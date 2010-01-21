@@ -1,0 +1,23 @@
+/* XPM */
+static char *jump_to_start_xpm[] = {
+/* width height ncolors chars_per_pixel */
+"9 9 8 1",
+/* colors */
+"A c None",
+"B c #DEDEDEDEDEDE",
+"C c #BDBDBDBDBDBD",
+"D c #B5B5B5B5B5B5",
+"E c #ADADADADADAD",
+"F c #A5A5A5A5A5A5",
+"G c #848484848484",
+"H c #000000000000",
+/* pixels */
+"AAAAAAAAA",
+"AHGAAAEHA",
+"AHGAAFHHA",
+"AHGAFHHHA",
+"AHGBHHHHA",
+"AHGAEHHHA",
+"AHGAADHHA",
+"AHGAAACHA",
+"AAAAAAAAA"};

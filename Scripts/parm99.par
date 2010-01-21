@@ -1,0 +1,636 @@
+! PARM99 for DNA,RNA,AA, organic molecules, TIP3P wat. Polariz.& LP incl.02/04/99
+! 
+! Original file was taken from the AMBER home page: http://ambermd.org/ (as of Nov 13, 2009)
+! Converted for Molby by amberparm2molby.pl by Toshi Nagata.
+! Thanks to the AMBER development team, the force field parameters are in the public domain. Hereby I acknowledge their great scientific contribution, with references to the literature as below.
+! 1. D.A. Case, T.E. Cheatham, III, T. Darden, H. Gohlke, R. Luo, K.M. Merz, Jr., A. Onufriev, C. Simmerling, B. Wang and R. Woods. The Amber biomolecular simulation programs. J. Computat. Chem. 26, 1668-1688 (2005).
+! 2. J.W. Ponder and D.A. Case. Force fields for protein simulations. Adv. Prot. Chem. 66, 27-85 (2003). Similar information for nucleic acids is given by T.E. Cheatham, III and M.A. Young. Molecular dynamics simulation of nucleic acids: Successes, limitations and promise. Biopolymers 56, 232-256 (2001).
+! 3. D.A. Case, T.A. Darden, T.E. Cheatham, III, C.L. Simmerling, J. Wang, R.E. Duke, R. Luo, M. Crowley, Ross C. Walker,W. Zhang, K.M. Merz, B.Wang, S. Hayik, A. Roitberg, G. Seabra, I. Kolossváry, K.F.Wong, F. Paesani, J. Vanicek, X.Wu, S.R. Brozell, T. Steinbrecher, H. Gohlke, L. Yang, C. Tan, J. Mongan, V. Hornak, G. Cui, D.H. Mathews, M.G. Seetin, C. Sagui, V. Babin, and P.A. Kollman (2008), AMBER 10, University of California, San Francisco.
+!
+bond OW   HW     553.0  0.96 ! TIP3P water
+bond HW   HW     553.0  1.51 ! TIP3P water
+bond C    C      310.0  1.52 ! Junmei et al, 1999
+bond C    CA     469.0  1.41 ! JCC,7,(1986),230; (not used any more in TYR)
+bond C    CB     447.0  1.42 ! JCC,7,(1986),230; GUA
+bond C    CM     410.0  1.44 ! JCC,7,(1986),230; THY,URA
+bond C    CT     317.0  1.52 ! JCC,7,(1986),230; AA
+bond C    N      490.0  1.33 ! JCC,7,(1986),230; AA
+bond C    N*     424.0  1.38 ! JCC,7,(1986),230; CYT,URA
+bond C    NA     418.0  1.39 ! JCC,7,(1986),230; GUA.URA
+bond C    NC     457.0  1.36 ! JCC,7,(1986),230; CYT
+bond C    O      570.0  1.23 ! JCC,7,(1986),230; AA,CYT,GUA,THY,URA
+bond C    O2     656.0  1.25 ! JCC,7,(1986),230; GLU,ASP
+bond C    OH     450.0  1.36 ! JCC,7,(1986),230; (not used any more for TYR)
+bond C    OS     450.0  1.32 ! Junmei et al, 1999
+bond C    H4     367.0  1.08 ! Junmei et al, 1999
+bond C    H5     367.0  1.08 ! Junmei et al, 1999
+bond CA   CA     469.0  1.40 ! JCC,7,(1986),230; BENZENE,PHE,TRP,TYR
+bond CA   CB     469.0  1.40 ! JCC,7,(1986),230; ADE,TRP
+bond CA   CM     427.0  1.43 ! JCC,7,(1986),230; CYT
+bond CA   CN     469.0  1.40 ! JCC,7,(1986),230; TRP
+bond CA   CT     317.0  1.51 ! JCC,7,(1986),230; PHE,TYR
+bond CA   HA     367.0  1.08 ! changed from 340. bsd on C6H6 nmodes; PHE,TRP,TYR
+bond CA   H4     367.0  1.08 ! changed from 340. bsd on C6H6 nmodes; no assigned
+bond CA   N2     481.0  1.34 ! JCC,7,(1986),230; ARG,CYT,GUA
+bond CA   NA     427.0  1.38 ! JCC,7,(1986),230; GUA
+bond CA   NC     483.0  1.34 ! JCC,7,(1986),230; ADE,CYT,GUA
+bond CA   OH     450.0  1.36 ! substituted for C-OH in tyr
+bond CB   CB     520.0  1.37 ! JCC,7,(1986),230; ADE,GUA
+bond CB   N*     436.0  1.37 ! JCC,7,(1986),230; ADE,GUA
+bond CB   NB     414.0  1.39 ! JCC,7,(1986),230; ADE,GUA
+bond CB   NC     461.0  1.35 ! JCC,7,(1986),230; ADE,GUA
+bond CD   HA     367.0  1.08 ! Junmei et al, 1999
+bond CD   CD     469.0  1.40 ! Junmei et al, 1999
+bond CD   CM     549.0  1.35 ! Junmei et al, 1999
+bond CD   CT     317.0  1.51 ! Junmei et al, 1999
+bond CK   H5     367.0  1.08 ! changed from 340. bsd on C6H6 nmodes; ADE,GUA
+bond CK   N*     440.0  1.37 ! JCC,7,(1986),230; ADE,GUA
+bond CK   NB     529.0  1.30 ! JCC,7,(1986),230; ADE,GUA
+bond CM   CM     549.0  1.35 ! JCC,7,(1986),230; CYT,THY,URA
+bond CM   CT     317.0  1.51 ! JCC,7,(1986),230; THY
+bond CM   HA     367.0  1.08 ! changed from 340. bsd on C6H6 nmodes; CYT,URA
+bond CM   H4     367.0  1.08 ! changed from 340. bsd on C6H6 nmodes; CYT,URA
+bond CM   H5     367.0  1.08 ! changed from 340. bsd on C6H6 nmodes; not assigned
+bond CM   N*     448.0  1.36 ! JCC,7,(1986),230; CYT,THY,URA
+bond CM   OS     480.0  1.24 ! Junmei et al, 1999
+bond CQ   H5     367.0  1.08 ! changed from 340. bsd on C6H6 nmodes; ADE
+bond CQ   NC     502.0  1.32 ! JCC,7,(1986),230; ADE
+bond CT   CT     310.0  1.53 ! JCC,7,(1986),230; AA, SUGARS
+bond CT   HC     340.0  1.09 ! changed from 331 bsd on NMA nmodes; AA, SUGARS
+bond CT   H1     340.0  1.09 ! changed from 331 bsd on NMA nmodes; AA, RIBOSE
+bond CT   H2     340.0  1.09 ! changed from 331 bsd on NMA nmodes; SUGARS
+bond CT   H3     340.0  1.09 ! changed from 331 bsd on NMA nmodes; not assigned
+bond CT   HP     340.0  1.09 ! changed from 331; AA-lysine, methyl ammonium cation
+bond CT   N*     337.0  1.48 ! JCC,7,(1986),230; ADE,CYT,GUA,THY,URA
+bond CT   N2     337.0  1.46 ! JCC,7,(1986),230; ARG
+bond CT   OH     320.0  1.41 ! JCC,7,(1986),230; SUGARS
+bond CT   OS     320.0  1.41 ! JCC,7,(1986),230; NUCLEIC ACIDS
+bond C*   HC     367.0  1.08 ! changed from 340. bsd on C6H6 nmodes, not needed AA
+bond C*   CB     388.0  1.46 ! JCC,7,(1986),230; TRP
+bond C*   CT     317.0  1.50 ! JCC,7,(1986),230; TRP
+bond C*   CW     546.0  1.35 ! JCC,7,(1986),230; TRP
+bond CB   CN     447.0  1.42 ! JCC,7,(1986),230; TRP
+bond CC   CT     317.0  1.50 ! JCC,7,(1986),230; HIS
+bond CC   CV     512.0  1.38 ! JCC,7,(1986),230; HIS(delta)
+bond CC   CW     518.0  1.37 ! JCC,7,(1986),230; HIS(epsilon)
+bond CC   NA     422.0  1.39 ! JCC,7,(1986),230; HIS
+bond CC   NB     410.0  1.39 ! JCC,7,(1986),230; HIS
+bond CN   NA     428.0  1.38 ! JCC,7,(1986),230; TRP
+bond CR   H5     367.0  1.08 ! changed from 340. bsd on C6H6 nmodes;HIS
+bond CR   NA     477.0  1.34 ! JCC,7,(1986),230; HIS
+bond CR   NB     488.0  1.33 ! JCC,7,(1986),230; HIS
+bond CT   N      337.0  1.45 ! JCC,7,(1986),230; AA
+bond CT   N3     367.0  1.47 ! JCC,7,(1986),230; LYS
+bond CT   NT     367.0  1.47 ! for neutral amines
+bond CT   S      227.0  1.81 ! changed from 222.0 based on dimethylS nmodes
+bond CT   SH     237.0  1.81 ! changed from 222.0 based on methanethiol nmodes
+bond CT   CY     400.0  1.46 ! Howard et al JCC.16,243,1995
+bond CT   CZ     400.0  1.46 ! Howard et al JCC,16,243,1995
+bond CV   H4     367.0  1.08 ! changed from 340. bsd on C6H6 nmodes; HIS
+bond CV   NB     410.0  1.39 ! JCC,7,(1986),230; HIS
+bond CW   H4     367.0  1.08 ! changed from 340. bsd on C6H6 nmodes;HIS(epsilon,+)
+bond CW   NA     427.0  1.38 ! JCC,7,(1986),230; HIS,TRP
+bond CY   NY     600.0  1.15 ! Howard et al JCC,16,243,1995
+bond CZ   CZ     600.0  1.21 ! Howard et al JCC,16,243,1995
+bond CZ   HZ     400.0  1.06 ! Howard et al JCC,16,243,1995
+bond O2   P      525.0  1.48 ! JCC,7,(1986),230; NA PHOSPHATES
+bond OH   P      230.0  1.61 ! JCC,7,(1986),230; NA PHOSPHATES
+bond OS   P      230.0  1.61 ! JCC,7,(1986),230; NA PHOSPHATES
+bond H    N2     434.0  1.01 ! JCC,7,(1986),230; ADE,CYT,GUA,ARG
+bond H    N*     434.0  1.01 ! for plain unmethylated bases ADE,CYT,GUA,ARG
+bond H    NA     434.0  1.01 ! JCC,7,(1986),230; GUA,URA,HIS
+bond H    N      434.0  1.01 ! JCC,7,(1986),230; AA
+bond H    N3     434.0  1.01 ! JCC,7,(1986),230; LYS
+bond H    NT     434.0  1.01 ! for neutral amines
+bond HO   OH     553.0  0.96 ! JCC,7,(1986),230; SUGARS,SER,TYR
+bond HO   OS     553.0  0.96 ! JCC,7,(1986),230; NUCLEOTIDE ENDS
+bond HS   SH     274.0  1.34 ! JCC,7,(1986),230; CYS
+bond S    S      166.0  2.04 ! JCC,7,(1986),230; CYX   (SCHERAGA)
+bond F    CT     367.0  1.38 ! JCC,13,(1992),963;CF4; R0=1.332 FOR CHF3
+bond Cl   CT     232.0  1.77 ! 6-31g* opt
+bond Br   CT     159.0  1.94 ! Junmei et al,99
+bond I    CT     148.0  2.17 ! Junmei et al,99
+bond F    CA     386.0  1.36 ! Junmei et al,99
+bond Cl   CA     193.0  1.73 ! Junmei et al,99
+bond I    CA     171.0  2.08 ! Junmei et al,99
+bond Br   CA     172.0  1.89 ! Junmei et al,99
+bond LP   O      600.0  0.20 ! or 0.35
+bond LP   OH     600.0  0.20 ! or 0.35
+bond LP   OS     600.0  0.20 ! or 0.35
+bond LP   N3     600.0  0.20 ! or 0.35
+bond LP   NT     600.0  0.20 ! or 0.35
+bond LP   NB     600.0  0.20 ! or 0.35 histidines, nucleic acids
+bond LP   NC     600.0  0.20 ! or 0.35 nucleic acids
+bond LP   S      600.0  0.70 ! cys,cyx,met
+bond LP   SH     600.0  0.70 ! cys,cyx
+
+angle HW   OW   HW     100.0 104.52 ! TIP3P water
+angle HW   HW   OW       0.0 127.74 ! (found in crystallographic water with 3 bonds)
+angle C    C    O       80.0 120.00 ! Junmei et al, 1999 acrolein
+angle C    C    OH      80.0 120.00 ! Junmei et al, 1999
+angle CA   C    CA      63.0 120.00 ! changed from 85.0  bsd on C6H6 nmodes; AA
+angle CA   C    OH      70.0 120.00 ! AA (not used in tyr)
+angle CB   C    NA      70.0 111.30 ! NA
+angle CB   C    O       80.0 128.80
+angle CM   C    NA      70.0 114.10
+angle CM   C    O       80.0 125.30
+angle CT   C    O       80.0 120.40
+angle CT   C    O2      70.0 117.00
+angle CT   C    N       70.0 116.60 ! AA general
+angle CT   C    CT      63.0 117.00 ! Junmei et al, 1999
+angle CT   C    OS      80.0 115.00 ! Junmei et al, 1999
+angle CT   C    OH      80.0 110.00 ! Junmei et al, 1999
+angle N*   C    NA      70.0 115.40
+angle N*   C    NC      70.0 118.60
+angle N*   C    O       80.0 120.90
+angle NA   C    O       80.0 120.60
+angle NC   C    O       80.0 122.50
+angle N    C    O       80.0 122.90 ! AA general
+angle O    C    O       80.0 126.00 ! AA COO- terminal residues
+angle O    C    OH      80.0 120.00 ! (check with Junmei for: theta0:120.0?)
+angle O    C    OS      80.0 125.00 ! Junmei et al, 1999
+angle O2   C    O2      80.0 126.00 ! AA GLU            (SCH JPC 79,2379)
+angle H4   C    C       50.0 120.00 ! Junmei et al, 1999
+angle H4   C    CM      50.0 115.00 ! Junmei et al, 1999
+angle H4   C    CT      50.0 115.00 ! Junmei et al, 1999
+angle H4   C    O       50.0 120.00 ! Junmei et al, 1999
+angle H4   C    OH      50.0 120.00 ! Junmei et al, 1999
+angle H5   C    N       50.0 120.00 ! Junmei et al, 1999
+angle H5   C    O       50.0 119.00 ! Junmei et al, 1999
+angle H5   C    OH      50.0 107.00 ! Junmei et al, 1999
+angle H5   C    OS      50.0 107.00 ! Junmei et al, 1999
+angle C    CA   CA      63.0 120.00 ! changed from 85.0  bsd on C6H6 nmodes
+angle C    CA   HA      50.0 120.00 ! AA (not used in tyr)
+angle CA   CA   CA      63.0 120.00 ! changed from 85.0  bsd on C6H6 nmodes
+angle CA   CA   CB      63.0 120.00 ! changed from 85.0  bsd on C6H6 nmodes
+angle CA   CA   CT      70.0 120.00
+angle CA   CA   HA      50.0 120.00
+angle CA   CA   H4      50.0 120.00
+angle CA   CA   OH      70.0 120.00 ! replacement in tyr
+angle CA   CA   CN      63.0 120.00 ! changed from 85.0  bsd on C6H6 nmodes; AA trp
+angle CB   CA   HA      50.0 120.00
+angle CB   CA   H4      50.0 120.00
+angle CB   CA   N2      70.0 123.50
+angle CB   CA   NC      70.0 117.30
+angle CM   CA   N2      70.0 120.10
+angle CM   CA   NC      70.0 121.50
+angle CN   CA   HA      50.0 120.00 ! AA trp
+angle NA   CA   NC      70.0 123.30
+angle N2   CA   NA      70.0 116.00
+angle N2   CA   NC      70.0 119.30
+angle N2   CA   N2      70.0 120.00 ! AA arg
+angle F    CA   CA      70.0 121.00 ! Junmei et al,99
+angle Cl   CA   CA      70.0 118.80 ! Junmei et al,99
+angle Br   CA   CA      70.0 118.80 ! Junmei et al,99
+angle I    CA   CA      70.0 118.80 ! Junmei et al,99
+angle C    CB   CB      63.0 119.20 ! changed from 85.0  bsd on C6H6 nmodes; NA gua
+angle C    CB   NB      70.0 130.00
+angle CA   CB   CB      63.0 117.30 ! changed from 85.0  bsd on C6H6 nmodes; NA ade
+angle CA   CB   NB      70.0 132.40
+angle CB   CB   N*      70.0 106.20
+angle CB   CB   NB      70.0 110.40
+angle CB   CB   NC      70.0 127.70
+angle C*   CB   CA      63.0 134.90 ! changed from 85.0  bsd on C6H6 nmodes; AA trp
+angle C*   CB   CN      63.0 108.80 ! changed from 85.0  bsd on C6H6 nmodes; AA trp
+angle CA   CB   CN      63.0 116.20 ! changed from 85.0  bsd on C6H6 nmodes; AA trp
+angle N*   CB   NC      70.0 126.20
+angle CD   CD   CM      63.0 120.00 ! Junmei et al, 1999
+angle CD   CD   CT      70.0 120.00 ! Junmei et al, 1999
+angle CM   CD   CT      70.0 120.00 ! Junmei et al, 1999
+angle HA   CD   HA      35.0 119.00 ! Junmei et al, 1999
+angle HA   CD   CD      50.0 120.00 ! Junmei et al, 1999
+angle HA   CD   CM      50.0 120.00 ! Junmei et al, 1999
+angle H5   CK   N*      50.0 123.05
+angle H5   CK   NB      50.0 123.05
+angle N*   CK   NB      70.0 113.90
+angle C    CM   CM      63.0 120.70 ! changed from 85.0  bsd on C6H6 nmodes; NA thy
+angle C    CM   CT      70.0 119.70
+angle C    CM   HA      50.0 119.70
+angle C    CM   H4      50.0 119.70
+angle CA   CM   CM      63.0 117.00 ! changed from 85.0  bsd on C6H6 nmodes; NA cyt
+angle CA   CM   HA      50.0 123.30
+angle CA   CM   H4      50.0 123.30
+angle CM   CM   CT      70.0 119.70
+angle CM   CM   HA      50.0 119.70
+angle CM   CM   H4      50.0 119.70
+angle CM   CM   N*      70.0 121.20
+angle CM   CM   OS      80.0 125.00 ! Junmei et al, 1999
+angle H4   CM   N*      50.0 119.10
+angle H4   CM   OS      50.0 113.00 ! Junmei et al, 1999
+angle HA   CM   HA      35.0 120.00 ! Junmei et al, 1999
+angle HA   CM   CD      50.0 120.00 ! Junmei et al, 1999
+angle HA   CM   CT      50.0 120.00 ! Junmei et al, 1999
+angle NC   CQ   NC      70.0 129.10
+angle H5   CQ   NC      50.0 115.45
+angle H1   CT   H1      35.0 109.50
+angle H1   CT   N*      50.0 109.50 ! changed based on NMA nmodes
+angle H1   CT   OH      50.0 109.50 ! changed based on NMA nmodes
+angle H1   CT   OS      50.0 109.50 ! changed based on NMA nmodes
+angle H1   CT   CM      50.0 109.50 ! Junmei et al, 1999
+angle H1   CT   CY      50.0 110.00 ! Junmei et al, 1999
+angle H1   CT   CZ      50.0 110.00 ! Junmei et al, 1999
+angle H1   CT   N       50.0 109.50 ! AA general  changed based on NMA nmodes
+angle H1   CT   S       50.0 109.50 ! AA cys     changed based on NMA nmodes
+angle H1   CT   SH      50.0 109.50 ! AA cyx     changed based on NMA nmodes
+angle H1   CT   N2      50.0 109.50 ! AA arg     changed based on NMA nmodes
+angle H1   CT   NT      50.0 109.50 ! neutral amines
+angle H2   CT   H2      35.0 109.50 ! AA lys
+angle H2   CT   N*      50.0 109.50 ! changed based on NMA nmodes
+angle H2   CT   OS      50.0 109.50 ! changed based on NMA nmodes
+angle HP   CT   HP      35.0 109.50 ! AA lys, ch3nh4+
+angle HP   CT   N3      50.0 109.50 ! AA lys, ch3nh3+, changed based on NMA nmodes
+angle HC   CT   HC      35.0 109.50
+angle HC   CT   CM      50.0 109.50 ! changed based on NMA nmodes
+angle HC   CT   CD      50.0 109.50 ! Junmei et al, 1999
+angle HC   CT   CZ      50.0 110.00 ! Junmei et al, 1999
+angle C    CT   H1      50.0 109.50 ! AA general  changed based on NMA nmodes
+angle C    CT   HP      50.0 109.50 ! AA zwitterion  changed based on NMA nmodes
+angle C    CT   HC      50.0 109.50 ! AA gln      changed based on NMA nmodes
+angle C    CT   N       63.0 110.10 ! AA general
+angle C    CT   N3      80.0 111.20 ! AA amino terminal residues
+angle C    CT   CT      63.0 111.10 ! AA general
+angle C    CT   OS      60.0 109.50 ! Junmei et al, 1999
+angle CA   CT   HC      50.0 109.50 ! AA tyr     changed based on NMA nmodes
+angle CC   CT   CT      63.0 113.10 ! AA his
+angle CC   CT   HC      50.0 109.50 ! AA his     changed based on NMA nmodes
+angle CM   CT   CT      63.0 111.00 ! Junmei et al, 1999 (last change: Mar24,99)
+angle CM   CT   OS      50.0 109.50 ! Junmei et al, 1999
+angle CT   CT   CT      40.0 109.50
+angle CT   CT   HC      50.0 109.50 ! changed based on NMA nmodes
+angle CT   CT   H1      50.0 109.50 ! changed based on NMA nmodes
+angle CT   CT   H2      50.0 109.50 ! changed based on NMA nmodes
+angle CT   CT   HP      50.0 109.50 ! changed based on NMA nmodes
+angle CT   CT   N*      50.0 109.50
+angle CT   CT   OH      50.0 109.50
+angle CT   CT   OS      50.0 109.50
+angle CT   CT   S       50.0 114.70 ! AA cyx            (SCHERAGA  JPC 79,1428)
+angle CT   CT   SH      50.0 108.60 ! AA cys
+angle CT   CT   CA      63.0 114.00 ! AA phe tyr          (SCH JPC  79,2379)
+angle CT   CT   N2      80.0 111.20 ! AA arg             (JCP 76, 1439)
+angle CT   CT   N       80.0 109.70 ! AA ala, general    (JACS 94, 2657)
+angle CT   CT   N3      80.0 111.20 ! AA lys             (JCP 76, 1439)
+angle CT   CT   NT      80.0 111.20 ! neutral amines
+angle CT   CT   CY      63.0 110.00 ! Junmei et al, 1999
+angle CT   CT   CZ      63.0 110.00 ! Junmei et al, 1999
+angle C*   CT   CT      63.0 115.60 ! AA trp
+angle C*   CT   HC      50.0 109.50 ! AA trp    changed based on NMA nmodes
+angle OS   CT   OS     160.0 101.00 ! Junmei et al, 1999
+angle OS   CT   CY      50.0 110.00 ! Junmei et al, 1999
+angle OS   CT   CZ      50.0 110.00 ! Junmei et al, 1999
+angle OS   CT   CZ      50.0 110.00 ! Junmei et al, 1999
+angle OS   CT   CY      50.0 110.00 ! Junmei et al, 1999
+angle OS   CT   N*      50.0 109.50
+angle F    CT   F       77.0 109.10 ! JCC,13,(1992),963;
+angle F    CT   H1      50.0 109.50 ! JCC,13,(1992),963;
+angle F    CT   CT      50.0 109.00
+angle F    CT   H2      50.0 109.50
+angle Cl   CT   CT      50.0 108.50 ! (6-31g* opt value)
+angle Cl   CT   H1      50.0 108.50 ! (6-31g* opt value)
+angle Br   CT   CT      50.0 108.00 ! Junmei et al 99
+angle Br   CT   H1      50.0 106.50 ! Junmei et al 99
+angle I    CT   CT      50.0 106.00 ! Junmei et al,99
+angle CT   CC   NA      70.0 120.00 ! AA his
+angle CT   CC   CV      70.0 120.00 ! AA his
+angle CT   CC   NB      70.0 120.00 ! AA his
+angle CV   CC   NA      70.0 120.00 ! AA his
+angle CW   CC   NA      70.0 120.00 ! AA his
+angle CW   CC   NB      70.0 120.00 ! AA his
+angle CT   CC   CW      70.0 120.00 ! AA his
+angle H5   CR   NA      50.0 120.00 ! AA his
+angle H5   CR   NB      50.0 120.00 ! AA his
+angle NA   CR   NA      70.0 120.00 ! AA his
+angle NA   CR   NB      70.0 120.00 ! AA his
+angle CC   CV   H4      50.0 120.00 ! AA his
+angle CC   CV   NB      70.0 120.00 ! AA his
+angle H4   CV   NB      50.0 120.00 ! AA his
+angle CC   CW   H4      50.0 120.00 ! AA his
+angle CC   CW   NA      70.0 120.00 ! AA his
+angle C*   CW   H4      50.0 120.00 ! AA trp
+angle C*   CW   NA      70.0 108.70 ! AA trp
+angle H4   CW   NA      50.0 120.00 ! AA his
+angle CB   C*   CT      70.0 128.60 ! AA trp
+angle CB   C*   CW      63.0 106.40 ! changed from 85.0  bsd on C6H6 nmodes; AA trp
+angle CT   C*   CW      70.0 125.00 ! AA trp
+angle CA   CN   CB      63.0 122.70 ! changed from 85.0  bsd on C6H6 nmodes; AA trp
+angle CA   CN   NA      70.0 132.80 ! AA trp
+angle CB   CN   NA      70.0 104.40 ! AA trp
+angle CT   CY   NY      80.0 180.00 ! Junmei et al, 1999
+angle CT   CZ   CZ      80.0 180.00 ! Junmei et al, 1999
+angle CZ   CZ   HZ      50.0 180.00 ! Junmei et al, 1999
+angle C    N    CT      50.0 121.90 ! AA general
+angle C    N    H       50.0 120.00 ! AA general, gln, asn,changed based on NMA nmodes
+angle CT   N    H       50.0 118.04 ! AA general,     changed based on NMA nmodes
+angle CT   N    CT      50.0 118.00 ! AA pro             (DETAR JACS 99,1232)
+angle H    N    H       35.0 120.00 ! ade,cyt,gua,gln,asn     **
+angle C    N*   CM      70.0 121.60
+angle C    N*   CT      70.0 117.60
+angle C    N*   H       50.0 119.20 ! changed based on NMA nmodes
+angle CB   N*   CK      70.0 105.40
+angle CB   N*   CT      70.0 125.80
+angle CB   N*   H       50.0 125.80 ! for unmethylated n.a. bases,chngd bsd NMA nmodes
+angle CK   N*   CT      70.0 128.80
+angle CK   N*   H       50.0 128.80 ! for unmethylated n.a. bases,chngd bsd NMA nmodes
+angle CM   N*   CT      70.0 121.20
+angle CM   N*   H       50.0 121.20 ! for unmethylated n.a. bases,chngd bsd NMA nmodes
+angle CA   N2   H       50.0 120.00
+angle CA   N2   CT      50.0 123.20 ! AA arg
+angle CT   N2   H       50.0 118.40 ! AA arg
+angle H    N2   H       35.0 120.00
+angle CT   N3   H       50.0 109.50 ! AA lys,     changed based on NMA nmodes
+angle CT   N3   CT      50.0 109.50 ! AA pro/nt
+angle H    N3   H       35.0 109.50 ! AA lys, AA(end)
+angle CT   NT   H       50.0 109.50 ! neutral amines
+angle CT   NT   CT      50.0 109.50 ! neutral amines
+angle H    NT   H       35.0 109.50 ! neutral amines
+angle C    NA   C       70.0 126.40
+angle C    NA   CA      70.0 125.20
+angle C    NA   H       50.0 116.80 ! changed based on NMA nmodes
+angle CA   NA   H       50.0 118.00 ! changed based on NMA nmodes
+angle CC   NA   CR      70.0 120.00 ! AA his
+angle CC   NA   H       50.0 120.00 ! AA his,    changed based on NMA nmodes
+angle CR   NA   CW      70.0 120.00 ! AA his
+angle CR   NA   H       50.0 120.00 ! AA his,    changed based on NMA nmodes
+angle CW   NA   H       50.0 120.00 ! AA his,    changed based on NMA nmodes
+angle CN   NA   CW      70.0 111.60 ! AA trp
+angle CN   NA   H       50.0 123.10 ! AA trp,    changed based on NMA nmodes
+angle CB   NB   CK      70.0 103.80
+angle CC   NB   CR      70.0 117.00 ! AA his
+angle CR   NB   CV      70.0 117.00 ! AA his
+angle C    NC   CA      70.0 120.50
+angle CA   NC   CB      70.0 112.20
+angle CA   NC   CQ      70.0 118.60
+angle CB   NC   CQ      70.0 111.00
+angle C    OH   HO      50.0 113.00 ! (not used in tyr anymore)
+angle CA   OH   HO      50.0 113.00 ! replacement in tyr
+angle CT   OH   HO      55.0 108.50
+angle HO   OH   P       45.0 108.50
+angle C    OS   CT      60.0 117.00 ! Junmei et al, 1999
+angle CM   OS   CT      60.0 117.00 ! Junmei et al, 1999
+angle CT   OS   CT      60.0 109.50
+angle CT   OS   P      100.0 120.50
+angle P    OS   P      100.0 120.50
+angle O2   P    OH      45.0 108.23
+angle O2   P    O2     140.0 119.90
+angle O2   P    OS     100.0 108.23
+angle OH   P    OS      45.0 102.60
+angle OS   P    OS      45.0 102.60
+angle CT   S    CT      62.0 98.90 ! AA met
+angle CT   S    S       68.0 103.70 ! AA cyx             (SCHERAGA  JPC 79,1428)
+angle CT   SH   HS      43.0 96.00 ! changed from 44.0 based on methanethiol nmodes
+angle HS   SH   HS      35.0 92.07 ! AA cys
+angle CB   NB   LP     150.0 126.00 ! NA
+angle CC   NB   LP     150.0 126.00 ! his,NA
+angle CK   NB   LP     150.0 126.00 ! NA
+angle CR   NB   LP     150.0 126.00 ! his,NA
+angle CV   NB   LP     150.0 126.00 ! his,NA
+angle C    NC   LP     150.0 120.00 ! NA
+angle CA   NC   LP     150.0 120.00 ! NA
+angle CB   NC   LP     150.0 120.00 ! NA
+angle CQ   NC   LP     150.0 120.00 ! NA
+angle CT   N3   LP     150.0 109.50 ! in neutral lysine
+angle H    N3   LP     150.0 109.50 ! in neutral lysine
+angle CT   NT   LP     150.0 109.50
+angle H    NT   LP     150.0 109.50
+angle C    O    LP     150.0 120.00
+angle LP   O    LP     150.0 120.00
+angle C    OH   LP     150.0 120.00
+angle CT   OH   LP     150.0 109.50
+angle HO   OH   LP     150.0 109.50
+angle LP   OH   LP     150.0 109.50
+angle C    OS   LP     150.0 109.50
+angle CM   OS   LP     150.0 109.50 ! methyl vinyl ether
+angle CT   OS   LP     150.0 109.50
+angle LP   OS   LP     150.0 109.50
+angle CT   S    LP     150.0 90.00 ! cys,cyx,met
+angle CT   SH   LP     150.0 90.00 ! cys,cyx,met
+angle P    OS   LP     150.0 109.50 ! NA
+angle LP   S    LP     150.0 180.00 ! cys,cyx,met
+angle LP   SH   LP     150.0 180.00 ! cys,cyx,met
+angle HS   SH   LP     150.0 90.00 ! cys
+
+dihe X    C    C    X     3.62       2  180.00 ! Junmei et al, 1999
+dihe X    C    CA   X     3.62       2  180.00 ! intrpol.bsd.on C6H6
+dihe X    C    CB   X     3.00       2  180.00 ! intrpol.bsd.on C6H6
+dihe X    C    CM   X     2.17       2  180.00 ! intrpol.bsd.on C6H6
+dihe X    C    CT   X     0.00       2    0.00 ! JCC,7,(1986),230
+dihe X    C    N    X     2.50       2  180.00 ! AA,NMA
+dihe X    C    N*   X     1.45       2  180.00 ! JCC,7,(1986),230
+dihe X    C    NA   X     1.35       2  180.00 ! JCC,7,(1986),230
+dihe X    C    NC   X     4.00       2  180.00 ! JCC,7,(1986),230
+dihe X    C    O    X     2.80       2  180.00 ! Junmei et al, 1999
+dihe X    C    OH   X     2.30       2  180.00 ! Junmei et al, 1999
+dihe X    C    OS   X     2.70       2  180.00 ! Junmei et al, 1999
+dihe X    CA   CA   X     3.62       2  180.00 ! intrpol.bsd.on C6H6
+dihe X    CA   CB   X     3.50       2  180.00 ! intrpol.bsd.on C6H6
+dihe X    CA   CM   X     2.55       2  180.00 ! intrpol.bsd.on C6H6
+dihe X    CA   CN   X     3.62       2  180.00 ! reinterpolated 93'
+dihe X    CA   CT   X     0.00       2    0.00 ! JCC,7,(1986),230
+dihe X    CA   N2   X     2.40       2  180.00 ! reinterpolated 93'
+dihe X    CA   NA   X     1.50       2  180.00 ! JCC,7,(1986),230
+dihe X    CA   NC   X     4.80       2  180.00 ! JCC,7,(1986),230
+dihe X    CA   OH   X     0.90       2  180.00 ! Junmei et al, 99
+dihe X    CB   CB   X     5.45       2  180.00 ! intrpol.bsd.on C6H6
+dihe X    CB   CN   X     3.00       2  180.00 ! reinterpolated 93'
+dihe X    CB   N*   X     1.65       2  180.00 ! JCC,7,(1986),230
+dihe X    CB   NB   X     2.55       2  180.00 ! JCC,7,(1986),230
+dihe X    CB   NC   X     4.15       2  180.00 ! JCC,7,(1986),230
+dihe X    CC   CT   X     0.00       2    0.00 ! JCC,7,(1986),230
+dihe X    CC   CV   X     5.15       2  180.00 ! intrpol.bsd.on C6H6
+dihe X    CC   CW   X     5.38       2  180.00 ! intrpol.bsd.on C6H6
+dihe X    CC   NA   X     1.40       2  180.00 ! JCC,7,(1986),230
+dihe X    CC   NB   X     2.40       2  180.00 ! JCC,7,(1986),230
+dihe X    CD   CD   X     1.00       2  180.00 ! Junmei et al, 1999
+dihe X    CD   CT   X     0.00       2    0.00 ! Junmei et al, 1999
+dihe X    CD   CM   X     6.65       2  180.00 ! Junmei et al, 1999
+dihe X    CK   N*   X     1.70       2  180.00 ! JCC,7,(1986),230
+dihe X    CK   NB   X    10.00       2  180.00 ! JCC,7,(1986),230
+dihe X    CM   CM   X     6.65       2  180.00 ! intrpol.bsd.on C6H6
+dihe X    CM   CT   X     0.00       3    0.00 ! JCC,7,(1986),230
+dihe X    CM   N*   X     1.85       2  180.00 ! JCC,7,(1986),230
+dihe X    CM   OS   X     1.05       2  180.00 ! Junmei et al, 1999
+dihe X    CN   NA   X     1.52       2  180.00 ! reinterpolated 93'
+dihe X    CQ   NC   X     6.80       2  180.00 ! JCC,7,(1986),230
+dihe X    CT   CT   X     0.16       3    0.00 ! JCC,7,(1986),230
+dihe X    CT   CY   X     0.00       1    0.00 ! Junmei et al, 1999
+dihe X    CT   CZ   X     0.00       1    0.00 ! Junmei et al, 1999
+dihe X    CT   N    X     0.00       2    0.00 ! JCC,7,(1986),230
+dihe X    CT   N*   X     0.00       2    0.00 ! JCC,7,(1986),230
+dihe X    CT   N2   X     0.00       3    0.00 ! JCC,7,(1986),230
+dihe X    CT   NT   X     0.30       3    0.00 ! Junmei et al, 1999
+dihe X    CT   N3   X     0.16       3    0.00 ! JCC,7,(1986),230
+dihe X    CT   OH   X     0.17       3    0.00 ! JCC,7,(1986),230
+dihe X    CT   OS   X     0.38       3    0.00 ! JCC,7,(1986),230
+dihe X    CT   S    X     0.33       3    0.00 ! JCC,7,(1986),230
+dihe X    CT   SH   X     0.25       3    0.00 ! JCC,7,(1986),230
+dihe X    C*   CB   X     1.68       2  180.00 ! intrpol.bsd.onC6H6aa
+dihe X    C*   CT   X     0.00       2    0.00 ! JCC,7,(1986),230
+dihe X    C*   CW   X     6.53       2  180.00 ! intrpol.bsd.on C6H6
+dihe X    CR   NA   X     2.33       2  180.00 ! JCC,7,(1986),230
+dihe X    CR   NB   X     5.00       2  180.00 ! JCC,7,(1986),230
+dihe X    CV   NB   X     2.40       2  180.00 ! JCC,7,(1986),230
+dihe X    CW   NA   X     1.50       2  180.00 ! JCC,7,(1986),230
+dihe X    OH   P    X     0.25       3    0.00 ! JCC,7,(1986),230
+dihe X    OS   P    X     0.25       3    0.00 ! JCC,7,(1986),230
+dihe N    CT   C    N     2.00       2  180.00
+dihe C    N    CT   C     0.80       1    0.00
+dihe CT   CT   N    C     0.53       1    0.00 ! phi,psi,parm94
+dihe CT   CT   C    N     0.07       2    0.00 ! phi,psi,parm94
+dihe H    N    C    O     2.00       1    0.00 ! J.C.cistrans-NMA DE
+dihe CT   S    S    CT    0.60       3    0.00 ! JCC,7,(1986),230
+dihe OH   P    OS   CT    1.20       2    0.00 ! gg&gt ene.631g*/mp2
+dihe OS   P    OS   CT    1.20       2    0.00 ! gg&gt ene.631g*/mp2
+dihe H1   CT   C    O     0.08       3  180.00 ! Junmei et al, 1999
+dihe HC   CT   C    O     0.08       3  180.00 ! Junmei et al, 1999
+dihe HC   CT   CT   HC    0.15       3    0.00 ! Junmei et al, 1999
+dihe HC   CT   CT   CT    0.16       3    0.00 ! Junmei et al, 1999
+dihe HC   CT   CM   CM    1.15       1    0.00 ! Junmei et al, 1999
+dihe HO   OH   CT   CT    0.25       1    0.00 ! Junmei et al, 1999
+dihe HO   OH   C    O     1.90       1    0.00 ! Junmei et al, 1999
+dihe CM   CM   C    O     0.30       3    0.00 ! Junmei et al, 1999
+dihe CT   CM   CM   CT    1.90       1  180.00 ! Junmei et al, 1999
+dihe CT   CT   CT   CT    0.20       1  180.00 ! Junmei et al, 1999
+dihe CT   CT   NT   CT    0.48       2  180.00 ! Junmei et al, 1999
+dihe CT   CT   OS   CT    0.10       2  180.00
+dihe CT   CT   OS   C     0.80       1  180.00 ! Junmei et al, 1999
+dihe CT   OS   CT   OS    1.35       1  180.00 ! Junmei et al, 1999
+dihe CT   OS   CT   N*    0.65       2    0.00 ! Piotr et al.
+dihe CT   CZ   CZ   HZ    0.00       1    0.00 ! Junmei et al, 1999
+dihe O    C    OS   CT    1.40       1  180.00 ! Junmei et al, 1999
+dihe OS   CT   N*   CK    2.50       1    0.00 ! parm98, TC,PC,PAK
+dihe OS   CT   N*   CM    2.50       1    0.00 ! parm98, TC,PC,PAK
+dihe OS   CT   CT   OS    1.18       2    0.00 ! Piotr et al.
+dihe OS   CT   CT   OH    1.18       2    0.00 ! parm98, TC,PC,PAK
+dihe OH   CT   CT   OH    1.18       2    0.00 ! parm98, TC,PC,PAK
+dihe F    CT   CT   F     1.20       1  180.00 ! Junmei et al, 1999
+dihe Cl   CT   CT   Cl    0.45       1  180.00 ! Junmei et al, 1999
+dihe Br   CT   CT   Br    0.00       1  180.00 ! Junmei et al, 1999
+dihe H1   CT   CT   OS    0.25       1    0.00 ! Junmei et al, 1999
+dihe H1   CT   CT   OH    0.25       1    0.00 ! Junmei et al, 1999
+dihe H1   CT   CT   F     0.19       1    0.00 ! Junmei et al, 1999
+dihe H1   CT   CT   Cl    0.25       1    0.00 ! Junmei et al, 1999
+dihe H1   CT   CT   Br    0.55       1    0.00 ! Junmei et al, 1999
+dihe HC   CT   CT   OS    0.25       1    0.00 ! Junmei et al, 1999
+dihe HC   CT   CT   OH    0.25       1    0.00 ! Junmei et al, 1999
+dihe HC   CT   CT   F     0.19       1    0.00 ! Junmei et al, 1999
+dihe HC   CT   CT   Cl    0.25       1    0.00 ! Junmei et al, 1999
+dihe HC   CT   CT   Br    0.55       1    0.00 ! Junmei et al, 1999
+dihe H1   CT   NT   LP    0.00       3    0.00
+dihe CT   CT   NT   LP    0.00       3    0.00
+dihe CT   C    N    LP    0.00       2  180.00
+dihe O    C    N    LP    0.00       2  180.00
+dihe H1   CT   OH   LP    0.00       3    0.00
+dihe CT   CT   OH   LP    0.00       3    0.00
+dihe H1   CT   OS   LP    0.00       3    0.00
+dihe H2   CT   OS   LP    0.00       3    0.00
+dihe CT   CT   OS   LP    0.00       3    0.00
+dihe CM   CM   OS   LP    0.00       2  180.00
+dihe HA   CM   OS   LP    0.00       2  180.00
+dihe H4   CM   OS   LP    0.00       2  180.00
+
+impr X    X    C    O    10.50       2  180.00 ! JCC,7,(1986),230
+impr X    O2   C    O2   10.50       2  180.00 ! JCC,7,(1986),230
+impr X    X    N    H     1.00       2  180.00 ! JCC,7,(1986),230
+impr X    X    N2   H     1.00       2  180.00 ! JCC,7,(1986),230
+impr X    X    NA   H     1.00       2  180.00 ! JCC,7,(1986),230
+impr X    N2   CA   N2   10.50       2  180.00 ! JCC,7,(1986),230
+impr X    CT   N    CT    1.00       2  180.00 ! JCC,7,(1986),230
+impr X    X    CA   HA    1.10       2  180.00 ! bsd.on C6H6 nmodes
+impr X    X    CW   H4    1.10       2  180.00
+impr X    X    CR   H5    1.10       2  180.00
+impr X    X    CV   H4    1.10       2  180.00
+impr X    X    CQ   H5    1.10       2  180.00
+impr X    X    CK   H5    1.10       2  180.00
+impr X    X    CM   H4    1.10       2  180.00
+impr X    X    CM   HA    1.10       2  180.00
+impr X    X    CA   H4    1.10       2  180.00 ! bsd.on C6H6 nmodes
+impr X    X    CA   H5    1.10       2  180.00 ! bsd.on C6H6 nmodes
+impr CK   CB   N*   CT    1.00       2  180.00
+impr CM   C    N*   CT    1.00       2  180.00 ! dac guess, 9/94
+impr CM   C    CM   CT    1.10       2  180.00
+impr CT   O    C    OH   10.50       2  180.00
+impr NA   CV   CC   CT    1.10       2  180.00
+impr NB   CW   CC   CT    1.10       2  180.00
+impr NA   CW   CC   CT    1.10       2  180.00
+impr CW   CB   C*   CT    1.10       2  180.00
+impr CA   CA   CA   CT    1.10       2  180.00
+impr C    CM   CM   CT    1.10       2  180.00 ! dac guess, 9/94
+impr NC   CM   CA   N2    1.10       2  180.00 ! dac guess, 9/94
+impr CB   NC   CA   N2    1.10       2  180.00 ! dac, 10/94
+impr NA   NC   CA   N2    1.10       2  180.00 ! dac, 10/94
+impr CA   CA   C    OH    1.10       2  180.00 ! (not used in tyr!)
+impr CA   CA   CA   OH    1.10       2  180.00 ! in tyr
+impr H5   O    C    OH    1.10       2  180.00 ! Junmei et al.1999
+impr H5   O    C    OS    1.10       2  180.00
+impr CM   CT   CM   HA    1.10       2  180.00 ! Junmei et al.1999
+impr CA   CA   CA   Br    1.10       2  180.00 ! Junmei et al.1999
+impr CM   H4   C    O     1.10       2  180.00 ! Junmei et al.1999
+impr C    CT   N    H     1.10       2  180.00 ! Junmei et al.1999
+impr C    CT   N    O     1.10       2  180.00 ! Junmei et al.1999
+
+vdw H   0.0157  0.6000  0.0157  0.6000 0   1.008 ! H bonded to nitrogen atoms
+vdw HO  0.0000  0.0000  0.0000  0.0000 0   1.008 ! hydroxyl group
+vdw HS  0.0157  0.6000  0.0157  0.6000 0   1.008 ! hydrogen bonded to sulphur (pol?)
+vdw HC  0.0157  1.4870  0.0157  1.4870 0   1.008 ! H aliph. bond. to C without electrwd.group
+vdw H1  0.0157  1.3870  0.0157  1.3870 0   1.008 ! H aliph. bond. to C with 1 electrwd. group
+vdw H2  0.0157  1.2870  0.0157  1.2870 0   1.008 ! H aliph. bond. to C with 2 electrwd.groups
+vdw H3  0.0157  1.1870  0.0157  1.1870 0   1.008 ! H aliph. bond. to C with 3 eletrwd.groups
+vdw HP  0.0157  1.1000  0.0157  1.1000 0   1.008 ! H bonded to C next to positively charged gr
+vdw HA  0.0150  1.4590  0.0150  1.4590 0   1.008 ! H arom. bond. to C without elctrwd. groups
+vdw H4  0.0150  1.4090  0.0150  1.4090 0   1.008 ! H arom. bond. to C with 1 electrwd. group
+vdw H5  0.0150  1.3590  0.0150  1.3590 0   1.008 ! H arom.at C with 2 elctrwd. gr,+HCOO group
+vdw HW  0.0000  0.0000  0.0000  0.0000 0   1.008 ! H in TIP3P water
+vdw HZ  0.0150  1.4590  0.0150  1.4590 0   1.008 ! H bond sp C (Howard et al.JCC,16,243,1995)
+vdw O   0.2100  1.6612  0.2100  1.6612 0  16.000 ! carbonyl group oxygen
+vdw O2  0.2100  1.6612  0.2100  1.6612 0  16.000 ! carboxyl and phosphate group oxygen
+vdw OW  0.1520  1.7683  0.1520  1.7683 0  16.000 ! oxygen in TIP3P water
+vdw OH  0.2104  1.7210  0.2104  1.7210 0  16.000 ! oxygen in hydroxyl group
+vdw OS  0.1700  1.6837  0.1700  1.6837 0  16.000 ! ether and ester oxygen
+vdw C*  0.0860  1.9080  0.0860  1.9080 0  12.010 ! sp2 arom. 5 memb.ring w/1 subst. (TRP)
+vdw CA  0.0860  1.9080  0.0860  1.9080 0  12.010 ! sp2 C pure aromatic (benzene)
+vdw CB  0.0860  1.9080  0.0860  1.9080 0  12.010 ! sp2 aromatic C, 5&6 membered ring junction
+vdw CC  0.0860  1.9080  0.0860  1.9080 0  12.010 ! sp2 aromatic C, 5 memb. ring HIS
+vdw CD  0.0860  1.9080  0.0860  1.9080 0  12.010 ! sp2 C atom in the middle of: C=CD-CD=C
+vdw CK  0.0860  1.9080  0.0860  1.9080 0  12.010 ! sp2 C 5 memb.ring in purines
+vdw CM  0.0860  1.9080  0.0860  1.9080 0  12.010 ! sp2 C  pyrimidines in pos. 5 & 6
+vdw CN  0.0860  1.9080  0.0860  1.9080 0  12.010 ! sp2 C aromatic 5&6 memb.ring junct.(TRP)
+vdw CQ  0.0860  1.9080  0.0860  1.9080 0  12.010 ! sp2 C in 5 mem.ring of purines between 2 N
+vdw CR  0.0860  1.9080  0.0860  1.9080 0  12.010 ! sp2 arom as CQ but in HIS
+vdw CV  0.0860  1.9080  0.0860  1.9080 0  12.010 ! sp2 arom. 5 memb.ring w/1 N and 1 H (HIS)
+vdw CW  0.0860  1.9080  0.0860  1.9080 0  12.010 ! sp2 arom. 5 memb.ring w/1 N-H and 1 H (HIS)
+vdw CX  0.0860  1.9080  0.0860  1.9080 0   0.000
+vdw CY  0.0860  1.9080  0.0860  1.9080 0  12.010 ! nitrile C (Howard et al.JCC,16,243,1995)
+vdw CZ  0.0860  1.9080  0.0860  1.9080 0  12.010 ! sp C (Howard et al.JCC,16,243,1995)
+vdw CT  0.1094  1.9080  0.1094  1.9080 0  12.010 ! sp3 aliphatic C
+vdw C   0.0860  1.9080  0.0860  1.9080 0  12.010 ! sp2 C carbonyl group
+vdw N   0.1700  1.8240  0.1700  1.8240 0  14.010 ! sp2 nitrogen in amide groups
+vdw NA  0.1700  1.8240  0.1700  1.8240 0  14.010 ! sp2 N in 5 memb.ring w/H atom (HIS)
+vdw N2  0.1700  1.8240  0.1700  1.8240 0  14.010 ! sp2 N in amino groups
+vdw N*  0.1700  1.8240  0.1700  1.8240 0  14.010 ! sp2 N
+vdw NC  0.1700  1.8240  0.1700  1.8240 0  14.010 ! sp2 N in 6 memb.ring w/LP (ADE,GUA)
+vdw NB  0.1700  1.8240  0.1700  1.8240 0  14.010 ! sp2 N in 5 memb.ring w/LP (HIS,ADE,GUA)
+vdw N3  0.1700  1.8240  0.1700  1.8240 0  14.010 ! sp3 N for charged amino groups (Lys, etc)
+vdw NT  0.1700  1.8240  0.1700  1.8240 0  14.010 ! sp3 N for amino groups amino groups
+vdw NP  0.1700  1.8240  0.1700  1.8240 0   0.000
+vdw NO  0.1700  1.8240  0.1700  1.8240 0   0.000
+vdw NY  0.1700  1.8240  0.1700  1.8240 0  14.010 ! nitrile N (Howard et al.JCC,16,243,1995)
+vdw NY  0.1700  1.8240  0.1700  1.8240 0  14.010 ! nitrile N (Howard et al.JCC,16,243,1995)
+vdw S   0.2500  2.0000  0.2500  2.0000 0  32.060 ! S in disulfide linkage,pol:JPC,102,2399,98
+vdw SH  0.2500  2.0000  0.2500  2.0000 0  32.060 ! S in cystine
+vdw P   0.2000  2.1000  0.2000  2.1000 0  30.970 ! phosphate,pol:JACS,112,8543,90,K.J.Miller
+vdw IM  0.1000  2.4700  0.1000  2.4700 0  35.450 ! assumed to be Cl- (ion minus)
+vdw Li  0.0183  1.1370  0.0183  1.1370 0   6.940 ! lithium, ions pol:J.PhysC,11,1541,(1978)
+vdw IP  0.0028  1.8680  0.0028  1.8680 0  22.990 ! assumed to be Na+ (ion plus)
+vdw Na  0.0028  1.8680  0.0028  1.8680 0  22.990 ! Na+, ions pol:J.PhysC,11,1541,(1978)
+vdw K   0.0003  2.6580  0.0003  2.6580 0  39.100 ! potassium
+vdw Rb  0.0002  2.9560  0.0002  2.9560 0  85.470 ! rubidium
+vdw Cs  0.0001  3.3950  0.0001  3.3950 0 132.910 ! cesium
+vdw MG  0.8947  0.7926  0.8947  0.7926 0  24.305 ! magnesium
+vdw C0  0.4598  1.7131  0.4598  1.7131 0  40.080 ! calcium
+vdw Zn  0.0125  1.1000  0.0125  1.1000 0  65.400 ! Zn2+
+vdw F   0.0610  1.7500  0.0610  1.7500 0  19.000 ! fluorine
+vdw Cl  0.2650  1.9480  0.2650  1.9480 0  35.450 ! chlorine  (Applequist)
+vdw Br  0.3200  2.2200  0.3200  2.2200 0  79.900 ! bromine  (Applequist)
+vdw I   0.4000  2.3500  0.4000  2.3500 0 126.900 ! iodine   (Applequist)
+vdw IB  0.1000  5.0000  0.1000  5.0000 0 131.000 ! 'big ion w/ waters' for vacuum (Na+, 6H2O)
+vdw LP  0.0000  0.0000  0.0000  0.0000 0   3.000 ! lone pair
+

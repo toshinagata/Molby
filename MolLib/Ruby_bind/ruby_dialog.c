@@ -1,0 +1,1144 @@
+/*
+ *  ruby_dialog.c
+ *
+ *  Created by Toshi Nagata on 08/04/13.
+ *  Copyright 2008 Toshi Nagata. All rights reserved.
+
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation version 2 of the License.
+ 
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+ 
+*/
+
+#include "ruby_dialog.h"
+#include "Molby.h"
+
+static VALUE
+	sTextSymbol, sTextFieldSymbol, sRadioSymbol, sButtonSymbol,
+	sCheckBoxSymbol, sPopUpSymbol, sTextViewSymbol, sViewSymbol,
+	sLineSymbol, sTagSymbol, sTypeSymbol, sTitleSymbol, sRadioGroupSymbol, 
+	sXSymbol, sYSymbol, sWidthSymbol, sHeightSymbol, 
+	sOriginSymbol, sSizeSymbol, sFrameSymbol,
+	sEnabledSymbol, sEditableSymbol, sHiddenSymbol, sValueSymbol,
+	sBlockSymbol, sRangeSymbol, sActionSymbol,
+	sAlignSymbol, sRightSymbol, sCenterSymbol,
+	sVerticalAlignSymbol, sBottomSymbol, 
+	sMarginSymbol, sPaddingSymbol, sSubItemsSymbol,
+	sHFillSymbol, sVFillSymbol;
+
+VALUE cRubyDialog = Qfalse;
+
+const RDPoint gZeroPoint = {0, 0};
+const RDSize gZeroSize = {0, 0};
+const RDRect gZeroRect = {{0, 0}, {0, 0}};
+
+/*  True if y-coordinate grows from bottom to top (like Cocoa)  */
+int gRubyDialogIsFlipped = 0;
+
+#pragma mark ====== RubyDialog alloc/init/release ======
+
+typedef struct RubyDialogInfo {
+	RubyDialog *dref;  /*  Reference to a platform-dependent "controller" object  */
+} RubyDialogInfo;
+
+static RubyDialog *
+s_RubyDialog_GetController(VALUE self)
+{
+	RubyDialogInfo *di;
+	Data_Get_Struct(self, RubyDialogInfo, di);
+	if (di != NULL)
+		return di->dref;
+	else return NULL;
+}
+
+static void
+s_RubyDialog_Release(void *p)
+{
+	if (p != NULL) {
+		RubyDialog *dref = ((RubyDialogInfo *)p)->dref;
+		if (dref != NULL) {
+			RubyDialogCallback_setRubyObject(dref, Qfalse); /* Stop access to the Ruby object (in case the RubyDialogController is not dealloc'ed in the following line) */
+			RubyDialogCallback_release(dref);
+			((RubyDialogInfo *)p)->dref = NULL;
+		}
+		free(p);
+	}
+}
+
+static VALUE
+s_RubyDialog_Alloc(VALUE klass)
+{
+	VALUE val;
+	RubyDialogInfo *di;
+	RubyDialog *dref = RubyDialogCallback_new();
+	val = Data_Make_Struct(klass, RubyDialogInfo, 0, s_RubyDialog_Release, di);
+	di->dref = dref;
+	RubyDialogCallback_setRubyObject(dref, (RubyValue)val);
+	return val;
+}
+
+static VALUE
+s_RubyDialog_Initialize(int argc, VALUE *argv, VALUE self)
+{
+	int i, j;
+	VALUE val1, val2, val3;
+	VALUE items;
+	char *title1, *title2;
+	RubyDialog *dref = s_RubyDialog_GetController(self);
+	
+	rb_scan_args(argc, argv, "03", &val1, &val2, &val3);
+	if (!NIL_P(val1)) {
+		char *p = StringValuePtr(val1);
+		RubyDialogCallback_setWindowTitle(dref, p);
+	}
+	if (val2 != Qnil)
+		title1 = StringValuePtr(val2);
+	else title1 = NULL;
+	if (val3 != Qnil)
+		title2 = StringValuePtr(val3);
+	else title2 = NULL;
+
+	//  Array of item informations
+	items = rb_ary_new();
+	
+	if (val2 == Qnil && argc < 2) {
+		/*  The 2nd argument is omitted (nil is not explicitly given)  */
+		title1 = "OK";  /*  Default title  */
+	}
+	if (val3 == Qnil && argc < 3) {
+		/*  The 3rd argument is omitted (nil is not explicitly given)  */
+		title2 = "Cancel";  /*  Default title  */
+	}
+	
+	/*  Create standard buttons  */
+	/*  (When title{1,2} == NULL, the buttons are still created but set to hidden)  */
+	RubyDialogCallback_createStandardButtons(dref, title1, title2);
+	for (i = 0; i < 2; i++) {
+		VALUE item, vals[14];
+		RDItem *button = RubyDialogCallback_dialogItemAtIndex(dref, i);
+		char *title = RubyDialogCallback_titleOfItem(button);
+		RDRect frame = RubyDialogCallback_frameOfItem(button);
+		vals[0] = sTagSymbol;
+		vals[1] = rb_str_new2(i == 0 ? "ok" : "cancel");
+		vals[2] = sTypeSymbol;
+		vals[3] = sButtonSymbol;
+		vals[4] = sTitleSymbol;
+		vals[5] = rb_str_new2(title);
+		vals[6] = sXSymbol;
+		vals[7] = rb_float_new(frame.origin.x);
+		vals[8] = sYSymbol;
+		vals[9] = rb_float_new(frame.origin.y);
+		vals[10] = sWidthSymbol;
+		vals[11] = rb_float_new(frame.size.width);
+		vals[12] = sHeightSymbol;
+		vals[13] = rb_float_new(frame.size.height);
+		item = rb_hash_new();
+		for (j = 0; j < 7; j++) {
+			rb_hash_aset(item, vals[j * 2], vals[j * 2 + 1]);
+		}
+		rb_ary_push(items, item);
+		free(title);
+	}
+	
+	rb_iv_set(self, "_items", items);
+	
+	return Qnil;
+}
+
+#pragma mark ====== Ruby methods ======
+
+static int
+s_RubyDialog_ItemIndexForTag(VALUE self, VALUE tag)
+{
+	VALUE items = rb_iv_get(self, "_items");
+	int len = RARRAY_LEN(items);
+	VALUE *ptr = RARRAY_PTR(items);
+	int i;
+	if (FIXNUM_P(tag) && (i = NUM2INT(tag)) >= 0 && i < len)
+		return i;
+	for (i = 0; i < len; i++) {
+		if (rb_equal(tag, rb_hash_aref(ptr[i], sTagSymbol)) == Qtrue)
+			return i;
+	}
+	rb_raise(rb_eStandardError, "RubyDialog has no item with tag %s", StringValuePtr(tag));
+	return -1; /* Not reached */
+}
+
+/*
+ *  call-seq:
+ *     dialog.set_attr(tag, hash)
+ *
+ *  Set the attributes given in the hash.
+ */
+static VALUE
+s_RubyDialog_SetAttr(VALUE self, VALUE tag, VALUE hash)
+{
+	int i;
+	VALUE items = rb_iv_get(self, "_items");
+	VALUE *ptr = RARRAY_PTR(items);
+	int itag = s_RubyDialog_ItemIndexForTag(self, tag);
+	VALUE item = ptr[itag];
+	VALUE type = rb_hash_aref(item, sTypeSymbol);
+	RubyDialog *dref = s_RubyDialog_GetController(self);
+	RDItem *view = RubyDialogCallback_dialogItemAtIndex(dref, itag);
+	VALUE keys = rb_funcall(hash, rb_intern("keys"), 0);
+	int klen = RARRAY_LEN(keys);
+	VALUE *kptr = RARRAY_PTR(keys);
+	char *p;
+
+	for (i = 0; i < klen; i++) {
+		VALUE key = kptr[i];
+		VALUE val = rb_hash_aref(hash, key);
+		int flag;
+		if (key == sRangeSymbol) {
+			/*  Range of value (must be an array of two integers or two floats)  */
+			VALUE val1, val2;
+			double d1, d2;
+			if (TYPE(val) != T_ARRAY || RARRAY_LEN(val) != 2)
+				rb_raise(rb_eTypeError, "the attribute 'range' should specify an array of two numbers");
+			val1 = (RARRAY_PTR(val))[0];
+			val2 = (RARRAY_PTR(val))[1];
+			d1 = NUM2DBL(rb_Float(val1));
+			d2 = NUM2DBL(rb_Float(val2));
+			if (!FIXNUM_P(val1) || !FIXNUM_P(val2)) {
+				/*  Convert to a range of floats  */
+				if (TYPE(val1) != T_FLOAT || TYPE(val2) != T_FLOAT) {
+					val1 = rb_float_new(NUM2DBL(val1));
+					val2 = rb_float_new(NUM2DBL(val2));
+					val = rb_ary_new3(2, val1, val2);
+				}
+			}
+			if (d1 > d2)
+				rb_raise(rb_eArgError, "invalid number range [%g,%g]", d1, d2);
+			rb_hash_aset(item, key, val);
+		} else if (key == sValueSymbol) {
+			/*  Value  */
+			if (type == sTextFieldSymbol || type == sTextViewSymbol) {
+				RubyDialogCallback_setStringToItem(view, StringValuePtr(val));
+			} else if (type == sPopUpSymbol) {
+				RubyDialogCallback_setSelectedSubItem(view, NUM2INT(rb_Integer(val)));
+			} else if (type == sCheckBoxSymbol || type == sRadioSymbol) {
+				RubyDialogCallback_setStateForItem(view, NUM2INT(rb_Integer(val)));
+			}
+		} else if (key == sTitleSymbol) {
+			/*  Title  */
+			p = StringValuePtr(val);
+			if (type == sTextSymbol)
+				RubyDialogCallback_setStringToItem(view, p);
+			else RubyDialogCallback_setTitleToItem(view, p);
+		} else if (key == sEnabledSymbol) {
+			/*  Enabled  */
+			flag = (val != Qnil && val != Qfalse);
+			RubyDialogCallback_setEnabledForItem(view, flag);
+		} else if (key == sEditableSymbol) {
+			/*  Editable  */
+			flag = (val != Qnil && val != Qfalse);
+			RubyDialogCallback_setEditableForItem(view, flag);
+		} else if (key == sHiddenSymbol) {
+			/*  Hidden  */
+			flag = (val != Qnil && val != Qfalse);
+			RubyDialogCallback_setHiddenForItem(view, flag);
+		} else if (key == sSubItemsSymbol) {
+			/*  SubItems  */
+			if (type == sPopUpSymbol) {
+				int j, len2;
+				VALUE *ptr2;
+				val = rb_ary_to_ary(val);
+				len2 = RARRAY_LEN(val);
+				ptr2 = RARRAY_PTR(val);
+				while (RubyDialogCallback_deleteSubItem(view, 0) >= 0);
+				for (j = 0; j < len2; j++) {
+					VALUE val2 = ptr2[j];
+					RubyDialogCallback_appendSubItem(view, StringValuePtr(val2));
+				}
+				RubyDialogCallback_resizeToBest(view);
+				RubyDialogCallback_setSelectedSubItem(view, 0);
+			}			
+		} else if (key == sXSymbol || key == sYSymbol || key == sWidthSymbol || key == sHeightSymbol) {
+			/*  Frame components  */
+			RDRect frame;
+			float f = NUM2DBL(rb_Float(val));
+			frame = RubyDialogCallback_frameOfItem(view);
+			if (key == sXSymbol)
+				frame.origin.x = f;
+			else if (key == sYSymbol)
+				frame.origin.y = f;
+			else if (key == sWidthSymbol)
+				frame.size.width = f;
+			else
+				frame.size.height = f;
+			RubyDialogCallback_setFrameOfItem(view, frame);
+		} else if (key == sOriginSymbol || key == sSizeSymbol) {
+			/*  Frame components  */
+			RDRect frame;
+			float f0 = NUM2DBL(rb_Float(Ruby_ObjectAtIndex(val, 0)));
+			float f1 = NUM2DBL(rb_Float(Ruby_ObjectAtIndex(val, 1)));
+			frame = RubyDialogCallback_frameOfItem(view);
+			if (key == sOriginSymbol) {
+				frame.origin.x = f0;
+				frame.origin.y = f1;
+			} else {
+				frame.size.width = f0;
+				frame.size.height = f1;
+			}
+			RubyDialogCallback_setFrameOfItem(view, frame);
+		} else if (key == sFrameSymbol) {
+			/*  Frame (x, y, width, height)  */
+			RDRect frame;
+			frame.origin.x = NUM2DBL(rb_Float(Ruby_ObjectAtIndex(val, 0)));
+			frame.origin.y = NUM2DBL(rb_Float(Ruby_ObjectAtIndex(val, 1)));
+			frame.size.width = NUM2DBL(rb_Float(Ruby_ObjectAtIndex(val, 2)));
+			frame.size.height = NUM2DBL(rb_Float(Ruby_ObjectAtIndex(val, 3)));
+			RubyDialogCallback_setFrameOfItem(view, frame);
+		} else {
+			rb_hash_aset(item, key, val);
+		}
+	}
+	return Qnil;
+}
+
+/*
+ *  call-seq:
+ *     dialog.attr(tag, key)
+ *
+ *  Get the attribute for the key.
+ */
+static VALUE
+s_RubyDialog_Attr(VALUE self, VALUE tag, VALUE key)
+{
+	int flag;
+	VALUE items = rb_iv_get(self, "_items");
+	VALUE *ptr = RARRAY_PTR(items);
+	int itag = s_RubyDialog_ItemIndexForTag(self, tag);
+	VALUE item = ptr[itag];
+	VALUE type = rb_hash_aref(item, sTypeSymbol);
+	RubyDialog *dref = s_RubyDialog_GetController(self);
+	RDItem *view = RubyDialogCallback_dialogItemAtIndex(dref, itag);
+	
+	VALUE val = Qnil;
+	char *cp;
+
+	if (key == sValueSymbol) {
+		/*  Value  */
+		if (type == sTextFieldSymbol) {
+			/*  Is range specified?  */
+			VALUE range = rb_hash_aref(item, sRangeSymbol);
+			cp = RubyDialogCallback_getStringPtrFromItem(view);
+			if (cp != NULL) {
+				if (TYPE(range) == T_ARRAY) {
+					if (FIXNUM_P((RARRAY_PTR(range))[0]))
+						val = INT2NUM(atoi(cp));
+					else
+						val = rb_float_new(atof(cp));
+				} else val = rb_str_new2(cp);
+				free(cp);
+			}
+		} else if (type == sTextViewSymbol) {
+			cp = RubyDialogCallback_getStringPtrFromItem(view);
+			if (cp != NULL) {
+				val = rb_str_new2(cp);
+				free(cp);
+			}
+		} else if (type == sPopUpSymbol) {
+			int n = RubyDialogCallback_selectedSubItem(view);
+			if (n >= 0)
+				val = INT2NUM(n);
+		} else if (type == sCheckBoxSymbol || type == sRadioSymbol) {
+			val = INT2NUM(RubyDialogCallback_getStateForItem(view));
+		}
+	} else if (key == sTitleSymbol) {
+		cp = RubyDialogCallback_titleOfItem(view);
+		if (cp != NULL) {
+			val = rb_str_new2(cp);
+			free(cp);
+		}
+	} else if (key == sEnabledSymbol) {
+		/*  Enabled  */
+		flag = RubyDialogCallback_isItemEnabled(view);
+		val = (flag ? Qtrue : Qfalse);
+	} else if (key == sEditableSymbol) {
+		/*  Editable  */
+		flag = RubyDialogCallback_isItemEditable(view);
+		val = (flag ? Qtrue : Qfalse);
+	} else if (key == sHiddenSymbol) {
+		/*  Hidden  */
+		flag = RubyDialogCallback_isItemHidden(view);
+		val = (flag ? Qtrue : Qfalse);
+	} else if (key == sSubItemsSymbol) {
+		int i;
+		val = rb_ary_new();
+		for (i = 0; (cp = RubyDialogCallback_titleOfSubItem(view, i)) != NULL; i++) {
+			rb_ary_push(val, rb_str_new2(cp));
+			free(cp);
+		}
+	} else if (key == sXSymbol || key == sYSymbol || key == sWidthSymbol || key == sHeightSymbol) {
+		/*  Frame components  */
+		RDRect frame;
+		float f;
+		frame = RubyDialogCallback_frameOfItem(view);
+		if (key == sXSymbol)
+			f = frame.origin.x;
+		else if (key == sYSymbol)
+			f = frame.origin.y;
+		else if (key == sWidthSymbol)
+			f = frame.size.width;
+		else
+			f = frame.size.height;
+		val = rb_float_new(f);
+	} else if (key == sOriginSymbol || key == sSizeSymbol) {
+		/*  Frame components  */
+		RDRect frame;
+		float f0, f1;
+		frame = RubyDialogCallback_frameOfItem(view);
+		if (key == sOriginSymbol) {
+			f0 = frame.origin.x;
+			f1 = frame.origin.y;
+		} else {
+			f0 = frame.size.width;
+			f1 = frame.size.height;
+		}
+		val = rb_ary_new3(2, rb_float_new(f0), rb_float_new(f1));
+		rb_obj_freeze(val);
+	} else if (key == sFrameSymbol) {
+		/*  Frame (x, y, width, height)  */
+		RDRect frame = RubyDialogCallback_frameOfItem(view);
+		val = rb_ary_new3(4, rb_float_new(frame.origin.x), rb_float_new(frame.origin.y), rb_float_new(frame.size.width), rb_float_new(frame.size.height));
+		rb_obj_freeze(val);
+	} else {
+		val = rb_hash_aref(item, key);
+	}
+
+	return val;
+}
+
+/*
+ *  call-seq:
+ *     dialog.run
+ *
+ *  Run the modal session for this dialog.
+ */
+static VALUE
+s_RubyDialog_Run(VALUE self)
+{
+	int retval;
+	VALUE iflag;
+	RubyDialog *dref = s_RubyDialog_GetController(self);
+
+	iflag = Ruby_SetInterruptFlag(Qfalse);
+	retval = RubyDialogCallback_runModal(dref);
+	Ruby_SetInterruptFlag(iflag);
+	RubyDialogCallback_close(dref);
+	if (retval == 0) {
+		VALUE items = rb_iv_get(self, "_items");
+		int len = RARRAY_LEN(items);
+		VALUE *ptr = RARRAY_PTR(items);
+		VALUE hash = rb_hash_new();
+		int i;
+		/*  Get values for controls with defined tags  */
+		for (i = 2; i < len; i++) {
+			/*  Items 0, 1 are OK/Cancel buttons  */
+		/*	VALUE type = rb_hash_aref(ptr[i], sTypeSymbol); */
+			VALUE tag = rb_hash_aref(ptr[i], sTagSymbol);
+			if (tag != Qnil) {
+				VALUE val;
+				val = s_RubyDialog_Attr(self, tag, sValueSymbol);
+				rb_hash_aset(hash, tag, val);
+			}
+		}
+		return hash;
+	} else
+		return Qfalse;
+}
+
+/*
+ *  call-seq:
+ *     dialog.layout(columns, i11, ..., i1c, i21, ..., i2c, ..., ir1, ..., irc [, options]) => integer
+ *
+ *  Layout items in a table. The first argument is the number of columns, and must be a positive integer.
+ *  If the last argument is a hash, then it contains the layout options.
+ *  The ixy is the item identifier (a non-negative integer) or [identifier, hash], where the hash
+ *  contains the specific options for the item.
+ *  Returns an integer that represents the NSView that wraps the items.
+ */
+static VALUE
+s_RubyDialog_Layout(int argc, VALUE *argv, VALUE self)
+{
+	VALUE items, oval, *opts;
+	int row, col, i, j, n, itag, nitems, *itags;
+	RubyDialog *dref;
+	float *widths, *heights;
+	float f, fmin;
+	RDSize *sizes;
+	RDItem *layoutView, *ditem;
+	RDSize contentMinSize;
+	RDRect layoutFrame;
+	float col_padding = 8.0;  /*  Padding between columns  */
+	float row_padding = 8.0;  /*  Padding between rows  */
+	float margin = 10.0;
+
+	dref = s_RubyDialog_GetController(self);
+	contentMinSize = RubyDialogCallback_windowMinSize(dref);
+	items = rb_iv_get(self, "_items");
+	nitems = RARRAY_LEN(items);
+	
+	if (argc > 0 && rb_obj_is_kind_of(argv[argc - 1], rb_cHash)) {
+		VALUE oval1;
+		oval = argv[argc - 1];
+		argc--;
+		oval1 = rb_hash_aref(oval, sPaddingSymbol);
+		if (rb_obj_is_kind_of(oval1, rb_cNumeric))
+			col_padding = row_padding = NUM2DBL(oval1);
+		oval1 = rb_hash_aref(oval, sMarginSymbol);
+		if (rb_obj_is_kind_of(oval1, rb_cNumeric))
+			margin = NUM2DBL(oval1);
+	} else {
+		oval = Qnil;
+	}
+	
+	if (--argc < 0 || (col = NUM2INT(rb_Integer(argv[0]))) <= 0 || argc < col)
+		rb_raise(rb_eArgError, "wrong arguments; the first argument (col) must be a positive integer, and at least col arguments must follow");
+	row = (argc + col - 1) / col;  /*  It actually means (int)(ceil((argc - 1.0) / col))  */
+	argv++;
+
+	/*  Allocate temporary storage  */
+	itags = (int *)calloc(sizeof(int), row * col);
+	opts = (VALUE *)calloc(sizeof(VALUE), row * col);
+	sizes = (RDSize *)calloc(sizeof(RDSize), row * col);
+	widths = (float *)calloc(sizeof(float), col);
+	heights = (float *)calloc(sizeof(float), row);
+	if (itags == NULL || sizes == NULL || opts == NULL || widths == NULL || heights == NULL)
+		rb_raise(rb_eNoMemError, "out of memory during layout");
+	
+	/*  Get frame sizes  */
+	for (i = 0; i < row; i++) {
+		for (j = 0; j < col; j++) {
+			n = i * col + j;
+			if (n >= argc)
+				break;
+			if (TYPE(argv[n]) == T_ARRAY && RARRAY_LEN(argv[n]) == 2) {
+				itag = FIX2INT(RARRAY_PTR(argv[n])[0]);
+				opts[n] = RARRAY_PTR(argv[n])[1];
+				if (TYPE(opts[n]) != T_HASH)
+					rb_raise(rb_eTypeError, "The layout options should be given as a hash");
+			} else {
+				itag = FIX2INT(argv[n]);
+			}
+			if (itag >= nitems)
+				rb_raise(rb_eRangeError, "item tag (%d) is out of range (should be 0..%d)", itag, nitems - 1);
+			if (itag >= 0 && (ditem = RubyDialogCallback_dialogItemAtIndex(dref, itag)) != NULL) {
+				sizes[n] = RubyDialogCallback_frameOfItem(ditem).size;
+			}
+			itags[n] = itag;
+		/*	printf("sizes(%d,%d) = [%f,%f]\n", i, j, sizes[n-2].width, sizes[n-2].height); */
+		}
+	}
+	
+	/*  Calculate required widths  */
+	for (j = 0; j < col; j++) {
+		fmin = 0.0;
+		for (i = 0; i < row; i++) {
+			for (n = j; n >= 0; n--) {
+				f = sizes[i * col + n].width;
+				if (f > 0.0) {
+					f += (n > 0 ? widths[n - 1] : 0.0);
+					break;
+				}
+			}
+			if (j < col - 1 && sizes[i * col + j + 1].width == 0.0)
+				continue;  /*  The next right item is empty  */
+			if (fmin < f)
+				fmin = f;
+		}
+		fmin += col_padding;
+		widths[j] = fmin;
+	/*	printf("widths[%d]=%f\n", j, fmin); */
+	}
+
+	/*  Calculate required heights  */
+	fmin = 0.0;
+	for (i = 0; i < row; i++) {
+		for (j = 0; j < col; j++) {
+			for (n = i; n >= 0; n--) {
+				f = sizes[n * col + j].height;
+				if (f > 0.0) {
+					f += (n > 0 ? heights[n - 1] : 0.0);
+					break;
+				}
+			}
+			if (fmin < f)
+				fmin = f;
+		}
+		fmin += row_padding;
+		heights[i] = fmin;
+	/*	printf("heights[%d]=%f\n", i, fmin); */
+	}
+	
+	/*  Calculate layout view size  */
+	layoutFrame.size.width = widths[col - 1];
+	layoutFrame.size.height = heights[row - 1];
+	layoutFrame.origin.x = margin;
+	layoutFrame.origin.y = margin;
+/*	printf("layoutFrame = [%f,%f,%f,%f]\n", layoutFrame.origin.x, layoutFrame.origin.y, layoutFrame.size.width, layoutFrame.size.height); */
+
+#if 0
+	/*  Resize the window  */
+	/*  Not necessary for wxWidgets, because contentSizer and buttonSizer will take care of the window resize
+	    automatically  */
+	{
+		RDSize winSize;
+		RDRect bframe[2];
+		winSize.width = layoutFrame.size.width + margin * 2;
+		if (winSize.width < contentMinSize.width)
+			winSize.width = contentMinSize.width;
+		winSize.height = layoutFrame.size.height + margin * 2;
+		for (i = 0; i < 2; i++) {
+			/*  OK(0), Cancel(1) buttons  */
+			RDItem *button = RubyDialogCallback_dialogItemAtIndex(dref, i);
+			if (RubyDialogCallback_indexOfItem(dref, RubyDialogCallback_superview(button)) < 0 && !RubyDialogCallback_isItemHidden(button)) {
+				bframe[i] = RubyDialogCallback_frameOfItem(button);
+				if (layoutFrame.origin.y == margin) {
+					//  Move the layoutView up
+					layoutFrame.origin.y += margin + bframe[i].size.height;
+				//	RubyDialogCallback_setFrameOfItem(layoutView, layoutFrame);
+					winSize.height += margin + bframe[i].size.height;
+				}
+				bframe[i].origin.y = winSize.height - margin - bframe[i].size.height;
+				bframe[i].origin.x = (i == 0 ? winSize.width - bframe[i].size.width - margin : margin);
+			} else {
+				static RDRect zeroRect = {0, 0, 0, 0};
+				bframe[i] = zeroRect;
+			}
+		}
+		RubyDialogCallback_setWindowSize(dref, winSize);
+		for (i = 0; i < 2; i++) {
+			if (bframe[i].size.width > 0) {
+				RDItem *button = RubyDialogCallback_dialogItemAtIndex(dref, i);
+				RubyDialogCallback_setFrameOfItem(button, bframe[i]);
+			}
+		}
+	}
+#endif
+	
+	/*  Create a layout view  */
+	layoutView = RubyDialogCallback_createItem(dref, "view", "", layoutFrame);
+
+	/*  Move the subviews into the layout view  */
+	for (i = 0; i < row; i++) {
+		for (j = 0; j < col; j++) {
+			n = i * col + j;
+			if (n < argc && (itag = itags[n]) > 0 && itag < nitems) {
+				RDPoint pt;
+				float offset;
+				RDRect cell;
+				VALUE type, item;
+				int k;
+				ditem = RubyDialogCallback_dialogItemAtIndex(dref, itag);
+				item = (RARRAY_PTR(items))[itag];
+				type = rb_hash_aref(item, sTypeSymbol);
+				if (type == sTextSymbol)
+					offset = 3.0;
+				else offset = 0.0;
+				cell.origin.x = (j > 0 ? widths[j - 1] : 0.0);
+				cell.origin.y = (i > 0 ? heights[i - 1] : 0.0);
+				for (k = j + 1; k < col; k++) {
+					if (itags[i * col + k] >= 0)
+						break;
+				}
+				cell.size.width = widths[k - 1] - cell.origin.x;
+				for (k = i + 1; k < row; k++) {
+					if (itags[k * col + j] >= 0)
+						break;
+				}
+				cell.size.height = heights[k - 1] - cell.origin.y;
+				pt.x = cell.origin.x + col_padding * 0.5;
+				pt.y = cell.origin.y + row_padding * 0.5 + offset;
+				{
+					/*  Handle item-specific options  */
+					VALUE oval1;
+					int resize = 0;
+					/*  HFill/VFill options can be specified as an item attribute or a layout option  */
+					if (!RTEST(opts[n]) || (oval1 = rb_hash_aref(opts[n], sHFillSymbol)) == Qnil)
+						oval1 = rb_hash_aref(item, sHFillSymbol);
+					if (RTEST(oval1)) {
+						sizes[n].width = cell.size.width - col_padding;
+						resize = 1;
+					}
+					if (!RTEST(opts[n]) || (oval1 = rb_hash_aref(opts[n], sVFillSymbol)) == Qnil)
+						oval1 = rb_hash_aref(item, sVFillSymbol);
+					if (RTEST(oval1)) {
+						sizes[n].height = cell.size.height - row_padding;
+						resize = 1;
+					}
+					if (resize) {
+						RDRect newFrameRect = RubyDialogCallback_frameOfItem(ditem);
+						newFrameRect.size.width = sizes[n].width;
+						newFrameRect.size.height = sizes[n].height;
+						RubyDialogCallback_setFrameOfItem(ditem, newFrameRect);
+					}
+					/*  align/vertical_align can only be specified as a layout option  */
+					if (RTEST(opts[n]) && (oval1 = rb_hash_aref(opts[n], sAlignSymbol)) != Qnil) {
+						if (oval1 == sCenterSymbol)
+							pt.x += (cell.size.width - sizes[n].width - col_padding) * 0.5;
+						else if (oval1 == sRightSymbol)
+							pt.x += (cell.size.width - sizes[n].width) - col_padding;
+					}
+					if (RTEST(opts[n]) && (oval1 = rb_hash_aref(opts[n], sVerticalAlignSymbol)) != Qnil) {
+						if (oval1 == sCenterSymbol)
+							pt.y += (cell.size.height - sizes[n].height - row_padding) * 0.5;
+						else if (oval1 == sBottomSymbol)
+							pt.y += (cell.size.height - sizes[n].height) - row_padding;
+					}
+				}
+				RubyDialogCallback_moveItemUnderView(ditem, layoutView, pt);
+			}
+		}
+	}
+	
+	free(sizes);
+	free(widths);
+	free(heights);
+	free(opts);
+	free(itags);
+	
+	/*  Create a new hash for the layout view and push to _items */
+	{
+		VALUE nhash = rb_hash_new();
+		rb_hash_aset(nhash, sTypeSymbol, sViewSymbol);
+		rb_ary_push(items, nhash);
+	}
+	
+	/*  Tag for the layout view  */
+	itag = RARRAY_LEN(items) - 1;
+
+	/*  Returns the integer tag  */
+	return INT2NUM(itag);
+}
+
+/*
+ *  call-seq:
+ *     dialog.item(type, hash) => integer
+ *
+ *  Create a dialog item.
+ *    type: one of the following symbols; :text, :textfield, :radio, :checkbox, :popup
+ *    hash: attributes that can be set by set_attr
+ *  Returns an integer that represents the item. (0 and 1 are reserved for "OK" and "Cancel")
+ */
+static VALUE
+s_RubyDialog_Item(int argc, VALUE *argv, VALUE self)
+{
+	int itag;  /*  Integer tag for NSControl  */
+	RDRect rect;
+	const char *title;
+	double dval;
+//	NSDictionary *attr;
+//	NSFont *font;
+	VALUE type, hash, val, nhash, items;
+	RubyDialog *dref;
+
+	dref = s_RubyDialog_GetController(self);
+	rb_scan_args(argc, argv, "11", &type, &hash);
+	if (NIL_P(hash))
+		hash = rb_hash_new();
+	rect.size.width = rect.size.height = 1.0;
+	rect.origin.x = rect.origin.y = 0.0;
+
+	val = rb_hash_aref(hash, sTitleSymbol);
+	if (!NIL_P(val)) {
+		title = StringValuePtr(val);
+	} else {
+		title = "";
+	}
+
+	Check_Type(type, T_SYMBOL);
+	
+/*	if (type == sTextViewSymbol)
+		font = [NSFont userFixedPitchFontOfSize: 0];
+	else
+		font = [NSFont systemFontOfSize: [NSFont smallSystemFontSize]];
+	attr = [NSDictionary dictionaryWithObjectsAndKeys: font, NSFontAttributeName, nil];
+	brect.origin.x = brect.origin.y = 0.0;
+	brect.size = [title sizeWithAttributes: attr];
+	brect.size.width += 8;
+*/
+	/*  Set rect if specified  */
+	rect.origin.x = rect.origin.y = 0.0;
+	rect.size.width = rect.size.height = 0.0;
+	val = rb_hash_aref(hash, sXSymbol);
+	if (!NIL_P(val) && (dval = NUM2DBL(rb_Float(val))) > 0.0)
+		rect.origin.x = dval;
+	val = rb_hash_aref(hash, sYSymbol);
+	if (!NIL_P(val) && (dval = NUM2DBL(rb_Float(val))) > 0.0)
+		rect.origin.y = dval;
+	val = rb_hash_aref(hash, sWidthSymbol);
+	if (!NIL_P(val) && (dval = NUM2DBL(rb_Float(val))) > 0.0)
+		rect.size.width = dval;
+	val = rb_hash_aref(hash, sHeightSymbol);
+	if (!NIL_P(val) && (dval = NUM2DBL(rb_Float(val))) > 0.0)
+		rect.size.height = dval;
+
+	/*  Create a new hash for this item  */
+	nhash = rb_hash_new();
+	rb_hash_aset(nhash, sTypeSymbol, type);
+
+	/*  Direction for the separator line  */
+	/*  The direction can be specified either by specifying non-square frame size or "vertical" flag  */
+	if (type == sLineSymbol) {
+		VALUE val1 = rb_hash_aref(hash, ID2SYM(rb_intern("vertical")));
+		if (rect.size.width == 0)
+			rect.size.width = 1;
+		if (rect.size.height == 0)
+			rect.size.height = 1;
+		if (rect.size.width == rect.size.height) {
+			if (RTEST(val1))
+				rect.size.height++;  /*  vertical  */
+			else rect.size.width++;  /*  horizontal  */
+		}
+	}
+	
+	if (RubyDialogCallback_createItem(dref, rb_id2name(SYM2ID(type)), title, rect) == NULL)
+		rb_raise(rb_eStandardError, "item type :%s is not implemented", rb_id2name(SYM2ID(type)));
+
+	/*  Push to _items  */
+	items = rb_iv_get(self, "_items");
+	rb_ary_push(items, nhash);
+	itag = RARRAY_LEN(items) - 1;
+
+	/*  Tag as a Ruby integer  */
+	val = INT2NUM(itag);
+
+	/*  Set attributes  */
+	s_RubyDialog_SetAttr(self, val, hash);
+
+	/*  Type-specific attributes  */
+	if (type == sLineSymbol) {
+		if (rect.size.width > rect.size.height && rect.size.width == 2)
+			rb_hash_aset(nhash, sHFillSymbol, Qtrue);
+		else if (rect.size.width < rect.size.height && rect.size.height == 2)
+			rb_hash_aset(nhash, sVFillSymbol, Qtrue);
+	}
+
+	return val;
+}
+
+/*
+ *  call-seq:
+ *     dialog._items => an array of hash
+ *
+ *  Returns an internal array of items. For debugging use only.
+ */
+static VALUE
+s_RubyDialog_Items(VALUE self)
+{
+	return rb_iv_get(self, "_items");
+}
+
+/*
+ *  call-seq:
+ *     dialog.nitems => integer
+ *
+ *  Returns the number of items.
+ */
+static VALUE
+s_RubyDialog_Nitems(VALUE self)
+{
+	VALUE items = rb_iv_get(self, "_items");
+	int nitems = RARRAY_LEN(items);
+	return INT2NUM(nitems);
+}
+
+/*
+ *  call-seq:
+ *     dialog.each_item block
+ *
+ *  Iterate the given block with the item number as the argument.
+ */
+static VALUE
+s_RubyDialog_EachItem(VALUE self)
+{
+	VALUE items = rb_iv_get(self, "_items");
+	int nitems = RARRAY_LEN(items);
+	int i;
+	for (i = 0; i < nitems; i++) {
+		rb_yield(INT2NUM(i));
+	}
+    return self;
+}
+
+/*
+ *  call-seq:
+ *     dialog.radio_group(ary)
+ *
+ *  Group radio buttons as a mutually exclusive group.
+ */
+static VALUE
+s_RubyDialog_RadioGroup(VALUE self, VALUE aval)
+{
+	int i, j, n;
+	VALUE gval;
+	VALUE items = rb_iv_get(self, "_items");
+	int nitems = RARRAY_LEN(items);
+	aval = rb_ary_to_ary(aval);
+	n = RARRAY_LEN(aval);
+
+	/*  Build a new array with checked arguments  */
+	gval = rb_ary_new2(n);
+	for (i = 0; i < n; i++) {
+		j = NUM2INT(RARRAY_PTR(aval)[i]);
+		if (j < 0 || j >= nitems)
+			break;
+		if (rb_hash_aref(RARRAY_PTR(items)[j], sTypeSymbol) != sRadioSymbol)
+			break;
+		rb_ary_push(gval, INT2NUM(j));
+	}
+	if (i < n)
+		rb_raise(rb_eStandardError, "the item %d (at index %d) does not represent a radio button", j, i);
+	
+	/*  Set the radio group array to the specified items. If the item already belongs to a radio group,
+	    then it is removed from that group. */
+	/*  All items share the common array (gval in the above). This allows removing easy.  */
+	for (i = 0; i < n; i++) {
+		VALUE gval2;
+		j = NUM2INT(RARRAY_PTR(gval)[i]);
+		gval2 = rb_hash_aref(RARRAY_PTR(items)[j], sRadioGroupSymbol);
+		if (gval2 != Qnil)
+			rb_ary_delete(gval2, INT2NUM(j));  /*  Remove j from gval2  */
+		rb_hash_aset(RARRAY_PTR(items)[j], sRadioGroupSymbol, gval);
+	}
+	return gval;
+}
+
+/*
+ *  call-seq:
+ *     dialog.action(index)
+ *
+ *  Do the default action for the dialog item with the given index.
+ *  If index == 0 (OK) or 1 (Cancel), RubyDialogCallback_endModal() is called.
+ *  Otherwise, the "action" attribute is looked for the item, and if found
+ *  it is called with the given index as the argument (the attribute must be
+ *  either a symbol (method name) or a Proc object).
+ *  If the "action" attribute is not found, do nothing.
+ */
+static VALUE
+s_RubyDialog_Action(VALUE self, VALUE idx)
+{
+	VALUE aval;
+	int ival = NUM2INT(idx);
+	if (ival == 0 || ival == 1) {
+		RubyDialogCallback_endModal(s_RubyDialog_GetController(self), ival);
+		return Qnil;
+	}
+	aval = s_RubyDialog_Attr(self, idx, sActionSymbol);
+	if (aval == Qnil)
+		return Qnil;
+	if (TYPE(aval) == T_SYMBOL) {
+		return rb_funcall(self, SYM2ID(aval), 1, idx);
+	} else if (rb_obj_is_kind_of(aval, rb_cProc)) {
+		return rb_funcall(aval, rb_intern("call"), 1, idx);
+	} else {
+		VALUE insval = rb_inspect(aval);
+		rb_raise(rb_eTypeError, "Cannot call action method '%s'", StringValuePtr(insval));
+	}
+	return Qnil;  /*  Not reached  */
+}
+
+/*
+ *  call-seq:
+ *     RubyDialog.save_panel(message = nil, directory = nil, default_filename = nil, wildcard = nil)
+ *
+ *  Display the "save as" dialog and returns the fullpath filename.
+ */
+static VALUE
+s_RubyDialog_SavePanel(int argc, VALUE *argv, VALUE klass)
+{
+	VALUE mval, dval, fval, wval, iflag;
+	const char *mp, *dp, *wp;
+	int n;
+	char buf[1024];
+	rb_scan_args(argc, argv, "04", &mval, &dval, &fval, &wval);
+	if (mval == Qnil)
+		mp = NULL;
+	else mp = StringValuePtr(mval);
+	if (dval == Qnil)
+		dp = NULL;
+	else dp = FileStringValuePtr(dval);
+	if (fval == Qnil)
+		buf[0] = 0;
+	else {
+		strncpy(buf, FileStringValuePtr(fval), 1023);
+		buf[1023] = 0;
+	}
+	if (wval == Qnil)
+		wp = NULL;
+	else wp = FileStringValuePtr(wval);
+	iflag = Ruby_SetInterruptFlag(Qfalse);
+	n = RubyDialogCallback_savePanel(mp, dp, wp, buf, sizeof buf);
+	Ruby_SetInterruptFlag(iflag);
+	if (n > 0)
+		return Ruby_NewFileStringValue(buf);
+	else return Qnil;
+}
+
+/*
+ *  call-seq:
+ *     RubyDialog.open_panel(message = nil, directory = nil, wildcard = nil, for_directories = false, multiple_selection = false)
+ *
+ *  Display the "open" dialog and returns the fullpath filename.
+ */
+static VALUE
+s_RubyDialog_OpenPanel(int argc, VALUE *argv, VALUE klass)
+{
+	VALUE mval, dval, fval, mulval, wval, iflag;
+	const char *mp, *dp, *wp;
+	char **ary;
+	int for_directories = 0, multiple_selection = 0;
+	int n;
+	rb_scan_args(argc, argv, "05", &mval, &dval, &wval, &fval, &mulval);
+	if (mval == Qnil)
+		mp = NULL;
+	else mp = StringValuePtr(mval);
+	if (dval == Qnil)
+		dp = NULL;
+	else dp = FileStringValuePtr(dval);
+	if (wval == Qnil)
+		wp = NULL;
+	else wp = FileStringValuePtr(wval);
+	if (fval != Qnil && fval != Qfalse)
+		for_directories = 1;
+	if (mulval != Qnil && mulval != Qfalse) {
+		multiple_selection = 1;
+		if (for_directories && multiple_selection)
+			rb_raise(rb_eStandardError, "open_panel for directories allows only single selection");
+	}
+	iflag = Ruby_SetInterruptFlag(Qfalse);
+	n = RubyDialogCallback_openPanel(mp, dp, wp, &ary, for_directories, multiple_selection);
+	Ruby_SetInterruptFlag(iflag);
+	if (n > 0) {
+		if (multiple_selection) {
+			int i;
+			VALUE retval = rb_ary_new();
+			for (i = 0; i < n; i++) {
+				rb_ary_push(retval, Ruby_NewFileStringValue(ary[i]));
+				free(ary[i]);
+			}
+			free(ary);
+			return retval;
+		} else return Ruby_NewFileStringValue(ary[0]);
+	} else return Qnil;
+}
+
+#pragma mark ====== Utility function ======
+
+int
+RubyDialog_validateItemContent(RubyValue self, RDItem *ip, const char *s)
+{
+	VALUE items, item, val, val_min, val_max;
+	int nitems, itag;
+	RubyDialog *dref = s_RubyDialog_GetController((VALUE)self);
+	char buf[80];
+	
+	items = rb_iv_get(((VALUE)self), "_items");
+	nitems = RARRAY_LEN(items);
+	itag = RubyDialogCallback_indexOfItem(dref, ip);
+	if (itag < 0 || itag >= nitems)
+		return 1;  /*  Accept anything  */
+	
+	item = (RARRAY_PTR(items))[itag];
+	val = rb_hash_aref(item, sRangeSymbol);
+	if (NIL_P(val))
+		return 1;  /*  Accept anything  */
+	
+	val_min = Ruby_ObjectAtIndex(val, 0);
+	val_max = Ruby_ObjectAtIndex(val, 1);
+	if (FIXNUM_P(val_min) && FIXNUM_P(val_max)) {
+		int ival = atoi(s);
+		int imin = NUM2INT(val_min);
+		int imax = NUM2INT(val_max);
+		if (ival < imin || ival > imax)
+			return 0;
+		snprintf(buf, sizeof buf, "%d", ival);
+		RubyDialogCallback_setStringToItem(ip, buf);
+	} else {
+		double d = atof(s);
+		double dmin = NUM2DBL(rb_Float(val_min));
+		double dmax = NUM2DBL(rb_Float(val_max));
+		if (d < dmin || d > dmax)
+			return 0;
+	}
+	return 1;
+}
+
+/*  Action for dialog items.
+ Get the item number, and call "action" method of the RubyDialog object with
+ the item number (integer) as the argument. The default "action" method is
+ defined as s_RubyDialog_action.  */
+void
+RubyDialog_doItemAction(RubyValue self, RDItem *ip)
+{
+	int status;
+	VALUE ival;
+	RubyDialog *dref = s_RubyDialog_GetController((VALUE)self);
+	VALUE items = rb_iv_get(((VALUE)self), "_items");
+	int nitems = RARRAY_LEN(items);
+	int idx = RubyDialogCallback_indexOfItem(dref, ip);
+	if (idx < 0)
+		return;
+	ival = INT2NUM(idx);
+	
+	/*  Handle radio group  */
+	{
+		VALUE gval = s_RubyDialog_Attr((VALUE)self, ival, sRadioGroupSymbol);
+		if (gval != Qnil && TYPE(gval) == T_ARRAY) {
+			int i, j, n;
+			n = RARRAY_LEN(gval);
+			for (i = 0; i < n; i++) {
+				j = NUM2INT(RARRAY_PTR(gval)[i]);
+				if (j >= 0 && j < nitems && j != idx) {
+					RDItem *iptr = RubyDialogCallback_dialogItemAtIndex(dref, j);
+					RubyDialogCallback_setStateForItem(iptr, 0);  /*  Deselect  */
+				}
+			}
+		}
+	}
+	
+	Ruby_funcall2_protect((VALUE)self, rb_intern("action"), 1, &ival, &status);
+	if (status != 0)
+		Molby_showError(status);
+}
+
+#pragma mark ====== Initialize class ======
+
+void
+RubyDialogInitClass(void)
+{
+	if (cRubyDialog != Qfalse)
+		return;
+
+	cRubyDialog = rb_define_class("RubyDialog", rb_cObject);
+	rb_define_alloc_func(cRubyDialog, s_RubyDialog_Alloc);
+	rb_define_private_method(cRubyDialog, "initialize", s_RubyDialog_Initialize, -1);
+	rb_define_method(cRubyDialog, "run", s_RubyDialog_Run, 0);
+	rb_define_method(cRubyDialog, "item", s_RubyDialog_Item, -1);
+	rb_define_method(cRubyDialog, "layout", s_RubyDialog_Layout, -1);
+	rb_define_method(cRubyDialog, "_items", s_RubyDialog_Items, 0);
+	rb_define_method(cRubyDialog, "nitems", s_RubyDialog_Nitems, 0);
+	rb_define_method(cRubyDialog, "each_item", s_RubyDialog_EachItem, 0);
+	rb_define_method(cRubyDialog, "set_attr", s_RubyDialog_SetAttr, 2);
+	rb_define_method(cRubyDialog, "attr", s_RubyDialog_Attr, 2);
+	rb_define_method(cRubyDialog, "radio_group", s_RubyDialog_RadioGroup, 1);
+	rb_define_method(cRubyDialog, "action", s_RubyDialog_Action, 1);
+	rb_define_singleton_method(cRubyDialog, "save_panel", s_RubyDialog_SavePanel, -1);
+	rb_define_singleton_method(cRubyDialog, "open_panel", s_RubyDialog_OpenPanel, -1);
+
+	{
+		static VALUE *sTable1[] = { &sTextSymbol, &sTextFieldSymbol, &sRadioSymbol, &sButtonSymbol, &sCheckBoxSymbol, &sPopUpSymbol, &sTextViewSymbol, &sViewSymbol, &sLineSymbol, &sTagSymbol, &sTypeSymbol, &sTitleSymbol, &sXSymbol, &sYSymbol, &sWidthSymbol, &sHeightSymbol, &sOriginSymbol, &sSizeSymbol, &sFrameSymbol, &sEnabledSymbol, &sEditableSymbol, &sHiddenSymbol, &sValueSymbol, &sRadioGroupSymbol, &sBlockSymbol, &sRangeSymbol, &sActionSymbol, &sAlignSymbol, &sRightSymbol, &sCenterSymbol, &sVerticalAlignSymbol, &sBottomSymbol, &sMarginSymbol, &sPaddingSymbol, &sSubItemsSymbol, &sHFillSymbol, &sVFillSymbol };
+		static const char *sTable2[] = { "text", "textfield", "radio", "button", "checkbox", "popup", "textview", "view", "line", "tag", "type", "title", "x", "y", "width", "height", "origin", "size", "frame", "enabled", "editable", "hidden", "value", "radio_group", "block", "range", "action", "align", "right", "center", "vertical_align", "bottom", "margin", "padding", "subitems", "hfill", "vfill" };
+		int i;
+		for (i = 0; i < sizeof(sTable1) / sizeof(sTable1[0]); i++)
+			*(sTable1[i]) = ID2SYM(rb_intern(sTable2[i]));
+	}
+}

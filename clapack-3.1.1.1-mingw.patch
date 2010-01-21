@@ -1,0 +1,255 @@
+diff --exclude=.* -Naur CLAPACK-3.1.1.1/F2CLIBS/libf2c/Makefile CLAPACK-3.1.1.1-mingw/F2CLIBS/libf2c/Makefile
+--- CLAPACK-3.1.1.1/F2CLIBS/libf2c/Makefile	Thu Sep  4 04:29:25 2008
++++ CLAPACK-3.1.1.1-mingw/F2CLIBS/libf2c/Makefile	Fri Nov  7 01:58:05 2008
+@@ -181,8 +181,8 @@
+ xwsne.o:	fmt.h
+ 
+ arith.h: arithchk.c
+-	$(CC) $(CFLAGS) -DNO_FPINIT arithchk.c -lm ||\
+-	 $(CC) -DNO_LONG_LONG $(CFLAGS) -DNO_FPINIT arithchk.c -lm
++	$(CC) $(CFLAGS) -DNO_FPINIT arithchk.c -lm -o a.out ||\
++	 $(CC) -DNO_LONG_LONG $(CFLAGS) -DNO_FPINIT arithchk.c -lm -o a.out
+ 	./a.out >arith.h
+ 	rm -f a.out arithchk.o
+ 
+diff --exclude=.* -Naur CLAPACK-3.1.1.1/F2CLIBS/libf2c/dtime_.c CLAPACK-3.1.1.1-mingw/F2CLIBS/libf2c/dtime_.c
+--- CLAPACK-3.1.1.1/F2CLIBS/libf2c/dtime_.c	Thu Sep  4 04:29:25 2008
++++ CLAPACK-3.1.1.1-mingw/F2CLIBS/libf2c/dtime_.c	Fri Nov  7 23:01:21 2008
+@@ -1,6 +1,6 @@
+ #include "time.h"
+ 
+-#ifdef MSDOS
++#if defined(MSDOS) || defined(MINGW)
+ #undef USE_CLOCK
+ #define USE_CLOCK
+ #endif
+@@ -14,9 +14,10 @@
+ #define _INCLUDE_XOPEN_SOURCE	/* for HP-UX */
+ #include "sys/types.h"
+ #include "sys/times.h"
++#endif
++
+ #ifdef __cplusplus
+ extern "C" {
+-#endif
+ #endif
+ 
+ #undef Hz
+diff --exclude=.* -Naur CLAPACK-3.1.1.1/F2CLIBS/libf2c/etime_.c CLAPACK-3.1.1.1-mingw/F2CLIBS/libf2c/etime_.c
+--- CLAPACK-3.1.1.1/F2CLIBS/libf2c/etime_.c	Thu Sep  4 04:29:25 2008
++++ CLAPACK-3.1.1.1-mingw/F2CLIBS/libf2c/etime_.c	Fri Nov  7 02:07:20 2008
+@@ -1,6 +1,6 @@
+ #include "time.h"
+ 
+-#ifdef MSDOS
++#if defined(MSDOS) || defined(MINGW)
+ #undef USE_CLOCK
+ #define USE_CLOCK
+ #endif
+diff --exclude=.* -Naur CLAPACK-3.1.1.1/INCLUDE/clapack.h CLAPACK-3.1.1.1-mingw/INCLUDE/clapack.h
+--- CLAPACK-3.1.1.1/INCLUDE/clapack.h	Thu Sep  4 04:29:25 2008
++++ CLAPACK-3.1.1.1-mingw/INCLUDE/clapack.h	Fri Nov  7 23:41:46 2008
+@@ -1,6 +1,10 @@
+ #ifndef __CLAPACK_H
+ #define __CLAPACK_H
+- 
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
+ /* Subroutine */ int cbdsqr_(char *uplo, integer *n, integer *ncvt, integer *
+ 	nru, integer *ncc, real *d__, real *e, complex *vt, integer *ldvt, 
+ 	complex *u, integer *ldu, complex *c__, integer *ldc, real *rwork, 
+@@ -1569,7 +1573,7 @@
+ 	doublereal *wi, doublereal *z__, integer *ldz, doublereal *work, 
+ 	integer *lwork, integer *info);
+ 
+-/* Subroutine */ int dlabad_(doublereal *small, doublereal *large);
++/* Subroutine */ int dlabad_(doublereal *small__, doublereal *large__);
+ 
+ /* Subroutine */ int dlabrd_(integer *m, integer *n, integer *nb, doublereal *
+ 	a, integer *lda, doublereal *d__, doublereal *e, doublereal *tauq, 
+@@ -3027,7 +3031,7 @@
+ 	 integer *ihi, real *h__, integer *ldh, real *wr, real *wi, real *z__, 	 
+ 	integer *ldz, real *work, integer *lwork, integer *info);
+ 
+-/* Subroutine */ int slabad_(real *small, real *large);
++/* Subroutine */ int slabad_(real *small__, real *large__);
+ 
+ /* Subroutine */ int slabrd_(integer *m, integer *n, integer *nb, real *a, 
+ 	integer *lda, real *d__, real *e, real *tauq, real *taup, real *x, 
+@@ -5429,6 +5433,10 @@
+ /* Subroutine */ int zupmtr_(char *side, char *uplo, char *trans, integer *m, 
+ 	integer *n, doublecomplex *ap, doublecomplex *tau, doublecomplex *c__,
+ 	 integer *ldc, doublecomplex *work, integer *info);
++
++#ifdef __cplusplus
++}
++#endif
+ 
+ #endif /* __CLAPACK_H */
+ 
+diff --exclude=.* -Naur CLAPACK-3.1.1.1/INCLUDE/f2c.h CLAPACK-3.1.1.1-mingw/INCLUDE/f2c.h
+--- CLAPACK-3.1.1.1/INCLUDE/f2c.h	Thu Sep  4 04:29:25 2008
++++ CLAPACK-3.1.1.1-mingw/INCLUDE/f2c.h	Fri Nov  7 23:33:56 2008
+@@ -7,6 +7,10 @@
+ #ifndef F2C_INCLUDE
+ #define F2C_INCLUDE
+ 
++#ifdef __cplusplus
++extern "C" {
++#endif
++
+ typedef long int integer;
+ typedef unsigned long int uinteger;
+ typedef char *address;
+@@ -220,4 +224,9 @@
+ #undef unix
+ #undef vax
+ #endif
++
++#ifdef __cplusplus
++}
++#endif
++
+ #endif
+diff --exclude=.* -Naur CLAPACK-3.1.1.1/INSTALL/dsecnd.c CLAPACK-3.1.1.1-mingw/INSTALL/dsecnd.c
+--- CLAPACK-3.1.1.1/INSTALL/dsecnd.c	Thu Sep  4 04:29:25 2008
++++ CLAPACK-3.1.1.1-mingw/INSTALL/dsecnd.c	Sun Nov  9 15:22:19 2008
+@@ -1,7 +1,15 @@
+ #include "blaswrap.h"
+ #include "f2c.h"
++
++#if defined(MSDOS) || defined(MINGW)
++#undef USE_CLOCK
++#define USE_CLOCK
++#endif
++
++#ifndef USE_CLOCK
+ #include <sys/times.h>
+ #include <sys/types.h>
++#endif
+ #include <time.h>
+ 
+ #ifndef CLK_TCK
+@@ -10,10 +18,17 @@
+ 
+ doublereal dsecnd_()
+ {
++#ifdef USE_CLOCK
++    
++  double t = clock();
++  return (doublereal)t / CLK_TCK;
++    
++#else
+   struct tms rusage;
+ 
+   times(&rusage);
+   return (doublereal)(rusage.tms_utime) / CLK_TCK;
+-
++#endif
++    
+ } /* dsecnd_ */
+ 
+diff --exclude=.* -Naur CLAPACK-3.1.1.1/INSTALL/second.c CLAPACK-3.1.1.1-mingw/INSTALL/second.c
+--- CLAPACK-3.1.1.1/INSTALL/second.c	Thu Sep  4 04:29:25 2008
++++ CLAPACK-3.1.1.1-mingw/INSTALL/second.c	Sun Nov  9 15:22:01 2008
+@@ -1,6 +1,14 @@
+ #include "f2c.h"
++
++#if defined(MSDOS) || defined(MINGW)
++#undef USE_CLOCK
++#define USE_CLOCK
++#endif
++
++#ifndef USE_CLOCK
+ #include <sys/times.h>
+ #include <sys/types.h>
++#endif
+ #include <time.h>
+ 
+ #ifndef CLK_TCK
+@@ -9,10 +17,17 @@
+ 
+ doublereal second_()
+ {
++#ifdef USE_CLOCK
++    
++  double t = clock();
++  return (doublereal)t / CLK_TCK;
++    
++#else
+   struct tms rusage;
+ 
+   times(&rusage);
+   return (doublereal)(rusage.tms_utime) / CLK_TCK;
++#endif
+ 
+ } /* second_ */
+ 
+diff --exclude=.* -Naur CLAPACK-3.1.1.1/make.inc CLAPACK-3.1.1.1-mingw/make.inc
+--- CLAPACK-3.1.1.1/make.inc	Thu Jan  1 09:00:00 1970
++++ CLAPACK-3.1.1.1-mingw/make.inc	Sun Nov  9 14:31:50 2008
+@@ -0,0 +1,61 @@
++####################################################################
++#  CLAPACK make include file.                                      #
++#  CLAPACK, Version 3.1.1.1                                        #
++#  October 2008                                                    #
++####################################################################
++#
++#  The machine (platform) identifier to append to the library names
++#
++PLAT = MinGW
++#  
++#  Modify the CC and CFLAGS definitions to refer to the
++#  compiler and desired compiler options for your machine.  NOOPT
++#  refers to the compiler options desired when NO OPTIMIZATION is
++#  selected.  Define LOADER and LOADOPTS to refer to the loader and
++#  desired load options for your machine.
++#
++#######################################################
++# This is used to compile C libary
++CC        = gcc
++# if no wrapping of the blas library is needed, uncomment next line
++#CC        = gcc -DNO_BLAS_WRAP
++CFLAGS    = -DMINGW -O2
++LOADER    = gcc
++LOADOPTS  = -Wl,--stack=33554432
++NOOPT     = -O0 
++DRVCFLAGS = $(CFLAGS)
++F2CCFLAGS = $(CFLAGS)
++#######################################################################
++#
++#  The archiver and the flag(s) to use when building archive (library)
++#  If you system has no ranlib, set RANLIB = echo.
++#
++ARCH     = ar
++ARCHFLAGS= cr
++RANLIB   = ranlib
++#
++#  The location of the libraries to which you will link.  (The 
++#  machine-specific, optimized BLAS library should be used whenever
++#  possible.)
++#
++
++# Using reference BLAS
++BLASLIB      = ../../blas$(PLAT).a
++# Using Vectib
++#BLASLIB = -framework vecLib
++# Using Fortran BLAS interface of ATLAS without wrapper (CLAPACK has to be compiled with -DNO_BLAS_WRAP)
++#BLASLIB = -lf77blas -latlas
++# Using Fortran BLAS interface of ATLAS with wrapper
++#BLASLIB = ../../libfblaswr.a -lf77blas -latlas
++# Using CBLAS interface of ATLAS with wrapper
++#BLASLIB = ../../libcblaswr.a -lcblas -latlas
++# Using Goto without wrapper (CLAPACK has to be compiled with -DNO_BLAS_WRAP)
++#BLASLIB = -lgoto -lpthread
++# Using Goto with wrapper
++#BLASLIB = ../../libfblaswr.a -lgoto -lpthread 
++LAPACKLIB    = lapack$(PLAT).a
++F2CLIB       = ../../F2CLIBS/libf2c.a
++TMGLIB       = tmglib$(PLAT).a
++EIGSRCLIB    = eigsrc$(PLAT).a
++LINSRCLIB    = linsrc$(PLAT).a
++

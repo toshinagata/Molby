@@ -1,0 +1,785 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<title>Molby</title>
+<link rel="stylesheet" href="../etc/style.css" type="text/css" />
+</head>
+
+<body>
+
+<div file="index.html">
+<div class="centered" lang="en">
+<h1>Molby</h1>
+<h2>An Interactive Molecular Modeling Software<br />with Integrated Ruby Interpreter</h2>
+<h3>Version 0.5.0 build 20100121</h3> <!-- version -->
+<h3>Toshi Nagata</h3>
+</div>
+<div class="centered" lang="ja">
+<h1>Molby</h1>
+<h2>対話型分子モデリングソフトウェア<br />（Ruby インタプリタ内蔵）</h2>
+<h3>Version 0.5.0 build 20100121</h3> <!-- version -->
+<h3>永田　央</h3>
+</div>
+<hr />
+<div class="contents" lang="en">
+<h2>Table of Contents</h2>
+<link id="#toc_all" />
+</div>
+<div class="contents" lang="ja">
+<h2>目次</h2>
+<link id="#toc_all" />
+</div>
+<link id="#navigation" />
+</div>
+
+<div file="introduction.html">
+<link rel="Up" href="index.html" />
+<link id="#header" />
+<div class="contents" lang="en">
+<h1>Introduction</h1>
+<link id="#toc" />
+</div>
+<div class="contents" lang="ja">
+<h1>はじめに</h1>
+<link id="#toc" />
+</div>
+<link id="#navigation" />
+</div>
+
+<div file="whatis.html">
+<link rel="Up" href="introduction.html" />
+<link id="#header" />
+<div class="contents" lang="en">
+<h1>What is Molby?</h1>
+<p>
+Molby is an application to visualize and build molecular models interactively through 3D display. It provides the following capability:
+</p>
+<ul>
+<li>Viewing molecular models in either ball-and-stick or "line" display.</li>
+<li>Interactive modification of molecular models by mouse operation.</li>
+<li>Viewing and editing atomic coordinates and other parameters in numeric tables.</li>
+<li>Importing and exporting structure/coordinate data for other program packages such as Gaussian, GAMESS, NAMD and SHELX.</li>
+<li>Embedded Ruby interpreter for automated processing of molecular models.</li>
+</ul>
+</div>
+<div class="contents" lang="ja">
+<h1>Molbyとは？</h1>
+<p>
+Molby は、分子を 3D 表示して、画面上で分子モデルを構築するためのアプリケーションです。以下のような機能があります。
+</p>
+<ul>
+<li>分子を ball-and-stick または「線」で表示できます。</li>
+<li>分子モデルをマウス操作で編集できます。</li>
+<li>原子座標などのパラメータを、数値テーブルで編集できます。</li>
+<li>Gaussian, GAMESS, NAMD, SHELX などの他のプログラムパッケージのファイルを読み込み／書き出しできます。</li>
+<li>分子モデルの操作を自動化できるように Ruby インタプリタを内蔵しています。</li>
+</ul>
+</div>
+<link id="#navigation" />
+</div>
+
+<div file="installation.html">
+<link rel="Up" href="introduction.html" />
+<link rel="Prev" href="whatis.html" />
+<link id="#header" />
+<div class="contents" lang="en">
+<h1>Installation</h1>
+<h2>1. Supported Platforms</h2>
+<p>
+Molby runs on the following platforms.
+</p>
+<ul>
+<li>Microsoft Windows (XP or later).</li>
+<li>Mac OS X (10.4 or later, PowerPC or Intel).</li>
+</ul>
+
+<p>
+Installation procedures are described below for each of these platforms.
+</p>
+
+<h2>2. Get the Software</h2>
+<p>
+Download from the official distribution web site, <a href="http://sourceforge.jp/projects/molby/">http://sourceforge.jp/projects/molby/</a>.
+</p>
+
+<h2>3. Installation</h2>
+
+<h3>3-1. Microsoft Windows</h3>
+
+<p>
+The Windows version is provided as a standard setup package (<code>SetupMolby.exe</code>). Double-click the setup package, and follow the instructions. If you are not sure, just select "OK" to go proceed.
+</p>
+<p>
+After installation is finished, you will find the Molby application registered in the "Start" menu under the item "All Programs."
+</p>
+
+<h3>3-2. Mac OS X</h3>
+<p>
+The Mac version is provided as a disk image (<code>Molby.dmg</code>). Double-click the disk image file, and you will find a virtual disk drive mounted on the desktop. Find the Molby application inside it, and drag it to the "Applications" folder in your hard drive.
+</p>
+<p>
+<span class="italic">Note:</span> The Mac version is provided as a universal binary, which runs natively on both PowerPC and Intel platforms.
+</p>
+
+<h2>4. Uninstallation</h2>
+<h3>4-1. Microsoft Windows</h3>
+<p>
+Use the uninstaller in the Molby folder. You can access the Molby folder from the "Start" menu (Start -&gt; All Programs -&gt; Molby).
+</p>
+<h3>4-2. Mac OS X</h3>
+<p>
+Trash the Molby application in the "Applications" folder.
+</p>
+
+</div>
+<div class="contents" lang="ja">
+<h1>インストール</h1>
+<h2>1. サポートするプラットフォーム</h2>
+<p>
+Molbyは以下のプラットフォームで動作します。
+</p>
+<ul>
+<li>Microsoft Windows (XPまたはそれ以降).</li>
+<li>Mac OS X (10.4またはそれ以降, PowerPCまたはIntel).</li>
+</ul>
+
+<p>
+それぞれのプラットフォームでのインストール方法を、以下に説明します。
+</p>
+
+<h2>2. ソフトウェアの入手</h2>
+<p>
+公式配布サイト <a href="http://sourceforge.jp/projects/molby/">http://sourceforge.jp/projects/molby/</a> から最新版をダウンロードしてください。
+</p>
+
+<h2>3. インストール</h2>
+
+<h3>3-1. Microsoft Windows</h3>
+
+<p>
+Windows版は、標準のセットアップパッケージ (<code>SetupMolby.exe</code>) で配布されています。セットアップパッケージをダブルクリックして、指示に従ってください。どうしたらよいかわからない時は、"OK"を押して進んで構いません。
+</p>
+<p>
+インストールが終了したら、「スタート」メニューの「すべてのプログラム」の中に Molby が入っているはずです。
+</p>
+
+<h3>3-2. Mac OS X</h3>
+<p>
+Mac版は、ディスクイメージ (<code>Molby.dmg</code>) で配布されています。ディスクイメージをダブルクリックすると、仮想ディスクがデスクトップにマウントされます。Molby アプリケーションがその中にありますので、ハードディスクの「アプリケーション」フォルダにドラッグコピーしてください。
+</p>
+<p>
+<span class="italic">注:</span> Mac 版は universal binary です。PowerPC, Intel の両方のマシンで動作します。
+</p>
+
+<h2>4. アンインストール</h2>
+<h3>4-1. Microsoft Windows</h3>
+<p>
+Molbyフォルダの中にアンインストーラがあります。「スタート」メニューで「すべてのプログラム」-&gt; Molby とたどってください。
+</p>
+<h3>4-2. Mac OS X</h3>
+<p>
+「アプリケーション」フォルダの中の Molby アプリケーションをゴミ箱に捨てます。
+</p>
+
+</div>
+<link id="#navigation" />
+</div>
+
+<div file="copyright.html">
+<link rel="Up" href="introduction.html" />
+<link rel="Prev" href="installation.html" />
+<link id="#header" />
+<div class="contents" lang="en">
+<h1>Copyright and License</h1>
+<h2>1. Copyright Notice</h2>
+<p>
+Molby is a copyrighted product of Toshi Nagata.
+</p>
+<p>
+Copyright (C) 2009 Toshi Nagata <!-- copyright -->
+</p>
+<p>
+Molby includes (more technically: is statically linked to) the following softwares, which are copyrighted products as described below:
+</p>
+<ul>
+<li>
+<a href="http://www.wxwidgets.org/">wxWidgets 2.8.9</a>: Copyright (C) 1992-2008 Julian Smart, Robert Roebling, Vadim Zeitlin and other members of the wxWidgets team. Portions (c) 1996 Artificial Intelligence Applications Institute
+</li>
+<li>
+<a href="http://www.ruby-lang.org/">Ruby 1.8.7</a>: Copyright (C) 1993-2009 Yukihiro Matsumoto
+</li>
+<li>
+<a href="http://www.netlib.org/clapack/">CLAPACK</a>: Copyright (c) 1992-2008 The University of Tennessee.  All rights reserved.
+</li>
+</ul>
+
+<h2>2. License</h2>
+<p>
+Molby is distributed under the GNU General Public License (version 2).
+</p>
+<blockquote>
+<p>
+Molby: An Interactive Molecular Modeling Software with Integrated Ruby Interpreter
+</p>
+<p>
+Copyright (C) 2009 Toshi Nagata <!-- copyright -->
+</p>
+<p>
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+</p>
+<p>
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+<a href="../etc/gpl.txt">GNU General Public License</a> for more details.
+</p>
+</blockquote>
+</div>
+<div class="contents" lang="ja">
+<h1>著作権とライセンス</h1>
+<h2>1. 著作権表示</h2>
+<p>
+Molby の著作権は永田　央が保持しています。
+</p>
+<p>
+Copyright (C) 2009 Toshi Nagata <!-- copyright -->
+</p>
+<p>
+Molby は以下のソフトウェアを含んでいます（静的にリンクしています）。それぞれの著作権表示は下の通りです。
+</p>
+<ul>
+<li>
+<a href="http://www.wxwidgets.org/">wxWidgets 2.8.9</a>: Copyright (C) 1992-2008 Julian Smart, Robert Roebling, Vadim Zeitlin and other members of the wxWidgets team. Portions (c) 1996 Artificial Intelligence Applications Institute
+</li>
+<li>
+<a href="http://www.ruby-lang.org/">Ruby 1.8.7</a>: Copyright (C) 1993-2009 Yukihiro Matsumoto
+</li>
+</ul>
+
+<h2>2. ライセンス</h2>
+<p>
+Molby は <a href="../etc/gpl.txt">GNU General Public License (GNU 一般公衆利用許諾契約書, version 2)</a> に従って配布します。
+</p>
+<blockquote>
+<p>
+Molby: 対話型分子モデルソフトウェア（Ruby インタプリタ内蔵）
+</p>
+<p>
+Copyright (C) 2009 Toshi Nagata <!-- copyright -->
+</p>
+<p>
+このプログラムはフリーソフトウェアです。あなたはこれを、フリーソフトウェア財団によって発行された GNU 一般公衆利用許諾契約書(バージョン2か、希望によってはそれ以降のバージョンのうちどれか)の定める条件の下で再頒布または改変することができます。
+</p>
+<p>
+このプログラムは有用であることを願って頒布されますが、*全くの無保証* です。商業可能性の保証や特定の目的への適合性は、言外に示されたものも含め全く存在しません。詳しくはGNU 一般公衆利用許諾契約書をご覧ください。
+</p>
+</blockquote>
+<p>
+参考のため、GNU 一般公衆利用許諾契約書の<a href="../etc/gpl.ja.txt">非公式日本語訳</a>を添付します。ただし、正式な文書は英語版の方です。
+</p>
+</div>
+<link id="#navigation" />
+</div>
+
+<div file="tutorials.html">
+<link rel="Up" href="index.html" />
+<link rel="Prev" href="introduction.html" />
+<link id="#header" />
+<div class="contents" lang="en">
+<h1>Tutorials</h1>
+<link id="#toc" />
+</div>
+<div class="contents" lang="ja">
+<h1>チュートリアル</h1>
+<link id="#toc" />
+</div>
+<link id="#navigation" />
+</div>
+
+<div file="drawing.html">
+<link rel="Up" href="tutorials.html" />
+<link id="#header" />
+<div class="contents" lang="en">
+<h1>Step One: Draw a New Molecule</h1>
+<h2>1. Create a Molecule</h2>
+<p>
+Start up Molby. You will see a blank window like below. This is the main window to manipulate your molecule.
+</p>
+<p><img src="../etc/tutorial_01.png" /></p>
+<p>
+Suppose you want a benzene molecule. Double-click on the black area, and you will be asked to "enter formula". Type "C6H6" and hit "OK".
+</p>
+<p><img src="../etc/tutorial_02.png" /></p>
+<p>
+Then you see a benzene molecule in the black area. The atoms and bonds are drawn in red, which means these atoms and bonds are "selected". On the left to this area, there is a table, which shows in numbers the positions of all atoms, and other useful information. We will get into this part in more details later.
+</p>
+<p><img src="../etc/tutorial_03.png" /></p>
+<h2>2. Rotate the Molecule</h2>
+<p>
+You can rotate the molecule around by use of the three bars on the both sides and the bottom of the black area. Press the left button of the mouse on one of these bars, and try dragging.
+</p>
+<p><img src="../etc/tutorial_04.png" /></p>
+<ul>
+<li>Bar 1: rotate the whole molecule around the horizontal axis.</li>
+<li>Bar 2: rotate the whole molecule around the vertical axis.</li>
+<li>Bar 3: rotate the selected part of the molecule. (In the present example, the whole molecule is selected, so that the bar 3 works in the same manner as the bar 2.)</li>
+</ul>
+<p>
+Next, look at the buttons above the black area. The left-most button "Rot" is now selected. This means the window is in the "Rotation" mode. In this case, you can drag in the black area to rotate freely the whole molecule.
+</p>
+<p class="note">
+<span class="italic">Note:</span> Be careful not to start drag from a very near point to the molecule. If you start drag on a selected atom or bond, the selected part will move along the mouse, instead of the whole molecule to rotate.
+</p>
+
+<h2>3. Translate and Scale</h2>
+<p>
+Press the button "Trans" above the black area. The window is now in "Translate" mode. When you drag in the black area, the whole molecule moves along with the mouse movement.
+</p>
+<p class="note">
+<span class="italic">Note:</span> the functions of the rotation bars do not change.
+</p>
+<p><img src="../etc/tutorial_05.png" /></p>
+<p>
+Next, press the button "Scale". The window is now in "Scale" mode, and you can expand and shrink the molecule by dragging in the black area.
+</p>
+<p><img src="../etc/tutorial_06.png" /></p>
+<p>
+The "Fit to Screen" menu command, avaiable under the "Show" menu, is a convenient way to fit the whole molecule to the window.
+</p>
+<p><img src="../etc/tutorial_07.png" /></p>
+<p>
+Now you have learned how to move the whole molecule around. In the next chapter, you will learn how to edit the molecule.
+</p>
+</div>
+
+<div class="contents" lang="ja">
+<h1>第一段階：新しい分子を描く</h1>
+<h2>1. 分子を作る</h2>
+<p>
+Molbyを立ち上げてください。下のような空のウィンドウが現れます。このウィンドウが、分子を取り扱うためのメインウィンドウです。
+</p>
+<p><img src="../etc/tutorial_01.png" /></p>
+<p>
+ベンゼン分子を作ってみたいとします。画面の黒いところ（編集エリア）をダブルクリックすると、"enter formula" と指示が出ます。"C6H6" とタイプして、OK を押します。
+</p>
+<p><img src="../etc/tutorial_02.png" /></p>
+<p>
+編集エリアにベンゼン分子が現れます。原子と結合は赤色で描かれていますが、これは「選択されている」という表示です。左側には表があり、原子の位置などの情報を数値で表示しています。この部分については、あとで詳しい使い方が出てきます。
+</p>
+<p><img src="../etc/tutorial_03.png" /></p>
+<h2>2. 分子を回転させる</h2>
+<p>
+編集エリアの両側と下には、分子を回転させるバーがあります。このバーでマウスボタンを押し、そのままドラッグしてみてください。
+</p>
+<p><img src="../etc/tutorial_04.png" /></p>
+<ul>
+<li>バー１：水平軸の周りに分子を回転させる。</li>
+<li>バー２：垂直軸の周りに分子を回転させる。</li>
+<li>バー３：分子の選択部分を回転させる。（今は分子全体が選択されているため、バー２と同じ動作をします。）</li>
+</ul>
+<p>
+次に、編集エリアの上にあるボタンを見てください。一番左の "Rot" が選択されています。これは、このウィンドウが現在「回転 (Rotation)」モードにあることを示しています。この場合、編集エリアでマウスをドラッグすると、分子全体を自由に回転させることができます。
+</p>
+<p class="note">
+<span class="italic">注:</span> 分子に近すぎるところからドラッグを始めないように注意してください。選択している原子・結合の上でドラッグを始めると、選択部分がマウスについて動いてしまい、分子全体を動かすことができません。
+</p>
+<h2>3. Translate and scale</h2>
+<p>
+"Trans" と書かれたボタンを押してください。ウィンドウは「並進 (Translate)」モードになります。編集エリアでマウスをドラッグすると、分子全体を平行移動させることができます。
+</p>
+<p class="note">
+<span class="italic">注:</span> 回転バーの機能は変わりません。
+</p>
+<p><img src="../etc/tutorial_05.png" /></p>
+<p>
+次に、"Scale" と書かれたボタンを押してください。ウィンドウは「拡大縮小 (Scale)」モードになります。編集エリアでマウスをドラッグすると、分子全体を拡大・縮小することができます。
+</p>
+<p><img src="../etc/tutorial_06.png" /></p>
+<p>
+"Show" メニューの中に "Fit to Screen" メニューコマンドがあります。このコマンドは、分子をウィンドウサイズに合わせて表示したいときに便利です。
+</p>
+<p><img src="../etc/tutorial_07.png" /></p>
+<p>
+分子を画面上で動かす方法がわかりました。次は、編集のやり方を説明します。
+</p>
+</div>
+<link id="#navigation" />
+</div>
+
+<div file="editing.html">
+<link rel="Up" href="tutorials.html" />
+<link rel="Prev" href="drawing.html" />
+<link id="#header" />
+<div class="contents" lang="en">
+<h1>Step Two: Edit a Molecule</h1>
+<h2>1. Append a Substituent</h2>
+<p>
+Suppose you have a benzene molecule now, and want to append a methyl substituent to give a toluene.
+</p>
+<p>
+Press the button "Select", and click on the black area where no atom nor bond is present. The selection becomes canceled.
+</p>
+<p><img src="../etc/tutorial_08.png" /></p>
+<p>
+Select one of the hydrogen atoms. There are two ways to do this. You can click on the target atom, or you can drag to select atoms within a rectangular region.
+</p>
+<p><img src="../etc/tutorial_09.png" /> <img src="../etc/tutorial_10.png" /></p>
+<p>
+Double-click on the hydrogen atom. This time, be sure to hit the selection! Then you will see the dialog "enter formula" as shown below. Type "CH3" in the text box and hit "OK".
+</p>
+<p><img src="../etc/tutorial_11.png" /></p>
+<p>
+Now you get toluene.
+</p>
+<p><img src="../etc/tutorial_12.png" /></p>
+<p>
+You want to save the result to a file. Select "Save as..." from the File menu, choose the file format, enter the filename, and hit "Save".
+</p>
+<p>
+The "native" file format in Molby is "mbsf", i.e. <u>M</u>ol<u>b</u>y <u>S</u>tructure <u>F</u>ile. The mbsf format is a private format with no compatibility with any existing file format for chemistry. Nevertheless, it is a plain text file that is reasonably compact and easy to read. Unless you have a particular reason to choose other formats, it is recommended that you save the structues as a "mbsf" file.
+</p>
+<h2>2. Manipulate Molecular Fragments</h2>
+<p>
+After building a molecule, you may want to move some part of a molecule. Here are examples how you can do it.
+</p>
+<p>
+Select the methyl group of the toluene, if you have not done so yet <span class="note">(Tip: you can add to the current selection by shift-clicking)</span>. Press the left rotation bar (marked "3" in the previous page), and drag up and down. You will see the methyl group rotates to the right and left.
+</p>
+<p><img src="../etc/tutorial_13.png" /></p>
+<p>
+The same manipulation can be achieved by selecting one bond and dragging the left rotation bar. In this case, you can also rotate the benzene ring (with the methyl group fixed) by pressing Option (Mac) or Alt (Win) key when dragging.
+</p>
+<p><img src="../etc/tutorial_14.png" /></p>
+<p>
+The selected atoms can be dragged to give a translational move. Use this feature with care, because it may result in a chemically unnatural structure.
+</p>
+<p><img src="../etc/tutorial_15.png" /></p>
+<h2>3. Adding and Deleting Atoms</h2>
+<p>
+We have already learned one way to add atoms: double-clicking on the selected part of the molecule (or on the black area where nothing is present), and type-in the formula. Actually, this is the most convenient way to add atoms in Molby. However, there are also other ways to add atoms.
+</p>
+<p>
+Look at our familiar toluene molecule. Suppose we want to convert it to indane.
+</p>
+<p><img src="../etc/indane.png" /> indane</p>
+<p>
+Rotate the molecule so that its orientation matches the chemical structure. We will start from C3, add two carbons, and then close the ring.
+</p>
+<p><img src="../etc/tutorial_16.png" /></p>
+<p>
+Press the "Erase" button above the black area. Click on the "H3" hydrogen. The hydrogen atom and the bond between C3 and H3 disappear.
+</p>
+<p><img src="../etc/tutorial_17.png" /></p>
+<p>
+Press the "Bond" button. Drag from the C3 atom to the right-bottom, and release the mouse button. A new atom and a bond to C3 are created. Drag from the new atom to the right-up, and another atom and bond are created.
+</p>
+<p><img src="../etc/tutorial_18.png" /> <img src="../etc/tutorial_19.png" /></p>
+<p>
+Press the "Erase" button again, and erase one hydrogen from the methyl group. Press the "Select" button, select the benzene-methylene bond, and rotate the methylene group as appropriate for the five-membered ring, by use of the left rotation bar.
+</p>
+<p><img src="../etc/tutorial_20.png" /> <img src="../etc/tutorial_21.png" /></p>
+<p>
+Now you can close the ring. Press the "Bond" button, and drag from the methylene carbon. When the mouse cursor comes close enough to the target carbon, the new atom will snap to the target and make a new bond. Then release the mouse button.
+</p>
+<p><img src="../etc/tutorial_22.png" /></p>
+<p>
+Finally, you want to add hydrogens to the newly created carbons. Press the "Select" button, and select these two carbons. Go to the "Edit" menu, and select the "Add Hydrogen" -&gt; "Tetrahedral sp3" menu command.
+</p>
+<p><img src="../etc/tutorial_23.png" /></p>
+<p>
+Here is the result.
+</p>
+<p><img src="../etc/tutorial_24.png" /></p>
+<p class="note">
+A similar result can be achieved by selecting the hydrogen ortho to the methyl group, double-click it, type "CH2CH3" in, erase one hydrogen atom from each of the methyl groups, and make a bond. This is better because the newly created methylenes have reasonable bond lengths and angles as methylene groups. The above example is just for explanation of the editing features.
+</p>
+</div>
+<div class="contents" lang="ja">
+<h1>第二段階：分子を編集する</h1>
+<h2>1. 置換基をつける</h2>
+<p>
+ベンゼン分子があり、これにメチル基をつけてトルエンを作りたいとします。
+</p>
+<p>
+"Select"ボタンを押して、編集エリアの原子や結合がないところをクリックします。選択が解除され、分子の表示が赤から原子ごとの色に変わります。
+</p>
+<p><img src="../etc/tutorial_08.png" /></p>
+<p>
+水素原子の一つを選択します。やり方は二つあります。選択したい原子をクリックするか、またはドラッグで現れる四角い領域の中の原子を選択します。
+</p>
+<p><img src="../etc/tutorial_09.png" /> <img src="../etc/tutorial_10.png" /></p>
+<p>
+水素原子の上でダブルクリックします。このとき、選択部分の上でダブルクリックするように注意してください。"Enter formula"というダイアログが出てきます。"CH3"と入力し、"OK"を押します。
+</p>
+<p><img src="../etc/tutorial_11.png" /></p>
+<p>
+トルエンができました。
+</p>
+<p><img src="../etc/tutorial_12.png" /></p>
+<p>
+ファイルに保存しておきたい時は、通常通り File メニューから "Save as..." を選び、ファイルフォーマットを選び、ファイル名をタイプして "Save" を押します。
+</p>
+<p>
+Molby の標準ファイルフォーマットは "mbsf" (<u>M</u>ol<u>b</u>y <u>S</u>tructure <u>F</u>ile) です。Mbsf フォーマットは独自のもので、既存の化学ファイルフォーマットとは互換性がありません。しかし、mbsfはテキストファイルであり、比較的コンパクトで、読みやすいものです。他のフォーマットで保存する積極的な理由がない場合は、"mbsf"フォーマットで保存しておくことをおすすめします。
+</p>
+
+<h2>2. 分子の一部を操作する</h2>
+<p>
+分子を組み立てたら、その一部を動かしたくなることがあります。ここでは、そのやり方の例を示します。
+</p>
+<p>
+トルエンのメチル基を選択します<span class="note">（コツ：シフトキーを押しながらクリックすると、現在の選択範囲に原子を付け加えることができます）</span>。左の回転バー（前ページで③と書かれていたもの）でマウスボタンを押し、上下にドラッグしてください。メチル基が右左に回転するのがわかります。
+</p>
+<p><img src="../etc/tutorial_13.png" /></p>
+<p>
+同じ操作は、結合を１つ選択して左の回転バーをドラッグしてもできます。この場合、メチル基を固定してベンゼン環の方を回すこともできます。ドラッグの時にOptionキー(Mac)、Altキー(Win)を押してください。
+</p>
+<p><img src="../etc/tutorial_14.png" /></p>
+<p>
+選択した原子をドラッグすると平行移動できます。化学的に不自然な構造になりますので、注意が必要です。
+</p>
+<p><img src="../etc/tutorial_15.png" /></p>
+<h2>3. 原子を追加する・削除する</h2>
+<p>
+原子を追加する方法はすでに一つ説明しました。選択部分または編集エリアの何もないところをダブルクリックして、構造式をタイプする方法です。実際、Molbyで原子を追加するにはこれが最も便利です。しかし、他の方法もありますので、それを紹介します。
+</p>
+<p>
+先ほどのトルエン分子を使います。これをインダンに変えたいとします。
+</p>
+<p><img src="../etc/indane.png" /> インダン</p>
+<p>
+分子を回転させて、化学構造式と同じ向きになるようにします。C3から始めて、炭素原子を２つ追加し、環を閉じることにします。
+</p>
+<p><img src="../etc/tutorial_16.png" /></p>
+<p>
+編集エリアの上の"Erase"ボタンを押します。"H3"水素をクリックします。この水素原子と、C3-H3の結合が消えます。
+</p>
+<p><img src="../etc/tutorial_17.png" /></p>
+<p>
+"Bond"ボタンを押します。C3原子から右下にドラッグし、マウスボタンを離します。新しい原子と、その原子とC3の間の結合が新しく作られます。新しい原子から右上にドラッグすると、もう一つの原子と結合が作られます。
+</p>
+<p><img src="../etc/tutorial_18.png" /> <img src="../etc/tutorial_19.png" /></p>
+<p>
+"Erase"ボタンをもう一度押して、メチル基の原子を一つ消します。"Select"ボタンを押して、ベンゼン環とメチレン炭素（今水素原子を一つ消したところ）の間の結合を選択します。左の回転バーを使って、五員環に適切な向きになるようにメチレン基を回転させます。
+</p>
+<p><img src="../etc/tutorial_20.png" /> <img src="../etc/tutorial_21.png" /></p>
+<p>
+環を閉じます。"Bond"ボタンを押し、メチレン炭素原子から右下の炭素原子へドラッグします。マウスカーソルが目標の炭素原子に近づくと、ドラッグしてできた結合が炭素原子にくっつきます。ここでマウスボタンを離します。
+</p>
+<p><img src="../etc/tutorial_22.png" /></p>
+<p>
+最後に、新しく作った二つの炭素原子に水素原子を付加します。"Select"ボタンを押して、マウスを使って二つの炭素原子を選択します。"Edit"メニューから、"Add Hydrogen"-&gt;"Tetrahedral sp3"コマンドを実行します。
+</p>
+<p><img src="../etc/tutorial_23.png" /></p>
+<p>
+結果はこのようになります。
+</p>
+<p><img src="../etc/tutorial_24.png" /></p>
+<p class="note">
+トルエンからインダンは次のような操作でも作ることができます。メチル基のオルト位の水素原子を選択、ダブルクリック、ダイアログが出たら"CH2CH3"と入力、二つのメチル基からそれぞれ水素原子を一つ削除、結合回転で向きを調整、結合を作成。この方法の方が、新しく作ったメチレン基の結合距離・結合角が正しくなるため、よりよい結果になります。上の例は、編集操作の説明のためのものと考えてください。
+</p>
+</div>
+<link id="#navigation" />
+</div>
+
+<div file="cut_copy_paste.html">
+<link rel="Up" href="tutorials.html" />
+<link rel="Prev" href="editing.html" />
+<link id="#header" />
+<div class="contents" lang="en">
+<h1>Step Three: Edit a Molecule: Cut/Copy/Paste</h1>
+<p>
+Like any other decent "editing" applications, Molby has a capability of cut/copy/paste by use of a clipboard. These functions (especially copy and paste) are also quite useful for building complex molecules.
+</p>
+<p>
+We start from the toluene molecule again. Select the methyl group and do copy.
+</p>
+<p><img src="../etc/tutorial_25.png" /></p>
+<p>
+Unselect the methyl group, and do paste. Another methyl group appears, with no connection to the existing atoms. This is how "paste" works when nothing is selected beforehand.
+</p>
+<p><img src="../etc/tutorial_26.png" /></p>
+<p>
+Now we will see what happens when something is selected before pasting. As described above, start with the toluene molecule, select the methyl group, and copy it. Unselect the methyl group, and this time select the hydrogen atom that is "ortho" to the methyl group.
+</p>
+<p><img src="../etc/tutorial_27.png" /></p>
+<p>
+Do paste. The selected hydrogen atom is replaced with the pasted methyl group. Note that a new bond is created between the pasted methyl carbon and the ortho carbon, with an acceptable bond length and angles. 
+</p>
+<p><img src="../etc/tutorial_28.png" /></p>
+<p class="note">
+The dihedral angle may not be acceptable. In that case, you can rotate the pasted fragment by use of the left rotation bar until the dihedral angle looks good.
+</p>
+<p>
+This "select and paste" technique is very useful for building large molecules. Suppose we want to build an oligobenzamide.
+</p>
+<p><img src="../etc/tutorial_39.png" /></p>
+<p>
+Create a "monomer", i.e. N-methyl-4-acetamidobenzamide. This is done by (1) create a benzene, (2) select H1, double-click, and enter "CONHCH3", (3) select H4, double-click, and enter "NHCOCH3". After entering each formula, you need to rotate the fragment to make the dihedral angle appropriate.
+</p>
+<p><img src="../etc/tutorial_29.png" /></p>
+<p>
+Select the whole molecule except for the COCH3 group at the left. Do copy.
+</p>
+<p><img src="../etc/tutorial_30.png" /></p>
+<p>
+Select the NHCH3 group at the right. Do paste.
+</p>
+<p><img src="../etc/tutorial_31.png" /></p>
+<p>
+The newly created amide bond has a bad dihedral angle. Rotate the pasted fragment by the left rotation bar, so that the amide bond becomes properly trans.
+</p>
+<p><img src="../etc/tutorial_32.png" /><img src="../etc/tutorial_33.png" /></p>
+<p>
+Select "Fit to Screen" from the "Show" menu, to make the whole molecule visible.
+</p>
+<p><img src="../etc/tutorial_34.png" /></p>
+<p><img src="../etc/tutorial_35.png" /></p>
+<p>
+Repeat these procedures to make the tetramer.
+</p>
+<p><img src="../etc/tutorial_36.png" /></p>
+<p><img src="../etc/tutorial_37.png" /></p>
+<p><img src="../etc/tutorial_38.png" /></p>
+<p>
+Make one more iteration to make the octamer.
+</p>
+<p><img src="../etc/tutorial_39.png" /></p>
+</div>
+<div class="contents" lang="ja">
+<h1>第三段階：分子を編集する：カット・コピー・ペースト</h1>
+<p>
+他のアプリケーションと同様に、Molby もクリップボードを使ってカット・コピー・ペーストを行う機能があります。これらの機能、特にコピー・ペーストは複雑な分子を作るときにたいへん有用です。
+</p>
+<p>
+ふたたびトルエン分子から始めます。メチル基を選択して、コピーします。
+</p>
+<p><img src="../etc/tutorial_25.png" /></p>
+<p>
+メチル基の選択を解除して、ペーストを実行します。他の原子と結合していないメチル基がもう一つ現れます。原子が選択されていない状態で「ペースト」すると、このような動作になります。
+</p>
+<p><img src="../etc/tutorial_26.png" /></p>
+<p>
+今度は、ペーストする前に原子が選択されているときにどうなるかを見てみます。上と同じように、トルエンから始めて、メチル基を選択して、コピーします。メチル基の選択を解除して、今度はメチル基のオルト位の水素原子を選択します。
+</p>
+<p><img src="../etc/tutorial_27.png" /></p>
+<p>
+ペーストを実行します。選択された水素原子がメチル基に置き換わります。オルト位の炭素とメチル基の間に新しい結合ができ、その長さと結合角が適切なものになっていることがわかります。
+</p>
+<p><img src="../etc/tutorial_28.png" /></p>
+<p class="note">
+二面角は適切とはいえないかも知れません。その場合は、ペーストされたグループを左の回転バーを使って回転させて、適切な二面角にします。
+</p>
+<p>
+この「選択してペースト」のテクニックは、大きな分子を作るときにたいへん役に立ちます。たとえば、オリゴベンズアミドを作りたいとします。
+</p>
+<p><img src="../etc/tutorial_39.png" /></p>
+<p>
+まず、「モノマー」となる N-メチル-4-アセトアミドベンズアミドを作ります。次のようにします：(1) ベンゼンを作る、(2) H1 を選択してダブルクリックし、「CONHCH3」とタイプする、(3) H4 を選択してダブルクリックし、「NHCOCH3」とタイプする。化学式をタイプしたあとは、作成したフラグメントを回転させて二面角を調整しておきます。
+</p>
+<p><img src="../etc/tutorial_29.png" /></p>
+<p>
+左端の COCH3 以外全部を選択し、コピーします。
+</p>
+<p><img src="../etc/tutorial_30.png" /></p>
+<p>
+右端の NHCH3 を選択し、「ペースト」を実行します。
+</p>
+<p><img src="../etc/tutorial_31.png" /></p>
+<p>
+新しく作られたアミド結合は二面角が不適切です。左の回転バーを使ってペーストしたフラグメントを回転し、アミド結合が正しく trans になるようにします。
+</p>
+<p><img src="../etc/tutorial_32.png" /><img src="../etc/tutorial_33.png" /></p>
+<p>
+"Show" メニューから "Fit to Screen" を選び、分子全体が見えるようにします。
+</p>
+<p><img src="../etc/tutorial_34.png" /></p>
+<p><img src="../etc/tutorial_35.png" /></p>
+<p>
+この操作を繰り返して、四量体を作ります。
+</p>
+<p><img src="../etc/tutorial_36.png" /></p>
+<p><img src="../etc/tutorial_37.png" /></p>
+<p><img src="../etc/tutorial_38.png" /></p>
+<p>
+もう一度繰り返して、八量体を作ります。
+</p>
+<p><img src="../etc/tutorial_39.png" /></p>
+</div>
+<link id="#navigation" />
+</div>
+
+<div file="proptable.html">
+<link rel="Up" href="tutorials.html" />
+<link rel="Prev" href="cut_copy_paste.html" />
+<link id="#header" />
+<div class="contents" lang="en">
+<h1>Step Four: Edit a Molecule: Using a Property Table</h1>
+</div>
+<div class="contents" lang="ja">
+<h1>第四段階：分子を編集する：属性テーブルを使う</h1>
+</div>
+<link id="#navigation" />
+</div>
+
+<div file="mm_minimize.html">
+<link rel="Up" href="tutorials.html" />
+<link rel="Prev" href="proptable.html" />
+<link id="#header" />
+<div class="contents" lang="en">
+<h1>Step Five: Energy Minimization by Molecular Mechanics</h1>
+</div>
+<div class="contents" lang="ja">
+<h1>第五段階：分子力学計算によるエネルギー最小化</h1>
+</div>
+<link id="#navigation" />
+</div>
+
+<div file="qchem.html">
+<link rel="Up" href="tutorials.html" />
+<link rel="Prev" href="mm_minimize.html" />
+<link id="#header" />
+<div class="contents" lang="en">
+<h1>Step Six: Collaboration with Other Quantum Chemistry Softwares</h1>
+</div>
+<div class="contents" lang="ja">
+<h1>第六段階：他の量子化学ソフトウェアとの連携</h1>
+</div>
+<link id="#navigation" />
+</div>
+
+<div file="ruby.html">
+<link rel="Up" href="tutorials.html" />
+<link rel="Prev" href="qchem.html" />
+<link id="#header" />
+<div class="contents" lang="en">
+<h1>Step Seven: Using Embedded Ruby Interpreter</h1>
+</div>
+<div class="contents" lang="ja">
+<h1>第七段階：組み込み Ruby インタプリタを使う</h1>
+</div>
+<link id="#navigation" />
+</div>
+
+<div file="reference.html">
+<link rel="Up" href="index.html" />
+<link rel="Prev" href="tutorials.html" />
+<link id="#header" />
+<div class="contents" lang="en">
+<h1>Reference</h1>
+<link id="#toc" />
+</div>
+<div class="contents" lang="ja">
+<h1>リファレンス</h1>
+<link id="#toc" />
+</div>
+<link id="#navigation" />
+</div>
+
+</body>
+</html>

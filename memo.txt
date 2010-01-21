@@ -1,0 +1,315 @@
+2008.10.24.
+　wxWidgets のサンプル docvwmdi を元に改造していこうとしている。
+TODO: ドキュメントは１種類でよい。ただし、１枚のウィンドウに複数のペインを持って、その中でグラフィック表示やリスト表示をする。
+-> wxView を１種類にすること。
+
+DrawingDocument -> MoleculeDocument, DrawingView -> MoleculeView にする。
+TextDocument, TextView? は廃止。
+
+Carbon emacs: マウスドラッグで自動的にコピーされるのを止める
+(setq mouse-drag-copy-region nil)
+マックのショートカットを使う
+(mac-key-mode 1)
+
+docview.cpp 中の MyFrame::CreateCanvas で MyCanvas を作っている。MyCanvas の定義を書き換えて、wxGLCanvas のサブクラスを作れば良い。
+
+MainView は Cocoa 版では MyWindowController の windowDidLoad で作られ、dealloc で破棄される。一方、Molecule は MyDocument の init で空のものが作られるが、ファイルから読み込むと新しい Molecule が作られ、[self setMolecule: mol] で更新される。
+
+UTF8 -> wxString:  wxString string(ascii_string, wxConvUTF8);
+wxString -> UTF8:  strncpy(buf, (const char*)string.mb_str(wxConvUTF8), sizeof buf - 1); buf[sizeof buf - 1] = 0;
+かなりめんどくさいがしょうがない。NSString だって似たようなもんだよな。
+
+wxDocument でファイルオープン、保存のオーバーロード。ストリームを使いたくない場合は、
+ protected:
+  virtual bool DoSaveDocument(const wxString& file);
+  virtual bool DoOpenDocument(const wxString& file);
+をオーバーライドすればよい。ドキュメントに書いてないけど、隠し機能なの？
+
+wxGLCanvas がうまく動かなくて苦労している。作ったあと、サイズを改めて指定してやらないと中身が表示されないらしい。これは wxWidgets のサンプルでも #if __X__ として入れてあるコード。MacOSX でもこれが必要みたい。
+    int x, y;
+    frame->GetSize(&x, &y);
+    frame->SetSize(wxDefaultCoord, wxDefaultCoord, x, y);
+
+Undo/redo はどう実装するか。これは相当面倒くさい。Cocoa の場合、UndoManager は任意のタイミングで任意の "undo用メッセージ" を受け取って溜めておき、アイドル状態になったらそれをまとめて Undo スタックか redo スタック（後者は自分が Undo メッセージを送っている最中）に積む。wxWidgets は、自分ですべてのメッセージを１つの wxCommand にまとめ、それを wxCommandProcessor に送ることで Do/undo を実現する。大きな違いは、最初に "Do" がなされた地点では Do の情報はメッセージ中には入っていないこと。
+１つのアイデア：MainView の中で、undo 用メッセージを自前で溜めておく。アイドル状態になったら、それをまとめて自分の undo スタックに積み、wxCommandProcessor にダミーの Submit を送る。wxCommandProcessor から undo が指示されたら、undo フラグを立てて undo 用メッセージを最初と逆順に送る。このとき送られて来る "undo 用メッセージ" は redo のための物なので、同じように溜めてアイドル状態になったら redo スタックに積む。（またはスタックは１つにして、「現在の undo アクション」を表すポインタを前後させてもよい。）
+重要：wxCommandProcessor の ClearCommands() （と、たぶん MarkAsSaved()）はオーバーライドして、MainView_clearCommands() を呼び出す必要がある。
+もう１つのアイデア：最初の Submit の前は、上と同様に undo 用メッセージを溜めておく。アイドル状態になったらこのメッセージを新しい wxCommand にまとめて Submit する。Do が呼ばれるが、これはそのままスルーする。wxCommand::Undo が呼ばれたら、上と同様に undo 用メッセージを溜めておくが、アイドル状態になったら溜めたメッセージを同じ wxCommand の Redo バッファに格納する。これなら wxCommandProcessor は素のままでよさそう。また、undo 用メッセージを溜めておくのは MainView よりも MyDocument (wxDocument の派生クラス) の方が適当か。
+
+「アイドル状態になったら」の実装方法。
+wxEvent って notification 目的で使えるのかなあ。→できそうだけど、けっこう複雑なので要注意。有用なドキュメント： http://wiki.wxwidgets.org/Custom_Events
+
+　関係ありそうなところを引用。
+// This goes somewhere in a cpp file, before you use it (unless you've declared it elsewhere)
+const wxEventType MyExcitingEvent = wxNewEventType(); // You get to choose the name yourself
+ 
+// In the posting method:
+...
+wxCommandEvent MyEvent( MyExcitingEvent ); // Still keeping it simple, don't give a specific event ID
+wxPostEvent(this, MyEvent); // This posts to ourselves: it'll be caught and sent to a different method
+wxPostEvent(pBar, MyEvent); // Posts to a different class, Bar, where pBar points to an instance of Bar 
+The event table would be:
+BEGIN_EVENT_TABLE(MyFoo, wxSomething)
+  EVT_COMMAND(wxID_ANY, MyExcitingEvent, MyFoo::OnMyEvent)
+  ...
+END_EVENT_TABLE()
+
+The handler's signature is still void MyFoo::OnMyEvent(wxCommandEvent&)
+
+Most of the time all of this will be happening within the same cpp file. However if you need to use your eventtype elsewhere, you'll need to declare it there as an extern:
+
+extern const wxEventType MyExcitingEvent;
+
+The individual ID case
+
+What if you want to send several messages? Well, you could create several eventtypes: they're only ints after all, there isn't a world shortage. But it's a bit easier to have just one eventtype, and use different IDs for different destinations. It's easier to read if you do that with an enum.
+// The values don't matter, as they're only used with this eventtype
+enum { Foo_DoFirstThing = 1, Foo_DoSecondThing, Foo_DoThirdThing };
+ 
+// In the posting method:
+...
+// The first two events are posted to ourselves
+wxCommandEvent MyEvent1( MyExcitingEvent, Foo_DoFirstThing ); wxPostEvent(this, MyEvent1);
+wxCommandEvent MyEvent2( MyExcitingEvent, Foo_DoSecondThing, ); wxPostEvent(this, MyEvent2);
+// Just for variety, let's send the third one elsewhere:
+wxCommandEvent MyEvent3( MyExcitingEvent, Foo_DoThirdThing ); wxPostEvent(pBar, MyEvent3);
+The MyFoo event table would be:
+BEGIN_EVENT_TABLE(MyFoo, wxSomething)
+  EVT_COMMAND(Foo_DoFirstThing, MyExcitingEvent, MyFoo::OnMyFirstEvent)
+  EVT_COMMAND(Foo_DoSecondThing,, MyExcitingEvent, MyFoo::OnMySecondEvent)
+  ...
+END_EVENT_TABLE()
+
+Alternatively you could catch everything as before with wxID_ANY, and discriminate between them in the handler with event.GetId().
+（引用おわり）
+
+　しかし、notification の代わりにはならないかな。各 wxEvtHandler ごとに wxPostEvent しないといけないみたいだし。→もしかして wxEvtHandler::Connect() 使ったらいけるか？
+    m_child->Connect(wxID_ANY, wxEVT_LEAVE_WINDOW,
+                     wxMouseEventHandler(MyFrame::OnMouseLeave),
+                     NULL,  // unused extra data parameter
+                     this); // this indicates the object to connect to
+  notification 用の wxEvent は MyDocument 宛に送る。その notification を聞きたいオブジェクトは、 myDocument->Connect(ID, TYPE, HANDLER, NULL, this) でハンドラを登録し、ハンドラ中では event.Skip() で処理を中断しないようにする。→うまくいった！
+  
+
+何となく DECLARE_DYNAMIC_CLASS(class) / IMPLEMENT_DYNAMIC_CLASS(class, superclass) を使うとエラーが出てしまった。最初は、IMPLEMENT_DYNAMIC_CLASS を忘れていて、"vtable not defined" という不思議なエラーが出ていたし、IMPLEMENT_DYNAMIC_CLASS を書くと今度は "no matching member function" というようなエラーが出た。正確なエラーメッセージは、
+１つめ：
+Undefined symbols:
+  "vtable for ConsoleFrame", referenced from:
+      __ZTV12ConsoleFrame$non_lazy_ptr in ConsoleFrame.o
+２つめ：
+no matching function for call to 'ConsoleFrame::ConsoleFrame()
+note: candidates are: ConsoleFrame::ConsoleFrame(wxMDIParentFrame*, const wxString&, const wxPoint&, const wxSize&, long int)
+note:                 ConsoleFrame::ConsoleFrame(const ConsoleFrame&)
+両方とも削除するとコンパイルは通った。難しいねぇ。
+
+デバッグ用に wxString を表示しようとしてハマる。cout << string はダメ（ポインタの値が表示される）。cout << string.c_str() でもダメ。printf("%s", (const char*)string.mb_str(wxConvUTF8)); でいいみたい。
+
+wxTextCtrl は EVT_TEXT_ENTER(id, func) でリターンキーの押下を検出して横取り（TextCtrl に "\n" が入力される前に処理）できるが、wxRichTextCtrl は横取りできず、"\n" が入力されてからイベントハンドラが呼ばれてしまう。wxRichTextCtrl のサブクラスを作って EVT_CHAR イベントをつかまえれば処理できそうだが、ほかの手はないものか？ -> これも Connect() を使って解決できた。
+textCtrl->Connect(-1, wxEVT_CHAR, wxKeyEventHandler(ConsoleFrame::OnChar), NULL, this);
+void
+ConsoleFrame::OnChar(wxKeyEvent &event)
+{
+	int code = event.GetKeyCode();
+	printf("OnChar: %d\n", code);
+	if (code == WXK_RETURN || code == WXK_NUMPAD_ENTER)
+		OnEnterPressed(event);
+	else
+		event.Skip();
+}
+でちゃんとリターンキーだけを横取りできる。このイベントメカニズムはなかなか便利だな。
+
+テキストを色分けしたいとき、（極度に重い）wxRichTextCtrl を使わなくとも wxTextCtrl で十分。（バックグラウンドに色をつけることはできないみたい）。wxMSW では wxTE_RICH2 あたりが必要かもしれない。
+
+色指定で、wxColour(red, green, blue) の引数は unsigned char なので注意。うっかり Cocoa の感覚で wxColour redColor(1, 0, 0) なんてやって「おかしい、色がつかない」と１時間ぐらい悩んでいた。
+
+Ruby で実行するスクリプトと結果表示を色分けするととたんに見やすくなった。よしよし。
+
+MSW でもビルドできるようになった。Mac で走っていたコードが MSW では BAD ADDRESS で落ちたりする。
+
+画面レイアウトを作っていくため、Life のソースを読んでいる。アイコンは xpm (ASCII Bitmap) で作っておくのが無難みたい。GraphicConverter でも作れる。知らなかったよ。
+
+wxBoxSizer の使い方。ウィンドウ内のある領域に、部品を「縦に上から」または「横に左から」順に並べていく、という考え方でレイアウトする。
+左から並べる時は、こんな風に使う。
+wxBoxSizer *sizer = new wxBoxSizer(wxHORIZONTAL);  //  Sizer を作る
+wxButton *button1 = new wxButton(frame, ...);      //  部品１を作る。部品１の親は sizer ではなく親ウィンドウ。
+sizer->Add(button1, 1, wxALL | wxEXPAND, 3);       //  "1" は proportion で、水平方向にリサイズしない部品は０、リサイズする部品は正の値を入れる。同じサイザー内に複数の部品があるとき、この値が大きいものほど伸び縮みが大きくなる。"3" は部品の枠とサイザーの枠の間にとる余白のピクセル数を指定する。そして、どちらの方向に余白を置くかを wxALL, wxTOP, wxBOTTOM, wxRIGHT, wxLEFT で指定する。
+wxEXPAND は、この部品を垂直方向に一杯までリサイズする指定。縦方向は固定サイズなら、これは指定しない。
+sizer の高さを固定するには、どれかの部品に wxEXPAND を無指定とし、その部品の縦サイズを固定値で指定すればよい。
+部品を Add() で加えたあと、sizer->Layout() を呼ぶと、指示したようにレイアウトされる。複数のサイザーが入れ子になっている時は、一番外側のサイザーについて Layout() を呼べば十分。
+
+マウスドラッグを実装していて気がついたのだが、ドラッグ中に画面からマウスが外に出ると、そこでボタンを離してもウィンドウにマウスアップのイベントが来ないみたい。ドラッグ途中の状態で画面が残ってしまう。これはなんとかしないとまずいな。あんまりきれいな解決法がない。とりあえず、MouseEnter イベントをつかまえて、ドラッグ中でかつボタンが離されていれば MouseUp の処理をすることにした。
+-> wxWindow のメソッド CaptureMouse/ReleaseMouse を使えばよい。マウスダウンのハンドラで CaptureMouse() を呼べば、すべてのマウスイベントがこのウィンドウで処理される。マウスアップの際に ReleaseMouse() を呼べばよい。CaptureMouse() を使うウィンドウは wxMouseCaptureLostevent に反応しないといけない。
+
+C++ ってほんまわけわからんなあ。
+MyGLCanvas *MoleculeView::CreateCanvas(wxMDIChildFrame *parent, const wxSize &size);
+のつもりで、
+MyGLCanvas *MoleculeView::CreateCanvas(wxMDIChildFrame *parent, wxSize &size);
+と宣言・定義してしまい、次のように呼び出すと、
+CreateCanvas(frame, wxSize(100,100));
+こんなエラーが出る。
+error: no matching function for call to 'MoleculeView::CreateCanvas(wxMDIChildFrame*&, wxSize)'
+note: candidates are: MyGLCanvas* MoleculeView::CreateCanvas(wxMDIChildFrame*, wxSize&)
+このエラーメッセージから「あ、const が抜けてる」って思わなくちゃいけないの？　難しいねぇ。
+
+キーイベントの扱いが Mac と MSW で違う？　ウィンドウ内でフォーカスが当たっているコントロールがないとき、Mac では キーイベントを wxView で受け取れるのだが、MSW では受け取れない。どこ行っちゃってるんだろ？
+MyApp で EVT_KEY_DOWN をつかまえることはできた。しかし、これは逆に、フォーカスが当たっているコントロールがあるときもここを通るので、Skip() すべきかどうかの判断が難しい。
+キーボードフォーカスを誰が持っているかは wxWindow::FindFocus() で調べられることがわかった。しかし、たとえば MyGLCanvas がフォーカスを受け取れるようにするにはどうすればいいんだ？ wxWANTS_CHARS ではだめだった。→なんだ、簡単じゃないか。MyGLCanvas::OnMouseEvent() の中で this->SetFocus() すればいいんだ。そうすると、上のボタンが押された時とか、MySlider が操作された時も（ユーザーの意識はたぶん MyGLCanvas に向いているから）同じ処理をすればよいな。
+
+MySlider の実装。マウスイベントをつかまえたあと、コントロールごとの独自イベントを投げるやり方。
+
+const wxEventType MySliderEvent = wxNewEventType();
+void
+MySlider::OnMouseEvent(wxMouseEvent &event)
+{
+	...
+    wxCommandEvent event(MySliderEvent, GetId());
+    event.SetEventObject(this);
+	GetEventHandler()->ProcessEvent(event);
+}
+
+wxCommandEvent は "propagate" されるので、wxView のイベントテーブルを書いておけばつかまえることができる。
+
+BEGIN_EVENT_TABLE(MoleculeView, wxView)
+	...
+	EVT_COMMAND(wxID_ANY, MySliderEvent, MoleculeView::OnSliderAction)
+END_EVENT_TABLE()
+
+wxID_ANY の代わりに、MySlider の ID を指定すれば、スライダーごとに別のハンドラを呼び出すこともできる。
+
+command-. の処理だけど、もしかして ::wxGetKeyState() と ::wxGetMouseState() の組み合わせでいける？　イベントを取りにいかなくていいんだったら楽なのだが。
+（ところで、このキーは Windows では何を使うのがいいんだろう？）
+
+Ruby のリンクについて。Windows では、One-click Ruby Installer を使ってもらうことにする。そうなると、Mac OS 10.4 でも One-click Ruby Installer OSX を使ってもらうことにすれば、例のインタラプトの問題が解決するのでは？？
+One-click Ruby Installer OSX を試しに使ってみたが、/usr/local が散らかるのであまりよろしくない。それよりは、Ruby.framework を自前で作る方がまだよろしい。
+
+Ruby.framework の作り方。
+$ export ARCH_FLAG='-isysroot /Developer/SDKs/MacOSX10.4u.sdk -mmacosx-version-min=10.4 -arch i386 -arch ppc'
+$ CFLAGS="$ARCH_FLAG" ./configure --prefix=/Library/Frameworks/Ruby.framework/Versions/1.8/usr --enable-shared --disable-pthread
+$ make
+$ make install
+$ sh ruby-createframework.sh
+
+ruby-createframework.sh は ~/Development/UNIX/ に置いてある。本当はもうちょっとスマートにしたいところだが。
+
+開発マシンでは、こうやってできた Ruby.framework を /Library/Frameworks に置いておく。SDK の Library/Frameworks は実は /Library/Frameworks へのシンボリックリンクなので、SDK を使っていてもサーチパスに /Library/Frameworks を入れておけばちゃんとリンクできる。
+
+実行マシンでも、同じ Ruby.framework を /Library/Frameworks に置いておけば、これをリンクしてくれる。なお、素の Leopard では Ruby.framework は /System/Library/Frameworks にあるのだが、リンク先が /Library/Frameworks であっても、そこに見つからなければ /System/Library/Frameworks を探しにいってくれるので大丈夫。
+
+実際、Molby のビルドで、ruby.h のサーチパスを /Library/Frameworks/Ruby.framework/Versions/Current/usr/lib/ruby/1.8/universal-darwin8.0 （長っ！）、-lruby のサーチパスを /Library/Frameworks/Ruby.framework/Versions/Current/usr/lib にしてビルドしてみる。コンソールで puts RUBY_VERSION とすると、
+/Library/Frameworks に Ruby.framework あり：1.8.7
+/Library/Frameworks に Ruby.framework なし：1.8.6
+となる。
+上のサーチパスだが、実はビルドすると /Library/.../ruby/1.8/i686-darwin9.5.1/ というパスになっており、RUBY_PLATFORM も i686-darwin9.5.1 を返す。これを universal-darwin8.0 に変える方法をいろいろ考えたのだがどうしても思いつかなかった。Apple はどうやってるんだろう？
+
+2008.12.7.
+　テーブルビューを使おうと思い、wxGrid を入れてみたら、リンクエラーが出て wxGrid::wxGrid がないと言われた。サンプルプログラムの grid は通るので、wxMac のビルドが悪い訳ではない。grid の make が実行するコマンドを参考にして、リンカフラグに -lwx_macu_adv-2.8 を加えて解決。
+
+2009.7.21.
+　結局テーブルビューは wxListCtrl を使っているが、一番左のカラムしか編集できない。なんじゃそりゃ、と思ったが、要は Finder 系のリストビューを実現するためのクラスなので仕方がない。wxDataViewCtrl というのが開発中のようだが、まだ枯れている感じじゃないので、あまり使いたくない。結局、wxGenericListCtrl をベースにして、セル編集を独自にコーディングしてしのいでいる。まだあちこち変な動作をしているが。
+　wxMSW では、普通にコンパイルすると wxGenericListCtrl が使えないので困ってしまった。generic/listctrl.cpp をコピーしてきて、wx/generic/listctrl.h を include するように書き換えると一応動作する。wxWidgets の本体に修正を加えると GPL で配布しないといけなくなるから困るんだよな。なんとかならないものかな。→これはどうやら勘違いみたい。まだLGPLの解釈が今ひとつわかってない。
+
+2009.10.16.
+　大高さんに渡すために突貫工事でいろいろ実装して、なんとか単体で MD ができるようになった。現時点で明らかに残っている問題点：
+  MD 中に GUI が生きている。分子をいろいろ回したりして見られるのはいいのだが、編集までできてしまうのはまずい。また、MD を二重に走らせることができてしまうかもしれない。Ruby インタプリタはリエントラントでないので、排他処理をしないと危ない。そもそも、MD run を Ruby で実装しているのがまずいと思う。Ruby から md や minimize ができるのはいいのだが、メニューコマンドから走らせる md/minimize は C レベルで実装した方がいい。（できればマルチスレッド化したいし。）
+  パラメータを見ることができない。MDを初期化したあとだけでいいから、テーブルでパラメータを見たい。
+  MyListCtrl は MoleculeView 決めうちじゃなくて、独立したクラスにしておきたい。RubyDialog でも使えるといい。
+  まあ今はいろいろと忙しいので、１１月ぐらいになってからかな。
+
+2009.10.20.
+　といいつつプログラムを修正していたりする。
+  Ruby スクリプトを走らせるところを少し整理中。いくつか必要なインターフェイスがある。
+・MolAction を経由するもの。引数を（C レベルの値で）与えることができ、戻り値を（C レベルで）受け取ることもできる。引数・戻り値の型は MolAction のメッセージ中に指定する。
+Int ival; Double dval; char *sval;
+n = MolActionCreateAndPerform(mol, SCRIPT_ACTION_WITH_INTERRUPT("id;s"), "script", ival, dval, &sval);
+"script" のところに来るのは、メソッド名または Proc を与える文字列。メソッド名は Molecule[mol] のメソッドとして、Proc 文字列は Molecule[mol].instance_eval で Proc オブジェクトを作った上で call(arguments) を呼ぶ。戻り値は rb_protect の status。
+・引数を与えず、任意のスクリプトを実行するもの。スクリプトの戻り値は RubyValue として返され、エラーステータスは *status に返される。mol != NULL なら Molecule[mol].instance_eval で、mol == NULL ならトップレベルで実行される。
+val = Molby_evalRubyScriptOnMolecule(const char *script, Molecule *mol, int *status);
+
+インタラプトの有無を厳密に区別する必要もないかなあ。前は Ruby レベルでスレッドを使ったりしてトリッキーなコーディングをしていたが、1.8.7 をスタティックリンクすることにしたのでこのへんは関係なくなったしな。Ruby_SetInterrupt(val), Ruby_GetInterrupt() で十分対応できる。
+
+2009.10.21.
+　MD を C++ レベルで実行するようにした。排他処理は未実装。むしろ、もうマルチスレッド化していいんじゃないかと思う。現状では、２つ同時に MD を走らせると GUI がおかしくなり、終了時にフリーズ。理由は不明だが、gdb で見ると、pthread でデッドロックを起こしていた。
+　マルチスレッド化するには、Molecule に対するアクセスについて排他処理すればいい。サブスレッドは分子１つにつき１本に限り、走らせるのは MD と分子のアニメーションに限定すれば、それほど難しくはないんじゃないか。
+　メインスレッドから Molecule にアクセスするのは、メニューコマンドの実行・GUI 操作の時（Ruby スクリプトの実行を含む）。
+　MDArena の中に Molecule のローカルコピーを作るようにした。MM/MD の計算はローカルコピーに対して行われる。必要に応じて mb_copyback で明示的にコピーする。
+  arena->xmol は残しておく必要ないんじゃないか？（要検討）
+　一応動いているみたい。２つ分子を開いてそれぞれ MD を走らせると、むちゃくちゃ遅いけどちゃんと２つ同時に走る。なかなかのもんじゃないか。
+
+2009.10.30.
+　wxThread を使ったら MSW でビルドできなくなってしまった。当たり前で、wxMSW を --disable-thread でビルドしていたから。mingwm10.dll という DLL が必要になるので避けていたのだが、インストーラを使うようにしたのだから別に DLL 必要でもいいだろう。（参考：http://0xcc.net/pub/uu-2004-08/）
+インストーラ Inno Setup の解説。http://www.sutosoft.com/mt/devdiary/archives/000056.html（ちょっと古い）
+　今テストしたら、MD のログが Molby.exe のディレクトリに作成されてしまう、というバグを発見。これはなんとかしないと。→なんとかできた、と思う。ファイルが確定していない (unnamed の) ドキュメントについてはホームディレクトリに、それ以外はドキュメントと同じディレクトリに作る。ホームディレクトリだが、Windows では c:\Documents and Settings\username\ だが、このディレクトリはアクセスしづらいので、この上の My Documents の方がいい。Mac OS X はホームディレクトリでよい。
+　Windows で、DLL 依存関係の調べ方：objdump -p XXXX.exe | grep dll
+
+2009.11.6.
+　ドキュメントを書き始めた。効率よく書くためにいろいろと工夫。たくさんの html ファイルに分けて相互リンクしないといけないのだが、一部自動化してみたい。
+・それぞれのファイルに収めるべき内容を <div file="...."></div> の中に入れる。
+・リンクを明示するため、次の疑似命令を使う。
+  <link rel="Up" href="...">   [Up] リンク先。
+  <link rel="Prev" href="..."> [Prev] リンク先。[Next] は [Prev] の逆として自動生成。
+  <link id="#toc('....')"> '....' の一つ下のファイルのリストを生成。'....' が省略された場合は、すべてのファイル（入れ子になった下層のファイルもすべて含める）のリストを生成。
+  <link id="#header"> パンくずリストを生成。
+  <link id="#navigation"> ナビゲーション ([Up: ....][Prev: ....]等) を生成。
+  <div .... lang="en|ja"> と指定されている場合は、その節は英語版（日本語版）のみ生成する。
+  Ruby の REXML パッケージを使って、なんとか実装できた。Documents/ 以下がソースファイルで、cd Documents; ruby makedoc.rb とすると、../doc/ 以下に en, ja の２つのディレクトリができて、そこに html ファイルが生成される。
+  
+2009.11.11.
+wxStandardPaths::GetUserConfigDir() で初期設定のディレクトリが取得できるのだが、wxMac では最後に "/" がつくのに wxMSW では "\" がつかない。これは wxMac のバグじゃないかな。
+
+2009.11.14.
+　MM/MD の時の missing parameter の扱いを整理しよう。
+・md_prepare() では、すべての必要なパラメータを arena->par に登録する。mol 由来のものは src フィールド＝０、未定義のものは -1。→実装した。
+・md_prepare() の終了時に、mol->par を再構築する。mol 由来のものはそのまま残し、その他のものはいったん全部削除して arena->par からコピーし直す。後ろのものの方が優先されるので、グローバル→mol定義→未定義の順に並べる。→実装した。
+・Parameter テーブルでは、未定義パラメータは目立つように背景を赤か何かで表示する。→実装した。
+・Parameter テーブルの編集をサポート。グローバルパラメータは編集不可。mol由来、未定義のもののみ。→実装した
+行を選択して、パラメータごと削除する機能もつける。複製や新しいパラメータの作成も可能で、作成したものは未定義扱いになる。【未実装】
+・グローバルパラメータをファイルから読み込むときは、ファイル名を gGlobalParInfo.files/gGlobalParInfo.count に登録。ただし、最初の読み込み（gBuiltinParameters == NULL のとき）は特別扱いで、このファイル名は登録されない（default.par のはず）。また、このファイルは include 文のみを含んでいるはずで、その読み込みが終わった時点で gGlobalParInfo.builtinCount を設定。グローバル変数 gGlobalParInfo は Parameter.h で宣言する。→実装した
+・gGlobalParInfo.files の要素は、struct { char *name; char *dir; int src; }。src フィールドは、ソース名に対応するコメントインデックス。ソース名はファイル名から ".par" を除いたもので、同じものがあってはいけない（同じファイル名のものを読み込もうとするとエラーが出る）。→実装した
+・ドキュメント保存のときは、グローバルパラメータはソース名をコメント欄に埋め込んで保存する。読み込むときは、ソースが指定されているときはその時点でのグローバルパラメータを検索して、同じものがあればそれをソースとして置き換える。なければコメント欄にもとのソースをそのまま残す。→実装した。
+・ParEnumerable の定義が変。ローカルパラメータを見ているつもりでも、グローバルパラメータにフォールバックするようになっている。便利さを追求したつもりらしいが、わかりにくいよ。【要改善】
+・Parameter 編集の undo はどうであるべきか。グローバルパラメータの編集を禁止したので、普通のドキュメントレベルの undo でよい。
+
+2009.11.16.
+　コピーしたあと、同じドキュメント内でペーストすると、コピーしたのと全く同じ位置に原子がペーストされるので何が起きたかわからない。少しずらすべき。→実装した
+
+2009.11.20.
+　antechamber とのインターフェイスを作成中。OSX では一応動くようになった。
+
+2009.11.22.
+　GAMESS とのインターフェイス。GamessQ がなかなか使いやすそうなので、インターフェイス自体はこれに任せて、inp ファイルのエキスポートと log/dat ファイルのインポートに徹する。
+  3-21G  ->  GBASIS=N21 NGAUSS=3 ; H-Xe
+  6-31G  ->  GBASIS=N31 NGAUSS=6 ; H-Ar (Ga-Kr: BC)
+  6-31G* = 6-31G(d) ->  GBASIS=N31 NGAUSS=6 NDFUNC=1
+  6-31G** = 6-31G(d,p) -> GBASIS=N31 NGAUSS=6 NDFUNC=1 NPFUNC=1
+  6-311G -> GBASIS=N311 NGAUSS=6 ; H-Ne (Na-Ar: MC)
+  6-311G(d,p) -> GBASIS=N311 NGAUSS=6 NDFUNC=1 NPFUNC=1
+
+  LanL2DZ を使うときは、ECP が必要。対称性を持つと面倒だが、当面対称性は無視して常に "C1 0" でいく。$BASIS セクションは書かずに、全部の原子にそれぞれ基底関数を記述する。（こうすれば extbas が要らない。ただし見通しは悪くなる）混合基底を使うときも同様。
+
+  gamess.rb に Molecule.read_gamess_basis_sets(fname) というメソッドを作成。グローバル変数 $gamess_basis に基底関数の記述、$gamess_ecp に ECP の記述を保存する。$gamess_{ecp,basis} はハッシュで、その要素は（原子番号を添字とする）配列。値は複数行にわたる文字列で、最後に "\n" がついている。
+  GAMESS で 6-31G(d), 6-31G(d,p), 6-311G(d,p) の計算を行い、$DATA セクションの記述を出力しておいた。(d),(d,p) がついているものは、分極関数の係数が必要なので、ファイルにしておくのが便利。分極関数を使わないなら "N31 6" とかだけでよいので、特にファイルにしておく必要はない。STO-3G は "STO 3", PM3 は "PM3 0"。
+　一応動くようになった。「ZnだけLanL2DZ, 他は6-31G(d)」とかがダイアログ一発でできるのはたいへん便利。といっても、Gaussian では昔から普通に簡単にできたのだが。
+
+2009.12.13.
+  公開に向けていろいろと整理していて、MinGW 上で CLAPACK を再コンパイルしたら、テストの時に SIGSEGV で落ちる。gdb で見てみると、__do_global_dtors() 中の probe() という関数でクラッシュしている。dtors って C++？ C++ なんてどこにも使ってないぜ？　おかしいなと思って Google で探してみたら、こんな記事に遭遇。
+
+Re: [uClinux-dev] do_global_dtors problem
+From: David McCullough (davidm@snapgear.com)
+Date: Sun Nov 04 2001 - 17:37:38 EST
+（中略）
+> Has anyone else seen this behavior?  Isn't do_global_dtors
+> a c++ function?  Any enlightenment on the constructor/
+> destructor functions would be appreciated.
+
+It is unlikely that the problem is with do_global_dtors.   What happens
+is in the later version of gcc (ie 2.95) main calls __main which processes
+do_global_[cd]tors lists.  So you get them with 'C' as well.  Actually,  I
+think that atexit is processed this way,  but I may be wrong.
+
+The fact that the program has run to completion and then crashed would make
+me look at the stack size and see if it could be overflowing into the top
+of the BSS/data sections.
+
+  ひぇー、スタックサイズか。そんな落とし穴があったんか。ちなみに、MinGW でのデフォルトスタックサイズは 2MB らしい。FORTRAN プログラムを f2c でコンバートしたら、2MB を越える大量の自動変数を使うことになった、というのはあり得る話だ（確認してないけど）。そこで、make.inc に
+LOADOPTS = -Wl,--stack=33554432
+という１行を加えてみたら、見事にテスト通過。いやはや、これだから FORTRAN は。（というか f2c を使うというのがそもそも筋悪という話も。）
+

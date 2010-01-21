@@ -1,0 +1,27 @@
+/* XPM */
+static char *play_backward_xpm[] = {
+/* width height ncolors chars_per_pixel */
+"9 9 12 1",
+/* colors */
+"A c None",
+"B c #DEDEDEDEDEDE",
+"C c #CECECECECECE",
+"D c #BDBDBDBDBDBD",
+"E c #ADADADADADAD",
+"F c #9C9C9C9C9C9C",
+"G c #737373737373",
+"H c #6B6B6B6B6B6B",
+"I c #5A5A5A5A5A5A",
+"J c #424242424242",
+"K c #212121212121",
+"L c #000000000000",
+/* pixels */
+"AAAAAAAAA",
+"AAAAACILA",
+"AAAAFKLLA",
+"AADHLLLLA",
+"ABJLLLLLA",
+"AACGLLLLA",
+"AAAAEKLLA",
+"AAAAABILA",
+"AAAAAAAAA"};
