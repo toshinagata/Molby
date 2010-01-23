@@ -690,7 +690,7 @@ s_CommentToString(char *buf, int bufsize, void *bp)
 int
 ParameterReadFromString(Parameter *par, char *buf, char **wbufp, const char *fname, int lineNumber, int src_idx)
 {
-	int i, len;
+	int i, len, options;
 	char com[12], com2[12], type[4][8];
 	Int itype[4];
 	float val[6];  /*  not Double  */
@@ -757,6 +757,7 @@ ParameterReadFromString(Parameter *par, char *buf, char **wbufp, const char *fna
 	if (src_idx == 0)
 		src = NULL;
 	else src = ParameterGetComment(src_idx);
+	options = kParameterLookupNoWildcard | kParameterLookupNoBaseAtomType;
 	if (strncmp(com, "bond", len) == 0) {
 		BondPar *bp;
 		if (sscanf(buf, " %11s %4s %4s %f %f %n", com2, type[0], type[1], &val[0], &val[1], &n) < 5) {
@@ -771,7 +772,7 @@ ParameterReadFromString(Parameter *par, char *buf, char **wbufp, const char *fna
 			itype[1] = i;
 		}
 		val[0] *= KCAL2INTERNAL;
-		bp = ParameterLookupBondPar(par, itype[0], itype[1], 1);
+		bp = ParameterLookupBondPar(par, itype[0], itype[1], options);
 		if (bp != NULL) {
 			if (bp->k != val[0] || bp->r0 != val[1]) {
 				s_AppendWarning(wbufp, "%s:%d: The BOND %s-%s parameter appeared twice; the values (%f, %f) are used\n", fname, lineNumber, AtomTypeDecodeToString(itype[0], type[0]), AtomTypeDecodeToString(itype[1], type[1]), val[0], val[1]);
@@ -800,7 +801,7 @@ ParameterReadFromString(Parameter *par, char *buf, char **wbufp, const char *fna
 		}
 		val[0] *= KCAL2INTERNAL;
 		val[1] *= (3.14159265358979 / 180.0);
-		ap = ParameterLookupAnglePar(par, itype[0], itype[1], itype[2], 1);
+		ap = ParameterLookupAnglePar(par, itype[0], itype[1], itype[2], options);
 		if (ap != NULL) {
 			if (ap->k != val[0] || ap->a0 != val[1]) {
 				s_AppendWarning(wbufp, "%s:%d: The ANGLE %s-%s-%s parameter appeared twice; the values (%f, %f) are used\n", fname, lineNumber, AtomTypeDecodeToString(itype[0], type[0]), AtomTypeDecodeToString(itype[1], type[1]), AtomTypeDecodeToString(itype[2], type[2]), val[0], val[1]);
@@ -832,7 +833,7 @@ ParameterReadFromString(Parameter *par, char *buf, char **wbufp, const char *fna
 			itype[1] = itype[2];
 			itype[2] = i;
 		}
-		dp = ParameterLookupDihedralPar(par, itype[0], itype[1], itype[2], itype[3], 1);
+		dp = ParameterLookupDihedralPar(par, itype[0], itype[1], itype[2], itype[3], options);
 		val[0] *= KCAL2INTERNAL;
 		val[1] *= 3.14159265358979 / 180.0;
 		if (dp != NULL) {
@@ -876,7 +877,7 @@ ParameterReadFromString(Parameter *par, char *buf, char **wbufp, const char *fna
 			itype[1] = itype[3];
 			itype[3] = i;
 		}
-		ip = ParameterLookupImproperPar(par, itype[0], itype[1], itype[2], itype[3], 1);
+		ip = ParameterLookupImproperPar(par, itype[0], itype[1], itype[2], itype[3], options);
 		val[0] *= KCAL2INTERNAL;
 		val[1] *= 3.14159265358979 / 180.0;
 		if (ip != NULL) {

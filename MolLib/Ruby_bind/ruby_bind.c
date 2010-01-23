@@ -961,6 +961,7 @@ static VALUE s_ParameterRef_GetIndex(VALUE self) {
 static VALUE s_ParameterRef_GetParType(VALUE self) {
 	Int tp;
 	s_UnionParFromValue(self, &tp, 0);
+	tp -= kFirstParType;
 	if (tp >= 0 && tp < sizeof(s_ParameterTypeNames) / sizeof(s_ParameterTypeNames[0]))
 		return rb_str_new2(s_ParameterTypeNames[tp]);
 	else rb_raise(rb_eMolbyError, "Internal error: parameter type tag is out of range (%d)", tp);
@@ -1345,10 +1346,11 @@ s_ScanAtomTypes(VALUE val, Int n, UInt *types)
 				/*  Skip leading blanks  */
 				while (*s == ' ' || *s == '\t')
 					s++;
-				p = strchr(s, '-');
-				if (p == NULL)
-					len = strlen(s);
-				else len = p - s;
+				for (p = s; *p != 0; p++) {
+					if (*p == '-' || *p == ' ' || *p == '\t')
+						break;
+				}
+				len = p - s;
 				if (len >= sizeof(buf))
 					len = sizeof(buf) - 1;
 				strncpy(buf, s, len);
@@ -1362,7 +1364,7 @@ s_ScanAtomTypes(VALUE val, Int n, UInt *types)
 					types[i] = atoi(buf);
 				else
 					types[i] = AtomTypeEncodeToUInt(buf);
-				if (p == NULL) {
+				if (p == NULL || *p == 0) {
 					i++;
 					break;
 				} else s = p + 1;
@@ -3041,7 +3043,7 @@ s_ParEnumerable_Delete(VALUE self, VALUE ival)
  *     ParEnumerable.lookup(atom_type_string, options, ...) -> ParameterRef
  *
  *  Find the parameter record that matches the given atom types. The atom types are given
- *  either as an array of string, or a single string delimited by whitespaces.
+ *  either as an array of string, or a single string delimited by whitespaces or hyphens.
  *  Options are given as symbols. Valid values are :global (look for global parameters), :local
  *  (look for local parameters), :missing (look for missing parameters), :nowildcard (do not 
  *  allow wildcard matching), :nobasetype (the base type does not match for the variant types)
