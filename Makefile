@@ -45,6 +45,9 @@ all: $(DESTPREFIX) $(DESTPREFIX)/$(PRODUCT)
 $(DESTPREFIX) :
 	mkdir -p $(DESTPREFIX)
 
+$(DESTPREFIX)/amber11 : ../amber11/src/antechamber/*.[ch] ../amber11/src/sqm/*.f ../amber11/src/config.h
+	make -f Makefile_amber11
+
 ifeq ($(TARGET_PLATFORM),MSW)
 EXTRA_OBJECTS = listctrl.o
 RESOURCE = molby_rc.o
@@ -78,7 +81,7 @@ DESTOBJECTS = $(addprefix $(DESTPREFIX)/,$(ALL_OBJECTS))
 $(DESTPREFIX)/$(EXECUTABLE) : $(DESTOBJECTS)
 	$(CC) -o $@ $(DESTOBJECTS) $(CFLAGS) $(LDFLAGS)
 
-$(DESTPREFIX)/$(PRODUCT) : $(DESTPREFIX)/$(EXECUTABLE) ../Scripts/*.rb
+$(DESTPREFIX)/$(PRODUCT) : $(DESTPREFIX)/$(EXECUTABLE) ../Scripts/*.rb $(DESTPREFIX)/amber11
 ifeq ($(TARGET_PLATFORM),MAC)
 	rm -rf $(DESTPREFIX)/$(PRODUCT)
 	mkdir -p $(DESTPREFIX)/$(PRODUCT)/Contents/MacOS
@@ -86,6 +89,7 @@ ifeq ($(TARGET_PLATFORM),MAC)
 	cp -f Info.plist $(DESTPREFIX)/$(PRODUCT)/Contents
 	echo -n "APPL????" > $(DESTPREFIX)/$(PRODUCT)/Contents/PkgInfo
 	cp -r ../Scripts $(DESTPREFIX)/$(PRODUCT)/Contents/Resources
+	cp -r $(DESTPREFIX)/amber11 $(DESTPREFIX)/$(PRODUCT)/Contents/Resources
 	mkdir -p $(DESTPREFIX)/$(PRODUCT)/Contents/Resources/Scripts/lib
 	for i in $(RUBY_EXTLIB); do cp $(RUBY_DIR)/lib/$$i $(DESTPREFIX)/$(PRODUCT)/Contents/Resources/Scripts/lib; done
 	cp $(DESTPREFIX)/$(EXECUTABLE) $(DESTPREFIX)/$(PRODUCT)/Contents/MacOS
@@ -96,6 +100,7 @@ ifeq ($(TARGET_PLATFORM),MSW)
 	cp $(DESTPREFIX)/$(EXECUTABLE) $(DESTPREFIX)/$(PRODUCT_DIR)/$(FINAL_EXECUTABLE)
 	cp `which mingwm10.dll` $(DESTPREFIX)/$(PRODUCT_DIR)
 	cp -r ../Scripts $(DESTPREFIX)/$(PRODUCT_DIR)
+	cp -r $(DESTPREFIX)/amber11 $(DESTPREFIX)/$(PRODUCT_DIR)
 	mkdir -p $(DESTPREFIX)/$(PRODUCT_DIR)/Scripts/lib
 	for i in $(RUBY_EXTLIB); do cp $(RUBY_DIR)/lib/$$i $(DESTPREFIX)/$(PRODUCT_DIR)/Scripts/lib; done
 endif

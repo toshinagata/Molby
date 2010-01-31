@@ -814,17 +814,24 @@ sRemoveDirectoryRecursively(const wxString &dir)
 void
 MyDocument::OnInvokeAntechamber(wxCommandEvent &event)
 {
-	/*  Ask for antechamber options and log directory  */
-	char *ante_dir, *log_dir, *log_level, buf[256];
-	Int net_charge, i, j, n, log_keep_number;
+	char *ante_dir;
+	char *log_dir, *log_level, buf[256];
+	Int net_charge, i, j, n, log_keep_number, calc_charge, use_residue;
 	int status;
+
+	/*  Find the ambertool directory  */
+	wxString ante = MyApp::FindResourcePath() + wxFileName::GetPathSeparator() + _T("amber11") + wxFileName::GetPathSeparator() + _T("bin");
+	ante_dir = strdup(ante.mb_str(wxConvFile));
+
+	/*  Ask for antechamber options and log directory  */
 	MolActionCreateAndPerform(mol, SCRIPT_ACTION(";i"), "cmd_antechamber", &n);
 	if (!n)
 		return;
-	if ((status = MyAppCallback_getGlobalSettingsWithType("antechamber.ante_dir", 's', &ante_dir))
-		|| (status = MyAppCallback_getGlobalSettingsWithType("antechamber.nc", 'i', &net_charge))
+	if ((status = MyAppCallback_getGlobalSettingsWithType("antechamber.nc", 'i', &net_charge))
 		|| (status = MyAppCallback_getGlobalSettingsWithType("antechamber.log_level", 's', &log_level))
 		|| (status = MyAppCallback_getGlobalSettingsWithType("antechamber.log_keep_number", 'i', &log_keep_number))
+		|| (status = MyAppCallback_getGlobalSettingsWithType("antechamber.calc_charge", 'i', &calc_charge))
+		|| (status = MyAppCallback_getGlobalSettingsWithType("antechamber.use_residue", 'i', &use_residue))
 		|| (status = MyAppCallback_getGlobalSettingsWithType("antechamber.log_dir", 's', &log_dir))) {
 		Molby_showError(status);
 		return;
@@ -855,17 +862,65 @@ MyDocument::OnInvokeAntechamber(wxCommandEvent &event)
 		MyAppCallback_errorMessageBox("Cannot move to the temporary directory '%s'", (const char *)tdir.mb_str(wxConvUTF8));
 		return;
 	}
-	if (MoleculeWriteToPdbFile(mol, "mol.pdb", buf, sizeof(buf))) {
-		MyAppCallback_errorMessageBox("PDB export error: %s", buf);
-		wxFileName::SetCwd(cwd);
-		return;
+	{
+		Int *resno;
+		char *resnames;
+		Atom *ap;
+		resno = (Int *)calloc(sizeof(Int), mol->natoms);
+		resnames = (char *)calloc(sizeof(char), mol->natoms * 4);
+		if (resno == NULL || resnames == NULL) {
+			MyAppCallback_errorMessageBox("Cannot save current residue informations (out of memory)");
+			return;
+		}
+		if (!use_residue) {
+			for (i = 0, ap = mol->atoms; i < mol->natoms; i++, ap = ATOM_NEXT(ap)) {
+				resno[i] = ap->resSeq;
+				memmove(resnames + i * 4, ap->resName, 4);
+				ap->resSeq = 1;
+				memmove(resnames + i * 4, "RES", 4);
+			}
+		}
+		n = MoleculeWriteToPdbFile(mol, "mol.pdb", buf, sizeof(buf));
+		if (!use_residue) {
+			for (i = 0, ap = mol->atoms; i < mol->natoms; i++, ap = ATOM_NEXT(ap)) {
+				ap->resSeq = resno[i];
+				memmove(ap->resName, resnames + i * 4, 4);
+			}
+		}
+		free(resno);
+		free(resnames);
+		if (n != 0) {
+			MyAppCallback_errorMessageBox("PDB export error: %s", buf);
+			wxFileName::SetCwd(cwd);
+			return;
+		}
 	}
 	
 	{
 		/*  Run antechamber and parmck  */
 		char *p;
-		asprintf(&p, "%s/antechamber -i mol.pdb -fi pdb -o mol.ac -fo ac -nc %d -c bcc", ante_dir, net_charge);
-	/*	printf("Calling subprocess: %s\n", p);  */
+
+		/*  Set AMBERHOME environment variable if necessary  */
+		n = strlen(ante_dir);
+		if (n >= 4) {
+			p = ante_dir + n - 3;
+			if ((p[-1] == '\\' || p[-1] == '/') && (strcmp(p, "bin") == 0 || strcmp(p, "exe") == 0)) {
+				n -= 4;
+			}
+		}
+		snprintf(buf, sizeof buf, "%.*s", n, ante_dir);
+		p = getenv("AMBERHOME");
+		if (p == NULL || strcmp(p, buf) != 0) {
+			asprintf(&p, "AMBERHOME=%s", buf);
+			putenv(p);
+		}
+		
+		if (calc_charge) {
+			snprintf(buf, sizeof buf, "-nc %d -c bcc", net_charge);
+		} else buf[0] = 0;
+
+		asprintf(&p, "%s/antechamber -i mol.pdb -fi pdb -o mol.ac -fo ac %s", ante_dir, buf);
+
 		status = MyAppCallback_callSubProcess(p, "antechamber");
 		if (status == 0) {
 			asprintf(&p, "%s/parmchk -i mol.ac -f ac -o frcmod", ante_dir);
@@ -878,12 +933,24 @@ MyDocument::OnInvokeAntechamber(wxCommandEvent &event)
 		status = MolActionCreateAndPerform(mol, SCRIPT_ACTION("s"), "import_ac", (const char *)acfile.mb_str(wxConvUTF8));
 		if (status != 0) {
 			MyAppCallback_errorMessageBox("Cannot import antechamber output.");
-		} else {
-			wxString frcmodfile = tdir + wxFileName::GetPathSeparator() + _T("frcmod");
-			status = MolActionCreateAndPerform(mol, SCRIPT_ACTION("s"), "import_frcmod", (const char *)frcmodfile.mb_str(wxConvUTF8));
+		}
+	}
+	
+	if (calc_charge && status == 0) {
+		wxString sqmfile = tdir + wxFileName::GetPathSeparator() + _T("sqm.out");
+		if (wxFileName::FileExists(sqmfile)) {
+			status = MolActionCreateAndPerform(mol, SCRIPT_ACTION("s"), "import_sqmout", (const char *)sqmfile.mb_str(wxConvUTF8));
 			if (status != 0) {
-				MyAppCallback_errorMessageBox("Cannot import parmchk output.");
+				MyAppCallback_errorMessageBox("Cannot import sqm output.");
 			}
+		}
+	}
+
+	if (status == 0) {
+		wxString frcmodfile = tdir + wxFileName::GetPathSeparator() + _T("frcmod");
+		status = MolActionCreateAndPerform(mol, SCRIPT_ACTION("s"), "import_frcmod", (const char *)frcmodfile.mb_str(wxConvUTF8));
+		if (status != 0) {
+			MyAppCallback_errorMessageBox("Cannot import parmchk output.");
 		}
 	}
 	

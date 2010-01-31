@@ -5,7 +5,7 @@
     An Interactive Molecular Modeling Software
         with Integrated Ruby Interpreter
   
-          Version 0.5.0 build 20100121
+          Version 0.5.1 build 20100131
 
                   Toshi Nagata
 
@@ -29,13 +29,14 @@ Molby runs on Mac OS X (10.4 and later) and Microsoft Windows (XP and later). Ex
 
 Molby is a copyrighted product of Toshi Nagata.
 
-       Copyright (C) 2009 Toshi Nagata
+       Copyright (C) 2009-2010 Toshi Nagata
 
 Molby includes (more technically: is statically linked to) the following softwares, which are copyrighted products as described below:
 
 - wxWidgets 2.8.9: Copyright (C) 1992-2008 Julian Smart, Robert Roebling, Vadim Zeitlin and other members of the wxWidgets team. Portions (c) 1996 Artificial Intelligence Applications Institute
 - Ruby 1.8.7: Copyright (C) 1993-2009 Yukihiro Matsumoto
 - CLAPACK: Copyright (c) 1992-2008 The University of Tennessee.
+- AmberTools 1.3: Copyright (c) Junmei Wang, Ross C. Walker, Michael F. Crowley, Scott Brozell and David A. Case
 
 Molby is distributed under the GNU General Public License (version 2). See the file COPYING for more details.
 
@@ -181,4 +182,6 @@ $ make setup  #  To make the installer
 
 
 2010.1.21.
+2010.1.31. Added notice on AmberTools1.3
+
 Toshi Nagata

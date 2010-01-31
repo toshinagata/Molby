@@ -81,7 +81,8 @@ STUB void RubyDialogCallback_setStateForItem(RDItem *item, int state);
 STUB int RubyDialogCallback_getStateForItem(RDItem *item);
 STUB void RubyDialogCallback_setHiddenForItem(RDItem *item, int flag);
 STUB int RubyDialogCallback_isItemHidden(RDItem *item);
-	
+STUB void RubyDialogCallback_setNeedsDisplay(RDItem *item, int flag);
+
 STUB int RubyDialogCallback_countSubItems(RDItem *item);
 STUB int RubyDialogCallback_appendSubItem(RDItem *item, const char *s);
 STUB int RubyDialogCallback_insertSubItem(RDItem *item, const char *s, int pos);

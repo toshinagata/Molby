@@ -14,7 +14,7 @@ year = t.year
 month = t.month
 day = t.day
 d = sprintf("%04d%02d%02d", year, month, day)
-exit 0 if date == d
+# exit 0 if date == d
 File.open("Version", "w") { |fp|
   fp.print "version = \"#{version}\"\n"
   fp.print "date = \"#{d}\"\n"
@@ -87,6 +87,15 @@ modify_file("wxSources/MyVersion.c") { |s|
 #  Modify doc_source.html
 modify_file("Documents/src/doc_source.html") { |s|
   if s =~ /Version/ && s.sub!(/[Vv][-.0-9 A-Za-z_]*/, "Version #{ver} #{build}")
+    s
+  else
+    nil
+  end
+}
+
+#  Modify README
+modify_file("README") { |s|
+  if s =~ /        Version/ && s.sub!(/[Vv][-.0-9 A-Za-z_]*/, "Version #{ver} #{build}")
     s
   else
     nil

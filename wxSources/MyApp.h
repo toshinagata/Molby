@@ -127,7 +127,9 @@ class MyApp: public wxApp
 
 //	void OnReadParameters(wxCommandEvent& event);
 
+	static wxString FindResourcePath();
 	static wxString DefaultSettingsPath();
+
 	void LoadDefaultSettings();
 	void SaveDefaultSettings();
 	void SetDefaultSetting(const wxString& key, const wxString& value);

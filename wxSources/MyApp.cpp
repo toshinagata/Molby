@@ -86,8 +86,8 @@ END_EVENT_TABLE()
 //  Mac: the "Resources" directory in the application bundle.
 //  Windows: the directory in which the application executable is located.
 //  UNIX: ?
-static wxString
-wxFindResourcePath()
+wxString
+MyApp::FindResourcePath()
 {
 #if defined(__WXMAC__)
 	CFBundleRef mainBundle = CFBundleGetMainBundle();
@@ -125,7 +125,7 @@ wxFindResourcePath()
         return wxPathOnly(str);
     return wxEmptyString;
 #else
-#error "wxFindResourcePath is not defined for UNIXes."
+#error "FindResourcePath is not defined for UNIXes."
 #endif
 }
 
@@ -227,7 +227,7 @@ bool MyApp::OnInit(void)
 	/*  Initialize Ruby interpreter with the startup script  */
 	{
 		static const char fname[] = "startup.rb";
-		wxString dirname = wxFindResourcePath();
+		wxString dirname = FindResourcePath();
 		char *wbuf;
 	
 		dirname += wxFILE_SEP_PATH;
@@ -907,8 +907,8 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname)
 				buf[len] = 0;
 				len_total += len;
 				fprintf(fplog, "%s", buf);
-			/*	MyAppCallback_setConsoleColor(0);
-				MyAppCallback_showScriptMessage("%s", buf); */
+				MyAppCallback_setConsoleColor(0);
+				MyAppCallback_showScriptMessage("%s", buf);
 			}
 		}
 		while (err->CanRead()) {
@@ -917,9 +917,9 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname)
 				buf[len] = 0;
 				len_total += len;
 				fprintf(fplog, "%s", buf);
-			/*	MyAppCallback_setConsoleColor(1);
+				MyAppCallback_setConsoleColor(1);
 				MyAppCallback_showScriptMessage("\n%s", buf);
-				MyAppCallback_setConsoleColor(0);  */
+				MyAppCallback_setConsoleColor(0); 
 			}
 		}
 	}
@@ -954,7 +954,10 @@ void MyFrame::OnAbout(wxCommandEvent& WXUNUSED(event) )
 	char *s;
 	asprintf(&s, 
 			 "%s\n%s\n\n"
-			 "Built by use of:\n"
+			 "Including:\n"
+			 "AmberTools 1.3, http://ambermd.org/\n"
+			 "  Copyright (c) Junmei Wang, Ross C. Walker, \n"
+			 "  Michael F. Crowley, Scott Brozell and David A. Case\n"
 			 "wxWidgets %d.%d.%d, Copyright (c) 1992-2008 Julian Smart, \n"
 			 "  Robert Roebling, Vadim Zeitlin and other members of the \n"
 			 "  wxWidgets team\n"

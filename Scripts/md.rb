@@ -380,6 +380,7 @@ class Molecule
 		super
 	  end
 	  layout(2,
+=begin
 		item(:text, :title=>"Ambertools directory:"),
 		[ item(:button, :title=>"Choose...",
 			:action=>proc { |n|
@@ -400,6 +401,16 @@ class Molecule
 			}
 		  ), {:align=>:right} ],
 		item(:textfield, :width=>360, :height=>40, :tag=>"ante_dir", :value=>ante_dir),
+		-1,
+=end
+		item(:checkbox, :title=>"Optimize structure and calculate charges (may be slow)", :tag=>"calc_charge", :value=>(get_global_settings("antechamber.calc_charge") || 0),
+		  :action=>proc { |n| set_attr("nc", :enabled=>(attr(n, :value) != 0)) } ),
+		-1,
+		item(:text, :title=>"      Net Molecular Charge:"),
+		item(:textfield, :width=>"80", :tag=>"nc", :value=>(get_global_settings("antechamber.nc") || "0")),
+		item(:checkbox, :title=>"Use the residue information", :tag=>"use_residue", :value=>(get_global_settings("antechamber.use_residue") || 0)),
+		-1,
+		item(:line),
 		-1,
 		item(:text, :title=>"Log directory:"),
 		[ item(:button, :title=>"Choose...",
@@ -425,11 +436,9 @@ class Molecule
 		  item(:radio, :title=>"Keep All", :tag=>"log_all", :value=>(log_level == "all" ? 1 : 0)),
 		  {:margin=>0, :padding=>0}
 		),
-		-1,
-		item(:text, :title=>"Net Molecular Charge:"),
-		item(:textfield, :width=>"80", :tag=>"nc", :value=>(get_global_settings("antechamber.nc") || "0"))
+		-1
 	  )
-	  set_attr(0, :enabled=>valid_antechamber_dir(ante_dir))
+	  set_attr("nc", :enabled=>(attr("calc_charge", :value) == "1"))
     }
 	#  The hash values are set in the action() method
 #	print "retval = #{hash ? 1 : 0}\n"
@@ -507,6 +516,26 @@ class Molecule
 		ap = atoms[idx]
 		ap.charge = charge
 		ap.atom_type = type
+	  end
+	}
+  end
+  
+  def import_sqmout(file)
+    open(file, "r") { |fp|
+	  while (s = fp.gets)
+	    next if s !~ /Final Structure/
+		s = fp.gets
+		s = fp.gets
+		s = fp.gets
+		idx = 0
+		while (s = fp.gets)
+		  break if s !~ /QMMM/
+		  a = s.split
+		  r = Vector3D[Float(a[4]), Float(a[5]), Float(a[6])]
+		  atoms[idx].r = r
+		  idx += 1
+		end
+		break
 	  end
 	}
   end

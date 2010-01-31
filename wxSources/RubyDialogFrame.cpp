@@ -537,6 +537,13 @@ RubyDialogCallback_isItemHidden(RDItem *item)
 	return !(((wxWindow *)item)->IsShown());
 }
 
+void
+RubyDialogCallback_setNeedsDisplay(RDItem *item, int flag)
+{
+	if (flag)
+		((wxWindow *)item)->Refresh();
+}
+
 int
 RubyDialogCallback_countSubItems(RDItem *item)
 {

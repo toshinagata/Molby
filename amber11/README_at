@@ -1,0 +1,24 @@
+This is release 1.3 of AmberTools.  The majority of the codes are licensed
+under the GPL, but some pieces are in the public domain, or have other license
+provisions.  See the file "LICENSE_at" for license information.
+
+AmberTools currently consists of several codes that were previously 
+released separately, and two new ones:
+
+    nucleic acid builder (NAB):  http://www.scripps.edu/case/nab.html
+    antechamber:                 http://amber.scripps.edu/antechamber
+    ptraj:           http://www.chpc.utah.edu/~cheatham/software.html
+    tleap, pbsa:                             http://amber.scripps.edu
+    sleap:                                   replace and expand tleap
+    sqm:                        carry out semi-empirical and SCC-DFTB
+                                       quantum chemistry calculations
+
+Future versions will add additional functionality as it becomes available.
+
+To access the installation instructions,  uncompress the tar file:
+
+        cd <some location you prefer>
+        tar xvfj AmberTools-1.3.tar.bz2
+
+Then read section 1.2 of the amber11/doc/AmberTools.pdf file.
+

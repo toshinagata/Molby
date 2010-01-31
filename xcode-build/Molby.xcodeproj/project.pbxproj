@@ -51,6 +51,7 @@
 		E4A4667610C15B4300E40A9D /* listctrl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E4A4667410C15B4300E40A9D /* listctrl.cpp */; };
 		E4C0C4960F25734B00161EC2 /* Dcd.c in Sources */ = {isa = PBXBuildFile; fileRef = E4C0C4950F25734B00161EC2 /* Dcd.c */; };
 		E4C8CBDF10B83060006C4692 /* MyDocManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E4C8CBDE10B83060006C4692 /* MyDocManager.cpp */; };
+		E4CFBB3B111096CF0081C481 /* amber11 in Resources */ = {isa = PBXBuildFile; fileRef = E4CFBB16111096CF0081C481 /* amber11 */; };
 		E4E2D5C510A249820007644A /* GlobalParameterFrame.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E4E2D5C410A249820007644A /* GlobalParameterFrame.cpp */; };
 		E4E470C910AE6F8600F72B68 /* GlobalParameterFilesFrame.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E4E470C810AE6F8600F72B68 /* GlobalParameterFilesFrame.cpp */; };
 		E4FFA9050EE960650045EDF9 /* RubyDialogFrame.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E4FFA9040EE960650045EDF9 /* RubyDialogFrame.cpp */; };
@@ -142,6 +143,7 @@
 		E4CBF38C10A91EAC00C7C74A /* doc_source.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; name = doc_source.html; path = ../Documents/src/doc_source.html; sourceTree = SOURCE_ROOT; };
 		E4CBF39510A91ED500C7C74A /* style.css */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.css; name = style.css; path = ../Documents/etc/style.css; sourceTree = SOURCE_ROOT; };
 		E4CBF39710A91EDA00C7C74A /* makedoc.rb */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.ruby; name = makedoc.rb; path = ../Documents/makedoc.rb; sourceTree = SOURCE_ROOT; };
+		E4CFBB16111096CF0081C481 /* amber11 */ = {isa = PBXFileReference; lastKnownFileType = folder; name = amber11; path = build/amber11; sourceTree = "<group>"; };
 		E4E2D5C310A249820007644A /* GlobalParameterFrame.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = GlobalParameterFrame.h; path = ../wxSources/GlobalParameterFrame.h; sourceTree = SOURCE_ROOT; };
 		E4E2D5C410A249820007644A /* GlobalParameterFrame.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = GlobalParameterFrame.cpp; path = ../wxSources/GlobalParameterFrame.cpp; sourceTree = SOURCE_ROOT; };
 		E4E470C710AE6F8600F72B68 /* GlobalParameterFilesFrame.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = GlobalParameterFilesFrame.h; path = ../wxSources/GlobalParameterFilesFrame.h; sourceTree = SOURCE_ROOT; };
@@ -192,7 +194,7 @@
 			isa = PBXGroup;
 			children = (
 				29B97315FDCFA39411CA2CEA /* Sources */,
-				E4CBF39010A91EBA00C7C74A /* doc */,
+				E4CBF39010A91EBA00C7C74A /* Document_source */,
 				E4A02338106B64F80094DBF8 /* Resources */,
 				29B97323FDCFA39411CA2CEA /* Frameworks */,
 				19C28FACFE9D520D11CA2CBB /* Products */,
@@ -340,20 +342,21 @@
 			children = (
 				E4A02346106B65640094DBF8 /* molby_icon.icns */,
 				E4A0234A106B657D0094DBF8 /* Scripts */,
+				E4CFBB16111096CF0081C481 /* amber11 */,
 				E4A0233F106B652F0094DBF8 /* InfoPlist.strings */,
 				E4A0233B106B651C0094DBF8 /* Info.plist */,
 			);
 			name = Resources;
 			sourceTree = "<group>";
 		};
-		E4CBF39010A91EBA00C7C74A /* doc */ = {
+		E4CBF39010A91EBA00C7C74A /* Document_source */ = {
 			isa = PBXGroup;
 			children = (
 				E4CBF38C10A91EAC00C7C74A /* doc_source.html */,
 				E4CBF39510A91ED500C7C74A /* style.css */,
 				E4CBF39710A91EDA00C7C74A /* makedoc.rb */,
 			);
-			name = doc;
+			name = Document_source;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -403,6 +406,7 @@
 				E4A02341106B652F0094DBF8 /* InfoPlist.strings in Resources */,
 				E4A02347106B65640094DBF8 /* molby_icon.icns in Resources */,
 				E4A02357106B657D0094DBF8 /* Scripts in Resources */,
+				E4CFBB3B111096CF0081C481 /* amber11 in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -420,7 +424,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "if [ \"$BUILD_STYLE\" = \"Release\" ]; then\n  cd $PROJECT_DIR/..\n  /usr/bin/ruby \"update_version.rb\"\n  cd Documents\n  /usr/bin/ruby \"makedoc.rb\"\nfi\n\n";
+			shellScript = "export TARGET_PLATFORM=MAC\nexport PATH=/usr/local/bin:$PATH\nif [ \"$BUILD_STYLE\" = \"Release\" ]; then\n  cd $PROJECT_DIR/..\n  /usr/bin/ruby \"update_version.rb\"\n  cd Documents\n  /usr/bin/ruby \"makedoc.rb\"\nfi\n(cd $PROJECT_DIR; make -f ../Makefile_amber11)\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 

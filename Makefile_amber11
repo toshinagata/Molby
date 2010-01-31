@@ -1,0 +1,17 @@
+#  Usage: make -f Makefile_amber11 (in XXXX_build directory)
+#  Build AmberTools in ./build/amber11-build
+#  and copy necessary files into ./build/amber11
+#  Assumes the source tree of the original AmberTools is in ../amber11
+
+OPWD = $(PWD)
+
+build/amber11 : ../amber11/src/antechamber/*.[ch] ../amber11/src/sqm/*.f ../amber11/src/config.h
+	(cd ../amber11; find src -type d -exec mkdir -p $(OPWD)/build/amber11-build/{} ';'; find src -not -type d -exec cp -p {} $(OPWD)/build/amber11-build/{} ';')
+	(export AMBERHOME=$(OPWD)/build/amber11-build && cd build/amber11-build/src && make) 
+	rm -rf build/amber11
+	mkdir -p build/amber11/dat/leap/parm
+	cp -p ../amber11/dat/leap/parm/{gaff,parm99}.dat build/amber11/dat/leap/parm
+	cp -rp ../amber11/dat/antechamber build/amber11/dat
+	mkdir -p build/amber11/bin
+	cp -r build/amber11-build/bin/{am1bcc,atomtype,parmchk,antechamber,bondtype,sqm}* build/amber11/bin
+

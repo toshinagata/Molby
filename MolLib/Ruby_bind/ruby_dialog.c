@@ -299,6 +299,7 @@ s_RubyDialog_SetAttr(VALUE self, VALUE tag, VALUE hash)
 			rb_hash_aset(item, key, val);
 		}
 	}
+	RubyDialogCallback_setNeedsDisplay(view, 1);
 	return Qnil;
 }
 
