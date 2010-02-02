@@ -1532,8 +1532,8 @@ static VALUE s_ParameterRef_SetMult(VALUE self, VALUE val) {
 		int i;
 		val = rb_Integer(val);
 		i = NUM2INT(val);
-		if (i <= 0 || i > 3)
-			rb_raise(rb_eMolbyError, "torsion multiplicity should be 1..3");
+		if (i < 0 || i > 3)
+			rb_raise(rb_eMolbyError, "torsion multiplicity should be 0..3");
 		up->torsion.mult = i;
 	} else rb_raise(rb_eMolbyError, "invalid member mult");
 	s_RegisterUndoForParameterAttrChange(self, s_MultSym, val, oldval, oldsrc);
@@ -1887,8 +1887,12 @@ static VALUE s_ParameterRef_SetComment(VALUE self, VALUE val) {
 	up = s_UnionParFromValue(self, &tp, 1);
 	oldval = s_ParameterRef_GetComment(self);
 	oldsrc = up->bond.src;
-	com = ParameterCommentIndex(StringValuePtr(val));
-	up->bond.com = com;
+	if (val == Qnil)
+		up->bond.com = 0;
+	else {
+		com = ParameterCommentIndex(StringValuePtr(val));
+		up->bond.com = com;
+	}
 	s_RegisterUndoForParameterAttrChange(self, s_CommentSym, val, oldval, oldsrc);	
 	return val;	
 }
