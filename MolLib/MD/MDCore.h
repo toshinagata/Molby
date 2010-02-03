@@ -267,6 +267,11 @@ typedef struct MDArena {
 
 	Int    natoms_uniq;     /*  Number of symmetry-unique atoms  */
 	
+	Vector *ring;           /*  Ring buffer for sending coordinates between threads */
+	Int    nringframes;     /*  Number of frames in the ring buffer (2000 / natoms)  */
+	Int    ring_next;       /*  Next frame index to store data  */
+	Int    ring_count;      /*  Number of frames currently in the ring buffer  */
+
 	/*  Parameters are copied from mol->par and gBuiltinParameters for each call to md_prepare()  */
 	Parameter *par;
 	

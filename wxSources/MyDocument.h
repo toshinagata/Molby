@@ -30,6 +30,7 @@ enum {
 	MyDocumentEvent_documentModified,
 	MyDocumentEvent_scriptMenuModified,
 	MyDocumentEvent_updateDisplay,
+	MyDocumentEvent_insertFrameFromMD,
 	MyDocumentEvent_threadTerminated
 };
 
@@ -70,6 +71,8 @@ public:
 	void	UpdateModifyFlag();
 	void	BeginUndoGrouping();
 	void	EndUndoGrouping();
+
+	virtual bool Close();
 	
 	void    OnNeedCleanUndoStack(wxCommandEvent& event);
 
@@ -115,6 +118,7 @@ public:
 	void	OnCreateGamessInput(wxCommandEvent &event);
 	void	OnCreateMOCube(wxCommandEvent &event);
 	
+	void	OnInsertFrameFromMD(wxCommandEvent &event);
 	void	OnUpdateDisplay(wxCommandEvent &event);
 	void	OnSubThreadTerminated(wxCommandEvent &event);
 	

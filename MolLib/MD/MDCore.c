@@ -1588,6 +1588,18 @@ md_prepare(MDArena *arena, int check_only)
 		arena->pair_forces = NULL;
 	}
 
+	/*  Allocate ring buffer   */
+	if (arena->ring != NULL)
+		free(arena->ring);
+	arena->nringframes = 2000 / mol->natoms;
+	if (arena->nringframes == 0)
+		arena->nringframes = 1;
+	arena->ring = (Vector *)malloc(sizeof(Vector) * mol->natoms * arena->nringframes);
+	if (arena->ring == NULL)
+		md_panic(arena, ERROR_out_of_memory);
+	arena->ring_next = 0;
+	arena->ring_count = 0;
+
 	/*  Initialize temperature statistics  */
 	arena->sum_temperature = 0.0;
 	arena->nsum_temperature = 0;
@@ -3016,6 +3028,8 @@ md_arena_release(MDArena *arena)
 		free(arena->old_pos);
 	if (arena->graphite != NULL)
 		graphite_release(arena->graphite);
+	if (arena->ring != NULL)
+		free(arena->ring);
 	free(arena);
 }
 

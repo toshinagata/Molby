@@ -64,6 +64,7 @@ const wxEventType MyDocumentEvent = wxNewEventType();
 BEGIN_EVENT_TABLE(MyDocument, wxDocument)
 	EVT_COMMAND(MyDocumentEvent_willNeedCleanUndoStack, MyDocumentEvent, MyDocument::OnNeedCleanUndoStack)
 	EVT_COMMAND(MyDocumentEvent_documentModified, MyDocumentEvent, MyDocument::OnDocumentModified)
+	EVT_COMMAND(MyDocumentEvent_insertFrameFromMD, MyDocumentEvent, MyDocument::OnInsertFrameFromMD)
 	EVT_COMMAND(MyDocumentEvent_updateDisplay, MyDocumentEvent, MyDocument::OnUpdateDisplay)
 	EVT_COMMAND(MyDocumentEvent_threadTerminated, MyDocumentEvent, MyDocument::OnSubThreadTerminated)
 	EVT_MENU(myMenuID_Import, MyDocument::OnImport)
@@ -396,6 +397,20 @@ MyDocument::CleanUndoStack(bool shouldRegister)
 	currentCommand = NULL;
 }
 
+bool
+MyDocument::Close()
+{
+	if (mol != NULL && mol->mutex != NULL) {
+		const char *msg;
+		if (subThreadKind == 1)
+			msg = "MM/MD";
+		else msg = "Some background process";
+		MyAppCallback_errorMessageBox("%s is running: please stop it before closing", msg);
+		return false;
+	}
+	return true;
+}
+
 void
 MyDocument::OnNeedCleanUndoStack(wxCommandEvent& event)
 {
@@ -650,8 +665,7 @@ sDoMolecularDynamics(void *argptr, int argnum)
 		mol->arena->end_step = mol->arena->start_step;
 		md_main(mol->arena, minimize);
 	} else if (count > 0) {
-		IntGroup *ig;
-		wxCommandEvent displayEvent(MyDocumentEvent, MyDocumentEvent_updateDisplay);
+		wxCommandEvent insertFrameEvent(MyDocumentEvent, MyDocumentEvent_insertFrameFromMD);
 		for (i = 0; i < count; i++) {
 			
 			mol->arena->end_step = mol->arena->start_step + mol->arena->coord_output_freq;
@@ -662,17 +676,30 @@ sDoMolecularDynamics(void *argptr, int argnum)
 					r = -1;
 				else {
 
-					/*  Create a new frame and copy the new coordinates  */
+					/*  Copy the coordinate to the ring buffer  */
+					Vector *rp = mol->arena->ring + mol->natoms * mol->arena->ring_next;
+					Int j;
+					Atom *ap;
 					MoleculeLock(mol);
+					for (j = 0, ap = mol->arena->mol->atoms; j < mol->natoms; j++, ap = ATOM_NEXT(ap)) {
+						rp[j] = ap->r;
+					}
+					mol->arena->ring_next = (mol->arena->ring_next + 1) % mol->arena->nringframes;
+					if (mol->arena->ring_count < mol->arena->nringframes)
+						mol->arena->ring_count++;
+					MoleculeUnlock(mol);
+					
+					/*  Create a new frame and copy the new coordinates  */
+				/*	MoleculeLock(mol);
 					ig = IntGroupNewWithPoints(MoleculeGetNumberOfFrames(mol), 1, -1);
 					MolActionCreateAndPerform(mol, gMolActionInsertFrames, ig, 0, NULL);
 					IntGroupRelease(ig);					
 					md_copy_coordinates_from_internal(mol->arena);
-					MoleculeUnlock(mol);
+					MoleculeUnlock(mol); */
 
 					if (minimize && mol->arena->minimize_complete)
 						break;
-					wxPostEvent(doc, displayEvent);
+					wxPostEvent(doc, insertFrameEvent);
 				}
 			}
 			if (r != 0)
@@ -724,6 +751,33 @@ MyDocument::OnStopMDRun(wxCommandEvent &event)
 {
 	if (mol != NULL && mol->mutex != NULL)
 		mol->requestAbortThread = 1;
+}
+
+void
+MyDocument::OnInsertFrameFromMD(wxCommandEvent &event)
+{
+	Int i, j, n, old_nframes;
+	Atom *ap;
+
+	/*  Create new frame(s) and copy the new coordinates from the ring buffer  */
+	MoleculeLock(mol);
+	n = mol->arena->ring_count;
+	if (n > 0) {
+		IntGroup *ig;
+		Vector *rp;
+		old_nframes = MoleculeGetNumberOfFrames(mol);
+		ig = IntGroupNewWithPoints(old_nframes, n, -1);
+		MolActionCreateAndPerform(mol, gMolActionInsertFrames, ig, 0, NULL);
+		IntGroupRelease(ig);
+		for (i = 0; i < n; i++) {
+			MoleculeSelectFrame(mol, old_nframes + i, 1);
+			rp = mol->arena->ring + ((mol->arena->ring_next + mol->arena->nringframes - n + i) % mol->arena->nringframes) * mol->natoms;
+			for (j = 0, ap = mol->atoms; j < mol->natoms; j++, ap = ATOM_NEXT(ap))
+				ap->r = rp[j];
+		}
+		mol->arena->ring_count = 0;
+	}
+	MoleculeUnlock(mol);
 }
 
 void
