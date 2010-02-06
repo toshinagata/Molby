@@ -13,13 +13,13 @@
 <div class="centered" lang="en">
 <h1>Molby</h1>
 <h2>An Interactive Molecular Modeling Software<br />with Integrated Ruby Interpreter</h2>
-<h3>Version 0.5.1 build 20100131</h3> <!-- version -->
+<h3>Version 0.5.1 build 20100206</h3> <!-- version -->
 <h3>Toshi Nagata</h3>
 </div>
 <div class="centered" lang="ja">
 <h1>Molby</h1>
 <h2>対話型分子モデリングソフトウェア<br />（Ruby インタプリタ内蔵）</h2>
-<h3>Version 0.5.1 build 20100131</h3> <!-- version -->
+<h3>Version 0.5.1 build 20100206</h3> <!-- version -->
 <h3>永田　央</h3>
 </div>
 <hr />
@@ -59,7 +59,8 @@ Molby is an application to visualize and build molecular models interactively th
 <ul>
 <li>Viewing molecular models in either ball-and-stick or "line" display.</li>
 <li>Interactive modification of molecular models by mouse operation.</li>
-<li>Viewing and editing atomic coordinates and other parameters in numeric tables.</li>
+<li>Optimization of the structure by molecular mechanics calculation. Also capable is the molecular dynamics calculation.</li>
+<li>Viewing and editing atomic coordinates, molecular mechanics atom typs, and other parameters in tables.</li>
 <li>Importing and exporting structure/coordinate data for other program packages such as Gaussian, GAMESS, NAMD and SHELX.</li>
 <li>Embedded Ruby interpreter for automated processing of molecular models.</li>
 </ul>
@@ -72,7 +73,8 @@ Molby は、分子を 3D 表示して、画面上で分子モデルを構築す�
 <ul>
 <li>分子を ball-and-stick または「線」で表示できます。</li>
 <li>分子モデルをマウス操作で編集できます。</li>
-<li>原子座標などのパラメータを、数値テーブルで編集できます。</li>
+<li>分子力学計算による構造最適化ができます。分子動力学計算も可能です。</li>
+<li>原子座標や分子力学の原子タイプなどのパラメータを、テーブルで編集できます。</li>
 <li>Gaussian, GAMESS, NAMD, SHELX などの他のプログラムパッケージのファイルを読み込み／書き出しできます。</li>
 <li>分子モデルの操作を自動化できるように Ruby インタプリタを内蔵しています。</li>
 </ul>
@@ -198,12 +200,15 @@ Molbyフォルダの中にアンインストーラがあります。「スター
 Molby is a copyrighted product of Toshi Nagata.
 </p>
 <p>
-Copyright (C) 2009 Toshi Nagata <!-- copyright -->
+Copyright (C) 2009-2010 Toshi Nagata <!-- copyright -->
 </p>
 <p>
-Molby includes (more technically: is statically linked to) the following softwares, which are copyrighted products as described below:
+Molby includes the following softwares, which are copyrighted products as described below:
 </p>
 <ul>
+<li>
+<a href="http://ambermd.org/">AmberTools 1.3</a>: Copyright (C) Junmei Wang, Ross C. Walker, Michael F. Crowley, Scott Brozell and David A. Case
+</li>
 <li>
 <a href="http://www.wxwidgets.org/">wxWidgets 2.8.9</a>: Copyright (C) 1992-2008 Julian Smart, Robert Roebling, Vadim Zeitlin and other members of the wxWidgets team. Portions (c) 1996 Artificial Intelligence Applications Institute
 </li>
@@ -211,7 +216,7 @@ Molby includes (more technically: is statically linked to) the following softwar
 <a href="http://www.ruby-lang.org/">Ruby 1.8.7</a>: Copyright (C) 1993-2009 Yukihiro Matsumoto
 </li>
 <li>
-<a href="http://www.netlib.org/clapack/">CLAPACK</a>: Copyright (c) 1992-2008 The University of Tennessee.  All rights reserved.
+<a href="http://www.netlib.org/clapack/">CLAPACK</a>: Copyright (C) 1992-2008 The University of Tennessee.  All rights reserved.
 </li>
 </ul>
 
@@ -247,12 +252,15 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 Molby の著作権は永田　央が保持しています。
 </p>
 <p>
-Copyright (C) 2009 Toshi Nagata <!-- copyright -->
+Copyright (C) 2009-2010 Toshi Nagata <!-- copyright -->
 </p>
 <p>
-Molby は以下のソフトウェアを含んでいます（静的にリンクしています）。それぞれの著作権表示は下の通りです。
+Molby は以下のソフトウェアを含んでいます。それぞれの著作権表示は下の通りです。
 </p>
 <ul>
+<li>
+<a href="http://ambermd.org/">AmberTools 1.3</a>: Copyright (C) Junmei Wang, Ross C. Walker, Michael F. Crowley, Scott Brozell and David A. Case
+</li>
 <li>
 <a href="http://www.wxwidgets.org/">wxWidgets 2.8.9</a>: Copyright (C) 1992-2008 Julian Smart, Robert Roebling, Vadim Zeitlin and other members of the wxWidgets team. Portions (c) 1996 Artificial Intelligence Applications Institute
 </li>
@@ -714,35 +722,205 @@ Make one more iteration to make the octamer.
 <link id="#navigation" />
 </div>
 
-<div file="proptable.html">
+<div file="mm_minimize.html">
 <link rel="Up" href="tutorials.html" />
 <link rel="Prev" href="cut_copy_paste.html" />
 <link id="#header" />
 <div class="contents" lang="en">
-<h1>Step Four: Edit a Molecule: Using a Property Table</h1>
+<h1>Step Four: Energy Minimization by Molecular Mechanics</h1>
+<h2>1. About Molecular Mechanics Implementation in Molby</h2>
+<p>
+The molecular models built by hand generally include unnatural bond lengths, bond angles, van der Waals contacts, and so on. Molecular mechanics is a useful technique to remove such unnatural structures.
+</p>
+<p>
+Molby implements molecular mechanics calculation by use of basic force fields, including bond stretching, angle bending, dihedral rotation, improper torsions, van der Waals interaction, and electrostatic interaction. With the exception of the electrostatic interaction, the parameters are taken from the predefined table by looking up the "atom types" assigned to the atoms.
+</p>
+<p>
+By default, Molby uses <span class="italic">gaff</span> parameter set. Gaff, "General AMBER Force Field",   is a part of <a href="http://ambermd.org/">AMBER molecular dynamics package</a>; the force field parameters are made public domain by courtesy of the AMBER developers. Molby also includes <span class="italic">parm99</span> parameter set, another AMBER force field that is widely used for biomolecules.
+</p>
+<p>
+The troublesome part in using force fields is how to assign atom types. The AMBER developers provides a useful set of programs to take care of this problem. Thanks again to the AMBER developers, these programs, named AmberTools, are now made public (open source under GPLv2). Molby includes some of these programs, and calls and imports the results.
+</p>
+<p>
+Following are the original papers published by the AMBER team. Please be sure to refer to them in your publication when you use the AMBER parameters or AmberTools.
+</p>
+<ul>
+<li>Wang, J.; Wolf, R.M.; Caldwell, J.W.; Kollamn, P.A.; Case, D.A. Development and testing of a general Amber force field. <span class="italic">J. Comput. Chem.,</span> <span class="bold">2004,</span> <span class="italic">25,</span> 1157–1174.</li>
+<li>Wang, B.; Merz, K.M. Jr. A fast QM/MM (quantum mechanical/molecular mechanical) approach to calculate nuclear magnetic resonance chemical shifts for macromolecules. <span class="italic">J. Chem. Theory Comput.,</span> <span class="bold">2006,</span> <span class="italic">2,</span> 209–215. </li>
+</ul>
+<h2>2. Energy Minimization How-to</h2>
+<p>
+Now we try energy minimization. We use 2,2'-dimethoxybiphenyl as an example.
+</p>
+<p><img src="../etc/biphenyl.png" /> 2,2'-dimethoxybiphenyl</p>
+<p>
+Build this molecule. The easiest way is, (1) double-click the empty editing area and type "C6H5C6H5", (2) select one ortho hydrogen, double-click, and type "OCH3", (3) repeat (2) for another ortho hydrogen on the other ring.
+</p>
+<p><img src="../etc/tutorial_40.png" /></p>
+<p>
+Open the "MM/MD" menu, and select "antechamber/parmchk..." command in the "Tools" submenu.
+</p>
+<p><img src="../etc/tutorial_41.png" /></p>
+<p>
+A dialog like below shows up. Turn off the first two checkboxes. The "log" directory is used by AmberTools for storing intermediate files; the default value would be acceptable, but you can change it here.
+</p>
+<p><img src="../etc/tutorial_42.png" /></p>
+<p>
+After pressing "OK", two dialog boxes appear in turn. They disappear so quickly that you may not recognize what they are saying; actually, the first one says "Running antechamber" and the second one "Running parmchk." These are programs included in AmberTools. In the present case, both programs complete successfully, and the following dialog appears.
+</p>
+<p><img src="../etc/tutorial_43.png" /></p>
+<p>
+Press "OK", and you will return to the molecule window. Do you notice what change has been made? It is the atom types that are modified. Specifically, the types of the atoms 0 and 10 are changed from "ca" to "cp".
+</p>
+<p><img src="../etc/tutorial_44.png" /></p>
+<p>
+If you are wondering what "ca" or "cp" mean, look at the global parameter table (MM/MD → View Global Parameters...), and find comment(s) in the "vdw" record.
+</p>
+<p><img src="../etc/tutorial_45.png" /></p>
+<p>
+Return to the molecule, and select MM/MD → Minimize.
+</p>
+<p><img src="../etc/tutorial_46.png" /></p>
+<p>
+A setting dialog opens. "Steps per frame" means the screen is updated every this number of steps. "Number of frames" means the maximum number of "frames" (i.e. screen updates) to calculate. If the minimization completes before this number of frames, the calculation will stop. The numbers 10 and 200 are reasonable choice in many cases.
+</p>
+<p><img src="../etc/tutorial_47.png" /></p>
+<p>
+Press "OK", and minimization starts. As you expect, the dihedral angle between the two phenyl rings becomes large. The calculation will stop after 200 frames. You can see the number "199" at the right bottom of the window, and the slider at the bottom of the window is now active. Move the slider, and you can see how the molecular structure changed during the minimization.
+</p>
+<p><img src="../etc/tutorial_48.png" /></p>
+<p>
+If you save this molecule at this stage, all the frames will be also saved (when you select the "mbsf" format), and the resulting file may be very large. If you do not want this, then you can remove all the frames by use of "Delete Frames..." command in the "Script" menu.
+</p>
+<p><img src="../etc/tutorial_49.png" /></p>
+<p><img src="../etc/tutorial_50.png" /></p>
+<h2>3. Handling electrostatic interaction</h2>
+<p>
+The above description is sufficient for initial cleanup of the molecular structure. However, we should go one further step to take electrostatic interaction into consideration. This is particularly important in molecules with polar functional groups (such as carbonyl).
+</p>
+<p>
+Continue our study on 2,2'-dimethoxybiphenyl. Open "MM/MD" → "Tools" → "Antechamber/parmchk...", and this time turn on the top checkbox. Also make sure the net molecular charge is correct.
+</p>
+<p><img src="../etc/tutorial_51.png" /></p>
+<p>
+Press "OK", and calculation starts. This time the calculation should take much longer than before, because semi-empirical calculation is carried out for optimizing the structure and getting the partial charges.
+</p>
+<p><img src="../etc/tutorial_52.png" /></p>
+<p>
+When calculation is done, the molecular structure may change, because structure optimization has been done by semi-empirical calculation. However, even more important is the "charge" values. You can see the charge values by scrolling the table to the right. By use of these "charge" values, interaction energies of the polar functional groups can be taken into account.
+</p>
+<p><img src="../etc/tutorial_53.png" /></p>
+<p>
+Note that the atomic charges given in the above method are derived from semi-empirical quantum chemical calculations. On the other hand, it is generally considered that the charges derived from ab initio calculations are better. Molby does not have capability to perform ab initio calculations, but it can help creating necessary input files for external quantum chemical programs. This will be described elsewhere in this User's Manual (not yet written, but coming soon).
+</p>
 </div>
 <div class="contents" lang="ja">
-<h1>第四段階：分子を編集する：属性テーブルを使う</h1>
+<h1>第四段階：分子力学計算によるエネルギー最小化</h1>
+<h2>1. Molby の分子力学計算について</h2>
+<p>
+手作業で作成した分子モデルは、不自然な結合長、結合角、van der Waals 接触などを含んでいます。このような不自然な構造を修正するには、分子力学のテクニックが便利です。
+</p>
+<p>
+Molby の分子力学計算は、基本的な分子力場（結合の伸縮、結合角のたわみ、二面角の回転、improper torsion、van der Waals 相互作用、静電相互作用）に基づいています。静電相互作用以外については、パラメータのセットが用意してあり、原子に与えられた「原子タイプ」から必要なパラメータを取り出して計算に使います。
+</p>
+<p>
+デフォルトでは、Molby は <span class="italic">gaff</span> パラメータセットを使います。Gaff は "General AMBER Force Field" の略で、<a href="http://ambermd.org/">AMBER 分子動力学パッケージ</a>の一部です。AMBER 開発者の好意により、分子力場パラメータはパブリックドメインとされています。なお、Molby は <span class="italic">parm99</span> パラメータセットも同梱しています。これも AMBER の分子力場であり、生体分子の計算に広く使われています。
+</p>
+<p>
+分子力場を使うときに厄介なのは、原子タイプをどうやって指定するかです。AMBER には、このための便利なプログラム AmberTools が含まれています。これもまた AMBER 開発者の好意により、AmberTools はフリーソフトウェア（GPLv2）として公開されています。Molby は AmberTools のプログラムの一部を同梱しています。
+</p>
+<p>
+以下の論文は AMBER 開発チームによるものです。AMBER パラメータや AmberTools プログラムの機能を使った場合は、発表論文にこれらの論文を引用してください。
+</p>
+<ul>
+<li>Wang, J.; Wolf, R.M.; Caldwell, J.W.; Kollamn, P.A.; Case, D.A. Development and testing of a general Amber force field. <span class="italic">J. Comput. Chem.,</span> <span class="bold">2004,</span> <span class="italic">25,</span> 1157–1174.</li>
+<li>Wang, B.; Merz, K.M. Jr. A fast QM/MM (quantum mechanical/molecular mechanical) approach to calculate nuclear magnetic resonance chemical shifts for macromolecules. <span class="italic">J. Chem. Theory Comput.,</span> <span class="bold">2006,</span> <span class="italic">2,</span> 209–215. </li>
+</ul>
+<h2>2. エネルギー最小化の方法</h2>
+<p>
+さて、エネルギー最小化をやってみましょう。例として 2,2'-ジメトキシビフェニルを使うことにします。
+</p>
+<p><img src="../etc/biphenyl.png" /> 2,2'-ジメトキシビフェニル</p>
+<p>
+この分子のモデルを作ってください。簡単なやり方は、(1) 空の編集エリアでダブルクリックして "C6H5C6H5" とタイプする。(2) オルト位の水素原子を１つ選択し、ダブルクリックして "OCH3" とタイプする。(3) もう１つの環のオルト位の水素原子について、(2) を繰り返す。
+</p>
+<p><img src="../etc/tutorial_40.png" /></p>
+<p>
+"MM/MD"メニューを開き、"Tools" サブメニューから "Antechamber/parmchk..." コマンドを実行します。
+</p>
+<p><img src="../etc/tutorial_41.png" /></p>
+<p>
+下のようなダイアログが現れます。上の２つのチェックボックスをオフにしてください。"Log" ディレクトリは、AmberTools のプログラムが中間ファイルを保存するのに使います。デフォルトの位置で問題はないでしょうが、変更してもかまいません。
+</p>
+<p><img src="../etc/tutorial_42.png" /></p>
+<p>
+"OK"を押すと、２つのダイアログが順に現れます。すぐに消えてしまうので、何と書いてあるか読めないかも知れません。最初のものは "Running antechamber", ２つめのものは "Running parmchk" と書いてあります。これらは AmberTools に含まれているプログラムです。今の場合は、両方とも正しく実行され、次のダイアログが現れます。
+</p>
+<p><img src="../etc/tutorial_43.png" /></p>
+<p>
+"OK"を押して、分子のウィンドウに戻ってください。何が変わったかわかるでしょうか？　変わったのは原子タイプです。具体的には、原子０と原子１０のタイプが "ca" から "cp" に変わっています。
+</p>
+<p><img src="../etc/tutorial_44.png" /></p>
+<p>
+"ca" や "cp" が何の意味か知りたければ、"MM/MD" メニューから "View Global Parameters..." を選んでみてください。Molby に同梱されているパラメータの一覧表が出てきます。"vdw" （van der Waals パラメータの意味ですが、原子タイプの定義も兼ねています）の中で "ca", "cp" を見つけて、表の右端にあるコメントを見てみてください。
+</p>
+<p><img src="../etc/tutorial_45.png" /></p>
+<p>
+分子のウィンドウに戻り、"MM/MD" → "Minimize" を選んでください。
+</p>
+<p><img src="../etc/tutorial_46.png" /></p>
+<p>
+設定ダイアログが開きます。"Steps per frame" は、構造最適化計算がこのステップ数進んだところで画面を更新する、という意味です。"Number of frames" は、この数だけ画面を更新したら計算を止める、という意味です。その前に構造最適化が終了すれば、その時点で計算は止まります。下の図にある 10, 200 を入れておけば、たいていの場合はよいでしょう。
+</p>
+<p><img src="../etc/tutorial_47.png" /></p>
+<p>
+"OK" を押すと、構造最適化が始まります。この分子の場合、期待される通り、２つのベンゼン環の間の二面角がだんだん大きくなります。指定通り、200回画面が更新されると計算は止まります。ウィンドウの右下に "199" という数字があり、ウィンドウの下辺にあるスライダーが有効になっています。更新された画面は、それぞれ独立したフレームとして保存されており、このスライダーを動かすと、初期状態からどのように構造が変わって行くかを再現することができます。
+</p>
+<p><img src="../etc/tutorial_48.png" /></p>
+<p>
+この時点で分子を "mbsf" フォーマットで保存すると、全部のフレームの情報が保存され、ファイルがとても大きくなります。これが好ましくない場合は、現在表示されている以外のフレームを削除することもできます。"Script" メニューから "Delete Frames..." コマンドを使ってください。
+</p>
+<p><img src="../etc/tutorial_49.png" /></p>
+<p><img src="../etc/tutorial_50.png" /></p>
+<h2>3. 静電相互作用の取り扱い</h2>
+<p>
+上の説明は、分子構造のひずみを取り除く最初の段階としては十分です。しかしながら、次の段階として、静電相互作用を考慮しなければなりません。特に、カルボニル基などの極性官能基が含まれている場合は、これは重要です。
+</p>
+<p>
+2,2'-ジメトキシビフェニルについて検討を続けましょう。"MM/MD" → "Tools" → "Antechamber/parmchk...", を開き、今度は一番上のチェックボックスをオンにします。そして、分子の総電荷が正しいことを確認してください。この場合は中性分子なので、"0" で結構です。
+</p>
+<p><img src="../etc/tutorial_51.png" /></p>
+<p>
+"OK" を押すと、計算が始まります。今度は、前回よりもずっと長く計算時間がかかります。半経験的分子軌道法により、構造最適化と部分電荷の計算を行うからです。
+</p>
+<p><img src="../etc/tutorial_52.png" /></p>
+<p>
+計算が終了すると、分子構造は少し変化することがあります。半経験的分子軌道計算で構造最適化が行われたからです。また、"charge" の値が設定されていることがわかります。テーブルを右にスクロールすると、与えられた電荷の値を見ることができます。この電荷の値を用いて静電相互作用の計算を行うことにより、極性官能基の相互作用エネルギーをより正しく見積もることができます。
+</p>
+<p><img src="../etc/tutorial_53.png" /></p>
+<p>
+上の方法で計算した電荷は、半経験的分子軌道計算によるものです。一方、一般的には ab initio 計算で求めた電荷の方が良いと考えられています。Molby は ab initio 計算を行う機能を持っていませんが、外部の量子化学計算プログラムへの入力ファイルを作成する機能があります。これは、このマニュアルの別のところで解説します（まだできていませんが、近いうちに）。
+</p>
 </div>
 <link id="#navigation" />
 </div>
 
-<div file="mm_minimize.html">
+<div file="proptable.html">
 <link rel="Up" href="tutorials.html" />
-<link rel="Prev" href="proptable.html" />
+<link rel="Prev" href="mm_minimize.html" />
 <link id="#header" />
 <div class="contents" lang="en">
-<h1>Step Five: Energy Minimization by Molecular Mechanics</h1>
+<h1>Step Five: Edit a Molecule: Using a Property Table</h1>
 </div>
 <div class="contents" lang="ja">
-<h1>第五段階：分子力学計算によるエネルギー最小化</h1>
+<h1>第五段階：分子を編集する：属性テーブルを使う</h1>
 </div>
 <link id="#navigation" />
 </div>
 
 <div file="qchem.html">
 <link rel="Up" href="tutorials.html" />
-<link rel="Prev" href="mm_minimize.html" />
+<link rel="Prev" href="proptable.html" />
 <link id="#header" />
 <div class="contents" lang="en">
 <h1>Step Six: Collaboration with Other Quantum Chemistry Softwares</h1>

@@ -46,7 +46,7 @@ $(DESTPREFIX) :
 	mkdir -p $(DESTPREFIX)
 
 $(DESTPREFIX)/amber11 : ../amber11/src/antechamber/*.[ch] ../amber11/src/sqm/*.f ../amber11/src/config.h
-	make -f Makefile_amber11
+	make -f ../Makefile_amber11
 
 ifeq ($(TARGET_PLATFORM),MSW)
 EXTRA_OBJECTS = listctrl.o
