@@ -88,9 +88,9 @@ ValueFromVector(const Vector *vp)
 
 /*
  *  call-seq:
- *     Vector3D.new
- *     Vector3D.new(vector3d)
- *     Vector3D.new(ary)
+ *     new
+ *     new(Vector3D)
+ *     new(Array)
  *
  *  Returns a new Vector3D object. In the first form, a zero vector
  *  is returned. In the second form, the given vector3d is duplicated.
@@ -111,7 +111,7 @@ s_Vector3D_Initialize(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     vector3d.size -> int
+ *     size -> Integer
  *  
  *  Returns 3. This method is present only to be consistent with classes like
  *  Array or Vector.
@@ -124,9 +124,9 @@ s_Vector3D_Size(VALUE self)
 
 /* 
  *  call-seq:
- *     vector3d[index]             -> float
+ *     self[index]        -> Float
  *
- *  Element Reference---Returns the element at _index_. If _index_ is
+ *  Element Reference---Returns the element at the given index. If the index is
  *  less than 0 or more than 2, an exception is thrown.
  */
 static VALUE
@@ -144,7 +144,7 @@ s_Vector3D_ElementAtIndex(VALUE self, VALUE val)
 
 /* 
  *  call-seq:
- *     vector3d[index] = float
+ *     self[index] = val
  *
  *  Element Assignment---Set the element at _index_. If _index_ is
  *  less than 0 or more than 2, an exception is thrown.
@@ -169,7 +169,7 @@ s_Vector3D_SetElementAtIndex(VALUE self, VALUE idx, VALUE val)
 
 /* 
  *  call-seq:
- *     vector3d == other_vector3d   ->   bool
+ *     self == val   ->   bool
  *
  *  Equality---Two vector3ds are equal if their elements are all equal.
  *  Usual caution about comparison between floating point numbers should be
@@ -188,9 +188,9 @@ s_Vector3D_IsEqual(VALUE self, VALUE val)
 
 /* 
  *  call-seq:
- *     vector3d + other_vector3d   ->   (new) vector3d
+ *     self + val   ->   (new) Vector3D
  *
- *  Add two vectors element by element.
+ *  Add two vectors element by element. Val is converted to Vector3D.
  */
 static VALUE
 s_Vector3D_Add(VALUE self, VALUE val)
@@ -208,9 +208,9 @@ s_Vector3D_Add(VALUE self, VALUE val)
 
 /* 
  *  call-seq:
- *     vector3d - other_vector3d   ->   (new) vector3d
+ *     self - val   ->   (new) Vector3D
  *
- *  Subtract two vectors element by element.
+ *  Subtract two vectors element by element. Val is converted to Vector3D.
  */
 static VALUE
 s_Vector3D_Subtract(VALUE self, VALUE val)
@@ -228,9 +228,11 @@ s_Vector3D_Subtract(VALUE self, VALUE val)
 
 /* 
  *  call-seq:
- *     vector3d.dot(other_vector3d) ->  float
+ *     self.dot(val) ->  Float
  *
- *  Calculate the dot (inner) product of the two vectors. See also <code>vector3d.*</code>.
+ *  Calculate the dot (inner) product of the two vectors. Val is converted to Vector3D.
+ *
+ *  <b>See Also:</b> Vector3D.*
  */
 static VALUE
 s_Vector3D_Dot(VALUE self, VALUE val)
@@ -243,12 +245,12 @@ s_Vector3D_Dot(VALUE self, VALUE val)
 
 /* 
  *  call-seq:
- *     vector3d * numeric           ->  (new) vector3d
- *     vector3d * other_vector3d    ->  float (the dot product)
+ *     self * numeric           ->  (new) Vector3D
+ *     self * val    ->  Float
  *
  *  In the first form, the vector is scaled by the numeric. In the second
- *  form, the dot (inner) product of the two vectors are returned (equivalent to
- *  <code>vector3d.dot(other_vector3d)</code>).
+ *  form, the dot (inner) product of the two vectors are returned, which is equivalent to
+ *  self.dot(val).
  */
 static VALUE
 s_Vector3D_Multiply(VALUE self, VALUE val)
@@ -266,7 +268,7 @@ s_Vector3D_Multiply(VALUE self, VALUE val)
 
 /* 
  *  call-seq:
- *     vector3d / numeric           ->  (new) vector3d
+ *     self / numeric           ->  (new) Vector3D
  *
  *  The vector is scaled by the inverse of the given numeric.
  */
@@ -284,9 +286,9 @@ s_Vector3D_Divide(VALUE self, VALUE val)
 
 /* 
  *  call-seq:
- *     vector3d.cross(other_vector3d) ->  (new) vector3d
+ *     self.cross(val) ->  (new) Vector3D
  *
- *  Calculate the cross (outer) product of the two vectors.
+ *  Calculate the cross (outer) product of the two vectors. Val is converted to Vector3D.
  */
 static VALUE
 s_Vector3D_Cross(VALUE self, VALUE val)
@@ -302,7 +304,7 @@ s_Vector3D_Cross(VALUE self, VALUE val)
 
 /* 
  *  call-seq:
- *     vector3d.-@                ->  vector3d
+ *     -self                ->  (new) Vector3D
  *
  *  Calculate the opposite vector. 
  */
@@ -319,10 +321,10 @@ s_Vector3D_UnaryMinus(VALUE self)
 
 /* 
  *  call-seq:
- *     vector3d.length                ->  float
+ *     length                ->  Float
  *
  *  Calculate the Pythagorean length of the vector. 
- *  Note that this method is <em>not</em> an alias of <code>vector3d.size</code>.
+ *  Note that this method is <em>not</em> an alias of Vector3D#size, which returns 3.
  */
 static VALUE
 s_Vector3D_Length(VALUE self)
@@ -334,7 +336,7 @@ s_Vector3D_Length(VALUE self)
 
 /* 
  *  call-seq:
- *     vector3d.length2                ->  float
+ *     length2                ->  Float
  *
  *  Calculate the square of the Pythagorean length of the vector.
  */
@@ -348,7 +350,7 @@ s_Vector3D_Length2(VALUE self)
 
 /* 
  *  call-seq:
- *     vector3d.normalize              ->  (new) vector3d
+ *     normalize              ->  (new) Vector3D
  *
  *  Returns a unit vector with the same direction. Raises an exception when the
  *  vector is a zero vector.
@@ -370,9 +372,9 @@ s_Vector3D_Normalize(VALUE self)
 
 /* 
  *  call-seq:
- *     vector3d.to_a                    ->  Array
+ *     to_a                    ->  Array
  *
- *  Returns <code>[self.x, self.y, self.z]</code>.
+ *  Returns [self.x, self.y, self.z].
  */
 static VALUE
 s_Vector3D_ToArray(VALUE self)
@@ -384,9 +386,9 @@ s_Vector3D_ToArray(VALUE self)
 
 /* 
  *  call-seq:
- *     vector3d.each {|item| block }  -> vector3d (self)
+ *     each {|item| ...}
  *
- *  Calls <i>block</i> once for x, y, z elements, passing that element as a parameter.
+ *  Calls block for x, y, z elements, passing that element as a parameter.
  */
 static VALUE
 s_Vector3D_Each(VALUE self)
@@ -401,7 +403,7 @@ s_Vector3D_Each(VALUE self)
 
 /* 
  *  call-seq:
- *     vector3d.x       -> float
+ *     x       -> Float
  *
  *  Get the x element of the vector.
  */
@@ -415,7 +417,7 @@ s_Vector3D_GetX(VALUE self)
 
 /* 
  *  call-seq:
- *     vector3d.y       -> float
+ *     y       -> Float
  *
  *  Get the y element of the vector.
  */
@@ -429,7 +431,7 @@ s_Vector3D_GetY(VALUE self)
 
 /* 
  *  call-seq:
- *     vector3d.z       -> float
+ *     z       -> Float
  *
  *  Get the z element of the vector.
  */
@@ -443,7 +445,7 @@ s_Vector3D_GetZ(VALUE self)
 
 /* 
  *  call-seq:
- *     vector3d.x = float       -> float
+ *     x = val
  *
  *  Set the x element of the vector.
  */
@@ -458,7 +460,7 @@ s_Vector3D_SetX(VALUE self, VALUE val)
 
 /* 
  *  call-seq:
- *     vector3d.y = float       -> float
+ *     y = val
  *
  *  Set the y element of the vector.
  */
@@ -473,7 +475,7 @@ s_Vector3D_SetY(VALUE self, VALUE val)
 
 /* 
  *  call-seq:
- *     vector3d.z = float       -> float
+ *     z = val
  *
  *  Set the z element of the vector.
  */
@@ -488,9 +490,9 @@ s_Vector3D_SetZ(VALUE self, VALUE val)
 
 /* 
  *  call-seq:
- *     Vector3d[fx, fy, fz]   -> (new) vector3d
+ *     Vector3d[fx, fy, fz]   -> (new) Vector3D
  *
- *  Create a new vector3d object. Equivalent to <code>Vector3d.new([fx, fy, fz])</code>.
+ *  Create a new vector3d object. Equivalent to Vector3D#new([fx, fy, fz]).
  */
 static VALUE
 s_Vector3D_Create(VALUE klass, VALUE args)
@@ -502,9 +504,9 @@ s_Vector3D_Create(VALUE klass, VALUE args)
 
 /* 
  *  call-seq:
- *     vector3d.inspect        -> string
+ *     inspect        -> String
  *
- *  Create a readable string like "Vector3d[fx, fy, fz]".
+ *  Create a readable string like "Vector3D[fx, fy, fz]".
  */
 static VALUE
 s_Vector3D_Inspect(VALUE self)
@@ -596,9 +598,9 @@ ValueFromTransform(Transform *tp)
 
 /*
  *  call-seq:
- *     Transform.new
- *     Transform.new(array)
- *     Transform.new(matrix)
+ *     new
+ *     new(array)
+ *     new(matrix)
  *
  *  Returns a new Transform object.
  *
@@ -612,8 +614,8 @@ ValueFromTransform(Transform *tp)
  *  the translation part. All vectors in (1) are column vectors.
  *  
  *  In the third form, a new transform is built from a 3x4 matrix. The argument
- *  <code>matrix</code> must respond to a method call <code>matrix[col, row]</code>
- *  where <code>row</code> is in <code>0..2</code> and <code>col</code> in <code>0..3</code>. 
+ *  +matrix+ must respond to a method call <tt>matrix[col, row]</tt>
+ *  where <tt>row</tt> is in <tt>0..2</tt> and <tt>col</tt> in <tt>0..3</tt>. 
  */
 static VALUE
 s_Transform_Initialize(int argc, VALUE *argv, VALUE self)
@@ -639,11 +641,11 @@ s_Transform_NewFromTransform(Transform *tp)
 
 /*
  *  call-seq:
- *     Transform.from_columns(c1, c2, c3, c4)
+ *     from_columns(c1, c2, c3, c4)
  *
  *  Returns a new Transform object built from four column vectors. The arguments
- *  <code>c1..c4</code> are vectors of (at least) three-dimension. This is equivalent
- *  to <code>Transform.new([c1, c2, c3, c4])</code>.
+ *  <tt>c1..c4</tt> are vectors of (at least) three-dimension. This is equivalent
+ *  to <tt>Transform.new([c1, c2, c3, c4])</tt>.
  */
 static VALUE
 s_Transform_NewFromColumns(VALUE klass, VALUE val)
@@ -681,10 +683,10 @@ s_Transform_NewFromColumns(VALUE klass, VALUE val)
 
 /*
  *  call-seq:
- *     Transform.from_rows(r1, r2, r3)
+ *     from_rows(r1, r2, r3)
  *
  *  Returns a new Transform object built from three row vectors. The arguments
- *  <code>r1, r2, r3</code> are vectors of (at least) four-dimension.
+ *  <tt>r1, r2, r3</tt> are vectors of (at least) four-dimension.
  */
 static VALUE
 s_Transform_NewFromRows(VALUE klass, VALUE val)
@@ -722,7 +724,7 @@ s_Transform_NewFromRows(VALUE klass, VALUE val)
 
 /*
  *  call-seq:
- *     transform[i, j]  -> float
+ *     self[i, j]  -> Float
  *
  *  Get the element (+i+,+j+) of the transform matrix, i.e. column +i+, row +j+.
  *  Be careful about the order of the arguments. It follows convention of multi-dimensional arrays
@@ -744,7 +746,7 @@ s_Transform_ElementAtIndex(VALUE self, VALUE val1, VALUE val2)
 
 /*
  *  call-seq:
- *     transform[i, j] = float  -> float
+ *     self[i, j] = val
  *
  *  Set the element (+i+,+j+) of the transform matrix, i.e. column +i+, row +j+.
  *  Be careful about the order of the arguments. It follows convention of multi-dimensional arrays
@@ -767,7 +769,7 @@ s_Transform_SetElementAtIndex(VALUE self, VALUE idx1, VALUE idx2, VALUE val)
 
 /*
  *  call-seq:
- *     transform == other_transform  -> bool
+ *     self == val  -> bool
  *
  *  Returns +true+ if and only if all the corresponding elements are equal.
  *  Usual caution about the comparison of floating-point numbers should be paid.
@@ -788,7 +790,7 @@ s_Transform_IsEqual(VALUE self, VALUE val)
 
 /*
  *  call-seq:
- *     transform + other_transform  -> (new) transform
+ *     self + val  -> (new) Transform
  *
  *  Returns a new transform corresponding to the sum of the two transform matrix.
  */
@@ -806,7 +808,7 @@ s_Transform_Add(VALUE self, VALUE val)
 
 /*
  *  call-seq:
- *     transform - other_transform  -> (new) transform
+ *     self - val  -> (new) Transform
  *
  *  Returns a new transform corresponding to the difference of the two transform matrix.
  */
@@ -824,9 +826,9 @@ s_Transform_Subtract(VALUE self, VALUE val)
 
 /*
  *  call-seq:
- *     transform * numeric          -> (new) transform
- *     transform * vector3d         -> (new) vector3d
- *     transform * other_transform  -> (new) transform
+ *     self * numeric          -> (new) Transform
+ *     self * Vector3D         -> (new) Vector3D
+ *     self * other_transform  -> (new) Transform
  *
  *  Perform the matrix multiplication. In the first form, a new matrix with scaled elements
  *  is returned. In the second, the transformed vector is returned. In the third form,
@@ -864,9 +866,9 @@ s_Transform_Multiply(VALUE self, VALUE val)
 
 /*
  *  call-seq:
- *     Transform.identity  -> transform
+ *     identity  -> Transform
  *
- *  Returns an identity transform, <code>[[1,0,0], [0,1,0], [0,0,1], [0,0,0]]</code>.
+ *  Returns an identity transform, <tt>[[1,0,0], [0,1,0], [0,0,1], [0,0,0]]</tt>.
  */
 static VALUE
 s_Transform_Identity(VALUE klass)
@@ -879,9 +881,9 @@ s_Transform_Identity(VALUE klass)
 
 /*
  *  call-seq:
- *     Transform.zero  -> transform
+ *     zero  -> Transform
  *
- *  Returns a zero transform, <code>[[0,0,0], [0,0,0], [0,0,0], [0,0,0]]</code>.
+ *  Returns a zero transform, <tt>[[0,0,0], [0,0,0], [0,0,0], [0,0,0]]</tt>.
  */
 static VALUE
 s_Transform_Zero(VALUE klass)
@@ -893,14 +895,14 @@ s_Transform_Zero(VALUE klass)
 
 /*
  *  call-seq:
- *     Transform.diagonal(array)
- *     Transform.diagonal(f1, f2 = nil, f3 = nil)
+ *     diagonal(Array)
+ *     diagonal(f1, f2 = nil, f3 = nil)
  *
  *  Returns a diagonal transform (the translational componets are all zero).
- *  In the first form, <code>array[0], array[1], array[2]</code> are for the
- *  x, y, z components, respectively. In the second form, <code>f1, f2, f3</code>
- *  are the x, y, z components. If <code>f3</code> is not given, the <code>f2</code>
- *  is used for the z components. If <code>f2</code> is not given, the <code>f1</code>
+ *  In the first form, <tt>array[0], array[1], array[2]</tt> are for the
+ *  x, y, z components, respectively. In the second form, <tt>f1, f2, f3</tt>
+ *  are the x, y, z components. If <tt>f3</tt> is not given, the <tt>f2</tt>
+ *  is used for the z components. If <tt>f2</tt> is not given, the <tt>f1</tt>
  *  is used for the y and z components.
  */
 static VALUE
@@ -935,7 +937,7 @@ s_Transform_Diagonal(int argc, VALUE *argv, VALUE klass)
 
 /*
  *  call-seq:
- *     transform.inverse  -> (new) transform
+ *     inverse  -> (new) Transform
  *
  *  Returns the inverse transform. If the matrix is not regular, an exception is raised.
  */
@@ -951,9 +953,9 @@ s_Transform_Inverse(VALUE self)
 
 /*
  *  call-seq:
- *     transform / other_transform -> (new) transform
+ *     self / val -> (new) Transform
  *
- *  Returns transform * other_transform.invert. If other_transform is not regular, 
+ *  Returns self * val.invert. If val is not a regular transform,
  *  an exception is raised.
  */
 static VALUE
@@ -970,7 +972,7 @@ s_Transform_Divide(VALUE self, VALUE val)
 
 /*
  *  call-seq:
- *     transform.transpose -> (new) transform
+ *     transpose -> (new) Transform
  *
  *  Returns a new transform in which the rotation component is transposed from the original.
  */
@@ -985,7 +987,7 @@ s_Transform_Transpose(VALUE self)
 
 /*
  *  call-seq:
- *     transform.determinant -> float
+ *     determinant -> Float
  *
  *  Returns the determinant of the transform.
  */
@@ -999,7 +1001,7 @@ s_Transform_Determinant(VALUE self)
 
 /*
  *  call-seq:
- *     transform.trace -> float
+ *     trace -> Float
  *
  *  Returns the trace (sum of the diagonal elements) of the transform.
  */
@@ -1013,7 +1015,7 @@ s_Transform_Trace(VALUE self)
 
 /*
  *  call-seq:
- *     transform.column(index) -> vector3d
+ *     column(index) -> Vector3D
  *
  *  Returns the index-th (0..3) column vector.
  */
@@ -1034,7 +1036,7 @@ s_Transform_Column(VALUE self, VALUE val)
 
 /*
  *  call-seq:
- *     transform.eigenvalues -> [[k1, k2, k3], v1, v2, v3]
+ *     eigenvalues -> [[k1, k2, k3], v1, v2, v3]
  *
  *  Calculate the eigenvalues and eigenvectors. The matrix must be symmetric.
  */
@@ -1053,7 +1055,7 @@ s_Transform_Eigenvalues(VALUE self)
 
 /*
  *  call-seq:
- *     Transform[*args]
+ *     Transform[*args] -> (new) Transform
  *
  *  Create a new transform. Equivalent to Transform.new(args).
  */
@@ -1067,7 +1069,7 @@ s_Transform_Create(VALUE klass, VALUE args)
 
 /*
  *  call-seq:
- *     transform.to_a  -> array
+ *     to_a  -> Array
  *
  *  Convert a transform to an array of 12 float numbers.
  */
@@ -1085,7 +1087,7 @@ s_Transform_ToArray(VALUE self)
 
 /*
  *  call-seq:
- *     transform.inspect  -> string
+ *     inspect  -> String
  *
  *  Convert a transform to a string like 
  *  "Transform[[a11,a21,a31],[a12,a22,a32],[a13,a23,a33],[a14,a24,a34]]".
@@ -1120,7 +1122,7 @@ s_Transform_Inspect(VALUE self)
 
 /*
  *  call-seq:
- *     Transform.translation(vec)
+ *     translation(vec) -> (new) Transform
  *
  *  Returns a transform corresponding to translation along the given vector. Equivalent
  *  to <code>Transform[[1,0,0],[0,1,0],[0,0,1],vec]</code>.
@@ -1141,10 +1143,10 @@ s_Transform_Translation(VALUE klass, VALUE vec)
 
 /*
  *  call-seq:
- *     Transform.rotation(axis, angle, center = [0,0,0])
+ *     rotation(axis, angle, center = [0,0,0]) -> (new) Transform
  *
- *  Returns a transform corresponding to the rotation along the given axis and angle. If 
- *  center is also given, that point will be the center of rotation.
+ *  Returns a transform corresponding to the rotation along the given axis and angle.
+ *  Angle is given in degree. If center is also given, that point will be the center of rotation.
  */
 static VALUE
 s_Transform_Rotation(int argc, VALUE *argv, VALUE klass)
@@ -1159,7 +1161,7 @@ s_Transform_Rotation(int argc, VALUE *argv, VALUE klass)
 		cv.x = cv.y = cv.z = 0.0;
 	else
 		VectorFromValue(center, &cv);
-	ang = NUM2DBL(rb_Float(angle));
+	ang = NUM2DBL(rb_Float(angle)) * kDeg2Rad;
 	if (TransformForRotation(tr, &av, ang, &cv))
 		rb_raise(rb_eMolbyError, "rotation axis cannot be a zero vector");
 	return ValueFromTransform(&tr);
@@ -1167,7 +1169,7 @@ s_Transform_Rotation(int argc, VALUE *argv, VALUE klass)
 
 /*
  *  call-seq:
- *     Transform.reflection(axis, center = [0,0,0])
+ *     reflection(axis, center = [0,0,0]) -> (new)Transform
  *
  *  Returns a transform corresponding to the reflection along the given axis. If 
  *  center is also given, that point will be fixed.
@@ -1191,7 +1193,7 @@ s_Transform_Reflection(int argc, VALUE *argv, VALUE klass)
 
 /*
  *  call-seq:
- *     Transform.inversion(center = [0,0,0])
+ *     inversion(center = [0,0,0]) -> (new) Transform
  *
  *  Returns a transform corresponding to the inversion along the given point.
  */
@@ -1262,6 +1264,17 @@ s_IntGroup_Initialize_i(VALUE val, VALUE ig1)
 	return Qnil;
 }
 
+/*
+ *  call-seq:
+ *     new(arg1, arg2,...)
+ *     new(arg1, arg2,...) {|i| ...}
+ *
+ *  Create a new integer group. If no arguments are given, an empty group is returned.
+ *  The arguments are either IntGroup, Range, Enumerable, or Numeric. In either case,
+ *  the non-negative integers included in the arguments are added to the result.
+ *  If a block is given, the block is called with the each integer in the given arguments,
+ *  and the integer group consisting with the returned integers is returned.
+ */
 static VALUE
 s_IntGroup_Initialize(int argc, VALUE *argv, VALUE self)
 {
@@ -1298,6 +1311,12 @@ s_IntGroup_Initialize(int argc, VALUE *argv, VALUE self)
 	return Qnil;
 }
 
+/*
+ *  call-seq:
+ *     clear -> self
+ *
+ *  Discard all integers included in self.
+ */
 static VALUE
 s_IntGroup_Clear(VALUE self)
 {
@@ -1307,6 +1326,12 @@ s_IntGroup_Clear(VALUE self)
 	return self;
 }
 
+/*
+ *  call-seq:
+ *     dup(IntGroup) -> (new) IntGroup
+ *
+ *  (Deep) copy the given IntGroup.
+ */
 static VALUE
 s_IntGroup_InitializeCopy(VALUE self, VALUE val)
 {
@@ -1319,6 +1344,13 @@ s_IntGroup_InitializeCopy(VALUE self, VALUE val)
 	return self;
 }
 
+/*
+ *  call-seq:
+ *     length -> Integer
+ *     size -> Integer
+ *
+ *  Returns the number of integers included in self.
+ */
 static VALUE
 s_IntGroup_Length(VALUE self)
 {
@@ -1327,6 +1359,13 @@ s_IntGroup_Length(VALUE self)
 	return INT2NUM(IntGroupGetCount(ig));
 }
 
+/*
+ *  call-seq:
+ *     member?(val) -> bool
+ *     include?(val) -> bool
+ *
+ *  Check whether the val is included in self.
+ */
 static VALUE
 s_IntGroup_MemberP(VALUE self, VALUE val)
 {
@@ -1336,6 +1375,12 @@ s_IntGroup_MemberP(VALUE self, VALUE val)
 	return (IntGroupLookup(ig, n, NULL) ? Qtrue : Qfalse);
 }
 
+/*
+ *  call-seq:
+ *     self[index] -> Integer or nil
+ *
+ *  Get the index-th point in self. If the index is out of range, nil is returned.
+ */
 static VALUE
 s_IntGroup_ElementAtIndex(VALUE self, VALUE val)
 {
@@ -1347,6 +1392,12 @@ s_IntGroup_ElementAtIndex(VALUE self, VALUE val)
 	return (n >= 0 ? INT2NUM(n) : Qnil);
 }
 
+/*
+ *  call-seq:
+ *     each {|i| ...}
+ *
+ *  Call the block with each integer in self.
+ */
 static VALUE
 s_IntGroup_Each(VALUE self)
 {
@@ -1362,6 +1413,12 @@ s_IntGroup_Each(VALUE self)
 	return self;
 }
 
+/*
+ *  call-seq:
+ *     add(IntGroup) -> self
+ *
+ *  Add the points in the given group.
+ */
 static VALUE
 s_IntGroup_Add(VALUE self, VALUE val)
 {
@@ -1382,6 +1439,12 @@ s_IntGroup_Add(VALUE self, VALUE val)
 	return self;
 }
 
+/*
+ *  call-seq:
+ *     delete(IntGroup) -> self
+ *
+ *  Remove the points in the given group.
+ */
 static VALUE
 s_IntGroup_Delete(VALUE self, VALUE val)
 {
@@ -1415,42 +1478,100 @@ s_IntGroup_Binary(VALUE self, VALUE val, int (*func)(const IntGroup *, const Int
 	return retval;
 }
 
+/*
+ *  call-seq:
+ *     union(val) -> (new)IntGroup
+ *     self + val -> (new)IntGroup
+ *     self | val -> (new)IntGroup
+ *
+ *  Returns a union group.
+ */
 static VALUE
 s_IntGroup_Union(VALUE self, VALUE val)
 {
 	return s_IntGroup_Binary(self, val, IntGroupUnion);
 }
 
+/*
+ *  call-seq:
+ *     intersection(val) -> (new)IntGroup
+ *     self & val -> (new)IntGroup
+ *
+ *  Returns an intersection group.
+ */
 static VALUE
 s_IntGroup_Intersection(VALUE self, VALUE val)
 {
 	return s_IntGroup_Binary(self, val, IntGroupIntersect);
 }
 
+/*
+ *  call-seq:
+ *     difference(val) -> (new)IntGroup
+ *     self - val -> (new)IntGroup
+ *
+ *  Returns a difference group.
+ */
 static VALUE
 s_IntGroup_Difference(VALUE self, VALUE val)
 {
 	return s_IntGroup_Binary(self, val, IntGroupDifference);
 }
 
+/*
+ *  call-seq:
+ *     sym_difference(val) -> (new)IntGroup
+ *     self ^ val -> (new)IntGroup
+ *
+ *  Returns a symmetric-difference group (i.e. a group containing elements that are included
+ *  in either self or val but not both).
+ */
 static VALUE
 s_IntGroup_SymDifference(VALUE self, VALUE val)
 {
 	return s_IntGroup_Binary(self, val, IntGroupXor);
 }
 
+/*
+ *  call-seq:
+ *     convolute(val) -> (new)IntGroup
+ *
+ *  For each element n in self, get the n-th point in val, and return the result as a new group.
+ *  If n is out of range, then that point is ignored.
+ *
+ *  <b>See Also:</b> IntGroup#deconvolute. If all points in self are within the range of val, then 
+ *  an equation <tt>self.convolute(val).deconvolute(val) == self</tt> holds.
+ */
 static VALUE
 s_IntGroup_Convolute(VALUE self, VALUE val)
 {
 	return s_IntGroup_Binary(self, val, IntGroupConvolute);
 }
 
+/*
+ *  call-seq:
+ *     deconvolute(val) -> (new)IntGroup
+ *
+ *  For each element n in self, find the point n in val, and return the found indices as a new group.
+ *  If n is not found in val, then that point is ignored.
+ *
+ *  <b>See Also:</b> IntGroup#convolute. If all points in self are found in val, then 
+ *  an equation <tt>self.deconvolute(val).convolute(val) == self</tt> holds.
+ */
 static VALUE
 s_IntGroup_Deconvolute(VALUE self, VALUE val)
 {
 	return s_IntGroup_Binary(self, val, IntGroupDeconvolute);
 }
 
+/*
+ *  call-seq:
+ *     range_at(val) -> Range
+ *
+ *  Split self into consecutive chunks of integers, and return the val-th chunk as a Range.
+ *  This method is relatively efficient, because it directly uses the internal representation
+ *  of IntGroup.
+ */
 static VALUE
 s_IntGroup_RangeAt(VALUE self, VALUE val)
 {
@@ -1465,6 +1586,7 @@ s_IntGroup_RangeAt(VALUE self, VALUE val)
 	return rb_funcall(rb_cRange, rb_intern("new"), 2, INT2NUM(sp), INT2NUM(ep));
 }
 
+/*
 static VALUE
 s_IntGroup_Merge(VALUE self, VALUE val)
 {
@@ -1498,7 +1620,15 @@ s_IntGroup_Subtract(VALUE self, VALUE val)
 	IntGroupRelease(ig2);
 	return self;
 }
+*/
 
+/*
+ *  call-seq:
+ *     offset(val) -> self
+ *
+ *  Move all points by an integer value. A negative val is allowed, but it
+ *  must be no smaller than -(self[0]), otherwise an exception is thrown.
+ */
 static VALUE
 s_IntGroup_Offset(VALUE self, VALUE ofs)
 {
@@ -1525,6 +1655,12 @@ s_IntGroup_Create(int argc, VALUE *argv, VALUE klass)
 	return val;
 }
 
+/*
+ *  call-seq:
+ *     inspect -> String
+ *
+ *  Create a String in the form "IntGroup[...]".
+ */
 static VALUE
 s_IntGroup_Inspect(VALUE self)
 {
@@ -1644,8 +1780,8 @@ Init_MolbyTypes(void)
 	rb_define_alias(rb_cIntGroup, "&", "intersection");
 	rb_define_alias(rb_cIntGroup, "^", "sym_difference");
 	rb_define_method(rb_cIntGroup, "range_at", s_IntGroup_RangeAt, 1);
-	rb_define_method(rb_cIntGroup, "merge", s_IntGroup_Merge, -1);
-	rb_define_method(rb_cIntGroup, "subtract", s_IntGroup_Subtract, -1);
+/*	rb_define_method(rb_cIntGroup, "merge", s_IntGroup_Merge, -1);
+	rb_define_method(rb_cIntGroup, "subtract", s_IntGroup_Subtract, -1); */
 	rb_define_method(rb_cIntGroup, "inspect", s_IntGroup_Inspect, 0);
 	rb_define_alias(rb_cIntGroup, "to_s", "inspect");
 	rb_define_singleton_method(rb_cIntGroup, "[]", s_IntGroup_Create, -1);

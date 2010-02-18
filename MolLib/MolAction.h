@@ -68,7 +68,7 @@ extern const char *gMolActionXtalToCartesian;
  *  MolActionCreateAndPerform(mol, SCRIPT_ACTION("vd"), "rotate", vec, angle);
  *    (Will perform 'mol.rotate(vec, angle)')
  *  or:
- *  MolActionCreateAndPerform(mol, SCRIPT_ACTION("vd"), "proc {|v,d| rotate(v,d*3.1415927/180)}", vec, deg)
+ *  MolActionCreateAndPerform(mol, SCRIPT_ACTION("vd"), "proc {|v,d| rotate(v,d)}", vec, deg)
  *    (Will perform '(mol.instance_eval "proc {...}").call(vec, deg)')
  */
 #define kMolActionPerformScript "script:s"

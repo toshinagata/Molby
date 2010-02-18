@@ -7175,7 +7175,7 @@ MoleculeMeasureAngle(Molecule *mp, const Vector *vp1, const Vector *vp2, const V
 	w = VecLength(r1) * VecLength(r3);
 	if (w < 1e-20)
 		return NAN;
-	return acos(VecDot(r1, r3) / w) * 180.0 / 3.1415927;
+	return acos(VecDot(r1, r3) / w) * kRad2Deg;
 }
 
 Double
@@ -7212,7 +7212,7 @@ MoleculeMeasureDihedral(Molecule *mp, const Vector *vp1, const Vector *vp2, cons
 		VecScaleSelf(v1, w1);
 		VecScaleSelf(v2, w2);
 		VecScaleSelf(v3, w3);
-		return -atan2(VecDot(v3, v2), VecDot(v1, v2)) * 180.0 / 3.1415927;
+		return -atan2(VecDot(v3, v2), VecDot(v1, v2)) * kRad2Deg;
 	}
 }
 

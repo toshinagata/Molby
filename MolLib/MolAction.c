@@ -1113,11 +1113,20 @@ MolActionPerform(Molecule *mol, MolAction *action)
 		needsRebuildMDArena = 1;
 	} else if (strcmp(action->name, gMolActionAddSymmetryOperation) == 0) {
 		Transform *trp;
+		Transform itr = {1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0};
 		trp = (Transform *)action->args[0].u.arval.ptr;
 		if (mol->nsyms == 0) {
-			Transform itr = {1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0};
-			if (AssignArray(&mol->syms, &mol->nsyms, sizeof(Transform), mol->nsyms, &itr) == 0)
-				return -1;
+			for (n1 = 0; n1 < 12; n1++) {
+				if (fabs((*trp)[n1] - itr[n1]) > 1e-8)
+					break;
+			}
+			if (n1 < 12) {
+				if (AssignArray(&mol->syms, &mol->nsyms, sizeof(Transform), mol->nsyms, &itr) == 0)
+					return -1;
+				act2 = MolActionNew(gMolActionDeleteSymmetryOperation);
+				MolActionCallback_registerUndo(mol, act2);
+				MolActionRelease(act2);
+			}
 		}
 		if (AssignArray(&mol->syms, &mol->nsyms, sizeof(Transform), mol->nsyms, trp) == 0)
 				return -1;
@@ -1127,8 +1136,8 @@ MolActionPerform(Molecule *mol, MolAction *action)
 			return -1;
 		act2 = MolActionNew(gMolActionAddSymmetryOperation, &(mol->syms[mol->nsyms - 1]));
 		mol->nsyms--;
-		if (mol->nsyms == 1)
-			mol->nsyms--;  /*  Remove the identity operation  */
+	/*	if (mol->nsyms == 1)
+			mol->nsyms--;  *//*  Remove the identity operation  */
 		if (mol->nsyms == 0) {
 			free(mol->syms);
 			mol->syms = NULL;
