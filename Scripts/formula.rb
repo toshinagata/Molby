@@ -91,13 +91,13 @@ class Molecule
 		fragment.add_atom("_2", "", "Du", length, 0, degree, 1)
 		if valence > 2
 		  if valence == 3
-		    sn = Math.sin(3.1415927/180.0 * degree)
-			cs = Math.cos(3.1415927/180.0 * degree)
+		    sn = Math.sin(degree * Deg2Rad)
+			cs = Math.cos(degree * Deg2Rad)
 			acs = cs * (1 - cs) / (sn * sn)
 			if (acs < -1 || acs > 1)
 			  dihed = 180.0
 			else
-			  dihed = 180.0/3.1415927 * Math.acos(acs)
+			  dihed = Math.acos(acs) * Rad2Deg
 			end
 		  elsif valence == 4
 		    dihed = 120.0
@@ -177,8 +177,8 @@ class Molecule
 	end
 	r2 = atoms[nd[1]].r - r0
 	cs = r1.dot(r2) / (r1.length * r2.length)
-	ang = Math.acos(cs)
-	rotate(ax, 3.1415927 * 2 / 3 - ang, r0, fragment(nd[0], root))
+	ang = Math.acos(cs) * Rad2Deg
+	rotate(ax, 120.0 - ang, r0, fragment(nd[0], root))
 	v = ((atoms[nd[0]].r - r0).normalize + (atoms[nd[1]].r - r0).normalize) * (-1.0)
 	vec.x = v.x
 	vec.y = v.y
@@ -279,7 +279,7 @@ class Molecule
 	end
 
 	#  Dock the two fragments
-	self.dock(mol, sroot, mroot, svec, mvec, len, 3.1415927, sdihed, mdihed)
+	self.dock(mol, sroot, mroot, svec, mvec, len, 180.0, sdihed, mdihed)
 	#  Remove the dummy atoms
 	md.map! { |item| item + natoms_s }
 	self.remove(sd + md)
@@ -448,7 +448,7 @@ class Molecule
 		end
 	#	dump([old1, old2, olddi1])
 	#	frag.dump([new1, new2, newdi1])
-		sel = dock(frag, old1, new1, oldv, newv, 1.5, 3.1415927, olddi1, newdi1)  #  Add (without removing atoms)
+		sel = dock(frag, old1, new1, oldv, newv, 1.5, 180.0, olddi1, newdi1)  #  Add (without removing atoms)
 		(1..bonds_old.length - 1).each { |i|
 		  break if i >= bonds_new.length
 		  #  Create bonds between other "root" atoms

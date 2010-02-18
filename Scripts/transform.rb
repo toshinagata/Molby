@@ -66,7 +66,7 @@ class Transform
       ang = 2*Math::PI - ang
       v = v * (-1)
     end
-    return [v, ang]
+    return [v, ang * Rad2Deg]
   end
 
   #  Decompose a rotation matrix to spiral components

@@ -109,7 +109,7 @@ class Molecule
       return 0.0
     end
     cs = r21.dot(r23) / (w1 * w2)
-    Math.atan2(Math.sqrt(1 - cs*cs), cs)
+    Math.atan2(Math.sqrt(1 - cs*cs), cs) * Rad2Deg
   end
   
   #  Calculate the dihedral angle defined by four vectors.
@@ -128,7 +128,7 @@ class Molecule
     end
     sn = cr3.dot(cr2) / (w3 * w2)
     cs = cr1.dot(cr2) / (w1 * w2)
-    Math.atan2(-sn, cs)
+    Math.atan2(-sn, cs) * Rad2Deg
   end
   
   #  Calculate the bond length between the two atoms.
@@ -202,7 +202,7 @@ class Molecule
   #  If len is specified, then the length of the new bond is set to this value. Otherwise,
   #  it is set to 1.5.
   #  If dihed is specified, then the dihedral angle def1-base1-base2-def2 is set to this
-  #  value (in radian). If nil is specified for either def1 or def2 (or both), then
+  #  value (in degree). If nil is specified for either def1 or def2 (or both), then
   #  the atom which is connected to base1 (base2) and has the smallest index is used.
   #  Returns the group of atom indices that have been added.
   
@@ -245,7 +245,7 @@ class Molecule
       else
         v3 = v2.cross(v1).normalize
       end
-      angle = Math.atan2(Math.sqrt(1.0 - cs*cs), cs)
+      angle = Math.atan2(Math.sqrt(1.0 - cs*cs), cs) * Rad2Deg
       mol.rotate(v3, angle, mol.atoms[base2].r)
     end
     #  Move the second molecule so that the atom 'base2' is located at atoms[base1].r+v1*len
@@ -323,13 +323,13 @@ class Molecule
           v3 = Vector3D[0, 0, 1]
           dihed = 180
         end
-        angle *= 3.1415927 / 180.0
-        dihed *= 3.1415927 / 180.0
+        angle *= Deg2Rad
+        dihed *= Deg2Rad
         vx = v2.normalize
         vy = v3.cross(v2)
         if vy.length < 1e-8
-          n = Math::floor(angle / 3.1415927 + 0.5)
-          if ((angle - n * 3.1415927).abs < 1e-8)
+          n = Math::floor(angle / Math::PI + 0.5)
+          if ((angle - n * Math::PI).abs < 1e-8)
             vd = vx * (bond * Math::cos(angle))
           else
             raise "Cannot define dihedral angle for atom #{name}-#{base1}-#{base2}-#{base3}"

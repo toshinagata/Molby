@@ -15,6 +15,9 @@
 
 include Math
 
+Deg2Rad = Math::PI / 180.0
+Rad2Deg = 180.0 / Math::PI
+
 $startup_dir = Dir.pwd
 case RUBY_PLATFORM
   when /mswin|mingw|cygwin|bccwin/
