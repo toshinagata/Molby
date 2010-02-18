@@ -131,7 +131,7 @@ extern int MyAppControllerGetTextWithPrompt(const char *prompt, char *buf, int b
 
 /*
  *  call-seq:
- *     MessageOutput.write(str)
+ *     write(str)
  *
  *  Put the message in the main text view.
  */
@@ -144,7 +144,7 @@ s_MessageOutput_Write(VALUE self, VALUE str)
 
 /*
  *  call-seq:
- *     Kernel.message_box(str, title, button = nil, icon = :info)
+ *     message_box(str, title, button = nil, icon = :info)
  *
  *  Show a message box.
  *  Buttons: nil (ok and cancel), :ok (ok only), :cancel (cancel only)
@@ -187,7 +187,7 @@ s_Kernel_MessageBox(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     Kernel.error_message_box(str)
+ *     error_message_box(str)
  *
  *  Show an error message box.
  */
@@ -444,276 +444,6 @@ s_Event_Callback(rb_event_t event, NODE *node, VALUE self, ID rid, VALUE klass)
 	}
 }
 
-#if 0
-#pragma mark ------ Obsolete ------
-
-/*  User interrupt handling
- *  User interrupt (command-period on Mac OS) is handled by periodic polling of
- *  key events. This polling should only be enabled during "normal" execution
- *  of scripts and must be disabled when the rest of the application (or Ruby
- *  script itself) is handling GUI. This is ensured by appropriate calls to
- *  enable_interrupt and disable_interrupt.  */
-
-static int s_interrupt_var_initialized = 0;
-static VALUE s_interrupt_thread = Qnil;
-static VALUE s_interrupt_proc = Qnil;
-static VALUE s_interrupt_lock = Qnil;
-static VALUE s_interrupt_flag = Qfalse;
-static VALUE s_eval_arguments[3] = {Qnil, Qnil, Qnil};
-
-static VALUE
-s_ShowProgressPanel(int argc, VALUE *argv, VALUE self)
-{
-	volatile VALUE message;
-	const char *p;
-	if (Ruby_GetInterruptFlag() == Qtrue) {
-		if (s_interrupt_lock != Qnil)
-			rb_funcall(s_interrupt_lock, rb_intern("lock"), 0);
-		rb_scan_args(argc, argv, "01", &message);
-		if (message != Qnil)
-			p = StringValuePtr(message);
-		else
-			p = NULL;
-		MyAppCallback_showProgressPanel(p);
-		if (s_interrupt_lock != Qnil)
-			rb_funcall(s_interrupt_lock, rb_intern("unlock"), 0);	
-	}
-	return Qnil;
-}
-
-static VALUE
-s_HideProgressPanel(VALUE self)
-{
-	MyAppCallback_hideProgressPanel();
-	return Qnil;
-}
-
-static VALUE
-s_SetProgressValue(VALUE self, VALUE val)
-{
-	double dval = NUM2DBL(rb_Float(val));
-	MyAppCallback_setProgressValue(dval);
-	return Qnil;
-}
-
-static VALUE
-s_SetProgressMessage(VALUE self, VALUE msg)
-{
-	const char *p;
-	if (msg == Qnil)
-		p = NULL;
-	else p = StringValuePtr(msg);
-	MyAppCallback_setProgressMessage(p);
-	return Qnil;
-}
-
-static VALUE
-s_SetInterruptFlag(VALUE self, VALUE val)
-{
-	VALUE oldval;
-	if (val != Qundef) {
-		if (val == Qfalse || val == Qnil)
-			val = Qfalse;
-		else val = Qtrue;
-	}
-	if (s_interrupt_lock != Qnil)
-		rb_funcall(s_interrupt_lock, rb_intern("lock"), 0);
-	oldval = s_interrupt_flag;
-	if (val != Qundef) {
-		s_interrupt_flag = val;
-		if (val == Qfalse) {
-			s_HideProgressPanel(self);
-		}
-	}
-	if (s_interrupt_lock != Qnil)
-		rb_funcall(s_interrupt_lock, rb_intern("unlock"), 0);
-	if (s_interrupt_thread != Qnil) {
-		if (val == Qtrue)
-			rb_funcall(s_interrupt_thread, rb_intern("wakeup"), 0);
-		else if (val == Qfalse)
-			rb_eval_string("while !$interrupt_thread['stopped']; Thread.pass; end");
-	}
-	return oldval;
-}
-
-static VALUE
-s_GetInterruptFlag(VALUE self)
-{
-	return s_SetInterruptFlag(self, Qundef);
-}
-
-static VALUE
-s_Ruby_CallMethod(VALUE val)
-{
-	void **ptr = (void **)val;
-	VALUE receiver = (VALUE)ptr[0];
-	ID method_id = (ID)ptr[1];
-	VALUE args = (VALUE)ptr[2];
-	return rb_funcall(s_interrupt_proc, rb_intern("call"), 3, receiver, ID2SYM(method_id), args);
-}
-
-VALUE
-Ruby_CallMethodWithInterrupt(VALUE receiver, ID method_id, VALUE args, int *status)
-{
-	VALUE *temp_arguments[3];
-	VALUE retval;
-	if (s_interrupt_var_initialized == 0) {
-		rb_define_variable("$interrupt_thread", &s_interrupt_thread);
-		rb_define_variable("$interrupt_proc", &s_interrupt_proc);
-		rb_define_variable("$interrupt_lock", &s_interrupt_lock);
-		rb_define_variable("$interrupt_flag", &s_interrupt_flag);
-		rb_define_variable("$eval_target", &s_eval_arguments[0]);
-		rb_define_variable("$eval_method", &s_eval_arguments[1]);
-		rb_define_variable("$eval_args", &s_eval_arguments[2]);
-		rb_eval_string_protect(
-			"require 'thread'; $interrupt_lock = Mutex.new \n"
-			"$interrupt_stack = Array.new \n"
-			"def start_interrupt_check \n"
-			"  f = set_interrupt_flag(false)     #  Suspend $interrupt_thread if running \n"
-			"  $interrupt_stack.push([f, $interrupt_thread]) # Save $interrupt_thread \n"
-			"  $interrupt_thread = Thread.new {  # Create a new $interrupt_thread \n"
-			"    while 1 \n"
-			"      10.times { \n"
-			"        sleep 0.01 \n"
-			"        if !get_interrupt_flag \n"
-			"          Thread.current['stopped'] = true \n"
-			"          Thread.stop \n"
-			"          Thread.current['stopped'] = nil \n"
-			"        end \n"
-			"      } \n"
-			"      if check_interrupt > 0 \n"
-					/* "raise Interrupt" does not work in Ruby1.8.6 */
-			"        Thread.main.raise Interrupt.new(nil) \n"
-			"      end \n"
-			"    end \n"
-			"  } \n"
-			"  set_interrupt_flag(true)          # Let $interrupt_thread alive \n"
-			"end \n"
-			"def stop_interrupt_check \n"
-			"  $interrupt_thread.kill            # Stop $interrupt_thread \n"
-			"  c = $interrupt_stack.pop \n"
-			"  $interrupt_thread = c[1]          # Restore the previous thread \n"
-			"  set_interrupt_flag(c[0])          # Wake up $interrupt_thread if necessary \n"
-			"end \n", status);
-		if (*status != 0)
-			return Qnil;
-	/*	s_interrupt_proc = rb_eval_string_protect(
-			"Proc.new { |rec, method, args| \n"
-			"  start_interrupt_check \n"
-			"  begin \n"
-			"    rec.send(method, *args)         # Do method call \n"
-			"  ensure \n"
-			"    stop_interrupt_check \n"
-			"  end \n"
-			"}", status);
-		if (*status != 0)
-			return Qnil; */
-		s_interrupt_var_initialized = 1;
-	}
-	
-	memmove(temp_arguments, s_eval_arguments, sizeof(temp_arguments));
-	s_eval_arguments[0] = receiver;
-	s_eval_arguments[2] = args;
-	if (method_id == 0) {
-		/*  args should be a string, which is evaluated  */
-		if (receiver == Qnil) {
-			retval = rb_eval_string_protect(
-				"start_interrupt_check \n"
-				"begin \n"
-				" eval $eval_args \n"
-				"ensure \n"
-				" stop_interrupt_check \n"
-				"end \n", status);
-		} else {
-			retval = rb_eval_string_protect(
-				"start_interrupt_check \n"
-				"begin \n"
-				" $eval_target.instance_eval $eval_args \n"
-				"ensure \n"
-				" stop_interrupt_check \n"
-				"end \n", status);
-		}
-	} else {
-		s_eval_arguments[1] = ID2SYM(method_id);
-		retval = rb_eval_string_protect(
-			"start_interrupt_check \n"
-			"begin \n"
-			" $eval_target.send($eval_method, *$eval_args) \n"
-			"ensure \n"
-			" stop_interrupt_check \n"
-			"end \n", status);
-	}
-	/*	char *s = StringValuePtr(args);
-		char *p;
-		asprintf(&p, "start_interrupt_check; begin; %s; ensure; stop_interrupt_check; end", s);
-		retval = rb_eval_string_protect(p, status);
-		free(p); */
-/*	} else { */
-		/*  args should be a Ruby array of arguments  */
-/*		ptr[0] = (void *)receiver;
-		ptr[1] = (void *)method_id;
-		ptr[2] = (void *)args;
-		retval = rb_protect(s_Ruby_CallMethod, (VALUE)ptr, status);
-	} */
-	memmove(s_eval_arguments, temp_arguments, sizeof(temp_arguments));
-
-	MyAppCallback_hideProgressPanel();  /*  In case when the progress panel is still onscreen */
-	return retval;
-}
-
-VALUE
-Ruby_SetInterruptFlag(VALUE val)
-{
-	return s_SetInterruptFlag(Qnil, val);
-}
-
-VALUE
-Ruby_GetInterruptFlag(void)
-{
-	return s_SetInterruptFlag(Qnil, Qundef);
-}
-
-/*
- *  call-seq:
- *     check_interrupt -> integer
- *
- *  Returns 1 if interrupted, 0 if not, -1 if interrupt is disabled.
- */
-static VALUE
-s_Kernel_CheckInterrupt(VALUE self)
-{
-	if (Ruby_GetInterruptFlag() == Qfalse)
-		return INT2NUM(-1);
-	else if (MyAppCallback_checkInterrupt())
-		return INT2NUM(1);
-	else return INT2NUM(0);
-}
-
-/*
- *  call-seq:
- *     idle(seconds)
- *
- *  Wait for seconds with handling GUI. Raises Interrupt exception if command-. is
- *  pressed.
- */
-/*static VALUE
-s_Kernel_Idle(VALUE self, VALUE seconds)
-{
-	double dval = NUM2DBL(seconds);
-	VALUE iflag;
-	int retval;
-	iflag = Ruby_SetInterruptFlag(Qfalse);
-	retval = MyAppCallback_processUIWithTimeout(dval);
-	Ruby_SetInterruptFlag(iflag);
-	if (retval == 1)
-		rb_interrupt();
-	return Qnil;
-}
-*/
-
-#pragma mark ------ End Obsolete ------
-#endif
-
 /*
  *  call-seq:
  *     ask(prompt, default = nil) -> string
@@ -833,7 +563,7 @@ s_Kernel_DocumentHome(VALUE self)
 
 /*
  *  call-seq:
- *     Kernel.get_global_settings(key)
+ *     get_global_settings(key)
  *
  *  Get a setting data for key from the application preferences.
  */
@@ -850,7 +580,7 @@ s_Kernel_GetGlobalSettings(VALUE self, VALUE key)
 
 /*
  *  call-seq:
- *     Kernel.set_global_settings(key, value)
+ *     set_global_settings(key, value)
  *
  *  Set a setting data for key to the application preferences.
  */
@@ -952,12 +682,24 @@ static const char *s_ParameterTypeNames[] = {
 	"bond", "angle", "dihedral", "improper", "vdw", "vdw_pair", "vdw_cutoff", "atom"
 };
 
+/*
+ *  call-seq:
+ *     index -> Integer
+ *
+ *  Get the index in the parameter list.
+ */
 static VALUE s_ParameterRef_GetIndex(VALUE self) {
 	ParameterRef *pref;
 	Data_Get_Struct(self, ParameterRef, pref);
 	return INT2NUM(pref->idx);
 }
 
+/*
+ *  call-seq:
+ *     par_type -> String
+ *
+ *  Get the parameter type, like "bond", "angle", etc.
+ */
 static VALUE s_ParameterRef_GetParType(VALUE self) {
 	Int tp;
 	s_UnionParFromValue(self, &tp, 0);
@@ -967,6 +709,16 @@ static VALUE s_ParameterRef_GetParType(VALUE self) {
 	else rb_raise(rb_eMolbyError, "Internal error: parameter type tag is out of range (%d)", tp);
 }
 
+/*
+ *  call-seq:
+ *     atom_type -> String or Array of String
+ *     atom_types -> String or Array of String
+ *
+ *  Get the atom types. For a bond parameter, an array of two strings (like ["ca", "ha"])
+ *  is returned. For an angle parameter, an array of three strings (like ["ha", "ca", "ha"])
+ *  is returned. For a dihedral or improper parameter, an array of four strings is returned.
+ *  The atom type may be "X", which is a wildcard that matches any atom type.
+ */
 static VALUE s_ParameterRef_GetAtomTypes(VALUE self) {
 	UnionPar *up;
 	Int tp, i, n, types[4];
@@ -1026,6 +778,12 @@ static VALUE s_ParameterRef_GetAtomTypes(VALUE self) {
 		return rb_ary_new4(n, vals);
 }
 
+/*
+ *  call-seq:
+ *     k -> Float
+ *
+ *  Get the force constant. Available for bond, angle, dihedral, and improper parameters.
+ */
 static VALUE s_ParameterRef_GetK(VALUE self) {
 	UnionPar *up;
 	Int tp, i, n;
@@ -1051,6 +809,12 @@ static VALUE s_ParameterRef_GetK(VALUE self) {
 	}
 }
 
+/*
+ *  call-seq:
+ *     r0 -> Float
+ *
+ *  Get the equilibrium bond length. Only available for bond parameters.
+ */
 static VALUE s_ParameterRef_GetR0(VALUE self) {
 	UnionPar *up;
 	Int tp;
@@ -1060,6 +824,12 @@ static VALUE s_ParameterRef_GetR0(VALUE self) {
 	else rb_raise(rb_eMolbyError, "invalid member r0");
 }
 
+/*
+ *  call-seq:
+ *     a0 -> Float
+ *
+ *  Get the equilibrium angle (in degree). Only available for angle parameters.
+ */
 static VALUE s_ParameterRef_GetA0(VALUE self) {
 	UnionPar *up;
 	Int tp;
@@ -1069,6 +839,13 @@ static VALUE s_ParameterRef_GetA0(VALUE self) {
 	else rb_raise(rb_eMolbyError, "invalid member a0");
 }
 
+/*
+ *  call-seq:
+ *     mult -> Float
+ *
+ *  Get the multiplicity. Only available for dihedral and improper parameters.
+ *  (Note: Implementation of multiple dihedral/improper parameters is not well tested)
+ */
 static VALUE s_ParameterRef_GetMult(VALUE self) {
 	UnionPar *up;
 	Int tp;
@@ -1078,6 +855,14 @@ static VALUE s_ParameterRef_GetMult(VALUE self) {
 	else rb_raise(rb_eMolbyError, "invalid member mult");
 }
 
+/*
+ *  call-seq:
+ *     period -> Integer or Array of Integers
+ *
+ *  Get the periodicity. Only available for dihedral and improper parameters.
+ *  If the multiplicity is larger than 1, then an array of integers is returned. 
+ *  (Note: Implementation of multiple dihedral/improper parameters is not well tested)
+ */
 static VALUE s_ParameterRef_GetPeriod(VALUE self) {
 	UnionPar *up;
 	Int tp, i, n;
@@ -1085,16 +870,24 @@ static VALUE s_ParameterRef_GetPeriod(VALUE self) {
 	up = s_UnionParFromValue(self, &tp, 0);
 	if (tp == kDihedralParType || tp == kImproperParType) {
 		if (up->torsion.mult == 1)
-			return rb_float_new(up->torsion.period[0]);
+			return INT2NUM(up->torsion.period[0]);
 		n = up->torsion.mult;
 		if (n > 3)
 			n = 3;
 		for (i = 0; i < n; i++)
-			vals[i] = rb_float_new(up->torsion.period[i]);
+			vals[i] = INT2NUM(up->torsion.period[i]);
 		return rb_ary_new4(n, vals);
 	} else rb_raise(rb_eMolbyError, "invalid member period");
 }
 
+/*
+ *  call-seq:
+ *     phi0 -> Float or Array of Floats
+ *
+ *  Get the equilibrium dihedral angle. Only available for dihedral and improper parameters.
+ *  If the multiplicity is larger than 1, then an array of floats is returned. 
+ *  (Note: Implementation of multiple dihedral/improper parameters is not well tested)
+ */
 static VALUE s_ParameterRef_GetPhi0(VALUE self) {
 	UnionPar *up;
 	Int tp, i, n;
@@ -1112,6 +905,12 @@ static VALUE s_ParameterRef_GetPhi0(VALUE self) {
 	} else rb_raise(rb_eMolbyError, "invalid member phi0");
 }
 
+/*
+ *  call-seq:
+ *     A -> Float
+ *
+ *  Get the "A" value for the van der Waals parameter.
+ */
 static VALUE s_ParameterRef_GetA(VALUE self) {
 	UnionPar *up;
 	Int tp;
@@ -1123,6 +922,12 @@ static VALUE s_ParameterRef_GetA(VALUE self) {
 	else rb_raise(rb_eMolbyError, "invalid member A");
 }
 
+/*
+ *  call-seq:
+ *     B -> Float
+ *
+ *  Get the "B" value for the van der Waals parameter.
+ */
 static VALUE s_ParameterRef_GetB(VALUE self) {
 	UnionPar *up;
 	Int tp;
@@ -1134,6 +939,12 @@ static VALUE s_ParameterRef_GetB(VALUE self) {
 	else rb_raise(rb_eMolbyError, "invalid member B");
 }
 
+/*
+ *  call-seq:
+ *     r_eq -> Float
+ *
+ *  Get the equilibrium radius (half of the minimum energy distance) for the van der Waals parameter.
+ */
 static VALUE s_ParameterRef_GetReq(VALUE self) {
 	UnionPar *up;
 	Int tp;
@@ -1154,6 +965,12 @@ static VALUE s_ParameterRef_GetReq(VALUE self) {
 /*	else return rb_float_new(pow(2*a/b, 1.0/6.0)); */
 }
 
+/*
+ *  call-seq:
+ *     eps -> Float
+ *
+ *  Get the minimum energy for the van der Waals parameter.
+ */
 static VALUE s_ParameterRef_GetEps(VALUE self) {
 	UnionPar *up;
 	Int tp;
@@ -1174,6 +991,12 @@ static VALUE s_ParameterRef_GetEps(VALUE self) {
 /*	else return rb_float_new(b*b/a/4.0 * INTERNAL2KCAL);  */
 }
 
+/*
+ *  call-seq:
+ *     A14 -> Float
+ *
+ *  Get the "A" value for the 1-4 van der Waals parameter.
+ */
 static VALUE s_ParameterRef_GetA14(VALUE self) {
 	UnionPar *up;
 	Int tp;
@@ -1185,6 +1008,12 @@ static VALUE s_ParameterRef_GetA14(VALUE self) {
 	else rb_raise(rb_eMolbyError, "invalid member A14");
 }
 
+/*
+ *  call-seq:
+ *     B14 -> Float
+ *
+ *  Get the "B" value for the 1-4 van der Waals parameter.
+ */
 static VALUE s_ParameterRef_GetB14(VALUE self) {
 	UnionPar *up;
 	Int tp;
@@ -1196,6 +1025,12 @@ static VALUE s_ParameterRef_GetB14(VALUE self) {
 	else rb_raise(rb_eMolbyError, "invalid member B14");
 }
 
+/*
+ *  call-seq:
+ *     r_eq14 -> Float
+ *
+ *  Get the equilibrium radius (half of the minimum energy distance) for the 1-4 van der Waals parameter.
+ */
 static VALUE s_ParameterRef_GetReq14(VALUE self) {
 	UnionPar *up;
 	Int tp;
@@ -1216,6 +1051,12 @@ static VALUE s_ParameterRef_GetReq14(VALUE self) {
 /*	else return rb_float_new(pow(2*a/b, 1.0/6.0));  */
 }
 
+/*
+ *  call-seq:
+ *     eps14 -> Float
+ *
+ *  Get the minimum energy for the 1-4 van der Waals parameter.
+ */
 static VALUE s_ParameterRef_GetEps14(VALUE self) {
 	UnionPar *up;
 	Int tp;
@@ -1236,6 +1077,12 @@ static VALUE s_ParameterRef_GetEps14(VALUE self) {
 /*	else return rb_float_new(b*b/a/4.0 * INTERNAL2KCAL);  */
 }
 
+/*
+ *  call-seq:
+ *     cutoff -> Float
+ *
+ *  Get the cutoff distance for the van der Waals pair-specific cutoff parameter.
+ */
 static VALUE s_ParameterRef_GetCutoff(VALUE self) {
 	UnionPar *up;
 	Int tp;
@@ -1245,6 +1092,12 @@ static VALUE s_ParameterRef_GetCutoff(VALUE self) {
 	else rb_raise(rb_eMolbyError, "invalid member cutoff");
 }
 
+/*
+ *  call-seq:
+ *     radius -> Float
+ *
+ *  Get the atomic radius for the atom display parameter.
+ */
 static VALUE s_ParameterRef_GetRadius(VALUE self) {
 	UnionPar *up;
 	Int tp;
@@ -1254,6 +1107,12 @@ static VALUE s_ParameterRef_GetRadius(VALUE self) {
 	else rb_raise(rb_eMolbyError, "invalid member radius");
 }
 
+/*
+ *  call-seq:
+ *     color -> [Float, Float, Float]
+ *
+ *  Get the rgb color for the atom display parameter.
+ */
 static VALUE s_ParameterRef_GetColor(VALUE self) {
 	UnionPar *up;
 	Int tp;
@@ -1263,6 +1122,12 @@ static VALUE s_ParameterRef_GetColor(VALUE self) {
 	else rb_raise(rb_eMolbyError, "invalid member color");
 }
 
+/*
+ *  call-seq:
+ *     atomic_number -> Integer
+ *
+ *  Get the atomic number for the atom display parameter.
+ */
 static VALUE s_ParameterRef_GetAtomicNumber(VALUE self) {
 	UnionPar *up;
 	Int tp;
@@ -1272,6 +1137,12 @@ static VALUE s_ParameterRef_GetAtomicNumber(VALUE self) {
 	else rb_raise(rb_eMolbyError, "invalid member atomic_number");
 }
 
+/*
+ *  call-seq:
+ *     name -> String
+ *
+ *  Get the name for the atom display parameter.
+ */
 static VALUE s_ParameterRef_GetName(VALUE self) {
 	UnionPar *up;
 	Int tp;
@@ -1284,6 +1155,12 @@ static VALUE s_ParameterRef_GetName(VALUE self) {
 	} else rb_raise(rb_eMolbyError, "invalid member name");
 }
 
+/*
+ *  call-seq:
+ *     weight -> Float
+ *
+ *  Get the atomic weight for the atom display parameter.
+ */
 static VALUE s_ParameterRef_GetWeight(VALUE self) {
 	UnionPar *up;
 	Int tp;
@@ -1295,6 +1172,12 @@ static VALUE s_ParameterRef_GetWeight(VALUE self) {
 	else rb_raise(rb_eMolbyError, "invalid member weight");
 }
 
+/*
+ *  call-seq:
+ *     fullname -> String
+ *
+ *  Get the full name for the atom display parameter.
+ */
 static VALUE s_ParameterRef_GetFullName(VALUE self) {
 	UnionPar *up;
 	Int tp;
@@ -1307,6 +1190,12 @@ static VALUE s_ParameterRef_GetFullName(VALUE self) {
 	} else rb_raise(rb_eMolbyError, "invalid member fullname");
 }
 
+/*
+ *  call-seq:
+ *     comment -> String
+ *
+ *  Get the comment for the parameter.
+ */
 static VALUE s_ParameterRef_GetComment(VALUE self) {
 	UnionPar *up;
 	Int tp, com;
@@ -1317,6 +1206,13 @@ static VALUE s_ParameterRef_GetComment(VALUE self) {
 	else return rb_str_new2(ParameterGetComment(com));
 }
 
+/*
+ *  call-seq:
+ *     source -> String
+ *
+ *  Get the source string for the parameter. Returns false for undefined parameter,
+ *  and nil for "local" parameter that is specific for the molecule.
+ */
 static VALUE s_ParameterRef_GetSource(VALUE self) {
 	UnionPar *up;
 	Int tp, src;
@@ -1963,7 +1859,7 @@ s_ParameterRef_GetAttr(VALUE self, VALUE key)
 
 /*
  *  call-seq:
- *     parameter.keys(idx)          -> array of valid parameter attributes
+ *     keys(idx)          -> array of valid parameter attributes
  *  
  *  Returns an array of valid parameter attributes (as Symbols).
  */
@@ -1996,7 +1892,7 @@ s_ParameterRef_Keys(VALUE self)
 
 /*
  *  call-seq:
- *     parameter.to_hash(idx)          -> hash
+ *     to_hash(idx)          -> Hash
  *  
  *  Returns a hash containing valid parameter names and values
  */
@@ -2019,7 +1915,7 @@ s_ParameterRef_ToHash(VALUE self)
 
 /*
  *  call-seq:
- *     parameter.to_s(idx)          -> string
+ *     parameter.to_s(idx)          -> String
  *  
  *  Returns a string representation of the given parameter
  */
@@ -2117,7 +2013,7 @@ s_MoleculeFromParameterOrParEnumerableValue(VALUE val)
 
 /*
  *  call-seq:
- *     Parameter.builtin    -> parameter
+ *     builtin    -> Parameter
  *  
  *  Returns a parameter value that points to the global (builtin) parameters.
  */
@@ -2130,15 +2026,14 @@ s_Parameter_Builtin(VALUE self)
 
 /*
  *  call-seq:
- *     Parameter.bond(idx)          -> parameterRef
- *     Parameter.bond(t1, t2)       -> parameterRef
+ *     bond(idx)          -> ParameterRef
+ *     bond(t1, t2)       -> ParameterRef
  *  
  *  In the first form, the index-th bond parameter record is returned. In the second
- *  form, the bond parameter for t1-t2 is looked up (the last index first).　t1, t2
+ *  form, the bond parameter for t1-t2 is looked up (the last index first). t1, t2
  *  are the atom type string (up to 4 characters).
  *  If the method is used as a singleton method, then the default parameters are looked up.
  *  Otherwise, the specific parameters are looked up first, and then the default parameters.
- *  In this case, t1 and t2 can be the atom index (0-based).
  */
 static VALUE
 s_Parameter_Bond(int argc, VALUE *argv, VALUE self)
@@ -2178,15 +2073,14 @@ s_Parameter_Bond(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     Parameter.angle(idx)          -> parameterRef
- *     Parameter.angle(t1, t2, t3)   -> parameterRef
+ *     angle(idx)          -> ParameterRef
+ *     angle(t1, t2, t3)   -> ParameterRef
  *  
  *  In the first form, the index-th angle parameter record is returned. In the second
- *  form, the bond parameter for t1-t2-t3 is looked up (the last index first).　t1, t2, t3
+ *  form, the bond parameter for t1-t2-t3 is looked up (the last index first). t1, t2, t3
  *  are the atom type string (up to 4 characters).
  *  If the method is used as a singleton method, then the default parameters are looked up.
  *  Otherwise, the specific parameters are looked up first, and then the default parameters.
- *  In this case, t1-t3 can be the atom index (0-based).
  */
 static VALUE
 s_Parameter_Angle(int argc, VALUE *argv, VALUE self)
@@ -2227,15 +2121,14 @@ s_Parameter_Angle(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     Parameter.dihedral(idx)            -> parameterRef
- *     Parameter.dihedral(t1, t2, t3, t4) -> parameterRef
+ *     dihedral(idx)            -> ParameterRef
+ *     dihedral(t1, t2, t3, t4) -> ParameterRef
  *  
  *  In the first form, the index-th dihedral parameter record is returned. In the second
- *  form, the bond parameter for t1-t2-t3-t4 is looked up (the last index first).　t1, t2, t3, t4
+ *  form, the bond parameter for t1-t2-t3-t4 is looked up (the last index first). t1, t2, t3, t4
  *  are the atom type string (up to 4 characters).
  *  If the method is used as a singleton method, then the default parameters are looked up.
  *  Otherwise, the specific parameters are looked up first, and then the default parameters.
- *  In this case, t1-t4 can be the atom index (0-based).
  */
 static VALUE
 s_Parameter_Dihedral(int argc, VALUE *argv, VALUE self)
@@ -2277,15 +2170,14 @@ s_Parameter_Dihedral(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     Parameter.improper(idx)            -> parameterRef
- *     Parameter.improper(t1, t2, t3, t4) -> parameterRef
+ *     improper(idx)            -> ParameterRef
+ *     improper(t1, t2, t3, t4) -> ParameterRef
  *  
  *  In the first form, the index-th improper parameter record is returned. In the second
- *  form, the bond parameter for t1-t2-t3-t4 is looked up (the last index first).　t1, t2, t3, t4
+ *  form, the bond parameter for t1-t2-t3-t4 is looked up (the last index first). t1, t2, t3, t4
  *  are the atom type string (up to 4 characters).
  *  If the method is used as a singleton method, then the default parameters are looked up.
  *  Otherwise, the specific parameters are looked up first, and then the default parameters.
- *  In this case, t1-t4 can be the atom index (0-based).
  */
 static VALUE
 s_Parameter_Improper(int argc, VALUE *argv, VALUE self)
@@ -2327,15 +2219,14 @@ s_Parameter_Improper(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     Parameter.vdw(idx)            -> parameterRef
- *     Parameter.vdw(t1)             -> parameterRef
+ *     vdw(idx)            -> ParameterRef
+ *     vdw(t1)             -> ParameterRef
  *  
  *  In the first form, the index-th vdw parameter record is returned. In the second
- *  form, the vdw parameter for t1 is looked up (the last index first).　t1
+ *  form, the vdw parameter for t1 is looked up (the last index first). t1
  *  are the atom type string (up to 4 characters).
  *  If the method is used as a singleton method, then the default parameters are looked up.
  *  Otherwise, the specific parameters are looked up first, and then the default parameters.
- *  In this case, t1 can be the atom index (0-based).
  */
 static VALUE
 s_Parameter_Vdw(int argc, VALUE *argv, VALUE self)
@@ -2376,15 +2267,14 @@ s_Parameter_Vdw(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     Parameter.vdw_pair(idx)          -> parameterRef
- *     Parameter.vdw_pair(t1, t2)       -> parameterRef
+ *     vdw_pair(idx)          -> ParameterRef
+ *     vdw_pair(t1, t2)       -> ParameterRef
  *  
  *  In the first form, the index-th vdw-pair parameter record is returned. In the second
- *  form, the vdw-pair parameter for t1-t2 is looked up (the last index first).　t1, t2
+ *  form, the vdw-pair parameter for t1-t2 is looked up (the last index first). t1, t2
  *  are the atom type string (up to 4 characters).
  *  If the method is used as a singleton method, then the default parameters are looked up.
  *  Otherwise, the specific parameters are looked up first, and then the default parameters.
- *  In this case, t1 and t2 can be the atom index (0-based).
  */
 static VALUE
 s_Parameter_VdwPair(int argc, VALUE *argv, VALUE self)
@@ -2424,15 +2314,14 @@ s_Parameter_VdwPair(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     Parameter.vdw_cutoff(idx)          -> parameterRef
- *     Parameter.vdw_cutoff(t1, t2)       -> parameterRef
+ *     vdw_cutoff(idx)          -> ParameterRef
+ *     vdw_cutoff(t1, t2)       -> ParameterRef
  *  
  *  In the first form, the index-th vdw-cutoff parameter record is returned. In the second
- *  form, the vdw-pair parameter for t1-t2 is looked up (the last index first).　t1, t2
+ *  form, the vdw-pair parameter for t1-t2 is looked up (the last index first). t1, t2
  *  are the atom type string (up to 4 characters).
  *  If the method is used as a singleton method, then the default parameters are looked up.
  *  Otherwise, the specific parameters are looked up first, and then the default parameters.
- *  In this case, t1 and t2 can be the atom index (0-based).
  */
 static VALUE
 s_Parameter_VdwCutoff(int argc, VALUE *argv, VALUE self)
@@ -2472,12 +2361,12 @@ s_Parameter_VdwCutoff(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     Parameter.atom(idx)            -> parameterRef
- *     Parameter.atom(t1)             -> parameterRef
+ *     atom(idx)            -> ParameterRef
+ *     atom(t1)             -> ParameterRef
  *  
  *  In the first form, the index-th atom parameter record is returned. In the second
- *  form, the atom parameter for t1 is looked up (the last index first).　t1
- *  are the element name string (up to 4 characters).
+ *  form, the atom parameter for t1 is looked up (the last index first). t1
+ *  is the element name string (up to 4 characters).
  *  Unlike other Parameter methods, this is used only as a singleton method, because
  *  the all atom parameters are global.
  */
@@ -2512,7 +2401,7 @@ s_Parameter_Atom(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     Parameter.nbonds          -> integer
+ *     nbonds          -> Integer
  *  
  *  Returns the number of bond parameters. If the method is used as a singleton method,
  *  then only the default parameters are examined. Otherwise, the total number of the
@@ -2531,7 +2420,7 @@ s_Parameter_Nbonds(VALUE self)
 
 /*
  *  call-seq:
- *     Parameter.nangles          -> integer
+ *     nangles          -> Integer
  *  
  *  Returns the number of angle parameters. If the method is used as a singleton method,
  *  then only the default parameters are examined. Otherwise, the total number of the
@@ -2550,7 +2439,7 @@ s_Parameter_Nangles(VALUE self)
 
 /*
  *  call-seq:
- *     Parameter.ndihedrals          -> integer
+ *     ndihedrals          -> Integer
  *  
  *  Returns the number of dihedral parameters. If the method is used as a singleton method,
  *  then only the default parameters are examined. Otherwise, the total number of the
@@ -2569,7 +2458,7 @@ s_Parameter_Ndihedrals(VALUE self)
 
 /*
  *  call-seq:
- *     Parameter.nimpropers          -> integer
+ *     nimpropers          -> Integer
  *  
  *  Returns the number of improper parameters. If the method is used as a singleton method,
  *  then only the default parameters are examined. Otherwise, the total number of the
@@ -2588,7 +2477,7 @@ s_Parameter_Nimpropers(VALUE self)
 
 /*
  *  call-seq:
- *     Parameter.nvdws          -> integer
+ *     nvdws          -> Integer
  *  
  *  Returns the number of vdw parameters. If the method is used as a singleton method,
  *  then only the default parameters are examined. Otherwise, the total number of the
@@ -2607,7 +2496,7 @@ s_Parameter_Nvdws(VALUE self)
 
 /*
  *  call-seq:
- *     Parameter.nvdw_pairs          -> integer
+ *     nvdw_pairs          -> Integer
  *  
  *  Returns the number of vdw pair parameters. If the method is used as a singleton method,
  *  then only the default parameters are examined. Otherwise, the total number of the
@@ -2626,7 +2515,7 @@ s_Parameter_NvdwPairs(VALUE self)
 
 /*
  *  call-seq:
- *     Parameter.nvdw_cutoffs          -> integer
+ *     nvdw_cutoffs          -> Integer
  *  
  *  Returns the number of vdw cutoff parameters. If the method is used as a singleton method,
  *  then only the default parameters are examined. Otherwise, the total number of the
@@ -2645,7 +2534,7 @@ s_Parameter_NvdwCutoffs(VALUE self)
 
 /*
  *  call-seq:
- *     Parameter.natoms          -> integer
+ *     natoms          -> Integer
  *  
  *  Returns the number of atom parameters. Unlike other Parameter methods, this
  *  method is used only as a singleton method, because all atom parameters are global.
@@ -2658,7 +2547,7 @@ s_Parameter_Natoms(VALUE self)
 
 /*
  *  call-seq:
- *     Parameter.bonds          -> ParEnumerable
+ *     bonds          -> ParEnumerable
  *  
  *  Returns a ParEnumerable value that (formally) points to the collection of bond parameters.
  *  Parameter.bonds[x] is equivalent to Parameter.bond(x). ParEnumerable class is
@@ -2673,7 +2562,7 @@ s_Parameter_Bonds(VALUE self)
 
 /*
  *  call-seq:
- *     Parameter.angles          -> ParEnumerable
+ *     angles          -> ParEnumerable
  *  
  *  Returns a ParEnumerable value that (formally) points to the collection of angle parameters.
  *  Parameter.angles[x] is equivalent to Parameter.angle(x). ParEnumerable class is
@@ -2688,7 +2577,7 @@ s_Parameter_Angles(VALUE self)
 
 /*
  *  call-seq:
- *     Parameter.dihedrals          -> ParEnumerable
+ *     dihedrals          -> ParEnumerable
  *  
  *  Returns a ParEnumerable value that (formally) points to the collection of dihedral parameters.
  *  Parameter.dihedrals[x] is equivalent to Parameter.dihedral(x). ParEnumerable class is
@@ -2703,7 +2592,7 @@ s_Parameter_Dihedrals(VALUE self)
 
 /*
  *  call-seq:
- *     Parameter.impropers          -> ParEnumerable
+ *     impropers          -> ParEnumerable
  *  
  *  Returns a ParEnumerable value that (formally) points to the collection of improper parameters.
  *  Parameter.impropers[x] is equivalent to Parameter.improper(x). ParEnumerable class is
@@ -2718,7 +2607,7 @@ s_Parameter_Impropers(VALUE self)
 
 /*
  *  call-seq:
- *     Parameter.vdws          -> ParEnumerable
+ *     vdws          -> ParEnumerable
  *  
  *  Returns a ParEnumerable value that (formally) points to the collection of vdw parameters.
  *  Parameter.vdws[x] is equivalent to Parameter.vdw(x). ParEnumerable class is
@@ -2733,7 +2622,7 @@ s_Parameter_Vdws(VALUE self)
 
 /*
  *  call-seq:
- *     Parameter.vdw_pairs          -> ParEnumerable
+ *     vdw_pairs          -> ParEnumerable
  *  
  *  Returns a ParEnumerable value that (formally) points to the collection of vdw pair parameters.
  *  Parameter.vdw_pairs[x] is equivalent to Parameter.vdw_pair(x). ParEnumerable class is
@@ -2748,7 +2637,7 @@ s_Parameter_VdwPairs(VALUE self)
 
 /*
  *  call-seq:
- *     Parameter.vdw_cutoffs          -> ParEnumerable
+ *     vdw_cutoffs          -> ParEnumerable
  *  
  *  Returns a ParEnumerable value that (formally) points to the collection of vdw cutoff parameters.
  *  Parameter.vdw_cutoffs[x] is equivalent to Parameter.vdw_cutoff(x). ParEnumerable class is
@@ -2763,7 +2652,7 @@ s_Parameter_VdwCutoffs(VALUE self)
 
 /*
  *  call-seq:
- *     Parameter.atoms          -> ParEnumerable
+ *     atoms          -> ParEnumerable
  *  
  *  Returns a ParEnumerable value that (formally) points to the collection of atom parameters.
  *  Parameter.atoms[x] is equivalent to Parameter.atom(x). ParEnumerable class is
@@ -2828,7 +2717,17 @@ s_NewParEnumerableValueFromMoleculeAndType(Molecule *mol, Int parType)
 	return Data_Wrap_Struct(rb_cParEnumerable, 0, (void (*)(void *))s_ParEnumerableRelease, pen);
 }
 
-/*  []  */
+/*
+ *  call-seq:
+ *     self[*args]          -> ParameterRef
+ *  
+ *  Call the accessor of the Parameter object from which this ParEnumerable object is derived from.
+ *  Thus, if self is "bond" type, self[*args] is equivalent to p.bond(*args), where p is the
+ *  parent Parameter object of self.
+ *
+ *  <b>See Also</b>: Parameter#bond, Parameter#angle, Parameter#dihedral, Parameter#improper, 
+ *  Parameter#vdw, Parameter#vdw_pair, Parameter#vdw_cutoff, Parameter#atom.
+ */
 static VALUE
 s_ParEnumerable_Aref(int argc, VALUE *argv, VALUE self)
 {
@@ -2850,6 +2749,12 @@ s_ParEnumerable_Aref(int argc, VALUE *argv, VALUE self)
 	return Qnil;  /*  Not reached  */
 }
 
+/*
+ *  call-seq:
+ *     length          -> Integer
+ *  
+ *  Returns the number of parameters included in this enumerable.
+ */
 static VALUE
 s_ParEnumerable_Length(VALUE self)
 {
@@ -2871,6 +2776,12 @@ s_ParEnumerable_Length(VALUE self)
 	return Qnil;  /*  Not reached  */
 }
 
+/*
+ *  call-seq:
+ *     each {|pref| ...}
+ *  
+ *  Call the block for each parameter, passing a ParameterRef object as a block argument.
+ */
 VALUE
 s_ParEnumerable_Each(VALUE self)
 {
@@ -2913,6 +2824,12 @@ s_ParEnumerable_Each(VALUE self)
     return self;
 }
 
+/*
+ *  call-seq:
+ *     reverse_each {|pref| ...}
+ *  
+ *  Call the block for each parameter in the reverse order, passing a ParameterRef object as a block argument.
+ */
 VALUE
 s_ParEnumerable_ReverseEach(VALUE self)
 {
@@ -2955,7 +2872,7 @@ s_ParEnumerable_ReverseEach(VALUE self)
 
 /*
  *  call-seq:
- *     ParEnumerable.insert(idx = nil, pref = nil)       -> ParameterRef
+ *     insert(idx = nil, pref = nil)       -> ParameterRef
  *  
  *  Insert a new parameter at the specified position (if idx is nil, then at the end).
  *  If a ParameterRef is given, then the content of the parameter is copied to the new parameter,
@@ -3007,8 +2924,8 @@ s_ParEnumerable_Insert(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     ParEnumerable.delete(int)
- *     ParEnumerable.delete(intgroup)
+ *     delete(Integer)
+ *     delete(IntGroup)
  *  
  *  Delete the parameter(s) specified by the argument.
  */
@@ -3043,8 +2960,8 @@ s_ParEnumerable_Delete(VALUE self, VALUE ival)
 
 /*
  *  call-seq:
- *     ParEnumerable.lookup(atom_types, options, ...) -> ParameterRef
- *     ParEnumerable.lookup(atom_type_string, options, ...) -> ParameterRef
+ *     lookup(atom_types, options, ...) -> ParameterRef
+ *     lookup(atom_type_string, options, ...) -> ParameterRef
  *
  *  Find the parameter record that matches the given atom types. The atom types are given
  *  either as an array of string, or a single string delimited by whitespaces or hyphens.
@@ -3773,7 +3690,14 @@ s_AtomRef_GetAttr(VALUE self, VALUE key)
 
 static int s_Molecule_AtomIndexFromValue(Molecule *, VALUE);
 
-/*  []  */
+/*
+ *  call-seq:
+ *     self[idx] -> AtomRef or Array of Integers
+ *  
+ *  Get the idx-th atom, bond, etc. for the Molecule from which this MolEnuerable object is
+ *  derived from. For the atom, the return value is AtomRef. For the residue, the return
+ *  value is a String. Otherwise, the return value is an Array of Integers.
+ */
 static VALUE
 s_MolEnumerable_Aref(VALUE self, VALUE arg1)
 {
@@ -3823,6 +3747,12 @@ s_MolEnumerable_Aref(VALUE self, VALUE arg1)
 	return Qnil;
 }
 
+/*
+ *  call-seq:
+ *     length          -> Integer
+ *  
+ *  Returns the number of objects included in this enumerable.
+ */
 static VALUE
 s_MolEnumerable_Length(VALUE self)
 {
@@ -3845,6 +3775,16 @@ s_MolEnumerable_Length(VALUE self)
 	return INT2NUM(-1);
 }
 
+/*
+ *  call-seq:
+ *     each {|obj| ...}
+ *  
+ *  Call the block for each atom/bond/angle/dihedral/improper/residue. The block argument is
+ *  an AtomRef for atoms, a String for residues, and an Array of Integers for others.
+ *  For the atoms, a same AtomRef object is passed (with different internal information)
+ *  for each invocation of block. Otherwise, a new Ruby object will be created and passed
+ *  for each iteration.
+ */
 VALUE
 s_MolEnumerable_Each(VALUE self)
 {
@@ -3936,7 +3876,7 @@ s_Molecule_Alloc(VALUE klass)
 
 /*
  *  call-seq:
- *     molecule.dup          -> molecule
+ *     dup          -> Molecule
  *
  *  Duplicate a molecule. All entries are deep copied, so modifying the newly
  *  created object does not affect the old object in any sense.
@@ -3954,7 +3894,7 @@ s_Molecule_InitCopy(VALUE self, VALUE arg)
 
 /*
  *  call-seq:
- *     molecule.loadmbsf(file)       -> boolean
+ *     loadmbsf(file)       -> bool
  *
  *  Read a structure from a mbsf file.
  *  Return true if successful.
@@ -3981,7 +3921,7 @@ s_Molecule_Loadmbsf(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     molecule.loadpsf(file, pdbfile = nil)       -> boolean
+ *     loadpsf(file, pdbfile = nil)       -> bool
  *
  *  Read a structure from a psf file. molecule must be empty. The psf may be
  *  an "extended" version, which also contains coordinates. If pdbfile 
@@ -4036,7 +3976,7 @@ s_Molecule_Loadpsf(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     molecule.loadpdb(file)       -> boolean
+ *     loadpdb(file)       -> bool
  *
  *  Read coordinates from a pdb file. If molecule is empty, then structure is build
  *  by use of CONECT instructions. Otherwise, only the coordinates are read in.
@@ -4064,7 +4004,7 @@ s_Molecule_Loadpdb(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     molecule.loaddcd(file)       -> boolean
+ *     loaddcd(file)       -> bool
  *
  *  Read coordinates from a dcd file. The molecule should not empty.
  *  Return true if successful.
@@ -4091,7 +4031,7 @@ s_Molecule_Loaddcd(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     molecule.loadtep(file)       -> boolean
+ *     loadtep(file)       -> bool
  *
  *  Read coordinates from an ortep .tep file.
  *  Return true if successful.
@@ -4118,7 +4058,7 @@ s_Molecule_Loadtep(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     molecule.loadres(file)       -> boolean
+ *     loadres(file)       -> bool
  *
  *  Read coordinates from a shelx .res file.
  *  Return true if successful.
@@ -4145,7 +4085,7 @@ s_Molecule_Loadres(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     molecule.loadfchk(file)       -> boolean
+ *     loadfchk(file)       -> bool
  *
  *  Read coordinates and MO information from a Gaussian fchk file. (TODO: implement this) 
  *  Return true if successful.
@@ -4172,7 +4112,7 @@ s_Molecule_Loadfchk(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     molecule.loaddat(file)       -> boolean
+ *     loaddat(file)       -> bool
  *
  *  Read coordinates and ESP information from a GAMESS dat file. (TODO: read MO info as well) 
  *  Return true if successful.
@@ -4199,7 +4139,7 @@ s_Molecule_Loaddat(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     molecule.savembsf(file)       -> boolean
+ *     savembsf(file)       -> bool
  *
  *  Write structure as a mbsf file. Returns true if successful.
  */
@@ -4218,7 +4158,7 @@ s_Molecule_Savembsf(VALUE self, VALUE fname)
 
 /*
  *  call-seq:
- *     molecule.savepsf(file)       -> boolean
+ *     savepsf(file)       -> bool
  *
  *  Write structure as a psf file. Returns true if successful.
  */
@@ -4237,7 +4177,7 @@ s_Molecule_Savepsf(VALUE self, VALUE fname)
 
 /*
  *  call-seq:
- *     molecule.savepdb(file)       -> boolean
+ *     savepdb(file)       -> bool
  *
  *  Write coordinates as a pdb file. Returns true if successful.
  */
@@ -4256,7 +4196,7 @@ s_Molecule_Savepdb(VALUE self, VALUE fname)
 
 /*
  *  call-seq:
- *     molecule.savedcd(file)       -> boolean
+ *     savedcd(file)       -> bool
  *
  *  Write coordinates as a dcd file. Returns true if successful.
  */
@@ -4275,7 +4215,7 @@ s_Molecule_Savedcd(VALUE self, VALUE fname)
 
 /*
  *  call-seq:
- *     molecule.savetep(file)       -> boolean
+ *     savetep(file)       -> bool
  *
  *  Write coordinates as an ORTEP file. Returns true if successful.
  */
@@ -4353,31 +4293,12 @@ s_Molecule_LoadSave(int argc, VALUE *argv, VALUE self, int loadFlag)
 			}
 		}
 	}
-#if 0
-	if (loadFlag) {
-		/*  Try all "loadXXX" (public) methods  */
-		ID midsave = mid;
-		rval = rb_funcall(self, rb_intern("methods"), 0);
-		vp = RARRAY_PTR(rval);
-		for (i = RARRAY_LEN(rval) - 1; i >= 0; i--) {
-			p = RSTRING_PTR(vp[i]);
-			if (strncmp(p, "load", 4) == 0 && strlen(p) > 4) {
-				mid = rb_to_id(vp[i]);
-				if (midsave != 0 && mid == midsave)
-					continue;
-				rval = rb_funcall2(self, mid, argc, argv);
-				if (rval != Qnil)
-					return rval;  /* Successful */
-			}
-		}
-	}
-#endif
 	rb_raise(rb_eMolbyError, "the file %s cannot be %s", argstr, (loadFlag ? "loaded" : "saved"));
 }
 
 /*
  *  call-seq:
- *     molecule.molload(file, *args)       -> boolean
+ *     molload(file, *args)       -> bool
  *
  *  Read a structure from the given file by calling the public method "loadXXX" (XXX is the
  *  file type given by the extension). If this method fails, then all defined (public)
@@ -4391,7 +4312,7 @@ s_Molecule_Load(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     molecule.molsave(file, *args)       -> boolean
+ *     molsave(file, *args)       -> bool
  *
  *  Write a structure/coordinate to the given file by calling the public method "saveXXX"
  *  (XXX is the file type given by the extension).
@@ -4404,7 +4325,7 @@ s_Molecule_Save(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     molecule.name       -> string
+ *     name       -> String
  *
  *  Returns the display name of the molecule. If the molecule has no associated
  *  document, then returns nil.
@@ -4424,7 +4345,7 @@ s_Molecule_Name(VALUE self)
 
 /*
  *  call-seq:
- *     molecule.path       -> string
+ *     path       -> String
  *
  *  Returns the full path name of the molecule, if it is associated with a file.
  *  If the molecule has no associated file, then returns nil.
@@ -4444,7 +4365,7 @@ s_Molecule_Path(VALUE self)
 
 /*
  *  call-seq:
- *     molecule.dir       -> string
+ *     dir       -> String
  *
  *  Returns the full path name of the directory in which the file associated with the
  *  molecule is located. If the molecule has no associated file, then returns nil.
@@ -4471,7 +4392,7 @@ s_Molecule_Dir(VALUE self)
 
 /*
  *  call-seq:
- *     molecule.inspect       -> string
+ *     inspect       -> String
  *
  *  Returns a string in the form "Molecule[name]" if the molecule has the associated
  *  document. Otherwise, a string "<Molecule:0x****>" (the address is the address of
@@ -4512,9 +4433,9 @@ s_Molecule_Inspect(VALUE self)
 
 /*
  *  call-seq:
- *     Molecule.open(file)  -> molecule
+ *     open(file)  -> Molecule
  *
- *  Create a new molecule from file. This assumes MoleculeCallback_openNewMolecule() is implemented.
+ *  Create a new molecule from file.
  */
 static VALUE
 s_Molecule_Open(VALUE self, VALUE fname)
@@ -4532,8 +4453,7 @@ s_Molecule_Open(VALUE self, VALUE fname)
 
 /*
  *  call-seq:
- *     Molecule.new(file, *args)  -> molecule
- *     molecule.initialize(file, *args)
+ *     new(file, *args)  -> Molecule
  *
  *  Create a new molecule and call "load" method with the same arguments.
  */
@@ -4557,7 +4477,7 @@ s_Molecule_MolEnumerable(VALUE self, int kind)
 
 /*
  *  call-seq:
- *     molecule.atoms       -> MolEnumerable
+ *     atoms       -> MolEnumerable
  *
  *  Returns a MolEnumerable object representing the array of atoms.
  */
@@ -4569,7 +4489,7 @@ s_Molecule_Atoms(VALUE self)
 
 /*
  *  call-seq:
- *     molecule.bonds       -> MolEnumerable
+ *     bonds       -> MolEnumerable
  *
  *  Returns a MolEnumerable object representing the array of bonds. A bond is represented
  *  by an array of two atom indices.
@@ -4582,7 +4502,7 @@ s_Molecule_Bonds(VALUE self)
 
 /*
  *  call-seq:
- *     molecule.angles       -> MolEnumerable
+ *     angles       -> MolEnumerable
  *
  *  Returns a MolEnumerable object representing the array of angles. An angle is represented
  *  by an array of three atom indices.
@@ -4595,7 +4515,7 @@ s_Molecule_Angles(VALUE self)
 
 /*
  *  call-seq:
- *     molecule.dihedrals       -> MolEnumerable
+ *     dihedrals       -> MolEnumerable
  *
  *  Returns a MolEnumerable object representing the array of dihedrals. A dihedral is represented
  *  by an array of four atom indices.
@@ -4608,7 +4528,7 @@ s_Molecule_Dihedrals(VALUE self)
 
 /*
  *  call-seq:
- *     molecule.impropers       -> MolEnumerable
+ *     impropers       -> MolEnumerable
  *
  *  Returns a MolEnumerable object representing the array of impropers. An improper is represented
  *  by an array of four atom indices.
@@ -4621,7 +4541,7 @@ s_Molecule_Impropers(VALUE self)
 
 /*
  *  call-seq:
- *     molecule.residues       -> MolEnumerable
+ *     residues       -> MolEnumerable
  *
  *  Returns a MolEnumerable object representing the array of residue names.
  */
@@ -4633,7 +4553,7 @@ s_Molecule_Residues(VALUE self)
 
 /*
  *  call-seq:
- *     molecule.natoms       -> int
+ *     natoms       -> Integer
  *
  *  Returns the number of atoms.
  */
@@ -4647,7 +4567,7 @@ s_Molecule_Natoms(VALUE self)
 
 /*
  *  call-seq:
- *     molecule.nbonds       -> int
+ *     nbonds       -> Integer
  *
  *  Returns the number of bonds.
  */
@@ -4661,7 +4581,7 @@ s_Molecule_Nbonds(VALUE self)
 
 /*
  *  call-seq:
- *     molecule.nangles       -> int
+ *     nangles       -> Integer
  *
  *  Returns the number of angles.
  */
@@ -4675,7 +4595,7 @@ s_Molecule_Nangles(VALUE self)
 
 /*
  *  call-seq:
- *     molecule.ndihedrals       -> int
+ *     ndihedrals       -> Integer
  *
  *  Returns the number of dihedrals.
  */
@@ -4689,7 +4609,7 @@ s_Molecule_Ndihedrals(VALUE self)
 
 /*
  *  call-seq:
- *     molecule.nimpropers       -> int
+ *     nimpropers       -> Integer
  *
  *  Returns the number of impropers.
  */
@@ -4703,7 +4623,7 @@ s_Molecule_Nimpropers(VALUE self)
 
 /*
  *  call-seq:
- *     molecule.nresidues       -> int
+ *     nresidues       -> Integer
  *
  *  Returns the number of residues.
  */
@@ -4717,7 +4637,7 @@ s_Molecule_Nresidues(VALUE self)
 
 /*
  *  call-seq:
- *     molecule.start_step       -> int
+ *     start_step       -> Integer
  *
  *  Returns the start step (defined by dcd format).
  */
@@ -4731,7 +4651,7 @@ s_Molecule_StartStep(VALUE self)
 
 /*
  *  call-seq:
- *     molecule.start_step = int
+ *     start_step = Integer
  *
  *  Set the start step (defined by dcd format).
  */
@@ -4746,7 +4666,7 @@ s_Molecule_SetStartStep(VALUE self, VALUE val)
 
 /*
  *  call-seq:
- *     molecule.steps_per_frame       -> int
+ *     steps_per_frame       -> Integer
  *
  *  Returns the number of steps between frames (defined by dcd format).
  */
@@ -4760,7 +4680,7 @@ s_Molecule_StepsPerFrame(VALUE self)
 
 /*
  *  call-seq:
- *     molecule.steps_per_frame = int
+ *     steps_per_frame = Integer
  *
  *  Set the number of steps between frames (defined by dcd format).
  */
@@ -4775,7 +4695,7 @@ s_Molecule_SetStepsPerFrame(VALUE self, VALUE val)
 
 /*
  *  call-seq:
- *     molecule.ps_per_step       -> float
+ *     ps_per_step       -> Float
  *
  *  Returns the time increment (in picoseconds) for one step (defined by dcd format).
  */
@@ -4789,7 +4709,7 @@ s_Molecule_PsPerStep(VALUE self)
 
 /*
  *  call-seq:
- *     molecule.ps_per_step = float
+ *     ps_per_step = Float
  *
  *  Set the time increment (in picoseconds) for one step (defined by dcd format).
  */
@@ -4804,9 +4724,9 @@ s_Molecule_SetPsPerStep(VALUE self, VALUE val)
 
 /*
  *  call-seq:
- *     molecule.find_angles     -> int (added number of angles)
+ *     find_angles     -> Integer
  *
- *  Find the angles from the bonds
+ *  Find the angles from the bonds. Returns the number of angles newly created.
  */
 static VALUE
 s_Molecule_FindAngles(VALUE self)
@@ -4841,9 +4761,9 @@ s_Molecule_FindAngles(VALUE self)
 
 /*
  *  call-seq:
- *     molecule.find_dihedrals     -> int (added number of dihedrals)
+ *     find_dihedrals     -> Integer
  *
- *  Find the dihedrals from the bonds
+ *  Find the dihedrals from the bonds. Returns the number of dihedrals newly created.
  */
 static VALUE
 s_Molecule_FindDihedrals(VALUE self)
@@ -4889,10 +4809,9 @@ s_Molecule_FindDihedrals(VALUE self)
 
 /*
  *  call-seq:
- *     molecule.nresidues = integer
+ *     nresidues = Integer
  *
- *  Change the number of residues. If the result is not equal to the argument, 
- *  exception is thrown. This operation is undoable.
+ *  Change the number of residues.
  */
 static VALUE
 s_Molecule_ChangeNresidues(VALUE self, VALUE val)
@@ -4908,7 +4827,7 @@ s_Molecule_ChangeNresidues(VALUE self, VALUE val)
 
 /*
  *  call-seq:
- *     molecule.max_residue_number(atom_group = nil)     -> int
+ *     max_residue_number(atom_group = nil)     -> Integer
  *
  *  Returns the maximum residue number actually used. If an atom group is given, only
  *  these atoms are examined. If no atom is present, nil is returned.
@@ -4929,7 +4848,7 @@ s_Molecule_MaxResSeq(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     molecule.min_residue_number(atom_group = nil)     -> int
+ *     min_residue_number(atom_group = nil)     -> Integer
  *
  *  Returns the minimum residue number actually used. If an atom group is given, only
  *  these atoms are examined. If no atom is present, nil is returned.
@@ -4950,7 +4869,7 @@ s_Molecule_MinResSeq(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     molecule.each_atom block
+ *     each_atom {|aref| ...}
  *
  *  Execute the block, with the AtomRef object for each atom as the argument.
  *  Equivalent to self.atoms.each, except that the return value is self (a Molecule object).
@@ -4974,9 +4893,9 @@ s_Molecule_EachAtom(VALUE self)
 
 /*
  *  call-seq:
- *     molecule.cell     -> array [a, b, c, alpha, beta, gamma]
+ *     cell     -> [a, b, c, alpha, beta, gamma]
  *
- *  Returns the cell parameters. If cell is not set, returns nil.
+ *  Returns the unit cell parameters. If cell is not set, returns nil.
  */
 static VALUE
 s_Molecule_Cell(VALUE self)
@@ -4995,10 +4914,10 @@ s_Molecule_Cell(VALUE self)
 
 /*
  *  call-seq:
- *     molecule.cell = [a, b, c, alpha, beta, gamma]
+ *     cell = [a, b, c, alpha, beta, gamma]
  *     set_cell([a, b, c, alpha, beta, gamma], flag = nil)
  *
- *  Set the cell parameters. If the cell value is nil, then clear the current cell. 
+ *  Set the unit cell parameters. If the cell value is nil, then clear the current cell. 
     This operation is undoable. If the second argument is given as non-nil, then 
 	the coordinates are transformed so that the cartesian coordinates remain the same.
  */
@@ -5045,8 +4964,10 @@ s_Molecule_CellTransform(VALUE self)
  *  call-seq:
  *     box -> [avec, bvec, cvec, origin, flags]
  *
- *  Get the unit cell as a periodic bounding box. Avec, bvec, cvec, origin are Vector3D objects, and 
-    flags is a 3-member array of integers. If no unit cell is defined, nil is returned.
+ *  Get the unit cell information in the form of a periodic bounding box.
+ *  Avec, bvec, cvec, origin are Vector3D objects, and flags is a 3-member array of 
+ *  Integers which define whether the system is periodic along the axis.
+ *  If no unit cell is defined, nil is returned.
  */
 static VALUE
 s_Molecule_Box(VALUE self)
@@ -5074,8 +4995,9 @@ s_Molecule_Box(VALUE self)
  *  Set the unit cell parameters. Avec, bvec, and cvec can be either a Vector3D or a number.
     If it is a number, the x/y/z axis vector is multiplied with the given number and used
     as the box vector.
-    Flags, if present, is a 3-member array of integers representing the periodic flags.
-    In the second form, an isotropic box with dimension d is set.
+    Flags, if present, is a 3-member array of Integers defining whether the system is
+    periodic along the axis.
+    In the second form, an isotropic box with cell-length d is set.
     In the third form, the existing box is cleared.
  */
 static VALUE
@@ -5127,28 +5049,10 @@ s_Molecule_SetBox(int argc, VALUE *argv, VALUE self)
 	return self;
 }
 
-#if 0
 /*
  *  call-seq:
- *     box_transform -> Transform
- *
- *  Get the transform matrix that converts internal coordinates for the periodic box
- *  to cartesian coordinates. If the periodic box is not defined, nil is returned.
- */
-static VALUE
-s_Molecule_BoxTransform(VALUE self)
-{
-    Molecule *mol;
-    Data_Get_Struct(self, Molecule, mol);
-	if (mol == NULL || mol->box == NULL)
-		return Qnil;
-	return ValueFromTransform(&(mol->box->tr));
-}
-#endif
-
-/*
- *  call-seq:
- *     molecule.symmetry -> array of Transform
+ *     symmetry -> Array of Transforms
+ *     symmetries -> Array of Transforms
  *
  *  Get the currently defined symmetry operations. If no symmetry operation is defined,
  *  returns an empty array.
@@ -5171,7 +5075,7 @@ s_Molecule_Symmetry(VALUE self)
 
 /*
  *  call-seq:
- *     molecule.nsymmetries -> integer
+ *     nsymmetries -> Integer
  *
  *  Get the number of currently defined symmetry operations.
  */
@@ -5185,10 +5089,12 @@ s_Molecule_Nsymmetries(VALUE self)
 
 /*
  *  call-seq:
- *     molecule.add_symmetry(Transform) -> integer (number of total transforms)
+ *     add_symmetry(Transform) -> Integer
  *
- *  Add a new symmetry operation. If no symmetry operation is defined, then add an identity
- *  transform as the index 0, then the new symmetry operation is appended.
+ *  Add a new symmetry operation. If no symmetry operation is defined and the
+ *  given argument is not an identity transform, then also add an identity
+ *  transform at the index 0.
+ *  Returns the total number of symmetries after operation.
  */
 static VALUE
 s_Molecule_AddSymmetry(VALUE self, VALUE trans)
@@ -5203,10 +5109,12 @@ s_Molecule_AddSymmetry(VALUE self, VALUE trans)
 
 /*
  *  call-seq:
- *     molecule.remove_symmetry(count = nil) -> integer (number of total transforms)
+ *     remove_symmetry(count = nil) -> Integer
+ *     remove_symmetries(count = nil) -> Integer
  *
  *  Remove the specified number of symmetry operations. The last added ones are removed
- *  first. If count is nil, then all symmetry operations are removed.
+ *  first. If count is nil, then all symmetry operations are removed. Returns the
+ *  number of leftover symmetries.
  */
 static VALUE
 s_Molecule_RemoveSymmetry(int argc, VALUE *argv, VALUE self)
@@ -5227,7 +5135,7 @@ s_Molecule_RemoveSymmetry(int argc, VALUE *argv, VALUE self)
 	}
 	for (i = 0; i < n; i++)
 		MolActionCreateAndPerform(mol, gMolActionDeleteSymmetryOperation);
-	return self;
+	return INT2NUM(mol->nsyms);
 }
 
 static VALUE
@@ -5242,19 +5150,16 @@ s_Molecule_AtomGroup_i(VALUE arg, VALUE values)
 
 /*
  *  call-seq:
- *     molecule.atom_group
- *     molecule.atom_group { block }
- *     molecule.atom_group(arg1, arg2, ...)
- *     molecule.atom_group(arg1, arg2, ...) { block }
- *         argN is either integer, string, intGroup, or array-like object
+ *     atom_group
+ *     atom_group {|aref| ...}
+ *     atom_group(arg1, arg2, ...)
+ *     atom_group(arg1, arg2, ...) {|aref| ...}
  *
- *  Specify a group of atoms. If no arguments are given, IntGroup[0..natoms] is the result.
- *  If arguments are given, then the atoms reprensented by the arguments are combined (the
- *  arguments are not scanned recursively; i.e. if arg1 is an array of intGroups, the intGroups
- *  are not scanned for component integers and exception will fire because intGroups cannot
- *  be coerced into an integer). For a conversion of a string to an atom index, see description
- *  of <code>Molecule#atom_index<code>.
- *  If block is given, the block is evaluated with an AtomRef (not atom index integers!)
+ *  Specify a group of atoms. If no arguments are given, IntGroup\[0...natoms] is the result.
+ *  If arguments are given, then the atoms reprensented by the arguments are added to the
+ *  group. For a conversion of a string to an atom index, see the description
+ *  of Molecule#atom_index.
+ *  If a block is given, it is evaluated with an AtomRef (not atom index integers)
  *  representing each atom, and the atoms are removed from the result if the block returns false.
  *
  */
@@ -5319,7 +5224,7 @@ s_Molecule_AtomGroup(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     molecule.atom_index(val)       -> int
+ *     atom_index(val)       -> Integer
  *
  *  Returns the atom index represented by val. val can be either a non-negative integer
  *  (directly representing the atom index), a negative integer (representing <code>natoms - val</code>),
@@ -5338,7 +5243,7 @@ s_Molecule_AtomIndex(VALUE self, VALUE val)
 
 /*
  *  call-seq:
- *     molecule.extract(group, dummy_flag = nil)       -> molecule
+ *     extract(group, dummy_flag = nil)       -> Molecule
  *
  *  Extract the atoms given by group and return as a new molecule object.
  *  If dummy_flag is true, then the atoms that are not included in the group but are connected
@@ -5368,7 +5273,7 @@ s_Molecule_Extract(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     molecule.add(molecule2)       -> molecule
+ *     add(molecule2)       -> self
  *
  *  Combine two molecules. The residue numbers of the newly added atoms may be renumbered to avoid
     conflicts.
@@ -5380,7 +5285,6 @@ s_Molecule_Add(VALUE self, VALUE val)
     Molecule *mol1, *mol2;
     Data_Get_Struct(self, Molecule, mol1);
 	mol2 = MoleculeFromValue(val);
-//	MoleculeMerge(mol1, mol2, NULL, mol1->nresidues - 1);
 	MolActionCreateAndPerform(mol1, gMolActionMergeMolecule, mol2, NULL);
 	return self; 
 }
@@ -5395,7 +5299,7 @@ s_Molecule_Duplicate(VALUE self)
 
 /*
  *  call-seq:
- *     molecule.remove(group)       -> molecule
+ *     remove(group)       -> Molecule
  *
  *  The atoms designated by the given group are removed from the molecule.
  *  This operation is undoable.
@@ -5448,7 +5352,7 @@ s_Molecule_Remove(VALUE self, VALUE group)
 
 /*
  *  call-seq:
- *     molecule.create_atom(name, pos = -1)  -> AtomRef
+ *     create_atom(name, pos = -1)  -> AtomRef
  *
  *  Create a new atom with the specified name (may contain residue 
  *  information) and position (if position is out of range, the atom is appended at
@@ -5490,7 +5394,7 @@ s_Molecule_CreateAnAtom(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     molecule.duplicate_atom(atomref, pos = -1)  -> AtomRef
+ *     duplicate_atom(atomref, pos = -1)  -> AtomRef
  *
  *  Create a new atom with the same attributes (but no bonding information)
  *  with the specified atom. Returns the reference to the new atom.
@@ -5534,7 +5438,7 @@ s_Molecule_DuplicateAnAtom(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     molecule.create_bond(n1, n2, ...)       -> molecule
+ *     create_bond(n1, n2, ...)       -> Molecule
  *
  *  Create bonds between atoms n1 and n2, n3 and n4, and so on. Returns self.
  *  This operation is undoable.
@@ -5568,7 +5472,7 @@ s_Molecule_CreateBond(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     molecule.add_angle(n1, n2, n3)       -> molecule
+ *     add_angle(n1, n2, n3)       -> Molecule
  *
  *  Add angle n1-n2-n3. Returns self. Usually, angles are automatically added
  *  when a bond is created, so it is rarely necessary to use this method explicitly.
@@ -5592,7 +5496,7 @@ s_Molecule_AddAngle(VALUE self, VALUE v1, VALUE v2, VALUE v3)
 
 /*
  *  call-seq:
- *     molecule.remove_angle(n1, n2, n3)       -> molecule
+ *     remove_angle(n1, n2, n3)       -> Molecule
  *
  *  Remove angle n1-n2-n3. Returns self. Usually, angles are automatically removed
  *  when a bond is removed, so it is rarely necessary to use this method explicitly.
@@ -5618,7 +5522,7 @@ s_Molecule_RemoveAngle(VALUE self, VALUE v1, VALUE v2, VALUE v3)
 
 /*
  *  call-seq:
- *     molecule.add_dihedral(n1, n2, n3, n4)       -> molecule
+ *     add_dihedral(n1, n2, n3, n4)       -> Molecule
  *
  *  Add dihedral n1-n2-n3-n4. Returns self. Usually, dihedrals are automatically added
  *  when a bond is created, so it is rarely necessary to use this method explicitly.
@@ -5643,7 +5547,7 @@ s_Molecule_AddDihedral(VALUE self, VALUE v1, VALUE v2, VALUE v3, VALUE v4)
 
 /*
  *  call-seq:
- *     molecule.remove_dihedral(n1, n2, n3, n4)       -> molecule
+ *     remove_dihedral(n1, n2, n3, n4)       -> Molecule
  *
  *  Remove dihedral n1-n2-n3-n4. Returns self. Usually, dihedrals are automatically removed
  *  when a bond is removed, so it is rarely necessary to use this method explicitly.
@@ -5670,7 +5574,7 @@ s_Molecule_RemoveDihedral(VALUE self, VALUE v1, VALUE v2, VALUE v3, VALUE v4)
 
 /*
  *  call-seq:
- *     molecule.add_improper(n1, n2, n3, n4)       -> molecule
+ *     add_improper(n1, n2, n3, n4)       -> Molecule
  *
  *  Add dihedral n1-n2-n3-n4. Returns self. Unlike angles and dihedrals, impropers are
  *  not automatically added when a new bond is created, so this method is more useful than
@@ -5696,7 +5600,7 @@ s_Molecule_AddImproper(VALUE self, VALUE v1, VALUE v2, VALUE v3, VALUE v4)
 
 /*
  *  call-seq:
- *     molecule.remove_improper(n1, n2, n3, n4)       -> molecule
+ *     remove_improper(n1, n2, n3, n4)       -> Molecule
  *
  *  Remove improper n1-n2-n3-n4. Returns self. Unlike angles and dihedrals, impropers are
  *  not automatically added when a new bond is created, so this method is more useful than
@@ -5724,7 +5628,7 @@ s_Molecule_RemoveImproper(VALUE self, VALUE v1, VALUE v2, VALUE v3, VALUE v4)
 
 /*
  *  call-seq:
- *     molecule.assign_residue(group, res)       -> molecule
+ *     assign_residue(group, res)       -> Molecule
  *
  *  Assign the specified atoms as the given residue. res can either be an integer, "resname"
  *  or "resname.resno". When the residue number is not specified, the residue number of
@@ -5788,7 +5692,7 @@ s_Molecule_AssignResidue(VALUE self, VALUE range, VALUE res)
 
 /*
  *  call-seq:
- *     molecule.offset_residue(group, offset)       -> molecule
+ *     offset_residue(group, offset)       -> Molecule
  *
  *  Offset the residue number of the specified atoms. If any of the residue number gets
  *  negative, then exception is thrown.
@@ -5812,7 +5716,7 @@ s_Molecule_OffsetResidue(VALUE self, VALUE range, VALUE offset)
 
 /*
  *  call-seq:
- *     molecule.reorder_atoms(array)       -> intGroup
+ *     reorder_atoms(array)       -> IntGroup
  *
  *  Change the order of atoms so that the atoms specified in the array argument appear
  *  in this order from the top of the molecule. The atoms that are not included in array
@@ -5854,12 +5758,12 @@ s_Molecule_ReorderAtoms(VALUE self, VALUE array)
 
 /*
  *  call-seq:
- *     molecule.guess_bonds(limit = 1.2)       -> Array
+ *     guess_bonds(limit = 1.2)       -> Integer
  *
  *  Create bonds between atoms that are 'close enough', i.e. the interatomic distance is
  *  smaller than the sum of the vdw radii times the argument 'limit'. If limit is not
  *  given, a default value of 1.2 is used.
- *  The newly created bonds are returned as an array of integer.
+ *  The number of the newly created bonds is returned.
  *  This operation is undoable.
  */
 static VALUE
@@ -5878,19 +5782,14 @@ s_Molecule_GuessBonds(int argc, VALUE *argv, VALUE self)
 	MoleculeGuessBonds(mol, limit, &nbonds, &bonds);
 	if (nbonds > 0) {
 		MolActionCreateAndPerform(mol, gMolActionAddBonds, nbonds * 2, bonds);
-		retval = rb_ary_new2(nbonds * 2);
-		for (i = 0; i < nbonds * 2; i++)
-			rb_ary_push(retval, INT2NUM(bonds[i]));
 		free(bonds);
-	} else {
-		retval = rb_ary_new();
 	}
-	return retval;
+	return INT2NUM(nbonds);
 }
 	
 /*
  *  call-seq:
- *     molecule.register_undo(script, *args)
+ *     register_undo(script, *args)
  *
  *  Register an undo operation with the current molecule.
  */
@@ -5909,7 +5808,7 @@ s_Molecule_RegisterUndo(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     molecule.undo_enabled? => true/false
+ *     undo_enabled? -> bool
  *
  *  Returns true if undo is enabled for this molecule; otherwise no.
  */
@@ -5925,7 +5824,7 @@ s_Molecule_UndoEnabled(VALUE self)
 
 /*
  *  call-seq:
- *     molecule.undo_enabled = true/false
+ *     undo_enabled = bool
  *
  *  Enable or disable undo.
  */
@@ -5940,7 +5839,7 @@ s_Molecule_SetUndoEnabled(VALUE self, VALUE val)
 
 /*
  *  call-seq:
- *     molecule.selection       -> intGroup
+ *     selection       -> IntGroup
  *
  *  Returns the current selection. The returned value is frozen.
  */
@@ -5981,7 +5880,7 @@ s_Molecule_SetSelectionSub(VALUE self, VALUE val, int undoable)
 
 /*
  *  call-seq:
- *     molecule.selection = intGroup
+ *     selection = IntGroup
  *
  *  Set the current selection. The right-hand operand may be nil.
  *  This operation is _not_ undoable. If you need undo, use set_undoable_selection instead.
@@ -5994,7 +5893,7 @@ s_Molecule_SetSelection(VALUE self, VALUE val)
 
 /*
  *  call-seq:
- *     molecule.set_undoable_selection(intGroup)
+ *     set_undoable_selection(IntGroup)
  *
  *  Set the current selection with undo registration. The right-hand operand may be nil.
  *  This operation is undoable.
@@ -6007,8 +5906,8 @@ s_Molecule_SetUndoableSelection(VALUE self, VALUE val)
 
 /*
  *  call-seq:
- *     molecule.select_frame(index)
- *     molecule.frame = index
+ *     select_frame(index)
+ *     frame = index
  *
  *  Select the specified frame. If successful, returns true, otherwise returns false.
  */
@@ -6026,7 +5925,7 @@ s_Molecule_SelectFrame(VALUE self, VALUE val)
 
 /*
  *  call-seq:
- *     molecule.frame => integer
+ *     frame -> Integer
  *
  *  Get the current frame.
  */
@@ -6040,7 +5939,7 @@ s_Molecule_Frame(VALUE self)
 
 /*
  *  call-seq:
- *     molecule.nframes => integer
+ *     nframes -> Integer
  *
  *  Get the number of frames.
  */
@@ -6054,85 +5953,8 @@ s_Molecule_Nframes(VALUE self)
 
 /*
  *  call-seq:
- *     molecule.insert_frame(index, coordinates = nil) => integer
- *
- *  Insert a new frame at index. If index is negative or greater than the number of 
- *  frames, a new frame is inserted at the last. If coordinates is given as an array
- *  of Vector3Ds, then those coordinates are set to the new frame. Otherwise, the
- *  coordinates of current molecule are copied to the new frame.
- *  Returns the index of the new frame if successful, -1 if not.
- */
-/*
-static VALUE
-s_Molecule_InsertFrame(int argc, VALUE *argv, VALUE self)
-{
-	VALUE val, coords;
-    Molecule *mol;
-	int ival;
-	Vector *vp;
-    Data_Get_Struct(self, Molecule, mol);
-	rb_scan_args(argc, argv, "11", &val, &coords);
-	ival = NUM2INT(val);
-	if (coords != Qnil) {
-		int i, len;
-		VALUE *ptr;
-		if (TYPE(coords) != T_ARRAY)
-			rb_raise(rb_eTypeError, "the coordinates should be given as an array of Vector3D");
-		len = RARRAY_LEN(coords);
-		if (len < mol->natoms)
-			rb_raise(rb_eMolbyError, "the coordinates should contain no less than %d vectors", mol->natoms);
-		len = mol->natoms;
-		ptr = RARRAY_PTR(coords);
-		vp = ALLOC_N(Vector, len);
-		for (i = 0; i < len; i++) {
-			VectorFromValue(ptr[i], &vp[i]);
-		}
-	} else vp = NULL;
-	ival = MoleculeInsertFrame(mol, ival, vp);
-	if (vp != NULL)
-		free(vp);
-	val = INT2NUM(ival);
-	rb_funcall(self, rb_intern("register_undo"), 2, rb_str_new2("remove_frame"), val);
-	return val;
-}
-*/
-
-/*
- *  call-seq:
- *     molecule.remove_frame(index)
- *
- *  Remove the frame at index. If successful, an array of the coordinates in the
- *  removed frame is returned. Otherwise, nil is returned.
- */
-/*
-static VALUE
-s_Molecule_RemoveFrame(VALUE self, VALUE val)
-{
-	VALUE coords;
-    Molecule *mol;
-	int ival;
-	Vector *vp;
-    Data_Get_Struct(self, Molecule, mol);
-	ival = NUM2INT(val);
-	vp = ALLOC_N(Vector, mol->natoms);
-	ival = MoleculeRemoveFrame(mol, ival, vp);
-	if (ival >= 0) {
-		int i;
-		coords = rb_ary_new2(mol->natoms);
-		for (i = 0; i < mol->natoms; i++) {
-			rb_ary_push(coords, ValueFromVector(&vp[i]));
-		}
-		rb_funcall(self, rb_intern("register_undo"), 3, rb_str_new2("insert_frame"), val, coords);
-	} else coords = Qnil;
-	free(vp);
-	return coords;
-}
-*/
-
-/*
- *  call-seq:
- *     molecule.insert_frame(integer, coordinates = nil) => boolean
- *     molecule.insert_frames(intGroup = nil, coordinates = nil) => boolean
+ *     insert_frame(integer, coordinates = nil) -> bool
+ *     insert_frames(intGroup = nil, coordinates = nil) -> bool
  *
  *  Insert new frames at the indices specified by the intGroup. If the first argument is
  *  an integer, a single new frame is inserted at that index. If the first argument is 
@@ -6191,34 +6013,16 @@ s_Molecule_InsertFrames(int argc, VALUE *argv, VALUE self)
 			}
 		}
 	}
-#if 1
 	ival = MolActionCreateAndPerform(mol, gMolActionInsertFrames, ig, mol->natoms * count, vp);
 	IntGroupRelease(ig);
 	free(vp);
 	return (ival >= 0 ? val : Qnil);
-#else
-	ival = MoleculeInsertFrames(mol, ig, vp);
-	if (vp != NULL)
-		free(vp);
-	if (val == Qnil)
-		val = ValueFromIntGroup(ig);
-	IntGroupRelease(ig);
-	i = MoleculeGetNumberOfFrames(mol);
-	if (nframes + count < i) {
-		/*  Register undo operation to remove "extra" frames that were automatically inserted  */
-		ig = IntGroupNewWithPoints(nframes, i - (nframes + count), -1);
-		rb_funcall(self, rb_intern("register_undo"), 2, rb_str_new2("remove_frames"), ValueFromIntGroup(ig));
-		IntGroupRelease(ig);
-	}
-	rb_funcall(self, rb_intern("register_undo"), 2, rb_str_new2("remove_frames"), val);
-	return (ival >= 0 ? val : Qnil);
-#endif
 }
 
 /*
  *  call-seq:
- *     molecule.create_frame(coordinates = nil) => integer
- *     molecule.create_frames(coordinates = nil) => integer
+ *     create_frame(coordinates = nil) -> Integer
+ *     create_frames(coordinates = nil) -> Integer
  *
  *  Same as molecule.insert_frames(nil, coordinates).
  */
@@ -6233,7 +6037,7 @@ s_Molecule_CreateFrames(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     molecule.remove_frames(intGroup, wantCoordinates = false)
+ *     remove_frames(IntGroup, wantCoordinates = false)
  *
  *  Remove the frames at group. If wantsCoordinates is false (default), returns true if successful
  *  and nil otherwise. If wantsCoordinates is true, an array of arrays of the coordinates in the
@@ -6277,7 +6081,7 @@ s_Molecule_RemoveFrames(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     molecule.each_frame block
+ *     each_frame {|n| ...}
  *
  *  Set the frame number from 0 to nframes-1 and execute the block. The block argument is
  *  the frame number. After completion, the original frame number is restored.
@@ -6302,7 +6106,7 @@ s_Molecule_EachFrame(VALUE self)
 
 /*
  *  call-seq:
- *     molecule.set_atom_attr(index, key, value)
+ *     set_atom_attr(index, key, value)
  *
  *  Set the atom attribute for the specified atom.
  *  This operation is undoable.
@@ -6323,7 +6127,7 @@ s_Molecule_SetAtomAttr(VALUE self, VALUE idx, VALUE key, VALUE val)
 
 /*
  *  call-seq:
- *     molecule.get_atom_attr(index, key)
+ *     get_atom_attr(index, key)
  *
  *  Get the atom attribute for the specified atom.
  */
@@ -6335,8 +6139,9 @@ s_Molecule_GetAtomAttr(VALUE self, VALUE idx, VALUE key)
 
 /*
  *  call-seq:
- *     molecule.fragment(n1, *exatoms)  -> molecule
- *     molecule.fragment(group, *exatoms)  -> molecule
+ *     fragment(n1, *exatoms)  -> IntGroup
+ *     fragment(group, *exatoms)  -> IntGroup
+ *
  *  Get the fragment including the atom n1 or the atom group. If additional arguments are given,
  *  those atoms will not be counted during the search.
  */
@@ -6393,7 +6198,7 @@ s_Molecule_Fragment(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     molecule.each_fragment block
+ *     each_fragment {|group| ...}
  *
  *  Execute the block, with the IntGroup object for each fragment as the argument.
  *  Atoms or bonds should not be added or removed during the execution of the block.
@@ -6424,7 +6229,7 @@ s_Molecule_EachFragment(VALUE self)
 
 /*
  *  call-seq:
- *     molecule.detachable?(n1, group)  -> array of two atoms
+ *     detachable?(group)  -> [n1, n2]
  *
  *  Check whether the group is 'detachable', i.e. the group is bound to the rest 
  *  of the molecule via only one bond. If it is, then the indices of the atoms
@@ -6449,7 +6254,7 @@ s_Molecule_Detachable_P(VALUE self, VALUE gval)
 
 /*
  *  call-seq:
- *     molecule.bonds_on_border(group = selection)  -> array of array of two atoms
+ *     bonds_on_border(group = selection)  -> Array of Array of two Integers
  *
  *  Returns an array of bonds that connect an atom in the group and an atom out
  *  of the group. The first atom in the bond always belongs to the group. If no
@@ -6501,7 +6306,7 @@ s_Molecule_BondsOnBorder(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     molecule.translate(vec, group = nil)       -> molecule
+ *     translate(vec, group = nil)       -> Molecule
  *
  *  Translate the molecule by vec. If group is given, only atoms in the group are moved.
  *  This operation is undoable.
@@ -6526,9 +6331,9 @@ s_Molecule_Translate(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     molecule.rotate(axis, angle, center = [0,0,0], group = nil)       -> molecule
+ *     rotate(axis, angle, center = [0,0,0], group = nil)       -> Molecule
  *
- *  Rotate the molecule. The axis must not a zero vector. angle is given in radian.
+ *  Rotate the molecule. The axis must not a zero vector. angle is given in degree.
  *  If group is given, only atoms in the group are moved.
  *  This operation is undoable.
  */
@@ -6544,7 +6349,7 @@ s_Molecule_Rotate(int argc, VALUE *argv, VALUE self)
     Data_Get_Struct(self, Molecule, mol);
 	rb_scan_args(argc, argv, "22", &aval, &anval, &cval, &gval);
 	ig = (NIL_P(gval) ? NULL : s_Molecule_AtomGroupFromValue(self, gval));
-	angle = NUM2DBL(rb_Float(anval));
+	angle = NUM2DBL(rb_Float(anval)) * kDeg2Rad;
 	VectorFromValue(aval, &av);
 	if (NIL_P(cval))
 		cv.x = cv.y = cv.z = 0.0;
@@ -6560,7 +6365,7 @@ s_Molecule_Rotate(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     molecule.reflect(axis, center = [0,0,0], group = nil)       -> molecule
+ *     reflect(axis, center = [0,0,0], group = nil)       -> Molecule
  *
  *  Reflect the molecule by the plane which is perpendicular to axis and including center. 
  *  axis must not be a zero vector.
@@ -6593,7 +6398,7 @@ s_Molecule_Reflect(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     molecule.invert(center = [0,0,0], group = nil)       -> molecule
+ *     invert(center = [0,0,0], group = nil)       -> Molecule
  *
  *  Invert the molecule with the given center.
  *  If group is given, only atoms in the group are moved.
@@ -6623,7 +6428,7 @@ s_Molecule_Invert(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     molecule.transform(transform, group = nil)       -> molecule
+ *     transform(transform, group = nil)       -> Molecule
  *
  *  Transform the molecule by the given Transform object.
  *  If group is given, only atoms in the group are moved.
@@ -6660,7 +6465,7 @@ s_Molecule_DoCenterOfMass(Molecule *mol, Vector *outv, IntGroup *ig)
 
 /*
  *  call-seq:
- *     molecule.center_of_mass(group = nil)       -> vector3d
+ *     center_of_mass(group = nil)       -> Vector3D
  *
  *  Calculate the center of mass for the given set of atoms. The argument
  *  group is null, then all atoms are considered.
@@ -6683,7 +6488,7 @@ s_Molecule_CenterOfMass(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     molecule.centralize(group = nil)       -> self
+ *     centralize(group = nil)       -> self
  *
  *  Translate the molecule so that the center of mass of the given group is located
  *  at (0, 0, 0). Equivalent to molecule.translate(molecule.center_of_mass(group) * -1).
@@ -6710,7 +6515,7 @@ s_Molecule_Centralize(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     molecule.bounds(group = nil)       -> [min, max]
+ *     bounds(group = nil)       -> [min, max]
  *
  *  Calculate the boundary. The return value is an array of two Vector3D objects.
  */
@@ -6765,7 +6570,7 @@ s_Molecule_GetVectorFromArg(Molecule *mol, VALUE val, Vector *vp)
 
 /*
  *  call-seq:
- *     molecule.measure_bond(n1, n2)       -> Float
+ *     measure_bond(n1, n2)       -> Float
  *
  *  Calculate the bond length. The arguments can either be atom indices, the "residue:name" representation, 
  *  or Vector3D values.
@@ -6784,7 +6589,7 @@ s_Molecule_MeasureBond(VALUE self, VALUE nval1, VALUE nval2)
 
 /*
  *  call-seq:
- *     molecule.measure_angle(n1, n2, n3)       -> Float
+ *     measure_angle(n1, n2, n3)       -> Float
  *
  *  Calculate the bond angle. The arguments can either be atom indices, the "residue:name" representation, 
  *  or Vector3D values. The return value is in degree.
@@ -6808,7 +6613,7 @@ s_Molecule_MeasureAngle(VALUE self, VALUE nval1, VALUE nval2, VALUE nval3)
 
 /*
  *  call-seq:
- *     molecule.measure_dihedral(n1, n2, n3, n4)       -> Float
+ *     measure_dihedral(n1, n2, n3, n4)       -> Float
  *
  *  Calculate the dihedral angle. The arguments can either be atom indices, the "residue:name" representation, 
  *  or Vector3D values. The return value is in degree.
@@ -6833,7 +6638,7 @@ s_Molecule_MeasureDihedral(VALUE self, VALUE nval1, VALUE nval2, VALUE nval3, VA
 
 /*
  *  call-seq:
- *     molecule.expand_by_symmetry(group, sym, dx=0, dy=0, dz=0) -> IntGroup
+ *     expand_by_symmetry(group, sym, dx=0, dy=0, dz=0) -> IntGroup
  *
  *  Expand the specified part of the molecule by the given symmetry operation.
  *  Returns an IntGroup containing the added atoms.
@@ -6871,7 +6676,7 @@ s_Molecule_ExpandBySymmetry(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     molecule.wrap_unit_cell(group) -> Vector3D
+ *     wrap_unit_cell(group) -> Vector3D
  *
  *  Move the specified group so that the center of mass of the group is within the
  *  unit cell. The offset vector is returned. If no periodic box is defined, 
@@ -6904,7 +6709,7 @@ s_Molecule_WrapUnitCell(VALUE self, VALUE gval)
 
 /*
  *  call-seq:
- *     molecule.find_conflicts(limit[, group1[, group2]]) -> [[n1, n2], [n3, n4], ...]
+ *     find_conflicts(limit[, group1[, group2]]) -> [[n1, n2], [n3, n4], ...]
  *
  *  Find pairs of atoms that are within the limit distance. If group1 and group2 are given, the
  *  first and second atom in the pair should belong to group1 and group2, respectively.
@@ -6974,7 +6779,7 @@ s_Molecule_FindConflicts(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     molecule.display()
+ *     display
  *
  *  Refresh the display if this molecule is bound to a view. Otherwise do nothing.
  */
@@ -6990,7 +6795,7 @@ s_Molecule_Display(VALUE self)
 
 /*
  *  call-seq:
- *     molecule.update_enabled? => true/false
+ *     update_enabled? -> bool
  *
  *  Returns true if screen update is enabled; otherwise no.
  */
@@ -7006,7 +6811,7 @@ s_Molecule_UpdateEnabled(VALUE self)
 
 /*
  *  call-seq:
- *     molecule.update_enabled = true/false
+ *     update_enabled = bool
  *
  *  Enable or disable screen update. This is effective for automatic update on modification.
  *  Explicit call to molecule.display() always updates the screen.
@@ -7025,9 +6830,9 @@ s_Molecule_SetUpdateEnabled(VALUE self, VALUE val)
 
 /*
  *  call-seq:
- *     molecule.show_unitcell
- *     molecule.show_unitcell true|false
- *     molecule.show_unitcell = true|false
+ *     show_unitcell
+ *     show_unitcell(bool)
+ *     show_unitcell = bool
  *
  *  Set the flag whether to show the unit cell. If no argument is given, the
  *  current flag is returned.
@@ -7048,9 +6853,9 @@ s_Molecule_ShowUnitCell(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     molecule.show_hydrogens
- *     molecule.show_hydrogens true|false
- *     molecule.show_hydrogens = true|false
+ *     show_hydrogens
+ *     show_hydrogens(bool)
+ *     show_hydrogens = bool
  *
  *  Set the flag whether to show the hydrogen atoms. If no argument is given, the
  *  current flag is returned.
@@ -7071,9 +6876,9 @@ s_Molecule_ShowHydrogens(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     molecule.show_dummy_atoms
- *     molecule.show_dummy_atoms true|false
- *     molecule.show_dummy_atoms = true|false
+ *     show_dummy_atoms
+ *     show_dummy_atoms(bool)
+ *     show_dummy_atoms = bool
  *
  *  Set the flag whether to show the dummy atoms. If no argument is given, the
  *  current flag is returned.
@@ -7094,9 +6899,9 @@ s_Molecule_ShowDummyAtoms(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     molecule.show_expanded
- *     molecule.show_expanded true|false
- *     molecule.show_expanded = true|false
+ *     show_expanded
+ *     show_expanded(bool)
+ *     show_expanded = bool
  *
  *  Set the flag whether to show the expanded atoms. If no argument is given, the
  *  current flag is returned.
@@ -7117,9 +6922,9 @@ s_Molecule_ShowExpanded(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     molecule.show_ellipsoids
- *     molecule.show_ellipsoids true|false
- *     molecule.show_ellipsoids = true|false
+ *     show_ellipsoids
+ *     show_ellipsoids(bool)
+ *     show_ellipsoids = bool
  *
  *  Set the flag whether to show the thermal ellipsoids. If no argument is given, the
  *  current flag is returned.
@@ -7140,8 +6945,8 @@ s_Molecule_ShowEllipsoids(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     molecule.show_graphite
- *     molecule.show_graphite = integer
+ *     show_graphite -> Integer
+ *     show_graphite = Integer
  *
  *  Set whether to show the graphite plane. If the argument is positive, it also indicates the
  *  number of rings to display for each direction.
@@ -7165,7 +6970,7 @@ s_Molecule_ShowGraphite(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     molecule.show_periodic_image = [amin, amax, bmin, bmax, cmin, cmax]
+ *     show_periodic_image = [amin, amax, bmin, bmax, cmin, cmax]
  *
  *  Set to show the periodic image of the atoms. If the unit cell is not defined, the values are
  *  set but no visual effects are observed.
@@ -7202,9 +7007,9 @@ s_Molecule_ShowPeriodicImage(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     molecule.line_mode
- *     molecule.line_mode true|false
- *     molecule.line_mode = true|false
+ *     line_mode
+ *     line_mode(bool)
+ *     line_mode = bool
  *
  *  Set the flag whether to draw the model in line mode. If no argument is given, the
  *  current flag is returned.
@@ -7225,7 +7030,7 @@ s_Molecule_LineMode(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     molecule.show_text(string)
+ *     show_text(string)
  *
  *  Show the string in the info text box.
  */
@@ -7241,7 +7046,7 @@ s_Molecule_ShowText(VALUE self, VALUE arg)
 
 /*
  *  call-seq:
- *     molecule.md_arena -> MDArena
+ *     md_arena -> MDArena
  *
  *  Returns the MDArena object associated to this molecule. If no MDArena is associated to
  *  this molecule, a new arena is created.
@@ -7262,7 +7067,7 @@ s_Molecule_MDArena(VALUE self)
 
 /*
  *  call-seq:
- *     molecule.set_parameter_attr(type, index, key, value, src) -> value
+ *     set_parameter_attr(type, index, key, value, src) -> value
  *
  *  This method is used only internally.
  */
@@ -7289,7 +7094,7 @@ s_Molecule_SetParameterAttr(VALUE self, VALUE tval, VALUE ival, VALUE kval, VALU
 
 /*
  *  call-seq:
- *     molecule.parameter -> Parameter
+ *     parameter -> Parameter
  *
  *  Get the local parameter of this molecule. If not defined, returns nil.
  */
@@ -7305,7 +7110,7 @@ s_Molecule_Parameter(VALUE self)
 
 /*
  *  call-seq:
- *     molecule.selectedMO -> IntGroup
+ *     selectedMO -> IntGroup
  *
  *  Returns a group of selected mo in the "MO Info" table. If the MO info table
  *  is not selected, returns nil. If the MO info table is selected but no MOs 
@@ -7331,7 +7136,7 @@ s_Molecule_SelectedMO(VALUE self)
 
 /*
  *  call-seq:
- *     molecule.default_MO_grid(npoints = 80*80*80) -> [origin, dx, dy, dz, nx, ny, nz]
+ *     default_MO_grid(npoints = 80*80*80) -> [origin, dx, dy, dz, nx, ny, nz]
  *
  *  Returns a default MO grid for cube file generation. Origin: Vector, dx, dy, dz: float, nx, ny, nz: integer.
  *  If the molecule does not contain a basis set information, then returns nil.
@@ -7366,8 +7171,8 @@ s_Cubegen_callback(double progress, void *ref)
 
 /*
  *  call-seq:
- *     molecule.cubegen(fname, mo, npoints=1000000 [, iflag])
- *     molecule.cubegen(fname, mo, origin, dx, dy, dz, nx, ny, nz [, iflag])
+ *     cubegen(fname, mo, npoints=1000000 [, iflag])
+ *     cubegen(fname, mo, origin, dx, dy, dz, nx, ny, nz [, iflag])
  *
  *  Calculate the molecular orbital with number mo and create a 'cube' file.
  *  In the first form, the cube size is estimated from the atomic coordinates. In the
@@ -7455,7 +7260,7 @@ s_Molecule_Cubegen(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     molecule.nelpots
+ *     nelpots
  *
  *  Get the number of electrostatic potential info.
  */
@@ -7469,7 +7274,7 @@ s_Molecule_NElpots(VALUE self)
 
 /*
  *  call-seq:
- *     molecule.elpot(idx)
+ *     elpot(idx)
  *
  *  Get the electrostatic potential info at the given index. If present, then the
  *  return value is [Vector, Float] (position and potential). If not present, then
@@ -7489,7 +7294,7 @@ s_Molecule_Elpot(VALUE self, VALUE ival)
 
 /*
  *  call-seq:
- *     molecule.search_equivalent_atoms(ig = nil)
+ *     search_equivalent_atoms(ig = nil)
  *
  *  Search equivalent atoms (within the atom group if given). Returns an array of integers.
  */
@@ -7521,7 +7326,7 @@ s_Molecule_SearchEquivalentAtoms(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     Molecule.current       -> Molecule
+ *     current       -> Molecule
  *
  *  Get the currently "active" molecule.
  */
@@ -7543,11 +7348,11 @@ s_Molecule_Current(VALUE klass)
  *  Molecule[] is equivalent to Molecule.current.
  *  Molecule[n] (n is an integer) is equivalent to Molecule.list[n].
  *  Molecule[name] gives the first document (in the order of creation time) that has
- *  the given name. If a second argument (k) is given, the n-th document that has the
+ *  the given name. If a second argument (k) is given, the k-th document that has the
  *  given name is returned.
  *  Molecule[regex] gives the first document (in the order of creation time) that
  *  has a name matching the regular expression. If a second argument (k) is given, 
- *  the n-th document that has a name matching the re is returned.
+ *  the k-th document that has a name matching the re is returned.
  */
 static VALUE
 s_Molecule_MoleculeAtIndex(int argc, VALUE *argv, VALUE klass)
@@ -7588,7 +7393,7 @@ s_Molecule_MoleculeAtIndex(int argc, VALUE *argv, VALUE klass)
 
 /*
  *  call-seq:
- *     Molecule.list         -> array of Molecules
+ *     list         -> array of Molecules
  *
  *  Get the list of molecules associated to the documents, in the order of creation
  *  time of the document. If no document is open, returns an empry array.
@@ -7610,7 +7415,7 @@ s_Molecule_List(VALUE klass)
 
 /*
  *  call-seq:
- *     Molecule.ordered_list         -> array of Molecules
+ *     ordered_list         -> array of Molecules
  *
  *  Get the list of molecules associated to the documents, in the order of front-to-back
  *  ordering of the associated window. If no document is open, returns an empry array.
@@ -7648,7 +7453,7 @@ Init_Molby(void)
     rb_define_private_method(rb_cMolecule, "initialize_copy", s_Molecule_InitCopy, 1);
     rb_define_method(rb_cMolecule, "loadmbsf", s_Molecule_Loadmbsf, -1);
     rb_define_method(rb_cMolecule, "loadpsf", s_Molecule_Loadpsf, -1);
-    rb_define_method(rb_cMolecule, "loadpsfx", s_Molecule_Loadpsf, -1);
+    rb_define_alias(rb_cMolecule, "loadpsfx", "loadpsf");
     rb_define_method(rb_cMolecule, "loadpdb", s_Molecule_Loadpdb, -1);
     rb_define_method(rb_cMolecule, "loaddcd", s_Molecule_Loaddcd, -1);
     rb_define_method(rb_cMolecule, "loadtep", s_Molecule_Loadtep, -1);
@@ -7659,7 +7464,7 @@ Init_Molby(void)
     rb_define_method(rb_cMolecule, "molsave", s_Molecule_Save, -1);
 	rb_define_method(rb_cMolecule, "savembsf", s_Molecule_Savembsf, 1);
     rb_define_method(rb_cMolecule, "savepsf", s_Molecule_Savepsf, 1);
-    rb_define_method(rb_cMolecule, "savepsfx", s_Molecule_Savepsf, 1);
+    rb_define_alias(rb_cMolecule, "savepsfx", "savepsf");
     rb_define_method(rb_cMolecule, "savepdb", s_Molecule_Savepdb, 1);
     rb_define_method(rb_cMolecule, "savedcd", s_Molecule_Savedcd, 1);
     rb_define_method(rb_cMolecule, "savetep", s_Molecule_Savetep, 1);
@@ -7695,16 +7500,17 @@ Init_Molby(void)
 	rb_define_method(rb_cMolecule, "each_atom", s_Molecule_EachAtom, 0);
 	rb_define_method(rb_cMolecule, "cell", s_Molecule_Cell, 0);
 	rb_define_method(rb_cMolecule, "cell=", s_Molecule_SetCell, -1);
-	rb_define_method(rb_cMolecule, "set_cell", s_Molecule_SetCell, -1);
+	rb_define_alias(rb_cMolecule, "set_cell", "cell=");
 	rb_define_method(rb_cMolecule, "cell_transform", s_Molecule_CellTransform, 0);
 	rb_define_method(rb_cMolecule, "box", s_Molecule_Box, 0);
-	rb_define_method(rb_cMolecule, "set_box", s_Molecule_SetBox, -1);
-/*	rb_define_method(rb_cMolecule, "box_transform", s_Molecule_BoxTransform, 0); */
+	rb_define_method(rb_cMolecule, "box=", s_Molecule_SetBox, -1);
+	rb_define_alias(rb_cMolecule, "set_box", "box=");
 	rb_define_method(rb_cMolecule, "symmetry", s_Molecule_Symmetry, 0);
+	rb_define_alias(rb_cMolecule, "symmetries", "symmetry");
 	rb_define_method(rb_cMolecule, "nsymmetries", s_Molecule_Nsymmetries, 0);
 	rb_define_method(rb_cMolecule, "add_symmetry", s_Molecule_AddSymmetry, 1);
-	rb_define_method(rb_cMolecule, "remove_symmetries", s_Molecule_RemoveSymmetry, -1);
 	rb_define_method(rb_cMolecule, "remove_symmetry", s_Molecule_RemoveSymmetry, -1);
+	rb_define_alias(rb_cMolecule, "remove_symmetries", "remove_symmetry");
 	rb_define_method(rb_cMolecule, "extract", s_Molecule_Extract, -1);
     rb_define_method(rb_cMolecule, "add", s_Molecule_Add, 1);
 	rb_define_alias(rb_cMolecule, "+", "add");
@@ -7727,16 +7533,16 @@ Init_Molby(void)
 	rb_define_method(rb_cMolecule, "selection", s_Molecule_Selection, 0);
 	rb_define_method(rb_cMolecule, "selection=", s_Molecule_SetSelection, 1);
 	rb_define_method(rb_cMolecule, "set_undoable_selection", s_Molecule_SetUndoableSelection, 1);
-	rb_define_method(rb_cMolecule, "select_frame", s_Molecule_SelectFrame, 1);
-	rb_define_method(rb_cMolecule, "frame=", s_Molecule_SelectFrame, 1);
 	rb_define_method(rb_cMolecule, "frame", s_Molecule_Frame, 0);
+	rb_define_method(rb_cMolecule, "frame=", s_Molecule_SelectFrame, 1);
+	rb_define_alias(rb_cMolecule, "select_frame", "frame=");
 	rb_define_method(rb_cMolecule, "nframes", s_Molecule_Nframes, 0);
 	rb_define_method(rb_cMolecule, "create_frame", s_Molecule_CreateFrames, -1);
 	rb_define_method(rb_cMolecule, "insert_frame", s_Molecule_InsertFrames, -1);
 	rb_define_method(rb_cMolecule, "remove_frame", s_Molecule_RemoveFrames, 1);
-	rb_define_method(rb_cMolecule, "create_frames", s_Molecule_CreateFrames, -1);
-	rb_define_method(rb_cMolecule, "insert_frames", s_Molecule_InsertFrames, -1);
-	rb_define_method(rb_cMolecule, "remove_frames", s_Molecule_RemoveFrames, -1);
+	rb_define_alias(rb_cMolecule, "create_frames", "create_frame");
+	rb_define_alias(rb_cMolecule, "insert_frames", "insert_frame");
+	rb_define_alias(rb_cMolecule, "remove_frames", "remove_frame");
 	rb_define_method(rb_cMolecule, "each_frame", s_Molecule_EachFrame, 0);
 	rb_define_method(rb_cMolecule, "register_undo", s_Molecule_RegisterUndo, -1);
 	rb_define_method(rb_cMolecule, "undo_enabled?", s_Molecule_UndoEnabled, 0);
@@ -7765,7 +7571,6 @@ Init_Molby(void)
 	rb_define_method(rb_cMolecule, "update_enabled?", s_Molecule_UpdateEnabled, 0);
 	rb_define_method(rb_cMolecule, "update_enabled=", s_Molecule_SetUpdateEnabled, 1);	
 	rb_define_method(rb_cMolecule, "show_unitcell", s_Molecule_ShowUnitCell, -1);
-	rb_define_method(rb_cMolecule, "show_unitcell=", s_Molecule_ShowUnitCell, -1);
 	rb_define_method(rb_cMolecule, "show_hydrogens", s_Molecule_ShowHydrogens, -1);
 	rb_define_method(rb_cMolecule, "show_hydrogens=", s_Molecule_ShowHydrogens, -1);
 	rb_define_method(rb_cMolecule, "show_dummy_atoms", s_Molecule_ShowDummyAtoms, -1);
@@ -7778,8 +7583,15 @@ Init_Molby(void)
 	rb_define_method(rb_cMolecule, "show_graphite=", s_Molecule_ShowGraphite, -1);
 	rb_define_method(rb_cMolecule, "show_periodic_image", s_Molecule_ShowPeriodicImage, -1);
 	rb_define_method(rb_cMolecule, "show_periodic_image=", s_Molecule_ShowPeriodicImage, -1);
+	rb_define_alias(rb_cMolecule, "show_unitcell=", "show_unitcell");
+	rb_define_alias(rb_cMolecule, "show_hydrogens=", "show_hydrogens");
+	rb_define_alias(rb_cMolecule, "show_dummy_atoms=", "show_dummy_atoms");
+	rb_define_alias(rb_cMolecule, "show_expanded=", "show_expanded");
+	rb_define_alias(rb_cMolecule, "show_ellipsoids=", "show_ellipsoids");
+	rb_define_alias(rb_cMolecule, "show_graphite=", "show_graphite");
+	rb_define_alias(rb_cMolecule, "show_periodic_image=", "show_periodic_image");
 	rb_define_method(rb_cMolecule, "line_mode", s_Molecule_LineMode, -1);
-	rb_define_method(rb_cMolecule, "line_mode=", s_Molecule_LineMode, -1);
+	rb_define_alias(rb_cMolecule, "line_mode=", "line_mode");
 	rb_define_method(rb_cMolecule, "show_text", s_Molecule_ShowText, 1);
 	rb_define_method(rb_cMolecule, "md_arena", s_Molecule_MDArena, 0);
 	rb_define_method(rb_cMolecule, "set_parameter_attr", s_Molecule_SetParameterAttr, 5);
@@ -7816,10 +7628,10 @@ Init_Molby(void)
 		strcat(buf, "=");
 		rb_define_method(rb_cAtomRef, buf, s_AtomAttrDefTable[i].setter, 1);
 	}
-	rb_define_method(rb_cAtomRef, "set_attr", s_AtomRef_SetAttr, 2);
 	rb_define_method(rb_cAtomRef, "[]=", s_AtomRef_SetAttr, 2);
-	rb_define_method(rb_cAtomRef, "get_attr", s_AtomRef_GetAttr, 1);
+	rb_define_alias(rb_cAtomRef, "set_attr", "[]=");
 	rb_define_method(rb_cAtomRef, "[]", s_AtomRef_GetAttr, 1);
+	rb_define_alias(rb_cAtomRef, "get_attr", "[]");
 	s_SetAtomAttrString = rb_str_new2("set_atom_attr");
 	rb_global_variable(&s_SetAtomAttrString);
 	
@@ -7900,10 +7712,10 @@ Init_Molby(void)
 			rb_define_method(rb_cParameterRef, buf, s_ParameterAttrDefTable[i].setter, 1);
 		}
 	}
-	rb_define_method(rb_cParameterRef, "set_attr", s_ParameterRef_SetAttr, 2);
 	rb_define_method(rb_cParameterRef, "[]=", s_ParameterRef_SetAttr, 2);
-	rb_define_method(rb_cParameterRef, "get_attr", s_ParameterRef_GetAttr, 1);
+	rb_define_alias(rb_cParameterRef, "set_attr", "[]=");
 	rb_define_method(rb_cParameterRef, "[]", s_ParameterRef_GetAttr, 1);
+	rb_define_alias(rb_cParameterRef, "get_attr", "[]");
 	rb_define_method(rb_cParameterRef, "to_hash", s_ParameterRef_ToHash, 0);
 	rb_define_method(rb_cParameterRef, "to_s", s_ParameterRef_ToString, 0);
 	rb_define_method(rb_cParameterRef, "keys", s_ParameterRef_Keys, 0);
@@ -7917,7 +7729,6 @@ Init_Molby(void)
 	
 	/*  module Kernel  */
 	rb_define_method(rb_mKernel, "check_interrupt", s_Kernel_CheckInterrupt, 0);
-/*	rb_define_method(rb_mKernel, "idle", s_Kernel_Idle, 1); */
 	rb_define_method(rb_mKernel, "get_interrupt_flag", s_GetInterruptFlag, 0);
 	rb_define_method(rb_mKernel, "set_interrupt_flag", s_SetInterruptFlag, 1);
 	rb_define_method(rb_mKernel, "show_progress_panel", s_ShowProgressPanel, -1);

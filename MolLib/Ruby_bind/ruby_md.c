@@ -112,7 +112,7 @@ s_MDArena_Run_or_minimize(VALUE self, VALUE arg, int minimize)
 
 /*
  *  call-seq:
- *     mdarena.run(n)       -> self
+ *     run(n)       -> self
  *
  *  Run the simulation for n steps. 
  */
@@ -124,8 +124,8 @@ s_MDArena_Run(VALUE self, VALUE arg)
 
 /*
  *  call-seq:
- *     mdarena.minimize(n)       -> self
- *     mdarena.minimize(n) { ... } -> self
+ *     minimize(n)       -> self
+ *     minimize(n) { ... } -> self
  *
  *  Minimize the energy for n steps. If a block is given, it is executed when minimization is complete.
  */
@@ -137,7 +137,7 @@ s_MDArena_Minimize(VALUE self, VALUE arg)
 
 /*
  *  call-seq:
- *     mdarena.prepare(check_only = false)         -> self or nil
+ *     prepare(check_only = false)         -> self or nil
  *
  *  Prepare for the MD calculation; refresh the internal information even if initialization is
  *  already done.
@@ -258,7 +258,7 @@ s_MDArena_Prepare(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     arena.energies -> [total, bond, angle, dihedral, improper, vdw, electrostatic, auxiliary, surface, kinetic, net]
+ *     energies -> [total, bond, angle, dihedral, improper, vdw, electrostatic, auxiliary, surface, kinetic, net]
  *
  *  Get the current energies.
  */
@@ -340,9 +340,9 @@ static struct s_MDArenaAttrDef s_MDPressureAttrDefTable[] = {
 
 /*
  *  call-seq:
- *     arena[attr]
+ *     self[attr]
  *
- *  Get the attribute value.
+ *  Get the attribute value. The attribute values also can be accessed by self.attribute_name.
  */
 static VALUE
 s_MDArena_Get(VALUE self, VALUE attr)
@@ -408,12 +408,6 @@ s_MDArena_Get(VALUE self, VALUE attr)
 	return Qnil;  /*  Not reached  */
 }
 
-/*
- *  call-seq:
- *     arena.(attrname)
- *
- *  Get the attribute value. The name of the attribute is taken from ruby_frame->last_func.
- */
 static VALUE
 s_MDArena_GetAttr(VALUE self)
 {
@@ -422,9 +416,9 @@ s_MDArena_GetAttr(VALUE self)
 
 /*
  *  call-seq:
- *     arena[attr]=
+ *     self[attr] = value
  *
- *  Set the attribute value.
+ *  Set the attribute value. The attributes can also be modified by self.attribute_name = value.
  */
 static VALUE
 s_MDArena_Set(VALUE self, VALUE attr, VALUE val)
@@ -523,12 +517,6 @@ s_MDArena_Set(VALUE self, VALUE attr, VALUE val)
 	return Qnil;  /*  Not reached  */
 }
 
-/*
- *  call-seq:
- *     arena.(attrname)=
- *
- *  Set the attribute value. The name of the attribute is taken from ruby_frame->last_func.
- */
 static VALUE
 s_MDArena_SetAttr(VALUE self, VALUE val)
 {
@@ -549,7 +537,7 @@ s_MDArena_SetAttr(VALUE self, VALUE val)
 
 /*
  *  call-seq:
- *     arena.to_hash
+ *     to_hash -> Hash
  *
  *  Returns a (frozen) hash that contains the current value for all attribute keys.
  */
@@ -570,7 +558,7 @@ s_MDArena_ToHash(VALUE self)
 
 /*
  *  call-seq:
- *     arena.print_surface_area
+ *     print_surface_area
  *
  *  Print the surface area information to standard output. (for debug)
  */

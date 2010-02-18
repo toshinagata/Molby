@@ -171,7 +171,7 @@ s_RubyDialog_ItemIndexForTag(VALUE self, VALUE tag)
 
 /*
  *  call-seq:
- *     dialog.set_attr(tag, hash)
+ *     set_attr(tag, hash)
  *
  *  Set the attributes given in the hash.
  */
@@ -305,7 +305,7 @@ s_RubyDialog_SetAttr(VALUE self, VALUE tag, VALUE hash)
 
 /*
  *  call-seq:
- *     dialog.attr(tag, key)
+ *     attr(tag, key)
  *
  *  Get the attribute for the key.
  */
@@ -419,7 +419,7 @@ s_RubyDialog_Attr(VALUE self, VALUE tag, VALUE key)
 
 /*
  *  call-seq:
- *     dialog.run
+ *     run
  *
  *  Run the modal session for this dialog.
  */
@@ -458,13 +458,13 @@ s_RubyDialog_Run(VALUE self)
 
 /*
  *  call-seq:
- *     dialog.layout(columns, i11, ..., i1c, i21, ..., i2c, ..., ir1, ..., irc [, options]) => integer
+ *     layout(columns, i11, ..., i1c, i21, ..., i2c, ..., ir1, ..., irc [, options]) => integer
  *
  *  Layout items in a table. The first argument is the number of columns, and must be a positive integer.
  *  If the last argument is a hash, then it contains the layout options.
  *  The ixy is the item identifier (a non-negative integer) or [identifier, hash], where the hash
  *  contains the specific options for the item.
- *  Returns an integer that represents the NSView that wraps the items.
+ *  Returns an integer that represents the dialog item.
  */
 static VALUE
 s_RubyDialog_Layout(int argc, VALUE *argv, VALUE self)
@@ -722,11 +722,10 @@ s_RubyDialog_Layout(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     dialog.item(type, hash) => integer
+ *     item(type, hash) -> integer
  *
- *  Create a dialog item.
- *    type: one of the following symbols; :text, :textfield, :radio, :checkbox, :popup
- *    hash: attributes that can be set by set_attr
+ *  Create a dialog item. Type is one of the following symbols; <tt>:text, :textfield, :radio,
+ *  :checkbox, :popup</tt>. Hash is the attributes that can be set by set_attr.
  *  Returns an integer that represents the item. (0 and 1 are reserved for "OK" and "Cancel")
  */
 static VALUE
@@ -828,7 +827,7 @@ s_RubyDialog_Item(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     dialog._items => an array of hash
+ *     _items -> Array of Hash
  *
  *  Returns an internal array of items. For debugging use only.
  */
@@ -840,7 +839,7 @@ s_RubyDialog_Items(VALUE self)
 
 /*
  *  call-seq:
- *     dialog.nitems => integer
+ *     nitems -> integer
  *
  *  Returns the number of items.
  */
@@ -854,7 +853,7 @@ s_RubyDialog_Nitems(VALUE self)
 
 /*
  *  call-seq:
- *     dialog.each_item block
+ *     each_item {|n| ...}
  *
  *  Iterate the given block with the item number as the argument.
  */
@@ -872,7 +871,7 @@ s_RubyDialog_EachItem(VALUE self)
 
 /*
  *  call-seq:
- *     dialog.radio_group(ary)
+ *     radio_group(Array)
  *
  *  Group radio buttons as a mutually exclusive group.
  */
@@ -915,14 +914,21 @@ s_RubyDialog_RadioGroup(VALUE self, VALUE aval)
 
 /*
  *  call-seq:
- *     dialog.action(index)
+ *     action(index)
  *
  *  Do the default action for the dialog item with the given index.
- *  If index == 0 (OK) or 1 (Cancel), RubyDialogCallback_endModal() is called.
+ *  If index == 0 (OK) or 1 (Cancel), the modal session of this dialog will end.
  *  Otherwise, the "action" attribute is looked for the item, and if found
  *  it is called with the given index as the argument (the attribute must be
  *  either a symbol (method name) or a Proc object).
  *  If the "action" attribute is not found, do nothing.
+ *
+ *  It is likely that you will create a new RubyDialog of your own, and
+ *  define a singleton method named +action+ that overrides this method.
+ *  When it is invoked, you can process item-specific actions according to
+ *  the argument index, and if you want to continue the default behavior
+ *  (e.g. to end modal session when "OK" is pressed), just call this
+ *  version by +super+.
  */
 static VALUE
 s_RubyDialog_Action(VALUE self, VALUE idx)
@@ -949,7 +955,7 @@ s_RubyDialog_Action(VALUE self, VALUE idx)
 
 /*
  *  call-seq:
- *     RubyDialog.save_panel(message = nil, directory = nil, default_filename = nil, wildcard = nil)
+ *     save_panel(message = nil, directory = nil, default_filename = nil, wildcard = nil)
  *
  *  Display the "save as" dialog and returns the fullpath filename.
  */
@@ -986,7 +992,7 @@ s_RubyDialog_SavePanel(int argc, VALUE *argv, VALUE klass)
 
 /*
  *  call-seq:
- *     RubyDialog.open_panel(message = nil, directory = nil, wildcard = nil, for_directories = false, multiple_selection = false)
+ *     open_panel(message = nil, directory = nil, wildcard = nil, for_directories = false, multiple_selection = false)
  *
  *  Display the "open" dialog and returns the fullpath filename.
  */
