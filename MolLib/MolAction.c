@@ -589,7 +589,7 @@ MolActionPerform(Molecule *mol, MolAction *action)
 	int n1, result, natoms;
 	Molecule *mol2;
 	IntGroup *ig;
-	MolAction *act2;
+	MolAction *act2 = NULL;
 	int needsSymmetryAmendment = 0;
 	int needsRebuildMDArena = 0;
 	Int *ip;
@@ -775,9 +775,14 @@ MolActionPerform(Molecule *mol, MolAction *action)
 	} else if (strcmp(action->name, gMolActionAddBonds) == 0) {
 		ip = (Int *)action->args[0].u.arval.ptr;
 		n1 = action->args[0].u.arval.nitems / 2;
-		if ((result = MoleculeAddBonds(mol, n1, ip)) < 0)
+		if ((result = MoleculeAddBonds(mol, n1, ip)) <= 0)
 			return result;
-		act2 = MolActionNew(gMolActionDeleteBonds, n1 * 2, ip);
+		ip = (Int *)malloc(sizeof(Int) * 2 * result);
+		if (ip == NULL)
+			return -4;
+		memmove(ip, mol->bonds - result * 2, sizeof(Int) * 2 * result);
+		act2 = MolActionNew(gMolActionDeleteBonds, result * 2, ip);
+		free(ip);
 		needsRebuildMDArena = 1;
 	} else if (strcmp(action->name, gMolActionDeleteBonds) == 0) {
 		ip = (Int *)action->args[0].u.arval.ptr;

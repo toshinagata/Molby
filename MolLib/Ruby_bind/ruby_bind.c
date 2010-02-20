@@ -4728,6 +4728,7 @@ s_Molecule_SetPsPerStep(VALUE self, VALUE val)
  *
  *  Find the angles from the bonds. Returns the number of angles newly created.
  */
+/*
 static VALUE
 s_Molecule_FindAngles(VALUE self)
 {
@@ -4758,13 +4759,14 @@ s_Molecule_FindAngles(VALUE self)
 	}
 	return INT2NUM(nip);
 }
-
+*/
 /*
  *  call-seq:
  *     find_dihedrals     -> Integer
  *
  *  Find the dihedrals from the bonds. Returns the number of dihedrals newly created.
  */
+/*
 static VALUE
 s_Molecule_FindDihedrals(VALUE self)
 {
@@ -4806,6 +4808,7 @@ s_Molecule_FindDihedrals(VALUE self)
 	}
 	return INT2NUM(nip);
 }
+*/
 
 /*
  *  call-seq:
@@ -5438,16 +5441,17 @@ s_Molecule_DuplicateAnAtom(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     create_bond(n1, n2, ...)       -> Molecule
+ *     create_bond(n1, n2, ...)       -> Integer
  *
- *  Create bonds between atoms n1 and n2, n3 and n4, and so on. Returns self.
+ *  Create bonds between atoms n1 and n2, n3 and n4, and so on. If the corresponding bond is already present for a particular pair,
+ *  do nothing for that pair. Returns the number of bonds actually created.
  *  This operation is undoable.
  */
 static VALUE
 s_Molecule_CreateBond(int argc, VALUE *argv, VALUE self)
 {
     Molecule *mol;
-	Int i, *ip;
+	Int i, *ip, old_nbonds;
 	if (argc == 0)
 		rb_raise(rb_eMolbyError, "missing arguments");
 	if (argc % 2 != 0)
@@ -5457,7 +5461,7 @@ s_Molecule_CreateBond(int argc, VALUE *argv, VALUE self)
 	for (i = 0; i < argc; i++)
 		ip[i] = s_Molecule_AtomIndexFromValue(mol, argv[i]);
 	ip[argc] = kInvalidIndex;
-//	i = MoleculeAddBonds(mol, ip, NULL);
+	old_nbonds = mol->nbonds;
 	i = MolActionCreateAndPerform(mol, gMolActionAddBonds, argc, ip);
 	if (i == -1)
 		rb_raise(rb_eMolbyError, "atom index out of range");
@@ -5467,7 +5471,34 @@ s_Molecule_CreateBond(int argc, VALUE *argv, VALUE self)
 		rb_raise(rb_eMolbyError, "duplicate bonds");
 	else if (i != 0)
 		rb_raise(rb_eMolbyError, "error in creating bonds");
-	return self;
+	return INT2NUM(mol->nbonds - old_nbonds);
+}
+
+/*
+ *  call-seq:
+ *     molecule.remove_bonds(n1, n2, ...)       -> Integer
+ *
+ *  Remove bonds between atoms n1 and n2, n3 and n4, and so on. If the corresponding bond is not present for
+ *  a particular pair, do nothing for that pair. Returns the number of bonds actually removed.
+ *  This operation is undoable.
+ */
+static VALUE
+s_Molecule_RemoveBond(int argc, VALUE *argv, VALUE self)
+{
+    Molecule *mol;
+	Int i, *ip, old_nbonds;
+	if (argc == 0)
+		rb_raise(rb_eMolbyError, "missing arguments");
+	if (argc % 2 != 0)
+		rb_raise(rb_eMolbyError, "bonds should be specified by pairs of atom indices");
+    Data_Get_Struct(self, Molecule, mol);
+	ip = ALLOC_N(Int, argc + 1);
+	for (i = 0; i < argc; i++)
+		ip[i] = s_Molecule_AtomIndexFromValue(mol, argv[i]);
+	ip[argc] = kInvalidIndex;
+	old_nbonds = mol->nbonds;
+	MolActionCreateAndPerform(mol, gMolActionDeleteBonds, argc, ip);
+	return INT2NUM(old_nbonds - mol->nbonds);
 }
 
 /*
@@ -7491,8 +7522,8 @@ Init_Molby(void)
 	rb_define_method(rb_cMolecule, "ps_per_step", s_Molecule_PsPerStep, 0);
 	rb_define_method(rb_cMolecule, "ps_per_step=", s_Molecule_SetPsPerStep, 1);
 	
-	rb_define_method(rb_cMolecule, "find_angles", s_Molecule_FindAngles, 0);
-	rb_define_method(rb_cMolecule, "find_dihedrals", s_Molecule_FindDihedrals, 0);
+/*	rb_define_method(rb_cMolecule, "find_angles", s_Molecule_FindAngles, 0);
+	rb_define_method(rb_cMolecule, "find_dihedrals", s_Molecule_FindDihedrals, 0); */
 	rb_define_method(rb_cMolecule, "nresidues", s_Molecule_Nresidues, 0);
 	rb_define_method(rb_cMolecule, "nresidues=", s_Molecule_ChangeNresidues, 1);
 	rb_define_method(rb_cMolecule, "max_residue_number", s_Molecule_MaxResSeq, -1);
@@ -7520,6 +7551,9 @@ Init_Molby(void)
 	rb_define_method(rb_cMolecule, "create_atom", s_Molecule_CreateAnAtom, -1);
 	rb_define_method(rb_cMolecule, "duplicate_atom", s_Molecule_DuplicateAnAtom, -1);
 	rb_define_method(rb_cMolecule, "create_bond", s_Molecule_CreateBond, -1);
+	rb_define_alias(rb_cMolecule, "create_bonds", "create_bond");
+	rb_define_method(rb_cMolecule, "remove_bond", s_Molecule_RemoveBond, -1);
+	rb_define_alias(rb_cMolecule, "remove_bonds", "remove_bond");
 	rb_define_method(rb_cMolecule, "add_angle", s_Molecule_AddAngle, 3);
 	rb_define_method(rb_cMolecule, "remove_angle", s_Molecule_RemoveAngle, 3);
 	rb_define_method(rb_cMolecule, "add_dihedral", s_Molecule_AddDihedral, 4);

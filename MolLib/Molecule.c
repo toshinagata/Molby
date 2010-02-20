@@ -5792,14 +5792,20 @@ MoleculeExtract(Molecule *src, Molecule **dstp, IntGroup *where, int dummyFlag)
 int
 MoleculeAddBonds(Molecule *mp, Int nbonds, const Int *bonds)
 {
-	int i, j, n1, n2;
+	int i, j, n1, n2, n;
 	Atom *ap;
+	Int *bonds_tmp;
+
 	if (mp == NULL || bonds == NULL || nbonds <= 0)
 		return 0;
 	if (mp->noModifyTopology)
 		return -4;  /*  Prohibited operation  */
 
 	/*  Check the bonds  */
+	bonds_tmp = (Int *)malloc(sizeof(Int) * nbonds * 2);
+	if (bonds_tmp == NULL)
+		return -4;  /*  Out of memory  */
+	n = 0;
 	for (i = 0; i < nbonds; i++) {
 		n1 = bonds[i * 2];
 		n2 = bonds[i * 2 + 1];
@@ -5808,18 +5814,29 @@ MoleculeAddBonds(Molecule *mp, Int nbonds, const Int *bonds)
 		ap = ATOM_AT_INDEX(mp->atoms, n1);
 		if (ap->nconnects >= ATOMS_MAX_CONNECTS - 1 || ATOM_AT_INDEX(mp->atoms, n2)->nconnects >= ATOMS_MAX_CONNECTS - 1)
 			return -2;  /*  Too many bonds  */
+		/*  Check duplicates  */
 		for (j = 0; j < ap->nconnects; j++) {
 			if (ap->connects[j] == n2)
-				return -3;  /*  Duplicate bond  */
+				break;
 		}
+		if (j == ap->nconnects) {
+			bonds_tmp[n * 2] = n1;
+			bonds_tmp[n * 2 + 1] = n2;
+			n++;
+		}
+	}
+	if (n == 0) {
+		/*  No bonds to add  */
+		free(bonds_tmp);
+		return 0;
 	}
 	
 	__MoleculeLock(mp);
 
 	/*  Add connects[]  */
-	for (i = 0; i < nbonds; i++) {
-		n1 = bonds[i * 2];
-		n2 = bonds[i * 2 + 1];
+	for (i = 0; i < n; i++) {
+		n1 = bonds_tmp[i * 2];
+		n2 = bonds_tmp[i * 2 + 1];
 		ap = ATOM_AT_INDEX(mp->atoms, n1);
 		ap->connects[ap->nconnects++] = n2;
 		ap = ATOM_AT_INDEX(mp->atoms, n2);
@@ -5830,9 +5847,9 @@ MoleculeAddBonds(Molecule *mp, Int nbonds, const Int *bonds)
 	n1 = mp->nbonds;
 /*	if (AssignArray(&(mp->bonds), &(mp->nbonds), sizeof(Int) * 2, mp->nbonds + nb - 1, NULL) == NULL
 	|| sInsertElementsToArrayAtPositions(mp->bonds, n1, bonds, nb, sizeof(Int) * 2, where) != 0) */
-	if (AssignArray(&(mp->bonds), &(mp->nbonds), sizeof(Int) * 2, mp->nbonds + nbonds - 1, NULL) == NULL)
+	if (AssignArray(&(mp->bonds), &(mp->nbonds), sizeof(Int) * 2, mp->nbonds + n - 1, NULL) == NULL)
 		goto panic;
-	memmove(mp->bonds + n1 * 2, bonds, sizeof(Int) * 2 * nbonds);
+	memmove(mp->bonds + n1 * 2, bonds_tmp, sizeof(Int) * 2 * n);
 
 	/*  Add angles, dihedrals, impropers  */
 	{
@@ -5846,9 +5863,9 @@ MoleculeAddBonds(Molecule *mp, Int nbonds, const Int *bonds)
 		angles = dihedrals = impropers = NULL;
 		nangles = ndihedrals = nimpropers = 0;
 
-		for (i = 0; i < nbonds; i++) {
-			n1 = bonds[i * 2];
-			n2 = bonds[i * 2 + 1];
+		for (i = 0; i < n; i++) {
+			n1 = bonds_tmp[i * 2];
+			n2 = bonds_tmp[i * 2 + 1];
 			ap1 = ATOM_AT_INDEX(mp->atoms, n1);
 			ap2 = ATOM_AT_INDEX(mp->atoms, n2);
 			/*  Angles X-n1-n2  */
@@ -5930,7 +5947,8 @@ MoleculeAddBonds(Molecule *mp, Int nbonds, const Int *bonds)
 	mp->needsMDRebuild = 1;
 	__MoleculeUnlock(mp);
 
-	return nbonds;	
+	free(bonds_tmp);
+	return n;	
 
   panic:
 	__MoleculeUnlock(mp);
