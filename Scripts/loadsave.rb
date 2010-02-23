@@ -295,6 +295,7 @@ class Molecule
 				num, charge, type, x, y, z = line.split
 				coords.push(Vector3D[x, y, z])
 				anums.push(charge)
+				n += 1
 			end
 			if new_unit
 				#  Build a new molecule
@@ -306,19 +307,21 @@ class Molecule
 					ap.r = coords[i]
 				}
 				#  Find bonds
-				atoms.each { |ap|
-					j = ap.index
-					(j + 1 ... natoms).each { |k|
-						if calc_bond(j, k) < 1.7
-							create_bond(j, k)
-						end
-					}
-				}
+			#	atoms.each { |ap|
+			#		j = ap.index
+			#		(j + 1 ... natoms).each { |k|
+			#			if calc_bond(j, k) < 1.7
+			#				create_bond(j, k)
+			#			end
+			#		}
+			#	}
+				guess_bonds
 				new_unit = false
 				create_frame
 			else
 				create_frame([coords])  #  Should not be (coords)
 			end
+			nf += 1
 		end
 	end
 	self.undo_enabled = save_undo_enabled
