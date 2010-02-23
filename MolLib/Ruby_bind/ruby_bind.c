@@ -2027,336 +2027,176 @@ s_Parameter_Builtin(VALUE self)
 /*
  *  call-seq:
  *     bond(idx)          -> ParameterRef
- *     bond(t1, t2)       -> ParameterRef
  *  
- *  In the first form, the index-th bond parameter record is returned. In the second
- *  form, the bond parameter for t1-t2 is looked up (the last index first). t1, t2
- *  are the atom type string (up to 4 characters).
- *  If the method is used as a singleton method, then the default parameters are looked up.
- *  Otherwise, the specific parameters are looked up first, and then the default parameters.
+ *  The index-th bond parameter record is returned.
  */
 static VALUE
-s_Parameter_Bond(int argc, VALUE *argv, VALUE self)
+s_Parameter_Bond(VALUE self, VALUE ival)
 {
 	Molecule *mol;
-	int idx, idx2;
+	int idx, n;
 	mol = s_MoleculeFromParameterOrParEnumerableValue(self);
-	if (argc == 1) {
-		int n = gBuiltinParameters->nbondPars + (mol && mol->par ? mol->par->nbondPars : 0);
-		idx = NUM2INT(rb_Integer(argv[0]));
-		if (idx < -n || idx >= n)
-			rb_raise(rb_eMolbyError, "Bond parameter index (%d) out of range", idx);
-		if (idx < 0)
-			idx += n;
-		if (idx < gBuiltinParameters->nbondPars)
-			return ValueFromMoleculeWithParameterTypeAndIndex(NULL, kBondParType, idx);
-		else
-			return ValueFromMoleculeWithParameterTypeAndIndex(mol, kBondParType, idx - gBuiltinParameters->nbondPars);
-	} else if (argc == 2) {
-		BondPar *bp;
-		idx = s_AtomTypeIndexFromValue(argv[0]);
-		idx2 = s_AtomTypeIndexFromValue(argv[1]);
-		if (mol != NULL) {
-			if (idx < kAtomTypeMinimum || idx2 < kAtomTypeMinimum)
-				rb_raise(rb_eMolbyError, "Atom type indices should be given in strings");
-			bp = ParameterLookupBondPar(mol->par, idx, idx2, 0);
-			if (bp != NULL)
-				return ValueFromMoleculeWithParameterTypeAndIndex(mol, kBondParType, bp - mol->par->bondPars);
-		}
-		bp = ParameterLookupBondPar(gBuiltinParameters, idx, idx2, 0);
-		if (bp != NULL)
-			return ValueFromMoleculeWithParameterTypeAndIndex(NULL, kBondParType, bp - gBuiltinParameters->bondPars);
-		else return Qnil;
-	}
-	rb_raise(rb_eMolbyError, "Wrong number of arguments");
+	idx = NUM2INT(rb_Integer(ival));
+	if (mol == NULL)
+		n = gBuiltinParameters->nbondPars;
+	else if (mol->par != NULL)
+		n = mol->par->nbondPars;
+	else n = 0;
+	if (idx < -n || idx >= n)
+		rb_raise(rb_eMolbyError, "Bond parameter index (%d) out of range", idx);
+	if (idx < 0)
+		idx += n;
+	return ValueFromMoleculeWithParameterTypeAndIndex(mol, kBondParType, idx);
 }
 
 /*
  *  call-seq:
  *     angle(idx)          -> ParameterRef
- *     angle(t1, t2, t3)   -> ParameterRef
  *  
- *  In the first form, the index-th angle parameter record is returned. In the second
- *  form, the bond parameter for t1-t2-t3 is looked up (the last index first). t1, t2, t3
- *  are the atom type string (up to 4 characters).
- *  If the method is used as a singleton method, then the default parameters are looked up.
- *  Otherwise, the specific parameters are looked up first, and then the default parameters.
+ *  The index-th angle parameter record is returned.
  */
 static VALUE
-s_Parameter_Angle(int argc, VALUE *argv, VALUE self)
+s_Parameter_Angle(VALUE self, VALUE ival)
 {
 	Molecule *mol;
-	int idx1, idx2, idx3;
+	int idx, n;
 	mol = s_MoleculeFromParameterOrParEnumerableValue(self);
-	if (argc == 1) {
-		int n = gBuiltinParameters->nanglePars + (mol && mol->par ? mol->par->nanglePars : 0);
-		idx1 = NUM2INT(rb_Integer(argv[0]));
-		if (idx1 < -n || idx1 >= n)
-			rb_raise(rb_eMolbyError, "Angle parameter index (%d) out of range", idx1);
-		if (idx1 < 0)
-			idx1 += n;
-		if (idx1 < gBuiltinParameters->nanglePars)
-			return ValueFromMoleculeWithParameterTypeAndIndex(NULL, kAngleParType, idx1);
-		else
-			return ValueFromMoleculeWithParameterTypeAndIndex(mol, kAngleParType, idx1 - gBuiltinParameters->nanglePars);
-	} else if (argc == 3) {
-		AnglePar *ap;
-		idx1 = s_AtomTypeIndexFromValue(argv[0]);
-		idx2 = s_AtomTypeIndexFromValue(argv[1]);
-		idx3 = s_AtomTypeIndexFromValue(argv[2]);
-		if (mol != NULL) {
-			if (idx1 < kAtomTypeMinimum || idx2 < kAtomTypeMinimum || idx3 < kAtomTypeMinimum)
-				rb_raise(rb_eMolbyError, "Atom type indices should be given in strings");
-			ap = ParameterLookupAnglePar(mol->par, idx1, idx2, idx3, 0);
-			if (ap != NULL)
-				return ValueFromMoleculeWithParameterTypeAndIndex(mol, kAngleParType, ap - mol->par->anglePars);
-		}
-		ap = ParameterLookupAnglePar(gBuiltinParameters, idx1, idx2, idx3, 0);
-		if (ap != NULL)
-			return ValueFromMoleculeWithParameterTypeAndIndex(NULL, kAngleParType, ap - gBuiltinParameters->anglePars);
-		else return Qnil;
-	}
-	rb_raise(rb_eMolbyError, "Wrong number of arguments");
+	idx = NUM2INT(rb_Integer(ival));
+	if (mol == NULL)
+		n = gBuiltinParameters->nanglePars;
+	else if (mol->par != NULL)
+		n = mol->par->nanglePars;
+	else n = 0;
+	if (idx < -n || idx >= n)
+		rb_raise(rb_eMolbyError, "Angle parameter index (%d) out of range", idx);
+	if (idx < 0)
+		idx += n;
+	return ValueFromMoleculeWithParameterTypeAndIndex(mol, kAngleParType, idx);
 }
 
 /*
  *  call-seq:
- *     dihedral(idx)            -> ParameterRef
- *     dihedral(t1, t2, t3, t4) -> ParameterRef
+ *     dihedral(idx)          -> ParameterRef
  *  
- *  In the first form, the index-th dihedral parameter record is returned. In the second
- *  form, the bond parameter for t1-t2-t3-t4 is looked up (the last index first). t1, t2, t3, t4
- *  are the atom type string (up to 4 characters).
- *  If the method is used as a singleton method, then the default parameters are looked up.
- *  Otherwise, the specific parameters are looked up first, and then the default parameters.
+ *  The index-th dihedral parameter record is returned.
  */
 static VALUE
-s_Parameter_Dihedral(int argc, VALUE *argv, VALUE self)
+s_Parameter_Dihedral(VALUE self, VALUE ival)
 {
 	Molecule *mol;
-	int idx1, idx2, idx3, idx4;
+	int idx, n;
 	mol = s_MoleculeFromParameterOrParEnumerableValue(self);
-	if (argc == 1) {
-		int n = gBuiltinParameters->ndihedralPars + (mol && mol->par ? mol->par->ndihedralPars : 0);
-		idx1 = NUM2INT(rb_Integer(argv[0]));
-		if (idx1 < -n || idx1 >= n)
-			rb_raise(rb_eMolbyError, "Dihedral parameter index (%d) out of range", idx1);
-		if (idx1 < 0)
-			idx1 += n;
-		if (idx1 < gBuiltinParameters->ndihedralPars)
-			return ValueFromMoleculeWithParameterTypeAndIndex(NULL, kDihedralParType, idx1);
-		else
-			return ValueFromMoleculeWithParameterTypeAndIndex(mol, kDihedralParType, idx1 - gBuiltinParameters->ndihedralPars);
-	} else if (argc == 4) {
-		TorsionPar *tp;
-		idx1 = s_AtomTypeIndexFromValue(argv[0]);
-		idx2 = s_AtomTypeIndexFromValue(argv[1]);
-		idx3 = s_AtomTypeIndexFromValue(argv[2]);
-		idx4 = s_AtomTypeIndexFromValue(argv[2]);
-		if (mol != NULL) {
-			if (idx1 < kAtomTypeMinimum || idx2 < kAtomTypeMinimum || idx3 < kAtomTypeMinimum || idx4 < kAtomTypeMinimum)
-				rb_raise(rb_eMolbyError, "Atom type indices should be given in strings");
-			tp = ParameterLookupDihedralPar(mol->par, idx1, idx2, idx3, idx4, 0);
-			if (tp != NULL)
-				return ValueFromMoleculeWithParameterTypeAndIndex(mol, kDihedralParType, tp - mol->par->dihedralPars);
-		}
-		tp = ParameterLookupDihedralPar(gBuiltinParameters, idx1, idx2, idx3, idx4, 0);
-		if (tp != NULL)
-			return ValueFromMoleculeWithParameterTypeAndIndex(NULL, kDihedralParType, tp - gBuiltinParameters->dihedralPars);
-		else return Qnil;
-	}
-	rb_raise(rb_eMolbyError, "Wrong number of arguments");
+	idx = NUM2INT(rb_Integer(ival));
+	if (mol == NULL)
+		n = gBuiltinParameters->ndihedralPars;
+	else if (mol->par != NULL)
+		n = mol->par->ndihedralPars;
+	else n = 0;
+	if (idx < -n || idx >= n)
+		rb_raise(rb_eMolbyError, "Dihedral parameter index (%d) out of range", idx);
+	if (idx < 0)
+		idx += n;
+	return ValueFromMoleculeWithParameterTypeAndIndex(mol, kDihedralParType, idx);
 }
 
 /*
  *  call-seq:
- *     improper(idx)            -> ParameterRef
- *     improper(t1, t2, t3, t4) -> ParameterRef
+ *     improper(idx)          -> ParameterRef
  *  
- *  In the first form, the index-th improper parameter record is returned. In the second
- *  form, the bond parameter for t1-t2-t3-t4 is looked up (the last index first). t1, t2, t3, t4
- *  are the atom type string (up to 4 characters).
- *  If the method is used as a singleton method, then the default parameters are looked up.
- *  Otherwise, the specific parameters are looked up first, and then the default parameters.
+ *  The index-th improper parameter record is returned.
  */
 static VALUE
-s_Parameter_Improper(int argc, VALUE *argv, VALUE self)
+s_Parameter_Improper(VALUE self, VALUE ival)
 {
 	Molecule *mol;
-	int idx1, idx2, idx3, idx4;
+	int idx, n;
 	mol = s_MoleculeFromParameterOrParEnumerableValue(self);
-	if (argc == 1) {
-		int n = gBuiltinParameters->nimproperPars + (mol && mol->par ? mol->par->nimproperPars : 0);
-		idx1 = NUM2INT(rb_Integer(argv[0]));
-		if (idx1 < -n || idx1 >= n)
-			rb_raise(rb_eMolbyError, "Improper parameter index (%d) out of range", idx1);
-		if (idx1 < 0)
-			idx1 += n;
-		if (idx1 < gBuiltinParameters->nimproperPars)
-			return ValueFromMoleculeWithParameterTypeAndIndex(NULL, kImproperParType, idx1);
-		else
-			return ValueFromMoleculeWithParameterTypeAndIndex(mol, kImproperParType, idx1 - gBuiltinParameters->nimproperPars);
-	} else if (argc == 4) {
-		TorsionPar *tp;
-		idx1 = s_AtomTypeIndexFromValue(argv[0]);
-		idx2 = s_AtomTypeIndexFromValue(argv[1]);
-		idx3 = s_AtomTypeIndexFromValue(argv[2]);
-		idx4 = s_AtomTypeIndexFromValue(argv[2]);
-		if (mol != NULL) {
-			if (idx1 < kAtomTypeMinimum || idx2 < kAtomTypeMinimum || idx3 < kAtomTypeMinimum || idx4 < kAtomTypeMinimum)
-				rb_raise(rb_eMolbyError, "Atom type indices should be given in strings");
-			tp = ParameterLookupImproperPar(mol->par, idx1, idx2, idx3, idx4, 0);
-			if (tp != NULL)
-				return ValueFromMoleculeWithParameterTypeAndIndex(mol, kImproperParType, tp - mol->par->improperPars);
-		}
-		tp = ParameterLookupImproperPar(gBuiltinParameters, idx1, idx2, idx3, idx4, 0);
-		if (tp != NULL)
-			return ValueFromMoleculeWithParameterTypeAndIndex(NULL, kImproperParType, tp - gBuiltinParameters->improperPars);
-		else return Qnil;
-	}
-	rb_raise(rb_eMolbyError, "Wrong number of arguments");
+	idx = NUM2INT(rb_Integer(ival));
+	if (mol == NULL)
+		n = gBuiltinParameters->nimproperPars;
+	else if (mol->par != NULL)
+		n = mol->par->nimproperPars;
+	else n = 0;
+	if (idx < -n || idx >= n)
+		rb_raise(rb_eMolbyError, "Improper parameter index (%d) out of range", idx);
+	if (idx < 0)
+		idx += n;
+	return ValueFromMoleculeWithParameterTypeAndIndex(mol, kImproperParType, idx);
 }
 
 /*
  *  call-seq:
- *     vdw(idx)            -> ParameterRef
- *     vdw(t1)             -> ParameterRef
+ *     vdw(idx)          -> ParameterRef
  *  
- *  In the first form, the index-th vdw parameter record is returned. In the second
- *  form, the vdw parameter for t1 is looked up (the last index first). t1
- *  are the atom type string (up to 4 characters).
- *  If the method is used as a singleton method, then the default parameters are looked up.
- *  Otherwise, the specific parameters are looked up first, and then the default parameters.
+ *  The index-th vdw parameter record is returned.
  */
 static VALUE
-s_Parameter_Vdw(int argc, VALUE *argv, VALUE self)
+s_Parameter_Vdw(VALUE self, VALUE ival)
 {
 	Molecule *mol;
-	int idx1;
+	int idx, n;
 	mol = s_MoleculeFromParameterOrParEnumerableValue(self);
-	if (argc == 1) {
-		if (rb_obj_is_kind_of(argv[0], rb_cNumeric)) {
-			int n = gBuiltinParameters->nvdwPars + (mol && mol->par ? mol->par->nvdwPars : 0);
-			idx1 = NUM2INT(rb_Integer(argv[0]));
-			if (idx1 < -n || idx1 >= n)
-				rb_raise(rb_eMolbyError, "Vdw parameter index (%d) out of range", idx1);
-			if (idx1 < 0)
-				idx1 += n;
-			if (idx1 < gBuiltinParameters->nvdwPars)
-				return ValueFromMoleculeWithParameterTypeAndIndex(NULL, kVdwParType, idx1);
-			else
-				return ValueFromMoleculeWithParameterTypeAndIndex(mol, kVdwParType, idx1 - gBuiltinParameters->nvdwPars);
-		} else {
-			VdwPar *vp;
-			idx1 = s_AtomTypeIndexFromValue(argv[0]);
-			if (mol != NULL) {
-				if (idx1 < kAtomTypeMinimum)
-					rb_raise(rb_eMolbyError, "Atom type indices should be given in strings");
-				vp = ParameterLookupVdwPar(mol->par, idx1, 0);
-				if (vp != NULL)
-					return ValueFromMoleculeWithParameterTypeAndIndex(mol, kVdwParType, vp - mol->par->vdwPars);
-			}
-			vp = ParameterLookupVdwPar(gBuiltinParameters, idx1, 0);
-			if (vp != NULL)
-				return ValueFromMoleculeWithParameterTypeAndIndex(NULL, kVdwParType, vp - gBuiltinParameters->vdwPars);
-			else return Qnil;
-		}
-	}
-	rb_raise(rb_eMolbyError, "Wrong number of arguments");
+	idx = NUM2INT(rb_Integer(ival));
+	if (mol == NULL)
+		n = gBuiltinParameters->nvdwPars;
+	else if (mol->par != NULL)
+		n = mol->par->nvdwPars;
+	else n = 0;
+	if (idx < -n || idx >= n)
+		rb_raise(rb_eMolbyError, "Vdw parameter index (%d) out of range", idx);
+	if (idx < 0)
+		idx += n;
+	return ValueFromMoleculeWithParameterTypeAndIndex(mol, kVdwParType, idx);
 }
 
 /*
  *  call-seq:
  *     vdw_pair(idx)          -> ParameterRef
- *     vdw_pair(t1, t2)       -> ParameterRef
  *  
- *  In the first form, the index-th vdw-pair parameter record is returned. In the second
- *  form, the vdw-pair parameter for t1-t2 is looked up (the last index first). t1, t2
- *  are the atom type string (up to 4 characters).
- *  If the method is used as a singleton method, then the default parameters are looked up.
- *  Otherwise, the specific parameters are looked up first, and then the default parameters.
+ *  The index-th vdw pair parameter record is returned.
  */
 static VALUE
-s_Parameter_VdwPair(int argc, VALUE *argv, VALUE self)
+s_Parameter_VdwPair(VALUE self, VALUE ival)
 {
 	Molecule *mol;
-	int idx1, idx2;
+	int idx, n;
 	mol = s_MoleculeFromParameterOrParEnumerableValue(self);
-	if (argc == 1) {
-		int n = gBuiltinParameters->nvdwpPars + (mol && mol->par ? mol->par->nvdwpPars : 0);
-		idx1 = NUM2INT(rb_Integer(argv[0]));
-		if (idx1 < -n || idx1 >= n)
-			rb_raise(rb_eMolbyError, "Vdw pair parameter index (%d) out of range", idx1);
-		if (idx1 < 0)
-			idx1 += n;
-		if (idx1 < gBuiltinParameters->nvdwpPars)
-			return ValueFromMoleculeWithParameterTypeAndIndex(NULL, kVdwPairParType, idx1);
-		else
-			return ValueFromMoleculeWithParameterTypeAndIndex(mol, kVdwPairParType, idx1 - gBuiltinParameters->nvdwpPars);
-	} else if (argc == 2) {
-		VdwPairPar *vp;
-		idx1 = s_AtomTypeIndexFromValue(argv[0]);
-		idx2 = s_AtomTypeIndexFromValue(argv[1]);
-		if (mol != NULL) {
-			if (idx1 < kAtomTypeMinimum || idx2 < kAtomTypeMinimum)
-				rb_raise(rb_eMolbyError, "Atom type indices should be given in strings");
-			vp = ParameterLookupVdwPairPar(mol->par, idx1, idx2, 0);
-			if (vp != NULL)
-				return ValueFromMoleculeWithParameterTypeAndIndex(mol, kVdwPairParType, vp - mol->par->vdwpPars);
-		}
-		vp = ParameterLookupVdwPairPar(gBuiltinParameters, idx1, idx2, 0);
-		if (vp != NULL)
-			return ValueFromMoleculeWithParameterTypeAndIndex(NULL, kVdwPairParType, vp - gBuiltinParameters->vdwpPars);
-		else return Qnil;
-	}
-	rb_raise(rb_eMolbyError, "Wrong number of arguments");
+	idx = NUM2INT(rb_Integer(ival));
+	if (mol == NULL)
+		n = gBuiltinParameters->nvdwpPars;
+	else if (mol->par != NULL)
+		n = mol->par->nvdwpPars;
+	else n = 0;
+	if (idx < -n || idx >= n)
+		rb_raise(rb_eMolbyError, "Vdw pair parameter index (%d) out of range", idx);
+	if (idx < 0)
+		idx += n;
+	return ValueFromMoleculeWithParameterTypeAndIndex(mol, kVdwPairParType, idx);
 }
 
 /*
  *  call-seq:
  *     vdw_cutoff(idx)          -> ParameterRef
- *     vdw_cutoff(t1, t2)       -> ParameterRef
  *  
- *  In the first form, the index-th vdw-cutoff parameter record is returned. In the second
- *  form, the vdw-pair parameter for t1-t2 is looked up (the last index first). t1, t2
- *  are the atom type string (up to 4 characters).
- *  If the method is used as a singleton method, then the default parameters are looked up.
- *  Otherwise, the specific parameters are looked up first, and then the default parameters.
+ *  The index-th vdw cutoff parameter record is returned.
  */
 static VALUE
-s_Parameter_VdwCutoff(int argc, VALUE *argv, VALUE self)
+s_Parameter_VdwCutoff(VALUE self, VALUE ival)
 {
 	Molecule *mol;
-	int idx1, idx2;
+	int idx, n;
 	mol = s_MoleculeFromParameterOrParEnumerableValue(self);
-	if (argc == 1) {
-		int n = gBuiltinParameters->nvdwCutoffPars + (mol && mol->par ? mol->par->nvdwCutoffPars : 0);
-		idx1 = NUM2INT(rb_Integer(argv[0]));
-		if (idx1 < -n || idx1 >= n)
-			rb_raise(rb_eMolbyError, "Vdw pair parameter index (%d) out of range", idx1);
-		if (idx1 < 0)
-			idx1 += n;
-		if (idx1 < gBuiltinParameters->nvdwCutoffPars)
-			return ValueFromMoleculeWithParameterTypeAndIndex(NULL, kVdwCutoffParType, idx1);
-		else
-			return ValueFromMoleculeWithParameterTypeAndIndex(mol, kVdwCutoffParType, idx1 - gBuiltinParameters->nvdwCutoffPars);
-	} else if (argc == 2) {
-		VdwCutoffPar *vp;
-		idx1 = s_AtomTypeIndexFromValue(argv[0]);
-		idx2 = s_AtomTypeIndexFromValue(argv[1]);
-		if (mol != NULL) {
-			if (idx1 < kAtomTypeMinimum || idx2 < kAtomTypeMinimum)
-				rb_raise(rb_eMolbyError, "Atom type indices should be given in strings");
-			vp = ParameterLookupVdwCutoffPar(mol->par, idx1, idx2, 0);
-			if (vp != NULL)
-				return ValueFromMoleculeWithParameterTypeAndIndex(mol, kVdwCutoffParType, vp - mol->par->vdwCutoffPars);
-		}
-		vp = ParameterLookupVdwCutoffPar(gBuiltinParameters, idx1, idx2, 0);
-		if (vp != NULL)
-			return ValueFromMoleculeWithParameterTypeAndIndex(NULL, kVdwCutoffParType, vp - gBuiltinParameters->vdwCutoffPars);
-		else return Qnil;
-	}
-	rb_raise(rb_eMolbyError, "Wrong number of arguments");
+	idx = NUM2INT(rb_Integer(ival));
+	if (mol == NULL)
+		n = gBuiltinParameters->nvdwCutoffPars;
+	else if (mol->par != NULL)
+		n = mol->par->nvdwCutoffPars;
+	else n = 0;
+	if (idx < -n || idx >= n)
+		rb_raise(rb_eMolbyError, "Dihedral parameter index (%d) out of range", idx);
+	if (idx < 0)
+		idx += n;
+	return ValueFromMoleculeWithParameterTypeAndIndex(mol, kVdwCutoffParType, idx);
 }
 
 /*
@@ -2371,50 +2211,47 @@ s_Parameter_VdwCutoff(int argc, VALUE *argv, VALUE self)
  *  the all atom parameters are global.
  */
 static VALUE
-s_Parameter_Atom(int argc, VALUE *argv, VALUE self)
+s_Parameter_Atom(VALUE self, VALUE ival)
 {
-	int idx1;
-	if (argc == 1) {
-		if (rb_obj_is_kind_of(argv[0], rb_cNumeric)) {
-			int n = gCountDispAtomParameters;
-			idx1 = NUM2INT(rb_Integer(argv[0]));
-			if (idx1 < -n || idx1 >= n)
-				rb_raise(rb_eMolbyError, "Atom parameter index (%d) out of range", idx1);
-			if (idx1 < 0)
-				idx1 += n;
-			return ValueFromMoleculeWithParameterTypeAndIndex(NULL, kAtomParType, idx1);
-		} else {
-			AtomPar *ap;
-			char name[6];
-			int i;
-			strncpy(name, StringValuePtr(argv[0]), 4);
-			name[4] = 0;
-			for (i = gCountDispAtomParameters - 1, ap = gDispAtomParameters + i; i >= 0; i--) {
-				if (strncmp(ap->name, name, 4) == 0)
-					return ValueFromMoleculeWithParameterTypeAndIndex(NULL, kAtomParType, i);
-			}
-			return Qnil;
+	Int idx1;
+	if (rb_obj_is_kind_of(ival, rb_cNumeric)) {
+		int n = gCountDispAtomParameters;
+		idx1 = NUM2INT(rb_Integer(ival));
+		if (idx1 < -n || idx1 >= n)
+			rb_raise(rb_eMolbyError, "Atom parameter index (%d) out of range", idx1);
+		if (idx1 < 0)
+			idx1 += n;
+		return ValueFromMoleculeWithParameterTypeAndIndex(NULL, kAtomParType, idx1);
+	} else {
+		AtomPar *ap;
+		char name[6];
+		int i;
+		strncpy(name, StringValuePtr(ival), 4);
+		name[4] = 0;
+		for (i = gCountDispAtomParameters - 1, ap = gDispAtomParameters + i; i >= 0; i--) {
+			if (strncmp(ap->name, name, 4) == 0)
+				return ValueFromMoleculeWithParameterTypeAndIndex(NULL, kAtomParType, i);
 		}
+		return Qnil;
 	}
-	rb_raise(rb_eMolbyError, "Wrong number of arguments");
 }
 
 /*
  *  call-seq:
  *     nbonds          -> Integer
  *  
- *  Returns the number of bond parameters. If the method is used as a singleton method,
- *  then only the default parameters are examined. Otherwise, the total number of the
- *  specific parameters _and_ the default (global) parameters are returned.
+ *  Returns the number of bond parameters.
  */
 static VALUE
 s_Parameter_Nbonds(VALUE self)
 {
 	Int n;
 	Molecule *mol = s_MoleculeFromParameterOrParEnumerableValue(self);
-	n = gBuiltinParameters->nbondPars;
-	if (mol && mol->par)
-		n += mol->par->nbondPars;
+	if (mol == NULL)
+		n = gBuiltinParameters->nbondPars;
+	else if (mol->par != NULL)
+		n = mol->par->nbondPars;
+	else n = 0;
 	return INT2NUM(n);
 }
 
@@ -2422,18 +2259,18 @@ s_Parameter_Nbonds(VALUE self)
  *  call-seq:
  *     nangles          -> Integer
  *  
- *  Returns the number of angle parameters. If the method is used as a singleton method,
- *  then only the default parameters are examined. Otherwise, the total number of the
- *  specific parameters _and_ the default (global) parameters are returned.
+ *  Returns the number of angle parameters.
  */
 static VALUE
 s_Parameter_Nangles(VALUE self)
 {
 	Int n;
 	Molecule *mol = s_MoleculeFromParameterOrParEnumerableValue(self);
-	n = gBuiltinParameters->nanglePars;
-	if (mol && mol->par)
-		n += mol->par->nanglePars;
+	if (mol == NULL)
+		n = gBuiltinParameters->nanglePars;
+	else if (mol->par != NULL)
+		n = mol->par->nanglePars;
+	else n = 0;
 	return INT2NUM(n);
 }
 
@@ -2441,18 +2278,18 @@ s_Parameter_Nangles(VALUE self)
  *  call-seq:
  *     ndihedrals          -> Integer
  *  
- *  Returns the number of dihedral parameters. If the method is used as a singleton method,
- *  then only the default parameters are examined. Otherwise, the total number of the
- *  specific parameters _and_ the default (global) parameters are returned.
+ *  Returns the number of dihedral parameters.
  */
 static VALUE
 s_Parameter_Ndihedrals(VALUE self)
 {
 	Int n;
 	Molecule *mol = s_MoleculeFromParameterOrParEnumerableValue(self);
-	n = gBuiltinParameters->ndihedralPars;
-	if (mol && mol->par)
-		n += mol->par->ndihedralPars;
+	if (mol == NULL)
+		n = gBuiltinParameters->ndihedralPars;
+	else if (mol->par != NULL)
+		n = mol->par->ndihedralPars;
+	else n = 0;
 	return INT2NUM(n);
 }
 
@@ -2460,18 +2297,18 @@ s_Parameter_Ndihedrals(VALUE self)
  *  call-seq:
  *     nimpropers          -> Integer
  *  
- *  Returns the number of improper parameters. If the method is used as a singleton method,
- *  then only the default parameters are examined. Otherwise, the total number of the
- *  specific parameters _and_ the default (global) parameters are returned.
+ *  Returns the number of improper parameters.
  */
 static VALUE
 s_Parameter_Nimpropers(VALUE self)
 {
 	Int n;
 	Molecule *mol = s_MoleculeFromParameterOrParEnumerableValue(self);
-	n = gBuiltinParameters->nimproperPars;
-	if (mol && mol->par)
-		n += mol->par->nimproperPars;
+	if (mol == NULL)
+		n = gBuiltinParameters->nimproperPars;
+	else if (mol->par != NULL)
+		n = mol->par->nimproperPars;
+	else n = 0;
 	return INT2NUM(n);
 }
 
@@ -2479,18 +2316,18 @@ s_Parameter_Nimpropers(VALUE self)
  *  call-seq:
  *     nvdws          -> Integer
  *  
- *  Returns the number of vdw parameters. If the method is used as a singleton method,
- *  then only the default parameters are examined. Otherwise, the total number of the
- *  specific parameters _and_ the default (global) parameters are returned.
+ *  Returns the number of vdw parameters.
  */
 static VALUE
 s_Parameter_Nvdws(VALUE self)
 {
 	Int n;
 	Molecule *mol = s_MoleculeFromParameterOrParEnumerableValue(self);
-	n = gBuiltinParameters->nvdwPars;
-	if (mol && mol->par)
-		n += mol->par->nvdwPars;
+	if (mol == NULL)
+		n = gBuiltinParameters->nvdwPars;
+	else if (mol->par != NULL)
+		n = mol->par->nvdwPars;
+	else n = 0;
 	return INT2NUM(n);
 }
 
@@ -2498,18 +2335,18 @@ s_Parameter_Nvdws(VALUE self)
  *  call-seq:
  *     nvdw_pairs          -> Integer
  *  
- *  Returns the number of vdw pair parameters. If the method is used as a singleton method,
- *  then only the default parameters are examined. Otherwise, the total number of the
- *  specific parameters _and_ the default (global) parameters are returned.
+ *  Returns the number of vdw pair parameters.
  */
 static VALUE
 s_Parameter_NvdwPairs(VALUE self)
 {
 	Int n;
 	Molecule *mol = s_MoleculeFromParameterOrParEnumerableValue(self);
-	n = gBuiltinParameters->nvdwpPars;
-	if (mol && mol->par)
-		n += mol->par->nvdwpPars;
+	if (mol == NULL)
+		n = gBuiltinParameters->nvdwpPars;
+	else if (mol->par != NULL)
+		n = mol->par->nvdwpPars;
+	else n = 0;
 	return INT2NUM(n);
 }
 
@@ -2517,18 +2354,18 @@ s_Parameter_NvdwPairs(VALUE self)
  *  call-seq:
  *     nvdw_cutoffs          -> Integer
  *  
- *  Returns the number of vdw cutoff parameters. If the method is used as a singleton method,
- *  then only the default parameters are examined. Otherwise, the total number of the
- *  specific parameters _and_ the default (global) parameters are returned.
+ *  Returns the number of vdw cutoff parameters.
  */
 static VALUE
 s_Parameter_NvdwCutoffs(VALUE self)
 {
 	Int n;
 	Molecule *mol = s_MoleculeFromParameterOrParEnumerableValue(self);
-	n = gBuiltinParameters->nvdwCutoffPars;
-	if (mol && mol->par)
-		n += mol->par->nvdwCutoffPars;
+	if (mol == NULL)
+		n = gBuiltinParameters->nvdwCutoffPars;
+	else if (mol->par != NULL)
+		n = mol->par->nvdwCutoffPars;
+	else n = 0;
 	return INT2NUM(n);
 }
 
@@ -2536,8 +2373,7 @@ s_Parameter_NvdwCutoffs(VALUE self)
  *  call-seq:
  *     natoms          -> Integer
  *  
- *  Returns the number of atom parameters. Unlike other Parameter methods, this
- *  method is used only as a singleton method, because all atom parameters are global.
+ *  Returns the number of atom parameters.
  */
 static VALUE
 s_Parameter_Natoms(VALUE self)
@@ -2719,30 +2555,30 @@ s_NewParEnumerableValueFromMoleculeAndType(Molecule *mol, Int parType)
 
 /*
  *  call-seq:
- *     self[*args]          -> ParameterRef
+ *     self[idx]          -> ParameterRef
  *  
  *  Call the accessor of the Parameter object from which this ParEnumerable object is derived from.
- *  Thus, if self is "bond" type, self[*args] is equivalent to p.bond(*args), where p is the
+ *  Thus, if self is "bond" type, self[idx] is equivalent to p.bond(idx), where p is the
  *  parent Parameter object of self.
  *
  *  <b>See Also</b>: Parameter#bond, Parameter#angle, Parameter#dihedral, Parameter#improper, 
  *  Parameter#vdw, Parameter#vdw_pair, Parameter#vdw_cutoff, Parameter#atom.
  */
 static VALUE
-s_ParEnumerable_Aref(int argc, VALUE *argv, VALUE self)
+s_ParEnumerable_Aref(VALUE self, VALUE ival)
 {
 	ParEnumerable *pen;
     Data_Get_Struct(self, ParEnumerable, pen);
 	switch (pen->parType) {
 			/*  s_Parameter_XXXX() also accepts ParEnumerable argument  */
-		case kBondParType:      return s_Parameter_Bond(argc, argv, self);
-		case kAngleParType:     return s_Parameter_Angle(argc, argv, self); 
-		case kDihedralParType:  return s_Parameter_Dihedral(argc, argv, self);
-		case kImproperParType:  return s_Parameter_Improper(argc, argv, self);
-		case kVdwParType:       return s_Parameter_Vdw(argc, argv, self);
-		case kVdwPairParType:   return s_Parameter_VdwPair(argc, argv, self);
-		case kVdwCutoffParType: return s_Parameter_VdwCutoff(argc, argv, self);
-		case kAtomParType:      return s_Parameter_Atom(argc, argv, self);
+		case kBondParType:      return s_Parameter_Bond(self, ival);
+		case kAngleParType:     return s_Parameter_Angle(self, ival);
+		case kDihedralParType:  return s_Parameter_Dihedral(self, ival);
+		case kImproperParType:  return s_Parameter_Improper(self, ival);
+		case kVdwParType:       return s_Parameter_Vdw(self, ival);
+		case kVdwPairParType:   return s_Parameter_VdwPair(self, ival);
+		case kVdwCutoffParType: return s_Parameter_VdwCutoff(self, ival);
+		case kAtomParType:      return s_Parameter_Atom(self, ival);
 		default:
 			rb_raise(rb_eMolbyError, "internal error: unknown parameter type (%d)", pen->parType);
 	}
@@ -2788,38 +2624,33 @@ s_ParEnumerable_Each(VALUE self)
 	VALUE aval;
 	ParEnumerable *pen;
 	ParameterRef *pref;
-	int i;
-	Int *np1, *np2;
+	int i, ofs, n;
     Data_Get_Struct(self, ParEnumerable, pen);
-	switch (pen->parType) {
-		case kBondParType:      np1 = &gBuiltinParameters->nbondPars; break;
-		case kAngleParType:     np1 = &gBuiltinParameters->nanglePars; break;
-		case kDihedralParType:  np1 = &gBuiltinParameters->ndihedralPars; break;
-		case kImproperParType:  np1 = &gBuiltinParameters->nimproperPars; break;
-		case kVdwParType:       np1 = &gBuiltinParameters->nvdwPars; break;
-		case kVdwPairParType:   np1 = &gBuiltinParameters->nvdwpPars; break;
-		case kVdwCutoffParType: np1 = &gBuiltinParameters->nvdwCutoffPars; break;
-		case kAtomParType:      np1 = &gCountDispAtomParameters; break;
-		default:
-			rb_raise(rb_eMolbyError, "internal error: unknown parameter type (%d)", pen->parType);
-	}
-	aval = ValueFromMoleculeWithParameterTypeAndIndex(NULL, pen->parType, 0);
+	if (pen->parType == kAtomParType)
+		n = gCountDispAtomParameters;
+	else {
+		switch (pen->parType) {
+			case kBondParType:      ofs = offsetof(Parameter, nbondPars); break;
+			case kAngleParType:     ofs = offsetof(Parameter, nanglePars); break;
+			case kDihedralParType:  ofs = offsetof(Parameter, ndihedralPars); break;
+			case kImproperParType:  ofs = offsetof(Parameter, nimproperPars); break;
+			case kVdwParType:       ofs = offsetof(Parameter, nvdwPars); break;
+			case kVdwPairParType:   ofs = offsetof(Parameter, nvdwpPars); break;
+			case kVdwCutoffParType: ofs = offsetof(Parameter, nvdwCutoffPars); break;
+			default:
+				rb_raise(rb_eMolbyError, "internal error: unknown parameter type (%d)", pen->parType);
+		}
+		if (pen->mol == NULL)
+			n = *((Int *)((char *)gBuiltinParameters + ofs));
+		else if (pen->mol->par != NULL)
+			n = *((Int *)((char *)(pen->mol->par) + ofs));
+		else return self;
+	}		
+	aval = ValueFromMoleculeWithParameterTypeAndIndex(pen->mol, pen->parType, 0);
 	Data_Get_Struct(aval, ParameterRef, pref);
-	for (i = 0; i < *np1; i++) {
+	for (i = 0; i < n; i++) {
 		pref->idx = i;
 		rb_yield(aval);
-	}
-	if (pen->mol != NULL && pen->mol->par != NULL && pen->parType != kAtomParType) {
-		/*  (char *)np1 - (char *)gBuiltinParameters is 'offsetof(nXXXXPars)'  */
-		np2 = (Int *)((char *)(pen->mol->par) + ((char *)np1 - (char *)gBuiltinParameters));
-		/*  A new aval is allocated, to avoid intercepting the release mechanism  */
-		/*  (Manually releasing and retaining pref->par should work, but I don't like it)  */
-		aval = ValueFromMoleculeWithParameterTypeAndIndex(pen->mol, pen->parType, 0);
-		Data_Get_Struct(aval, ParameterRef, pref);
-		for (i = 0; i < *np2; i++) {
-			pref->idx = i;
-			rb_yield(aval);
-		}
 	}
     return self;
 }
@@ -2836,34 +2667,31 @@ s_ParEnumerable_ReverseEach(VALUE self)
 	VALUE aval;
 	ParEnumerable *pen;
 	ParameterRef *pref;
-	int i;
-	Int *np1, *np2;
+	int i, ofs, n;
     Data_Get_Struct(self, ParEnumerable, pen);
-	switch (pen->parType) {
-		case kBondParType:      np1 = &gBuiltinParameters->nbondPars; break;
-		case kAngleParType:     np1 = &gBuiltinParameters->nanglePars; break;
-		case kDihedralParType:  np1 = &gBuiltinParameters->ndihedralPars; break;
-		case kImproperParType:  np1 = &gBuiltinParameters->nimproperPars; break;
-		case kVdwParType:       np1 = &gBuiltinParameters->nvdwPars; break;
-		case kVdwPairParType:   np1 = &gBuiltinParameters->nvdwpPars; break;
-		case kVdwCutoffParType: np1 = &gBuiltinParameters->nvdwCutoffPars; break;
-		case kAtomParType:      np1 = &gCountDispAtomParameters; break;
-		default:
-			rb_raise(rb_eMolbyError, "internal error: unknown parameter type (%d)", pen->parType);
-	}
-	if (pen->mol != NULL && pen->mol->par != NULL && pen->parType != kAtomParType) {
-		/*  (char *)np1 - (char *)gBuiltinParameters is 'offsetof(nXXXXPars)'  */
-		np2 = (Int *)((char *)(pen->mol->par) + ((char *)np1 - (char *)gBuiltinParameters));
-		aval = ValueFromMoleculeWithParameterTypeAndIndex(pen->mol, pen->parType, 0);
-		Data_Get_Struct(aval, ParameterRef, pref);
-		for (i = *np2 - 1; i >= 0; i--) {
-			pref->idx = i;
-			rb_yield(aval);
+	if (pen->parType == kAtomParType)
+		n = gCountDispAtomParameters;
+	else {
+		switch (pen->parType) {
+			case kBondParType:      ofs = offsetof(Parameter, nbondPars); break;
+			case kAngleParType:     ofs = offsetof(Parameter, nanglePars); break;
+			case kDihedralParType:  ofs = offsetof(Parameter, ndihedralPars); break;
+			case kImproperParType:  ofs = offsetof(Parameter, nimproperPars); break;
+			case kVdwParType:       ofs = offsetof(Parameter, nvdwPars); break;
+			case kVdwPairParType:   ofs = offsetof(Parameter, nvdwpPars); break;
+			case kVdwCutoffParType: ofs = offsetof(Parameter, nvdwCutoffPars); break;
+			default:
+				rb_raise(rb_eMolbyError, "internal error: unknown parameter type (%d)", pen->parType);
 		}
-	}
-	aval = ValueFromMoleculeWithParameterTypeAndIndex(NULL, pen->parType, 0);
+		if (pen->mol == NULL)
+			n = *((Int *)((char *)gBuiltinParameters + ofs));
+		else if (pen->mol->par != NULL)
+			n = *((Int *)((char *)(pen->mol->par) + ofs));
+		else return self;
+	}		
+	aval = ValueFromMoleculeWithParameterTypeAndIndex(pen->mol, pen->parType, 0);
 	Data_Get_Struct(aval, ParameterRef, pref);
-	for (i = *np1 - 1; i >= 0; i--) {
+	for (i = n - 1; i >= 0; i--) {
 		pref->idx = i;
 		rb_yield(aval);
 	}
@@ -5801,9 +5629,9 @@ static VALUE
 s_Molecule_GuessBonds(int argc, VALUE *argv, VALUE self)
 {
     Molecule *mol;
-	VALUE limval, retval;
+	VALUE limval;
 	double limit;
-	Int i, nbonds, *bonds;
+	Int nbonds, *bonds;
     Data_Get_Struct(self, Molecule, mol);
 	rb_scan_args(argc, argv, "01", &limval);
 	if (limval == Qnil)
@@ -7672,22 +7500,22 @@ Init_Molby(void)
 	/*  class Parameter  */
 	rb_cParameter = rb_define_class("Parameter", rb_cObject);
 	rb_define_singleton_method(rb_cParameter, "builtin", s_Parameter_Builtin, 0);
-	rb_define_method(rb_cParameter, "bond", s_Parameter_Bond, -1);
-	rb_define_singleton_method(rb_cParameter, "bond", s_Parameter_Bond, -1);
-	rb_define_method(rb_cParameter, "angle", s_Parameter_Angle, -1);
-	rb_define_singleton_method(rb_cParameter, "angle", s_Parameter_Angle, -1);
-	rb_define_method(rb_cParameter, "dihedral", s_Parameter_Dihedral, -1);
-	rb_define_singleton_method(rb_cParameter, "dihedral", s_Parameter_Dihedral, -1);
-	rb_define_method(rb_cParameter, "improper", s_Parameter_Improper, -1);
-	rb_define_singleton_method(rb_cParameter, "improper", s_Parameter_Improper, -1);
-	rb_define_method(rb_cParameter, "vdw", s_Parameter_Vdw, -1);
-	rb_define_singleton_method(rb_cParameter, "vdw", s_Parameter_Vdw, -1);
-	rb_define_method(rb_cParameter, "vdw_pair", s_Parameter_VdwPair, -1);
-	rb_define_singleton_method(rb_cParameter, "vdw_pair", s_Parameter_VdwPair, -1);
-	rb_define_method(rb_cParameter, "vdw_cutoff", s_Parameter_VdwCutoff, -1);
-	rb_define_singleton_method(rb_cParameter, "vdw_cutoff", s_Parameter_VdwCutoff, -1);
-	rb_define_method(rb_cParameter, "atom", s_Parameter_Atom, -1);
-	rb_define_singleton_method(rb_cParameter, "atom", s_Parameter_Atom, -1);
+	rb_define_method(rb_cParameter, "bond", s_Parameter_Bond, 1);
+	rb_define_singleton_method(rb_cParameter, "bond", s_Parameter_Bond, 1);
+	rb_define_method(rb_cParameter, "angle", s_Parameter_Angle, 1);
+	rb_define_singleton_method(rb_cParameter, "angle", s_Parameter_Angle, 1);
+	rb_define_method(rb_cParameter, "dihedral", s_Parameter_Dihedral, 1);
+	rb_define_singleton_method(rb_cParameter, "dihedral", s_Parameter_Dihedral, 1);
+	rb_define_method(rb_cParameter, "improper", s_Parameter_Improper, 1);
+	rb_define_singleton_method(rb_cParameter, "improper", s_Parameter_Improper, 1);
+	rb_define_method(rb_cParameter, "vdw", s_Parameter_Vdw, 1);
+	rb_define_singleton_method(rb_cParameter, "vdw", s_Parameter_Vdw, 1);
+	rb_define_method(rb_cParameter, "vdw_pair", s_Parameter_VdwPair, 1);
+	rb_define_singleton_method(rb_cParameter, "vdw_pair", s_Parameter_VdwPair, 1);
+	rb_define_method(rb_cParameter, "vdw_cutoff", s_Parameter_VdwCutoff, 1);
+	rb_define_singleton_method(rb_cParameter, "vdw_cutoff", s_Parameter_VdwCutoff, 1);
+	rb_define_method(rb_cParameter, "atom", s_Parameter_Atom, 1);
+	rb_define_singleton_method(rb_cParameter, "atom", s_Parameter_Atom, 1);
 	rb_define_method(rb_cParameter, "nbonds", s_Parameter_Nbonds, 0);
 	rb_define_singleton_method(rb_cParameter, "nbonds", s_Parameter_Nbonds, 0);
 	rb_define_method(rb_cParameter, "nangles", s_Parameter_Nangles, 0);
@@ -7724,7 +7552,7 @@ Init_Molby(void)
 	/*  class ParEnumerable  */
 	rb_cParEnumerable = rb_define_class("ParEnumerable", rb_cObject);
     rb_include_module(rb_cParEnumerable, rb_mEnumerable);
-	rb_define_method(rb_cParEnumerable, "[]", s_ParEnumerable_Aref, -1);
+	rb_define_method(rb_cParEnumerable, "[]", s_ParEnumerable_Aref, 1);
 	rb_define_method(rb_cParEnumerable, "length", s_ParEnumerable_Length, 0);
 	rb_define_method(rb_cParEnumerable, "each", s_ParEnumerable_Each, 0);
 	rb_define_method(rb_cParEnumerable, "reverse_each", s_ParEnumerable_ReverseEach, 0);
