@@ -51,7 +51,7 @@ extern const char *gMolActionChangeResidueNumberForUndo;
 extern const char *gMolActionChangeResidueNames;
 extern const char *gMolActionOffsetResidueNumbers;
 extern const char *gMolActionChangeNumberOfResidues;
-extern const char *gMolActionReorderAtoms;
+extern const char *gMolActionRenumberAtoms;
 extern const char *gMolActionExpandBySymmetry;
 extern const char *gMolActionDeleteSymmetryOperation;
 extern const char *gMolActionAddSymmetryOperation;

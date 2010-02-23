@@ -418,7 +418,7 @@ int MoleculeShowAllAtoms(Molecule *mp);
 int MoleculeShowReverse(Molecule *mp);
 int MoleculeHideAtoms(Molecule *mp, IntGroup *ig);
 
-int MoleculeReorderAtoms(Molecule *mp, const Int *new2old, Int *old2new_out, Int isize);
+int MoleculeRenumberAtoms(Molecule *mp, const Int *new2old, Int *old2new_out, Int isize);
 
 void MoleculeTransform(Molecule *mp, Transform tr, IntGroup *group);
 void MoleculeMove(Molecule *mp, Transform tr, IntGroup *group);

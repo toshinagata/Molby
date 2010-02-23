@@ -50,7 +50,7 @@ const char *gMolActionChangeResidueNumberForUndo = "changeResSeqForUndo:GIi";
 const char *gMolActionChangeResidueNames = "changeResNames:IC";
 const char *gMolActionOffsetResidueNumbers = "offsetResSeq:Gii";
 const char *gMolActionChangeNumberOfResidues = "changeNres:i";
-const char *gMolActionReorderAtoms    = "reorderAtoms:I";
+const char *gMolActionRenumberAtoms    = "renumberAtoms:I";
 const char *gMolActionExpandBySymmetry = "expandSym:Giiii";
 const char *gMolActionDeleteSymmetryOperation = "deleteSymop";
 const char *gMolActionAddSymmetryOperation = "addSymop:t";
@@ -1016,7 +1016,7 @@ MolActionPerform(Molecule *mol, MolAction *action)
 		act2 = MolActionNew(gMolActionSetSelection, ig2);
 		if (ig2 != NULL)
 			IntGroupRelease(ig2);
-	} else if (strcmp(action->name, gMolActionReorderAtoms) == 0) {
+	} else if (strcmp(action->name, gMolActionRenumberAtoms) == 0) {
 		Int *ip2 = (Int *)malloc(sizeof(Int) * (mol->natoms + 1));
 		if (ip2 == NULL)
 			return -1;
@@ -1026,12 +1026,12 @@ MolActionPerform(Molecule *mol, MolAction *action)
 			if (ip[n1] < 0)
 				break;
 		} */
-		result = MoleculeReorderAtoms(mol, ip, ip2, n1);
+		result = MoleculeRenumberAtoms(mol, ip, ip2, n1);
 		if (result != 0) {
 			free(ip2);
 			return result;
 		}
-		act2 = MolActionNew(gMolActionReorderAtoms, mol->natoms, ip2);
+		act2 = MolActionNew(gMolActionRenumberAtoms, mol->natoms, ip2);
 		needsRebuildMDArena = 1;
 	} else if (strcmp(action->name, gMolActionChangeResidueNumber) == 0 || (strcmp(action->name, gMolActionChangeResidueNumberForUndo) == 0 && (n1 = 1))) {
 		IntGroupIterator iter;

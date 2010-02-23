@@ -6914,7 +6914,7 @@ sMoleculeReorder(Molecule *mp)
 
 /*  Renumber atoms  */
 int
-MoleculeReorderAtoms(Molecule *mp, const Int *new2old, Int *old2new_out, Int isize)
+MoleculeRenumberAtoms(Molecule *mp, const Int *new2old, Int *old2new_out, Int isize)
 {
 	Int *old2new, i, j, retval;
 	Atom *saveAtoms;

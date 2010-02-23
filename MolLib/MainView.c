@@ -3393,7 +3393,7 @@ MainView_dragTableSelectionToRow(MainView *mview, int row)
 		if (IntGroupLookupPoint(sel, i) < 0)
 			new2old[n++] = i;
 	}
-	MolActionCreateAndPerform(mview->mol, gMolActionReorderAtoms, n, new2old);
+	MolActionCreateAndPerform(mview->mol, gMolActionRenumberAtoms, n, new2old);
 	
 	//  Change selection
 	sel = IntGroupNewWithPoints(start_row, count, -1);

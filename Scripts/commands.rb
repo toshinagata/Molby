@@ -66,7 +66,7 @@ class Molecule
 	    ary << i
 	  end
 	}
-	self.reorder_atoms(ary)
+	self.renumber_atoms(ary)
   end
 
   def save_gamess_with_ecp(filename)
