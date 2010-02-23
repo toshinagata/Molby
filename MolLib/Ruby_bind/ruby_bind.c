@@ -62,7 +62,7 @@ static VALUE
 	s_ResNameSym, s_NameSym, s_AtomTypeSym, s_ChargeSym,
 	s_WeightSym, s_ElementSym, s_AtomicNumberSym, s_ConnectsSym,
 	s_RSym, s_XSym, s_YSym, s_ZSym,
-	s_CrSym, s_CxSym, s_CySym, s_CzSym,
+	s_FractRSym, s_FractXSym, s_FractYSym, s_FractZSym,
 	s_VSym, s_FSym, s_OccupancySym, s_TempFactorSym,
 	s_AnisoSym, s_IntChargeSym, s_FixForceSym, s_FixPosSym;
 
@@ -3267,32 +3267,32 @@ static VALUE s_AtomRef_GetZ(VALUE self) {
 	return rb_float_new(s_AtomFromValue(self)->r.z);
 }
 
-static Vector s_AtomRef_GetCrAsVector(VALUE self) {
+static Vector s_AtomRef_GetFractionalRAsVector(VALUE self) {
 	Atom *ap;
 	Molecule *mp;
 	Vector r1;
 	s_AtomIndexFromValue(self, &ap, &mp);
 	r1 = ap->r;
-/*	if (mp->is_xtal_coord)
-		TransformVec(&r1, mp->cell->tr, &r1); */
+	if (mp->cell != NULL)
+		TransformVec(&r1, mp->cell->rtr, &r1);
 	return r1;
 }
 
-static VALUE s_AtomRef_GetCr(VALUE self) {
-	Vector r1 = s_AtomRef_GetCrAsVector(self);
+static VALUE s_AtomRef_GetFractionalR(VALUE self) {
+	Vector r1 = s_AtomRef_GetFractionalRAsVector(self);
 	return ValueFromVector(&r1);
 }
 
-static VALUE s_AtomRef_GetCx(VALUE self) {
-	return rb_float_new(s_AtomRef_GetCrAsVector(self).x);
+static VALUE s_AtomRef_GetFractionalX(VALUE self) {
+	return rb_float_new(s_AtomRef_GetFractionalRAsVector(self).x);
 }
 
-static VALUE s_AtomRef_GetCy(VALUE self) {
-	return rb_float_new(s_AtomRef_GetCrAsVector(self).y);
+static VALUE s_AtomRef_GetFractionalY(VALUE self) {
+	return rb_float_new(s_AtomRef_GetFractionalRAsVector(self).y);
 }
 
-static VALUE s_AtomRef_GetCz(VALUE self) {
-	return rb_float_new(s_AtomRef_GetCrAsVector(self).z);
+static VALUE s_AtomRef_GetFractionalZ(VALUE self) {
+	return rb_float_new(s_AtomRef_GetFractionalRAsVector(self).z);
 }
 
 static VALUE s_AtomRef_GetV(VALUE self) {
@@ -3466,21 +3466,21 @@ static VALUE s_AtomRef_SetZ(VALUE self, VALUE val) {
 	return val;
 }
 
-static VALUE s_AtomRef_SetCr(VALUE self, VALUE val) {
+static VALUE s_AtomRef_SetFractionalR(VALUE self, VALUE val) {
 	Vector v, ov;
 	Atom *ap;
 	Molecule *mp;
 	s_AtomIndexFromValue(self, &ap, &mp);
 	ov = ap->r;
 	VectorFromValue(val, &v);
-/*	if (mp->is_xtal_coord)
-		TransformVec(&v, mp->cell->rtr, &v); */
+	if (mp->cell != NULL)
+		TransformVec(&v, mp->cell->tr, &v);
 	ap->r = v;
 	s_RegisterUndoForAtomAttrChange(self, s_RSym, Qnil, ValueFromVector(&ov));
 	return val;
 }
 
-static VALUE s_AtomRef_SetCx(VALUE self, VALUE val) {
+static VALUE s_AtomRef_SetFractionalX(VALUE self, VALUE val) {
 	double f;
 	Vector v, ov;
 	Atom *ap;
@@ -3489,17 +3489,17 @@ static VALUE s_AtomRef_SetCx(VALUE self, VALUE val) {
 	ov = v = ap->r;
 	val = rb_Float(val);
 	f = NUM2DBL(val);
-/*	if (mp->is_xtal_coord) {
-		TransformVec(&v, mp->cell->tr, &v);
+	if (mp->cell != NULL) {
+		TransformVec(&v, mp->cell->rtr, &v);
 		v.x = f;
-		TransformVec(&v, mp->cell->rtr, &v);
-	} else */ v.x = f;
+		TransformVec(&v, mp->cell->tr, &v);
+	} else v.x = f;
 	ap->r = v;
 	s_RegisterUndoForAtomAttrChange(self, s_RSym, Qnil, ValueFromVector(&ov));
 	return val;
 }
 
-static VALUE s_AtomRef_SetCy(VALUE self, VALUE val) {
+static VALUE s_AtomRef_SetFractionalY(VALUE self, VALUE val) {
 	double f;
 	Vector v, ov;
 	Atom *ap;
@@ -3508,17 +3508,17 @@ static VALUE s_AtomRef_SetCy(VALUE self, VALUE val) {
 	ov = v = ap->r;
 	val = rb_Float(val);
 	f = NUM2DBL(val);
-/*	if (mp->is_xtal_coord) {
-		TransformVec(&v, mp->cell->tr, &v);
+	if (mp->cell != NULL) {
+		TransformVec(&v, mp->cell->rtr, &v);
 		v.y = f;
-		TransformVec(&v, mp->cell->rtr, &v);
-	} else */ v.y = f;
+		TransformVec(&v, mp->cell->tr, &v);
+	} else v.y = f;
 	ap->r = v;
 	s_RegisterUndoForAtomAttrChange(self, s_RSym, Qnil, ValueFromVector(&ov));
 	return val;
 }
 
-static VALUE s_AtomRef_SetCz(VALUE self, VALUE val) {
+static VALUE s_AtomRef_SetFractionalZ(VALUE self, VALUE val) {
 	double f;
 	Vector v, ov;
 	Atom *ap;
@@ -3527,11 +3527,11 @@ static VALUE s_AtomRef_SetCz(VALUE self, VALUE val) {
 	ov = v = ap->r;
 	val = rb_Float(val);
 	f = NUM2DBL(val);
-/*	if (mp->is_xtal_coord) {
-		TransformVec(&v, mp->cell->tr, &v);
-		v.z = f;
+	if (mp->cell != NULL) {
 		TransformVec(&v, mp->cell->rtr, &v);
-	} else */ v.z = f;
+		v.z = f;
+		TransformVec(&v, mp->cell->tr, &v);
+	} else v.z = f;
 	ap->r = v;
 	s_RegisterUndoForAtomAttrChange(self, s_RSym, Qnil, ValueFromVector(&ov));
 	return val;
@@ -3644,10 +3644,10 @@ static struct s_AtomAttrDef {
 	{"x",            &s_XSym,            0, s_AtomRef_GetX,            s_AtomRef_SetX},
 	{"y",            &s_YSym,            0, s_AtomRef_GetY,            s_AtomRef_SetY},
     {"z",            &s_ZSym,            0, s_AtomRef_GetZ,            s_AtomRef_SetZ},
-	{"cr",           &s_CrSym,           0, s_AtomRef_GetCr,           s_AtomRef_SetCr},
-	{"cx",           &s_CxSym,           0, s_AtomRef_GetCx,           s_AtomRef_SetCx},
-	{"cy",           &s_CySym,           0, s_AtomRef_GetCy,           s_AtomRef_SetCy},
-	{"cz",           &s_CzSym,           0, s_AtomRef_GetCz,           s_AtomRef_SetCz},
+	{"fract_r",      &s_FractRSym,       0, s_AtomRef_GetFractionalR,  s_AtomRef_SetFractionalR},
+	{"fract_x",      &s_FractXSym,       0, s_AtomRef_GetFractionalX,  s_AtomRef_SetFractionalX},
+	{"fract_y",      &s_FractYSym,       0, s_AtomRef_GetFractionalY,  s_AtomRef_SetFractionalY},
+	{"fract_z",      &s_FractZSym,       0, s_AtomRef_GetFractionalZ,  s_AtomRef_SetFractionalZ},
 	{"v",            &s_VSym,            0, s_AtomRef_GetV,            s_AtomRef_SetV},
 	{"f",            &s_FSym,            0, s_AtomRef_GetF,            s_AtomRef_SetF},
 	{"occupancy",    &s_OccupancySym,    0, s_AtomRef_GetOccupancy,    s_AtomRef_SetOccupancy},
@@ -5747,7 +5747,7 @@ s_Molecule_OffsetResidue(VALUE self, VALUE range, VALUE offset)
 
 /*
  *  call-seq:
- *     reorder_atoms(array)       -> IntGroup
+ *     renumber_atoms(array)       -> IntGroup
  *
  *  Change the order of atoms so that the atoms specified in the array argument appear
  *  in this order from the top of the molecule. The atoms that are not included in array
@@ -5755,7 +5755,7 @@ s_Molecule_OffsetResidue(VALUE self, VALUE range, VALUE offset)
  *  This operation is undoable.
  */
 static VALUE
-s_Molecule_ReorderAtoms(VALUE self, VALUE array)
+s_Molecule_RenumberAtoms(VALUE self, VALUE array)
 {
     Molecule *mol;
 	Int *new2old;
@@ -5771,14 +5771,14 @@ s_Molecule_ReorderAtoms(VALUE self, VALUE array)
 	for (i = 0; i < n; i++)
 		new2old[i] = s_Molecule_AtomIndexFromValue(mol, valp[i]);
 	new2old[i] = kInvalidIndex;
-	i = MolActionCreateAndPerform(mol, gMolActionReorderAtoms, i, new2old);
-/*	i = MoleculeReorderAtoms(mol, new2old, n); */
+	i = MolActionCreateAndPerform(mol, gMolActionRenumberAtoms, i, new2old);
+/*	i = MoleculeRenumberAtoms(mol, new2old, n); */
 	if (i == 1)
 		rb_raise(rb_eMolbyError, "Atom index out of range");
 	else if (i == 2)
 		rb_raise(rb_eMolbyError, "Duplicate entry");
 	else if (i == 3)
-		rb_raise(rb_eMolbyError, "Internal inconsistency during atom reordering");
+		rb_raise(rb_eMolbyError, "Internal inconsistency during atom renumbering");
 	retval = IntGroup_Alloc(rb_cIntGroup);
 	Data_Get_Struct(retval, IntGroup, ig);
 	if (mol->natoms > n)
@@ -7562,7 +7562,7 @@ Init_Molby(void)
 	rb_define_method(rb_cMolecule, "remove_improper", s_Molecule_RemoveImproper, 4);
 	rb_define_method(rb_cMolecule, "assign_residue", s_Molecule_AssignResidue, 2);
 	rb_define_method(rb_cMolecule, "offset_residue", s_Molecule_OffsetResidue, 2);
-	rb_define_method(rb_cMolecule, "reorder_atoms", s_Molecule_ReorderAtoms, 1);
+	rb_define_method(rb_cMolecule, "renumber_atoms", s_Molecule_RenumberAtoms, 1);
 	rb_define_method(rb_cMolecule, "guess_bonds", s_Molecule_GuessBonds, -1);
 	rb_define_method(rb_cMolecule, "selection", s_Molecule_Selection, 0);
 	rb_define_method(rb_cMolecule, "selection=", s_Molecule_SetSelection, 1);
