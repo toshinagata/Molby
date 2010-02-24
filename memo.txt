@@ -16,4 +16,5 @@ OS 10.4 用のユニバーサルバイナリは、export ISYSROOT='-isysroot /De
 2010.2.21.
   Ruby の Parameter/ParEnumerable の仕様がわかりにくい。グローバルパラメータを自動的に探しに行く機能はlookup メソッドに限定する。Parameter#lookup(par_type, atom_type_string, *options), ParEnumerable#lookup(atom_type_string, *options).
   Parameter#bond, ParEnumerable#[] などで、原子タイプからの探索はやめにする。また、ローカルな Parameter の nbonds などがグローバルパラメータを含んだ値を返すのはやめる。
+  Parameter#bond などをクラスメソッド・インスタンスメソッドとして二重に登録するのはやめた。グローバルパラメータはたとえば Parameter.builtin.atoms または Parameter::Builtin.atoms としてアクセスする。
 

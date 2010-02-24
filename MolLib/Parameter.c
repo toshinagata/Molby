@@ -352,7 +352,7 @@ ParameterInsert(Parameter *par, Int type, const UnionPar *up, struct IntGroup *w
 	}
 	n2 = 0;
 	for (i = 0; (n1 = IntGroupGetNthPoint(where, i)) >= 0; i++) {
-		if (InsertArray(p, ip, size, n1, 1, up + i) == NULL)
+		if (InsertArray(p, ip, size, n1, 1, (up ? up + i : NULL)) == NULL)
 			return n2;
 		n2++;
 	}

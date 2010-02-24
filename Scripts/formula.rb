@@ -383,7 +383,7 @@ class Molecule
   def dock_formula(str, group = selection)
     if group.length == 1
 	  #  Check if the string is an element name
-	  Parameter.atoms.each { |par|
+	  Parameter.builtin.atoms.each { |par|
 		if par.atomic_number > 0 && par.name == str
 		  ap = atoms[group[0]]
 		  if ap.atomic_number != par.atomic_number

@@ -681,6 +681,28 @@ s_AtomTypeIndexFromValue(VALUE val)
 static const char *s_ParameterTypeNames[] = {
 	"bond", "angle", "dihedral", "improper", "vdw", "vdw_pair", "vdw_cutoff", "atom"
 };
+static ID s_ParameterTypeIDs[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+
+static int
+s_ParTypeFromValue(VALUE val)
+{
+	int i, n;
+	ID valid;
+	n = sizeof(s_ParameterTypeNames) / sizeof(s_ParameterTypeNames[0]);
+	if (s_ParameterTypeIDs[0] == 0) {
+		for (i = 0; i < n; i++)
+			s_ParameterTypeIDs[i] = rb_intern(s_ParameterTypeNames[i]);
+	}
+	valid = rb_to_id(val);
+	for (i = 0; i < n; i++) {
+		if (valid == s_ParameterTypeIDs[i]) {
+			if (i == 7)
+				return kAtomParType;
+			else return kFirstParType + i;
+		}
+	}
+	return kInvalidParType;
+}
 
 /*
  *  call-seq:
@@ -703,6 +725,8 @@ static VALUE s_ParameterRef_GetIndex(VALUE self) {
 static VALUE s_ParameterRef_GetParType(VALUE self) {
 	Int tp;
 	s_UnionParFromValue(self, &tp, 0);
+	if (tp == kAtomParType)
+		return rb_str_new2("atom");
 	tp -= kFirstParType;
 	if (tp >= 0 && tp < sizeof(s_ParameterTypeNames) / sizeof(s_ParameterTypeNames[0]))
 		return rb_str_new2(s_ParameterTypeNames[tp]);
@@ -2016,12 +2040,15 @@ s_MoleculeFromParameterOrParEnumerableValue(VALUE val)
  *     builtin    -> Parameter
  *  
  *  Returns a parameter value that points to the global (builtin) parameters.
+ *  Equivalent to Parameter::Builtin (constant).
  */
 static VALUE
 s_Parameter_Builtin(VALUE self)
 {
-	Molecule *mol = NULL;
-	return Data_Wrap_Struct(rb_cParameter, 0, NULL, mol);
+	static ID s_builtin_id = 0;
+	if (s_builtin_id == 0)
+		s_builtin_id = rb_intern("Builtin");
+	return rb_const_get(rb_cParameter, s_builtin_id);
 }
 
 /*
@@ -2501,6 +2528,188 @@ s_Parameter_Atoms(VALUE self)
 	return s_NewParEnumerableValueFromMoleculeAndType(mol, kAtomParType);
 }
 
+static VALUE
+s_Parameter_Lookup_sub(int argc, VALUE *argv, int parType, Molecule *mol)
+{
+	VALUE atval, optval;
+	UInt t[4];
+	int i, n, idx, flags, is_global;
+
+	rb_scan_args(argc, argv, "1*", &atval, &optval);
+	
+	/*  Get the atom types  */
+	switch (parType) {
+		case kBondParType: n = 2; break;
+		case kAngleParType: n = 3; break;
+		case kDihedralParType: n = 4; break;
+		case kImproperParType: n = 4; break;
+		case kVdwParType: n = 1; break;
+		case kVdwPairParType: n = 2; break;
+		default: return Qnil;
+	}
+	s_ScanAtomTypes(atval, n, t);
+	
+	/*  Analyze options  */
+	flags = 0;
+	n = RARRAY_LEN(optval);
+	for (i = 0; i < n; i++) {
+		VALUE oval = RARRAY_PTR(optval)[i];
+		if (oval == ID2SYM(rb_intern("global")))
+			flags |= kParameterLookupGlobal;
+		else if (oval == ID2SYM(rb_intern("local")))
+			flags |= kParameterLookupLocal;
+		else if (oval == ID2SYM(rb_intern("missing")))
+			flags |= kParameterLookupMissing;
+		else if (oval == ID2SYM(rb_intern("nowildcard")))
+			flags |= kParameterLookupNoWildcard;
+		else if (oval == ID2SYM(rb_intern("nobasetype")))
+			flags |= kParameterLookupNoBaseAtomType;
+		else if (oval == ID2SYM(rb_intern("create")))
+			flags |= 256;
+	}
+	if (flags == 0)
+		flags = kParameterLookupGlobal | kParameterLookupLocal;
+	
+	idx = -1;
+	is_global = 0;
+	switch (parType) {
+		case kBondParType: {
+			BondPar *bp;
+			if (mol != NULL) {
+				bp = ParameterLookupBondPar(mol->par, t[0], t[1], flags);
+				if (bp != NULL) {
+					idx = bp - mol->par->bondPars;
+					break;
+				}
+			}
+			bp = ParameterLookupBondPar(gBuiltinParameters, t[0], t[1], flags);
+			if (bp != NULL) {
+				idx = bp - gBuiltinParameters->bondPars;
+				is_global = 1;
+			}
+			break;
+		}
+		case kAngleParType: {
+			AnglePar *ap;
+			if (mol != NULL) {
+				ap = ParameterLookupAnglePar(mol->par, t[0], t[1], t[2], flags);
+				if (ap != NULL) {
+					idx = ap - mol->par->anglePars;
+					break;
+				}
+			}
+			ap = ParameterLookupAnglePar(gBuiltinParameters, t[0], t[1], t[2], flags);
+			if (ap != NULL) {
+				idx = ap - gBuiltinParameters->anglePars;
+				is_global = 1;
+			}
+			break;
+		}
+		case kDihedralParType: {
+			TorsionPar *tp;
+			if (mol != NULL) {
+				tp = ParameterLookupDihedralPar(mol->par, t[0], t[1], t[2], t[3], flags);
+				if (tp != NULL) {
+					idx = tp - mol->par->dihedralPars;
+					break;
+				}
+			}
+			tp = ParameterLookupDihedralPar(gBuiltinParameters, t[0], t[1], t[2], t[3], flags);
+			if (tp != NULL) {
+				idx = tp - gBuiltinParameters->dihedralPars;
+				is_global = 1;
+			}
+			break;
+		}
+		case kImproperParType: {
+			TorsionPar *tp;
+			if (mol != NULL) {
+				tp = ParameterLookupImproperPar(mol->par, t[0], t[1], t[2], t[3], flags);
+				if (tp != NULL) {
+					idx = tp - mol->par->improperPars;
+					break;
+				}
+			}
+			tp = ParameterLookupImproperPar(gBuiltinParameters, t[0], t[1], t[2], t[3], flags);
+			if (tp != NULL) {
+				idx = tp - gBuiltinParameters->improperPars;
+				is_global = 1;
+			}
+			break;
+		}	
+		case kVdwParType: {
+			VdwPar *vp;
+			if (mol != NULL) {
+				vp = ParameterLookupVdwPar(mol->par, t[0], flags);
+				if (vp != NULL) {
+					idx = vp - mol->par->vdwPars;
+					break;
+				}
+			}
+			vp = ParameterLookupVdwPar(gBuiltinParameters, t[0], flags);
+			if (vp != NULL) {
+				idx = vp - gBuiltinParameters->vdwPars;
+				is_global = 1;
+			}
+			break;
+		}	
+		case kVdwPairParType: {
+			VdwPairPar *vp;
+			if (mol != NULL) {
+				vp = ParameterLookupVdwPairPar(mol->par, t[0], t[1], flags);
+				if (vp != NULL) {
+					idx = vp - mol->par->vdwpPars;
+					break;
+				}
+			}
+			vp = ParameterLookupVdwPairPar(gBuiltinParameters, t[0], t[1], flags);
+			if (vp != NULL) {
+				idx = vp - gBuiltinParameters->vdwpPars;
+				is_global = 1;
+			}
+			break;
+		}
+		default:
+			return Qnil;
+	}
+	if (idx < 0) {
+		if ((flags & 256) == 0 || mol == NULL || mol->par == NULL)
+			return Qnil;		
+		else {
+			/*  Insert a new (empty) parameter record  */
+			Int count = ParameterGetCountForType(mol->par, parType);
+			IntGroup *ig = IntGroupNewWithPoints(count, 1, -1);
+			MolActionCreateAndPerform(mol, gMolActionAddParameters, parType, ig, 0, NULL);
+			IntGroupRelease(ig);
+			is_global = 0;
+			idx = count;
+		}
+	}
+	return ValueFromMoleculeWithParameterTypeAndIndex(mol, parType, idx);
+}
+
+/*
+ *  call-seq:
+ *     lookup(par_type, atom_types, options, ...) -> ParameterRef
+ *     lookup(par_type, atom_type_string, options, ...) -> ParameterRef
+ *
+ *  Find the parameter record that matches the given atom types. The atom types are given
+ *  either as an array of string, or a single string delimited by whitespaces or hyphens.
+ *  Options are given as symbols. Valid values are :global (look for global parameters), :local
+ *  (look for local parameters), :missing (look for missing parameters), :nowildcard (do not 
+ *  allow wildcard matching), :nobasetype (the base type does not match for the variant types)
+ */
+static VALUE
+s_Parameter_LookUp(int argc, VALUE *argv, VALUE self)
+{
+	int parType;
+	Molecule *mol = s_MoleculeFromParameterOrParEnumerableValue(self);
+	if (argc == 0)
+		rb_raise(rb_eMolbyError, "parameter type and atom types must be specified");
+	parType = s_ParTypeFromValue(argv[0]);
+	return s_Parameter_Lookup_sub(argc - 1, argv + 1, parType, mol);
+}
+
 #pragma mark ====== ParEnumerable Class ======
 
 /*  The ParEnumerable class encapsulates the Molecule (not Parameter) pointer
@@ -2791,167 +3000,16 @@ s_ParEnumerable_Delete(VALUE self, VALUE ival)
  *     lookup(atom_types, options, ...) -> ParameterRef
  *     lookup(atom_type_string, options, ...) -> ParameterRef
  *
- *  Find the parameter record that matches the given atom types. The atom types are given
- *  either as an array of string, or a single string delimited by whitespaces or hyphens.
- *  Options are given as symbols. Valid values are :global (look for global parameters), :local
- *  (look for local parameters), :missing (look for missing parameters), :nowildcard (do not 
- *  allow wildcard matching), :nobasetype (the base type does not match for the variant types)
+ *  Find the parameter record that matches the given atom types. The arguments are
+ *  the same as Parameter#lookup, except for the parameter type which is implicitly
+ *  specified.
  */
 static VALUE
 s_ParEnumerable_LookUp(int argc, VALUE *argv, VALUE self)
 {
-	VALUE atval, optval;
 	ParEnumerable *pen;
-	Molecule *mol;
-	UInt t[4];
-	int i, n, idx, flags;
-
     Data_Get_Struct(self, ParEnumerable, pen);
-	rb_scan_args(argc, argv, "1*", &atval, &optval);
-
-	/*  Get the atom types  */
-	switch (pen->parType) {
-		case kBondParType: n = 2; break;
-		case kAngleParType: n = 3; break;
-		case kDihedralParType: n = 4; break;
-		case kImproperParType: n = 4; break;
-		case kVdwParType: n = 1; break;
-		case kVdwPairParType: n = 2; break;
-		default: return Qnil;
-	}
-	s_ScanAtomTypes(atval, n, t);
-
-	/*  Analyze options  */
-	flags = 0;
-	n = RARRAY_LEN(optval);
-	for (i = 0; i < n; i++) {
-		VALUE oval = RARRAY_PTR(optval)[i];
-		if (oval == ID2SYM(rb_intern("global")))
-			flags |= kParameterLookupGlobal;
-		else if (oval == ID2SYM(rb_intern("local")))
-			flags |= kParameterLookupLocal;
-		else if (oval == ID2SYM(rb_intern("missing")))
-			flags |= kParameterLookupMissing;
-		else if (oval == ID2SYM(rb_intern("nowildcard")))
-			flags |= kParameterLookupNoWildcard;
-		else if (oval == ID2SYM(rb_intern("nobasetype")))
-			flags |= kParameterLookupNoBaseAtomType;
-		else if (oval == ID2SYM(rb_intern("create")))
-			flags |= 256;
-	}
-	if (flags == 0)
-		flags = kParameterLookupGlobal | kParameterLookupLocal;
-
-	idx = -1;
-	mol = pen->mol;
-	switch (pen->parType) {
-		case kBondParType: {
-			BondPar *bp;
-			if (pen->mol != NULL) {
-				bp = ParameterLookupBondPar(pen->mol->par, t[0], t[1], flags);
-				if (bp != NULL) {
-					idx = bp - pen->mol->par->bondPars;
-					break;
-				}
-			}
-			bp = ParameterLookupBondPar(gBuiltinParameters, t[0], t[1], flags);
-			if (bp != NULL) {
-				idx = bp - gBuiltinParameters->bondPars;
-				mol = NULL;
-			}
-			break;
-		}
-		case kAngleParType: {
-			AnglePar *ap;
-			if (pen->mol != NULL) {
-				ap = ParameterLookupAnglePar(pen->mol->par, t[0], t[1], t[2], flags);
-				if (ap != NULL) {
-					idx = ap - pen->mol->par->anglePars;
-					break;
-				}
-			}
-			ap = ParameterLookupAnglePar(gBuiltinParameters, t[0], t[1], t[2], flags);
-			if (ap != NULL) {
-				idx = ap - gBuiltinParameters->anglePars;
-				mol = NULL;
-			}
-			break;
-		}
-		case kDihedralParType: {
-			TorsionPar *tp;
-			if (pen->mol != NULL) {
-				tp = ParameterLookupDihedralPar(pen->mol->par, t[0], t[1], t[2], t[3], flags);
-				if (tp != NULL) {
-					idx = tp - pen->mol->par->dihedralPars;
-					break;
-				}
-			}
-			tp = ParameterLookupDihedralPar(gBuiltinParameters, t[0], t[1], t[2], t[3], flags);
-			if (tp != NULL) {
-				idx = tp - gBuiltinParameters->dihedralPars;
-				mol = NULL;
-			}
-			break;
-		}
-		case kImproperParType: {
-			TorsionPar *tp;
-			if (pen->mol != NULL) {
-				tp = ParameterLookupImproperPar(pen->mol->par, t[0], t[1], t[2], t[3], flags);
-				if (tp != NULL) {
-					idx = tp - pen->mol->par->improperPars;
-					break;
-				}
-			}
-			tp = ParameterLookupImproperPar(gBuiltinParameters, t[0], t[1], t[2], t[3], flags);
-			if (tp != NULL) {
-				idx = tp - gBuiltinParameters->improperPars;
-				mol = NULL;
-			}
-			break;
-		}	
-		case kVdwParType: {
-			VdwPar *vp;
-			if (pen->mol != NULL) {
-				vp = ParameterLookupVdwPar(pen->mol->par, t[0], flags);
-				if (vp != NULL) {
-					idx = vp - pen->mol->par->vdwPars;
-					break;
-				}
-			}
-			vp = ParameterLookupVdwPar(gBuiltinParameters, t[0], flags);
-			if (vp != NULL) {
-				idx = vp - gBuiltinParameters->vdwPars;
-				mol = NULL;
-			}
-			break;
-		}	
-		case kVdwPairParType: {
-			VdwPairPar *vp;
-			if (pen->mol != NULL) {
-				vp = ParameterLookupVdwPairPar(pen->mol->par, t[0], t[1], flags);
-				if (vp != NULL) {
-					idx = vp - pen->mol->par->vdwpPars;
-					break;
-				}
-			}
-			vp = ParameterLookupVdwPairPar(gBuiltinParameters, t[0], t[1], flags);
-			if (vp != NULL) {
-				idx = vp - gBuiltinParameters->vdwpPars;
-				mol = NULL;
-			}
-			break;
-		}
-		default:
-			return Qnil;
-	}
-	if (idx < 0) {
-		if (flags & 256) {
-			VALUE rval = s_ParEnumerable_Insert(0, NULL, self);
-			s_ParameterRef_SetAtomTypes(rval, atval);
-			return rval;
-		} else return Qnil;
-	}
-	return ValueFromMoleculeWithParameterTypeAndIndex(mol, pen->parType, idx);
+	return s_Parameter_Lookup_sub(argc, argv, pen->parType, pen->mol);
 }
 
 #pragma mark ====== AtomRef Class ======
@@ -7501,53 +7559,57 @@ Init_Molby(void)
 	rb_cParameter = rb_define_class("Parameter", rb_cObject);
 	rb_define_singleton_method(rb_cParameter, "builtin", s_Parameter_Builtin, 0);
 	rb_define_method(rb_cParameter, "bond", s_Parameter_Bond, 1);
-	rb_define_singleton_method(rb_cParameter, "bond", s_Parameter_Bond, 1);
 	rb_define_method(rb_cParameter, "angle", s_Parameter_Angle, 1);
-	rb_define_singleton_method(rb_cParameter, "angle", s_Parameter_Angle, 1);
 	rb_define_method(rb_cParameter, "dihedral", s_Parameter_Dihedral, 1);
-	rb_define_singleton_method(rb_cParameter, "dihedral", s_Parameter_Dihedral, 1);
 	rb_define_method(rb_cParameter, "improper", s_Parameter_Improper, 1);
-	rb_define_singleton_method(rb_cParameter, "improper", s_Parameter_Improper, 1);
 	rb_define_method(rb_cParameter, "vdw", s_Parameter_Vdw, 1);
-	rb_define_singleton_method(rb_cParameter, "vdw", s_Parameter_Vdw, 1);
 	rb_define_method(rb_cParameter, "vdw_pair", s_Parameter_VdwPair, 1);
-	rb_define_singleton_method(rb_cParameter, "vdw_pair", s_Parameter_VdwPair, 1);
 	rb_define_method(rb_cParameter, "vdw_cutoff", s_Parameter_VdwCutoff, 1);
-	rb_define_singleton_method(rb_cParameter, "vdw_cutoff", s_Parameter_VdwCutoff, 1);
 	rb_define_method(rb_cParameter, "atom", s_Parameter_Atom, 1);
-	rb_define_singleton_method(rb_cParameter, "atom", s_Parameter_Atom, 1);
 	rb_define_method(rb_cParameter, "nbonds", s_Parameter_Nbonds, 0);
-	rb_define_singleton_method(rb_cParameter, "nbonds", s_Parameter_Nbonds, 0);
 	rb_define_method(rb_cParameter, "nangles", s_Parameter_Nangles, 0);
-	rb_define_singleton_method(rb_cParameter, "nangles", s_Parameter_Nangles, 0);
 	rb_define_method(rb_cParameter, "ndihedrals", s_Parameter_Ndihedrals, 0);
-	rb_define_singleton_method(rb_cParameter, "ndihedrals", s_Parameter_Ndihedrals, 0);
 	rb_define_method(rb_cParameter, "nimpropers", s_Parameter_Nimpropers, 0);
-	rb_define_singleton_method(rb_cParameter, "nimpropers", s_Parameter_Nimpropers, 0);
 	rb_define_method(rb_cParameter, "nvdws", s_Parameter_Nvdws, 0);
-	rb_define_singleton_method(rb_cParameter, "nvdws", s_Parameter_Nvdws, 0);
 	rb_define_method(rb_cParameter, "nvdw_pairs", s_Parameter_NvdwPairs, 0);
-	rb_define_singleton_method(rb_cParameter, "nvdw_pairs", s_Parameter_NvdwPairs, 0);
 	rb_define_method(rb_cParameter, "nvdw_cutoffs", s_Parameter_NvdwCutoffs, 0);
-	rb_define_singleton_method(rb_cParameter, "nvdw_cutoffs", s_Parameter_NvdwCutoffs, 0);
 	rb_define_method(rb_cParameter, "natoms", s_Parameter_Natoms, 0);
-	rb_define_singleton_method(rb_cParameter, "natoms", s_Parameter_Natoms, 0);
 	rb_define_method(rb_cParameter, "bonds", s_Parameter_Bonds, 0);
-	rb_define_singleton_method(rb_cParameter, "bonds", s_Parameter_Bonds, 0);
 	rb_define_method(rb_cParameter, "angles", s_Parameter_Angles, 0);
-	rb_define_singleton_method(rb_cParameter, "angles", s_Parameter_Angles, 0);
 	rb_define_method(rb_cParameter, "dihedrals", s_Parameter_Dihedrals, 0);
-	rb_define_singleton_method(rb_cParameter, "dihedrals", s_Parameter_Dihedrals, 0);
 	rb_define_method(rb_cParameter, "impropers", s_Parameter_Impropers, 0);
-	rb_define_singleton_method(rb_cParameter, "impropers", s_Parameter_Impropers, 0);
 	rb_define_method(rb_cParameter, "vdws", s_Parameter_Vdws, 0);
-	rb_define_singleton_method(rb_cParameter, "vdws", s_Parameter_Vdws, 0);
 	rb_define_method(rb_cParameter, "vdw_pairs", s_Parameter_VdwPairs, 0);
-	rb_define_singleton_method(rb_cParameter, "vdw_pairs", s_Parameter_VdwPairs, 0);
 	rb_define_method(rb_cParameter, "vdw_cutoffs", s_Parameter_VdwCutoffs, 0);
-	rb_define_singleton_method(rb_cParameter, "vdw_cutoffs", s_Parameter_VdwCutoffs, 0);
 	rb_define_method(rb_cParameter, "atoms", s_Parameter_Atoms, 0);
+	rb_define_method(rb_cParameter, "lookup", s_Parameter_LookUp, -1);
+	rb_define_const(rb_cParameter, "Builtin", Data_Wrap_Struct(rb_cParameter, 0, NULL, NULL));
+/*
+	rb_define_singleton_method(rb_cParameter, "bond", s_Parameter_Bond, 1);
+	rb_define_singleton_method(rb_cParameter, "angle", s_Parameter_Angle, 1);
+	rb_define_singleton_method(rb_cParameter, "dihedral", s_Parameter_Dihedral, 1);
+	rb_define_singleton_method(rb_cParameter, "improper", s_Parameter_Improper, 1);
+	rb_define_singleton_method(rb_cParameter, "vdw", s_Parameter_Vdw, 1);
+	rb_define_singleton_method(rb_cParameter, "vdw_pair", s_Parameter_VdwPair, 1);
+	rb_define_singleton_method(rb_cParameter, "vdw_cutoff", s_Parameter_VdwCutoff, 1);
+	rb_define_singleton_method(rb_cParameter, "atom", s_Parameter_Atom, 1);
+	rb_define_singleton_method(rb_cParameter, "nbonds", s_Parameter_Nbonds, 0);
+	rb_define_singleton_method(rb_cParameter, "nangles", s_Parameter_Nangles, 0);
+	rb_define_singleton_method(rb_cParameter, "ndihedrals", s_Parameter_Ndihedrals, 0);
+	rb_define_singleton_method(rb_cParameter, "nimpropers", s_Parameter_Nimpropers, 0);
+	rb_define_singleton_method(rb_cParameter, "nvdws", s_Parameter_Nvdws, 0);
+	rb_define_singleton_method(rb_cParameter, "nvdw_pairs", s_Parameter_NvdwPairs, 0);
+	rb_define_singleton_method(rb_cParameter, "nvdw_cutoffs", s_Parameter_NvdwCutoffs, 0);
+	rb_define_singleton_method(rb_cParameter, "natoms", s_Parameter_Natoms, 0);
+	rb_define_singleton_method(rb_cParameter, "bonds", s_Parameter_Bonds, 0);
+	rb_define_singleton_method(rb_cParameter, "angles", s_Parameter_Angles, 0);
+	rb_define_singleton_method(rb_cParameter, "dihedrals", s_Parameter_Dihedrals, 0);
+	rb_define_singleton_method(rb_cParameter, "impropers", s_Parameter_Impropers, 0);
+	rb_define_singleton_method(rb_cParameter, "vdws", s_Parameter_Vdws, 0);
 	rb_define_singleton_method(rb_cParameter, "atoms", s_Parameter_Atoms, 0);
+	rb_define_singleton_method(rb_cParameter, "vdw_pairs", s_Parameter_VdwPairs, 0);
+	rb_define_singleton_method(rb_cParameter, "vdw_cutoffs", s_Parameter_VdwCutoffs, 0);
+*/
 
 	/*  class ParEnumerable  */
 	rb_cParEnumerable = rb_define_class("ParEnumerable", rb_cObject);

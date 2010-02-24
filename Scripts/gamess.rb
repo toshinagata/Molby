@@ -36,7 +36,7 @@ class Molecule
 		    break if s=~ /\$END/
 			ary = s.split  #  (PNAME, PTYPE, IZCORE, LMAX+1)
 			elem = ary[0].match(/\w{1,2}/).to_a[0]  #  ary[0] should begin with an element name
-			ap = Parameter.atoms.find { |p| p.name.casecmp(elem) == 0 }
+			ap = Parameter.builtin.atoms.find { |p| p.name.casecmp(elem) == 0 }
 			raise MolbyError, "the ECP definition does not begin with an element name: #{s}" if !ap
 			ecpdef = s
 			ln = 1
@@ -58,7 +58,7 @@ class Molecule
 		elsif ss =~ /\W/
 		  #  Comments or other unrecognizable lines
 		  next
-		elsif (ap = Parameter.atoms.find { |p| p.name.casecmp(ss) == 0 || p.fullname.casecmp(ss) == 0 })
+		elsif (ap = Parameter.builtin.atoms.find { |p| p.name.casecmp(ss) == 0 || p.fullname.casecmp(ss) == 0 })
 		  #  Valid basis definition
 		  if bas == nil || bas =~ /\W/
 		    bas = basename
