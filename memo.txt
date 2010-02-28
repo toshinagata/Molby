@@ -18,3 +18,5 @@ OS 10.4 用のユニバーサルバイナリは、export ISYSROOT='-isysroot /De
   Parameter#bond, ParEnumerable#[] などで、原子タイプからの探索はやめにする。また、ローカルな Parameter の nbonds などがグローバルパラメータを含んだ値を返すのはやめる。
   Parameter#bond などをクラスメソッド・インスタンスメソッドとして二重に登録するのはやめた。グローバルパラメータはたとえば Parameter.builtin.atoms または Parameter::Builtin.atoms としてアクセスする。
 
+2010.2.27.
+  Parameter タイプの atom というのはなんとも紛らわしい。element の方がまだましかも。

@@ -2428,7 +2428,7 @@ MoleculeReadCoordinatesFromPdbFile(Molecule *mp, const char *fname, char *errbuf
 				}
 				i = ElementToInt(ap->element);
 				if (i >= 0)
-					ap->weight = gDispAtomParameters[i].weight;
+					ap->weight = gElementParameters[i].weight;
 			}
 			entries++;
 		} else if (strncmp(buf, "CONECT", 6) == 0 && new_unit) {
@@ -4168,13 +4168,13 @@ MoleculeGuessBonds(Molecule *mp, Double limit, Int *outNbonds, Int **outBonds)
 	Vector r1, r2, dr;
 	Double a1, a2, alim;
 	Int newbond[2];
-	AtomPar *p = gDispAtomParameters;
+	ElementPar *p = gElementParameters;
 	nbonds = 0;
 	bonds = NULL;
 	for (i = 0; i < mp->natoms; i++) {
 		ap = ATOM_AT_INDEX(mp->atoms, i);
 		n1 = ap->atomicNumber;
-		if (n1 >= 0 && n1 < gCountDispAtomParameters)
+		if (n1 >= 0 && n1 < gCountElementParameters)
 			a1 = p[n1].radius;
 		else a1 = p[6].radius;
 		r1 = ap->r;
@@ -4183,7 +4183,7 @@ MoleculeGuessBonds(Molecule *mp, Double limit, Int *outNbonds, Int **outBonds)
 		for (j = 0; j < i; j++) {
 			bp = ATOM_AT_INDEX(mp->atoms, j);
 			n2 = bp->atomicNumber;
-			if (n2 >= 0 && n2 < gCountDispAtomParameters)
+			if (n2 >= 0 && n2 < gCountElementParameters)
 				a2 = p[n2].radius;
 			else a2 = p[6].radius;
 			r2 = bp->r;

@@ -236,7 +236,7 @@ bool MyApp::OnInit(void)
 		wxSetWorkingDirectory(dirname);
 
 		/*  Read atom display parameters  */
-		if (AtomParameterInitialize("dispatom.par", &wbuf) != 0) {
+		if (ElementParameterInitialize("element.par", &wbuf) != 0) {
 			SetConsoleColor(1);
 			AppendConsoleMessage(wbuf);
 			SetConsoleColor(0);

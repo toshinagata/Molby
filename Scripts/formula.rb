@@ -383,7 +383,7 @@ class Molecule
   def dock_formula(str, group = selection)
     if group.length == 1
 	  #  Check if the string is an element name
-	  Parameter.builtin.atoms.each { |par|
+	  Parameter.builtin.elements.each { |par|
 		if par.atomic_number > 0 && par.name == str
 		  ap = atoms[group[0]]
 		  if ap.atomic_number != par.atomic_number
@@ -686,7 +686,7 @@ class Molecule
 	else
 	  raise "Unknown atom type #{atype}"
 	end
-	aname = Parameter.atom(anum).name
+	aname = Parameter.builtin.element(anum).name
 	name = atoms[idx].name
 	name = name.gsub(/\A[A-Za-z]*/, aname)[0..2]
 	vn.each_with_index { |v, i|

@@ -47,7 +47,7 @@ enum {
 	kVdwParType, kVdwPairParType, kVdwCutoffParType,
 	kFirstParType = kBondParType,
 	kLastParType = kVdwCutoffParType,
-	kAtomParType = 100  /*  Only used in rb_cParameterRef  */
+	kElementParType = 100  /*  Only used in rb_cParameterRef  */
 };
 	
 /*  Parameter Lookup options  */
@@ -122,7 +122,7 @@ typedef struct VdwCutoffPar {
 } VdwCutoffPar;
 
 /*  Display parameters (defined for elements)  */
-typedef struct AtomPar {
+typedef struct ElementPar {
 	Int    com, src;   /*  Index to the comment array  */
 	Int    number;   /*  Atomic number  */
 	char   name[4];
@@ -130,7 +130,7 @@ typedef struct AtomPar {
 	Double r, g, b;  /*  Color: [0.0, 1.0] for each component  */
 	Double weight;
 	char   fullname[16];
-} AtomPar;
+} ElementPar;
 	
 typedef struct Parameter {
 	Object base;
@@ -149,7 +149,7 @@ typedef struct Parameter {
 	Int    nvdwCutoffPars;
 	VdwCutoffPar *vdwCutoffPars;
 /*	Int    natomPars;
-	AtomPar *atomPars;
+	ElementPar *atomPars;
 	Int    ncomments;
 	char **comments;  */
 } Parameter;
@@ -169,7 +169,7 @@ typedef union UnionPar {
 	VdwPar vdw;
 	VdwPairPar vdwp;
 	VdwCutoffPar vdwcutoff;
-	AtomPar atom;
+	ElementPar atom;
 } UnionPar;
 
 Parameter *ParameterNew(void);
@@ -213,7 +213,7 @@ VdwPar *ParameterLookupVdwPar(Parameter *par, UInt t1, Int options);
 VdwPairPar *ParameterLookupVdwPairPar(Parameter *par, UInt t1, UInt t2, Int options);
 VdwCutoffPar *ParameterLookupVdwCutoffPar(Parameter *par, UInt t1, UInt t2, Int options);
 
-int AtomParameterInitialize(const char *fname, char **outWarningMessage);
+int ElementParameterInitialize(const char *fname, char **outWarningMessage);
 UInt AtomTypeEncodeToUInt(const char *s);
 char *AtomTypeDecodeToString(UInt type, char *s);
 Int ElementToInt(const char *s);
@@ -232,8 +232,8 @@ int ParameterTableGetItemSource(Parameter *par, int row);
 int ParameterTableIsItemEditable(Parameter *par, int column, int row);
 
 extern Parameter *gBuiltinParameters;
-extern AtomPar *gDispAtomParameters;
-extern Int gCountDispAtomParameters;
+extern ElementPar *gElementParameters;
+extern Int gCountElementParameters;
 	
 #ifdef __cplusplus
 }

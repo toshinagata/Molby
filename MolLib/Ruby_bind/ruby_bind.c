@@ -629,8 +629,8 @@ s_UnionParFromValue(VALUE self, Int *typep, Int checkEditable)
 	Data_Get_Struct(self, ParameterRef, pref);
 	if (typep != NULL)
 		*typep = pref->parType;
-	if (pref->parType == kAtomParType) {
-		up = (UnionPar *)&gDispAtomParameters[pref->idx];
+	if (pref->parType == kElementParType) {
+		up = (UnionPar *)&gElementParameters[pref->idx];
 	} else {
 		up = ParameterRefGetPar(pref);
 		if (checkEditable && up->bond.src != 0 && up->bond.src != -1)
@@ -679,7 +679,7 @@ s_AtomTypeIndexFromValue(VALUE val)
 }
 
 static const char *s_ParameterTypeNames[] = {
-	"bond", "angle", "dihedral", "improper", "vdw", "vdw_pair", "vdw_cutoff", "atom"
+	"bond", "angle", "dihedral", "improper", "vdw", "vdw_pair", "vdw_cutoff", "element"
 };
 static ID s_ParameterTypeIDs[8] = {0, 0, 0, 0, 0, 0, 0, 0};
 
@@ -697,7 +697,7 @@ s_ParTypeFromValue(VALUE val)
 	for (i = 0; i < n; i++) {
 		if (valid == s_ParameterTypeIDs[i]) {
 			if (i == 7)
-				return kAtomParType;
+				return kElementParType;
 			else return kFirstParType + i;
 		}
 	}
@@ -725,8 +725,8 @@ static VALUE s_ParameterRef_GetIndex(VALUE self) {
 static VALUE s_ParameterRef_GetParType(VALUE self) {
 	Int tp;
 	s_UnionParFromValue(self, &tp, 0);
-	if (tp == kAtomParType)
-		return rb_str_new2("atom");
+	if (tp == kElementParType)
+		return rb_str_new2("element");
 	tp -= kFirstParType;
 	if (tp >= 0 && tp < sizeof(s_ParameterTypeNames) / sizeof(s_ParameterTypeNames[0]))
 		return rb_str_new2(s_ParameterTypeNames[tp]);
@@ -1126,7 +1126,7 @@ static VALUE s_ParameterRef_GetRadius(VALUE self) {
 	UnionPar *up;
 	Int tp;
 	up = s_UnionParFromValue(self, &tp, 0);
-	if (tp == kAtomParType)
+	if (tp == kElementParType)
 		return rb_float_new(up->atom.radius);
 	else rb_raise(rb_eMolbyError, "invalid member radius");
 }
@@ -1141,7 +1141,7 @@ static VALUE s_ParameterRef_GetColor(VALUE self) {
 	UnionPar *up;
 	Int tp;
 	up = s_UnionParFromValue(self, &tp, 0);
-	if (tp == kAtomParType)
+	if (tp == kElementParType)
 		return rb_ary_new3(3, rb_float_new(up->atom.r), rb_float_new(up->atom.g), rb_float_new(up->atom.b));
 	else rb_raise(rb_eMolbyError, "invalid member color");
 }
@@ -1150,14 +1150,16 @@ static VALUE s_ParameterRef_GetColor(VALUE self) {
  *  call-seq:
  *     atomic_number -> Integer
  *
- *  Get the atomic number for the atom display parameter.
+ *  Get the atomic number for the vdw or atom parameter.
  */
 static VALUE s_ParameterRef_GetAtomicNumber(VALUE self) {
 	UnionPar *up;
 	Int tp;
 	up = s_UnionParFromValue(self, &tp, 0);
-	if (tp == kAtomParType)
+	if (tp == kElementParType)
 		return INT2NUM(up->atom.number);
+	else if (tp == kVdwParType)
+		return INT2NUM(up->vdw.atomicNumber);
 	else rb_raise(rb_eMolbyError, "invalid member atomic_number");
 }
 
@@ -1171,7 +1173,7 @@ static VALUE s_ParameterRef_GetName(VALUE self) {
 	UnionPar *up;
 	Int tp;
 	up = s_UnionParFromValue(self, &tp, 0);
-	if (tp == kAtomParType) {
+	if (tp == kElementParType) {
 		char name[5];
 		strncpy(name, up->atom.name, 4);
 		name[4] = 0;
@@ -1189,7 +1191,7 @@ static VALUE s_ParameterRef_GetWeight(VALUE self) {
 	UnionPar *up;
 	Int tp;
 	up = s_UnionParFromValue(self, &tp, 0);
-	if (tp == kAtomParType)
+	if (tp == kElementParType)
 		return rb_float_new(up->atom.weight);
 	else if (tp == kVdwParType)
 		return rb_float_new(up->vdw.weight);
@@ -1206,7 +1208,7 @@ static VALUE s_ParameterRef_GetFullName(VALUE self) {
 	UnionPar *up;
 	Int tp;
 	up = s_UnionParFromValue(self, &tp, 0);
-	if (tp == kAtomParType) {
+	if (tp == kElementParType) {
 		char fullname[16];
 		strncpy(fullname, up->atom.fullname, 15);
 		fullname[15] = 0;
@@ -1712,7 +1714,7 @@ static VALUE s_ParameterRef_SetRadius(VALUE self, VALUE val) {
 	oldval = s_ParameterRef_GetRadius(self);
 	oldsrc = up->bond.src;
 	val = rb_Float(val);
-	if (tp == kAtomParType) {
+	if (tp == kElementParType) {
 		up->atom.radius = NUM2DBL(val);
 	} else rb_raise(rb_eMolbyError, "invalid member radius");
 	s_RegisterUndoForParameterAttrChange(self, s_RadiusSym, val, oldval, oldsrc);	
@@ -1730,7 +1732,7 @@ static VALUE s_ParameterRef_SetColor(VALUE self, VALUE val) {
 	if (RARRAY_LEN(val) != 3)
 		rb_raise(rb_eMolbyError, "value should be an array of three floats (r, g, b)");
 	valp = RARRAY_PTR(val);
-	if (tp == kAtomParType) {
+	if (tp == kElementParType) {
 		up->atom.r = NUM2DBL(rb_Float(valp[0]));
 		up->atom.g = NUM2DBL(rb_Float(valp[1]));
 		up->atom.b = NUM2DBL(rb_Float(valp[2]));
@@ -1747,9 +1749,12 @@ static VALUE s_ParameterRef_SetAtomicNumber(VALUE self, VALUE val) {
 	oldval = s_ParameterRef_GetAtomicNumber(self);
 	oldsrc = up->bond.src;
 	val = rb_Integer(val);
-	if (tp == kAtomParType)
+	if (tp == kElementParType)
 		up->atom.number = NUM2INT(val);
-	else rb_raise(rb_eMolbyError, "invalid member atomic_number");
+	else if (tp == kVdwParType) {
+		up->vdw.atomicNumber = NUM2INT(val);
+		up->vdw.weight = WeightForAtomicNumber(up->vdw.atomicNumber);
+	} else rb_raise(rb_eMolbyError, "invalid member atomic_number");
 	s_RegisterUndoForParameterAttrChange(self, s_AtomicNumberSym, val, oldval, oldsrc);	
 	return val;
 }
@@ -1761,7 +1766,7 @@ static VALUE s_ParameterRef_SetName(VALUE self, VALUE val) {
 	up = s_UnionParFromValue(self, &tp, 1);
 	oldval = s_ParameterRef_GetName(self);
 	oldsrc = up->bond.src;
-	if (tp == kAtomParType) {
+	if (tp == kElementParType) {
 		strncpy(up->atom.name, StringValuePtr(val), 4);
 	} else rb_raise(rb_eMolbyError, "invalid member name");
 	s_RegisterUndoForParameterAttrChange(self, s_NameSym, val, oldval, oldsrc);	
@@ -1776,7 +1781,7 @@ static VALUE s_ParameterRef_SetWeight(VALUE self, VALUE val) {
 	oldval = s_ParameterRef_GetWeight(self);
 	oldsrc = up->bond.src;
 	up = s_UnionParFromValue(self, &tp, 1);
-	if (tp == kAtomParType)
+	if (tp == kElementParType)
 		up->atom.weight = NUM2DBL(val);
 	else if (tp == kVdwParType)
 		up->vdw.weight = NUM2DBL(val);
@@ -1792,7 +1797,7 @@ static VALUE s_ParameterRef_SetFullName(VALUE self, VALUE val) {
 	up = s_UnionParFromValue(self, &tp, 1);
 	oldval = s_ParameterRef_GetFullName(self);
 	oldsrc = up->bond.src;
-	if (tp == kAtomParType) {
+	if (tp == kElementParType) {
 		strncpy(up->atom.fullname, StringValuePtr(val), 15);
 		up->atom.fullname[15] = 0;
 	} else rb_raise(rb_eMolbyError, "invalid member fullname");
@@ -1894,20 +1899,20 @@ s_ParameterRef_Keys(VALUE self)
 	Data_Get_Struct(self, ParameterRef, pref);
 	switch (pref->parType) {
 		case kBondParType:
-			return rb_ary_new3(5, s_IndexSym, s_ParTypeSym, s_AtomTypesSym, s_KSym, s_R0Sym);
+			return rb_ary_new3(7, s_IndexSym, s_ParTypeSym, s_AtomTypesSym, s_KSym, s_R0Sym, s_CommentSym, s_SourceSym);
 		case kAngleParType:
-			return rb_ary_new3(5, s_IndexSym, s_ParTypeSym, s_AtomTypesSym, s_KSym, s_A0Sym);
+			return rb_ary_new3(7, s_IndexSym, s_ParTypeSym, s_AtomTypesSym, s_KSym, s_A0Sym, s_CommentSym, s_SourceSym);
 		case kDihedralParType:
 		case kImproperParType:
-			return rb_ary_new3(7, s_IndexSym, s_ParTypeSym, s_AtomTypesSym, s_MultSym, s_KSym, s_PeriodSym, s_Phi0Sym);
+			return rb_ary_new3(9, s_IndexSym, s_ParTypeSym, s_AtomTypesSym, s_MultSym, s_KSym, s_PeriodSym, s_Phi0Sym, s_CommentSym, s_SourceSym);
 		case kVdwParType:
-			return rb_ary_new3(12, s_IndexSym, s_ParTypeSym, s_AtomTypesSym, s_AtomicNumberSym, s_ASym, s_BSym, s_ReqSym, s_EpsSym, s_A14Sym, s_B14Sym, s_Req14Sym, s_Eps14Sym);
+			return rb_ary_new3(14, s_IndexSym, s_ParTypeSym, s_AtomTypesSym, s_AtomicNumberSym, s_ASym, s_BSym, s_ReqSym, s_EpsSym, s_A14Sym, s_B14Sym, s_Req14Sym, s_Eps14Sym, s_CommentSym, s_SourceSym);
 		case kVdwPairParType:
-			return rb_ary_new3(11, s_IndexSym, s_ParTypeSym, s_AtomTypesSym, s_ASym, s_BSym, s_ReqSym, s_EpsSym, s_A14Sym, s_B14Sym, s_Req14Sym, s_Eps14Sym);
+			return rb_ary_new3(13, s_IndexSym, s_ParTypeSym, s_AtomTypesSym, s_ASym, s_BSym, s_ReqSym, s_EpsSym, s_A14Sym, s_B14Sym, s_Req14Sym, s_Eps14Sym, s_CommentSym, s_SourceSym);
 		case kVdwCutoffParType:
-			return rb_ary_new3(4, s_IndexSym, s_ParTypeSym, s_AtomTypesSym, s_CutoffSym);
-		case kAtomParType:
-			return rb_ary_new3(7, s_IndexSym, s_ParTypeSym, s_AtomicNumberSym, s_NameSym, s_RadiusSym, s_ColorSym, s_WeightSym);
+			return rb_ary_new3(6, s_IndexSym, s_ParTypeSym, s_AtomTypesSym, s_CutoffSym, s_CommentSym, s_SourceSym);
+		case kElementParType:
+			return rb_ary_new3(10, s_IndexSym, s_ParTypeSym, s_AtomicNumberSym, s_NameSym, s_FullNameSym, s_RadiusSym, s_ColorSym, s_WeightSym, s_CommentSym, s_SourceSym);
 		default:
 			rb_raise(rb_eMolbyError, "internal error: invalid parameter type");
 	}
@@ -1977,8 +1982,8 @@ s_ParameterRef_ToString(VALUE self)
 			else
 				snprintf(buf, sizeof buf, "vdwcutoff %d %d %d %d %8.4f", up->vdwcutoff.n1, up->vdwcutoff.n2, up->vdwcutoff.n3, up->vdwcutoff.n4, up->vdwcutoff.cutoff);
 			break;
-		case kAtomParType:
-			snprintf(buf, sizeof buf, "dispatom %2.2s %3d %6.3f %6.3f %6.3f %6.3f %8.4f %s", up->atom.name, up->atom.number, up->atom.radius, up->atom.r, up->atom.g, up->atom.b, up->atom.weight, up->atom.fullname);
+		case kElementParType:
+			snprintf(buf, sizeof buf, "element %2.2s %3d %6.3f %6.3f %6.3f %6.3f %8.4f %s", up->atom.name, up->atom.number, up->atom.radius, up->atom.r, up->atom.g, up->atom.b, up->atom.weight, up->atom.fullname);
 			break;
 	}
 	return rb_str_new2(buf);
@@ -2228,36 +2233,35 @@ s_Parameter_VdwCutoff(VALUE self, VALUE ival)
 
 /*
  *  call-seq:
- *     atom(idx)            -> ParameterRef
- *     atom(t1)             -> ParameterRef
+ *     element(idx)            -> ParameterRef
+ *     element(t1)             -> ParameterRef
  *  
- *  In the first form, the index-th atom parameter record is returned. In the second
- *  form, the atom parameter for t1 is looked up (the last index first). t1
+ *  In the first form, the index-th element parameter record is returned. In the second
+ *  form, the element parameter for t1 is looked up (the last index first). t1
  *  is the element name string (up to 4 characters).
- *  Unlike other Parameter methods, this is used only as a singleton method, because
- *  the all atom parameters are global.
+ *  Unlike other Parameter methods, this is used only for the global parameter.
  */
 static VALUE
-s_Parameter_Atom(VALUE self, VALUE ival)
+s_Parameter_Element(VALUE self, VALUE ival)
 {
 	Int idx1;
 	if (rb_obj_is_kind_of(ival, rb_cNumeric)) {
-		int n = gCountDispAtomParameters;
+		int n = gCountElementParameters;
 		idx1 = NUM2INT(rb_Integer(ival));
 		if (idx1 < -n || idx1 >= n)
-			rb_raise(rb_eMolbyError, "Atom parameter index (%d) out of range", idx1);
+			rb_raise(rb_eMolbyError, "Element parameter index (%d) out of range", idx1);
 		if (idx1 < 0)
 			idx1 += n;
-		return ValueFromMoleculeWithParameterTypeAndIndex(NULL, kAtomParType, idx1);
+		return ValueFromMoleculeWithParameterTypeAndIndex(NULL, kElementParType, idx1);
 	} else {
-		AtomPar *ap;
+		ElementPar *ep;
 		char name[6];
 		int i;
 		strncpy(name, StringValuePtr(ival), 4);
 		name[4] = 0;
-		for (i = gCountDispAtomParameters - 1, ap = gDispAtomParameters + i; i >= 0; i--) {
-			if (strncmp(ap->name, name, 4) == 0)
-				return ValueFromMoleculeWithParameterTypeAndIndex(NULL, kAtomParType, i);
+		for (i = gCountElementParameters - 1, ep = gElementParameters + i; i >= 0; i--) {
+			if (strncmp(ep->name, name, 4) == 0)
+				return ValueFromMoleculeWithParameterTypeAndIndex(NULL, kElementParType, i);
 		}
 		return Qnil;
 	}
@@ -2398,14 +2402,14 @@ s_Parameter_NvdwCutoffs(VALUE self)
 
 /*
  *  call-seq:
- *     natoms          -> Integer
+ *     nelements          -> Integer
  *  
- *  Returns the number of atom parameters.
+ *  Returns the number of element parameters.
  */
 static VALUE
-s_Parameter_Natoms(VALUE self)
+s_Parameter_Nelements(VALUE self)
 {
-	return INT2NUM(gCountDispAtomParameters);
+	return INT2NUM(gCountElementParameters);
 }
 
 /*
@@ -2515,17 +2519,17 @@ s_Parameter_VdwCutoffs(VALUE self)
 
 /*
  *  call-seq:
- *     atoms          -> ParEnumerable
+ *     elements          -> ParEnumerable
  *  
- *  Returns a ParEnumerable value that (formally) points to the collection of atom parameters.
- *  Parameter.atoms[x] is equivalent to Parameter.atom(x). ParEnumerable class is
+ *  Returns a ParEnumerable value that (formally) points to the collection of element parameters.
+ *  Parameter.elements[x] is equivalent to Parameter.element(x). ParEnumerable class is
  *  useful when all accessible parameters should be examined by use of 'each' method.
  */
 static VALUE
-s_Parameter_Atoms(VALUE self)
+s_Parameter_Elements(VALUE self)
 {
 	Molecule *mol = s_MoleculeFromParameterOrParEnumerableValue(self);
-	return s_NewParEnumerableValueFromMoleculeAndType(mol, kAtomParType);
+	return s_NewParEnumerableValueFromMoleculeAndType(mol, kElementParType);
 }
 
 static VALUE
@@ -2764,6 +2768,26 @@ s_NewParEnumerableValueFromMoleculeAndType(Molecule *mol, Int parType)
 
 /*
  *  call-seq:
+ *     par_type -> String
+ *
+ *  Get the parameter type, like "bond", "angle", etc.
+ */
+static VALUE
+s_ParEnumerable_ParType(VALUE self) {
+	ParEnumerable *pen;
+	Int tp;
+    Data_Get_Struct(self, ParEnumerable, pen);
+	tp = pen->parType;
+	if (tp == kElementParType)
+		return rb_str_new2("element");
+	tp -= kFirstParType;
+	if (tp >= 0 && tp < sizeof(s_ParameterTypeNames) / sizeof(s_ParameterTypeNames[0]))
+		return rb_str_new2(s_ParameterTypeNames[tp]);
+	else rb_raise(rb_eMolbyError, "Internal error: parameter type tag is out of range (%d)", tp);
+}
+
+/*
+ *  call-seq:
  *     self[idx]          -> ParameterRef
  *  
  *  Call the accessor of the Parameter object from which this ParEnumerable object is derived from.
@@ -2771,7 +2795,7 @@ s_NewParEnumerableValueFromMoleculeAndType(Molecule *mol, Int parType)
  *  parent Parameter object of self.
  *
  *  <b>See Also</b>: Parameter#bond, Parameter#angle, Parameter#dihedral, Parameter#improper, 
- *  Parameter#vdw, Parameter#vdw_pair, Parameter#vdw_cutoff, Parameter#atom.
+ *  Parameter#vdw, Parameter#vdw_pair, Parameter#vdw_cutoff, Parameter#element.
  */
 static VALUE
 s_ParEnumerable_Aref(VALUE self, VALUE ival)
@@ -2787,7 +2811,7 @@ s_ParEnumerable_Aref(VALUE self, VALUE ival)
 		case kVdwParType:       return s_Parameter_Vdw(self, ival);
 		case kVdwPairParType:   return s_Parameter_VdwPair(self, ival);
 		case kVdwCutoffParType: return s_Parameter_VdwCutoff(self, ival);
-		case kAtomParType:      return s_Parameter_Atom(self, ival);
+		case kElementParType:   return s_Parameter_Element(self, ival);
 		default:
 			rb_raise(rb_eMolbyError, "internal error: unknown parameter type (%d)", pen->parType);
 	}
@@ -2814,7 +2838,7 @@ s_ParEnumerable_Length(VALUE self)
 		case kVdwParType:       return s_Parameter_Nvdws(self);
 		case kVdwPairParType:   return s_Parameter_NvdwPairs(self);
 		case kVdwCutoffParType: return s_Parameter_NvdwCutoffs(self);
-		case kAtomParType:      return s_Parameter_Natoms(self);
+		case kElementParType:   return s_Parameter_Nelements(self);
 		default:
 			rb_raise(rb_eMolbyError, "internal error: unknown parameter type (%d)", pen->parType);
 	}
@@ -2835,8 +2859,8 @@ s_ParEnumerable_Each(VALUE self)
 	ParameterRef *pref;
 	int i, ofs, n;
     Data_Get_Struct(self, ParEnumerable, pen);
-	if (pen->parType == kAtomParType)
-		n = gCountDispAtomParameters;
+	if (pen->parType == kElementParType)
+		n = gCountElementParameters;
 	else {
 		switch (pen->parType) {
 			case kBondParType:      ofs = offsetof(Parameter, nbondPars); break;
@@ -2878,8 +2902,8 @@ s_ParEnumerable_ReverseEach(VALUE self)
 	ParameterRef *pref;
 	int i, ofs, n;
     Data_Get_Struct(self, ParEnumerable, pen);
-	if (pen->parType == kAtomParType)
-		n = gCountDispAtomParameters;
+	if (pen->parType == kElementParType)
+		n = gCountElementParameters;
 	else {
 		switch (pen->parType) {
 			case kBondParType:      ofs = offsetof(Parameter, nbondPars); break;
@@ -7565,7 +7589,7 @@ Init_Molby(void)
 	rb_define_method(rb_cParameter, "vdw", s_Parameter_Vdw, 1);
 	rb_define_method(rb_cParameter, "vdw_pair", s_Parameter_VdwPair, 1);
 	rb_define_method(rb_cParameter, "vdw_cutoff", s_Parameter_VdwCutoff, 1);
-	rb_define_method(rb_cParameter, "atom", s_Parameter_Atom, 1);
+	rb_define_method(rb_cParameter, "element", s_Parameter_Element, 1);
 	rb_define_method(rb_cParameter, "nbonds", s_Parameter_Nbonds, 0);
 	rb_define_method(rb_cParameter, "nangles", s_Parameter_Nangles, 0);
 	rb_define_method(rb_cParameter, "ndihedrals", s_Parameter_Ndihedrals, 0);
@@ -7573,7 +7597,7 @@ Init_Molby(void)
 	rb_define_method(rb_cParameter, "nvdws", s_Parameter_Nvdws, 0);
 	rb_define_method(rb_cParameter, "nvdw_pairs", s_Parameter_NvdwPairs, 0);
 	rb_define_method(rb_cParameter, "nvdw_cutoffs", s_Parameter_NvdwCutoffs, 0);
-	rb_define_method(rb_cParameter, "natoms", s_Parameter_Natoms, 0);
+	rb_define_method(rb_cParameter, "nelements", s_Parameter_Nelements, 0);
 	rb_define_method(rb_cParameter, "bonds", s_Parameter_Bonds, 0);
 	rb_define_method(rb_cParameter, "angles", s_Parameter_Angles, 0);
 	rb_define_method(rb_cParameter, "dihedrals", s_Parameter_Dihedrals, 0);
@@ -7581,7 +7605,7 @@ Init_Molby(void)
 	rb_define_method(rb_cParameter, "vdws", s_Parameter_Vdws, 0);
 	rb_define_method(rb_cParameter, "vdw_pairs", s_Parameter_VdwPairs, 0);
 	rb_define_method(rb_cParameter, "vdw_cutoffs", s_Parameter_VdwCutoffs, 0);
-	rb_define_method(rb_cParameter, "atoms", s_Parameter_Atoms, 0);
+	rb_define_method(rb_cParameter, "elements", s_Parameter_Elements, 0);
 	rb_define_method(rb_cParameter, "lookup", s_Parameter_LookUp, -1);
 	rb_define_const(rb_cParameter, "Builtin", Data_Wrap_Struct(rb_cParameter, 0, NULL, NULL));
 /*
@@ -7614,6 +7638,7 @@ Init_Molby(void)
 	/*  class ParEnumerable  */
 	rb_cParEnumerable = rb_define_class("ParEnumerable", rb_cObject);
     rb_include_module(rb_cParEnumerable, rb_mEnumerable);
+	rb_define_method(rb_cParEnumerable, "par_type", s_ParEnumerable_ParType, 0);
 	rb_define_method(rb_cParEnumerable, "[]", s_ParEnumerable_Aref, 1);
 	rb_define_method(rb_cParEnumerable, "length", s_ParEnumerable_Length, 0);
 	rb_define_method(rb_cParEnumerable, "each", s_ParEnumerable_Each, 0);

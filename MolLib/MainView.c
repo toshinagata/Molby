@@ -318,7 +318,7 @@ MainView_resizeToFit(MainView *mview)
 	GLdouble p0[4];
 	int i, j, natoms;
 	const Atom *ap;
-	const AtomPar *app;
+	const ElementPar *app;
 	GLdouble *pp, *p1;
 	GLdouble max[3], min[3], center[3];
 	float frame[4], width, height, cot15, rsin15, cot_th, rsin_th, d, trans[3];
@@ -460,7 +460,7 @@ MainView_findObjectAtPoint(MainView *mview, const float *mousePos, int *outIndex
     int i, natoms, nbonds;
 	float r, d2, z;
 	const Atom *ap, *bp;
-	const AtomPar *dp;
+	const ElementPar *ep;
 	const int *ip;
 	Molecule *mol;
 	float minDepth;
@@ -528,10 +528,10 @@ MainView_findObjectAtPoint(MainView *mview, const float *mousePos, int *outIndex
 			if (mview->showEllipsoids) {
 				r = biso2radius(ap->tempFactor) * mview->probabilityScale;
 			} else {
-				dp = &(gDispAtomParameters[ap->atomicNumber]);
-				if (dp == NULL)
+				ep = &(gElementParameters[ap->atomicNumber]);
+				if (ep == NULL)
 					continue;
-				r = dp->radius * mview->atomRadius;
+				r = ep->radius * mview->atomRadius;
 			}
 			pa1 = pa;
 			pq1 = pq;
@@ -694,7 +694,7 @@ int
 MainView_screenCenterPointOfAtom(MainView *mview, int index, float *outScreenPos)
 {
 	const Atom *ap;
-	const AtomPar *dp;
+	const ElementPar *dp;
 	Vector cv, pv, v;
 	Double rad, w;
 	float p[3];
@@ -739,7 +739,7 @@ MainView_screenCenterPointOfAtom(MainView *mview, int index, float *outScreenPos
 			VecScaleSelf(pv, w);
 		}
 	} else {
-		dp = &(gDispAtomParameters[ap->atomicNumber]);
+		dp = &(gElementParameters[ap->atomicNumber]);
 		rad = dp->radius * mview->atomRadius;
 		w = rad / VecLength(pv) * 1.1;
 		VecScaleSelf(pv, w);
@@ -1090,7 +1090,7 @@ static void
 drawAtom(MainView *mview, int i1, int selected, const Vector *dragOffset, const Vector *periodicOffset)
 {
 	const Atom *ap;
-	const AtomPar *dp;
+	const ElementPar *dp;
 	int an1;
 	int expanded = 0;
 	Vector r1;
@@ -1142,7 +1142,7 @@ drawAtom(MainView *mview, int i1, int selected, const Vector *dragOffset, const 
 		return;
 	if (ap != NULL && (ap->exflags & kAtomHiddenFlag))
 		return;
-	dp = &(gDispAtomParameters[an1]);
+	dp = &(gElementParameters[an1]);
 	if (dp == NULL)
 		return;
 	if (selected) {
@@ -1220,7 +1220,7 @@ drawAtom(MainView *mview, int i1, int selected, const Vector *dragOffset, const 
 static void
 drawBond(MainView *mview, int i1, int i2, int selected, int selected2, int draft, const Vector *dragOffset, const Vector *periodicOffset)
 {
-	const AtomPar *dp;
+	const ElementPar *dp;
 	int i, in;
 	int an[2];
 	int expanded[2];
@@ -1278,7 +1278,7 @@ drawBond(MainView *mview, int i1, int i2, int selected, int selected2, int draft
 		TransformVec(&r[1], mview->mol->cell->tr, &r[1]);
 	} */
 
-	dp = &(gDispAtomParameters[an[0]]);
+	dp = &(gElementParameters[an[0]]);
 	if (dp == NULL)
 		return;
 	if (selected && selected2) {
@@ -1311,7 +1311,7 @@ drawBond(MainView *mview, int i1, int i2, int selected, int selected2, int draft
 		glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, rgba);
 		drawCylinder(p, p + 3, mview->bondRadius, 6);
 	}
-	dp = &(gDispAtomParameters[an[1]]);
+	dp = &(gElementParameters[an[1]]);
 	if (dp == NULL)
 		return;
 	if (!selected || !selected2) {
@@ -1901,7 +1901,7 @@ MainView_attachLabelToAtom(MainView *mview, int index)
 	LabelRecord rec;
 	char buf[24], *p;
 	Atom *ap;
-/*	const AtomPar *dp; */
+/*	const ElementPar *dp; */
 	static float foreColor[] = {1, 1, 0, 1};
 	static float backColor[] = {1, 1, 1, 0};
 	ap = ATOM_AT_INDEX(mview->mol->atoms, index);

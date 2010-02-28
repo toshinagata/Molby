@@ -695,7 +695,7 @@ class Molecule
 	else
       #  Export as an antechamber format
   	  c = count_elements
-	  formula = c.map { |p| Parameter.atoms[p[0]].name + p[1].to_s }.join(" ")
+	  formula = c.map { |p| Parameter.builtin.elements[p[0]].name + p[1].to_s }.join(" ")
 	  open("respgen_in.ac", "w") { |fp|
 	    fp.printf("CHARGE %9.2f ( %d )\n", nc, nc)
 	    fp.printf("Formula: #{formula}\n")

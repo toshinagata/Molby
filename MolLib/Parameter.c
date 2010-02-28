@@ -24,8 +24,8 @@
 Parameter *gBuiltinParameters = NULL;
 
 /*  Global parameter  */
-AtomPar *gDispAtomParameters = NULL;
-Int gCountDispAtomParameters = 0;
+ElementPar *gElementParameters = NULL;
+Int gCountElementParameters = 0;
 
 static Parameter *sParameterRoot = NULL;
 static int sParameterUntitledCount = 0;
@@ -101,10 +101,10 @@ ParameterDuplicate(const Parameter *par)
 		npar->nvdwCutoffPars = par->nvdwCutoffPars;
 	}
 /*	if (par->atomPars != NULL) {
-		npar->atomPars = (AtomPar *)malloc(sizeof(AtomPar) * par->natomPars);
+		npar->atomPars = (ElementPar *)malloc(sizeof(ElementPar) * par->natomPars);
 		if (npar->atomPars == NULL)
 			goto release;
-		memmove(npar->atomPars, par->atomPars, sizeof(AtomPar) * par->natomPars);
+		memmove(npar->atomPars, par->atomPars, sizeof(ElementPar) * par->natomPars);
 		npar->natomPars = par->natomPars;
 	} */
 	return npar;
@@ -222,7 +222,7 @@ ParameterGetUnionParFromTypeAndIndex(Parameter *par, int type, int index)
 			if (index >= 0 && index < par->nvdwCutoffPars)
 				return (UnionPar *)(par->vdwCutoffPars + index);
 			else return NULL;
-	/*	case kAtomParType:
+	/*	case kElementParType:
 			if (index >= 0 && index < par->natomPars)
 				return (UnionPar *)(par->atomPars + index);
 			else return NULL; */
@@ -251,7 +251,7 @@ ParameterGetCountForType(Parameter *par, int type)
 			return par->nvdwpPars;
 		case kVdwCutoffParType:
 			return par->nvdwCutoffPars;
-	/*	case kAtomParType:
+	/*	case kElementParType:
 			return par->natomPars; */
 		default:
 			return 0;
@@ -276,7 +276,7 @@ ParameterGetSizeForType(int type)
 			return sizeof(VdwPairPar);
 		case kVdwCutoffParType:
 			return sizeof(VdwCutoffPar);
-			/*	case kAtomParType:
+			/*	case kElementParType:
 			 return par->natomPars; */
 		default:
 			return 0;
@@ -342,10 +342,10 @@ ParameterInsert(Parameter *par, Int type, const UnionPar *up, struct IntGroup *w
 			ip = &par->nvdwCutoffPars;
 			size = sizeof(VdwCutoffPar);
 			break;
-	/*	case kAtomParType:
+	/*	case kElementParType:
 			p = &par->atomPars;
 			ip = &par->natomPars;
-			size = sizeof(AtomPar);
+			size = sizeof(ElementPar);
 			break; */
 		default:
 			return -1;
@@ -402,10 +402,10 @@ sParameterDeleteOrCopy(Parameter *par, Int type, UnionPar *up, struct IntGroup *
 			ip = &par->nvdwCutoffPars;
 			size = sizeof(VdwCutoffPar);
 			break;
-	/*	case kAtomParType:
+	/*	case kElementParType:
 			p = (char **)&par->atomPars;
 			ip = &par->natomPars;
-			size = sizeof(AtomPar);
+			size = sizeof(ElementPar);
 			break; */
 		default:
 			return -1;
@@ -1196,9 +1196,9 @@ ParameterAppendToFile(Parameter *par, FILE *fp)
 /*	if (par->natomPars > 0)
 		fprintf(fp, "! name atomic_number radius red green blue weight\n");
 	for (i = 0; i < par->natomPars; i++) {
-		AtomPar *app = par->atomPars + i;
+		ElementPar *app = par->atomPars + i;
 		s_CommentToString(buf, bufsize, app);
-		fprintf(fp, "dispatom %.4s %d %f %f %f %f %f%s\n", app->name, app->number, app->radius, app->r, app->g, app->b, app->weight, buf);
+		fprintf(fp, "element %.4s %d %f %f %f %f %f%s\n", app->name, app->number, app->radius, app->r, app->g, app->b, app->weight, buf);
 		n++;
 	} */
 	return n;
@@ -1564,7 +1564,7 @@ ParameterTableGetItemPtr(Parameter *par, int row, int *type)
 		*type = kVdwPairParType;
 		return (UnionPar *)(row >= 0 ? par->vdwpPars + row : NULL);
 /*	} else if ((row -= par->nvdwpPars + 1) < par->natomPars) {
-		*type = kAtomParType;
+		*type = kElementParType;
 		return (UnionPar *)(row >= 0 ? par->atomPars + row : NULL); */
 	} else {
 		*type = kInvalidParType;
@@ -1749,8 +1749,8 @@ ParameterTableGetItemText(Parameter *par, int column, int row, char *buf, int bu
 			}
 			break;
 		}
-/*		case kAtomParType: {
-			AtomPar *ap = (AtomPar *)up;
+/*		case kElementParType: {
+			ElementPar *ap = (ElementPar *)up;
 			if (ap == NULL) {
 				if (column >= 0 && column < 8)
 					snprintf(buf, bufsize, "%s", sAtomParTitles[column]);
@@ -1830,7 +1830,7 @@ ParameterTableIsItemEditable(Parameter *par, int column, int row)
 		case kDihedralParType: return (f && column > 0 && column < 5);
 		case kImproperParType: return (f && column > 0 && column < 5);
 		case kVdwPairParType: return (f && column > 0 && column < 5);
-	/*	case kAtomParType: return (f && column > 0 && column < 7); */
+	/*	case kElementParType: return (f && column > 0 && column < 7); */
 		default: return 0;
 	}
 }
@@ -1838,7 +1838,7 @@ ParameterTableIsItemEditable(Parameter *par, int column, int row)
 #pragma mark ====== Utility Functions ======
 
 int
-AtomParameterInitialize(const char *fname, char **outWarningMessage)
+ElementParameterInitialize(const char *fname, char **outWarningMessage)
 {
 	char buf[1024], name[6], fullname[16];
 	float val[6];
@@ -1853,31 +1853,31 @@ AtomParameterInitialize(const char *fname, char **outWarningMessage)
 	}
 	lineNumber = 0;
 	while (ReadLine(buf, sizeof buf, fp, &lineNumber) > 0) {
-		AtomPar *ap;
-		if (strncmp(buf, "dispatom ", 9) != 0)
+		ElementPar *ep;
+		if (strncmp(buf, "element ", 8) != 0)
 			continue;  /*  Skip non-relevant lines  */
 		fullname[0] = 0;
-		if (sscanf(buf + 9, " %4s %f %f %f %f %f %f %15s", name, &val[0], &val[1], &val[2], &val[3], &val[4], &val[5], fullname) < 7) {
-			asprintf(&wbuf, "%s:%d: missing parameter in DISPATOM record", fname, lineNumber);
+		if (sscanf(buf + 8, " %4s %f %f %f %f %f %f %15s", name, &val[0], &val[1], &val[2], &val[3], &val[4], &val[5], fullname) < 7) {
+			asprintf(&wbuf, "%s:%d: missing parameter in ELEMENT record", fname, lineNumber);
 			retval = 1;
 			goto exit;
 		}
 		i = (int)val[0];
 		if (i < 0 || i >= 200) {
-			asprintf(&wbuf, "%s:%d: The atomic number (%d) in DISPATOM record is out of range", fname, lineNumber, i);
+			asprintf(&wbuf, "%s:%d: The atomic number (%d) in ELEMENT record is out of range", fname, lineNumber, i);
 			retval = 2;
 			goto exit;
 		}
-		ap = AssignArray(&gDispAtomParameters, &gCountDispAtomParameters, sizeof(AtomPar), i, NULL);
-		memmove(ap->name, name, 4);
-		ap->number = i;
-		ap->radius = val[1];
-		ap->r = val[2];
-		ap->g = val[3];
-		ap->b = val[4];
-		ap->weight = val[5];
+		ep = AssignArray(&gElementParameters, &gCountElementParameters, sizeof(ElementPar), i, NULL);
+		memmove(ep->name, name, 4);
+		ep->number = i;
+		ep->radius = val[1];
+		ep->r = val[2];
+		ep->g = val[3];
+		ep->b = val[4];
+		ep->weight = val[5];
 		fullname[15] = 0;
-		memmove(ap->fullname, fullname, 16);
+		memmove(ep->fullname, fullname, 16);
 	}
 exit:
 	if (fp != NULL)
@@ -1963,8 +1963,8 @@ Int
 ElementToInt(const char *s)
 {
 	int i;
-	AtomPar *p;
-	for (i = 0, p = gDispAtomParameters; i < gCountDispAtomParameters; i++, p++) {
+	ElementPar *p;
+	for (i = 0, p = gElementParameters; i < gCountElementParameters; i++, p++) {
 		if (p->name[0] == toupper(s[0]) && p->name[1] == tolower(s[1]))
 			return p->number;
 	}
@@ -1974,8 +1974,8 @@ ElementToInt(const char *s)
 char *
 ElementToString(Int elem, char *s)
 {
-	if (elem >= 0 && elem < gCountDispAtomParameters) {
-		const char *cs = gDispAtomParameters[elem].name;
+	if (elem >= 0 && elem < gCountElementParameters) {
+		const char *cs = gElementParameters[elem].name;
 		s[0] = cs[0];
 		s[1] = cs[1];
 		s[2] = 0;
@@ -2009,10 +2009,10 @@ Int
 GuessAtomicNumber(const char *name, Double weight)
 {
 	int i;
-	AtomPar *p;
+	ElementPar *p;
 	char buf[4];
 	const char *cp;
-	for (i = 0, p = gDispAtomParameters; i < gCountDispAtomParameters; i++, p++) {
+	for (i = 0, p = gElementParameters; i < gCountElementParameters; i++, p++) {
 		if (p->weight > 0.0 && fabs(weight - p->weight) < 0.1)
 			return p->number;
 	}
@@ -2035,16 +2035,16 @@ GuessAtomicNumber(const char *name, Double weight)
 Double
 WeightForAtomicNumber(Int elem)
 {
-	if (elem >= 1 && elem < gCountDispAtomParameters)
-		return gDispAtomParameters[elem].weight;
+	if (elem >= 1 && elem < gCountElementParameters)
+		return gElementParameters[elem].weight;
 	else return 0.0;
 }
 
 Double
 RadiusForAtomicNumber(Int elem)
 {
-	if (elem >= 1 && elem < gCountDispAtomParameters)
-		return gDispAtomParameters[elem].radius;
+	if (elem >= 1 && elem < gCountElementParameters)
+		return gElementParameters[elem].radius;
 	else return 0.0;
 }
 
