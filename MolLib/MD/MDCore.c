@@ -2079,6 +2079,7 @@ md_calc_kinetic_energy(MDArena *arena)
 	arena->transient_temperature = kinetic_uniq / (arena->degree_of_freedom * BOLTZMANN);
 	arena->sum_temperature += arena->transient_temperature;
 	arena->nsum_temperature++;
+	arena->average_temperature = arena->sum_temperature / arena->nsum_temperature;
 }
 
 /*  Andersen thermostat  */

@@ -935,7 +935,8 @@ static VALUE s_ParameterRef_GetPhi0(VALUE self) {
  *
  *  Get the "A" value for the van der Waals parameter.
  */
-static VALUE s_ParameterRef_GetA(VALUE self) {
+/*
+ static VALUE s_ParameterRef_GetA(VALUE self) {
 	UnionPar *up;
 	Int tp;
 	up = s_UnionParFromValue(self, &tp, 0);
@@ -945,6 +946,7 @@ static VALUE s_ParameterRef_GetA(VALUE self) {
 		return rb_float_new(up->vdwp.A);
 	else rb_raise(rb_eMolbyError, "invalid member A");
 }
+*/
 
 /*
  *  call-seq:
@@ -952,6 +954,7 @@ static VALUE s_ParameterRef_GetA(VALUE self) {
  *
  *  Get the "B" value for the van der Waals parameter.
  */
+/*
 static VALUE s_ParameterRef_GetB(VALUE self) {
 	UnionPar *up;
 	Int tp;
@@ -962,6 +965,7 @@ static VALUE s_ParameterRef_GetB(VALUE self) {
 		return rb_float_new(up->vdwp.B);
 	else rb_raise(rb_eMolbyError, "invalid member B");
 }
+*/
 
 /*
  *  call-seq:
@@ -1021,6 +1025,7 @@ static VALUE s_ParameterRef_GetEps(VALUE self) {
  *
  *  Get the "A" value for the 1-4 van der Waals parameter.
  */
+/*
 static VALUE s_ParameterRef_GetA14(VALUE self) {
 	UnionPar *up;
 	Int tp;
@@ -1031,6 +1036,7 @@ static VALUE s_ParameterRef_GetA14(VALUE self) {
 		return rb_float_new(up->vdwp.A14);
 	else rb_raise(rb_eMolbyError, "invalid member A14");
 }
+*/
 
 /*
  *  call-seq:
@@ -1038,6 +1044,7 @@ static VALUE s_ParameterRef_GetA14(VALUE self) {
  *
  *  Get the "B" value for the 1-4 van der Waals parameter.
  */
+/*
 static VALUE s_ParameterRef_GetB14(VALUE self) {
 	UnionPar *up;
 	Int tp;
@@ -1048,6 +1055,7 @@ static VALUE s_ParameterRef_GetB14(VALUE self) {
 		return rb_float_new(up->vdwp.B14);
 	else rb_raise(rb_eMolbyError, "invalid member B14");
 }
+*/
 
 /*
  *  call-seq:
@@ -1839,12 +1847,12 @@ static struct s_ParameterAttrDef {
 	{"mult",         &s_MultSym,         0, s_ParameterRef_GetMult,         s_ParameterRef_SetMult},
 	{"period",       &s_PeriodSym,       0, s_ParameterRef_GetPeriod,       s_ParameterRef_SetPeriod},
 	{"phi0",         &s_Phi0Sym,         0, s_ParameterRef_GetPhi0,         s_ParameterRef_SetPhi0},
-	{"A",            &s_ASym,            0, s_ParameterRef_GetA,            NULL},
-	{"B",            &s_BSym,            0, s_ParameterRef_GetB,            NULL},
+/*	{"A",            &s_ASym,            0, s_ParameterRef_GetA,            NULL},
+	{"B",            &s_BSym,            0, s_ParameterRef_GetB,            NULL}, */
 	{"r_eq",         &s_ReqSym,          0, s_ParameterRef_GetReq,          s_ParameterRef_SetReq},
 	{"eps",          &s_EpsSym,          0, s_ParameterRef_GetEps,          s_ParameterRef_SetEps},
-	{"A14",          &s_A14Sym,          0, s_ParameterRef_GetA14,          NULL},
-	{"B14",          &s_B14Sym,          0, s_ParameterRef_GetB14,          NULL},
+/*	{"A14",          &s_A14Sym,          0, s_ParameterRef_GetA14,          NULL},
+	{"B14",          &s_B14Sym,          0, s_ParameterRef_GetB14,          NULL}, */
 	{"r_eq14",       &s_Req14Sym,        0, s_ParameterRef_GetReq14,        s_ParameterRef_SetReq14},
 	{"eps14",        &s_Eps14Sym,        0, s_ParameterRef_GetEps14,        s_ParameterRef_SetEps14},
 	{"cutoff",       &s_CutoffSym,       0, s_ParameterRef_GetCutoff,       s_ParameterRef_SetCutoff},
@@ -1906,9 +1914,9 @@ s_ParameterRef_Keys(VALUE self)
 		case kImproperParType:
 			return rb_ary_new3(9, s_IndexSym, s_ParTypeSym, s_AtomTypesSym, s_MultSym, s_KSym, s_PeriodSym, s_Phi0Sym, s_CommentSym, s_SourceSym);
 		case kVdwParType:
-			return rb_ary_new3(14, s_IndexSym, s_ParTypeSym, s_AtomTypesSym, s_AtomicNumberSym, s_ASym, s_BSym, s_ReqSym, s_EpsSym, s_A14Sym, s_B14Sym, s_Req14Sym, s_Eps14Sym, s_CommentSym, s_SourceSym);
+			return rb_ary_new3(11, s_IndexSym, s_ParTypeSym, s_AtomTypesSym, s_AtomicNumberSym, s_ReqSym, s_EpsSym, s_Req14Sym, s_Eps14Sym, s_WeightSym, s_CommentSym, s_SourceSym);
 		case kVdwPairParType:
-			return rb_ary_new3(13, s_IndexSym, s_ParTypeSym, s_AtomTypesSym, s_ASym, s_BSym, s_ReqSym, s_EpsSym, s_A14Sym, s_B14Sym, s_Req14Sym, s_Eps14Sym, s_CommentSym, s_SourceSym);
+			return rb_ary_new3(9, s_IndexSym, s_ParTypeSym, s_AtomTypesSym, s_ReqSym, s_EpsSym, s_Req14Sym, s_Eps14Sym, s_CommentSym, s_SourceSym);
 		case kVdwCutoffParType:
 			return rb_ary_new3(6, s_IndexSym, s_ParTypeSym, s_AtomTypesSym, s_CutoffSym, s_CommentSym, s_SourceSym);
 		case kElementParType:
@@ -2000,6 +2008,14 @@ s_NewParameterValueFromValue(VALUE val)
 	Molecule *mol;
 	if (rb_obj_is_kind_of(val, rb_cMolecule)) {
 		Data_Get_Struct(val, Molecule, mol);
+		if (mol == NULL)
+			rb_raise(rb_eMolbyError, "the molecule is empty");
+		if (mol->par == NULL) {
+			/*  Do self.md_arena.prepare  */
+			VALUE val2 = rb_funcall(val, rb_intern("md_arena"), 0);
+			if (val2 != Qnil)
+				val2 = rb_funcall(val2, rb_intern("prepare"), 1, Qtrue);
+		}
 		MoleculeRetain(mol);
 		return Data_Wrap_Struct(rb_cParameter, 0, (void (*)(void *))MoleculeRelease, mol);
 	} else {
@@ -7044,8 +7060,8 @@ s_Molecule_Parameter(VALUE self)
 {
     Molecule *mol;
     Data_Get_Struct(self, Molecule, mol);
-	if (mol->par == NULL)
-		return Qnil;
+/*	if (mol->par == NULL)
+		return Qnil; */
 	return s_NewParameterValueFromValue(self);
 }
 

@@ -280,11 +280,11 @@ s_MDArena_Energies(VALUE self)
 static VALUE s_LogFileSym, s_CoordFileSym, s_VelFileSym, s_ForceFileSym, 
 s_DebugFileSym, s_DebugOutputLevelSym, s_StepSym, s_CoordOutputFreqSym, 
 s_EnergyOutputFreqSym, s_CoordFrameSym, s_TimestepSym, s_CutoffSym, 
-s_ElectroCutoffSym, s_PairlistDistanceSym, s_TemperatureSym, s_AndersenFreqSym, 
-s_AndersenCouplingSym, s_RandomSeedSym, s_DielectricSym, s_GradientConvergenceSym, 
-s_CoordinateConvergenceSym, s_UseXplorShiftSym, s_Scale14VdwSym, s_Scale14ElectSym, 
-s_RelocateCenterSym, s_SurfaceProbeRadiusSym, s_SurfaceTensionSym, s_SurfacePotentialFreqSym,
-s_UseGraphiteSym;
+s_ElectroCutoffSym, s_PairlistDistanceSym, s_TemperatureSym, s_TransientTempSym, 
+s_AverageTempSym, s_AndersenFreqSym, s_AndersenCouplingSym, s_RandomSeedSym, 
+s_DielectricSym, s_GradientConvergenceSym, s_CoordinateConvergenceSym, s_UseXplorShiftSym, 
+s_Scale14VdwSym, s_Scale14ElectSym, s_RelocateCenterSym, s_SurfaceProbeRadiusSym, 
+s_SurfaceTensionSym, s_SurfacePotentialFreqSym, s_UseGraphiteSym;
 
 struct s_MDArenaAttrDef {
 	char *name;
@@ -310,6 +310,8 @@ static struct s_MDArenaAttrDef s_MDArenaAttrDefTable[] = {
 	{"electro_cutoff",    &s_ElectroCutoffSym,    0, 0, 'f', offsetof(MDArena, electro_cutoff)},
 	{"pairlist_distance", &s_PairlistDistanceSym, 0, 0, 'f', offsetof(MDArena, pairlist_distance)},
 	{"temperature",       &s_TemperatureSym,      0, 0, 'f', offsetof(MDArena, temperature)},
+	{"transient_temperature", &s_TransientTempSym, 0, 0, 'F', offsetof(MDArena, transient_temperature)},
+	{"average_temperature", &s_AverageTempSym,    0, 0, 'F', offsetof(MDArena, average_temperature)},
 	{"andersen_freq",     &s_AndersenFreqSym,     0, 0, 'i', offsetof(MDArena, andersen_thermo_freq)},
 	{"andersen_coupling", &s_AndersenCouplingSym, 0, 0, 'f', offsetof(MDArena, andersen_thermo_coupling)},
 	{"random_seed",       &s_RandomSeedSym,       0, 0, 'i', offsetof(MDArena, random_seed)},

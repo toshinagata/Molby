@@ -306,7 +306,8 @@ typedef struct MDArena {
 	Double  sum_temperature;    /*  For rescaling temperature  */
 	Int    nsum_temperature;   /*  ditto  */
 	Double  transient_temperature;
-	
+	Double  average_temperature;
+
 	/*  Temporary storage for pair interaction calculations  */
 	/*	char   *group_flags; */
 //	void *group_flags_1, *group_flags_2;  /*  hold the TCL objects  */
