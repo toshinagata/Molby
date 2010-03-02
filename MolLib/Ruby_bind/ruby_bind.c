@@ -46,13 +46,6 @@ int gMolbyIsCheckingInterrupt = 0;
 
 char *gRubyVersion, *gRubyCopyright;
 
-/*  This library depends on matrix library  */
-/* static VALUE rb_cVector; */
-
-/*  Standard output object (to show message in the window)  */
-static VALUE rb_cMessageOutput;
-/* static VALUE sStdout; */
-
 /*  For convenience  */
 static VALUE s_ID_equal;  /*  rb_intern("==")  */
 
@@ -70,8 +63,10 @@ static VALUE
 static VALUE
 	s_ParTypeSym, s_AtomTypesSym, s_KSym, s_R0Sym,
 	s_A0Sym, s_MultSym, s_PeriodSym, s_Phi0Sym,
-	s_ASym, s_BSym, s_ReqSym, s_EpsSym,
-	s_A14Sym, s_B14Sym, s_Req14Sym, s_Eps14Sym,
+	/* s_ASym, s_BSym, */
+	s_ReqSym, s_EpsSym,
+	/* s_A14Sym, s_B14Sym, */
+	s_Req14Sym, s_Eps14Sym,
 	s_CutoffSym, s_RadiusSym, s_ColorSym, s_FullNameSym,
 	s_CommentSym, s_SourceSym;
 
@@ -125,20 +120,34 @@ Ruby_NewFileStringValue(const char *fstr)
 
 #pragma mark ====== Message output ======
 
-extern int MyAppControllerAppendMessage(const char *p);
-extern int MyAppControllerCheckInterrupt(void);
-extern int MyAppControllerGetTextWithPrompt(const char *prompt, char *buf, int bufsize);
+/*
+ *  call-seq:
+ *     stdout.write(str)
+ *
+ *  Put the message in the main text view in black color.
+ */
+static VALUE
+s_StandardOutput(VALUE self, VALUE str)
+{
+	int n;
+	MyAppCallback_setConsoleColor(0);
+	n = MyAppCallback_showScriptMessage("%s", StringValuePtr(str));
+	return INT2NUM(n);
+}
 
 /*
  *  call-seq:
- *     write(str)
+ *     stderr.write(str)
  *
- *  Put the message in the main text view.
+ *  Put the message in the main text view in red color.
  */
 static VALUE
-s_MessageOutput_Write(VALUE self, VALUE str)
+s_StandardErrorOutput(VALUE self, VALUE str)
 {
-	int n = MyAppCallback_showScriptMessage("%s", StringValuePtr(str));
+	int n;
+	MyAppCallback_setConsoleColor(1);
+	n = MyAppCallback_showScriptMessage("%s", StringValuePtr(str));
+	MyAppCallback_setConsoleColor(0);
 	return INT2NUM(n);
 }
 
@@ -7448,8 +7457,6 @@ Init_Molby(void)
 	rb_define_method(rb_cMolecule, "ps_per_step", s_Molecule_PsPerStep, 0);
 	rb_define_method(rb_cMolecule, "ps_per_step=", s_Molecule_SetPsPerStep, 1);
 	
-/*	rb_define_method(rb_cMolecule, "find_angles", s_Molecule_FindAngles, 0);
-	rb_define_method(rb_cMolecule, "find_dihedrals", s_Molecule_FindDihedrals, 0); */
 	rb_define_method(rb_cMolecule, "nresidues", s_Molecule_Nresidues, 0);
 	rb_define_method(rb_cMolecule, "nresidues=", s_Molecule_ChangeNresidues, 1);
 	rb_define_method(rb_cMolecule, "max_residue_number", s_Molecule_MaxResSeq, -1);
@@ -7624,32 +7631,6 @@ Init_Molby(void)
 	rb_define_method(rb_cParameter, "elements", s_Parameter_Elements, 0);
 	rb_define_method(rb_cParameter, "lookup", s_Parameter_LookUp, -1);
 	rb_define_const(rb_cParameter, "Builtin", Data_Wrap_Struct(rb_cParameter, 0, NULL, NULL));
-/*
-	rb_define_singleton_method(rb_cParameter, "bond", s_Parameter_Bond, 1);
-	rb_define_singleton_method(rb_cParameter, "angle", s_Parameter_Angle, 1);
-	rb_define_singleton_method(rb_cParameter, "dihedral", s_Parameter_Dihedral, 1);
-	rb_define_singleton_method(rb_cParameter, "improper", s_Parameter_Improper, 1);
-	rb_define_singleton_method(rb_cParameter, "vdw", s_Parameter_Vdw, 1);
-	rb_define_singleton_method(rb_cParameter, "vdw_pair", s_Parameter_VdwPair, 1);
-	rb_define_singleton_method(rb_cParameter, "vdw_cutoff", s_Parameter_VdwCutoff, 1);
-	rb_define_singleton_method(rb_cParameter, "atom", s_Parameter_Atom, 1);
-	rb_define_singleton_method(rb_cParameter, "nbonds", s_Parameter_Nbonds, 0);
-	rb_define_singleton_method(rb_cParameter, "nangles", s_Parameter_Nangles, 0);
-	rb_define_singleton_method(rb_cParameter, "ndihedrals", s_Parameter_Ndihedrals, 0);
-	rb_define_singleton_method(rb_cParameter, "nimpropers", s_Parameter_Nimpropers, 0);
-	rb_define_singleton_method(rb_cParameter, "nvdws", s_Parameter_Nvdws, 0);
-	rb_define_singleton_method(rb_cParameter, "nvdw_pairs", s_Parameter_NvdwPairs, 0);
-	rb_define_singleton_method(rb_cParameter, "nvdw_cutoffs", s_Parameter_NvdwCutoffs, 0);
-	rb_define_singleton_method(rb_cParameter, "natoms", s_Parameter_Natoms, 0);
-	rb_define_singleton_method(rb_cParameter, "bonds", s_Parameter_Bonds, 0);
-	rb_define_singleton_method(rb_cParameter, "angles", s_Parameter_Angles, 0);
-	rb_define_singleton_method(rb_cParameter, "dihedrals", s_Parameter_Dihedrals, 0);
-	rb_define_singleton_method(rb_cParameter, "impropers", s_Parameter_Impropers, 0);
-	rb_define_singleton_method(rb_cParameter, "vdws", s_Parameter_Vdws, 0);
-	rb_define_singleton_method(rb_cParameter, "atoms", s_Parameter_Atoms, 0);
-	rb_define_singleton_method(rb_cParameter, "vdw_pairs", s_Parameter_VdwPairs, 0);
-	rb_define_singleton_method(rb_cParameter, "vdw_cutoffs", s_Parameter_VdwCutoffs, 0);
-*/
 
 	/*  class ParEnumerable  */
 	rb_cParEnumerable = rb_define_class("ParEnumerable", rb_cObject);
@@ -7688,10 +7669,6 @@ Init_Molby(void)
 	/*  class MolbyError  */
 	rb_eMolbyError = rb_define_class("MolbyError", rb_eStandardError);
 
-	/*  class MessageOutput  */
-	rb_cMessageOutput = rb_define_class("MessageOutput", rb_cObject);
-	rb_define_method(rb_cMessageOutput, "write", s_MessageOutput_Write, 1);
-	
 	/*  module Kernel  */
 	rb_define_method(rb_mKernel, "check_interrupt", s_Kernel_CheckInterrupt, 0);
 	rb_define_method(rb_mKernel, "get_interrupt_flag", s_GetInterruptFlag, 0);
@@ -7740,7 +7717,6 @@ Molby_evalRubyScriptOnMolecule(const char *script, Molecule *mol, int *status)
 		*status = -1;
 		return (RubyValue)Qnil;
 	}
-/*	gMolbyBacktrace = Qnil; */
 	gMolbyRunLevel++;
 	args[0] = (void *)script;
 	args[1] = (void *)mol;
@@ -7750,39 +7726,6 @@ Molby_evalRubyScriptOnMolecule(const char *script, Molecule *mol, int *status)
 	gMolbyRunLevel--;
 	return retval;
 }
-
-/*
-RubyValue
-Molby_evalRubyScript(const char *script, int *status)
-{
-	RubyValue retval;
-	if (gMolbyIsCheckingInterrupt) {
-		MolActionAlertRubyIsRunning();
-		return NULL;
-	}
-	gMolbyRunLevel = 1;
-	retval = (RubyValue)rb_eval_string_protect(script, status);
-	gMolbyRunLevel = 0;
-	return retval;
-}
-
-RubyValue
-Molby_evalRubyScriptOnActiveMoleculeWithInterrupt(const char *script, int *status)
-{
-	VALUE sval, mval;
-	RubyValue retval;
-	if (gMolbyIsCheckingInterrupt) {
-		MolActionAlertRubyIsRunning();
-		return NULL;
-	}
-	gMolbyRunLevel = 1;
-	sval = rb_str_new2(script);
-	mval = s_Molecule_Current(rb_cMolecule);
-	retval = (RubyValue)Ruby_CallMethodWithInterrupt(mval, 0, sval, status);
-	gMolbyRunLevel = 0;
-	return retval;
-}
-*/
 
 void
 Molby_showRubyValue(RubyValue value)
@@ -7808,7 +7751,6 @@ Molby_showError(int status)
 	char *msg = NULL;
 	VALUE val, backtrace;
 	int interrupted = 0;
-/*	char *amsg; */
 	if (status == tag_raise) {
 		VALUE eclass = CLASS_OF(ruby_errinfo);
 		if (eclass == rb_eInterrupt) {
@@ -7824,27 +7766,7 @@ Molby_showError(int status)
 			msg = RSTRING_PTR(val);
 		else msg = "(message not available)";
 	}
-/*	asprintf(&amsg, "%s: %s\n", msg, (status == 0 ? RSTRING_PTR(val) : "(no message)")); */
-	
 	MyAppCallback_messageBox(msg, "Molby script error", 0, 3);
-
-	/*	MyAppCallback_setConsoleColor(1);
-	MyAppCallback_showScriptMessage(amsg); */
-	/*	if (!interrupted)
-	 NSRunAlertPanel(@"MolRuby Error", [NSString stringWithUTF8String: amsg], @"OK", nil, nil); */
-/*	free(amsg); */
-
-/*	if (TYPE(backtrace) == T_ARRAY) {
-		int i;
-		int n = RARRAY_LEN(backtrace);
-		VALUE *ap = RARRAY_PTR(backtrace);
-		for (i = 0; i < n; i++) {
-			val = rb_protect(rb_str_to_str, ap[i], &status);
-			MyAppCallback_showScriptMessage("%s\n", RSTRING_PTR(val));
-		}
-		MyAppCallback_showRubyPrompt();
-	} */
-
 	gMolbyRunLevel--;
 }
 
@@ -7859,7 +7781,6 @@ Molby_startup(const char *script, const char *dir)
 	ruby_init();
 	
 	/*  Initialize loadpath; the specified directory, "lib" subdirectory, and "."  */
-/*	ruby_init_loadpath(); */
 	ruby_incpush(".");
 #if __WXMSW__
 	asprintf(&libpath, "%s\\lib", dir);
@@ -7876,9 +7797,12 @@ Molby_startup(const char *script, const char *dir)
 	Init_Molby();
 	RubyDialogInitClass();
 	
-	/*  Create a MessageOutput instance and assign it to $stdout and $stderr  */
-	val = rb_funcall(rb_cMessageOutput, rb_intern("new"), 0);
+	/*  Create objects for stdout and stderr  */
+	val = rb_funcall(rb_cObject, rb_intern("new"), 0);
+	rb_define_singleton_method(val, "write", s_StandardOutput, 1);
 	rb_gv_set("$stdout", val);
+	val = rb_funcall(rb_cObject, rb_intern("new"), 0);
+	rb_define_singleton_method(val, "write", s_StandardErrorOutput, 1);
 	rb_gv_set("$stderr", val);
 	
 	/*  Global variable to hold backtrace  */

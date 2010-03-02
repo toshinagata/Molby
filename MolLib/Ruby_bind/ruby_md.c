@@ -560,6 +560,26 @@ s_MDArena_ToHash(VALUE self)
 
 /*
  *  call-seq:
+ *     keys -> Array
+ *
+ *  Returns an array of valid attributes.
+ */
+static VALUE
+s_MDArena_Keys(VALUE self)
+{
+	int i;
+	VALUE ary;
+	struct s_MDArenaAttrDef *dp;
+	ary = rb_ary_new();
+	for (i = 0, dp = s_MDArenaAttrDefTable; dp->name != NULL; i++, dp++) {
+		VALUE attr = ID2SYM(dp->id);
+		rb_ary_push(ary, attr);
+	}
+	return ary;
+}
+
+/*
+ *  call-seq:
  *     print_surface_area
  *
  *  Print the surface area information to standard output. (for debug)
@@ -609,6 +629,7 @@ Init_MolbyMDTypes(void)
 	rb_define_method(rb_cMDArena, "[]", s_MDArena_Get, 1);
 	rb_define_method(rb_cMDArena, "[]=", s_MDArena_Set, 2);
 	rb_define_method(rb_cMDArena, "to_hash", s_MDArena_ToHash, 0);
+	rb_define_method(rb_cMDArena, "keys", s_MDArena_Keys, 0);
 	rb_define_method(rb_cMDArena, "print_surface_area", s_MDArena_PrintSurfaceArea, 0);
 
 	/*  All setter and getter are handled with the same C function (attribute name is taken
