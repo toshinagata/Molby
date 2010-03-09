@@ -25,7 +25,7 @@ extern "C" {
 #endif
 	
 /*  RubyDialog class  */
-/* extern VALUE cRubyDialog; */
+/* extern VALUE rb_cDialog; */
 
 /*  True if y-coordinate grows from bottom to top (like Cocoa)  */
 extern int gRubyDialogIsFlipped;

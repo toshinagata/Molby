@@ -13,6 +13,7 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
+include Molby
 include Math
 
 Deg2Rad = Math::PI / 180.0

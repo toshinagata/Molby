@@ -13,10 +13,10 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 
-class RubyDialog
+class Dialog
 
   def self.run(*args, &block)
-    obj = RubyDialog.new(*args)
+    obj = Dialog.new(*args)
     obj.instance_eval(&block)
     obj.run
   end

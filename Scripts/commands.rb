@@ -21,7 +21,7 @@ class Molecule
 	  sel = self.atom_group
 	end
 	atoms = sel.inspect.sub!("IntGroup[", "").sub!("]", "")
-    hash = RubyDialog.run {
+    hash = Dialog.run {
 	  layout(2,
 		item(:text, :title=>"New residue name/number\n(like \"RES.1\")\nfor atoms #{atoms}"),
 	    item(:textfield, :width=>120, :tag=>"residue"))
@@ -38,7 +38,7 @@ class Molecule
 	  sel = self.atom_group
 	end
 	atoms = sel.inspect.sub!("IntGroup[", "").sub!("]", "")
-    hash = RubyDialog.run {
+    hash = Dialog.run {
 	  layout(2,
 		item(:text, :title=>"Offset residue number:\nfor atoms #{atoms}"),
 	    item(:textfield, :width=>120, :tag=>"offset"))
@@ -143,13 +143,13 @@ end_of_header
   end
   
   def cmd_create_gamess
-    hash = RubyDialog.run {
+    hash = Dialog.run {
 	  layout(1,
 	    item(:text, :title=>"Create GAMESS input with LANL2DZ effective core potentials"))
     }
     if hash
       fname = File.basename(self.path, ".*") + ".inp"
-	  fname = RubyDialog.save_panel(nil, self.dir, fname)
+	  fname = Dialog.save_panel(nil, self.dir, fname)
 	  if fname
 		save_gamess_with_ecp(fname)
 	  end
@@ -159,7 +159,7 @@ end_of_header
   def cmd_create_cube
     grid = default_MO_grid
 	if grid == nil
-	  RubyDialog.run {
+	  Dialog.run {
 	    layout(1,
 		  item(:text, :title=>"This molecule does not contain MO information."))
 	  }
@@ -167,13 +167,13 @@ end_of_header
 	end
     mos = selected_MO
 	if mos == nil || mos.length == 0
-      RubyDialog.run {
+      Dialog.run {
 	    layout(1,
 		  item(:text, :title=>"Please select MO(s) in the MO Info table."))
       }
 	  return
 	end
-	hash = RubyDialog.run {
+	hash = Dialog.run {
 	  layout(1,
 	    item(:text, :title=>"Please specify cube dimensions (in bohr unit):"),
 	    layout(4,
@@ -201,7 +201,7 @@ end_of_header
 	  basename = File.basename(self.path, ".*")
 	  filenames = []
 	  mos.each { |n|
-	    fname = RubyDialog.save_panel("Cube file name for MO #{n}", self.dir, basename + "_#{n}.cube", "Gaussian cube file (*.cube)|*.cube")
+	    fname = Dialog.save_panel("Cube file name for MO #{n}", self.dir, basename + "_#{n}.cube", "Gaussian cube file (*.cube)|*.cube")
 		if !fname
 		  filenames.clear
 		  break
@@ -217,13 +217,13 @@ end_of_header
 	end
   end
 
-  def RubyDialog.list_remote_files(host, directory)
+  def Dialog.list_remote_files(host, directory)
 #    list = `ssh #{host} "env COLUMNS=40 ls -C #{directory}"`
     list = `ssh #{host} "ls #{directory}"`
   end
   
   def Molecule.cmd_load_remote(mol)  #  mol is not used
-    hash = RubyDialog.run {
+    hash = Dialog.run {
 	  def action(n)
 	    if n == 0 || n == 1
 		  self.each_item { |i|
@@ -254,7 +254,7 @@ end_of_header
 			    msg = "The files " + exist.join(", ") + " already exist"
 			  end
 			  msg += " in directory #{local}. Overwrite?"
-			  hash = RubyDialog.run {
+			  hash = Dialog.run {
 			    layout(1, item(:text, :title=>msg, :width=>240, :height=>60))
 			  }
 			  return if !hash  #  No call of super -> dialog is not dismissed
@@ -283,7 +283,7 @@ end_of_header
 		nil,
 		[ item(:button, :title=>"Update",
 			:action=>proc { |n| 
-			  list = RubyDialog.list_remote_files(value("host"), value("directory"))
+			  list = Dialog.list_remote_files(value("host"), value("directory"))
 			  set_value("list", list)
 			}
 		  ), {:align=>:right} ],
@@ -294,7 +294,7 @@ end_of_header
 		nil,
 		[ item(:button, :title=>"Choose...",
 		    :action=>proc { |n|
-			  dir = RubyDialog.open_panel(nil, nil, nil, true)
+			  dir = Dialog.open_panel(nil, nil, nil, true)
 			  if dir
 			    set_value("local", dir)
 			  end
@@ -351,7 +351,7 @@ end_of_header
   def cmd_delete_frames
     n = nframes
     return if n == 0
-	hash = RubyDialog.run {
+	hash = Dialog.run {
 	  layout(2,
 	    item(:text, :title=>"Start"),
 	    item(:textfield, :width=>120, :tag=>"start", :value=>"0"),
@@ -390,13 +390,13 @@ end_of_header
 	  end
     }
 	if solvnames.length == 0
-	  RubyDialog.run {
+	  Dialog.run {
 	    layout(1,
 		  item(:text, :title=>"Please open a molecule file containing a solvent box."))
 	  }
 	  return
 	end
-	hash = RubyDialog.run {
+	hash = Dialog.run {
 	  layout(1,
 	    item(:text, :title=>"Choose solvent box:"),
 	    item(:popup, :subitems=>solvnames, :tag=>"solvent"),
@@ -418,7 +418,7 @@ end_of_header
      
   def cmd_show_graphite
     n = self.show_graphite
-	hash = RubyDialog.run("Show Graphite") {
+	hash = Dialog.run("Show Graphite") {
       layout(1,
 	    item(:text, :title=>"Number of graphite rings for each direction:\n(0 to suppress display)"),
 	    item(:textfield, :width=>120, :tag=>"graphite", :value=>n.to_s))

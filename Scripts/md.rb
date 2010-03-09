@@ -34,7 +34,7 @@ class Molecule
 	i = 0
 	keys = keys.sort_by { |k| i += 1; (i > n ? i - n + 0.5 : i) }
 	#  Do dialog
-    hash = RubyDialog.run("Molecular Dynamics Advanced Settings") {
+    hash = Dialog.run("Molecular Dynamics Advanced Settings") {
 	  items = []
 	  keys.each { |k|
 	    enabled = (k == :step || k == :coord_frame ? false : true)
@@ -65,7 +65,7 @@ class Molecule
 	#  Get the MDArena
 	arena = self.md_arena
 	if !arena.prepare(true)   #  Parameter check only
-	  RubyDialog.run("MD Error") {
+	  Dialog.run("MD Error") {
 		layout(1,
 		  item(:text, :title=>"Some parameters are missing. Please open\nthe 'parameters' table and examine."))
 		  set_attr(1, :hidden=>true)  #  Hide the cancel button
@@ -108,7 +108,7 @@ class Molecule
 	  end
 	}
 	title = (minimize ? "Minimize" : "Molecular Dynamics")
-	hash = RubyDialog.run(title) {
+	hash = Dialog.run(title) {
 	  items = []
 	  if !minimize
 	    items.push item(:text, :title=>"Timestep (fs)")
@@ -165,7 +165,7 @@ class Molecule
   
   def cmd_define_unit_cell
     mol = self
-    hash = RubyDialog.run("Define Unit Cell") {
+    hash = Dialog.run("Define Unit Cell") {
 	  @mol = mol
 	  def set_box_value(n)
 	    h = Hash.new
@@ -180,7 +180,7 @@ class Molecule
 			end
 		  rescue
 		    mes = "Cannot evaluate #{value(k)}: " + $!.to_s
-			RubyDialog.run("Value Error") {
+			Dialog.run("Value Error") {
 			  layout(1, item(:text, :title=>mes))
 			  set_attr(1, :hidden=>true)
 			}
@@ -230,7 +230,7 @@ class Molecule
 
   def cmd_show_periodic_image
     mol = self
-    hash = RubyDialog.run("Show Periodic Image") {
+    hash = Dialog.run("Show Periodic Image") {
 	  @mol = mol
 	  def set_periodic_image(n)
 	    a = []
@@ -273,7 +273,7 @@ class Molecule
   def cmd_pressure_control
   
     if box == nil
-	  RubyDialog.run("Pressure Control Error") {
+	  Dialog.run("Pressure Control Error") {
 		layout(1,
 		  item(:text, :title=>"Unit cell is not defined. Please open 'Unit Cell...' \nfrom the MM/MD menu and set up the unit cell."))
 		set_attr(1, :hidden=>true)  #  Hide the cancel button
@@ -293,7 +293,7 @@ class Molecule
 	  arena.pressure_freq = 20   #  This assignment will automatically create pressure arena
 	end
 	
-	hash = RubyDialog.run("Pressure Control") {
+	hash = Dialog.run("Pressure Control") {
 	  @mol = mol
 	  layout(2,
 	    item(:text, :title=>"Frequency"),
@@ -352,7 +352,7 @@ class Molecule
 	  suffix = ""
 	end
 	log_level = (get_global_settings("antechamber.log_level") || "none")
-    hash = RubyDialog.run("Run " + tool.capitalize) {
+    hash = Dialog.run("Run " + tool.capitalize) {
 	  @toolname = tool + suffix
       def valid_antechamber_dir(s)
 	    FileTest.exist?(s + "/" + @toolname)
@@ -385,13 +385,13 @@ class Molecule
 		[ item(:button, :title=>"Choose...",
 			:action=>proc { |n|
 			#  print "action method called\n"
-			  dir = RubyDialog.open_panel(nil, nil, nil, true)
+			  dir = Dialog.open_panel(nil, nil, nil, true)
 			  if dir
 				if valid_antechamber_dir(dir)
 				  set_value("ante_dir", dir)
 		          set_attr(0, :enabled=>true)
 				else
-				  RubyDialog.run {
+				  Dialog.run {
 				    layout(1,
 					  item(:text, :title=>"Cannot find #{tool} in #{dir}."))
 				  }
@@ -415,7 +415,7 @@ class Molecule
 		item(:text, :title=>"Log directory:"),
 		[ item(:button, :title=>"Choose...",
 			:action=>proc { |n|
-			  dir = RubyDialog.open_panel(nil, nil, nil, true)
+			  dir = Dialog.open_panel(nil, nil, nil, true)
 			  if dir
 				set_value("log_dir", dir)
 			  end
@@ -768,7 +768,7 @@ class Molecule
 	  return
 	end
 	mol = self;
-	RubyDialog.run("#{name}:GAMESS/RESP", nil, nil) {
+	Dialog.run("#{name}:GAMESS/RESP", nil, nil) {
 	  layout(1,
 	    item(:text, :title=>"Step 1:\nCreate GAMESS input for ESP calculation"),
 		[item(:button, :title=>"Create GAMESS Input...",
@@ -783,7 +783,7 @@ class Molecule
 		item(:text, :title=>"Step 2:\nImport GAMESS .dat file"),
 		[item(:button, :title=>"Import GAMESS dat...",
 		  :action=>proc {
-		    fname = RubyDialog.open_panel("Select GAMESS .dat file", nil, "*.dat")
+		    fname = Dialog.open_panel("Select GAMESS .dat file", nil, "*.dat")
 			if fname
 			  errmsg = nil
 			  begin
@@ -842,7 +842,7 @@ class Molecule
 	  return
 	end
 	p = params.split
-	hash = RubyDialog.run("Edit local parameter") {
+	hash = Dialog.run("Edit local parameter") {
       layout(1,
 	    item(:text, :title=>"Edit #{ptype} parameter for #{names} (#{types})"),
 		item(:text, :title=>"(Current value = #{value})"),

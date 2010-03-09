@@ -36,6 +36,7 @@
 #pragma mark ====== Global Values ======
 
 VALUE rb_eMolbyError;
+VALUE rb_mMolby;
 VALUE rb_cMolecule, rb_cMolEnumerable, rb_cAtomRef;
 VALUE rb_cParameter, rb_cParEnumerable, rb_cParameterRef;
 
@@ -7406,6 +7407,9 @@ Init_Molby(void)
 {
 	int i;
 	
+	/*  Define module Molby  */
+	rb_mMolby = rb_define_module("Molby");
+	
 	/*  Define Vector3D, Transform, IntGroup  */
 	Init_MolbyTypes();
 	
@@ -7413,7 +7417,7 @@ Init_Molby(void)
 	Init_MolbyMDTypes();
 
 	/*  class Molecule  */
-	rb_cMolecule = rb_define_class("Molecule", rb_cObject);
+	rb_cMolecule = rb_define_class_under(rb_mMolby, "Molecule", rb_cObject);
 	rb_define_alloc_func(rb_cMolecule, s_Molecule_Alloc);
     rb_define_private_method(rb_cMolecule, "initialize", s_Molecule_Initialize, -1);
     rb_define_private_method(rb_cMolecule, "initialize_copy", s_Molecule_InitCopy, 1);
@@ -7577,7 +7581,7 @@ Init_Molby(void)
 	rb_define_singleton_method(rb_cMolecule, "ordered_list", s_Molecule_OrderedList, 0);
 	
 	/*  class MolEnumerable  */
-	rb_cMolEnumerable = rb_define_class("MolEnumerable", rb_cObject);
+	rb_cMolEnumerable = rb_define_class_under(rb_mMolby, "MolEnumerable", rb_cObject);
     rb_include_module(rb_cMolEnumerable, rb_mEnumerable);
 	rb_define_method(rb_cMolEnumerable, "[]", s_MolEnumerable_Aref, 1);
 	rb_define_method(rb_cMolEnumerable, "length", s_MolEnumerable_Length, 0);
@@ -7585,7 +7589,7 @@ Init_Molby(void)
 	rb_define_method(rb_cMolEnumerable, "each", s_MolEnumerable_Each, 0);
 	
 	/*  class AtomRef  */
-	rb_cAtomRef = rb_define_class("AtomRef", rb_cObject);
+	rb_cAtomRef = rb_define_class_under(rb_mMolby, "AtomRef", rb_cObject);
 	for (i = 0; s_AtomAttrDefTable[i].name != NULL; i++) {
 		char buf[64];
 		snprintf(buf, sizeof buf - 1, "%s", s_AtomAttrDefTable[i].name);
@@ -7603,7 +7607,7 @@ Init_Molby(void)
 	rb_global_variable(&s_SetAtomAttrString);
 	
 	/*  class Parameter  */
-	rb_cParameter = rb_define_class("Parameter", rb_cObject);
+	rb_cParameter = rb_define_class_under(rb_mMolby, "Parameter", rb_cObject);
 	rb_define_singleton_method(rb_cParameter, "builtin", s_Parameter_Builtin, 0);
 	rb_define_method(rb_cParameter, "bond", s_Parameter_Bond, 1);
 	rb_define_method(rb_cParameter, "angle", s_Parameter_Angle, 1);
@@ -7633,7 +7637,7 @@ Init_Molby(void)
 	rb_define_const(rb_cParameter, "Builtin", Data_Wrap_Struct(rb_cParameter, 0, NULL, NULL));
 
 	/*  class ParEnumerable  */
-	rb_cParEnumerable = rb_define_class("ParEnumerable", rb_cObject);
+	rb_cParEnumerable = rb_define_class_under(rb_mMolby, "ParEnumerable", rb_cObject);
     rb_include_module(rb_cParEnumerable, rb_mEnumerable);
 	rb_define_method(rb_cParEnumerable, "par_type", s_ParEnumerable_ParType, 0);
 	rb_define_method(rb_cParEnumerable, "[]", s_ParEnumerable_Aref, 1);
@@ -7645,7 +7649,7 @@ Init_Molby(void)
 	rb_define_method(rb_cParEnumerable, "lookup", s_ParEnumerable_LookUp, -1);
 	
 	/*  class ParameterRef  */
-	rb_cParameterRef = rb_define_class("ParameterRef", rb_cObject);
+	rb_cParameterRef = rb_define_class_under(rb_mMolby, "ParameterRef", rb_cObject);
 	for (i = 0; s_ParameterAttrDefTable[i].name != NULL; i++) {
 		char buf[64];
 		snprintf(buf, sizeof buf - 1, "%s", s_ParameterAttrDefTable[i].name);
@@ -7667,7 +7671,7 @@ Init_Molby(void)
 	rb_define_method(rb_cParameterRef, "keys", s_ParameterRef_Keys, 0);
 	
 	/*  class MolbyError  */
-	rb_eMolbyError = rb_define_class("MolbyError", rb_eStandardError);
+	rb_eMolbyError = rb_define_class_under(rb_mMolby, "MolbyError", rb_eStandardError);
 
 	/*  module Kernel  */
 	rb_define_method(rb_mKernel, "check_interrupt", s_Kernel_CheckInterrupt, 0);

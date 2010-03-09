@@ -20,3 +20,13 @@ OS 10.4 用のユニバーサルバイナリは、export ISYSROOT='-isysroot /De
 
 2010.2.27.
   Parameter タイプの atom というのはなんとも紛らわしい。element の方がまだましかも。
+
+2010.3.8.
+  RubyDialog って名前はよくないな。Ruby のクラス名に "Ruby" って接頭辞をつけてどうすんだよ。全体を Molby というモジュールにして、暗黙に include Molby することにしようか。これなら、RubyDialog は Dialog でもいい。
+  DialogItem を独立したクラスにしたいんだけど、オーナーシップをどうしようか？
+  DialogItem は常に Dialog#item で作成されるので、このとき作ったオブジェクトを Dialog._items に格納し、常にそれを返す。従って、Dialog#get_item(n) で返されるオブジェクトは常に同一。
+  DialogItem は Dialog へのポインタとアイテム番号を保持すべき。アイテム番号はともかく、ポインタはどう保持するか？　Dialog._items -> DialogItem -> Dialog という循環参照を作っても、Ruby の GC ならちゃんと回収してくれるから、これでいいんじゃないか。他のいい方法が思いつかん。
+  DialogItem は C レベルのデータは持たず、単なる cDialogItem のインスタンスとする。属性は、今まで Dialog 中のハッシュに保持していたが、DialogItem のインスタンス変数として実装する。
+  Dialog#item(:type, hash) でアイテムを作成。Dialog#set_attr, Dialog#get_attr はやめて、DialogItem#[], DialogItem#[]= で実装する。DialogItem#属性名, DialogItem#属性名= も実装する（ParameterRef と同様）。また、Dialog#action の引数はアイテム番号でなく DialogItem オブジェクトとする。
+  DialogItem の action 属性は今までと同様だが、引数としてはアイテム番号でなく DialogItem オブジェクトそのものが渡される。
+  

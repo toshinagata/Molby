@@ -57,6 +57,7 @@ extern VALUE Ruby_funcall2_protect(VALUE recv, ID mid, int argc, VALUE *argv, in
 extern VALUE Ruby_ObjectAtIndex(VALUE ary, int idx);
 	
 extern VALUE rb_eMolbyError;
+extern VALUE rb_mMolby;
 extern VALUE rb_cMolecule, rb_cMolEnumerable, rb_cAtomRef, rb_cIntGroup;
 extern VALUE rb_cVector3D, rb_cTransform;
 extern VALUE rb_cMDArena;

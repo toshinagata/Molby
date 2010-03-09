@@ -31,7 +31,8 @@ static VALUE
 	sMarginSymbol, sPaddingSymbol, sSubItemsSymbol,
 	sHFillSymbol, sVFillSymbol;
 
-VALUE cRubyDialog = Qfalse;
+VALUE rb_cDialog = Qfalse;
+VALUE rb_cDialogItem = Qfalse;
 
 const RDPoint gZeroPoint = {0, 0};
 const RDSize gZeroSize = {0, 0};
@@ -159,8 +160,12 @@ s_RubyDialog_ItemIndexForTag(VALUE self, VALUE tag)
 	int len = RARRAY_LEN(items);
 	VALUE *ptr = RARRAY_PTR(items);
 	int i;
-	if (FIXNUM_P(tag) && (i = NUM2INT(tag)) >= 0 && i < len)
+	if (FIXNUM_P(tag)) {
+		i = NUM2INT(tag);
+		if (i < 0 || i >= len)
+			rb_raise(rb_eMolbyError, "item number (%d) out of range", i);
 		return i;
+	}
 	for (i = 0; i < len; i++) {
 		if (rb_equal(tag, rb_hash_aref(ptr[i], sTagSymbol)) == Qtrue)
 			return i;
@@ -296,6 +301,8 @@ s_RubyDialog_SetAttr(VALUE self, VALUE tag, VALUE hash)
 			frame.size.height = NUM2DBL(rb_Float(Ruby_ObjectAtIndex(val, 3)));
 			RubyDialogCallback_setFrameOfItem(view, frame);
 		} else {
+			if (key == sTagSymbol && rb_obj_is_kind_of(val, rb_cInteger))
+				rb_raise(rb_eMolbyError, "the dialog item tag must not be integers");				
 			rb_hash_aset(item, key, val);
 		}
 	}
@@ -518,16 +525,22 @@ s_RubyDialog_Layout(int argc, VALUE *argv, VALUE self)
 	/*  Get frame sizes  */
 	for (i = 0; i < row; i++) {
 		for (j = 0; j < col; j++) {
+			VALUE argval;
 			n = i * col + j;
 			if (n >= argc)
 				break;
-			if (TYPE(argv[n]) == T_ARRAY && RARRAY_LEN(argv[n]) == 2) {
-				itag = FIX2INT(RARRAY_PTR(argv[n])[0]);
-				opts[n] = RARRAY_PTR(argv[n])[1];
+			argval = argv[n];
+			if (argval == Qnil)
+				itag = -1;
+			else if (FIXNUM_P(argval))
+				itag = FIX2INT(argval);
+			else if (TYPE(argval) == T_ARRAY && RARRAY_LEN(argval) == 2) {
+				itag = s_RubyDialog_ItemIndexForTag(self, RARRAY_PTR(argval)[0]);
+				opts[n] = RARRAY_PTR(argval)[1];
 				if (TYPE(opts[n]) != T_HASH)
 					rb_raise(rb_eTypeError, "The layout options should be given as a hash");
 			} else {
-				itag = FIX2INT(argv[n]);
+				itag = s_RubyDialog_ItemIndexForTag(self, argval);
 			}
 			if (itag >= nitems)
 				rb_raise(rb_eRangeError, "item tag (%d) is out of range (should be 0..%d)", itag, nitems - 1);
@@ -888,7 +901,7 @@ s_RubyDialog_RadioGroup(VALUE self, VALUE aval)
 	/*  Build a new array with checked arguments  */
 	gval = rb_ary_new2(n);
 	for (i = 0; i < n; i++) {
-		j = NUM2INT(RARRAY_PTR(aval)[i]);
+		j = s_RubyDialog_ItemIndexForTag(self, RARRAY_PTR(aval)[i]);
 		if (j < 0 || j >= nitems)
 			break;
 		if (rb_hash_aref(RARRAY_PTR(items)[j], sTypeSymbol) != sRadioSymbol)
@@ -1122,24 +1135,24 @@ RubyDialog_doItemAction(RubyValue self, RDItem *ip)
 void
 RubyDialogInitClass(void)
 {
-	if (cRubyDialog != Qfalse)
+	if (rb_cDialog != Qfalse)
 		return;
 
-	cRubyDialog = rb_define_class("RubyDialog", rb_cObject);
-	rb_define_alloc_func(cRubyDialog, s_RubyDialog_Alloc);
-	rb_define_private_method(cRubyDialog, "initialize", s_RubyDialog_Initialize, -1);
-	rb_define_method(cRubyDialog, "run", s_RubyDialog_Run, 0);
-	rb_define_method(cRubyDialog, "item", s_RubyDialog_Item, -1);
-	rb_define_method(cRubyDialog, "layout", s_RubyDialog_Layout, -1);
-	rb_define_method(cRubyDialog, "_items", s_RubyDialog_Items, 0);
-	rb_define_method(cRubyDialog, "nitems", s_RubyDialog_Nitems, 0);
-	rb_define_method(cRubyDialog, "each_item", s_RubyDialog_EachItem, 0);
-	rb_define_method(cRubyDialog, "set_attr", s_RubyDialog_SetAttr, 2);
-	rb_define_method(cRubyDialog, "attr", s_RubyDialog_Attr, 2);
-	rb_define_method(cRubyDialog, "radio_group", s_RubyDialog_RadioGroup, 1);
-	rb_define_method(cRubyDialog, "action", s_RubyDialog_Action, 1);
-	rb_define_singleton_method(cRubyDialog, "save_panel", s_RubyDialog_SavePanel, -1);
-	rb_define_singleton_method(cRubyDialog, "open_panel", s_RubyDialog_OpenPanel, -1);
+	rb_cDialog = rb_define_class_under(rb_mMolby, "Dialog", rb_cObject);
+	rb_define_alloc_func(rb_cDialog, s_RubyDialog_Alloc);
+	rb_define_private_method(rb_cDialog, "initialize", s_RubyDialog_Initialize, -1);
+	rb_define_method(rb_cDialog, "run", s_RubyDialog_Run, 0);
+	rb_define_method(rb_cDialog, "item", s_RubyDialog_Item, -1);
+	rb_define_method(rb_cDialog, "layout", s_RubyDialog_Layout, -1);
+	rb_define_method(rb_cDialog, "_items", s_RubyDialog_Items, 0);
+	rb_define_method(rb_cDialog, "nitems", s_RubyDialog_Nitems, 0);
+	rb_define_method(rb_cDialog, "each_item", s_RubyDialog_EachItem, 0);
+	rb_define_method(rb_cDialog, "set_attr", s_RubyDialog_SetAttr, 2);
+	rb_define_method(rb_cDialog, "attr", s_RubyDialog_Attr, 2);
+	rb_define_method(rb_cDialog, "radio_group", s_RubyDialog_RadioGroup, 1);
+	rb_define_method(rb_cDialog, "action", s_RubyDialog_Action, 1);
+	rb_define_singleton_method(rb_cDialog, "save_panel", s_RubyDialog_SavePanel, -1);
+	rb_define_singleton_method(rb_cDialog, "open_panel", s_RubyDialog_OpenPanel, -1);
 
 	{
 		static VALUE *sTable1[] = { &sTextSymbol, &sTextFieldSymbol, &sRadioSymbol, &sButtonSymbol, &sCheckBoxSymbol, &sPopUpSymbol, &sTextViewSymbol, &sViewSymbol, &sLineSymbol, &sTagSymbol, &sTypeSymbol, &sTitleSymbol, &sXSymbol, &sYSymbol, &sWidthSymbol, &sHeightSymbol, &sOriginSymbol, &sSizeSymbol, &sFrameSymbol, &sEnabledSymbol, &sEditableSymbol, &sHiddenSymbol, &sValueSymbol, &sRadioGroupSymbol, &sBlockSymbol, &sRangeSymbol, &sActionSymbol, &sAlignSymbol, &sRightSymbol, &sCenterSymbol, &sVerticalAlignSymbol, &sBottomSymbol, &sMarginSymbol, &sPaddingSymbol, &sSubItemsSymbol, &sHFillSymbol, &sVFillSymbol };

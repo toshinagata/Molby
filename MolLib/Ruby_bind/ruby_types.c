@@ -512,8 +512,9 @@ static VALUE
 s_Vector3D_Inspect(VALUE self)
 {
 	/*  self.class.name << self.to_a.inspect  */
-	VALUE klass = CLASS_OF(self);
-	VALUE val = rb_funcall(klass, rb_intern("name"), 0);
+/*	VALUE klass = CLASS_OF(self); */
+/*	VALUE val = rb_funcall(klass, rb_intern("name"), 0); */
+	VALUE val = rb_str_new2("Vector3D");
 	self = s_Vector3D_ToArray(self);
 	return rb_funcall(val, rb_intern("<<"), 1, rb_funcall(self, rb_intern("inspect"), 0));
 }
@@ -1097,8 +1098,9 @@ s_Transform_Inspect(VALUE self)
 {
 	Transform *tp;
 	int i, j;
-	VALUE klass = CLASS_OF(self);
-	VALUE val = rb_funcall(klass, rb_intern("name"), 0);
+/*	VALUE klass = CLASS_OF(self); */
+/*	VALUE val = rb_funcall(klass, rb_intern("name"), 0); */
+	VALUE val = rb_str_new2("Transform");
 	ID mid = rb_intern("<<");
 	ID mid2 = rb_intern("inspect");
 	rb_str_cat(val, "[", 1);
@@ -1667,10 +1669,11 @@ s_IntGroup_Inspect(VALUE self)
 	int i, sp, ep;
 	IntGroup *ig;
 	char buf[64];
-	VALUE klass = CLASS_OF(self);
-	VALUE val = rb_funcall(klass, rb_intern("name"), 0);
+/*	VALUE klass = CLASS_OF(self);
+	VALUE val = rb_funcall(klass, rb_intern("name"), 0); */
+/*	rb_str_cat(val, "[", 1); */
+	VALUE val = rb_str_new2("IntGroup[");
 	Data_Get_Struct(self, IntGroup, ig);
-	rb_str_cat(val, "[", 1);
 	for (i = 0; (sp = IntGroupGetStartPoint(ig, i)) >= 0; i++) {
 		if (i > 0)
 			rb_str_cat(val, ", ", 2);
@@ -1689,7 +1692,7 @@ void
 Init_MolbyTypes(void)
 {
 	/*  class Vector3D  */
-	rb_cVector3D = rb_define_class("Vector3D", rb_cObject);
+	rb_cVector3D = rb_define_class_under(rb_mMolby, "Vector3D", rb_cObject);
 	rb_define_alloc_func(rb_cVector3D, s_Vector3D_Alloc);
 	rb_define_method(rb_cVector3D, "initialize", s_Vector3D_Initialize, -1);
 	rb_define_method(rb_cVector3D, "size", s_Vector3D_Size, 0);
@@ -1721,7 +1724,7 @@ Init_MolbyTypes(void)
 	rb_define_singleton_method(rb_cVector3D, "[]", s_Vector3D_Create, -2);
 
 	/*  class Transform  */
-	rb_cTransform = rb_define_class("Transform", rb_cObject);
+	rb_cTransform = rb_define_class_under(rb_mMolby, "Transform", rb_cObject);
 	rb_define_alloc_func(rb_cTransform, s_Transform_Alloc);
 	rb_define_method(rb_cTransform, "initialize", s_Transform_Initialize, -1);
 	rb_define_method(rb_cTransform, "[]", s_Transform_ElementAtIndex, 2);
@@ -1752,7 +1755,7 @@ Init_MolbyTypes(void)
 	rb_define_singleton_method(rb_cTransform, "inversion", s_Transform_Inversion, -1);
 
 	/*  class IntGroup  */
-	rb_cIntGroup = rb_define_class("IntGroup", rb_cObject);
+	rb_cIntGroup = rb_define_class_under(rb_mMolby, "IntGroup", rb_cObject);
 	rb_include_module(rb_cIntGroup, rb_mEnumerable);
 	rb_define_alloc_func(rb_cIntGroup, IntGroup_Alloc);
 	rb_define_method(rb_cIntGroup, "clear", s_IntGroup_Clear, 0);

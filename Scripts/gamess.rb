@@ -214,7 +214,7 @@ class Molecule
 	  "basis"=>4, "use_secondary_basis"=>0, "secondary_elements"=>"",
 	  "secondary_basis"=>8, "esp"=>0}
 
-    hash = RubyDialog.run("GAMESS Export") {
+    hash = Dialog.run("GAMESS Export") {
 	  def action(n)
 	    if n == 0 || n == 1
 	      each_item { |i|
@@ -290,7 +290,7 @@ class Molecule
 	  hash["secondary_basis"] = bset_internal[hash["secondary_basis"]]
 	  hash["dfttype"] = dft_internal[hash["dfttype"]]
 	  basename = (self.path ? File.basename(self.path, ".*") : self.name)
-      fname = RubyDialog.save_panel("GAMESS input file name", self.dir, basename + ".inp", "GAMESS input file (*.inp)|*.inp|All files|*.*")
+      fname = Dialog.save_panel("GAMESS input file name", self.dir, basename + ".inp", "GAMESS input file (*.inp)|*.inp|All files|*.*")
 	  return nil if !fname
 	  export_gamess(fname, hash)
 	else
