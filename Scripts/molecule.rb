@@ -536,7 +536,7 @@ class Molecule
 	solute_natoms = self.natoms
 
 	#  Add solvents so that the target box is fully covered
-	rtr = sbox.box_transform.inverse
+	rtr = sbox.cell_transform.inverse
 	min = Vector3D[1e30, 1e30, 1e30]
 	max = Vector3D[-1e30, -1e30, -1e30]
 	[[0,0,0],[1,0,0],[0,1,0],[0,0,1],[1,1,0],[1,0,1],[0,1,1],[1,1,1]].each do |pt|

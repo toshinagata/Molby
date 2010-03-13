@@ -215,12 +215,13 @@ class Molecule
 	  "secondary_basis"=>8, "esp"=>0}
 
     hash = Dialog.run("GAMESS Export") {
-	  def action(n)
+	  def action(item1)
+	    n = item1[:index]
 	    if n == 0 || n == 1
-	      each_item { |i|
-	        tag = attr(i, :tag)
+	      each_item { |item2|
+	        tag = item2[:tag]
 			if tag
-			  set_global_settings("gamess.#{tag}", attr(i, :value))
+			  set_global_settings("gamess.#{tag}", item2[:value])
 			end
 		  }
 		end
@@ -238,7 +239,7 @@ class Molecule
 		item(:textfield, :width=>80, :tag=>"mult"),
 
 		item(:checkbox, :title=>"Use DFT", :tag=>"dft",
-		  :action=>proc { |n| set_attr("dfttype", :enabled=>(attr(n, :value) != 0)) } ),
+		  :action=>proc { |item1| set_attr("dfttype", :enabled=>(item1[:value] != 0)) } ),
 		-1,
 		item(:text, :title=>"DFT type"),
 		item(:popup, :subitems=>dft_desc, :tag=>"dfttype"),
@@ -251,8 +252,8 @@ class Molecule
 		-1, -1,
 
 		item(:checkbox, :title=>"Use secondary basis set", :tag=>"use_secondary_basis",
-		  :action=>proc { |n|
-		    flag = (attr(n, :value) != 0)
+		  :action=>proc { |item1|
+		    flag = (item1[:value] != 0)
 			set_attr("secondary_elements", :enabled=>flag)
 			set_attr("secondary_basis", :enabled=>flag)
 		  }),
@@ -273,11 +274,11 @@ class Molecule
 		-1, -1, -1
 	  )
 	  values = Hash.new
-	  each_item { |i|
-	    tag = attr(i, :tag)
+	  each_item { |it|
+	    tag = it[:tag]
 		if tag
 		  values[tag] = (get_global_settings("gamess.#{tag}") || defaults[tag])
-		  set_attr(i, :value=>values[tag])
+		  it[:value] = values[tag]
 		end
 	  }
 	  set_attr("secondary_elements", :enabled=>(values["use_secondary_basis"] == 1))

@@ -473,7 +473,7 @@ s_MDArena_Set(VALUE self, VALUE attr, VALUE val)
 					*((Double *)p) = NUM2DBL(rb_Float(val));
 					return val;
 				case 'S': case 'I': case 'F':
-					rb_raise(rb_eMolbyError, "The attribute is read-only");
+					rb_raise(rb_eMolbyError, "The attribute '%s' is read-only", rb_id2name(aid));
 				default:
 					rb_raise(rb_eMolbyError, "Internal inconsistency: unknown type field");
 			}
@@ -509,7 +509,7 @@ s_MDArena_Set(VALUE self, VALUE attr, VALUE val)
 					}
 					return val;
 				case 'S': case 'I': case 'F':
-					rb_raise(rb_eMolbyError, "The attribute is read-only");
+					rb_raise(rb_eMolbyError, "The attribute '%s' is read-only", rb_id2name(aid));
 				default:
 					rb_raise(rb_eMolbyError, "Internal inconsistency: unknown type field");
 			}

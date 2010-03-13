@@ -224,12 +224,13 @@ end_of_header
   
   def Molecule.cmd_load_remote(mol)  #  mol is not used
     hash = Dialog.run {
-	  def action(n)
+	  def action(item1)
+	    n = item1[:index]
 	    if n == 0 || n == 1
-		  self.each_item { |i|
-		    if (type = attr(i, :type)) == :textfield || type == :textview
-		      val = value(i)
-		      tag = attr(i, :tag)
+		  self.each_item { |item2|
+		    if (type = item2[:type]) == :textfield || type == :textview
+		      val = item2[:value]
+		      tag = item2[:tag]
 		      set_global_settings("load_remote.#{tag}", val)
 			end
 		  }
@@ -282,7 +283,7 @@ end_of_header
 		item(:textview, :width=>280, :height=>80, :tag=>"list", :editable=>false),
 		nil,
 		[ item(:button, :title=>"Update",
-			:action=>proc { |n| 
+			:action=>proc { |item1| 
 			  list = Dialog.list_remote_files(value("host"), value("directory"))
 			  set_value("list", list)
 			}
@@ -293,7 +294,7 @@ end_of_header
 		item(:textfield, :width=>280, :height=>20, :tag=>"local"),
 		nil,
 		[ item(:button, :title=>"Choose...",
-		    :action=>proc { |n|
+		    :action=>proc { |item1|
 			  dir = Dialog.open_panel(nil, nil, nil, true)
 			  if dir
 			    set_value("local", dir)
@@ -303,9 +304,9 @@ end_of_header
 	#	layout(1, 2, 1, 0)
 	  )
 	  set_attr(0, :enabled=>false)
-	  self.each_item { |i|
-		tag = attr(i, :tag)
-	    if (type = attr(i, :type)) == :textfield || type == :textview
+	  self.each_item { |it|
+		tag = it[:tag]
+	    if (type = it[:type]) == :textfield || type == :textview
 		  val = get_global_settings("load_remote.#{tag}")
 		  if (val != nil)
 			set_value(tag, val)

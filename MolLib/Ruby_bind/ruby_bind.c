@@ -7510,7 +7510,7 @@ Init_Molby(void)
 	rb_define_method(rb_cMolecule, "nframes", s_Molecule_Nframes, 0);
 	rb_define_method(rb_cMolecule, "create_frame", s_Molecule_CreateFrames, -1);
 	rb_define_method(rb_cMolecule, "insert_frame", s_Molecule_InsertFrames, -1);
-	rb_define_method(rb_cMolecule, "remove_frame", s_Molecule_RemoveFrames, 1);
+	rb_define_method(rb_cMolecule, "remove_frame", s_Molecule_RemoveFrames, -1);
 	rb_define_alias(rb_cMolecule, "create_frames", "create_frame");
 	rb_define_alias(rb_cMolecule, "insert_frames", "insert_frame");
 	rb_define_alias(rb_cMolecule, "remove_frames", "remove_frame");
@@ -7752,7 +7752,7 @@ void
 Molby_showError(int status)
 {
 	static const int tag_raise = 6;
-	char *msg = NULL;
+	char *msg = NULL, *msg2;
 	VALUE val, backtrace;
 	int interrupted = 0;
 	if (status == tag_raise) {
@@ -7763,14 +7763,16 @@ Molby_showError(int status)
 		}
 	}
 	gMolbyRunLevel++;
-	backtrace = rb_eval_string_protect("$backtrace = $!.backtrace", &status);
+	backtrace = rb_eval_string_protect("$backtrace = $!.backtrace.join(\"\\n\")", &status);
 	if (msg == NULL) {
 		val = rb_eval_string_protect("$!.to_s", &status);
 		if (status == 0)
 			msg = RSTRING_PTR(val);
 		else msg = "(message not available)";
 	}
-	MyAppCallback_messageBox(msg, "Molby script error", 0, 3);
+	asprintf(&msg2, "%s\n%s", msg, RSTRING_PTR(backtrace));
+	MyAppCallback_messageBox(msg2, "Molby script error", 0, 3);
+	free(msg2);
 	gMolbyRunLevel--;
 }
 

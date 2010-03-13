@@ -18,6 +18,8 @@ class Molecule
   def cmd_md_sub
     arena = self.md_arena
     keys = arena.to_hash.keys
+	#  The read-only keys
+	read_only = [:step, :coord_frame, :transient_temperature, :average_temperature]
 	#  Sort the keys so that they are (a little more) readable
 	[:timestep, :temperature, :cutoff, :electro_cutoff, :pairlist_distance,
 	 :scale14_vdw, :scale14_elect, :use_xplor_shift, :dielectric,
@@ -25,7 +27,8 @@ class Molecule
 	 :use_graphite, :surface_probe_radius, :surface_tension, :surface_potential_freq,
 	 :gradient_convergence, :coordinate_convergence,
 	 :log_file, :coord_file, :vel_file, :force_file, :debug_file, :debug_output_level,
-	 :coord_output_freq, :energy_output_freq].each_with_index { |k, i|
+	 :coord_output_freq, :energy_output_freq,
+	 :step, :coord_frame, :transient_temperature, :average_temperature].each_with_index { |k, i|
 	  keys.delete(k)
 	  keys.insert(i, k)
 	}
@@ -37,7 +40,7 @@ class Molecule
     hash = Dialog.run("Molecular Dynamics Advanced Settings") {
 	  items = []
 	  keys.each { |k|
-	    enabled = (k == :step || k == :coord_frame ? false : true)
+	    enabled = !read_only.include?(k)
 	    items.push(item(:text, :title=>k.to_s))
 		it = item(:textfield, :width=>120, :value=>arena[k].to_s)
 		if enabled
@@ -51,6 +54,7 @@ class Molecule
 	}
 	if hash
 	  hash.keys.each { |k|
+	    next if read_only.include?(k)
 	    arena[k] = hash[k]
 	  }
 #	  arena.prepare
@@ -123,7 +127,7 @@ class Molecule
 	  items.push item(:text, :title=>"Log file")
 	  items.push item(:textfield, :width=>120, :value=>(arena.log_file || ""), :tag=>"log_file")
 	  items.push item(:button, :title=>"Advanced...",
-		     :action=>proc {
+		     :action=>proc { |item1|
 			   if mol.cmd_md_sub
 			     if !minimize
 			       set_value("timestep", arena[:timestep].to_s)
@@ -167,7 +171,7 @@ class Molecule
     mol = self
     hash = Dialog.run("Define Unit Cell") {
 	  @mol = mol
-	  def set_box_value(n)
+	  def set_box_value(item1)
 	    h = Hash.new
 		["o0", "o1", "o2", "a0", "a1", "a2", "b0", "b1", "b2", "c0", "c1", "c2"].each { |k|
 		  begin
@@ -194,9 +198,9 @@ class Molecule
 		@mol.set_box(ax, bx, cx, ox)
 		return @mol
 	  end
-	  def action(n)
-	    if n == 0
-		  if !set_box_value(n)
+	  def action(item1)
+	    if item1[:index] == 0
+		  if !set_box_value(item1)
 		    return  #  Cannot set box: dialog is not dismissed
 		  end
 		end
@@ -244,9 +248,9 @@ class Molecule
 		}
 	    @mol.show_periodic_image(a)
 	  end
-	  def action(n)
-	    if n == 0
-		  set_periodic_image(n)
+	  def action(item1)
+	    if item1[:index] == 0
+		  set_periodic_image(item1)
 		end
 		super
 	  end
@@ -357,16 +361,17 @@ class Molecule
       def valid_antechamber_dir(s)
 	    FileTest.exist?(s + "/" + @toolname)
   	  end
-	  def action(n)
+	  def action(item1)
+	    n = item1[:index]
 	    if n == 4
-		  if valid_antechamber_dir(attr(n, :value))
+		  if valid_antechamber_dir(item1[:value])
 		    set_attr(0, :enabled=>true)
 		  end
 		elsif n == 0 || n == 1
 		  #  Settings are stored in the global settings (even if Cancel is pressed)
-		  self.each_item { |i|
-		    if (tag = attr(i, :tag))
-			  value = attr(i, :value)
+		  self.each_item { |item2|
+		    if (tag = item2[:tag])
+			  value = item2[:value]
 	          v = [["log_none", "none"], ["log_error_only", "error_only"], ["log_keep_latest", "latest"], ["log_all", "all"]].assoc(tag)
 			  if v 
 			    next if value != 1
@@ -404,7 +409,7 @@ class Molecule
 		-1,
 =end
 		item(:checkbox, :title=>"Optimize structure and calculate charges (may be slow)", :tag=>"calc_charge", :value=>(get_global_settings("antechamber.calc_charge") || 0),
-		  :action=>proc { |n| set_attr("nc", :enabled=>(attr(n, :value) != 0)) } ),
+		  :action=>proc { |item1| set_attr("nc", :enabled=>(item1[:value] != 0)) } ),
 		-1,
 		item(:text, :title=>"      Net Molecular Charge:"),
 		item(:textfield, :width=>"80", :tag=>"nc", :value=>(get_global_settings("antechamber.nc") || "0")),
@@ -414,7 +419,7 @@ class Molecule
 		-1,
 		item(:text, :title=>"Log directory:"),
 		[ item(:button, :title=>"Choose...",
-			:action=>proc { |n|
+			:action=>proc { |item1|
 			  dir = Dialog.open_panel(nil, nil, nil, true)
 			  if dir
 				set_value("log_dir", dir)
@@ -772,7 +777,7 @@ class Molecule
 	  layout(1,
 	    item(:text, :title=>"Step 1:\nCreate GAMESS input for ESP calculation"),
 		[item(:button, :title=>"Create GAMESS Input...",
-		  :action=>proc {
+		  :action=>proc { |item1|
 		    esp_save = get_global_settings("gamess.esp")
 			set_global_settings("gamess.esp", 1)
 			mol.cmd_create_gamess_input
@@ -782,7 +787,7 @@ class Molecule
 		item(:line),
 		item(:text, :title=>"Step 2:\nImport GAMESS .dat file"),
 		[item(:button, :title=>"Import GAMESS dat...",
-		  :action=>proc {
+		  :action=>proc { |item1|
 		    fname = Dialog.open_panel("Select GAMESS .dat file", nil, "*.dat")
 			if fname
 			  errmsg = nil
@@ -803,17 +808,17 @@ class Molecule
 		item(:line),
 		item(:text, :title=>"Step 3:\nRun RESP for charge fitting"),
 		[item(:button, :title=>"Run RESP...", :tag=>"resp",
-		  :action=>proc {
+		  :action=>proc { |item1|
 		    if mol.cmd_run_resp
 			  if get_global_settings("antechamber.log_level") == "latest"
 			    mol.clean_ante_log_dir(Integer(get_global_settings("antechamber.log_keep_number")))
 			  end
-			  action(0)
+			  action(item(0))
 			end
 		  }),
 		  {:align=>:right}],
 		item(:line),
-		[item(:button, :title=>"Close", :action=>proc { action(1) }),
+		[item(:button, :title=>"Close", :action=>proc { |item1| action(item(1)) }),
 		  {:align=>:center}]
 	  )
 	  if mol.nelpots == 0
