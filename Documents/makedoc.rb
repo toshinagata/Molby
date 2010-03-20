@@ -278,6 +278,8 @@ body.each_element_with_attribute('file') { |ef|
 }
 target_dir = "../doc"
 system("cp -r etc #{base_dir}; rm -rf #{base_dir}/etc/CVS #{base_dir}/etc/.svn #{base_dir}/etc/.DS_Store") 
+system("cp -r src/molby_rb #{base_dir}/en; rm -rf #{base_dir}/en/molby_rb/CVS #{base_dir}/en/molby_rb/.svn")
+system("cp -r #{base_dir}/en/molby_rb #{base_dir}/ja")
 system("rm -rf #{target_dir}/*")
 system("mv #{base_dir}/* #{target_dir}")
 system("rmdir #{base_dir}")

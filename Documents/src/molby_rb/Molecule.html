@@ -1,0 +1,2615 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>Class: Molecule</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Script-Type" content="text/javascript" />
+  <link rel="stylesheet" href="rdoc-style.css" type="text/css" media="screen" />
+</head>
+<body>
+
+<div id="navi">
+<a href="../index.html">[Molby Document Home]</a>
+<a href="../ruby_ref.html">[Contents]</a>
+</div>
+
+<div id="classHeader">
+<table class="header-table">
+<tr>
+<td><strong>Class:</strong></td>
+<td class="class-name-in-header">Molecule</td>
+</tr>
+<tr>
+<td><strong>Parent:</strong></td>
+<td><a href="Object.html">Object</a></td>
+</tr>
+</table>
+</div>
+
+<div id="section">
+<h3 class="section-bar">Description</h3>
+<a name="description-overview"></a>
+<h4>Overview</h4>
+<p>
+The class <a href="Molecule.html">Molecule</a> is the principal data structure in Molby. It contains the list of atoms, bonds, angles, dihedrals, and impropers. It may also contain optional information such as a unit cell, symmetry operations, multiple frames, electrostatic potentials, quantum chemistry information (basis sets and MO coefficients), MM/MD parameters (see class <a href="Parameter.html">Parameter</a>), and MM/MD runtime information (see class <a href="MDArena.html">MDArena</a>).
+</p>
+<a name="description-documents"></a>
+<h4>Documents and Molecule objects</h4>
+<p>
+<a href="Molecule.html">Molecule</a> objects can be obtained from the documents; examples are the return values of <a href="Molecule.html#M000322">Molecule#current</a> and <a href="Molecule.html#M000323">Molecule[name]</a>. However, not all <a href="Molecule.html">Molecule</a> objects necessarily have the associated documents. Some methods of <a href="Molecule.html">Molecule</a> generates a new <a href="Molecule.html">Molecule</a> object that has no associated document (e.g. <a href="Molecule.html#M000190">Molecule#new</a>, <a href="Molecule.html#M000191">Molecule#dup</a>, <a href="Molecule.html#M000244">Molecule#extract</a>). Such Molecule objects are useful for keeping partial structures until model-building is complete.
+</p>
+<a name="description-atomref"></a>
+<h4>AtomRef</h4>
+<p>
+Atoms are the most important component in <a href="Molecule.html">Molecule</a>. For efficiency reasons, the internal representation of atoms is a flat array, not a collection of "Atom" objects. Consequently, there is no "Atom" object in Molby; instead, an atom is represented by the <a href="AtomRef.html">AtomRef</a> object, which "points" to a particular atom via a pointer to <a href="Molecule.html">Molecule</a> and an index.
+</p>
+<a name="description-atom-index"></a>
+<h4>Atom index</h4>
+<p>
+The atom index in Molby is 0-based, unlike the 1-based index found in many chemical files. In addition, there is a convenient way to specify an atom via its name and (optionally) the residue name and residue number. Thus, if an atom has a name "CA" and belongs to a residue number 1 named "RES", then the atom can be specified by "CA", "1:CA", "RES:CA", or "RES.1:CA". If the description matches more than two atoms, it specifies the atom with the lowest index. Such description is acceptable in such methods like  <a href="MolEnumerable.html#M000002">MolEnumerable#[]</a>, <a href="Molecule.html#M000247">Molecule#atom_group</a>, etc.
+</p>
+<a name="description-molenumerable"></a>
+<h4>MolEnumerable</h4>
+<p>
+As described above, the components in <a href="Molecule.html">Molecule</a> such as atoms, bonds, etc. are not represented by Array objects of Ruby. Nevertheless, it is often convenient if we can treat the collection of these substances as a single Enumerable object. The class <a href="MolEnumerable.html">MolEnumerable</a> does this job, and allows to access the individual substances in an Array-like manner, e.g. <tt>mol.atoms[n]</tt> (mol.<a href="Molecule.html#M000211">atoms</a> is a <a href="MolEnumerable.html">MolEnumerable</a> object).
+</p>
+<h4>Atom group</h4>
+<a name="description-atom-group"></a>
+<p>
+Many methods of <a href="Molecule.html">Molecule</a> take a "group" argument, which means a group of atoms. A group is represented by an <a href="IntGroup.html">IntGroup</a> object, which is a collection of non-negative integers.
+</p>
+<h4>Undo support</h4>
+<a name="description-undo-support"></a>
+<p>
+Many methods of <a href="Molecule.html">Molecule</a> are described as "undoable". This means, when such methods are invoked for a <a href="Molecule.html">Molecule</a> that has an associated document, an undo operation is automatically registered to the document. 
+</p>
+</div>
+
+<div id="methods">
+<h3 class="section-bar">Public Class methods</h3>
+
+<div id="method-M000323" class="method-detail">
+<a name="M000323"></a>
+<div class="method-heading">
+<span class="method-name">
+Molecule[]          &rarr; <a href="Molecule.html">Molecule</a><br />
+Molecule[n]         &rarr; <a href="Molecule.html">Molecule</a><br />
+Molecule[name]      &rarr; <a href="Molecule.html">Molecule</a><br />
+Molecule[name, k]   &rarr; <a href="Molecule.html">Molecule</a><br />
+Molecule[regex]     &rarr; <a href="Molecule.html">Molecule</a><br />
+Molecule[regex, k]  &rarr; <a href="Molecule.html">Molecule</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+<a href="Molecule.html">Molecule</a>[] is equivalent to <a
+href="Molecule.html#M000322">Molecule.current</a>. <a
+href="Molecule.html">Molecule</a>[n] (n is an integer) is equivalent to <a
+href="Molecule.html#M000325">Molecule.list</a>[n]. <a
+href="Molecule.html">Molecule</a>[name]
+gives the first document (in the order of creation time) that has the given
+name. If a second argument (k) is
+given, the k-th document that has the given name is returned. <a
+href="Molecule.html">Molecule</a>[regex] gives the first document (in the
+order of creation time) that has a name
+matching the regular expression. If a second argument (k) is given, the
+k-th document that has a name matching
+the regex is returned.
+</p>
+</div>
+</div>
+
+<div id="method-M000176" class="method-detail">
+<a name="M000176"></a>
+<div class="method-heading">
+<span class="method-name">calc_angle(v1, v2, v3) &rarr; Float</span>
+</div>
+<div class="method-description">
+<p>
+Calculate the angle defined by three vectors. The result is in degree.
+</p>
+<p>
+<i>See Also:</i> <a href="#M000179">Molecule#calc_angle</a> (Instance Method)
+</p>
+</div>
+</div>
+
+<div id="method-M000175" class="method-detail">
+<a name="M000175"></a>
+<div class="method-heading">
+<span class="method-name">calc_bond(v1, v2) &rarr; Float</span>
+</div>
+<div class="method-description">
+<p>
+Calculate the bond length defined by two vectors.
+</p>
+<p>
+<i>See Also:</i> <a href="#M000178">Molecule#calc_bond</a> (Instance Method)
+</p>
+</div>
+</div>
+
+<div id="method-M000177" class="method-detail">
+<a name="M000177"></a>
+<div class="method-heading">
+<span class="method-name">calc_dihedral(v1, v2, v3, v4) &rarr; Float</span>
+</div>
+<div class="method-description">
+<p>
+Calculate the dihedral angle defined by four vectors. The result is in degree.
+</p>
+<p>
+<i>See Also:</i> <a href="#M000180">Molecule#calc_dihedral</a> (Instance Method)
+</p></div>
+</div>
+
+<div id="method-M000322" class="method-detail">
+<a name="M000322"></a>
+<div class="method-heading">
+<span class="method-name">current       &rarr; <a href="Molecule.html">Molecule</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get the currently &quot;active&quot; molecule.
+</p>
+</div>
+</div>
+
+<div id="method-M000120" class="method-detail">
+<a name="M000120"></a>
+<div class="method-heading">
+<span class="method-name">from_formula(str, resname = nil) &rarr; (new) <a href="Molecule.html">Molecule</a></span>
+</div>
+<div class="method-description">
+<p>
+Convert a string (like "CH2OCH3") to a molecule.
+</p>
+</div>
+</div>
+
+<div id="method-M000325" class="method-detail">
+<a name="M000325"></a>
+<div class="method-heading">
+<span class="method-name">list         &rarr; Array of <a href="Molecule.html">Molecule</a><br />
+</span>
+</div>
+
+<div class="method-description">
+<p>
+Get the list of molecules associated to
+the documents, in the order of creation time of the document. If no
+document is open, returns an empry array.
+</p>
+</div>
+</div>
+
+<div id="method-M000190" class="method-detail">
+<a name="M000190"></a>
+<div class="method-heading">
+<span class="method-name">new(file, *args)  &rarr; (new) <a href="Molecule.html">Molecule</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Create a new molecule and call
+<a href="Molecule.html#M000200">molload</a> method with the same arguments.
+</p>
+<p>
+<i>See Also:</i> <a href="#M000324">Molecule#open</a>, which opens the molecule as a document (i.e. with associated window).
+</p>
+</div>
+</div>
+
+<div id="method-M000324" class="method-detail">
+<a name="M000324"></a>
+<div class="method-heading">
+<span class="method-name">open(file)  &rarr; (new) <a href="Molecule.html">Molecule</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Open a molecule from file as a document.
+</p>
+<p>
+<i>See Also:</i> <a href="#M000190">Molecule#new</a>, which creates a new Molecule object but does not open as a document (i.e. no associated window is opened).
+</p>
+</div>
+</div>
+
+<div id="method-M000326" class="method-detail">
+<a name="M000326"></a>
+<div class="method-heading">
+<span class="method-name">ordered_list         &rarr; Array of <a href="Molecule.html">Molecule</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get the list of molecules which are opened as documents, in the order of front-to-back ordering of the associated window. If no document is open, returns
+an empry array.
+</p>
+</div>
+</div>
+
+<h3 class="section-bar">Public Instance methods</h3>
+
+<div id="method-M000245" class="method-detail">
+<a name="M000245"></a>
+<div class="method-heading">
+<span class="method-name">
+add(molecule2)       &rarr; self<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Combine two molecules. The residue numbers of the newly added atoms 
+may be renumbered to avoid
+conflicts. This operation is undoable.
+</p>
+</div>
+</div>
+
+<div id="method-M000252" class="method-detail">
+<a name="M000252"></a>
+<div class="method-heading">
+<span class="method-name">add_angle(n1, n2, n3)       &rarr; self<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Add angle n1-n2-n3. Returns self. Usually, angles are automatically added when a bond
+is created, so it is rarely necessary to use this method explicitly. This
+operation is undoable.
+</p>
+<p>
+<i>See Also:</i> <a href="Molecule.html#M000251">Molecule#create_bond</a>
+</p>
+</div>
+</div>
+
+<div id="method-M000184" class="method-detail">
+<a name="M000184"></a>
+<div class="method-heading">
+<span class="method-name">add_atom(name, atom_type = &quot;c3&quot;, element = &quot;C&quot;, bond = nil, base1 = nil, angle = nil, base2 = nil, dihed = nil, base3 = nil) -> <a href="AtomRef.html">AtomRef</a></span>
+</div>
+<div class="method-description">
+  <p>
+Add a new atom. The arguments bond, base1, angle,
+base2, dihed, and base3 defines the position of the new atom in the Z-matrix style. (Note:
+angle and dihed should be given in <b>degree</b>, not in radian). If
+bond/base1 are specified, a new bond is
+also created between the new atom and
+base1. If bond/base1 are specified but angle/base2 are not, then the
+direction of the new bond is assumed as
+the most distant direction from the existing bonds. Returns the reference to the new atom. This operation is undoable.
+</p>
+<p>
+<i>See Also:</i> <a href="Molecule.html#M000249">Molecule#create_atom</a>
+</p>
+</div>
+</div>
+
+<div id="method-M000254" class="method-detail">
+<a name="M000254"></a>
+<div class="method-heading">
+<span class="method-name">add_dihedral(n1, n2, n3, n4)       &rarr; self<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Add dihedral n1-n2-n3-n4. Returns self. Usually, dihedrals are automatically added when a
+bond is created, so it is rarely necessary to use this method explicitly.
+This operation is undoable.
+</p>
+<p>
+<i>See Also:</i> <a href="Molecule.html#M000251">Molecule#create_bond</a>
+</p>
+</div>
+</div>
+
+<div id="method-M000125" class="method-detail">
+<a name="M000125"></a>
+<div class="method-heading">
+<span class="method-name">add_hydrogen(idx, atype, bond = 1.07, anum = 1)</span>
+</div>
+<div class="method-description">
+<p>
+Add missing hydrogen (or other atom) according to the given geometry type.
+Atype is a String, which is one of the following: &quot;td&quot; (tetrahedral),
+&quot;tr&quot; (trigonal), &quot;py&quot; (pyramidal, like amine nitrogen),
+&quot;li&quot; (linear). This operation is undoable.
+</p>
+</div>
+</div>
+
+<div id="method-M000256" class="method-detail">
+<a name="M000256"></a>
+<div class="method-heading">
+<span class="method-name">add_improper(n1, n2, n3, n4)       &rarr; self<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Add dihedral n1-n2-n3-n4. Returns self. Unlike angles and dihedrals, impropers
+are <b>not</b> automatically added when
+new bonds are created, so this method
+is more useful than the angle/dihedral counterpart. This operation is
+undoable.
+</p>
+</div>
+</div>
+
+<div id="method-M000242" class="method-detail">
+<a name="M000242"></a>
+<div class="method-heading">
+<span class="method-name">add_symmetry(Transform) &rarr; Integer<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Add a new symmetry operation. If no symmetry operation is defined and the
+given argument is not an identity transform, then an identity transform is
+added before the given transform is added. Returns the
+new total number of symmetry operations. This operation is undoable.
+</p>
+</div>
+</div>
+
+<div id="method-M000172" class="method-detail">
+<a name="M000172"></a>
+<div class="method-heading">
+<span class="method-name">all &rarr; <a href="IntGroup.html">IntGroup</a></span>
+</div>
+<div class="method-description">
+<p>
+Returns <a href="IntGroup.html">IntGroup</a>[0..<a href="Molecule.html#M000217">natoms</a>-1], which represents "all atoms in the molecule".
+</p>
+</div>
+</div>
+
+<div id="method-M000213" class="method-detail">
+<a name="M000213"></a>
+<div class="method-heading">
+<span class="method-name">angles       &rarr; <a href="MolEnumerable.html">MolEnumerable</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns a <a href="MolEnumerable.html">MolEnumerable</a> object
+representing the array of angles. An
+angle n1-n2-n3 is represented [n1, n2, n3], where n1, n2, n3 are the atom indices.
+</p>
+<p>
+<i>See Also:</i> <a href="Molecule.html#M000219">Molecule#nangles</a>
+</div>
+</div>
+
+<div id="method-M000258" class="method-detail">
+<a name="M000258"></a>
+<div class="method-heading">
+<span class="method-name">assign_residue(group, res)       &rarr; self<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Assign the specified atoms (as <a href="IntGroup.html">IntGroup</a>) to have the given
+residue. res can either be an integer, &quot;resname&quot; or
+&quot;resname.resno&quot;. When the residue number is not specified, the
+residue number of the first atom in the group is used. This operation is
+undoable.
+</p>
+</div>
+</div>
+
+<div id="method-M000247" class="method-detail">
+<a name="M000247"></a>
+<div class="method-heading">
+<span class="method-name">atom_group &rarr; <a href="IntGroup.html">IntGroup</a><br />
+atom_group {|aref| ...} &rarr; <a href="IntGroup.html">IntGroup</a><br />
+atom_group(arg1, arg2, ...) &rarr; <a href="IntGroup.html">IntGroup</a> <br />
+atom_group(arg1, arg2, ...) {|aref| ...} &rarr; <a href="IntGroup.html">IntGroup</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Specify a group of atoms. If no
+arguments are given, <a href="IntGroup.html">IntGroup</a>[0..<a href="Molecule.html#M000217">natoms</a>-1] is the
+result. If arguments are given, then the atoms reprensented by the arguments are
+added to the group. For a conversion of a string to an atom index, see the
+description of <a href="Molecule.html#M000248">Molecule#atom_index</a>.
+</p>
+<p>
+If a block is given, it is evaluated with an <a
+href="AtomRef.html">AtomRef</a> (not atom index integers) representing each
+atom, and the atoms are removed from
+the result if the block returns false.
+</p>
+<p>
+<i>See Also:</i> <a href="#M000172">Molecule#all</a>
+</p>
+</div>
+</div>
+
+<div id="method-M000248" class="method-detail">
+<a name="M000248"></a>
+<div class="method-heading">
+  <span class="method-name">atom_index(val)       &rarr; Integer<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns the atom index represented by val. Val can be either a non-negative
+integer (directly representing the atom index), a negative integer
+(representing <a href="Molecule.html#M000217">natoms</a> - val), a
+string of type &quot;resname.resid:name&quot; or &quot;resname:name&quot; or &quot;resid:name&quot; or &quot;name&quot;, where resname, resid, name are the residue name, residue id, and atom name, respectively. If val is a string and
+multiple atoms match the description,
+the atom with the lowest index is returned.
+</p>
+</div>
+</div>
+
+<div id="method-M000211" class="method-detail">
+<a name="M000211"></a>
+<div class="method-heading">
+<span class="method-name">atoms       &rarr; <a href="MolEnumerable.html">MolEnumerable</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns a <a href="MolEnumerable.html">MolEnumerable</a> object
+representing the array of atoms.
+</p>
+<p>
+<i>See Also:</i> <a href="Molecule.html#M000217">Molecule#natoms</a>
+</p>
+</div>
+</div>
+
+<div id="method-M000212" class="method-detail">
+<a name="M000212"></a>
+<div class="method-heading">
+  <span class="method-name">bonds       &rarr; <a href="MolEnumerable.html">MolEnumerable</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns a <a href="MolEnumerable.html">MolEnumerable</a> object
+representing the array of bonds. 
+A bond n1-n2 is represented by an array [n1, n2], where n1 and n2 are the atom index integers.</p>
+<p>
+<i>See Also:</i> <a href="Molecule.html#M000218">Molecule#nbonds</a>
+</p>
+</div>
+</div>
+
+<div id="method-M000280" class="method-detail">
+<a name="M000280"></a>
+<div class="method-heading">
+  <span class="method-name">bonds_on_border(group = selection)  &rarr; [[na1, nb1], [na2, nb2], ...]<br />
+</span>
+</div>
+<div class="method-description">
+  <p>
+Returns an array of bonds that connect
+atoms in the group and atoms out of the group. The first atom in the
+bond always belongs to the group. If no such bonds are present, an empty array is
+returned.
+</p>
+</div>
+</div>
+
+<div id="method-M000288" class="method-detail">
+<a name="M000288"></a>
+<div class="method-heading">
+  <span class="method-name">bounds(group = nil)       &rarr; [min, max]<br />
+</span>
+</div>
+<div class="method-description">
+  <p>
+Calculate the boundary. The return value is an array of two <a
+href="Vector3D.html">Vector3D</a> objects.
+</p>
+<p>
+<i>See Also:</i> <a href="Molecule.html#M000169">Molecule#min</a>, <a href="Molecule.html#M000170">Molecule#max</a>
+</p>
+</div>
+</div>
+
+<div id="method-M000238" class="method-detail">
+<a name="M000238"></a>
+<div class="method-heading">
+  <span class="method-name">box &rarr; [avec, bvec, cvec, origin, flags]<br />
+</span>
+</div>
+<div class="method-description">
+  <p>
+Get the unit cell information in the
+form of a periodic bounding box. Avec,
+bvec, cvec, origin are <a href="Vector3D.html">Vector3D</a> objects, and
+flags is a 3-member array of Integers which define whether the system is
+periodic along the axis. If no unit cell is defined, nil is returned.
+</p>
+<p>
+<i>See Also:</i> <a href="Molecule.html#M000239">Molecule#box=</a>, <a href="Molecule.html#M000235">Molecule#cell</a>, <a href="Molecule.html#M000236">Molecule#cell=</a>
+</p>
+</div>
+</div>
+
+<div id="method-M000239" class="method-detail">
+<a name="M000239"></a>
+<div class="method-heading">
+  <span class="method-name">
+self.box = [avec, bvec, cvec, origin = [0, 0, 0], flags = [1, 1, 1]]<br />
+self.box = [d, origin = [0, 0, 0]]<br />
+self.box = nil<br />
+set_box(avec, bvec, cvec, origin = [0, 0, 0], flags = [1, 1, 1])<br />
+set_box(d, origin = [0, 0, 0])<br />
+set_box<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Set the unit cell parameters. Avec,
+bvec, and cvec can be either a <a href="Vector3D.html">Vector3D</a> or a
+number. If it is a number, the x/y/z axis vector is multiplied with the
+given number and used as the cell axis
+vector. Flags, if present, is a 3-member array of Integers defining whether
+the system is periodic along the axis.
+</p>
+<p>
+In the second form, an isotropic box with cell-length d is set.
+</p>
+<p>
+In the third form,
+the existing unit cell is cleared.
+</p>
+<p>
+This operation is undoable, in any of the above form.
+</p>
+<p>
+<i>See Also:</i> <a href="Molecule.html#M000238">Molecule#box</a>, <a href="Molecule.html#M000235">Molecule#cell</a>, <a href="Molecule.html#M000236">Molecule#cell=</a>
+</p>
+</div>
+</div>
+
+<div id="method-M000179" class="method-detail">
+<a name="M000179"></a>
+<div class="method-heading">
+<span class="method-name">calc_angle(n1, n2, n3) &rarr; Float</span>
+</div>
+<div class="method-description">
+<p>
+Calculate the bond angle defined by the three atoms. The result is in degree.
+</p>
+<p>
+<i>See Also:</i> <a href="#M000176">Molecule#calc_angle</a> (Class Method)
+</p>
+</div>
+</div>
+
+<div id="method-M000178" class="method-detail">
+<a name="M000178"></a>
+<div class="method-heading">
+<span class="method-name">calc_bond(n1, n2) &rarr; Float</span>
+</div>
+<div class="method-description">
+<p>
+Calculate the bond length between the two atoms.
+</p>
+<p>
+<i>See Also:</i> <a href="#M000175">Molecule#calc_bond</a> (Class Method)
+</p>
+</div>
+</div>
+
+<div id="method-M000180" class="method-detail">
+<a name="M000180"></a>
+<div class="method-heading">
+<span class="method-name">calc_dihedral(n1, n2, n3, n4) &rarr; Float</span>
+</div>
+<div class="method-description">
+<p>
+Calculate the dihedral angle defined by the four atoms. The result is in degree.
+</p>
+<p>
+<i>See Also:</i> <a href="#M000177">Molecule#calc_dihedral</a> (Class Method)
+</p>
+</div>
+</div>
+
+<div id="method-M000235" class="method-detail">
+<a name="M000235"></a>
+<div class="method-heading">
+<span class="method-name">cell     &rarr; [a, b, c, alpha, beta, gamma]<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns the unit cell parameters. If a unit cell is not set, returns nil. Alpha/beta/gamma are in degree.
+</p>
+<p>
+<i>See Also:</i> <a href="Molecule.html#M000238">Molecule#box</a>, <a href="Molecule.html#M000239">Molecule#box=</a>, <a href="Molecule.html#M000236">Molecule#cell=</a>
+</p>
+</div>
+</div>
+
+<div id="method-M000236" class="method-detail">
+<a name="M000236"></a>
+<div class="method-heading">
+<span class="method-name">cell = [a, b, c, alpha, beta, gamma]<br />
+set_cell([a, b, c, alpha, beta, gamma], flag = nil)<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Set the unit cell parameters. Alpha/beta/gamma are in degree. If the right-hand value (or the first argument) is nil, then clear the current unit cell. If the second argument is given as non-nil, then
+the coordinates are transformed so that the cartesian coordinates remain the same. This operation is undoable.
+</p>
+<p>
+<i>See Also:</i> <a href="Molecule.html#M000238">Molecule#box</a>, <a href="Molecule.html#M000239">Molecule#box=</a>, <a href="Molecule.html#M000235">Molecule#cell</a>
+</p>
+</div>
+</div>
+
+<div id="method-M000237" class="method-detail">
+<a name="M000237"></a>
+<div class="method-heading">
+<span class="method-name">cell_transform &rarr; <a href="Transform.html">Transform</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Return the <a href="Transform.html">Transform</a> matrix that converts
+internal coordinates to cartesian coordinates. If the unit cell is not defined, nil is returned.
+</p>
+</div>
+</div>
+
+<div id="method-M000286" class="method-detail">
+<a name="M000286"></a>
+<div class="method-heading">
+<span class="method-name">center_of_mass(group = nil)       &rarr; <a href="Vector3D.html">Vector3D</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Calculate the center of mass for the given set of atoms. If the argument group is null, all atoms are considered.
+</p>
+</div>
+</div>
+
+<div id="method-M000287" class="method-detail">
+<a name="M000287"></a>
+<div class="method-heading">
+<span class="method-name">centralize(group = nil)       &rarr; self<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Translate the molecule so that the center of mass of the given group is
+located at (0, 0, 0). Equivalent to
+<a href="Molecule.html#M000281">self.translate</a>(<a href="Molecule.html#M000286">self.center_of_mass</a>(group) * -1). This operation is undoable.
+</p>
+</div>
+</div>
+
+<div id="method-M000189" class="method-detail">
+<a name="M000189"></a>
+<div class="method-heading">
+<span class="method-name">count_bonds(n1, n2) &rarr; Integer</span>
+</div>
+<div class="method-description">
+<p>
+Count the (minimum) number of bonds
+between atoms n1 and n2. If there is no connection between n1 and n2, return -1.
+</p>
+</div>
+</div>
+
+<div id="method-M000249" class="method-detail">
+<a name="M000249"></a>
+<div class="method-heading">
+<span class="method-name">create_atom(name, pos = -1)  &rarr; <a href="AtomRef.html">AtomRef</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Create a new atom with the specified name (may contain residue information) and
+position (if position is out of range, the atom is appended at the end). The occupancy of the new atom is 1.0, and other attributes are 0 or null.
+Returns the reference to the atom.
+This operation is undoable.
+</p>
+<p>
+<i>See Also:</i> <a href="Molecule.html#M000184">Molecule#add_atom</a>
+</p>
+</div>
+</div>
+
+<div id="method-M000251" class="method-detail">
+<a name="M000251"></a>
+<div class="method-heading">
+<span class="method-name">create_bond(n1, n2, ...)       &rarr; Integer<br />
+<span class="method-name">create_bonds(n1, n2, ...)       &rarr; Integer<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Create bond(s) between atoms n1 and n2, n3 and n4, and so on.
+If the atoms already have other bonds, new angles and dihedrals are automatically created.
+If a bond is already present for a particular pair of atoms, do nothing for that pair.
+Returns the number of bonds actually created. This operation is undoable.
+</p>
+</div>
+</div>
+
+<div id="method-M000268" class="method-detail">
+<a name="M000268"></a>
+<div class="method-heading">
+<span class="method-name">create_frame(coordinates = nil) &rarr; Integer<br />
+create_frames(coordinates = nil) &rarr; Integer<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Same as <a href="Molecule.html#M000336">Molecule#insert_frames</a>(nil, coordinates).
+</p>
+</div>
+</div>
+
+<div id="method-M000318" class="method-detail">
+<a name="M000318"></a>
+<div class="method-heading">
+<span class="method-name">cubegen(fname, mo, npoints=1000000 [, iflag])<br />
+cubegen(fname, mo, origin, dx, dy, dz, nx, ny, nz [, iflag])<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Calculate the molecular orbital with number mo and create a cube file. 
+In the first form, the cube size is estimated from
+the atomic coordinates. In the second form, the cube dimension is
+explicitly given. Returns fname when successful, nil otherwise. If iflag is
+non-false, then interrupt check is enabled during calculation.
+</p>
+</div>
+</div>
+
+<div id="method-M000317" class="method-detail">
+<a name="M000317"></a>
+<div class="method-heading">
+<span class="method-name">default_MO_grid(npoints = 80*80*80) &rarr; [origin, dx, dy, dz, nx, ny, nz]<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Calculate a default MO grid for cube file generation. Origin is <a href="Vector3D.html">Vector3D</a>; dx, dy,
+dz are Float; nx, ny, nz are Integer. If the molecule does not contain a basis
+set information, then returns nil.
+</p>
+</div>
+</div>
+
+<div id="method-M000279" class="method-detail">
+<a name="M000279"></a>
+<div class="method-heading">
+<span class="method-name">detachable?(group)  &rarr; [n1, n2]<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Check whether the group is detachable, i.e. the group is
+bound to the rest of the molecule via only one bond. If it is, then the
+indices of the atoms belonging to the
+bond is returned; n1 is the atom belonging to the group, and n2 is the atom not belonging to the group and bound to n1. If the above conditions are not met, nil is returned.
+</p>
+</div>
+</div>
+
+<div id="method-M000214" class="method-detail">
+<a name="M000214"></a>
+<div class="method-heading">
+<span class="method-name">dihedrals       &rarr; <a href="MolEnumerable.html">MolEnumerable</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns a <a href="MolEnumerable.html">MolEnumerable</a> object
+representing the array of <a href="Molecule.html#M000214">dihedrals</a>. A
+dihedral n1-n2-n3-n4 is represented by an array [n1, n2, n3, n4], where n1, n2, n3, n4 are the atom index integers.
+</p>
+<p>
+<i>See Also:</i> <a href="Molecule.html#M000220">Molecule#ndihedrals</a>
+</p>
+</div>
+</div>
+
+<div id="method-M000209" class="method-detail">
+<a name="M000209"></a>
+<div class="method-heading">
+<span class="method-name">dir       &rarr; String<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns the full path name of the directory in which the file
+associated with the molecule is located. If the molecule has no associated
+file, then returns nil.
+</p>
+<p>
+<i>See Also:</i> <a href="Molecule.html#M000208">Molecule#path</a>
+</p>
+</div>
+</div>
+
+<div id="method-M000295" class="method-detail">
+<a name="M000295"></a>
+<div class="method-heading">
+<span class="method-name">display<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Refresh the display if this molecule is
+bound to a view. Otherwise do nothing.
+</p>
+</div>
+</div>
+
+<div id="method-M000183" class="method-detail">
+<a name="M000183"></a>
+<div class="method-heading">
+<span class="method-name">dock(mol, base1, base2, rem1 = nil, rem2 = nil, len = nil, dihed = nil, def1 = nil, def2 = nil)</span>
+</div>
+
+<div class="method-description">
+<p>
+Combine two molecules. A new bond is
+created between base1 and base2.
+Rem1 and rem2 specify the atom (or fragment) to be removed when creating the new bond.
+If nil is specified for
+either of them, a dummy atom (which has a name beginning with '#')
+ is looked for, and if none is
+found then no atom is removed and the new bond is directed so that it is most
+remote from any of the existing bonds.
+</p>
+<p>
+Rem1 and rem2 can also be <a href="Vector3D.html">Vector3D</a> objects that
+specify the direction of the <a href="Molecule.html#M000190">new</a> bond.
+In this case, no atoms are removed.
+</p>
+<p>
+If len is specified, then the length of the new bond is set to this value. Otherwise,
+it is set to 1.5.
+</p>
+<p>
+If dihed is specified, then the dihedral angle
+def1-base1-base2-def2 is set to this value (in <b>degree</b>, not radian). If nil is specified
+for either def1 or def2 (or both), then the atom which is connected to
+base1 (base2) and has the smallest index is used.
+</p>
+<p>
+Returns the group of atom indices that have been added. This operation is undoable.
+</p>
+<p>
+<i>See Also:</i> <a href="Molecule.html#M000279">Molecule#detachable?</a> (for description of detachability), <a href="Molecule.html#M000121">Molecule#dock_formula</a>, <a href="Molecule.html#M000122">Molecule#dock_fragment</a>
+</p>
+</div>
+</div>
+
+<div id="method-M000121" class="method-detail">
+<a name="M000121"></a>
+<div class="method-heading">
+<span class="method-name">dock_formula(str, group = selection)</span>
+</div>
+<div class="method-description">
+<p>
+Create a fragment from str and replace
+the group with the generated fragment.
+This method is invoked when a detachable selection is double-clicked and user
+enters the formula in the dialog box. This operation is undoable.
+</p>
+<p>
+<i>See Also:</i> <a href="Molecule.html#M000183">Molecule#dock</a>, <a href="Molecule.html#M000122">Molecule#dock_fragment</a>
+</p>
+</div>
+</div>
+
+<div id="method-M000122" class="method-detail">
+<a name="M000122"></a>
+<div class="method-heading">
+<span class="method-name">dock_fragment(fragment, group = selection)</span>
+</div>
+<div class="method-description">
+<p>
+Replace the specified group with the given fragment, which is another <a href="Molecule.html">Molecule</a> object. This operation is undoable.
+</p>
+<p>
+<i>See Also:</i> <a href="Molecule.html#M000183">Molecule#dock</a>, <a href="Molecule.html#M000121">Molecule#dock_formula</a>
+</p>
+</div>
+</div>
+
+<div id="method-M000142" class="method-detail">
+<a name="M000142"></a>
+<div class="method-heading">
+<span class="method-name">dump(group = nil) &rarr; String</span>
+</div>
+<div class="method-description">
+<p>
+Create a String that represent the atom list. If a group is given, only the atoms in the group will be included.
+</p>
+<p>
+<i>See Also:</i> <a href="Molecule.html#M000144">Molecule#from_dump</a>
+</div>
+</div>
+
+<div id="method-M000191" class="method-detail">
+<a name="M000191"></a>
+<div class="method-heading">
+<span class="method-name">dup          &rarr; (new) <a href="Molecule.html">Molecule</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Duplicate a molecule. All entries are deep copied, so that modifying the newly
+created object does not affect the old object in any sense.
+</p>
+</div>
+</div>
+
+<div id="method-M000250" class="method-detail">
+<a name="M000250"></a>
+<div class="method-heading">
+<span class="method-name">duplicate_atom(atomref, pos = -1)  &rarr; <a href="AtomRef.html">AtomRef</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Create a new atom with the same
+attributes (but no bonding information) with the specified atom. Returns
+the reference to the new atom. Useful as a convenient version of Molecule#create_atom, with the various atomic attributes duplicated from the reference atom. This operation is undoable.
+</p>
+</div>
+</div>
+
+<div id="method-M000234" class="method-detail">
+<a name="M000234"></a>
+<div class="method-heading">
+<span class="method-name">each_atom {|aref| ...}<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Execute the block for each atom, with the <a href="AtomRef.html">AtomRef</a> object as the argument. Equivalent to <a href="Molecule.html#M000211">self.atoms</a>.<a href="MolEnumerable.html#M000004">each</a>, except that the
+return value is self.
+</p>
+</div>
+</div>
+
+<div id="method-M000278" class="method-detail">
+<a name="M000278"></a>
+<div class="method-heading">
+<span class="method-name">each_fragment {|group| ...}<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Execute the block for each fragment in the molecule, with the <a href="IntGroup.html">IntGroup</a> object representing the fragment as the block 
+argument. No new atoms or bonds should be created or removed during the execution of the block, otherwise the results will be unpredictable (may even cause a crash).
+</p>
+</div>
+</div>
+
+<div id="method-M000271" class="method-detail">
+<a name="M000271"></a>
+<div class="method-heading">
+<span class="method-name">each_frame {|n| ...}<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Set the frame number from 0 to <a
+href="Molecule.html#M000267">nframes</a>-1 and execute the block. The block
+argument is the frame number. After
+completion, the original frame number
+is restored. Roughly equivalent to the following code snippet:
+</p>
+<pre><tt>old_frame = self.frame
+for n in 0..self.nframes-1
+  self.frame = n
+  yield(n)
+end
+self.frame = old_frame</tt>
+</pre>
+<p>
+<i>See Also:</i> <a href="Molecule.html#M000267">Molecule#nframes</a>
+</p>
+</div>
+</div>
+
+<div id="method-M000320" class="method-detail">
+<a name="M000320"></a>
+<div class="method-heading">
+<span class="method-name">elpot(idx) &rarr; [pos, potential]<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get the electrostatic potential info at the given index. The electrostatic potential are read from the output of quantum chemistry softwares. If present, then
+the return value is [Vector3D, Float] (position and potential). If not
+present, then returns nil.
+</p>
+<p>
+<i>See Also: </i> <a href="Molecule.html#M000133">Molecule#loadlog</a> (to load GAMESS output), <a href="Molecule.html#M000319">Molecule#nelpots</a>
+</p>
+</div>
+</div>
+
+<div id="method-M000292" class="method-detail">
+<a name="M000292"></a>
+<div class="method-heading">
+<span class="method-name">expand_by_symmetry(group, sym, dx=0, dy=0, dz=0) &rarr; <a href="IntGroup.html">IntGroup</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Expand the specified part of the molecule by the given symmetry operation. Sym is the index to the <a href="Molecule.html#M000331">symmetries</a> array, and dx/dy/dz are the integers representing the translational operations along the unit cell axes. Returns an <a
+href="IntGroup.html">IntGroup</a> that represents the added atoms. This operation is undoable.
+</p>
+</div>
+</div>
+
+<div id="method-M000244" class="method-detail">
+<a name="M000244"></a>
+<div class="method-heading">
+<span class="method-name">extract(group, dummy_flag = nil)       &rarr; (new) <a href="Molecule.html">Molecule</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Extract the atoms represented by the given group, and
+return as a new Molecule object. If
+dummy_flag is true, then the atoms that
+are not selected but are connected to any selected atoms are also included as dummy atoms.
+(i.e. with element &quot;Du&quot; and names beginning with an underscore).
+</p>
+</div>
+</div>
+
+<div id="method-M000294" class="method-detail">
+<a name="M000294"></a>
+<div class="method-heading">
+<span class="method-name">find_conflicts(limit[, group1[, group2]]) &rarr; [[n1, n2], [n3, n4], ...]<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Find pairs of atoms that are within the
+limit distance. If group1 and group2 are given, the first and second atom
+in the pair should belong to group1 and group2, respectively.
+</p>
+</div>
+</div>
+
+<div id="method-M000109" class="method-detail">
+<a name="M000109"></a>
+<div class="method-heading">
+<span class="method-name">find_dummy_atoms(how_many = nil)</span>
+</div>
+<div class="method-description">
+<p>
+Find dummy atoms, i.e. the atoms whose element is &quot;Du&quot; and
+whose name begins with an underscore.
+</p>
+</div>
+</div>
+
+<div id="method-M000277" class="method-detail">
+<a name="M000277"></a>
+<div class="method-heading">
+<span class="method-name">fragment(n1, *exatoms)  &rarr; <a href="IntGroup.html">IntGroup</a><br />
+fragment(group, *exatoms)  &rarr; <a href="IntGroup.html">IntGroup</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Find the fragment (i.e. a group of connected atoms) including the atom n1
+or the atom group. If additional arguments are given, those atoms will not be counted during the search.
+</p>
+</div>
+</div>
+
+<div id="method-M000265" class="method-detail">
+<a name="M000265"></a>
+<div class="method-heading">
+<span class="method-name">frame &rarr; Integer<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get the current frame shown in the window.
+</p>
+</div>
+</div>
+
+<div id="method-M000266" class="method-detail">
+<a name="M000266"></a>
+<div class="method-heading">
+<span class="method-name">self.frame = index<br />
+select_frame(index)<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Select the specified frame. If
+successful, returns true, otherwise returns false.
+</p>
+<p>
+<i>See Also:</i> <a href="Molecule.html#M000267">Molecule#nframes</a>
+</p>
+</div>
+</div>
+
+<div id="method-M000144" class="method-detail">
+<a name="M000144"></a>
+<div class="method-heading">
+<span class="method-name">from_dump(str) &rarr; self</span>
+</div>
+<div class="method-description">
+<p>
+Read the description of atoms from the String of the <a href="Molecule.html#M000142">dump</a> format. Self must be empty.
+</p>
+<p>
+<i>See Also:</i> <a href="Molecule.html#M000142">Molecule#dump</a>
+</p>
+</div>
+</div>
+
+<div id="method-M000276" class="method-detail">
+<a name="M000276"></a>
+<div class="method-heading">
+<span class="method-name">get_atom_attr(index, key)<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get the atom attribute for the specified atom. Equivalent to <a href="Molecule.html#M000211">self.atoms</a>[index].key. See the methods of class <a href"AtomRef.html">AtomRef</a> for available atrributes.
+</p>
+</div>
+</div>
+
+<div id="method-M000261" class="method-detail">
+<a name="M000261"></a>
+<div class="method-heading">
+<span class="method-name">guess_bonds(limit = 1.2)       &rarr; Integer<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Create bonds between atoms that are close enough,
+i.e. the interatomic distance is smaller than the sum of the vdw radii
+times the argument limit. Returns the number of the newly created bonds.
+This operation is undoable.
+</p>
+</div>
+</div>
+
+<div id="method-M000215" class="method-detail">
+<a name="M000215"></a>
+<div class="method-heading">
+<span class="method-name">impropers       &rarr; <a href="MolEnumerable.html">MolEnumerable</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns a <a href="MolEnumerable.html">MolEnumerable</a> object
+representing the array of impropers.
+improper is represented by an array of four atom indices.
+</p>
+<p>
+<i>See Also:</i> <a href="Molecule.html#M000221">Molecule#nimpropers</a>
+</p>
+</div>
+</div>
+
+<div id="method-M000269" class="method-detail">
+<a name="M000269"></a>
+<div class="method-heading">
+<span class="method-name">insert_frame(integer, coordinates = nil) &rarr; <a href="IntGroup.html">IntGroup</a><br />
+insert_frames(intGroup = nil, coordinates = nil) &rarr; <a href="IntGroup.html">IntGroup</a><br />
+</span>
+</div>
+
+<div class="method-description">
+<p>
+Insert new frames at the indices
+specified by the intGroup. If the first argument is an integer, a single new frame is inserted at that index. If the
+first argument is nil, a new frame is inserted at the last. If non-nil
+coordinates is given, it should be an array of arrays of Vector3Ds, and
+those coordinates are set to the new frame. Otherwise, the current coordinates are copied to the new frame. Returns an <a href="IntGroup.html">IntGroup</a> representing
+the inserted frames if successful, nil if not.
+</p>
+</div>
+</div>
+
+<div id="method-M000210" class="method-detail">
+<a name="M000210"></a>
+<div class="method-heading">
+<span class="method-name">inspect       &rarr; String<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns a string in the form &quot;<a href="Molecule.html">Molecule</a>[name]&quot;
+if the molecule has the
+associated document. Otherwise, an internal representation like &quot;&lt;<a
+href="Molecule.html">Molecule</a>:0x****&gt;&quot; is returned.
+</p>
+</div>
+</div>
+
+<div id="method-M000284" class="method-detail">
+<a name="M000284"></a>
+<div class="method-heading">
+<span class="method-name">invert(center = [0,0,0], group = nil)       &rarr; self<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Invert the molecule with the given center. If group is given, only the atoms in the group are moved. This operation is undoable.
+</p>
+</div>
+</div>
+
+<div id="method-M000311" class="method-detail">
+<a name="M000311"></a>
+<div class="method-heading">
+<span class="method-name">line_mode<br />
+line_mode(bool)<br />
+self.line_mode = bool<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Set the flag whether to draw the model in line mode. If no argument is
+given, the current flag is returned.
+</p>
+</div>
+</div>
+
+<div id="method-M000136" class="method-detail">
+<a name="M000136"></a>
+<div class="method-heading">
+<span class="method-name">loadcom(filename) &rarr; bool<br />
+loadgjf(filename) &rarr; bool</span>
+</div>
+<div class="method-description">
+<p>
+Load a molecule from a Gaussian input file.
+</p>
+</div>
+</div>
+
+<div id="method-M000131" class="method-detail">
+<a name="M000131"></a>
+<div class="method-heading">
+<span class="method-name">loadcrd(filename) &rarr; bool</span>
+</div>
+<div class="method-description">
+<p>
+Import the frames from a crd file (from AMBER etc.). The molecule must <b>not</b> be empty, because a crd file does not contain structure information, 
+</p>
+</div>
+</div>
+
+<div id="method-M000199" class="method-detail">
+<a name="M000199"></a>
+<div class="method-heading">
+<span class="method-name">loaddat(file)       &rarr; bool<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Read coordinates and ESP information (if present) from a GAMESS dat file. (TODO: read MO
+info as well) Return true if successful.
+</p>
+</div>
+</div>
+
+<div id="method-M000195" class="method-detail">
+<a name="M000195"></a>
+<div class="method-heading">
+<span class="method-name">loaddcd(file)       &rarr; bool<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Read coordinates from a dcd file. The molecule must <b>not</b> be empty, because a dcd file does not contain structure information. This method is aware of the endian of the input file, so that you do not need to flip the endian when you transfer a dcd file created on other platform.
+Return true if successful.
+</p>
+</div>
+</div>
+
+<div id="method-M000198" class="method-detail">
+<a name="M000198"></a>
+<div class="method-heading">
+<span class="method-name">loadfchk(file)       &rarr; bool<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Read coordinates and MO information from a Gaussian fchk file. Return true if successful.
+</p>
+</div>
+</div>
+
+<div id="method-M000137" class="method-detail">
+<a name="M000137"></a>
+<div class="method-heading">
+<span class="method-name">loadinp(filename) &rarr; bool</span>
+</div>
+<div class="method-description">
+<p>
+Load molecule from a GAMESS input file.
+</p>
+</div>
+</div>
+
+<div id="method-M000133" class="method-detail">
+<a name="M000133"></a>
+<div class="method-heading">
+<span class="method-name">loadlog(filename) &rarr; bool</span>
+</div>
+<div class="method-description">
+<p>
+Read coordinates from a GAMESS log file.
+</p>
+</div>
+</div>
+
+<div id="method-M000192" class="method-detail">
+<a name="M000192"></a>
+<div class="method-heading">
+<span class="method-name">loadmbsf(file)       &rarr; bool<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Read a structure from a mbsf (Molby structure format) file. Return true if successful.
+</p>
+</div>
+</div>
+
+<div id="method-M000135" class="method-detail">
+<a name="M000135"></a>
+<div class="method-heading">
+<span class="method-name">loadout(filename) &rarr; bool</span>
+</div>
+<div class="method-description">
+<p>
+Read coordinates from a Gaussian output file. If molecule is empty, then structure is built by guessing bonds from the interatomic distances. Otherwise, only the coordinates are read in. Return true if successful.
+</p>
+</div>
+</div>
+
+<div id="method-M000194" class="method-detail">
+<a name="M000194"></a>
+<div class="method-heading">
+<span class="method-name">loadpdb(file)       &rarr; bool<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Read coordinates from a pdb file. If molecule is empty, then structure is
+build by use of CONECT instructions. Otherwise, only the coordinates are
+read in. Return true if successful.
+</p>
+</div>
+</div>
+
+<div id="method-M000193" class="method-detail">
+<a name="M000193"></a>
+<div class="method-heading">
+<span class="method-name">loadpsf(file, pdbfile = nil)       &rarr; bool<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Read a structure from a psf file. molecule must be empty. The psf may be an
+&quot;extended&quot; version, which also contains coordinates. If pdbfile
+is given, then atomic coordinates are read from that file. Return true if
+successful.
+</p>
+</div>
+</div>
+
+<div id="method-M000197" class="method-detail">
+<a name="M000197"></a>
+<div class="method-heading">
+<span class="method-name">loadres(file)       &rarr; bool<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Read coordinates from a SHELX input/result file. Return true if successful.
+</p>
+</div>
+</div>
+
+<div id="method-M000196" class="method-detail">
+<a name="M000196"></a>
+<div class="method-heading">
+<span class="method-name">loadtep(file)       &rarr; bool<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Read coordinates from an ORTEP input file. Return true if successful.
+</p>
+</div>
+</div>
+
+<div id="method-M000134" class="method-detail">
+<a name="M000134"></a>
+<div class="method-heading">
+<span class="method-name">loadxyz(file) &rarr; bool</span>
+</div>
+<div class="method-description">
+<p>
+Load molecule from a text file describing the cartesian coordinates. The first line may be "natoms a b c alpha beta gamma", which defines crystallographic unit cell; in this case, the coordinates are regarded as crystallographic internal coordinates. (The first "natoms" field is present for historical reasons.)
+</p>
+</div>
+</div>
+
+<div id="method-M000170" class="method-detail">
+<a name="M000170"></a>
+<div class="method-heading">
+<span class="method-name">max(group = nil) &rarr; <a href="Vector3D.html">Vector3D</a></span>
+</div>
+<div class="method-description">
+<p>
+Return a Vector3D consisting of the largest value of x/y/z coordinates for the atoms in the group. If group is not given, all atoms are considered. Equivalent to <a href="Molecule.html#M000288">self.bounds</a>[1].
+</p>
+</div>
+</div>
+
+<div id="method-M000232" class="method-detail">
+<a name="M000232"></a>
+<div class="method-heading">
+<span class="method-name">max_residue_number(group = nil)     &rarr; Integer<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns the maximum residue number used in the given group. If group is not specified, all atoms are considered. If no atom is present, nil is returned.
+</p>
+</div>
+</div>
+
+<div id="method-M000313" class="method-detail">
+<a name="M000313"></a>
+<div class="method-heading">
+<span class="method-name">md_arena &rarr; <a href="MDArena.html">MDArena</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns the <a href="MDArena.html">MDArena</a> object associated to this
+molecule. If no <a href="MDArena.html">MDArena</a> is associated to this
+molecule, a new arena is created.
+</p>
+</div>
+</div>
+
+<div id="method-M000290" class="method-detail">
+<a name="M000290"></a>
+<div class="method-heading">
+<span class="method-name">measure_angle(n1, n2, n3)       &rarr; Float<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Calculate the bond angle. The arguments can either be atom indices, the
+&quot;residue:name&quot;
+representation, or <a href="Vector3D.html">Vector3D</a> values. The return
+value is in <b>degree</b> (not radian).
+</p>
+</div>
+</div>
+
+<div id="method-M000289" class="method-detail">
+<a name="M000289"></a>
+<div class="method-heading">
+<span class="method-name">measure_bond(n1, n2)       &rarr; Float<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Calculate the bond length. The arguments can either be atom indices, the
+&quot;residue:name&quot;
+representation, or <a href="Vector3D.html">Vector3D</a> values.
+</p>
+</div>
+</div>
+
+<div id="method-M000291" class="method-detail">
+<a name="M000291"></a>
+<div class="method-heading">
+<span class="method-name">measure_dihedral(n1, n2, n3, n4)       &rarr; Float<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Calculate the dihedral angle. The arguments can either be atom indices, the
+&quot;residue:name&quot;
+representation, or <a href="Vector3D.html">Vector3D</a> values. The return
+value is in <b>degree</b> (not radian).
+</p>
+</div>
+</div>
+
+<div id="method-M000169" class="method-detail">
+<a name="M000169"></a>
+<div class="method-heading">
+<span class="method-name">min(group = nil)</span>
+</div>
+<div class="method-description">
+<p>
+Return a Vector3D consisting of the smallest value of x/y/z coordinates for the atoms in the group. If group is not given, all atoms are considered. Equivalent to <a href="Molecule.html#M000288">self.bounds</a>[0].
+</p>
+</div>
+</div>
+
+<div id="method-M000233" class="method-detail">
+<a name="M000233"></a>
+<div class="method-heading">
+<span class="method-name">min_residue_number(group = nil)     &rarr; Integer<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns the minimum residue number used in the given group. If group is not specified, all atoms are considered. If no atom is present, nil is returned.
+</p>
+</div>
+</div>
+
+<div id="method-M000200" class="method-detail">
+<a name="M000200"></a>
+<div class="method-heading">
+<span class="method-name">molload(file, *args)       &rarr; bool<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Read a structure from the given file by calling the public method
+&quot;loadXXX&quot; (XXX is the file type given by the extension). If this
+method fails, then all defined (public)
+&quot;loadXXX&quot; methods are invoked, and raises an exception if none of
+them were successful.
+</p>
+</div>
+</div>
+
+<div id="method-M000201" class="method-detail">
+<a name="M000201"></a>
+<div class="method-heading">
+<span class="method-name">molsave(file, *args)       &rarr; bool<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Write a structure/coordinate to the given file by calling the public method
+&quot;saveXXX&quot; (XXX is the file type given by the extension).
+</p>
+</div>
+</div>
+
+<div id="method-M000207" class="method-detail">
+<a name="M000207"></a>
+<div class="method-heading">
+<span class="method-name">name       &rarr; String<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns the name of the molecule, which is the basename of the filename of the associated document. If the molecule has no associated document, nil is returned.
+</p>
+</div>
+</div>
+
+<div id="method-M000219" class="method-detail">
+<a name="M000219"></a>
+<div class="method-heading">
+<span class="method-name">nangles       &rarr; Integer<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns the number of angles.
+</p>
+<p>
+<i>See Also:</i> <a href="Molecule.html#M000213">Molecule#angles</a>.
+</p>
+</div>
+</div>
+
+<div id="method-M000217" class="method-detail">
+<a name="M000217"></a>
+<div class="method-heading">
+<span class="method-name">natoms       &rarr; Integer<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns the number of atoms.
+</p>
+<p>
+<i>See Also:</i> <a href="Molecule.html#M000211">Molecule#atoms</a>.
+</p>
+</div>
+</div>
+
+<div id="method-M000218" class="method-detail">
+<a name="M000218"></a>
+<div class="method-heading">
+<span class="method-name">nbonds       &rarr; Integer<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns the number of bonds.
+</p>
+<p>
+<i>See Also:</i> <a href="Molecule.html#M000212">Molecule#bonds</a>.
+</p>
+</div>
+</div>
+
+<div id="method-M000220" class="method-detail">
+<a name="M000220"></a>
+<div class="method-heading">
+<span class="method-name">ndihedrals       &rarr; Integer<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns the number of dihedrals.
+</p>
+<p>
+<i>See Also:</i> <a href="Molecule.html#M000214">Molecule#dihedrals</a>.
+</p>
+</div>
+</div>
+
+<div id="method-M000319" class="method-detail">
+<a name="M000319"></a>
+<div class="method-heading">
+<span class="method-name">nelpots &rarr; Integer<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get the number of electrostatic potential info.
+</p>
+<p>
+<i>See Also:</i> <a href="Molecule.html#M000320">Molecule#elpot</a>
+</div>
+</div>
+
+<div id="method-M000171" class="method-detail">
+<a name="M000171"></a>
+<div class="method-heading">
+<span class="method-name">neutralize(charge = 0.0, group = nil)</span>
+</div>
+<div class="method-description">
+<p>
+Shift the partial charges of atoms, so that the sum of the charges becomes the specified value. If group is specified, only the atoms in the group are examined.
+</p>
+</div>
+</div>
+
+<div id="method-M000267" class="method-detail">
+<a name="M000267"></a>
+<div class="method-heading">
+<span class="method-name">nframes &rarr; Integer<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get the number of frames.
+</p>
+<p>
+<i>See Also:</i> <a href="Molecule.html#M000265">Molecule#frame</a>, <a href="Molecule.html#M000266">Molecule#frame=</a>
+</p>
+</div>
+</div>
+
+<div id="method-M000221" class="method-detail">
+<a name="M000221"></a>
+<div class="method-heading">
+<span class="method-name">nimpropers       &rarr; Integer<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns the number of impropers.
+</p>
+<p>
+<i>See Also:</i> <a href="Molecule.html#M000215">Molecule#impropers</a>.
+</p>
+</div>
+</div>
+
+<div id="method-M000230" class="method-detail">
+<a name="M000230"></a>
+<div class="method-heading">
+<span class="method-name">nresidues       &rarr; Integer<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns the number of residues.
+</p>
+<p>
+<i>See Also:</i> <a href="Molecule.html#M000216">Molecule#residues</a>.
+</p>
+</div>
+</div>
+
+<div id="method-M000231" class="method-detail">
+<a name="M000231"></a>
+<div class="method-heading">
+<span class="method-name">self.nresidues = Integer<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Change the number of residues.
+</p>
+<p>
+<i>See Also:</i> <a href="Molecule.html#M000216">Molecule#residues</a>, <a href="Molecule.html#M000230">Molecule#nresidues</a>.
+</p>
+</div>
+</div>
+
+<div id="method-M000241" class="method-detail">
+<a name="M000241"></a>
+<div class="method-heading">
+<span class="method-name">nsymmetries &rarr; Integer<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get the number of currently defined symmetry operations.
+</p>
+<p>
+<i>See Also:</i> <a href="Molecule.html#M000240">Molecule#symmetries</a>
+</p>
+</div>
+</div>
+
+<div id="method-M000259" class="method-detail">
+<a name="M000259"></a>
+<div class="method-heading">
+<span class="method-name">offset_residue(group, offset)       &rarr; self<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Offset the residue number of the specified atoms. If any of the residue number gets
+negative, then exception is thrown. This operation is undoable.
+</p>
+</div>
+</div>
+
+<div id="method-M000124" class="method-detail">
+<a name="M000124"></a>
+<div class="method-heading">
+<span class="method-name">orthogonal_vector(v)</span>
+</div>
+<div class="method-description">
+<p>
+Returns an arbitrary unit vector that is orthogonal to v
+</p>
+</div>
+</div>
+
+<div id="method-M000315" class="method-detail">
+<a name="M000315"></a>
+<div class="method-heading">
+<span class="method-name">parameter &rarr; <a href="Parameter.html">Parameter</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get a <a href="Parameter.html">Parameter</a> object that represents the local 
+parameters for this molecule. This method may call <code>self.md_arena.prepare(true)</code> internally, so that the side effect caused by <a href="MDArena.html#M000046">MDArena#prepare</a> may be observed.
+</p>
+</div>
+</div>
+
+<div id="method-M000208" class="method-detail">
+<a name="M000208"></a>
+<div class="method-heading">
+<span class="method-name">path       &rarr; String<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns the full path name of the molecule, if it has an associated document.
+If the molecule has no associated document, then returns nil.
+</p>
+<p>
+<i>See Also:</i> <a href="Molecule.html#M000209">Molecule#dir</a>, <a href="Molecule.html#M000207">Molecule#name</a>
+</p>
+</div>
+</div>
+
+<div id="method-M000226" class="method-detail">
+<a name="M000226"></a>
+<div class="method-heading">
+<span class="method-name">ps_per_step       &rarr; Float<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns the time increment (in picoseconds) for one step (defined by dcd
+format).
+</p>
+<p>
+<i>See Also:</i> <a href="Molecule.html#M000195">Molecule#loaddcd</a>, <a href="Molecule.html#M000227">Molecule#ps_per_step=</a>
+</p>
+</div>
+</div>
+
+<div id="method-M000227" class="method-detail">
+<a name="M000227"></a>
+<div class="method-heading">
+<span class="method-name">ps_per_step = Float<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Set the time increment (in picoseconds) for one step (defined by dcd
+format).
+</p>
+<p>
+<i>See Also:</i> <a href="Molecule.html#M000195">Molecule#loaddcd</a>, <a href="Molecule.html#M000226">Molecule#ps_per_step</a>
+</p>
+</div>
+</div>
+
+<div id="method-M000283" class="method-detail">
+<a name="M000283"></a>
+<div class="method-heading">
+<span class="method-name">reflect(axis, center = [0,0,0], group = nil)       &rarr; self<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Reflect the molecule by the plane which is perpendicular to axis and
+including center. axis must not be a zero vector. If group is given, only
+the atoms in the group are moved. This
+operation is undoable.
+</p>
+</div>
+</div>
+
+<div id="method-M000272" class="method-detail">
+<a name="M000272"></a>
+<div class="method-heading">
+<span class="method-name">register_undo(script, *args)</span>
+</div>
+<div class="method-description">
+<p>
+Register an undo operation with the current molecule. When "undo" menu command is selected, a command "script(*args)" is executed. If self has no associated document, do nothing.
+</p>
+</div>
+</div>
+
+<div id="method-M000246" class="method-detail">
+<a name="M000246"></a>
+<div class="method-heading">
+<span class="method-name">remove(group)       &rarr; self<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+The atoms in the group are removed from the molecule. This operation is undoable.
+</p>
+</div>
+</div>
+
+<div id="method-M000253" class="method-detail">
+<a name="M000253"></a>
+<div class="method-heading">
+<span class="method-name">remove_angle(n1, n2, n3)       &rarr; self<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Remove angle n1-n2-n3. Returns self. Usually, angles are automatically removed when any of the constituent bonds are removed, so it is rarely necessary to use this method explicitly.
+This operation is undoable.
+</p>
+<p>
+<i>See Also:</i> <a href="Molecule.html#remove_bond">Molecule#remove_bond</a>
+</p>
+</div>
+</div>
+
+<div id="method-remove_bond" class="method-detail">
+<a name="remove_bond"></a>
+<div class="method-heading">
+<span class="method-name">remove_bond(n1, n2, ...)       &rarr; Integer<br />
+<span class="method-name">remove_bonds(n1, n2, ...)       &rarr; Integer<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Remove bond(s) between atoms n1 and n2, n3 and n4, and so on.
+The angles, dihedrals, and impropers including the removed bonds are automatically removed.
+If a bond for a particular pair of atoms is not present, do nothing for that pair.
+Returns the number of bonds actually removed. This operation is undoable.
+</p>
+</div>
+</div>
+
+<div id="method-M000255" class="method-detail">
+<a name="M000255"></a>
+<div class="method-heading">
+<span class="method-name">remove_dihedral(n1, n2, n3, n4)       &rarr; self<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Remove dihedral n1-n2-n3-n4. Returns self. Usually, dihedrals are automatically removed when any of the constituent bonds are removed, so it is rarely necessary to use this method explicitly.
+This operation is undoable.
+</p>
+<p>
+<i>See Also:</i> <a href="Molecule.html#remove_bond">Molecule#remove_bond</a>
+</p>
+</div>
+</div>
+
+<div id="method-M000270" class="method-detail">
+<a name="M000270"></a>
+<div class="method-heading">
+<span class="method-name">
+remove_frame(intGroup, want_coordinates = false)<br />
+remove_frames(intGroup, want_coordinates = false)<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Remove the frames at group. If want_coordinates is false (default), returns
+true if successful and nil otherwise. If want_coordinates is true, an array
+of arrays of the coordinates in the removed frames is returned.
+</p>
+</div>
+</div>
+
+<div id="method-M000257" class="method-detail">
+<a name="M000257"></a>
+<div class="method-heading">
+<span class="method-name">remove_improper(n1, n2, n3, n4)       &rarr; self<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Remove improper n1-n2-n3-n4. Returns self. Usually, impropers are automatically 
+removed when any of the constituent bonds are removed, so it is rarely necessary to use this method explicitly.
+This operation is undoable.
+</p>
+<p>
+<i>See Also:</i> <a href="Molecule.html#remove_bond">Molecule#remove_bond</a>
+</p>
+</div>
+</div>
+
+<div id="method-M000243" class="method-detail">
+<a name="M000243"></a>
+<div class="method-heading">
+<span class="method-name">remove_symmetry(count = nil) &rarr; Integer<br />
+remove_symmetries(count = nil) &rarr; Integer<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Remove the specified number of symmetry operations.
+The last added ones are removed first. If count is nil, then all symmetry operations are removed. Returns the number of leftover symmetry operations. This operation is undoable.
+</p>
+</div>
+</div>
+
+<div id="method-M000260" class="method-detail">
+<a name="M000260"></a>
+<div class="method-heading">
+<span class="method-name">renumber_atoms(array)       &rarr; <a href="IntGroup.html">IntGroup</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Change the order of atoms so that the atoms specified in the array argument
+appear in this order from the top of the molecule. The atoms that are not included in array are
+placed after these atoms, and these atoms are returned as an intGroup. This
+operation is undoable.
+</p>
+</div>
+</div>
+
+<div id="method-M000216" class="method-detail">
+<a name="M000216"></a>
+<div class="method-heading">
+<span class="method-name">residues       &rarr; <a href="MolEnumerable.html">MolEnumerable</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns a <a href="MolEnumerable.html">MolEnumerable</a> object
+representing the array of residue names.
+</p>
+<p>
+<i>See Also:</i> <a href="Molecule.html#M000230">Molecule#nresidues</a>
+</p>
+</div>
+</div>
+
+<div id="method-M000282" class="method-detail">
+<a name="M000282"></a>
+<div class="method-heading">
+<span class="method-name">rotate(axis, angle, center = [0,0,0], group = nil)       &rarr; self<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Rotate the molecule. The axis must not a zero vector. angle is given in
+<b>degree</b> (not radian). If group is given, only the atoms
+in the group are moved. This operation is undoable.
+</p>
+</div>
+</div>
+
+<div id="method-M000174" class="method-detail">
+<a name="M000174"></a>
+<div class="method-heading">
+<span class="method-name">rotate_fragment(n1, n2, angle)</span>
+</div>
+<div class="method-description">
+<p>
+Rotate the molecular fragment. The fragment given by &quot;<a
+href="Molecule.html#M000277">fragment</a>(n2, n1)&quot; is rotated, with
+the atom n1 as the center and the vector n2-&gt;n1 as the axis.
+Note the order of the arguments; the fragment including n2 is rotated. This operation is undoable.
+</p>
+</div>
+</div>
+
+<div id="method-M000173" class="method-detail">
+<a name="M000173"></a>
+<div class="method-heading">
+<span class="method-name">rotate_with_axis(xv, yv, cv = nil, group = nil)</span>
+</div>
+<div class="method-description">
+<p>
+Move the molecule (or the group if specified) so that cv becomes the origin, xv points to the x-axis, and yv lies in the xy-plane (with the y-coordinate to be positive). If cv is nil, it is equivalent to [0, 0, 0]. This operation is undoable.
+</p>
+</div>
+</div>
+
+<div id="method-M000139" class="method-detail">
+<a name="M000139"></a>
+<div class="method-heading">
+<span class="method-name">savecom(file) &rarr; bool<br />
+savegjf(file) &rarr; bool</span>
+</div>
+<div class="method-description">
+<p>
+Write a Gaussian input file. Returns true if successful.
+</p>
+</div>
+</div>
+
+<div id="method-M000132" class="method-detail">
+<a name="M000132"></a>
+<div class="method-heading">
+<span class="method-name">savecrd(file) &rarr; bool</span>
+</div>
+<div class="method-description">
+<p>
+Write coordinates to a crd file. Returns true if successful.
+</p>
+</div>
+</div>
+
+<div id="method-M000205" class="method-detail">
+<a name="M000205"></a>
+<div class="method-heading">
+<span class="method-name">savedcd(file)       &rarr; bool<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Write coordinates to a dcd file. Returns true if successful.
+</p>
+</div>
+</div>
+
+<div id="method-M000138" class="method-detail">
+<a name="M000138"></a>
+<div class="method-heading">
+<span class="method-name">saveinp(file) &rarr; bool</span>
+</div>
+<div class="method-description">
+<p>
+Write a GAMESS input file. Returns true if successful.
+</p>
+</div>
+</div>
+
+<div id="method-M000202" class="method-detail">
+<a name="M000202"></a>
+<div class="method-heading">
+<span class="method-name">savembsf(file)       &rarr; bool<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Write structure as a mbsf file. Returns true if successful.
+</p>
+</div>
+</div>
+
+<div id="method-M000204" class="method-detail">
+<a name="M000204"></a>
+<div class="method-heading">
+<span class="method-name">savepdb(file)       &rarr; bool<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Write coordinates to a pdb file. Returns true if successful.
+</p>
+</div>
+</div>
+
+<div id="method-M000203" class="method-detail">
+<a name="M000203"></a>
+<div class="method-heading">
+<span class="method-name">savepsf(file)       &rarr; bool<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Write structure as a psf file. Returns true if successful.
+</p>
+<p>
+Note: when a document is saved as a psf file from a menu command, a pdb file is created at the same time. However, this is <b>not</b> the case with the script command savepsf. You need to invoke savepdb explicitly, if you want a pdb file.
+</p>
+</div>
+</div>
+
+<div id="method-M000206" class="method-detail">
+<a name="M000206"></a>
+<div class="method-heading">
+<span class="method-name">savetep(file)       &rarr; bool<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Write an ORTEP input file. Returns true if successful.
+</p>
+</div>
+</div>
+
+<div id="method-M000321" class="method-detail">
+<a name="M000321"></a>
+<div class="method-heading">
+<span class="method-name">search_equivalent_atoms(ig = nil) &rarr; Array of Integer<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Search topologically equivalent atoms (within the atom group if given).
+Returns an array of integers of size natoms, each entry designates the equivalent atom with the lowest index, or -1 if no equivalent atoms are present.
+</p>
+</div>
+</div>
+
+<div id="method-M000316" class="method-detail">
+<a name="M000316"></a>
+<div class="method-heading">
+<span class="method-name">selectedMO &rarr; <a href="IntGroup.html">IntGroup</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns a group of selected MO in the &quot;MO Info&quot; table. If the MO
+info table is not selected, returns nil. If the MO info table is selected
+but no MOs are selected, returns an empty <a
+href="IntGroup.html">IntGroup</a>. The numbers in the table are 1-based.
+</p>
+</div>
+</div>
+
+<div id="method-M000262" class="method-detail">
+<a name="M000262"></a>
+<div class="method-heading">
+<span class="method-name">selection       &rarr; <a href="IntGroup.html">IntGroup</a> (frozen)<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns the current selection. The returned value is frozen.
+</p>
+</div>
+</div>
+
+<div id="method-M000263" class="method-detail">
+<a name="M000263"></a>
+<div class="method-heading">
+<span class="method-name">self.selection = group<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Set the current selection. The right-hand operand (of class <a href="IntGroup.html">IntGroup</a>) may be
+nil, in which case all atoms will be unselected.
+This operation is <b>not</b> undoable. If you need undo, use <a
+href="Molecule.html#M000264">set_undoable_selection</a> instead.
+</p>
+</div>
+</div>
+
+<div id="method-M000275" class="method-detail">
+<a name="M000275"></a>
+<div class="method-heading">
+<span class="method-name">set_atom_attr(index, key, value)<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Set the atom attribute for the specified atom. Equivalent to <a href="Molecule.html#M000211">self.atoms</a>[index].key = value. See the methods of class <a href"AtomRef.html">AtomRef</a> for available atrributes. This operation is undoable.
+</p>
+</div>
+</div>
+
+<div id="method-M000181" class="method-detail">
+<a name="M000181"></a>
+<div class="method-heading">
+<span class="method-name">set_dihedral(n1, n2, n3, n4, angle)</span>
+</div>
+<div class="method-description">
+<p>
+Set the dihedral angle n1-n2-n3-n4 to the specified value. The bond n2-n3 should be rotatable. The fragment including n3 and n4 are rotated. This operation is undoable.
+</p>
+</div>
+</div>
+
+<div id="method-M000264" class="method-detail">
+<a name="M000264"></a>
+<div class="method-heading">
+<span class="method-name">set_undoable_selection(group)<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Set the current selection with undo registration. The
+right-hand operand (of class <a href="IntGroup.html">IntGroup</a>) may be nil, in which case all atoms are unselected.
+This operation is undoable.
+</p>
+</div>
+</div>
+
+<div id="method-M000301" class="method-detail">
+<a name="M000301"></a>
+<div class="method-heading">
+<span class="method-name">show_dummy_atoms &rarr; bool<br />
+show_dummy_atoms(bool)<br />
+self.show_dummy_atoms = bool<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Set the flag whether to show the dummy atoms. If no argument is given, the current flag is returned.
+</p>
+</div>
+</div>
+
+<div id="method-M000305" class="method-detail">
+<a name="M000305"></a>
+<div class="method-heading">
+<span class="method-name">show_ellipsoids &rarr; bool<br />
+show_ellipsoids(bool)<br />
+self.show_ellipsoids = bool<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Set the flag whether to show the thermal ellipsoids. If no argument is
+given, the current flag is returned.
+</p>
+</div>
+</div>
+
+<div id="method-M000303" class="method-detail">
+<a name="M000303"></a>
+<div class="method-heading">
+<span class="method-name">show_expanded &rarr; bool<br />
+show_expanded(bool)<br />
+self.show_expanded = bool<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Set the flag whether to show the expanded atoms. If no argument is given, the current flag is returned.
+</p>
+</div>
+</div>
+
+<div id="method-M000307" class="method-detail">
+<a name="M000307"></a>
+<div class="method-heading">
+<span class="method-name">show_graphite &rarr; Integer<br />
+self.show_graphite = Integer<br />
+</span>
+</div>
+
+<div class="method-description">
+<p>
+Set whether to show the graphite plane. The plane is assumed to be on the xy plane. If the argument is positive, it also indicates the number of rings to display for each direction. If the argument is zero, the plane is not displayed. If no argument is given, the current value is returned.
+</p>
+</div>
+</div>
+
+<div id="method-M000299" class="method-detail">
+<a name="M000299"></a>
+<div class="method-heading">
+<span class="method-name">show_hydrogens &rarr; bool<br />
+show_hydrogens(bool)<br />
+self.show_hydrogens = bool<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Set the flag whether to show the hydrogen atoms. If no argument is given, the current flag is returned.
+</p>
+</div>
+</div>
+
+<div id="method-M000309" class="method-detail">
+<a name="M000309"></a>
+<div class="method-heading">
+<span class="method-name">self.show_periodic_image = [amin, amax, bmin, bmax, cmin, cmax]<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Set the number of periodic images to show along each cell axis. If the unit cell is not defined, the values are set but no visual effects are observed.
+</p>
+</div>
+</div>
+
+<div id="method-M000312" class="method-detail">
+<a name="M000312"></a>
+<div class="method-heading">
+<span class="method-name">show_text(string)<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Show the string in the info text box in the molecule window.
+</p>
+</div>
+</div>
+
+<div id="method-M000298" class="method-detail">
+<a name="M000298"></a>
+<div class="method-heading">
+<span class="method-name">show_unitcell &rarr; bool<br />
+show_unitcell(bool)<br />
+self.show_unitcell = bool<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Set the flag whether to show the unit cell. If no argument is given, the current flag is returned.
+</p>
+</div>
+</div>
+
+<div id="method-M000188" class="method-detail">
+<a name="M000188"></a>
+<div class="method-heading">
+<span class="method-name">solvate(sbox, size = [10.0, 10.0, 10.0], limit = 3.0) &rarr; <a href="IntGroup.html">IntGroup</a></span>
+</div>
+<div class="method-description">
+<p>
+Solvate the molecule with the given solvent box. The first argument (sbox)
+must be a <a href="Molecule.html">Molecule</a> containing the solvent, which
+must have a unit cell information. The second argument
+defines the size of the solvated system. A positive number represents an
+offset to the bounding box of the
+solute, and a negative number represents an absolute size.
+The third argument represents the limit distance to avoid
+conflict between the solute and solvent. The solvent molecule containing atoms
+within this limit from the solute is removed.
+</p>
+<p>
+The return value is the IntGroup representing the added solvent atoms. This operation is undoable.
+</p>
+</div>
+</div>
+
+<div id="method-M000222" class="method-detail">
+<a name="M000222"></a>
+<div class="method-heading">
+<span class="method-name">start_step       &rarr; Integer<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns the start step (defined by dcd format).
+</p>
+</div>
+</div>
+
+<div id="method-M000223" class="method-detail">
+<a name="M000223"></a>
+<div class="method-heading">
+<span class="method-name">self.start_step = Integer<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Set the start step (defined by dcd format).
+</p>
+</div>
+</div>
+
+<div id="method-M000224" class="method-detail">
+<a name="M000224"></a>
+<div class="method-heading">
+<span class="method-name">steps_per_frame       &rarr; Integer<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns the number of steps between frames (defined by dcd format).
+</p>
+</div>
+</div>
+
+<div id="method-M000225" class="method-detail">
+<a name="M000225"></a>
+<div class="method-heading">
+<span class="method-name">self.steps_per_frame = Integer<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Set the number of steps between frames (defined by dcd format).
+</p>
+</div>
+</div>
+
+<div id="method-M000240" class="method-detail">
+<a name="M000240"></a>
+<div class="method-heading">
+<span class="method-name">symmetry &rarr; Array of <a href="Transform.html">Transform</a><br />
+symmetries &rarr; Array of <a href="Transform.html">Transform</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get the currently defined symmetry operations. If no symmetry operation is
+defined, returns an empty array.
+</p>
+</div>
+</div>
+
+<div id="method-M000285" class="method-detail">
+<a name="M000285"></a>
+<div class="method-heading">
+<span class="method-name">transform(transform, group = nil)       &rarr; self<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Transform the molecule by the given <a href="Transform.html">Transform</a> object.
+If group is given, only the atoms in the group are moved. This operation is undoable.
+</p>
+</div>
+</div>
+
+<div id="method-M000281" class="method-detail">
+<a name="M000281"></a>
+<div class="method-heading">
+<span class="method-name">translate(vec, group = nil)       &rarr; self<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Translate the molecule by vec. If group is given, only the atoms in the group are moved. This
+operation is undoable.
+</p>
+</div>
+</div>
+
+<div id="method-M000274" class="method-detail">
+<a name="M000274"></a>
+<div class="method-heading">
+<span class="method-name">self.undo_enabled = bool<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Enable or disable undo.
+</p>
+</div>
+</div>
+
+<div id="method-M000273" class="method-detail">
+<a name="M000273"></a>
+<div class="method-heading">
+<span class="method-name">undo_enabled? &rarr; bool<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns true if undo is enabled for this molecule; otherwise no.
+</p>
+</div>
+</div>
+
+<div id="method-M000297" class="method-detail">
+<a name="M000297"></a>
+<div class="method-heading">
+<span class="method-name">self.update_enabled = bool<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Enable or disable screen update. This is effective for automatic update on
+modification. Explicit call to <a href="Molecule.html#M000295">Molecule#display</a> always updates the
+screen.
+</p>
+</div>
+</div>
+
+<div id="method-M000296" class="method-detail">
+<a name="M000296"></a>
+<div class="method-heading">
+<span class="method-name">update_enabled? &rarr; bool<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns true if screen update is enabled; otherwise no.
+</p>
+</div>
+</div>
+
+<div id="method-M000293" class="method-detail">
+<a name="M000293"></a>
+<div class="method-heading">
+<span class="method-name">wrap_unit_cell(group) &rarr; <a href="Vector3D.html">Vector3D</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Move the specified group so that the center of mass of the group is within
+the unit cell. The offset vector is
+returned. If no unit cell is
+defined, exception is raised. This operation is undoable.
+</p>
+</div>
+</div>
+
+</div>
+
+</body>
+</html>

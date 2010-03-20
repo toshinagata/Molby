@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>Class: DialogItem</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Script-Type" content="text/javascript" />
+  <link rel="stylesheet" href="rdoc-style.css" type="text/css" media="screen" />
+</head>
+<body>
+
+<div id="navi">
+<a href="../index.html">[Molby Document Home]</a>
+<a href="../ruby_ref.html">[Contents]</a>
+</div>
+
+<div id="classHeader">
+<table class="header-table">
+<tr>
+<td><strong>Class:</strong></td>
+<td class="class-name-in-header">DialogItem</td>
+</tr>
+<tr>
+<td><strong>Parent:</strong></td>
+<td><a href="Object.html">Object</a></td>
+</tr>
+</table>
+</div>
+
+<div id="section">
+<h3 class="section-bar">Description</h3>
+<a name="description-overview"></a>
+<h4>Overview</h4>
+<p>
+The class <a href="DialogItem.html">DialogItem</a> represents an item in a <a href="Dialog.html">Dialog</a>. There are two default dialog items ("OK" and "Cancel" buttons); other items are created by <a href="Dialog.html#M000087">Dialog#item</a>.
+</p>
+<a name="item_types"></a>
+<h4>Item types</h4>
+<p>
+A <a href="DialogItem.html">DialogItem</a> object belongs to one of the following types. The type should be designated when an item is created (as the first argument to <a href="Dialog.html#M000087">Dialog#item</a>).
+</p>
+<ul>
+<li><b>text</b>: A static text.</li>
+<li><b>textfield</b>: A text box that accepts user input.</li>
+<li><b>textview</b>: Similar to the text field, but accepts multiline inputs and has a vertical scroll bar.</li>
+<li><b>view</b>: An empty placeholder.</li>
+<li><b>line</b>: A separator line. May be vertical or horizontal.</li>
+<li><b>button</b>: A standard push button with a short text inside.</li>
+<li><b>popup</b>: A button with a popup menu.</li>
+<li><b>checkbox</b>: A checkbox with a text.</li>
+<li><b>radio</b>: A radio button. This is a single button, and a radio group can be defined by <a href="Dialog.html#M000094">Dialog#radio_group</a>.</li>
+</ul>
+<h4>Item attributes</h4>
+<p>
+Dialog items have various attributes. Some attributes are common to all items, and others are specific to some item types. Available attributes are listed below:
+</p>
+<table cellspacing="0" border="1">
+<tr><th>Name</th><th>Item Type</th><th>Description</th></tr>
+<tr><td>action</td><td>textfield, textview,<br />button, popup,<br />checkbox, radio</td><td>The action procedure. See <a href="#actions">Actions</a> for how this attribute is used.</td></tr>
+<tr><td>dialog</td><td>all</td><td>The <a href="Dialog.html">Dialog</a> object which this item belongs to.</td></tr>
+<tr><td>editable</td><td>textfield, textview</td><td>A boolean value indicating whether the text in this item is editable.</td></tr>
+<tr><td>enabled</td><td>all except line</td><td>A boolean value indicating whether the item is enabled.</td></tr>
+<tr><td>hidden</td><td>all</td><td>A boolean value indicating whether the item is hidden.</td></tr>
+<tr><td>index</td><td>all</td><td>The non-negative integer to identify the item in the parent dialog. The indices 0 and 1 always correspond to the "OK" and "Cancel" buttons (either or both of which may be hidden).</td></tr>
+<tr><td>range</td><td>textfield</td><td>An array of two numerics, which indicates that the value must be a numeric within the specified range.</td></tr>
+<tr><td>subitems</td><td>popup</td><td>An array of strings representing the subitems included in this item.</td></tr>
+<tr><td>tag</td><td>all</td><td>The identification tag. The value must not be an integer.</td></tr>
+<tr><td>title</td><td>text, button, <br/ >checkbox, radio</td><td>The title string.</td></tr>
+<tr><td>type</td><td>all</td><td>The item type. The value is a symbol like <code>:button</code>.</td></tr>
+<tr><td>value</td><td>textfield, textview, popup, <br />checkbox, radio</td><td>The value of the control. For the textfield and textview, the value is a string.<br />
+For the popup, the value is an integer indicating the selected item (0-based).<br />
+For the checkbox and radio, the value is 0/1 for off/on state.</td></tr>
+<tr><td>x, y,<br />width, height,<br />origin, size,<br />frame</td><td>all</td><td>The item position and size. The values are represented in the local coordinates of the dialog (or the superview if the item is a child of another view) in pixel unit. The frame is represented as [origin_x, origin_y, size_width, size_height]. The origin of the coordinate system is the top-left position of the dialog (or the superview).</td></tr>
+</table>
+<a name="actions"></a>
+<h4>Actions</h4>
+<p>
+If the "action" attribute is defined, it is called when the dialog items are clicked and/or their values are changed. If the attribute value is a symbol, it is considered as the method name of the parent <a href="Dialog.html">Dialog</a>. Otherwise, the value must be a callable object, most likely a Proc object. In either case, the <a href="DialogItem.html">DialogItem</a> object is passed as the single argument.
+</p>
+<p>
+If the <a href="Dialog.html">Dialog</a> is to be closed as a result of the action procedure, <a href="Dialog.html#end_modal">Dialog#end_modal(n)</a> is used. This method cause termination of the modal session started by <a href="Dialog.html#M000086">Dialog#run</a>, and the argument n will be available in the return value from <a href="Dialog.html#M000086">Dialog#run</a>, which is a hash containing (among other things) a <code>:status=>n</code> entry.
+</p>
+</div>
+
+<div id="methods">
+
+<h3 class="section-bar">Public Instance methods</h3>
+
+<div id="method-M000089" class="method-detail">
+<a name="attr"></a>
+<div class="method-heading">
+<span class="method-name">attr(attribute_name) &rarr; value<br />
+<span class="method-name">self[attribute_name] &rarr; value<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get the attribute value. The attribute name should be given as a symbol.
+</p>
+</div>
+</div>
+
+<div id="method-M000089" class="method-detail">
+<a name="set_attr"></a>
+<div class="method-heading">
+<span class="method-name">set_attr(attribute_name, value) &rarr; value<br />
+<span class="method-name">self[attribute_name] = value &rarr; value<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Set the attribute value. The attribute name should be given as a symbol.
+</p>
+</div>
+</div>
+
+</div>
+
+</body>
+</html>

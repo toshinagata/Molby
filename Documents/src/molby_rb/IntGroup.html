@@ -1,0 +1,326 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>Class: IntGroup</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta http-equiv="Content-Script-Type" content="text/javascript" />
+<link rel="stylesheet" href="rdoc-style.css" type="text/css" media="screen" />
+</head>
+<body>
+
+<div id="navi">
+<a href="../index.html">[Molby Document Home]</a>
+<a href="../ruby_ref.html">[Contents]</a>
+</div>
+
+<div id="classHeader">
+<table class="header-table">
+<tr>
+<td><strong>Class:</strong></td>
+<td class="class-name-in-header">IntGroup</td>
+</tr>
+<tr>
+<td><strong>Parent:</strong></td>
+<td><a href="Object.html">Object</a></td>
+</tr>
+<tr>
+<td><strong>Includes:</strong></td>
+<td>Enumerable</td>
+</tr>
+</table>
+</div>
+
+<div id="section">
+<h3 class="section-bar">Description</h3>
+<p>
+The class <a href="IntGroup.html">IntGroup</a> represents an unordered set of non-negative integers.
+</p>
+</div>
+
+<div id="methods">
+
+<h3 class="section-bar">Public Class methods</h3>
+
+<div id="method-M000018" class="method-detail">
+<a name="M000018"></a>
+<div class="method-heading">
+<span class="method-name">
+new(arg1, arg2,...)<br />
+new(arg1, arg2,...) {|i| ...}<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Create a new integer group. If no
+arguments are given, an empty group is returned. The arguments are either
+<a href="IntGroup.html">IntGroup</a>, Range, Enumerable, or Numeric. In
+either case, the non-negative integers included in the arguments are added
+to the result. If a block is given, the block is called with the each integer 
+in the given arguments, and the integer group consisting with the returned 
+integers is returned.
+</p>
+</div>
+</div>
+
+<h3 class="section-bar">Public Instance methods</h3>
+
+<div id="method-M000023" class="method-detail">
+<a name="M000023"></a>
+<div class="method-heading">
+<span class="method-name">self[index] &rarr; Integer or nil<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get the index-th point in self. If the index is out of range, nil is
+returned.
+</p>
+</div>
+</div>
+
+<div id="method-M000024" class="method-detail">
+<a name="M000024"></a>
+<div class="method-heading">
+<span class="method-name">add(IntGroup) &rarr; self<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Add the points in the given group.
+</p>
+</div>
+</div>
+
+<div id="method-M000017" class="method-detail">
+<a name="M000017"></a>
+<div class="method-heading">
+<span class="method-name">clear &rarr; self<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Discard all integers included in self.
+</p>
+</div>
+</div>
+
+<div id="method-M000030" class="method-detail">
+<a name="M000030"></a>
+<div class="method-heading">
+<span class="method-name">convolute(val) &rarr; (new)IntGroup<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+For each element n in self, get the
+n-th point in val, and return the result as a new group. If n is out of range, then that
+point is ignored.
+</p>
+<p>
+<i>See Also:</i> <a href="IntGroup.html#M000031">IntGroup#deconvolute</a>.
+If all points in self are within the range of val, then an equation
+<tt>self.convolute(val).<a
+href="IntGroup.html#M000031">deconvolute</a>(val) == self</tt> holds.
+</p>
+</div>
+</div>
+
+<div id="method-M000031" class="method-detail">
+<a name="M000031"></a>
+<div class="method-heading">
+<span class="method-name">deconvolute(val) &rarr; (new)IntGroup<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+For each element n in self, find the
+point n in val, and return the found indices as a new group. If n is not found in val, then
+that point is ignored.
+</p>
+<p>
+<i>See Also:</i> <a href="IntGroup.html#M000030">IntGroup#convolute</a>. If
+all points in self are found in val, then an equation
+<tt>self.deconvolute(val).<a
+href="IntGroup.html#M000030">convolute</a>(val) == self</tt> holds.
+</p>
+</div>
+</div>
+
+<div id="method-M000025" class="method-detail">
+<a name="M000025"></a>
+<div class="method-heading">
+<span class="method-name">delete(IntGroup) &rarr; self<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Remove the points in the given group.
+</p>
+</div>
+</div>
+
+<div id="method-M000027" class="method-detail">
+<a name="M000027"></a>
+<div class="method-heading">
+<span class="method-name">difference(val) &rarr; (new)IntGroup<br />
+self - val &rarr; (new)IntGroup<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns a difference group.
+</p>
+</div>
+</div>
+
+<div id="method-M000022" class="method-detail">
+<a name="M000022"></a>
+<div class="method-heading">
+<span class="method-name">each {|i| ...}<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Call the block with each integer in
+self.
+</p>
+</div>
+</div>
+
+<div id="method-M000019" class="method-detail">
+<a name="M000019"></a>
+<div class="method-heading">
+<span class="method-name">dup(IntGroup) &rarr; (new) IntGroup<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+(Deep) copy the given <a href="IntGroup.html">IntGroup</a>.
+</p>
+</div>
+</div>
+
+<div id="method-M000034" class="method-detail">
+<a name="M000034"></a>
+<div class="method-heading">
+<span class="method-name">inspect &rarr; String<br />
+to_s &rarr; String<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Create a String in the form &quot;<a href="IntGroup.html">IntGroup</a>[...]&quot;.
+</p>
+</div>
+</div>
+
+<div id="method-M000028" class="method-detail">
+<a name="M000028"></a>
+<div class="method-heading">
+<span class="method-name">intersection(val) &rarr; (new)IntGroup<br />
+self & val &rarr; (new)IntGroup<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns an intersection group.
+</p>
+</div>
+</div>
+
+<div id="method-M000020" class="method-detail">
+<a name="M000020"></a>
+<div class="method-heading">
+<span class="method-name">length &rarr; Integer<br />
+size &rarr; Integer<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns the number of integers included in self.
+</p>
+</div>
+</div>
+
+<div id="method-M000021" class="method-detail">
+<a name="M000021"></a>
+<div class="method-heading">
+<span class="method-name">member?(val) &rarr; bool<br />
+include?(val) &rarr; bool<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Check whether the val is included in self.
+</p>
+</div>
+</div>
+
+<div id="method-M000032" class="method-detail">
+<a name="M000032"></a>
+<div class="method-heading">
+<span class="method-name">offset(val) &rarr; self<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Move all points by an integer value. A negative val is allowed, but it must
+be no smaller than -(self[0]), otherwise an exception is thrown.
+</p>
+</div>
+</div>
+
+<div id="method-M000033" class="method-detail">
+<a name="M000033"></a>
+<div class="method-heading">
+<span class="method-name">range_at(val) &rarr; Range<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Split self into consecutive chunks of integers, and return the val-th chunk
+as a Range. This method is relatively efficient, because it directly uses
+the internal representation of <a href="IntGroup.html">IntGroup</a>.
+</p>
+</div>
+</div>
+
+<div id="method-M000029" class="method-detail">
+<a name="M000029"></a>
+<div class="method-heading">
+<span class="method-name">sym_difference(val) &rarr; (new)IntGroup<br />
+self ^ val &rarr; (new)IntGroup<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns a symmetric-difference group
+(i.e. a group containing elements that are included in either self or val
+but not both).
+</p>
+</div>
+</div>
+
+<div id="method-M000026" class="method-detail">
+<a name="M000026"></a>
+<div class="method-heading">
+<span class="method-name">union(val) &rarr; (new)IntGroup<br />
+self + val &rarr; (new)IntGroup<br />
+self | val &rarr; (new)IntGroup<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns a union group.
+</p>
+</div>
+</div>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,425 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>Class: Vector3D</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta http-equiv="Content-Script-Type" content="text/javascript" />
+<link rel="stylesheet" href="rdoc-style.css" type="text/css" media="screen" />
+</head>
+<body>
+
+<div id="navi">
+<a href="../index.html">[Molby Document Home]</a>
+<a href="../ruby_ref.html">[Contents]</a>
+</div>
+
+<div id="classHeader">
+<table class="header-table">
+<tr>
+<td><strong>Class:</strong></td>
+<td class="class-name-in-header">Vector3D</td>
+</tr>
+<tr>
+<td><strong>Parent:</strong></td>
+<td><a href="Object.html">Object</a></td>
+</tr>
+</table>
+</div>
+
+<div id="section">
+<h3 class="section-bar">Description</h3>
+<p>
+The class <a href="Vector3D.html">Vector3D</a> represents a three-dimensional vector with three Float numbers.
+</p>
+</div>
+
+<div id="methods">
+
+<h3 class="section-bar">Public Class methods</h3>
+
+<div id="method-M000371" class="method-detail">
+<a name="M000371"></a>
+<div class="method-heading">
+<span class="method-name">Vector3d[fx, fy, fz]   &rarr; (new) Vector3D<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Create a new vector3d object. Equivalent to <a href="#M000347">Vector3D#new</a>([fx, fy, fz]).
+</p>
+</div>
+</div>
+
+<div id="method-M000347" class="method-detail">
+<a name="M000347"></a>
+<div class="method-heading">
+<span class="method-name">new &rarr; (new) Vector3D<br />
+new(Vector3D) &rarr; (new) Vector3D<br />
+new([fx, fy, fz]) &rarr; (new) Vector3D<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns a new <a href="Vector3D.html">Vector3D</a> object. In the first form, a zero vector is returned. In the second form, the given vector3d is duplicated. In the third form, a vector [fx, fy, fz] is returned.
+</p>
+</div>
+</div>
+
+<h3 class="section-bar">Public Instance methods</h3>
+
+<div id="method-M000354" class="method-detail">
+<a name="M000354"></a>
+<div class="method-heading">
+<span class="method-name">self * numeric           &rarr;  (new) Vector3D<br />
+self * val    &rarr;  Float<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+In the first form, the vector is scaled by the numeric. In the second form, the dot (inner) product of the two vectors are returned, which is equivalent to <a href="#M000356">self.dot</a>(val).
+</p>
+</div>
+</div>
+
+<div id="method-M000352" class="method-detail">
+<a name="M000352"></a>
+<div class="method-heading">
+<span class="method-name">self + val   &rarr;   (new) Vector3D<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Add two vectors element by element. Val is converted to a <a href="Vector3D.html">Vector3D</a> if necessary.
+</p>
+</div>
+</div>
+
+<div id="method-M000353" class="method-detail">
+<a name="M000353"></a>
+<div class="method-heading">
+<span class="method-name">self - val   &rarr;   (new) Vector3D<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Subtract two vectors element by element. Val is converted to a <a
+href="Vector3D.html">Vector3D</a> if necessary.
+</p>
+</div>
+</div>
+
+<div id="method-M000358" class="method-detail">
+<a name="M000358"></a>
+<div class="method-heading">
+<span class="method-name">-self                &rarr;  (new) Vector3D<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Calculate the opposite vector.
+</p>
+</div>
+</div>
+
+<div id="method-M000355" class="method-detail">
+<a name="M000355"></a>
+<div class="method-heading">
+<span class="method-name">self / numeric           &rarr;  (new) Vector3D<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+The vector is scaled by the inverse of the given numeric.
+</p>
+</div>
+</div>
+
+<div id="method-M000351" class="method-detail">
+<a name="M000351"></a>
+<div class="method-heading">
+<span class="method-name">self == val   &rarr;   boolean<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Two Vector3D objects are equal if their elements are all equal. Usual caution about comparison between floating point numbers should be paid. Also consider using something like <code><a href="#M000359">self.length</a> &lt; 1e-10</code>.
+</p>
+</div>
+</div>
+
+<div id="method-M000349" class="method-detail">
+<a name="M000349"></a>
+<div class="method-heading">
+<span class="method-name">self[index]        &rarr; Float<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Element Reference. Returns the element at the given index (0, 1, 2 for x, y, z component, respectively). If the index is less than 0 or more than 2, an exception is thrown.
+</p>
+</div>
+</div>
+
+<div id="method-M000350" class="method-detail">
+<a name="M000350"></a>
+<div class="method-heading">
+<span class="method-name">self[index] = val<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Element Assignment. Set the element at index (0, 1, 2 for x, y, z component, respectively). If index is less than 0 or more than 2, an exception is thrown.
+</p>
+</div>
+</div>
+
+<div id="method-M000357" class="method-detail">
+<a name="M000357"></a>
+<div class="method-heading">
+<span class="method-name">self.cross(val) &rarr;  (new) Vector3D<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Calculate the cross (outer) product of
+the two vectors. Val is converted to a <a href="Vector3D.html">Vector3D</a> if necessary.
+</p>
+</div>
+</div>
+
+<div id="method-M000356" class="method-detail">
+<a name="M000356"></a>
+<div class="method-heading">
+<span class="method-name">self.dot(val) &rarr;  Float<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Calculate the dot (inner) product of
+the two vectors. Val is converted to a <a href="Vector3D.html">Vector3D</a> if necessary.
+</p>
+<p>
+<i>See Also:</i> <a href="Vector3D.html#M000354">Vector3D.*</a>.
+</p>
+</div>
+</div>
+
+<div id="method-M000363" class="method-detail">
+<a name="M000363"></a>
+<div class="method-heading">
+<span class="method-name">each {|item| ...}<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Calls block for x, y, z elements, passing that element as a block parameter.
+</p>
+</div>
+</div>
+
+<div id="method-M000370" class="method-detail">
+<a name="M000370"></a>
+<div class="method-heading">
+<span class="method-name">inspect        &rarr; String<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Create a readable string like "Vector3D[fx, fy, fz]".
+</p>
+</div>
+</div>
+
+<div id="method-M000359" class="method-detail">
+<a name="M000359"></a>
+<div class="method-heading">
+<span class="method-name">length                &rarr;  Float<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Calculate the Pythagorean length of the vector. Note that this method is <em>not</em> an alias of <a href="Vector3D.html#M000348">Vector3D#size</a>, which returns 3.
+</p>
+<p>
+<i>See Also:</i> <a href="Vector3D.html#M000360">Vector3D#length2</a>.
+</p>
+</div>
+</div>
+
+<div id="method-M000360" class="method-detail">
+<a name="M000360"></a>
+<div class="method-heading">
+<span class="method-name">length2                &rarr;  Float<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Calculate the square of the Pythagorean length of the vector.
+</p>
+<p>
+<i>See Also:</i> <a href="Vector3D.html#M000359">Vector3D#length</a>.
+</p>
+</div>
+</div>
+
+<div id="method-M000361" class="method-detail">
+<a name="M000361"></a>
+<div class="method-heading">
+<span class="method-name">normalize              &rarr;  (new) Vector3D<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns a unit vector with the same direction. Raises an exception when the vector is a zero vector.
+</p>
+</div>
+</div>
+
+<div id="method-M000372" class="method-detail">
+<a name="M000372"></a>
+<div class="method-heading">
+<span class="method-name">r &rarr; Float</span>
+</div>
+<div class="method-description">
+<p>
+Alias for <a href="Vector3D.html#M000359">length</a>
+</p>
+</div>
+</div>
+
+<div id="method-M000373" class="method-detail">
+<a name="M000373"></a>
+<div class="method-heading">
+<span class="method-name">r2 &rarr; Float</span>
+</div>
+<div class="method-description">
+<p>
+Alias for <a href="Vector3D.html#M000360">length2</a>
+</p>
+</div>
+</div>
+
+<div id="method-M000348" class="method-detail">
+<a name="M000348"></a>
+<div class="method-heading">
+<span class="method-name">size &rarr; Integer<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns 3. This method is present only to be consistent with classes like Array or Vector.
+</p>
+</div>
+</div>
+
+<div id="method-M000362" class="method-detail">
+<a name="M000362"></a>
+<div class="method-heading">
+<span class="method-name">to_a                    &rarr;  Array<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns [self.x, self.y, self.z].
+</p>
+</div>
+</div>
+
+<div id="method-M000374" class="method-detail">
+<a name="M000374"></a>
+<div class="method-heading">
+<span class="method-name">to_s &rarr; String</span>
+</div>
+<div class="method-description">
+<p>
+Alias for <a href="Vector3D.html#M000370">inspect</a>.
+</p>
+</div>
+</div>
+
+<div id="method-M000364" class="method-detail">
+<a name="M000364"></a>
+<div class="method-heading">
+<span class="method-name">x       &rarr; Float<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get the x element of the vector.
+</p>
+</div>
+</div>
+
+<div id="method-M000367" class="method-detail">
+<a name="M000367"></a>
+<div class="method-heading">
+<span class="method-name">x = val<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Set the x element of the vector.
+</p>
+</div>
+</div>
+
+<div id="method-M000365" class="method-detail">
+<a name="M000365"></a>
+<div class="method-heading">
+<span class="method-name">y       &rarr; Float<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get the y element of the vector.
+</p>
+</div>
+</div>
+
+<div id="method-M000368" class="method-detail">
+<a name="M000368"></a>
+<div class="method-heading">
+<span class="method-name">y = val<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Set the y element of the vector.
+</p>
+</div>
+</div>
+
+<div id="method-M000366" class="method-detail">
+<a name="M000366"></a>
+<div class="method-heading">
+<span class="method-name">z       &rarr; Float<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get the z element of the vector.
+</p>
+</div>
+</div>
+
+<div id="method-M000369" class="method-detail">
+<a name="M000369"></a>
+<div class="method-heading">
+<span class="method-name">z = val<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Set the z element of the vector.
+</p>
+</div>
+</div>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,453 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>Class: ParameterRef</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Script-Type" content="text/javascript" />
+  <link rel="stylesheet" href="rdoc-style.css" type="text/css" media="screen" />
+</head>
+<body>
+
+<div id="navi">
+<a href="../index.html">[Molby Document Home]</a>
+<a href="../ruby_ref.html">[Contents]</a>
+</div>
+
+<div id="classHeader">
+<table class="header-table">
+<tr>
+<td><strong>Class:</strong></td>
+<td class="class-name-in-header">ParameterRef</td>
+</tr>
+<tr>
+<td><strong>Parent:</strong></td>
+<td><a href="Object.html">Object</a></td>
+</tr>
+</table>
+</div>
+
+<div id="section">
+<h3 class="section-bar">Description</h3>
+<a name="description-overview"></a>
+<h4>Overview</h4>
+<p>
+The class <a href="ParameterRef.html">ParameterRef</a> points to a parameter at a particular index in a <a href="Parameter.html">Parameter</a> object. <a href="ParameterRef.html">ParameterRef</a> does not implement <span class="method-name">initialize</span> nor <span class="method-name">new</span> methods; i.e. a <a href="ParameterRef.html">ParameterRef</a> object cannot be created explicitly by calling a constructor method. Instead, a <a href="ParameterRef.html">ParameterRef</a> object is implicitly created as a return value of <a href="ParEnumerable.html#M000007">ParEnumerable#[]</a>, or its equivalent methods of <a href="Parameter.html">Parameter</a>, namely <a href="Parameter.html#M000387">Parameter#angle(idx)</a>, <a href="Parameter.html#M000385">Parameter#bond(idx)</a>, <a href="Parameter.html#M000389">Parameter#dihedral(idx)</a>, <a href="Parameter.html#M000399">Parameter#element(idx)</a>, <a href="Parameter.html#M000391">Parameter#improper(idx)</a>, <a href="Parameter.html#M000393">Parameter#vdw(idx)</a>, <a href="Parameter.html#M000397">Parameter#vdw_cutoff(idx)</a>, and <a href="Parameter.html#M000395">Parameter#vdw_pair(idx)</a>. A <a href="ParamterRef.html">ParameterRef</a> is also given as a block argument in <a href="ParEnumerable.html#M000009">ParEnumerable#each</a> and <a href="ParEnumerable.html#M000010">ParEnumerable#reverse_each</a>.
+</p>
+
+<a name="description_parameter_types"></a>
+<h4>Parameter types</h4>
+<p>
+A parameter has one of the following types:
+</p>
+<ul>
+<li><b>bond</b>: Bond stretching parameter, defined by two atom types, a force constant, and an equilibrium length.</li>
+<li><b>angle</b>: Angle bending parameter, defined by three atom types, a force constant, and an equilibrium angle.</li>
+<li><b>dihedral</b>: Dihedral angle torsion parameter, defined by four atom types, a force constant, an equilibrium angle, and a periodicity. There is also an attribute called multiplicity, but it is not (yet) actively implemented in Molby.</li>
+<li><b>improper</b>: Improper torshion parameter, defined by the same attributes as the dihedral angle parameter.</li>
+<li><b>vdw</b>: van der Waals parameter, defined by an atom type, a potential minimum, and a van der Waals radius. The parameter may also specify the potential minimum and vdw radius values for 1-4 interactions specifically. This type of parameter also defines an atomic number and an atomic weight (although in the MM/MD calculations the atomic weight specified in the <a href="AtomRef.html">AtomRef</a> record is actually used).</li>
+<li><b>vdw_pair</b>: Pair-specific van der Waals parameter. This type of parameter defines a van der Waals potential between two specific atom types. It is defined by two atom types, a potential minimum, a van der Waals radius, and the latter two for 1-4 interactions.</li>
+<li><b>vdw_cutoff</b>: Pair-specific van der Waals cutoff parameter. This type of parameter a specific cutoff distance for the van der Waals potential between two specific atom types.</li>
+<li><b>element</b>: This parameter is not for MM/MD calculations, but for collecting information of chemical elements. It contains a name (chemical symbol), a full name (element name), an atomic weight, an atomic radius (for screen display), and a color (also for screen display).</li>
+</ul>
+
+<h4>Parameter attributes</h4>
+<p>
+A parameter consists of a number of attributes. Some of them are common to all kind of parameters, and others are specific to certain types. The common attributes are <a href="#index">index</a>, <a href="#par_type">par_type</a>, <a href="#source">source</a>, and <a href="#comment">comment</a>. Type-specific parameters are as follows:
+</p>
+<table border="1" cellspacing="0">
+<tr><th>type</th><th>attributes</th></tr>
+<tr><td>bond</td><td><a href="#atom_types">atom_types</a>, <a href="#k">k</a>, <a href="#r0">r0</a></td></tr>
+<tr><td>angle</td><td><a href="#atom_types">atom_types</a>, <a href="#k">k</a>, <a href="#a0">a0</a></td></tr>
+<tr><td>dihedral<br />improper</td><td><a href="#atom_types">atom_types</a>, <a href="#mult">mult</a>, <a href="#k">k</a>, <a href="#period">period</a>, <a href="#phi0">phi0</a></td></tr>
+<tr><td>vdw</td><td><a href="#atom_types">atom_type</a>, <a href="#atomic_number">atomic_number</a>, <a href="#r_eq">r_eq</a>, <a href="#eps">eps</a>, <a href="#r_eq14">r_eq14</a>, <a href="#eps14">eps14</a>, <a href="#weight">weight</a></td></tr>
+<tr><td>vdw_pair</td><td><a href="#atom_types">atom_types</a>, <a href="#r_eq">r_eq</a>, <a href="#eps">eps</a>, <a href="#r_eq14">r_eq14</a>, <a href="#eps14">eps14</a></td></tr>
+<tr><td>vdw_cutoff</td><td><a href="#atom_types">atom_types</a>, <a href="#cutoff">cutoff</a></td></tr>
+<tr><td>element</td><td><a href="#atomic_number">atomic_number</a>, <a href="#name">name</a>, <a href="#fullname">fullname</a>, <a href="#radius">radius</a>, <a href="#color">color</a>, <a href="#weight">weight</a></td></tr>
+</table>
+</div>
+
+<div id="section">
+
+<div id="methods">
+<h3 class="section-bar">Public Instance methods</h3>
+
+<div id="method-M000016" class="method-detail">
+<a name="a0"></a>
+<div class="method-heading">
+<span class="method-name">
+a0  &rarr; Float<br />
+self.a0 = Float<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get/set the equilibrium bond angle (in degree). This attribute if available for angle parameters.
+</p>
+</div>
+</div>
+
+<div id="method-M000016" class="method-detail">
+<a name="atom_types"></a>
+<div class="method-heading">
+<span class="method-name">
+atom_type  &rarr; String<br />
+atom_types &rarr; [str1, str2, ...]<br />
+self.atom_type = String<br />
+self.atom_types = [str1, str2, ...]
+</span>
+</div>
+<div class="method-description">
+<p>
+Get/set the atom types to define the parameter. The atom types are represented as a String with the format described in <a href="AtomRef.html#atom_type">AtomRef#atom_type</a>. For the vdw parameter, only one atom type is required. For other parameters, two or more atom types are required, in which case the argument should be an array of atom type strings.
+</p>
+<p>
+The methods <a href="#atom_types">atom_type</a> and <a href="#atom_types">atom_types</a> are actually the same, so a code like <code>pr.atom_type = ["ca", "c3"]</code> is accepted. However, this is a lousy coding style, so it is better to avoid it.
+</p>
+<p>
+This attribute is available for all types except for the element type.
+</p>
+</div>
+</div>
+
+<div id="method-M000016" class="method-detail">
+<a name="atomic_number"></a>
+<div class="method-heading">
+<span class="method-name">
+atomic_number  &rarr; Integer<br />
+self.atomic_number = Integer<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get/set the atomic number. This attribute is available for vdw and element parameters. For vdw parameters, changing the atomic number automatically causes change of the weight attribute. (This is not the case for the element parameters.)
+</p>
+</div>
+</div>
+
+<div id="method-M000016" class="method-detail">
+<a name="color"></a>
+<div class="method-heading">
+<span class="method-name">
+color  &rarr; [red, green, blue]<br />
+self.color = [red, green, blue]<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get/set the color for element parameters. This is used only for screen display. The red, green, blue components are given as floats, with 1.0 for saturation.
+</p>
+</div>
+</div>
+
+<div id="method-M000016" class="method-detail">
+<a name="comment"></a>
+<div class="method-heading">
+<span class="method-name">comment  &rarr; String<br />
+self.comment = String
+</span>
+</div>
+<div class="method-description">
+<p>
+Get/set the comment for the parameter as a String.
+</p>
+</div>
+</div>
+
+<div id="method-M000016" class="method-detail">
+<a name="cutoff"></a>
+<div class="method-heading">
+<span class="method-name">
+cutoff  &rarr; Float<br />
+self.cutoff = Float<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get/set the cutoff distance (in Å) for the vdw_cutoff parameters.
+</p>
+</div>
+</div>
+
+<div id="method-M000016" class="method-detail">
+<a name="eps"></a>
+<div class="method-heading">
+<span class="method-name">
+eps  &rarr; Float<br />
+self.eps = Float<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get/set the minimum potential for the vdw and vdw_pair parameters. The unit is kcal/mol.
+</p>
+</div>
+</div>
+
+<div id="method-M000016" class="method-detail">
+<a name="eps14"></a>
+<div class="method-heading">
+<span class="method-name">
+eps14  &rarr; Float<br />
+self.eps14 = Float<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get/set the 1-4 speicific minimum potential for the vdw and vdw_pair parameters. The unit is kcal/mol.
+</p>
+</div>
+</div>
+
+<div id="method-M000016" class="method-detail">
+<a name="fullname"></a>
+<div class="method-heading">
+<span class="method-name">
+fullname  &rarr; String<br />
+self.fullname = String<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get/set the fullname attribute for the element parameters, like "hydrogen". If you want the element symbol like "H", use <a href="#name">name</a> instead.
+</p>
+</div>
+</div>
+
+<div id="method-M000016" class="method-detail">
+<a name="index"></a>
+<div class="method-heading">
+<span class="method-name">index  &rarr; Integer<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns the index in the parent <a href="ParEnumerable.html">ParEnumerable</a> object.
+</p>
+</div>
+</div>
+
+<div id="method-M000016" class="method-detail">
+<a name="k"></a>
+<div class="method-heading">
+<span class="method-name">
+k  &rarr; Float<br />
+self.k = Float<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get/set the force constant.  This attribute is available for bond, angle, dihedral, and improper parameters. The unit is kcal/mol/Å for bond parameters and kcal/mol/radian for angle, dihedral, and improper parameters.
+</p>
+</div>
+</div>
+
+<div id="method-M000016" class="method-detail">
+<a name="M000016"></a>
+<div class="method-heading">
+<span class="method-name">keys  &rarr; Array<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns an array of valid parameter attributes (as Symbols).
+</p>
+</div>
+</div>
+
+<div id="method-M000016" class="method-detail">
+<a name="mult"></a>
+<div class="method-heading">
+<span class="method-name">
+mult  &rarr; Integer<br />
+self.mult = Integer<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get/set the multiplicity of the dihedral parameters. This attribute if available for dihedral and improper parameters.
+</p>
+</div>
+</div>
+
+<div id="method-M000016" class="method-detail">
+<a name="name"></a>
+<div class="method-heading">
+<span class="method-name">
+name  &rarr; String<br />
+self.name = String<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get/set the name attribute for the element parameters. The name is actually the element symbol, like "H" and "He". If you want the real element name like "hydrogen", use <a href="#fullname">fullname</a> instead.
+</p>
+</div>
+</div>
+
+<div id="method-M000016" class="method-detail">
+<a name="par_type"></a>
+<div class="method-heading">
+<span class="method-name">par_type  &rarr; String<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns the type of the parameter as a String, like "bond", "angle", etc.
+</p>
+</div>
+</div>
+
+<div id="method-M000016" class="method-detail">
+<a name="period"></a>
+<div class="method-heading">
+<span class="method-name">
+period  &rarr; Integer<br />
+self.period = Integer<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get/set the periodicity of the dihedral parameters. This attribute is available for dihedral and improper parameters. A dihedral (improper) parameter record with periodicity p has p energy minima within the range of 0-360 degree.
+</p>
+</div>
+</div>
+
+<div id="method-M000016" class="method-detail">
+<a name="phi0"></a>
+<div class="method-heading">
+<span class="method-name">
+phi0  &rarr; Float<br />
+self.phi0 = Float<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get/set the equilibrium dihedral angle (in degree). This attribute is available for dihedral and improper parameters.
+</p>
+</div>
+</div>
+
+<div id="method-M000016" class="method-detail">
+<a name="r0"></a>
+<div class="method-heading">
+<span class="method-name">
+r0  &rarr; Float<br />
+self.r0 = Float<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get/set the equilibrium bond length (in Å). This attribute if available for bond parameters.
+</p>
+</div>
+</div>
+
+<div id="method-M000016" class="method-detail">
+<a name="radius"></a>
+<div class="method-heading">
+<span class="method-name">
+radius  &rarr; Float<br />
+self.radius = Float<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get/set the atomic radius for element parameters. This is used only for screen display. To set the van der Waals radius, use <a href="#r_eq">r_eq</a> and <a href="#r_eq14">r_eq14</a>.
+</p>
+</div>
+</div>
+
+<div id="method-M000016" class="method-detail">
+<a name="r_eq"></a>
+<div class="method-heading">
+<span class="method-name">
+r_eq  &rarr; Float<br />
+self.r_eq = Float<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get/set the van der Waals radius for the vdw parameters, or the equilibrium interatomic distance for the vdw_pair parameters. The unit is Å. Note that, for the vdw parameters, the value is <i>half</i> of the interatomic distance at the potential minimum.
+</p>
+</div>
+</div>
+
+<div id="method-M000016" class="method-detail">
+<a name="r_eq14"></a>
+<div class="method-heading">
+<span class="method-name">
+r_eq14  &rarr; Float<br />
+self.r_eq14 = Float<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get/set the 1-4 specific van der Waals radius for the vdw parameters, or the equilibrium interatomic distance for the vdw_pair parameters. The unit is Å. Note that, for the vdw parameters, the value is <i>half</i> of the interatomic distance at the potential minimum.
+</p>
+</div>
+</div>
+
+<div id="method-M000016" class="method-detail">
+<a name="source"></a>
+<div class="method-heading">
+<span class="method-name">source  &rarr; String<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns the source information of the parameter as a String.
+</p>
+</div>
+</div>
+
+<div id="method-M000014" class="method-detail">
+<a name="M000014"></a>
+<div class="method-heading">
+<span class="method-name">to_hash  &rarr; Hash<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns a hash containing valid parameter names and values.
+</p>
+</div>
+</div>
+
+<div id="method-M000015" class="method-detail">
+<a name="M000015"></a>
+<div class="method-heading">
+<span class="method-name">to_s   &rarr; String<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns a string representation of the given parameter.
+</p>
+</div>
+</div>
+
+<div id="method-M000016" class="method-detail">
+<a name="weight"></a>
+<div class="method-heading">
+<span class="method-name">
+weight  &rarr; Float<br />
+self.weight = Float<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get/set the atomic weight. This attribute is available for vdw (but not vdw_pair) and element parameters. Note that, for vdw parameters, setting the atomic_number attribute also causes changing the weight attribute, but the other way does not work.
+</p>
+</div>
+</div>
+
+</div>
+
+</div>
+
+</body>
+</html>
