@@ -34,6 +34,7 @@ class Dialog
   
   def set_value(tag, value)
     set_attr(tag, :value=>value)
+	value
   end
   
 end

@@ -26,7 +26,7 @@ class Molecule
 		item(:text, :title=>"New residue name/number\n(like \"RES.1\")\nfor atoms #{atoms}"),
 	    item(:textfield, :width=>120, :tag=>"residue"))
     }
-    if hash
+    if hash[:status] == 0
 	  residue = hash["residue"]
 	  assign_residue(sel, residue)
 	end
@@ -43,7 +43,7 @@ class Molecule
 		item(:text, :title=>"Offset residue number:\nfor atoms #{atoms}"),
 	    item(:textfield, :width=>120, :tag=>"offset"))
     }
-	if hash
+	if hash[:status] == 0
 	  offset = hash["offset"].to_i
 	  offset_residue(sel, offset)
 	end
@@ -147,7 +147,7 @@ end_of_header
 	  layout(1,
 	    item(:text, :title=>"Create GAMESS input with LANL2DZ effective core potentials"))
     }
-    if hash
+    if hash[:status] == 0
       fname = File.basename(self.path, ".*") + ".inp"
 	  fname = Dialog.save_panel(nil, self.dir, fname)
 	  if fname
@@ -190,7 +190,7 @@ end_of_header
 		  item(:textfield, :width=>100, :height=>20, :tag=>"stepy", :value=>grid[5].to_s),
 		  item(:textfield, :width=>100, :height=>20, :tag=>"stepz", :value=>grid[6].to_s)))
 	}
-	if hash
+	if hash[:status] == 0
 	  origin = Vector3D[hash["originx"], hash["originy"], hash["originz"]]
 	  dx = hash["deltax"]
 	  dy = hash["deltay"]
@@ -224,18 +224,8 @@ end_of_header
   
   def Molecule.cmd_load_remote(mol)  #  mol is not used
     hash = Dialog.run {
-	  def action(item1)
-	    n = item1[:index]
-	    if n == 0 || n == 1
-		  self.each_item { |item2|
-		    if (type = item2[:type]) == :textfield || type == :textview
-		      val = item2[:value]
-		      tag = item2[:tag]
-		      set_global_settings("load_remote.#{tag}", val)
-			end
-		  }
-		end
-		if n == 0  #  OK
+	  def button_action(it)   #  Action for OK and Cancel buttons
+		if it[:index] == 0  #  OK
 		  local = File.expand_path(value("local"))
 		  if value("local") != ""
 		    #  Check whether the local file already exists
@@ -258,32 +248,33 @@ end_of_header
 			  hash = Dialog.run {
 			    layout(1, item(:text, :title=>msg, :width=>240, :height=>60))
 			  }
-			  return if !hash  #  No call of super -> dialog is not dismissed
+			  return if hash[:status] != 0  #  No call of super -> dialog is not dismissed
 			end
 		  end
-		elsif n != 0 && n != 1
-	      if value("host") != "" && value("directory") != "" && value("sfile") != ""
-		    set_attr(0, :enabled=>true)
-		  else
-		    set_attr(0, :enabled=>false)
-		  end
 	    end
-	    super
+		end_modal(it)
+	  end
+	  def text_action(it)
+		if value("host") != "" && value("directory") != "" && value("sfile") != ""
+		  set_attr(0, :enabled=>true)
+		else
+		  set_attr(0, :enabled=>false)
+		end	  
 	  end
 	  layout(2,
 		item(:text, :title=>"Remote host"),
-		item(:textfield, :width=>280, :height=>20, :tag=>"host"),
+		item(:textfield, :width=>280, :height=>20, :tag=>"host", :action=>:text_action),
 		item(:text, :title=>"Directory"),
-		item(:textfield, :width=>280, :height=>20, :tag=>"directory"),
+		item(:textfield, :width=>280, :height=>20, :tag=>"directory", :action=>:text_action),
 		item(:text, :title=>"Structure File"),
-		item(:textfield, :width=>280, :height=>20, :tag=>"sfile"),
+		item(:textfield, :width=>280, :height=>20, :tag=>"sfile", :action=>:text_action),
 		item(:text, :title=>"Coordinate File"),
 		item(:textfield, :width=>280, :height=>20, :tag=>"cfile"),
 		item(:text, :title=>"File List"),
 		item(:textview, :width=>280, :height=>80, :tag=>"list", :editable=>false),
 		nil,
 		[ item(:button, :title=>"Update",
-			:action=>proc { |item1| 
+			:action=>proc { |it| 
 			  list = Dialog.list_remote_files(value("host"), value("directory"))
 			  set_value("list", list)
 			}
@@ -294,7 +285,7 @@ end_of_header
 		item(:textfield, :width=>280, :height=>20, :tag=>"local"),
 		nil,
 		[ item(:button, :title=>"Choose...",
-		    :action=>proc { |item1|
+		    :action=>proc { |it|
 			  dir = Dialog.open_panel(nil, nil, nil, true)
 			  if dir
 			    set_value("local", dir)
@@ -303,6 +294,8 @@ end_of_header
 		  ), {:align=>:right} ]
 	#	layout(1, 2, 1, 0)
 	  )
+	  set_attr(0, :action=>:button_action)
+	  set_attr(1, :action=>:button_action)
 	  set_attr(0, :enabled=>false)
 	  self.each_item { |it|
 		tag = it[:tag]
@@ -314,7 +307,11 @@ end_of_header
 		end
 	  }
     }
-	if hash
+	hash.each_pair { |key, value|
+	  next if key == :status
+	  set_global_settings("load_remote.#{key}", value)
+	}
+	if hash[:status] == 0
 	  sfile = hash["sfile"]
 	  cfile = hash["cfile"]
 	  host = hash["host"]
@@ -363,7 +360,7 @@ end_of_header
 		item(:text, :title=>"Step"),
 		item(:textfield, :width=>120, :tag=>"step", :value=>"0"))
 	}
-	if hash
+	if hash[:status] == 0
 	  sframe = Integer(hash["start"])
 	  eframe = Integer(hash["end"])
 	  step = Integer(hash["step"])
@@ -412,7 +409,7 @@ end_of_header
 		item(:text, :title=>"Exclusion limit distance:"),
 		item(:textfield, :width=>"120", :tag=>"limit", :value=>"3.0"))
 	}
-	if hash
+	if hash[:status] == 0
 	  solvate(solv[hash["solvent"]], [hash["x"], hash["y"], hash["z"]], hash["limit"])
 	end
   end
@@ -424,7 +421,7 @@ end_of_header
 	    item(:text, :title=>"Number of graphite rings for each direction:\n(0 to suppress display)"),
 	    item(:textfield, :width=>120, :tag=>"graphite", :value=>n.to_s))
 	}
-	if hash
+	if hash[:status] == 0
 	  self.show_graphite(hash["graphite"])
 	end
   end

@@ -396,7 +396,7 @@ s_RubyDialog_Initialize(int argc, VALUE *argv, VALUE self)
 }
 
 static int
-s_RubyDialog_ItemIndexForTag(VALUE self, VALUE tag)
+s_RubyDialog_ItemIndexForTagNoRaise(VALUE self, VALUE tag)
 {
 	VALUE items = rb_iv_get(self, "_items");
 	int len = RARRAY_LEN(items);
@@ -405,25 +405,58 @@ s_RubyDialog_ItemIndexForTag(VALUE self, VALUE tag)
 	if (FIXNUM_P(tag)) {
 		i = NUM2INT(tag);
 		if (i < 0 || i >= len)
-			rb_raise(rb_eMolbyError, "item number (%d) out of range", i);
-		return i;
+			return -1;
+		else return i;
 	}
 	for (i = 0; i < len; i++) {
 		if (rb_equal(tag, rb_ivar_get(ptr[i], SYM2ID(sTagSymbol))) == Qtrue)
 			return i;
 	}
-	rb_raise(rb_eStandardError, "RubyDialog has no item with tag %s", StringValuePtr(tag));
-	return -1; /* Not reached */
+	return -2;
 }
 
+static int
+s_RubyDialog_ItemIndexForTag(VALUE self, VALUE tag)
+{
+	int i = s_RubyDialog_ItemIndexForTagNoRaise(self, tag);
+	if (i == -1)
+		rb_raise(rb_eStandardError, "item number (%d) out of range", i);
+	else if (i == -2)
+		rb_raise(rb_eStandardError, "Dialog has no item with tag %s", StringValuePtr(tag));
+	return i;
+}
+
+/*
+ *  call-seq:
+ *     item_at_index(index) -> DialogItem
+ *
+ *  Get the dialog item at index. If no such item exists, exception is raised.
+ */
 static VALUE
-s_RubyDialog_ItemAtIndex(VALUE self, int idx)
+s_RubyDialog_ItemAtIndex(VALUE self, VALUE ival)
 {
 	VALUE items;
+	int idx = NUM2INT(rb_Integer(ival));
 	items = rb_iv_get(self, "_items");
 	if (idx < 0 || idx >= RARRAY_LEN(items))
 		rb_raise(rb_eRangeError, "item index (%d) out of range", idx);
 	return RARRAY_PTR(items)[idx];
+}
+
+/*
+ *  call-seq:
+ *     item_with_tag(tag) -> DialogItem
+ *
+ *  Get the dialog item which has the given tag. If no such item exists, returns nil.
+ */
+static VALUE
+s_RubyDialog_ItemWithTag(VALUE self, VALUE tval)
+{
+	int idx = s_RubyDialog_ItemIndexForTagNoRaise(self, tval);
+	if (idx >= 0) {
+		VALUE items = rb_iv_get(self, "_items");
+		return RARRAY_PTR(items)[idx];
+	} else return Qnil;
 }
 
 /*
@@ -448,7 +481,7 @@ s_RubyDialog_SetAttr(VALUE self, VALUE tag, VALUE hash)
 		VALUE val = rb_hash_aref(hash, key);
 		s_RubyDialogItem_SetAttr(item, key, val);
 	}
-	return Qnil;
+	return item;
 }
 
 /*
@@ -484,6 +517,8 @@ s_RubyDialog_Run(VALUE self)
 	retval = RubyDialogCallback_runModal(dref);
 	Ruby_SetInterruptFlag(iflag);
 	RubyDialogCallback_close(dref);
+	return rb_iv_get(self, "_retval");
+#if 0
 	if (retval == 0) {
 		VALUE items = rb_iv_get(self, "_items");
 		int len = RARRAY_LEN(items);
@@ -504,6 +539,7 @@ s_RubyDialog_Run(VALUE self)
 		return hash;
 	} else
 		return Qfalse;
+#endif
 }
 
 /*
@@ -519,7 +555,7 @@ s_RubyDialog_Run(VALUE self)
 static VALUE
 s_RubyDialog_Layout(int argc, VALUE *argv, VALUE self)
 {
-	VALUE items, oval, *opts;
+	VALUE items, oval, *opts, new_item;
 	int row, col, i, j, n, itag, nitems, *itags;
 	RubyDialog *dref;
 	float *widths, *heights;
@@ -644,45 +680,6 @@ s_RubyDialog_Layout(int argc, VALUE *argv, VALUE self)
 	layoutFrame.origin.y = margin;
 /*	printf("layoutFrame = [%f,%f,%f,%f]\n", layoutFrame.origin.x, layoutFrame.origin.y, layoutFrame.size.width, layoutFrame.size.height); */
 
-#if 0
-	/*  Resize the window  */
-	/*  Not necessary for wxWidgets, because contentSizer and buttonSizer will take care of the window resize
-	    automatically  */
-	{
-		RDSize winSize;
-		RDRect bframe[2];
-		winSize.width = layoutFrame.size.width + margin * 2;
-		if (winSize.width < contentMinSize.width)
-			winSize.width = contentMinSize.width;
-		winSize.height = layoutFrame.size.height + margin * 2;
-		for (i = 0; i < 2; i++) {
-			/*  OK(0), Cancel(1) buttons  */
-			RDItem *button = RubyDialogCallback_dialogItemAtIndex(dref, i);
-			if (RubyDialogCallback_indexOfItem(dref, RubyDialogCallback_superview(button)) < 0 && !RubyDialogCallback_isItemHidden(button)) {
-				bframe[i] = RubyDialogCallback_frameOfItem(button);
-				if (layoutFrame.origin.y == margin) {
-					//  Move the layoutView up
-					layoutFrame.origin.y += margin + bframe[i].size.height;
-				//	RubyDialogCallback_setFrameOfItem(layoutView, layoutFrame);
-					winSize.height += margin + bframe[i].size.height;
-				}
-				bframe[i].origin.y = winSize.height - margin - bframe[i].size.height;
-				bframe[i].origin.x = (i == 0 ? winSize.width - bframe[i].size.width - margin : margin);
-			} else {
-				static RDRect zeroRect = {0, 0, 0, 0};
-				bframe[i] = zeroRect;
-			}
-		}
-		RubyDialogCallback_setWindowSize(dref, winSize);
-		for (i = 0; i < 2; i++) {
-			if (bframe[i].size.width > 0) {
-				RDItem *button = RubyDialogCallback_dialogItemAtIndex(dref, i);
-				RubyDialogCallback_setFrameOfItem(button, bframe[i]);
-			}
-		}
-	}
-#endif
-	
 	/*  Create a layout view  */
 	layoutView = RubyDialogCallback_createItem(dref, "view", "", layoutFrame);
 
@@ -769,26 +766,23 @@ s_RubyDialog_Layout(int argc, VALUE *argv, VALUE self)
 
 	/*  Create a new hash for the layout view and push to _items */
 	{
-		VALUE new_item = rb_class_new_instance(0, NULL, rb_cDialogItem);
+		new_item = rb_class_new_instance(0, NULL, rb_cDialogItem);
 		rb_ivar_set(new_item, SYM2ID(sTypeSymbol), sViewSymbol);
 		rb_ivar_set(new_item, SYM2ID(sDialogSymbol), self);
 		rb_ivar_set(new_item, SYM2ID(sIndexSymbol), INT2NUM(itag));
 		rb_ary_push(items, new_item);
 	}
 	
-	/*  Returns the integer tag  */
-	return INT2NUM(itag);
+	return new_item;
 }
 
 /*
  *  call-seq:
  *     item(type, hash) -> DialogItem
- *     item(index) -> DialogItem
  *
  *  Create a dialog item. Type is one of the following symbols; <tt>:text, :textfield, :radio,
  *  :checkbox, :popup</tt>. Hash is the attributes that can be set by set_attr.
  *  Returns an integer that represents the item. (0 and 1 are reserved for "OK" and "Cancel")
- *  The second form returns the index-th item.
  */
 static VALUE
 s_RubyDialog_Item(int argc, VALUE *argv, VALUE self)
@@ -804,7 +798,7 @@ s_RubyDialog_Item(int argc, VALUE *argv, VALUE self)
 	RubyDialog *dref;
 
 	if (argc == 1 && FIXNUM_P(argv[0])) {
-		return s_RubyDialog_ItemAtIndex(self, NUM2INT(argv[0]));
+		return s_RubyDialog_ItemAtIndex(self, argv[0]);
 	}
 
 	dref = s_RubyDialog_GetController(self);
@@ -942,7 +936,8 @@ s_RubyDialog_EachItem(VALUE self)
  *  call-seq:
  *     radio_group(Array)
  *
- *  Group radio buttons as a mutually exclusive group.
+ *  Group radio buttons as a mutually exclusive group. The array elements can be
+ *  DialogItems, Integers (item index) or other values (item tag).
  */
 static VALUE
 s_RubyDialog_RadioGroup(VALUE self, VALUE aval)
@@ -957,10 +952,16 @@ s_RubyDialog_RadioGroup(VALUE self, VALUE aval)
 	/*  Build a new array with checked arguments  */
 	gval = rb_ary_new2(n);
 	for (i = 0; i < n; i++) {
-		j = s_RubyDialog_ItemIndexForTag(self, RARRAY_PTR(aval)[i]);
-		if (j < 0 || j >= nitems)
-			break;
-		if (rb_ivar_get(RARRAY_PTR(items)[j], SYM2ID(sTypeSymbol)) != sRadioSymbol)
+		VALUE tval = RARRAY_PTR(aval)[i];
+		if (rb_obj_is_kind_of(tval, rb_cDialogItem)) {
+			j = NUM2INT(s_RubyDialogItem_Attr(tval, sIndexSymbol));
+		} else {
+			j = s_RubyDialog_ItemIndexForTag(self, tval);
+			if (j < 0 || j >= nitems)
+				break;
+			tval = RARRAY_PTR(items)[j];
+		}
+		if (rb_ivar_get(tval, SYM2ID(sTypeSymbol)) != sRadioSymbol)
 			break;
 		rb_ary_push(gval, INT2NUM(j));
 	}
@@ -979,6 +980,58 @@ s_RubyDialog_RadioGroup(VALUE self, VALUE aval)
 		rb_ivar_set(RARRAY_PTR(items)[j], SYM2ID(sRadioGroupSymbol), gval);
 	}
 	return gval;
+}
+
+/*
+ *  call-seq:
+ *     end_modal(item = 0, retval = nil) -> nil
+ *
+ *  End the modal session. The argument item is either the DialogItem object or
+ *  the index (0 for OK, 1 for Cancel). If the second argument is given, it will
+ *  be the return value of Dialog#run. Otherwise, the return value will be a hash
+ *  including the key-value pairs for all "tagged" dialog items plus :status=>true
+ *  (if OK is pressed) or false (if Cancel is pressed).
+ *  This method itself returns nil.
+ */
+static VALUE
+s_RubyDialog_EndModal(int argc, VALUE *argv, VALUE self)
+{
+	int flag;
+	VALUE retval = Qundef;
+	if (argc == 0) {
+		flag = 0;
+	} else {
+		if (rb_obj_is_kind_of(argv[0], rb_cDialogItem)) {
+			flag = NUM2INT(s_RubyDialogItem_Attr(argv[0], sIndexSymbol));
+		} else {
+			flag = NUM2INT(rb_Integer(argv[0]));
+		}
+		if (argc > 1)
+			retval = argv[1];
+	}
+	if (retval == Qundef) {
+		/*  The default return value  */
+		VALUE items = rb_iv_get(self, "_items");
+		int len = RARRAY_LEN(items);
+		VALUE *ptr = RARRAY_PTR(items);
+		int i;
+		retval = rb_hash_new();
+		/*  Get values for controls with defined tags  */
+		for (i = 2; i < len; i++) {
+			/*  Items 0, 1 are OK/Cancel buttons  */
+			/*	VALUE type = rb_hash_aref(ptr[i], sTypeSymbol); */
+			VALUE tag = rb_ivar_get(ptr[i], SYM2ID(sTagSymbol));
+			if (tag != Qnil) {
+				VALUE val;
+				val = s_RubyDialogItem_Attr(ptr[i], sValueSymbol);
+				rb_hash_aset(retval, tag, val);
+			}
+		}
+		rb_hash_aset(retval, ID2SYM(rb_intern("status")), INT2NUM(flag));
+	}
+	rb_iv_set(self, "_retval", retval);
+	RubyDialogCallback_endModal(s_RubyDialog_GetController(self), (flag ? 1 : 0));
+	return Qnil;
 }
 
 /*
@@ -1148,24 +1201,22 @@ RubyDialog_validateItemContent(RubyValue self, RDItem *ip, const char *s)
 	return 1;
 }
 
-/*  Action for dialog items.
- Get the item number, and call "action" method of the RubyDialog object with
- the item number (integer) as the argument. The default "action" method is
- defined as s_RubyDialog_action.  */
-void
-RubyDialog_doItemAction(RubyValue self, RDItem *ip)
+static VALUE
+s_RubyDialog_doItemAction(VALUE val)
 {
-	int status;
-	VALUE ival, itval;
-	RubyDialog *dref = s_RubyDialog_GetController((VALUE)self);
-	VALUE items = rb_iv_get(((VALUE)self), "_items");
+	void **vp = (void **)val;
+	VALUE self = (VALUE)vp[0];
+	RDItem *ip = (RDItem *)vp[1];
+	VALUE ival, itval, actval;
+	RubyDialog *dref = s_RubyDialog_GetController(self);
+	VALUE items = rb_iv_get(self, "_items");
 	int nitems = RARRAY_LEN(items);
 	int idx = RubyDialogCallback_indexOfItem(dref, ip);
 	if (idx < 0)
-		return;
+		return Qnil;
 	ival = INT2NUM(idx);
-	itval = s_RubyDialog_ItemAtIndex((VALUE)self, idx);
-
+	itval = s_RubyDialog_ItemAtIndex(self, ival);
+	
 	/*  Handle radio group  */
 	{
 		VALUE gval = s_RubyDialogItem_Attr(itval, sRadioGroupSymbol);
@@ -1182,7 +1233,36 @@ RubyDialog_doItemAction(RubyValue self, RDItem *ip)
 		}
 	}
 	
-	Ruby_funcall2_protect((VALUE)self, rb_intern("action"), 1, &itval, &status);
+	/*  If the item has the "action" attribute, call it  */
+	actval = s_RubyDialogItem_Attr(itval, sActionSymbol);
+	if (actval != Qnil) {
+		if (TYPE(actval) == T_SYMBOL)
+			rb_funcall(self, SYM2ID(actval), 1, itval);
+		else
+			rb_funcall(actval, rb_intern("call"), 1, itval);
+	} else if (rb_respond_to(itval, SYM2ID(sActionSymbol))) {
+		/*  If "action" method is defined, then call it without arguments  */
+		rb_funcall(itval, SYM2ID(sActionSymbol), 0);
+	} else {
+		/*  Default action (only for default buttons)  */
+		if (idx == 0 || idx == 1)
+			s_RubyDialog_EndModal(1, &itval, self);
+	}
+	return Qnil;
+}
+
+/*  Action for dialog items.
+ Get the item number, and call "action" method of the RubyDialog object with
+ the item number (integer) as the argument. The default "action" method is
+ defined as s_RubyDialog_action.  */
+void
+RubyDialog_doItemAction(RubyValue self, RDItem *ip)
+{
+	int status;
+	void *vp[2];
+	vp[0] = (void *)self;
+	vp[1] = ip;
+	rb_protect(s_RubyDialog_doItemAction, (VALUE)vp, &status);
 	if (status != 0)
 		Molby_showError(status);
 }
@@ -1200,14 +1280,17 @@ RubyDialogInitClass(void)
 	rb_define_private_method(rb_cDialog, "initialize", s_RubyDialog_Initialize, -1);
 	rb_define_method(rb_cDialog, "run", s_RubyDialog_Run, 0);
 	rb_define_method(rb_cDialog, "item", s_RubyDialog_Item, -1);
+	rb_define_method(rb_cDialog, "item_at_index", s_RubyDialog_ItemAtIndex, 1);
+	rb_define_method(rb_cDialog, "item_with_tag", s_RubyDialog_ItemWithTag, 1);
 	rb_define_method(rb_cDialog, "layout", s_RubyDialog_Layout, -1);
 	rb_define_method(rb_cDialog, "_items", s_RubyDialog_Items, 0);
 	rb_define_method(rb_cDialog, "nitems", s_RubyDialog_Nitems, 0);
 	rb_define_method(rb_cDialog, "each_item", s_RubyDialog_EachItem, 0);
 	rb_define_method(rb_cDialog, "set_attr", s_RubyDialog_SetAttr, 2);
 	rb_define_method(rb_cDialog, "attr", s_RubyDialog_Attr, 2);
-	rb_define_method(rb_cDialog, "radio_group", s_RubyDialog_RadioGroup, 1);
+	rb_define_method(rb_cDialog, "radio_group", s_RubyDialog_RadioGroup, -2);
 	rb_define_method(rb_cDialog, "action", s_RubyDialog_Action, 1);
+	rb_define_method(rb_cDialog, "end_modal", s_RubyDialog_EndModal, -1);
 	rb_define_singleton_method(rb_cDialog, "save_panel", s_RubyDialog_SavePanel, -1);
 	rb_define_singleton_method(rb_cDialog, "open_panel", s_RubyDialog_OpenPanel, -1);
 
