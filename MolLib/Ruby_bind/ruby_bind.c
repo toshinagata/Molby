@@ -5920,8 +5920,8 @@ s_Molecule_Nframes(VALUE self)
 
 /*
  *  call-seq:
- *     insert_frame(integer, coordinates = nil) -> bool
- *     insert_frames(intGroup = nil, coordinates = nil) -> bool
+ *     insert_frame(integer, coordinates = nil, cell_axes = nil) -> bool
+ *     insert_frames(intGroup = nil, coordinates = nil, cell_axes = nil) -> bool
  *
  *  Insert new frames at the indices specified by the intGroup. If the first argument is
  *  an integer, a single new frame is inserted at that index. If the first argument is 
@@ -5934,18 +5934,26 @@ s_Molecule_Nframes(VALUE self)
 static VALUE
 s_Molecule_InsertFrames(int argc, VALUE *argv, VALUE self)
 {
-	VALUE val, coords;
+	VALUE val, coords, cells;
     Molecule *mol;
 	IntGroup *ig;
 	int count, ival, i, j, len, nframes;
-	Vector *vp;
+	Vector *vp, *vp2;
     Data_Get_Struct(self, Molecule, mol);
-	rb_scan_args(argc, argv, "11", &val, &coords);
+	rb_scan_args(argc, argv, "12", &val, &coords, &cells);
 	if (coords != Qnil) {
 		if (TYPE(coords) != T_ARRAY)
 			rb_raise(rb_eTypeError, "the coordinates should be given as an array of Vector3D");
 		len = RARRAY_LEN(coords);
 	} else len = 0;
+	if (cells != Qnil) {
+		if (mol->cell == NULL)
+			rb_raise(rb_eTypeError, "the unit cell is not defined but the cell axes are given");
+		if (TYPE(cells) != T_ARRAY)
+			rb_raise(rb_eTypeError, "the cell axes should be given as an array of Vector3D");
+		if (len != RARRAY_LEN(coords))
+			rb_raise(rb_eTypeError, "the number of entries for coordinates and cell axes does not match");
+	}
 	nframes = MoleculeGetNumberOfFrames(mol);
 	if (val == Qnil) {
 		ig = IntGroupNewWithPoints(nframes, (len > 0 ? len : 1), -1);
@@ -5955,14 +5963,16 @@ s_Molecule_InsertFrames(int argc, VALUE *argv, VALUE self)
 	}
 	count = IntGroupGetCount(ig);
 	vp = ALLOC_N(Vector, mol->natoms * count);
+	if (cells != Qnil && len > 0)
+		vp2 = ALLOC_N(Vector, 4 * count);
+	else vp2 = NULL;
 	if (len > 0) {
-		VALUE *ptr;
+		VALUE *ptr, *ptr2;
+		int j, len2;
 		if (len < count)
 			rb_raise(rb_eMolbyError, "the coordinates should contain no less than %d arrays (for frames)", count);
 		ptr = RARRAY_PTR(coords);
 		for (i = 0; i < len; i++) {
-			VALUE *ptr2;
-			int j, len2;
 			if (TYPE(ptr[i]) != T_ARRAY)
 				rb_raise(rb_eTypeError, "the coordinate array contains non-array object at index %d", i);
 			len2 = RARRAY_LEN(ptr[i]);
@@ -5972,6 +5982,19 @@ s_Molecule_InsertFrames(int argc, VALUE *argv, VALUE self)
 			for (j = 0; j < mol->natoms; j++)
 				VectorFromValue(ptr2[j], &vp[i * mol->natoms + j]);
 		}
+		if (vp2 != NULL) {
+			ptr = RARRAY_PTR(cells);
+			for (i = 0; i < len; i++) {
+				if (TYPE(ptr[i]) != T_ARRAY)
+					rb_raise(rb_eTypeError, "the cell parameter array contains non-array object at index %d", i);
+				len2 = RARRAY_LEN(ptr[i]);
+				if (len2 < 4)
+					rb_raise(rb_eMolbyError, "the cell parameter should contain 4 vectors");
+				ptr2 = RARRAY_PTR(ptr[i]);
+				for (j = 0; j < 4; j++)
+					VectorFromValue(ptr2[j], &vp2[i * 4 + j]);
+			}
+		}
 	} else {
 		Atom *ap;
 		for (i = 0; i < count; i++) {
@@ -5980,9 +6003,11 @@ s_Molecule_InsertFrames(int argc, VALUE *argv, VALUE self)
 			}
 		}
 	}
-	ival = MolActionCreateAndPerform(mol, gMolActionInsertFrames, ig, mol->natoms * count, vp);
+	ival = MolActionCreateAndPerform(mol, gMolActionInsertFrames, ig, mol->natoms * count, vp, (vp2 != NULL ? 4 * count : 0), vp2);
 	IntGroupRelease(ig);
 	free(vp);
+	if (vp2 != NULL)
+		free(vp2);
 	return (ival >= 0 ? val : Qnil);
 }
 

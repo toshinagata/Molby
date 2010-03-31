@@ -29,4 +29,6 @@ OS 10.4 用のユニバーサルバイナリは、export ISYSROOT='-isysroot /De
   DialogItem は C レベルのデータは持たず、単なる cDialogItem のインスタンスとする。属性は、今まで Dialog 中のハッシュに保持していたが、DialogItem のインスタンス変数として実装する。
   Dialog#item(:type, hash) でアイテムを作成。Dialog#set_attr, Dialog#get_attr はやめて、DialogItem#[], DialogItem#[]= で実装する。DialogItem#属性名, DialogItem#属性名= も実装する（ParameterRef と同様）。また、Dialog#action の引数はアイテム番号でなく DialogItem オブジェクトとする。
   DialogItem の action 属性は今までと同様だが、引数としてはアイテム番号でなく DialogItem オブジェクトそのものが渡される。
-  
+
+2010.3.21.
+  Pressure control を使えるようにしたい。フレームごとに unit cell パラメータを保持できるようにしないといけない。

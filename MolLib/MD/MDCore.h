@@ -129,6 +129,15 @@ typedef struct MDGroupFlags {
 #define get_group_flag(gf, n) (n < (gf)->natoms ? (gf)->flags[(n)/8] & group_flag_mask[(n)%8] : 0)
 #define set_group_flag(gf, n, bool) (n < (gf)->natoms ? (bool ? ((gf)->flags[(n)/8] |= group_flag_mask[(n)%8]) : ((gf)->flags[(n)/8] &= ~(group_flag_mask[(n)%8]))) : 0)
 
+/*  Ring buffer for sending coordinates to another thread  */
+typedef struct MDRing {
+	Vector *buf;           /*  Vector buffer  */
+	Int    size;           /*  Number of vectors per frame; natoms + (use_cell ? 4 : 0)  */
+	Int    nframes;        /*  Number of frames in the ring buffer (2000 / natoms)  */
+	Int    next;           /*  Next frame index to store data  */
+	Int    count;          /*  Number of frames currently in the ring buffer  */
+} MDRing;
+	
 /*  Everything needed for MD  */
 typedef struct MDArena {
 	Int refCount;
@@ -267,10 +276,7 @@ typedef struct MDArena {
 
 	Int    natoms_uniq;     /*  Number of symmetry-unique atoms  */
 	
-	Vector *ring;           /*  Ring buffer for sending coordinates between threads */
-	Int    nringframes;     /*  Number of frames in the ring buffer (2000 / natoms)  */
-	Int    ring_next;       /*  Next frame index to store data  */
-	Int    ring_count;      /*  Number of frames currently in the ring buffer  */
+	MDRing *ring;
 
 	/*  Parameters are copied from mol->par and gBuiltinParameters for each call to md_prepare()  */
 	Parameter *par;

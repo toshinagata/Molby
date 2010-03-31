@@ -253,6 +253,9 @@ typedef struct Molecule {
 	Int    nframes;      /*  The number of frames. This is a cached value, and should be
 							 recalculated from the atoms if it is -1  */
 	Int    cframe;       /*  The current frame number  */
+
+	Vector *frame_cells; /*  The cell vectors for frames; (nframes*3) array of Vectors  */
+
 	struct MainView *mview;  /*  Reference to the MainView object if present (no retain)  */
 	Int    modifyCount;  /*  Internal counter for modification. This value is not to be modified
 	                         manually; instead, call MoleculeIncrementModifyCount() whenever
@@ -448,10 +451,10 @@ int MoleculeIsFragmentDetachable(Molecule *mp, IntGroup *group, int *n1, int *n2
 int MoleculeIsFragmentRotatable(Molecule *mp, IntGroup *group, int *n1, int *n2, IntGroup **rotGroup);
 
 int MoleculeGetNumberOfFrames(Molecule *mp);
-int MoleculeInsertFrames(Molecule *mp, IntGroup *group, const Vector *inFrame);
-int MoleculeRemoveFrames(Molecule *mp, IntGroup *group, Vector *outFrame);
-int MoleculeInsertFrame(Molecule *mp, int index, const Vector *inFrame);
-int MoleculeRemoveFrame(Molecule *mp, int frame, Vector *outFrame);
+int MoleculeInsertFrames(Molecule *mp, IntGroup *group, const Vector *inFrame, const Vector *inFrameCell);
+int MoleculeRemoveFrames(Molecule *mp, IntGroup *group, Vector *outFrame, Vector *outFrameCell);
+/*int MoleculeInsertFrame(Molecule *mp, int index, const Vector *inFrame);
+int MoleculeRemoveFrame(Molecule *mp, int frame, Vector *outFrame); */
 int MoleculeSelectFrame(Molecule *mp, int frame, int copyback);
 
 int MoleculeCalcMO(Molecule *mp, Int mono, const Vector *op, const Vector *dxp, const Vector *dyp, const Vector *dzp, Int nx, Int ny, Int nz, int (*callback)(double progress, void *ref), void *ref);

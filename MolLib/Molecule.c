@@ -2249,7 +2249,7 @@ MoleculeLoadGamessDatFile(Molecule *mol, const char *fname, char *errbuf, int er
 				vbuf[i].z = dval[3];
 			}
 			ig = IntGroupNewWithPoints(nframes, 1, -1);
-			MolActionCreateAndPerform(mol, gMolActionInsertFrames, ig, natoms, vbuf);
+			MolActionCreateAndPerform(mol, gMolActionInsertFrames, ig, natoms, vbuf, 0, NULL);
 			IntGroupRelease(ig);
 			nframes++;
 			if (n1) {
@@ -2589,7 +2589,8 @@ MoleculeReadCoordinatesFromDcdFile(Molecule *mp, const char *fname, char *errbuf
 			vpp->z = zp[i];
 		}
 	}
-	if (MoleculeInsertFrames(mp, ig, vp) < 0)
+	/*  TODO: implement frame-specific cells  */
+	if (MoleculeInsertFrames(mp, ig, vp, NULL) < 0)
 		snprintf(errbuf, errbufsize, "Cannot insert frames");
 	if (dcd.with_unitcell) {
 		Vector ax, ay, az, orig;
@@ -7329,21 +7330,21 @@ MoleculeCalculateCellFromAxes(XtalCell *cp, int calc_abc)
 		return -1;  /*  Non-regular transform  */
 
 	/*  Calculate the reciprocal cell parameters  */
-	cp->rcell[0] = sqrt(cp->rtr[0] * cp->rtr[0] + cp->rtr[1] * cp->rtr[1] + cp->rtr[2] * cp->rtr[2]);
-	cp->rcell[1] = sqrt(cp->rtr[3] * cp->rtr[3] + cp->rtr[4] * cp->rtr[4] + cp->rtr[5] * cp->rtr[5]);
-	cp->rcell[2] = sqrt(cp->rtr[6] * cp->rtr[6] + cp->rtr[7] * cp->rtr[7] + cp->rtr[8] * cp->rtr[8]);
-	cp->rcell[3] = acos((cp->rtr[3] * cp->rtr[6] + cp->rtr[4] * cp->rtr[7] + cp->rtr[5] * cp->rtr[8]) / (cp->rcell[1] * cp->rcell[2])) * kRad2Deg;
-	cp->rcell[4] = acos((cp->rtr[6] * cp->rtr[0] + cp->rtr[7] * cp->rtr[1] + cp->rtr[8] * cp->rtr[2]) / (cp->rcell[2] * cp->rcell[0])) * kRad2Deg;
-	cp->rcell[5] = acos((cp->rtr[0] * cp->rtr[3] + cp->rtr[1] * cp->rtr[4] + cp->rtr[2] * cp->rtr[5]) / (cp->rcell[0] * cp->rcell[1])) * kRad2Deg;
+	cp->rcell[0] = sqrt(cp->rtr[0] * cp->rtr[0] + cp->rtr[3] * cp->rtr[3] + cp->rtr[6] * cp->rtr[6]);
+	cp->rcell[1] = sqrt(cp->rtr[1] * cp->rtr[1] + cp->rtr[4] * cp->rtr[4] + cp->rtr[7] * cp->rtr[7]);
+	cp->rcell[2] = sqrt(cp->rtr[2] * cp->rtr[2] + cp->rtr[5] * cp->rtr[5] + cp->rtr[8] * cp->rtr[8]);
+	cp->rcell[3] = acos((cp->rtr[1] * cp->rtr[2] + cp->rtr[4] * cp->rtr[5] + cp->rtr[7] * cp->rtr[8]) / (cp->rcell[1] * cp->rcell[2])) * kRad2Deg;
+	cp->rcell[4] = acos((cp->rtr[2] * cp->rtr[0] + cp->rtr[5] * cp->rtr[3] + cp->rtr[8] * cp->rtr[6]) / (cp->rcell[2] * cp->rcell[0])) * kRad2Deg;
+	cp->rcell[5] = acos((cp->rtr[0] * cp->rtr[1] + cp->rtr[3] * cp->rtr[4] + cp->rtr[6] * cp->rtr[7]) / (cp->rcell[0] * cp->rcell[1])) * kRad2Deg;
 	
-	if (!calc_abc) {
+	if (calc_abc) {
 		/*  Calculate a, b, c, alpha, beta, gamma  */
-		cp->cell[0] = sqrt(cp->tr[0] * cp->tr[0] + cp->tr[1] * cp->tr[1] + cp->tr[2] * cp->tr[2]);
-		cp->cell[1] = sqrt(cp->tr[3] * cp->tr[3] + cp->tr[4] * cp->tr[4] + cp->tr[5] * cp->tr[5]);
-		cp->cell[2] = sqrt(cp->tr[6] * cp->tr[6] + cp->tr[7] * cp->tr[7] + cp->tr[8] * cp->tr[8]);
-		cp->cell[3] = acos((cp->tr[3] * cp->tr[6] + cp->tr[4] * cp->tr[7] + cp->tr[5] * cp->tr[8]) / (cp->cell[1] * cp->cell[2])) * kRad2Deg;
-		cp->cell[4] = acos((cp->tr[6] * cp->tr[0] + cp->tr[7] * cp->tr[1] + cp->tr[8] * cp->tr[2]) / (cp->cell[2] * cp->cell[0])) * kRad2Deg;
-		cp->cell[5] = acos((cp->tr[0] * cp->tr[3] + cp->tr[1] * cp->tr[4] + cp->tr[2] * cp->tr[5]) / (cp->cell[0] * cp->cell[1])) * kRad2Deg;
+		cp->cell[0] = sqrt(cp->tr[0] * cp->tr[0] + cp->tr[3] * cp->tr[3] + cp->tr[6] * cp->tr[6]);
+		cp->cell[1] = sqrt(cp->tr[1] * cp->tr[1] + cp->tr[4] * cp->tr[4] + cp->tr[7] * cp->tr[7]);
+		cp->cell[2] = sqrt(cp->tr[2] * cp->tr[2] + cp->tr[5] * cp->tr[5] + cp->tr[8] * cp->tr[8]);
+		cp->cell[3] = acos((cp->tr[1] * cp->tr[2] + cp->tr[4] * cp->tr[5] + cp->tr[7] * cp->tr[8]) / (cp->cell[1] * cp->cell[2])) * kRad2Deg;
+		cp->cell[4] = acos((cp->tr[2] * cp->tr[0] + cp->tr[5] * cp->tr[3] + cp->tr[8] * cp->tr[6]) / (cp->cell[2] * cp->cell[0])) * kRad2Deg;
+		cp->cell[5] = acos((cp->tr[0] * cp->tr[1] + cp->tr[3] * cp->tr[4] + cp->tr[6] * cp->tr[7]) / (cp->cell[0] * cp->cell[1])) * kRad2Deg;
 	}
 	
 	return 0;
@@ -7736,9 +7737,9 @@ MoleculeGetNumberOfFrames(Molecule *mp)
 }
 
 int
-MoleculeInsertFrames(Molecule *mp, IntGroup *group, const Vector *inFrame)
+MoleculeInsertFrames(Molecule *mp, IntGroup *group, const Vector *inFrame, const Vector *inFrameCell)
 {
-	int i, j, count, n_new, n_old, natoms, exframes, last_inserted;
+	int i, j, count, n_new, n_old, natoms, exframes, last_inserted, old_count;
 	Vector *tempv, *vp;
 	Atom *ap;
 	if (mp == NULL || (natoms = mp->natoms) == 0 || (count = IntGroupGetCount(group)) <= 0)
@@ -7752,7 +7753,7 @@ MoleculeInsertFrames(Molecule *mp, IntGroup *group, const Vector *inFrame)
 		n_new += exframes;
 	} else exframes = 0;
 
-	tempv = (Vector *)malloc(sizeof(Vector) * n_new);
+	tempv = (Vector *)malloc(sizeof(Vector) * n_new * 4);  /*  "*4" for handling cells  */
 	if (tempv == NULL)
 		return -1;
 
@@ -7771,6 +7772,17 @@ MoleculeInsertFrames(Molecule *mp, IntGroup *group, const Vector *inFrame)
 			vp[j] = ap->r;
 		ap->frames = vp;
 	}
+	if (mp->cell != NULL && (mp->frame_cells != NULL || inFrameCell != NULL)) {
+		if (mp->frame_cells == NULL)
+			vp = (Vector *)calloc(sizeof(Vector), n_new * 4);
+		else
+			vp = (Vector *)realloc(mp->frame_cells, sizeof(Vector) * 4 * n_new);
+		if (vp == NULL) {
+			__MoleculeUnlock(mp);
+			return -1;
+		}
+		mp->frame_cells = vp;
+	}
 	
 	/*  group = [n0..n1-1, n2..n3-1, ...]  */
 	/*  s = t = 0,  */
@@ -7781,31 +7793,56 @@ MoleculeInsertFrames(Molecule *mp, IntGroup *group, const Vector *inFrame)
 		...
 		tempv[nl..n_new-1] <- ap[s..s+(n_new-nl-1)], s += n_new-nl
 		At last, s will become n_old and t will become count.  */
-	for (i = 0, ap = mp->atoms; i < mp->natoms; i++, ap = ATOM_NEXT(ap)) {
-		int s, t, ns, ne;
-		Vector cr = ap->r;
+	for (i = 0, ap = mp->atoms; i <= mp->natoms; i++, ap = ATOM_NEXT(ap)) {
+		int s, t, ns, ne, mult;
+		Vector cr;
 		ne = s = t = 0;
-		vp = ap->frames;
+		if (i == mp->natoms) {
+			if (mp->cell == NULL || mp->frame_cells == NULL)
+				break;
+			vp = mp->frame_cells;
+			mult = 4;
+		} else {
+			cr = ap->r;
+			vp = ap->frames;
+			mult = 1;
+		}
 		for (j = 0; (ns = IntGroupGetStartPoint(group, j)) >= 0; j++) {
 			if (ns > ne) {
-				memmove(tempv + ne, vp + s, sizeof(Vector) * (ns - ne));
+				memmove(tempv + ne * mult, vp + s * mult, sizeof(Vector) * mult * (ns - ne));
 				s += ns - ne;
 			}
 			ne = IntGroupGetEndPoint(group, j);
 			while (ns < ne) {
-				if (inFrame != NULL)
-					tempv[ns] = inFrame[natoms * t + i];
-				else tempv[ns] = cr;
+				if (i == mp->natoms) {
+					if (inFrameCell != NULL) {
+						tempv[ns * 4] = inFrameCell[t * 4];
+						tempv[ns * 4 + 1] = inFrameCell[t * 4 + 1];
+						tempv[ns * 4 + 2] = inFrameCell[t * 4 + 2];
+						tempv[ns * 4 + 3] = inFrameCell[t * 4 + 3];
+					} else {
+						tempv[ns * 4] = mp->cell->axes[0];
+						tempv[ns * 4 + 1] = mp->cell->axes[1];
+						tempv[ns * 4 + 2] = mp->cell->axes[2];
+						tempv[ns * 4 + 3] = mp->cell->origin;
+					}
+				} else {
+					if (inFrame != NULL)
+						tempv[ns] = inFrame[natoms * t + i];
+					else
+						tempv[ns] = cr;
+				}
 				t++;
 				ns++;
 			}
 		}
 		if (n_new > ne) {
-			memmove(tempv + ne, vp + s, sizeof(Vector) * (n_new - ne));
+			memmove(tempv + ne * mult, vp + s * mult, sizeof(Vector) * mult * (n_new - ne));
 			s += n_new - ne;
 		}
-		ap->nframes = n_new;
-		memmove(vp, tempv, sizeof(Vector) * n_new);
+		if (i < mp->natoms)
+			ap->nframes = n_new;
+		memmove(vp, tempv, sizeof(Vector) * mult * n_new);
 	}
 	free(tempv);
 	mp->nframes = n_new;
@@ -7816,9 +7853,9 @@ MoleculeInsertFrames(Molecule *mp, IntGroup *group, const Vector *inFrame)
 }
 
 int
-MoleculeRemoveFrames(Molecule *mp, IntGroup *group, Vector *outFrame)
+MoleculeRemoveFrames(Molecule *mp, IntGroup *group, Vector *outFrame, Vector *outFrameCell)
 {
-	int i, count, n_new, n_old, natoms, nframes;
+	int i, count, n_new, n_old, natoms, nframes, old_count;
 	Vector *tempv, *vp;
 	Atom *ap;
 	if (mp == NULL || (natoms = mp->natoms) == 0 || (count = IntGroupGetCount(group)) <= 0)
@@ -7826,12 +7863,14 @@ MoleculeRemoveFrames(Molecule *mp, IntGroup *group, Vector *outFrame)
 
 	/*  outFrame[] should have enough size for Vector * natoms * group.count  */
 	memset(outFrame, 0, sizeof(Vector) * natoms * count);
+	if (mp->cell != NULL && mp->frame_cells != NULL)
+		memset(outFrameCell, 0, sizeof(Vector) * 4 * count);
 
 	n_old = MoleculeGetNumberOfFrames(mp);
 	n_new = n_old - count;
 	if (n_new < 0)
 		n_new = 0;
-	tempv = (Vector *)malloc(sizeof(Vector) * n_old);
+	tempv = (Vector *)malloc(sizeof(Vector) * n_old * 4);  /*  "*4" for handling cells  */
 	if (tempv == NULL)
 		return -1;
 
@@ -7846,49 +7885,77 @@ MoleculeRemoveFrames(Molecule *mp, IntGroup *group, Vector *outFrame)
 		At last, s will become n_new and t will become count.  */
 	__MoleculeLock(mp);
 	nframes = 0;
-	for (i = 0, ap = mp->atoms; i < mp->natoms; i++, ap = ATOM_NEXT(ap)) {
+	for (i = 0, ap = mp->atoms; i <= mp->natoms; i++, ap = ATOM_NEXT(ap)) {
 		int s, t, j, ns, ne;
-		/*  Copy ap->frames to tempv  */
-		memset(tempv, 0, sizeof(Vector) * n_old);
-		vp = ap->frames;
-		if (vp != NULL)
-			memmove(tempv, vp, sizeof(Vector) * (ap->nframes > n_old ? n_old : ap->nframes));
-		else {
-			ap->frames = vp = (Vector *)calloc(sizeof(Vector), n_old);
+		int mult;
+		/*  if i == mp->natoms, mp->frame_cells is handled  */
+		if (i == mp->natoms) {
+			if (mp->cell == NULL || mp->frame_cells == NULL)
+				break;
+			mult = 4;
+			vp = mp->frame_cells;
+			old_count = n_old;
+		} else {
+			mult = 1;
+			vp = ap->frames;
 			if (vp == NULL) {
-				__MoleculeUnlock(mp);
-				return -1;
+				ap->frames = vp = (Vector *)calloc(sizeof(Vector), n_old);
+				if (vp == NULL) {
+					__MoleculeUnlock(mp);
+					return -1;
+				}
 			}
+			old_count = ap->nframes;
 		}
+
+		/*  Copy vp to tempv  */
+		memset(tempv, 0, sizeof(Vector) * mult * n_old);
+		memmove(tempv, vp, sizeof(Vector) * mult * (old_count > n_old ? n_old : old_count));
 		ne = ns = s = t = 0;
 		for (j = 0; ns < n_old && (ns = IntGroupGetStartPoint(group, j)) >= 0; j++) {
 			if (ns > n_old)
 				ns = n_old;
 			if (ns > ne) {
-				memmove(vp + s, tempv + ne, sizeof(Vector) * (ns - ne));
+				memmove(vp + s * mult, tempv + ne * mult, sizeof(Vector) * mult * (ns - ne));
 				s += ns - ne;
 			}
 			ne = IntGroupGetEndPoint(group, j);
 			if (ne > n_old)
 				ne = n_old;
 			while (ns < ne) {
-				outFrame[natoms * t + i] = tempv[ns];
+				if (i < mp->natoms)
+					outFrame[natoms * t + i] = tempv[ns];
+				else if (outFrameCell != NULL) {
+					outFrameCell[i * 4] = tempv[ns * 4];
+					outFrameCell[i * 4 + 1] = tempv[ns * 4 + 1];
+					outFrameCell[i * 4 + 2] = tempv[ns * 4 + 2];
+					outFrameCell[i * 4 + 3] = tempv[ns * 4 + 3];
+				}
 				t++;
 				ns++;
 			}
 		}
 		if (n_old > ne) {
-			memmove(vp + s, tempv + ne, sizeof(Vector) * (n_old - ne));
+			memmove(vp + s * mult, tempv + ne * mult, sizeof(Vector) * mult * (n_old - ne));
 			s += n_old - ne;
 		}
-		ap->nframes = s;
+		if (i < mp->natoms)
+			ap->nframes = s;
 		if (nframes < s)
 			nframes = s;
 		if (s == 0) {
-			free(ap->frames);
-			ap->frames = NULL;
+			if (i < mp->natoms) {
+				free(ap->frames);
+				ap->frames = NULL;
+			} else {
+				free(mp->frame_cells);
+				mp->frame_cells = NULL;
+			}
 		} else {
-			ap->frames = (Vector *)realloc(ap->frames, sizeof(Vector) * s);
+			if (i < mp->natoms)
+				ap->frames = (Vector *)realloc(ap->frames, sizeof(Vector) * s);
+			else
+				mp->frame_cells = (Vector *)realloc(mp->frame_cells, sizeof(Vector) * 4 * s);
 		}
 	}
 	free(tempv);
@@ -7903,6 +7970,7 @@ MoleculeRemoveFrames(Molecule *mp, IntGroup *group, Vector *outFrame)
 	return count;
 }
 
+#if 0
 int
 MoleculeInsertFrame(Molecule *mp, int index, const Vector *inFrame)
 {
@@ -7985,6 +8053,7 @@ MoleculeRemoveFrame(Molecule *mp, int frame, Vector *outFrame)
 	__MoleculeUnlock(mp);
 	return frame;
 }
+#endif
 
 int
 MoleculeSelectFrame(Molecule *mp, int frame, int copyback)
@@ -8008,6 +8077,11 @@ MoleculeSelectFrame(Molecule *mp, int frame, int copyback)
 			ok = 1;
 		}
 	}
+
+	if (mp->cell != NULL && mp->frame_cells != NULL) {
+		MoleculeSetPeriodicBox(mp, &mp->frame_cells[frame * 4], &mp->frame_cells[frame * 4 + 1], &mp->frame_cells[frame * 4 + 2], &mp->frame_cells[frame * 4 + 3], mp->cell->flags);
+	}
+
 	__MoleculeUnlock(mp);
 	if (ok) {
 		mp->cframe = frame;

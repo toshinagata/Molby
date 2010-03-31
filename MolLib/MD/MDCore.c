@@ -1589,16 +1589,24 @@ md_prepare(MDArena *arena, int check_only)
 	}
 
 	/*  Allocate ring buffer   */
-	if (arena->ring != NULL)
+	if (arena->ring != NULL) {
+		free(arena->ring->buf);
 		free(arena->ring);
-	arena->nringframes = 2000 / mol->natoms;
-	if (arena->nringframes == 0)
-		arena->nringframes = 1;
-	arena->ring = (Vector *)malloc(sizeof(Vector) * mol->natoms * arena->nringframes);
+	}
+	arena->ring = (MDRing *)calloc(sizeof(MDRing), 1);
 	if (arena->ring == NULL)
 		md_panic(arena, ERROR_out_of_memory);
-	arena->ring_next = 0;
-	arena->ring_count = 0;
+	arena->ring->size = mol->natoms;
+	if (arena->pressure != NULL && arena->pressure->disabled == 0)
+		arena->ring->size += 4;
+	arena->ring->nframes = 2000 / arena->ring->size;
+	if (arena->ring->nframes < 2)
+		arena->ring->nframes = 2;
+	arena->ring->buf = (Vector *)calloc(sizeof(Vector), arena->ring->size * arena->ring->nframes);
+	if (arena->ring->buf == NULL)
+		md_panic(arena, ERROR_out_of_memory);
+	arena->ring->next = 0;
+	arena->ring->count = 0;
 
 	/*  Initialize temperature statistics  */
 	arena->sum_temperature = 0.0;

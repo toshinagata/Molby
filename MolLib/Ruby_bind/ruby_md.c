@@ -96,7 +96,7 @@ s_MDArena_Run_or_minimize(VALUE self, VALUE arg, int minimize)
 	if (arena->step > start_step) {
 		/*  Create a new frame and copy new coordinates  */
 		ig = IntGroupNewWithPoints(MoleculeGetNumberOfFrames(arena->xmol), 1, -1);
-		MolActionCreateAndPerform(arena->xmol, gMolActionInsertFrames, ig, 0, NULL);
+		MolActionCreateAndPerform(arena->xmol, gMolActionInsertFrames, ig, 0, NULL, 0, NULL);
 		IntGroupRelease(ig);
 		md_copy_coordinates_from_internal(arena);
 	}

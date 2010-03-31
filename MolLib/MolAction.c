@@ -42,7 +42,7 @@ const char *gMolActionTranslateAtoms  = "translateAtoms:vG";
 const char *gMolActionRotateAtoms     = "rotate:vdvG";
 const char *gMolActionTransformAtoms  = "transform:tG";
 const char *gMolActionSetAtomPositions = "atomPosition:GV";
-const char *gMolActionInsertFrames    = "insertFrames:GV";
+const char *gMolActionInsertFrames    = "insertFrames:GVV";
 const char *gMolActionRemoveFrames    = "removeFrames:G";
 const char *gMolActionSetSelection    = "selection:G";
 const char *gMolActionChangeResidueNumber = "changeResSeq:Gi";
@@ -973,15 +973,19 @@ MolActionPerform(Molecule *mol, MolAction *action)
 		needsSymmetryAmendment = 1;
 	} else if (strcmp(action->name, gMolActionInsertFrames) == 0) {
 		int old_nframes, new_nframes;
+		Vector *vp2;
 		ig = action->args[0].u.igval;
 		vp = (Vector *)action->args[1].u.arval.ptr;
+		vp2 = (Vector *)action->args[2].u.arval.ptr;
 		n1 = IntGroupGetCount(ig);
 		if (n1 == 0)
 			return 0;  /*  Do nothing  */
 		if (vp != NULL && action->args[1].u.arval.nitems != n1 * mol->natoms)
 			return -1;  /*  Internal inconsistency  */
+		if (vp2 != NULL && action->args[2].u.arval.nitems != n1 * 4)
+			return -1;  /*  Internal inconsistency  */
 		old_nframes = MoleculeGetNumberOfFrames(mol);
-		if (MoleculeInsertFrames(mol, ig, vp) < 0)
+		if (MoleculeInsertFrames(mol, ig, vp, vp2) < 0)
 			return -1;  /*  Error  */
 		new_nframes = MoleculeGetNumberOfFrames(mol);
 		if (old_nframes + n1 < new_nframes) {
@@ -996,16 +1000,22 @@ MolActionPerform(Molecule *mol, MolAction *action)
 		act2 = MolActionNew(gMolActionRemoveFrames, ig);
 		act2->frame = mol->cframe;
 	} else if (strcmp(action->name, gMolActionRemoveFrames) == 0) {
+		Vector *vp2;
 		ig = action->args[0].u.igval;
 		n1 = IntGroupGetCount(ig);
 		if (n1 == 0)
 			return 0;  /*  Do nothing  */
 		vp = (Vector *)calloc(sizeof(Vector), n1 * mol->natoms);
-		if (MoleculeRemoveFrames(mol, ig, vp) < 0)
+		if (mol->cell != NULL && mol->frame_cells != NULL)
+			vp2 = (Vector *)calloc(sizeof(Vector) * 4, n1);
+		else vp2 = NULL;
+		if (MoleculeRemoveFrames(mol, ig, vp, vp2) < 0)
 			return -1;  /*  Error  */
-		act2 = MolActionNew(gMolActionInsertFrames, ig, n1 * mol->natoms, vp);
+		act2 = MolActionNew(gMolActionInsertFrames, ig, n1 * mol->natoms, vp, (vp2 != NULL ? n1 * 4 : 0), vp2);
 		act2->frame = mol->cframe;
 		free(vp);
+		if (vp2 != NULL)
+			free(vp2);
 	} else if (strcmp(action->name, gMolActionSetSelection) == 0) {
 		IntGroup *ig2;
 		ig2 = MoleculeGetSelection(mol);

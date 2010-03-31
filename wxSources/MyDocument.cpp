@@ -675,18 +675,27 @@ sDoMolecularDynamics(void *argptr, int argnum)
 				if (mol->requestAbortThread)
 					r = -1;
 				else {
-
 					/*  Copy the coordinate to the ring buffer  */
-					Vector *rp = mol->arena->ring + mol->natoms * mol->arena->ring_next;
+					MDRing *ring = mol->arena->ring;
+					Vector *rp = ring->buf + ring->size * ring->next;
 					Int j;
 					Atom *ap;
 					MoleculeLock(mol);
 					for (j = 0, ap = mol->arena->mol->atoms; j < mol->natoms; j++, ap = ATOM_NEXT(ap)) {
 						rp[j] = ap->r;
 					}
-					mol->arena->ring_next = (mol->arena->ring_next + 1) % mol->arena->nringframes;
-					if (mol->arena->ring_count < mol->arena->nringframes)
-						mol->arena->ring_count++;
+					if (j < ring->size) {
+						XtalCell *cp = mol->arena->mol->cell;
+						if (cp != NULL) {
+							rp[j++] = cp->axes[0];
+							rp[j++] = cp->axes[1];
+							rp[j++] = cp->axes[2];
+							rp[j++] = cp->origin;
+						}
+					}
+					ring->next = (ring->next + 1) % ring->nframes;
+					if (ring->count < ring->nframes)
+						ring->count++;
 					MoleculeUnlock(mol);
 					
 					/*  Create a new frame and copy the new coordinates  */
@@ -758,24 +767,40 @@ MyDocument::OnInsertFrameFromMD(wxCommandEvent &event)
 {
 	Int i, j, n, old_nframes;
 	Atom *ap;
+	MDRing *ring;
 
 	/*  Create new frame(s) and copy the new coordinates from the ring buffer  */
 	MoleculeLock(mol);
-	n = mol->arena->ring_count;
+	ring = mol->arena->ring;
+	n = ring->count;
 	if (n > 0) {
 		IntGroup *ig;
 		Vector *rp;
 		old_nframes = MoleculeGetNumberOfFrames(mol);
+		/*  It is more convenient to set cell parameter when inserting frames, whereas 
+		    the coordinates can be set afterwards  */
+		if (ring->size > mol->natoms) {
+			rp = (Vector *)calloc(sizeof(Vector) * 4, n);
+			for (i = 0; i < n; i++) {
+				j = ((ring->next - n + i + ring->nframes) % ring->nframes) * ring->size + mol->natoms;
+				rp[i * 4] = ring->buf[j++];
+				rp[i * 4 + 1] = ring->buf[j++];
+				rp[i * 4 + 2] = ring->buf[j++];
+				rp[i * 4 + 3] = ring->buf[j++];
+			}
+		} else rp = NULL;
 		ig = IntGroupNewWithPoints(old_nframes, n, -1);
-		MolActionCreateAndPerform(mol, gMolActionInsertFrames, ig, 0, NULL);
+		MolActionCreateAndPerform(mol, gMolActionInsertFrames, ig, 0, NULL, (rp != NULL ? n * 4 : 0), rp);
+		if (rp != NULL)
+			free(rp);
 		IntGroupRelease(ig);
 		for (i = 0; i < n; i++) {
 			MoleculeSelectFrame(mol, old_nframes + i, 1);
-			rp = mol->arena->ring + ((mol->arena->ring_next + mol->arena->nringframes - n + i) % mol->arena->nringframes) * mol->natoms;
+			rp = ring->buf + ((ring->next - n + i + ring->nframes) % ring->nframes) * ring->size;
 			for (j = 0, ap = mol->atoms; j < mol->natoms; j++, ap = ATOM_NEXT(ap))
 				ap->r = rp[j];
 		}
-		mol->arena->ring_count = 0;
+		ring->count = 0;
 	}
 	MoleculeUnlock(mol);
 }
