@@ -21,7 +21,7 @@
 #include <stdio.h>
 #include <math.h>
 
-#ifdef __WXMAC__
+#if defined(__WXMAC__) || defined(__CMDMAC__)
 /*  On Mac OS X, CLAPACK is in Accelerate.framework  */
 #include <vecLib/clapack.h>
 #else

@@ -27,7 +27,7 @@
 #include <version.h>  /*  for Ruby version  */
 #include <node.h>     /*  for rb_add_event_hook()  */
 
-#if __WXMAC__
+#if defined(__WXMAC__) || defined(__CMDMAC__)
 #include <signal.h>   /*  for sigaction()  */
 #endif
 

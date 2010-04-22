@@ -191,7 +191,7 @@ MatrixGeneralRotation(Mat33 dst, const Vector *v1, const Vector *v2, const Vecto
 
 
 /*  Get the eigenvalue/eigenvector for a real symmetric matrix (3x3)  */
-#ifndef __WXMAC__
+#if !defined(__WXMAC__) && !defined(__CMDMAC__)
 typedef integer        __CLPK_integer;
 typedef logical        __CLPK_logical;
 typedef real           __CLPK_real;

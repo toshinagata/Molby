@@ -20,7 +20,7 @@
 #include "MolLib.h"
 
 /*  The OpenGL header location may be different for different platform  */
-#ifdef __WXMAC__
+#if defined(__WXMAC__) || defined(__CMDMAC__)
 #include <OpenGL/gl.h>
 #include <OpenGL/glu.h>
 #include <GLUT/vvector.h>

@@ -52,6 +52,26 @@
 		E4C0C4960F25734B00161EC2 /* Dcd.c in Sources */ = {isa = PBXBuildFile; fileRef = E4C0C4950F25734B00161EC2 /* Dcd.c */; };
 		E4C8CBDF10B83060006C4692 /* MyDocManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E4C8CBDE10B83060006C4692 /* MyDocManager.cpp */; };
 		E4CFBB3B111096CF0081C481 /* amber11 in Resources */ = {isa = PBXBuildFile; fileRef = E4CFBB16111096CF0081C481 /* amber11 */; };
+		E4D5AD6A1180868A00B1D8A4 /* MyVersion.c in Sources */ = {isa = PBXBuildFile; fileRef = E472B7C41087F63200F931F3 /* MyVersion.c */; };
+		E4D5AD6B1180869500B1D8A4 /* MDGraphite.c in Sources */ = {isa = PBXBuildFile; fileRef = E42D8AEF1030193F00C20247 /* MDGraphite.c */; };
+		E4D5AD72118086A100B1D8A4 /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E43CCDD10EB20F0F00108D2D /* Accelerate.framework */; };
+		E4D5AD73118086A200B1D8A4 /* AGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E43CCDD20EB20F0F00108D2D /* AGL.framework */; };
+		E4D5AD74118086BF00B1D8A4 /* IntGroup.c in Sources */ = {isa = PBXBuildFile; fileRef = E433CE7C0EC709BD00675985 /* IntGroup.c */; };
+		E4D5AD76118086D500B1D8A4 /* MDCore.c in Sources */ = {isa = PBXBuildFile; fileRef = E42D8AF11030193F00C20247 /* MDCore.c */; };
+		E4D5AD77118086D600B1D8A4 /* MDForce.c in Sources */ = {isa = PBXBuildFile; fileRef = E42D8AF31030193F00C20247 /* MDForce.c */; };
+		E4D5AD78118086D800B1D8A4 /* MDPressure.c in Sources */ = {isa = PBXBuildFile; fileRef = E42D8AF61030193F00C20247 /* MDPressure.c */; };
+		E4D5AD79118086DB00B1D8A4 /* MDSurface.c in Sources */ = {isa = PBXBuildFile; fileRef = E49D17F1107753DF00C4841E /* MDSurface.c */; };
+		E4D5AD7A118086DC00B1D8A4 /* Missing.c in Sources */ = {isa = PBXBuildFile; fileRef = E433CE800EC709BD00675985 /* Missing.c */; };
+		E4D5AD7B118086DE00B1D8A4 /* MolAction.c in Sources */ = {isa = PBXBuildFile; fileRef = E433CE820EC709BD00675985 /* MolAction.c */; };
+		E4D5AD7C118086E300B1D8A4 /* Molecule.c in Sources */ = {isa = PBXBuildFile; fileRef = E433CE840EC709BD00675985 /* Molecule.c */; };
+		E4D5AD7D118086ED00B1D8A4 /* Object.c in Sources */ = {isa = PBXBuildFile; fileRef = E433CE870EC709BD00675985 /* Object.c */; };
+		E4D5AD7E118086EF00B1D8A4 /* Parameter.c in Sources */ = {isa = PBXBuildFile; fileRef = E433CE890EC709BD00675985 /* Parameter.c */; };
+		E4D5AD7F118086F500B1D8A4 /* ruby_bind.c in Sources */ = {isa = PBXBuildFile; fileRef = E433CE760EC7099B00675985 /* ruby_bind.c */; };
+		E4D5AD80118086FA00B1D8A4 /* ruby_md.c in Sources */ = {isa = PBXBuildFile; fileRef = E42D8BB21031BB2900C20247 /* ruby_md.c */; };
+		E4D5AD81118086FB00B1D8A4 /* ruby_types.c in Sources */ = {isa = PBXBuildFile; fileRef = E4299DA60F2A191600780B44 /* ruby_types.c */; };
+		E4D5AD841180870900B1D8A4 /* Types.c in Sources */ = {isa = PBXBuildFile; fileRef = E433CE8D0EC709BD00675985 /* Types.c */; };
+		E4D5AD9C1180890A00B1D8A4 /* Dcd.c in Sources */ = {isa = PBXBuildFile; fileRef = E4C0C4950F25734B00161EC2 /* Dcd.c */; };
+		E4D5ADA611808A2C00B1D8A4 /* cmdtool_stubs.c in Sources */ = {isa = PBXBuildFile; fileRef = E4D5ADA511808A2C00B1D8A4 /* cmdtool_stubs.c */; };
 		E4E2D5C510A249820007644A /* GlobalParameterFrame.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E4E2D5C410A249820007644A /* GlobalParameterFrame.cpp */; };
 		E4E470C910AE6F8600F72B68 /* GlobalParameterFilesFrame.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E4E470C810AE6F8600F72B68 /* GlobalParameterFilesFrame.cpp */; };
 		E4FFA9050EE960650045EDF9 /* RubyDialogFrame.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E4FFA9040EE960650045EDF9 /* RubyDialogFrame.cpp */; };
@@ -144,6 +164,8 @@
 		E4CBF39510A91ED500C7C74A /* style.css */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.css; name = style.css; path = ../Documents/etc/style.css; sourceTree = SOURCE_ROOT; };
 		E4CBF39710A91EDA00C7C74A /* makedoc.rb */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.ruby; name = makedoc.rb; path = ../Documents/makedoc.rb; sourceTree = SOURCE_ROOT; };
 		E4CFBB16111096CF0081C481 /* amber11 */ = {isa = PBXFileReference; lastKnownFileType = folder; name = amber11; path = build/amber11; sourceTree = "<group>"; };
+		E4D5AD651180852F00B1D8A4 /* Molby_command */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Molby_command; sourceTree = BUILT_PRODUCTS_DIR; };
+		E4D5ADA511808A2C00B1D8A4 /* cmdtool_stubs.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = cmdtool_stubs.c; sourceTree = "<group>"; };
 		E4E2D5C310A249820007644A /* GlobalParameterFrame.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = GlobalParameterFrame.h; path = ../wxSources/GlobalParameterFrame.h; sourceTree = SOURCE_ROOT; };
 		E4E2D5C410A249820007644A /* GlobalParameterFrame.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = GlobalParameterFrame.cpp; path = ../wxSources/GlobalParameterFrame.cpp; sourceTree = SOURCE_ROOT; };
 		E4E470C710AE6F8600F72B68 /* GlobalParameterFilesFrame.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = GlobalParameterFilesFrame.h; path = ../wxSources/GlobalParameterFilesFrame.h; sourceTree = SOURCE_ROOT; };
@@ -169,6 +191,15 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E4D5AD631180852F00B1D8A4 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E4D5AD72118086A100B1D8A4 /* Accelerate.framework in Frameworks */,
+				E4D5AD73118086A200B1D8A4 /* AGL.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -186,6 +217,7 @@
 			isa = PBXGroup;
 			children = (
 				8D1107320486CEB800E47090 /* Molby.app */,
+				E4D5AD651180852F00B1D8A4 /* Molby_command */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -261,6 +293,7 @@
 				E433CE8B0EC709BD00675985 /* Trackball.c */,
 				E433CE8E0EC709BD00675985 /* Types.h */,
 				E433CE8D0EC709BD00675985 /* Types.c */,
+				E4D5ADA511808A2C00B1D8A4 /* cmdtool_stubs.c */,
 				E43CCE0F0EB210DD00108D2D /* Ruby_bind */,
 			);
 			name = MolLib;
@@ -381,6 +414,22 @@
 			productReference = 8D1107320486CEB800E47090 /* Molby.app */;
 			productType = "com.apple.product-type.application";
 		};
+		E4D5AD641180852F00B1D8A4 /* Molby_command */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E4D5AD691180854D00B1D8A4 /* Build configuration list for PBXNativeTarget "Molby_command" */;
+			buildPhases = (
+				E4D5AD621180852F00B1D8A4 /* Sources */,
+				E4D5AD631180852F00B1D8A4 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Molby_command;
+			productName = Molby_command;
+			productReference = E4D5AD651180852F00B1D8A4 /* Molby_command */;
+			productType = "com.apple.product-type.tool";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -394,6 +443,7 @@
 			projectRoot = "";
 			targets = (
 				8D1107260486CEB800E47090 /* Molby */,
+				E4D5AD641180852F00B1D8A4 /* Molby_command */,
 			);
 		};
 /* End PBXProject section */
@@ -469,6 +519,31 @@
 				E4E470C910AE6F8600F72B68 /* GlobalParameterFilesFrame.cpp in Sources */,
 				E4C8CBDF10B83060006C4692 /* MyDocManager.cpp in Sources */,
 				E4A4667610C15B4300E40A9D /* listctrl.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E4D5AD621180852F00B1D8A4 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E4D5AD6A1180868A00B1D8A4 /* MyVersion.c in Sources */,
+				E4D5AD6B1180869500B1D8A4 /* MDGraphite.c in Sources */,
+				E4D5AD74118086BF00B1D8A4 /* IntGroup.c in Sources */,
+				E4D5AD76118086D500B1D8A4 /* MDCore.c in Sources */,
+				E4D5AD77118086D600B1D8A4 /* MDForce.c in Sources */,
+				E4D5AD78118086D800B1D8A4 /* MDPressure.c in Sources */,
+				E4D5AD79118086DB00B1D8A4 /* MDSurface.c in Sources */,
+				E4D5AD7A118086DC00B1D8A4 /* Missing.c in Sources */,
+				E4D5AD7B118086DE00B1D8A4 /* MolAction.c in Sources */,
+				E4D5AD7C118086E300B1D8A4 /* Molecule.c in Sources */,
+				E4D5AD7D118086ED00B1D8A4 /* Object.c in Sources */,
+				E4D5AD7E118086EF00B1D8A4 /* Parameter.c in Sources */,
+				E4D5AD7F118086F500B1D8A4 /* ruby_bind.c in Sources */,
+				E4D5AD80118086FA00B1D8A4 /* ruby_md.c in Sources */,
+				E4D5AD81118086FB00B1D8A4 /* ruby_types.c in Sources */,
+				E4D5AD841180870900B1D8A4 /* Types.c in Sources */,
+				E4D5AD9C1180890A00B1D8A4 /* Dcd.c in Sources */,
+				E4D5ADA611808A2C00B1D8A4 /* cmdtool_stubs.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -605,6 +680,44 @@
 			};
 			name = Release;
 		};
+		E4D5AD671180852F00B1D8A4 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				HEADER_SEARCH_PATHS = "$(HOME)/Development/ruby-1.8.7-static";
+				INSTALL_PATH = /usr/local/bin;
+				LIBRARY_SEARCH_PATHS = "$(HOME)/Development/ruby-1.8.7-static";
+				OTHER_CFLAGS = "-D__CMDMAC__=1";
+				OTHER_LDFLAGS = "-lruby-static";
+				PREBINDING = NO;
+				PRODUCT_NAME = Molby_command;
+			};
+			name = Debug;
+		};
+		E4D5AD681180852F00B1D8A4 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_MODEL_TUNING = G5;
+				HEADER_SEARCH_PATHS = "$(HOME)/Development/ruby-1.8.7-static";
+				INSTALL_PATH = /usr/local/bin;
+				LIBRARY_SEARCH_PATHS = "$(HOME)/Development/ruby-1.8.7-static";
+				OTHER_CFLAGS = "-D__CMDMAC__=1";
+				OTHER_LDFLAGS = "-lruby-static";
+				PREBINDING = NO;
+				PRODUCT_NAME = Molby_command;
+				ZERO_LINK = NO;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -622,6 +735,15 @@
 			buildConfigurations = (
 				C01FCF4F08A954540054247B /* Debug */,
 				C01FCF5008A954540054247B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E4D5AD691180854D00B1D8A4 /* Build configuration list for PBXNativeTarget "Molby_command" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E4D5AD671180852F00B1D8A4 /* Debug */,
+				E4D5AD681180852F00B1D8A4 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
