@@ -4989,6 +4989,7 @@ MoleculeAmendBySymmetry(Molecule *mp, IntGroup *group, IntGroup **groupout, Vect
 		ap->r = nr;
 		count++;
 	}
+	mp->needsMDCopyCoordinates = 1;
 	__MoleculeUnlock(mp);
 	if (groupout != NULL) {
 		if (count == 0) {
@@ -7009,6 +7010,7 @@ MoleculeTransform(Molecule *mp, Transform tr, IntGroup *group)
 			continue;
 		TransformVec(&ap->r, tr, &ap->r);
 	}
+	mp->needsMDCopyCoordinates = 1;
 	__MoleculeUnlock(mp);
 	sMoleculeNotifyChangeAppearance(mp);
 }
@@ -7026,6 +7028,7 @@ MoleculeMove(Molecule *mp, Transform tr, IntGroup *group)
 			continue;
 		TransformVec(&ap->r, tr, &ap->r);
 	}
+	mp->needsMDCopyCoordinates = 1;
 	__MoleculeUnlock(mp);
 	sMoleculeNotifyChangeAppearance(mp);
 }
@@ -7043,6 +7046,7 @@ MoleculeTranslate(Molecule *mp, const Vector *vp, IntGroup *group)
 			continue;
 		VecInc(ap->r, *vp);
 	}
+	mp->needsMDCopyCoordinates = 1;
 	__MoleculeUnlock(mp);
 	sMoleculeNotifyChangeAppearance(mp);
 }
@@ -7073,6 +7077,7 @@ MoleculeRotate(Molecule *mp, const Vector *axis, Double angle, const Vector *cen
 			continue;
 		TransformVec(&ap->r, tr, &ap->r);
 	}
+	mp->needsMDCopyCoordinates = 1;
 	__MoleculeUnlock(mp);
 	sMoleculeNotifyChangeAppearance(mp);
 }
@@ -7094,6 +7099,7 @@ MoleculeReaxis(Molecule *mp, const Vector *xaxis, const Vector *yaxis, const Vec
 		v.z = VecDot(ap->r, *zaxis);
 		ap->r = v;
 	}
+	mp->needsMDCopyCoordinates = 1;
 	__MoleculeUnlock(mp);
 	sMoleculeNotifyChangeAppearance(mp);
 }
@@ -8081,7 +8087,7 @@ MoleculeSelectFrame(Molecule *mp, int frame, int copyback)
 	if (mp->cell != NULL && mp->frame_cells != NULL) {
 		MoleculeSetPeriodicBox(mp, &mp->frame_cells[frame * 4], &mp->frame_cells[frame * 4 + 1], &mp->frame_cells[frame * 4 + 2], &mp->frame_cells[frame * 4 + 3], mp->cell->flags);
 	}
-
+	mp->needsMDCopyCoordinates = 1;
 	__MoleculeUnlock(mp);
 	if (ok) {
 		mp->cframe = frame;

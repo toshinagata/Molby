@@ -2630,6 +2630,7 @@ md_copy_coordinates_to_internal(MDArena *arena)
 	}
 	if (arena->mol->cell != NULL && arena->xmol->cell != NULL)
 		memmove(arena->mol->cell, arena->xmol->cell, sizeof(XtalCell));
+	arena->xmol->needsMDCopyCoordinates = 0;
 	return 0;
 }
 
@@ -2657,7 +2658,10 @@ md_main(MDArena *arena, int minimize)
 			snprintf(arena->errmsg, sizeof(arena->errmsg), "%s", msg);
 			return 1;
 		}
-		/*  Copy coordinates  */
+		arena->xmol->needsMDCopyCoordinates = 1;  /*  Coordinates will be copied below  */
+	}
+	
+	if (arena->xmol->needsMDCopyCoordinates) {
 		MoleculeLock(arena->xmol);
 		retval = md_copy_coordinates_to_internal(arena);
 		MoleculeUnlock(arena->xmol);

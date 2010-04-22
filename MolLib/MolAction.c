@@ -1262,6 +1262,7 @@ MolActionPerform(Molecule *mol, MolAction *action)
 			free(vp2);
 			IntGroupRelease(ig2);
 		}
+		mol->needsMDCopyCoordinates = 1;
 	}
 	
 	if (needsRebuildMDArena) {

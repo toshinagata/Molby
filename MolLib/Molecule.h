@@ -282,6 +282,9 @@ typedef struct Molecule {
 	/*  Flag to request rebuilding MD internal information  */
 	Byte   needsMDRebuild;
 	
+	/*  Flag to request copying coordinates to MD arena  */
+	Byte   needsMDCopyCoordinates;
+
 	/*  Prohibit modification of the topology (to avoid interfering MD) */
 	Byte   noModifyTopology;
 	

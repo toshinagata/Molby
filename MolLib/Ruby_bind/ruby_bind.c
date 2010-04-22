@@ -3094,6 +3094,14 @@ s_AtomFromValue(VALUE self)
 	return ap;
 }
 
+static Atom *
+s_AtomAndMoleculeFromValue(VALUE self, Molecule **mpp)
+{
+	Atom *ap;
+	s_AtomIndexFromValue(self, &ap, mpp);
+	return ap;
+}
+
 static void
 s_NotifyModificationForAtomRef(VALUE self)
 {
@@ -3306,35 +3314,42 @@ static VALUE s_AtomRef_SetName(VALUE self, VALUE val) {
 }
 
 static VALUE s_AtomRef_SetAtomType(VALUE self, VALUE val) {
+	Molecule *mp;
 	char *p = StringValuePtr(val);
 	VALUE oval = s_AtomRef_GetAtomType(self);
 	int type = (p[0] == 0 ? 0 : AtomTypeEncodeToUInt(p));
 	if (type != 0 && type < kAtomTypeMinimum)
 		rb_raise(rb_eMolbyError, "Invalid atom type '%s'", p);
-	s_AtomFromValue(self)->type = type;
+	s_AtomAndMoleculeFromValue(self, &mp)->type = type;
+	mp->needsMDRebuild = 1;
 	s_RegisterUndoForAtomAttrChange(self, s_AtomTypeSym, val, oval);
 	return val;
 }
 
 static VALUE s_AtomRef_SetCharge(VALUE self, VALUE val) {
+	Molecule *mp;
 	VALUE oval = s_AtomRef_GetCharge(self);
 	val = rb_Float(val);
-	s_AtomFromValue(self)->charge = NUM2DBL(val);
+	s_AtomAndMoleculeFromValue(self, &mp)->charge = NUM2DBL(val);
+	mp->needsMDRebuild = 1;
 	s_RegisterUndoForAtomAttrChange(self, s_ChargeSym, val, oval);
 	return val;
 }
 
 static VALUE s_AtomRef_SetWeight(VALUE self, VALUE val) {
+	Molecule *mp;
 	VALUE oval = s_AtomRef_GetWeight(self);
 	val = rb_Float(val);
-	s_AtomFromValue(self)->weight = NUM2DBL(val);
+	s_AtomAndMoleculeFromValue(self, &mp)->weight = NUM2DBL(val);
+	mp->needsMDRebuild = 1;
 	s_RegisterUndoForAtomAttrChange(self, s_WeightSym, val, oval);
 	return val;
 }
 
 static VALUE s_AtomRef_SetElement(VALUE self, VALUE val) {
 	Double w;
-	Atom *ap = s_AtomFromValue(self);
+	Molecule *mp;
+	Atom *ap = s_AtomAndMoleculeFromValue(self, &mp);
 	char *p = StringValuePtr(val);
 	VALUE oval = s_AtomRef_GetElement(self);
 	ap->atomicNumber = ElementToInt(p);
@@ -3342,12 +3357,14 @@ static VALUE s_AtomRef_SetElement(VALUE self, VALUE val) {
 	if ((w = WeightForAtomicNumber(ap->atomicNumber)) > 0.0)
 		ap->weight = w;
 	s_RegisterUndoForAtomAttrChange(self, s_ElementSym, val, oval);
+	mp->needsMDRebuild = 1;
 	return val;
 }
 
 static VALUE s_AtomRef_SetAtomicNumber(VALUE self, VALUE val) {
 	Double w;
-	Atom *ap = s_AtomFromValue(self);
+	Molecule *mp;
+	Atom *ap = s_AtomAndMoleculeFromValue(self, &mp);
 	VALUE oval = s_AtomRef_GetAtomicNumber(self);
 	val = rb_Integer(val);
 	ap->atomicNumber = NUM2INT(val);
@@ -3355,6 +3372,7 @@ static VALUE s_AtomRef_SetAtomicNumber(VALUE self, VALUE val) {
 	if ((w = WeightForAtomicNumber(ap->atomicNumber)) > 0.0)
 		ap->weight = w;
 	s_RegisterUndoForAtomAttrChange(self, s_AtomicNumberSym, val, oval);
+	mp->needsMDRebuild = 1;
 	return val;
 }
 
@@ -3365,40 +3383,48 @@ static VALUE s_AtomRef_SetConnects(VALUE self, VALUE val) {
 
 static VALUE s_AtomRef_SetR(VALUE self, VALUE val) {
 	Vector v;
+	Molecule *mp;
 	VALUE oval = s_AtomRef_GetR(self);
 	VectorFromValue(val, &v);
-	s_AtomFromValue(self)->r = v;
+	s_AtomAndMoleculeFromValue(self, &mp)->r = v;
 	s_RegisterUndoForAtomAttrChange(self, s_RSym, val, oval);
+	mp->needsMDCopyCoordinates = 1;
 	return val;
 }
 
 static VALUE s_AtomRef_SetX(VALUE self, VALUE val) {
 	Double f;
+	Molecule *mp;
 	VALUE oval = s_AtomRef_GetX(self);
 	val = rb_Float(val);
 	f = NUM2DBL(val);
- 	s_AtomFromValue(self)->r.x = f;
+ 	s_AtomAndMoleculeFromValue(self, &mp)->r.x = f;
 	s_RegisterUndoForAtomAttrChange(self, s_XSym, val, oval);
+	mp->needsMDCopyCoordinates = 1;
 	return val;
 }
 
 static VALUE s_AtomRef_SetY(VALUE self, VALUE val) {
 	Double f;
+	Molecule *mp;
 	VALUE oval = s_AtomRef_GetY(self);
 	val = rb_Float(val);
 	f = NUM2DBL(val);
-	s_AtomFromValue(self)->r.y = f;
+	s_AtomAndMoleculeFromValue(self, &mp)->r.y = f;
 	s_RegisterUndoForAtomAttrChange(self, s_YSym, val, oval);
+	mp->needsMDCopyCoordinates = 1;
 	return val;
 }
 
 static VALUE s_AtomRef_SetZ(VALUE self, VALUE val) {
 	Double f;
+	Molecule *mp;
 	VALUE oval = s_AtomRef_GetZ(self);
 	val = rb_Float(val);
 	f = NUM2DBL(val);
-	s_AtomFromValue(self)->r.z = f;
+	s_AtomAndMoleculeFromValue(self, &mp)->r.z = f;
 	s_RegisterUndoForAtomAttrChange(self, s_ZSym, val, oval);
+	mp->needsMDCopyCoordinates = 1;
 	return val;
 }
 
@@ -3413,6 +3439,7 @@ static VALUE s_AtomRef_SetFractionalR(VALUE self, VALUE val) {
 		TransformVec(&v, mp->cell->tr, &v);
 	ap->r = v;
 	s_RegisterUndoForAtomAttrChange(self, s_RSym, Qnil, ValueFromVector(&ov));
+	mp->needsMDCopyCoordinates = 1;
 	return val;
 }
 
@@ -3432,6 +3459,7 @@ static VALUE s_AtomRef_SetFractionalX(VALUE self, VALUE val) {
 	} else v.x = f;
 	ap->r = v;
 	s_RegisterUndoForAtomAttrChange(self, s_RSym, Qnil, ValueFromVector(&ov));
+	mp->needsMDCopyCoordinates = 1;
 	return val;
 }
 
@@ -3451,6 +3479,7 @@ static VALUE s_AtomRef_SetFractionalY(VALUE self, VALUE val) {
 	} else v.y = f;
 	ap->r = v;
 	s_RegisterUndoForAtomAttrChange(self, s_RSym, Qnil, ValueFromVector(&ov));
+	mp->needsMDCopyCoordinates = 1;
 	return val;
 }
 
@@ -3470,6 +3499,7 @@ static VALUE s_AtomRef_SetFractionalZ(VALUE self, VALUE val) {
 	} else v.z = f;
 	ap->r = v;
 	s_RegisterUndoForAtomAttrChange(self, s_RSym, Qnil, ValueFromVector(&ov));
+	mp->needsMDCopyCoordinates = 1;
 	return val;
 }
 
@@ -3483,15 +3513,18 @@ static VALUE s_AtomRef_SetV(VALUE self, VALUE val) {
 	s_AtomIndexFromValue(self, &ap, &mp);
 	ap->v = v;
 	s_RegisterUndoForAtomAttrChange(self, s_VSym, val, oval);
+	mp->needsMDCopyCoordinates = 1;
 	return val;
 }
 
 static VALUE s_AtomRef_SetF(VALUE self, VALUE val) {
 	Vector v;
+	Molecule *mp;
 	VALUE oval = s_AtomRef_GetF(self);
 	VectorFromValue(val, &v);
-	s_AtomFromValue(self)->f = v;
+	s_AtomAndMoleculeFromValue(self, &mp)->f = v;
 	s_RegisterUndoForAtomAttrChange(self, s_FSym, val, oval);
+	mp->needsMDCopyCoordinates = 1;
 	return val;
 }
 
@@ -3541,19 +3574,23 @@ static VALUE s_AtomRef_SetIntCharge(VALUE self, VALUE val) {
 }
 
 static VALUE s_AtomRef_SetFixForce(VALUE self, VALUE val) {
+	Molecule *mp;
 	VALUE oval = s_AtomRef_GetFixForce(self);
 	val = rb_Float(val);
-	s_AtomFromValue(self)->fix_force = NUM2DBL(val) * KCAL2INTERNAL;
+	s_AtomAndMoleculeFromValue(self, &mp)->fix_force = NUM2DBL(val) * KCAL2INTERNAL;
 	s_RegisterUndoForAtomAttrChange(self, s_FixForceSym, val, oval);
+	mp->needsMDRebuild = 1;
 	return val;
 }
 
 static VALUE s_AtomRef_SetFixPos(VALUE self, VALUE val) {
 	Vector v;
+	Molecule *mp;
 	VALUE oval = s_AtomRef_GetFixPos(self);
 	VectorFromValue(val, &v);
-	s_AtomFromValue(self)->fix_pos = v;
+	s_AtomAndMoleculeFromValue(self, &mp)->fix_pos = v;
 	s_RegisterUndoForAtomAttrChange(self, s_FixPosSym, val, oval);
+	mp->needsMDRebuild = 1;
 	return val;
 }
 
@@ -5937,7 +5974,8 @@ s_Molecule_InsertFrames(int argc, VALUE *argv, VALUE self)
 	VALUE val, coords, cells;
     Molecule *mol;
 	IntGroup *ig;
-	int count, ival, i, j, len, nframes;
+	int count, ival, i, j, len, len_c, len2, nframes;
+	VALUE *ptr, *ptr2;
 	Vector *vp, *vp2;
     Data_Get_Struct(self, Molecule, mol);
 	rb_scan_args(argc, argv, "12", &val, &coords, &cells);
@@ -5951,28 +5989,26 @@ s_Molecule_InsertFrames(int argc, VALUE *argv, VALUE self)
 			rb_raise(rb_eTypeError, "the unit cell is not defined but the cell axes are given");
 		if (TYPE(cells) != T_ARRAY)
 			rb_raise(rb_eTypeError, "the cell axes should be given as an array of Vector3D");
-		if (len != RARRAY_LEN(coords))
-			rb_raise(rb_eTypeError, "the number of entries for coordinates and cell axes does not match");
-	}
+		len_c = RARRAY_LEN(cells);
+	} else len_c = 0;
+	count = (len > len_c ? len : len_c);  /*  May be zero; will be updated later  */
 	nframes = MoleculeGetNumberOfFrames(mol);
 	if (val == Qnil) {
-		ig = IntGroupNewWithPoints(nframes, (len > 0 ? len : 1), -1);
+		ig = IntGroupNewWithPoints(nframes, (count > 0 ? count : 1), -1);
 		val = ValueFromIntGroup(ig);
 	} else {
 		ig = IntGroupFromValue(val);
 	}
-	count = IntGroupGetCount(ig);
+	count = IntGroupGetCount(ig);  /*  Count is updated here  */
 	vp = ALLOC_N(Vector, mol->natoms * count);
-	if (cells != Qnil && len > 0)
+	if (cells != Qnil)
 		vp2 = ALLOC_N(Vector, 4 * count);
 	else vp2 = NULL;
 	if (len > 0) {
-		VALUE *ptr, *ptr2;
-		int j, len2;
 		if (len < count)
 			rb_raise(rb_eMolbyError, "the coordinates should contain no less than %d arrays (for frames)", count);
 		ptr = RARRAY_PTR(coords);
-		for (i = 0; i < len; i++) {
+		for (i = 0; i < count; i++) {
 			if (TYPE(ptr[i]) != T_ARRAY)
 				rb_raise(rb_eTypeError, "the coordinate array contains non-array object at index %d", i);
 			len2 = RARRAY_LEN(ptr[i]);
@@ -5982,25 +6018,27 @@ s_Molecule_InsertFrames(int argc, VALUE *argv, VALUE self)
 			for (j = 0; j < mol->natoms; j++)
 				VectorFromValue(ptr2[j], &vp[i * mol->natoms + j]);
 		}
-		if (vp2 != NULL) {
-			ptr = RARRAY_PTR(cells);
-			for (i = 0; i < len; i++) {
-				if (TYPE(ptr[i]) != T_ARRAY)
-					rb_raise(rb_eTypeError, "the cell parameter array contains non-array object at index %d", i);
-				len2 = RARRAY_LEN(ptr[i]);
-				if (len2 < 4)
-					rb_raise(rb_eMolbyError, "the cell parameter should contain 4 vectors");
-				ptr2 = RARRAY_PTR(ptr[i]);
-				for (j = 0; j < 4; j++)
-					VectorFromValue(ptr2[j], &vp2[i * 4 + j]);
-			}
-		}
 	} else {
 		Atom *ap;
 		for (i = 0; i < count; i++) {
 			for (j = 0, ap = mol->atoms; j < mol->natoms; j++, ap = ATOM_NEXT(ap)) {
 				vp[i * mol->natoms + j] = ap->r;
 			}
+		}
+	}
+	if (len_c > 0) {
+		if (len_c < count)
+			rb_raise(rb_eMolbyError, "the cell vectors should contain no less than %d arrays (for frames)", count);
+		ptr = RARRAY_PTR(cells);
+		for (i = 0; i < count; i++) {
+			if (TYPE(ptr[i]) != T_ARRAY)
+				rb_raise(rb_eTypeError, "the cell parameter array contains non-array object at index %d", i);
+			len2 = RARRAY_LEN(ptr[i]);
+			if (len2 < 4)
+				rb_raise(rb_eMolbyError, "the cell parameter should contain 4 vectors");
+			ptr2 = RARRAY_PTR(ptr[i]);
+			for (j = 0; j < 4; j++)
+				VectorFromValue(ptr2[j], &vp2[i * 4 + j]);
 		}
 	}
 	ival = MolActionCreateAndPerform(mol, gMolActionInsertFrames, ig, mol->natoms * count, vp, (vp2 != NULL ? 4 * count : 0), vp2);
@@ -6021,10 +6059,10 @@ s_Molecule_InsertFrames(int argc, VALUE *argv, VALUE self)
 static VALUE
 s_Molecule_CreateFrames(int argc, VALUE *argv, VALUE self)
 {
-	VALUE vals[2];
-	rb_scan_args(argc, argv, "01", &vals[1]);
+	VALUE vals[3];
+	rb_scan_args(argc, argv, "02", &vals[1], &vals[2]);
 	vals[0] = Qnil;
-	return s_Molecule_InsertFrames(2, vals, self);
+	return s_Molecule_InsertFrames(3, vals, self);
 }
 
 /*
