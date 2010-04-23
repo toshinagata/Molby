@@ -1204,6 +1204,8 @@ MolActionPerform(Molecule *mol, MolAction *action)
 		up = action->args[2].u.arval.ptr;
 		ParameterInsert(mol->par, parType, up, ig);
 		act2 = MolActionNew(gMolActionDeleteParameters, parType, ig);
+		needsRebuildMDArena = 1;
+		mol->parameterTableSelectionNeedsClear = 1;
 	} else if (strcmp(action->name, gMolActionDeleteParameters) == 0) {
 		UnionPar *up;
 		Int parType;
@@ -1216,6 +1218,8 @@ MolActionPerform(Molecule *mol, MolAction *action)
 		ParameterDelete(mol->par, parType, up, ig);
 		act2 = MolActionNew(gMolActionAddParameters, parType, ig, n1, up);
 		free(up);
+		needsRebuildMDArena = 1;
+		mol->parameterTableSelectionNeedsClear = 1;
 /*	} else if (strcmp(action->name, gMolActionCartesianToXtal) == 0 || (strcmp(action->name, gMolActionXtalToCartesian) == 0 && (n1 = 1))) {
 		Int i, j;
 		Atom *ap;

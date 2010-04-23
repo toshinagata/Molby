@@ -562,7 +562,14 @@ MoleculeView::OnDocumentModified(wxCommandEvent& event)
 		MainView_refreshTable(mview);
 		MoleculeUnlock(mview->mol);
 	}
-	printf("MoleculeView::OnDocumentModified invoked\n");
+	
+	if (mview->tableIndex == kMainViewParameterTableIndex && mview->mol->parameterTableSelectionNeedsClear) {
+		/*  Clear parameter selection if necessary  */
+		MainViewCallback_setTableSelection(mview, NULL);
+		mview->mol->parameterTableSelectionNeedsClear = 0;
+	}
+	
+/*	printf("MoleculeView::OnDocumentModified invoked\n"); */
 	event.Skip();  /*  Continue processing of the notification  */
 }
 
@@ -609,7 +616,7 @@ MoleculeView::OnChar(wxKeyEvent &event)
 void
 MoleculeView::SelectTable(int idx)
 {
-	if (idx >= 0 && idx < listmenu->GetCount()) {
+	if (idx >= 0 && idx < listmenu->GetCount() && idx != mview->tableIndex) {
 		isRebuildingTable = true;
 		listmenu->SetSelection(idx);
 		MainView_createColumnsForTableAtIndex(mview, idx);
@@ -617,6 +624,9 @@ MoleculeView::SelectTable(int idx)
 		MoleculeLock(mview->mol);
 		MainView_refreshTable(mview);
 		MoleculeUnlock(mview->mol);
+		if (idx == kMainViewParameterTableIndex || idx == kMainViewMOTableIndex) {
+			MainViewCallback_setTableSelection(mview, NULL);
+		}
 	}
 }
 
@@ -1138,15 +1148,17 @@ MainViewCallback_setTableSelection(MainView *mview, IntGroup *selection)
 		return;
 	n = 0;
 	listctrl->EnableSelectionChangeNotification(false);
-	for (i = 0; (n1 = IntGroupGetStartPoint(selection, i)) >= 0; i++) {
-		n2 = IntGroupGetEndPoint(selection, i);
-		while (n < n1) {
-			listctrl->SetItemState(n, 0, wxLIST_STATE_SELECTED);
-			n++;
-		}
-		while (n < n2) {
-			listctrl->SetItemState(n, wxLIST_STATE_SELECTED, wxLIST_STATE_SELECTED);
-			n++;
+	if (selection != NULL) {
+		for (i = 0; (n1 = IntGroupGetStartPoint(selection, i)) >= 0; i++) {
+			n2 = IntGroupGetEndPoint(selection, i);
+			while (n < n1) {
+				listctrl->SetItemState(n, 0, wxLIST_STATE_SELECTED);
+				n++;
+			}
+			while (n < n2) {
+				listctrl->SetItemState(n, wxLIST_STATE_SELECTED, wxLIST_STATE_SELECTED);
+				n++;
+			}
 		}
 	}
 	listctrl->RefreshTable();

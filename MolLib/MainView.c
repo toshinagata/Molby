@@ -177,7 +177,7 @@ MainView_refreshCachedInfo(MainView *mview)
 	IntGroupClear(mview->tableCache);
 	IntGroupClear(mview->tableSelection);
 		
-	if (mview->tableIndex == 0) {  /* Atoms */
+	if (mview->tableIndex == kMainViewAtomTableIndex) {  /* Atoms */
 		for (i = j = 0; i < mol->natoms; i++) {
 			f1 = mview->visibleFlags[i];
 			if ((f1 & 1) != 0) {
@@ -187,7 +187,7 @@ MainView_refreshCachedInfo(MainView *mview)
 				j++;
 			}
 		}
-	} else if (mview->tableIndex == 1) {  /* Bonds */
+	} else if (mview->tableIndex == kMainViewBondTableIndex) {  /* Bonds */
 		for (i = j = 0; i < mol->nbonds; i++) {
 			n1 = mol->bonds[i * 2];
 			n2 = mol->bonds[i * 2 + 1];
@@ -200,7 +200,7 @@ MainView_refreshCachedInfo(MainView *mview)
 				j++;
 			}
 		}
-	} else if (mview->tableIndex == 2) {  /* Angles */
+	} else if (mview->tableIndex == kMainViewAngleTableIndex) {  /* Angles */
 		for (i = j = 0; i < mol->nangles; i++) {
 			n1 = mol->angles[i * 3];
 			n2 = mol->angles[i * 3 + 1];
@@ -215,7 +215,7 @@ MainView_refreshCachedInfo(MainView *mview)
 				j++;
 			}
 		}
-	} else if (mview->tableIndex == 3) {  /* Dihedrals */
+	} else if (mview->tableIndex == kMainViewDihedralTableIndex) {  /* Dihedrals */
 		for (i = j = 0; i < mol->ndihedrals; i++) {
 			n1 = mol->dihedrals[i * 4];
 			n2 = mol->dihedrals[i * 4 + 1];
@@ -232,7 +232,7 @@ MainView_refreshCachedInfo(MainView *mview)
 				j++;
 			}
 		}
-	} else if (mview->tableIndex == 4) {  /* Impropers */
+	} else if (mview->tableIndex == kMainViewImproperTableIndex) {  /* Impropers */
 		for (i = j = 0; i < mol->nimpropers; i++) {
 			n1 = mol->impropers[i * 4];
 			n2 = mol->impropers[i * 4 + 1];
@@ -249,7 +249,9 @@ MainView_refreshCachedInfo(MainView *mview)
 				j++;
 			}
 		}
-	} else if (mview->tableIndex == 5) {  /* MO infos  */
+	} else if (mview->tableIndex == kMainViewParameterTableIndex) {  /* Parameter infos */
+		/*  Do nothing (tableCache will not be used)  */
+	} else if (mview->tableIndex == kMainViewMOTableIndex) {  /* MO infos  */
 		/*  Really no need to cache info, but create it anyway to simplify code  */
 		if (mol->bset != NULL && mol->bset->nmos > 0)
 			IntGroupAdd(mview->tableCache, 0, mol->bset->nmos);
@@ -2745,6 +2747,7 @@ MainView_pasteParameters(MainView *mview)
 {
 	char *p, *pp;
 	Int len, i;
+	IntGroup *newsel;
 	if (mview == NULL || mview->mol == NULL || mview->mol->par == NULL)
 		return -1;
 	if (!MoleculeCallback_isDataInPasteboard(kParameterPasteboardType))
@@ -2752,8 +2755,9 @@ MainView_pasteParameters(MainView *mview)
 	if (MoleculeCallback_readFromPasteboard(kParameterPasteboardType, (void **)&p, &len) != 0)
 		return 2;
 	pp = p;
+	newsel = IntGroupNew();
 	while (*p != 0) {
-		int count;
+		int count, c;
 		UnionPar *up;
 		IntGroup *ig;
 		int parType = *p;
@@ -2771,13 +2775,27 @@ MainView_pasteParameters(MainView *mview)
 				up[i].bond.src = 0;
 		}
 		
-		ig = IntGroupNewWithPoints(ParameterGetCountForType(mview->mol->par, parType), count, -1);
+		c = ParameterGetCountForType(mview->mol->par, parType);
+		ig = IntGroupNewWithPoints(c, count, -1);
 		MolActionCreateAndPerform(mview->mol, gMolActionAddParameters, parType, ig, count, up);
 		free(up);
 		IntGroupRelease(ig);
 		p += sizeof(UnionPar) * count;
+		c = ParameterTableGetRowFromTypeAndIndex(mview->mol->par, parType, c);
+		IntGroupAdd(newsel, c, count);
 	}
 	free(pp);
+	
+	/*  Select newly pasted parameters  */
+	MainViewCallback_setTableSelection(mview, newsel);
+	IntGroupRelease(newsel);
+
+	/*  Request MD rebuild  */
+	mview->mol->needsMDRebuild = 1;
+
+	/*  Suppress clear of parameter table selection  */
+	mview->mol->parameterTableSelectionNeedsClear = 0;
+
 	MoleculeCallback_notifyModification(mview->mol, 0);
 	return 0;
 }
@@ -2845,7 +2863,12 @@ MainView_copyOrCutParameters(MainView *mview, int flags)
 		if (n != 0)
 			return n;
 	}
-	
+	if (flags & 1) {
+		/*  Clear selection  */
+		MainViewCallback_setTableSelection(mview, NULL);
+		/*  Request MD rebuild  */
+		mview->mol->needsMDRebuild = 1;
+	}
 	MoleculeCallback_notifyModification(mview->mol, 0);
 	return 0;
 }
@@ -2939,7 +2962,7 @@ MainView_refreshTable(MainView *mview)
 	
 	MainViewCallback_reloadTableData(mview);
 
-	if (mview != NULL && mview->mol != NULL)
+	if (mview != NULL && mview->mol != NULL && mview->tableIndex >= kMainViewAtomTableIndex && mview->tableIndex <= kMainViewImproperTableIndex)
 		MainViewCallback_setTableSelection(mview, mview->tableSelection);
 }
 

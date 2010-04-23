@@ -282,6 +282,9 @@ typedef struct Molecule {
 	/*  Flag to request rebuilding MD internal information  */
 	Byte   needsMDRebuild;
 	
+	/*  Flag to clear selection of the parameter table  */
+	Byte   parameterTableSelectionNeedsClear;
+	
 	/*  Flag to request copying coordinates to MD arena  */
 	Byte   needsMDCopyCoordinates;
 

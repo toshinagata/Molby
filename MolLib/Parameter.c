@@ -1538,6 +1538,32 @@ ParameterTableGetItemIndex(Parameter *par, int row, int *type)
 	return row;
 }
 
+int
+ParameterTableGetRowFromTypeAndIndex(Parameter *par, int type, int idx)
+{
+	int ofs = 1;
+	if (idx < -1)
+		return -1;  /*  Invalid  */
+	if (type == kVdwParType)
+		return (idx < par->nvdwPars ? idx + ofs : -1);
+	ofs += par->nvdwPars + 1;
+	if (type == kBondParType)
+		return (idx < par->nbondPars ? idx + ofs : -1);
+	ofs += par->nbondPars + 1;
+	if (type == kAngleParType)
+		return (idx < par->nanglePars ? idx + ofs : -1);
+	ofs += par->nanglePars + 1;
+	if (type == kDihedralParType)
+		return (idx < par->ndihedralPars ? idx + ofs : -1);
+	ofs += par->ndihedralPars + 1;
+	if (type == kImproperParType)
+		return (idx < par->nimproperPars ? idx + ofs : -1);
+	ofs += par->nimproperPars + 1;
+	if (type == kVdwPairParType)
+		return (idx < par->nvdwpPars ? idx + ofs : -1);
+	return -1;
+}
+
 UnionPar *
 ParameterTableGetItemPtr(Parameter *par, int row, int *type)
 {

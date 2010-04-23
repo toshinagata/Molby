@@ -226,6 +226,7 @@ Double RadiusForAtomicNumber(Int elem);
 	
 int ParameterTableNumberOfRows(Parameter *par);
 int ParameterTableGetItemIndex(Parameter *par, int row, int *type);
+int ParameterTableGetRowFromTypeAndIndex(Parameter *par, int type, int idx);
 UnionPar *ParameterTableGetItemPtr(Parameter *par, int row, int *type);
 void ParameterTableGetItemText(Parameter *par, int column, int row, char *buf, int bufsize);
 int ParameterTableGetItemSource(Parameter *par, int row);
