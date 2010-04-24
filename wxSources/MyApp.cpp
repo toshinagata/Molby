@@ -59,6 +59,8 @@
 
 #if defined(__WXMAC__)
 #include <CoreFoundation/CoreFoundation.h>
+#undef T_DATA
+#include <Carbon/Carbon.h>
 #endif
 
 #pragma mark ====== MyApp ======
@@ -79,6 +81,9 @@ BEGIN_EVENT_TABLE(MyApp, wxApp)
 //	EVT_MENU(myMenuID_ReadParameters, MyApp::OnReadParameters)
 	EVT_MENU(myMenuID_ViewGlobalParameters, MyApp::OnViewGlobalParameters)
 	EVT_MENU(myMenuID_ViewParameterFilesList, MyApp::OnViewParameterFilesList)
+#if defined(__WXMAC__)
+	EVT_ACTIVATE(MyApp::OnActivate)
+#endif
 	EVT_END_PROCESS(-1, MyApp::OnEndProcess)
 END_EVENT_TABLE()
 
@@ -211,6 +216,7 @@ bool MyApp::OnInit(void)
 
 #if defined(__WXMAC__)
 	frame->Move(-10000, -10000);  //  Set invisible
+	frame->Show(false);
 #else
 	frame->Show(true);
 #endif
@@ -742,6 +748,16 @@ MyApp::OnExecuteScript(wxCommandEvent &event)
 	dialog->Destroy();
 }
 
+void
+MyApp::OnActivate(wxActivateEvent &event)
+{
+#if defined(__WXMAC__)
+	MyFrame *frame = GetMainFrame();
+	frame->Show(false);  /*  Sometimes this "parent" frame gets visible and screw up the menus  */
+#endif
+	event.Skip();
+}
+
 wxString
 MyApp::DefaultSettingsPath()
 {
@@ -946,6 +962,14 @@ MyFrame::MyFrame(wxDocManager *manager, wxFrame *frame, const wxString& title,
   wxDocMDIParentFrame(manager, frame, wxID_ANY, title, pos, size, type, _T("myFrame"))
 {
 	editMenu = (wxMenu *) NULL;
+#if defined(__WXMAC__)
+	/*  Avoid this "dummy" top-level window to appear in the window menu.
+	    It should not happen because MyApp::OnActivate() tries to hide this window,
+	    but this is still here just in case.  */
+	OSStatus sts;
+	sts = ChangeWindowAttributes((WindowRef)m_macWindow, 0, kWindowInWindowMenuAttribute);
+/*	printf("m_macWindow = %p, status = %d\n", m_macWindow, (int)sts); */
+#endif
 }
 
 void MyFrame::OnAbout(wxCommandEvent& WXUNUSED(event) )

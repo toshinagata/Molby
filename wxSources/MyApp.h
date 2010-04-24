@@ -148,6 +148,8 @@ class MyApp: public wxApp
 	void OnEndProcess(wxProcessEvent &event);
 	int CallSubProcess(const char *cmdline, const char *procname);
 
+	void OnActivate(wxActivateEvent &event);
+
 	MyListCtrl *GetGlobalParameterListCtrl();
 #if __WXMAC__
 	virtual void MacNewFile();

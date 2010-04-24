@@ -408,7 +408,7 @@ MyDocument::Close()
 		MyAppCallback_errorMessageBox("%s is running: please stop it before closing", msg);
 		return false;
 	}
-	return true;
+	return wxDocument::Close();
 }
 
 void

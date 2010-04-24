@@ -371,8 +371,8 @@ MoleculeView::OnUpdate(wxView *WXUNUSED(sender), wxObject *WXUNUSED(hint))
 bool
 MoleculeView::OnClose(bool deleteWindow)
 {
-	if (!GetDocument()->Close())
-		return false;
+//	if (!GetDocument()->Close())
+//		return false;
 
 	//  Dispose relationship between MainView and Molecule
 	MainView_setMolecule(mview, NULL);
