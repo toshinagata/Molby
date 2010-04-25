@@ -41,6 +41,10 @@ MyListCtrl::MyListCtrl()
 
 MyListCtrl::~MyListCtrl()
 {
+	if (editText != NULL) {
+	/*	editText->Destroy(); */  /*  May be unnecessary  */
+		editText = NULL;
+	}
 }
 
 bool
@@ -300,7 +304,7 @@ MyListCtrl::StartEditText(int row, int column)
 {
 	wxRect rect;
 	int x0, x1, dx, size, xpos, ypos, xunit, yunit, yorigin;
-	if (editText != NULL)
+	if (editText != NULL && editText->IsShown())
 		EndEditText(true);
 	if (dataSource == NULL || !dataSource->IsItemEditable(this, row, column))
 		return;
@@ -338,11 +342,19 @@ MyListCtrl::StartEditText(int row, int column)
 	rect.Offset(0, -yorigin);
 
 	wxString str = dataSource->GetItemText(this, editRow, editColumn);
-	editText = new wxTextCtrl(((wxScrolledWindow *)m_mainWin), -1, wxT(""), rect.GetPosition(), rect.GetSize(), wxTE_PROCESS_ENTER | wxTE_PROCESS_TAB);
+	if (editText == NULL) {
+		editText = new wxTextCtrl(((wxScrolledWindow *)m_mainWin), -1, wxT(""), rect.GetPosition(), rect.GetSize(), wxTE_PROCESS_ENTER | wxTE_PROCESS_TAB);
+		editText->Connect(wxID_ANY, wxEVT_KEY_DOWN, wxKeyEventHandler(MyListCtrl::OnKeyDownOnEditText), NULL, this);
+		editText->Connect(wxID_ANY, wxEVT_KILL_FOCUS, wxFocusEventHandler(MyListCtrl::OnKillFocusOnEditText), NULL, this);
+	} else {
+		editText->SetSize(rect);
+		editText->Clear();
+		editText->Show();
+	}
 	editText->AppendText(str);
 	editText->SetFocus();
-	editText->Connect(wxID_ANY, wxEVT_KEY_DOWN, wxKeyEventHandler(MyListCtrl::OnKeyDownOnEditText), NULL, this);
-	editText->Connect(wxID_ANY, wxEVT_KILL_FOCUS, wxFocusEventHandler(MyListCtrl::OnKillFocusOnEditText), NULL, this);
+//	editText->Connect(wxID_ANY, wxEVT_IDLE, wxIdleEventHandler(MyListCtrl::OnIdle), NULL, this);
+
 	editText->SetSelection(-1, -1);  //  Select all text
 
 	/*  Select only this row  */
@@ -360,32 +372,45 @@ MyListCtrl::StartEditText(int row, int column)
 void
 MyListCtrl::EndEditText(bool setValueFlag)
 {
-	if (editText != NULL) {
+	if (editText != NULL && editText->IsShown()) {
 		if (setValueFlag && dataSource) {
 			wxString sval = editText->GetValue();
 			dataSource->SetItemText(this, editRow, editColumn, sval);
 		}
-		wxTextCtrl *t = editText;
-#if __WXMAC__
+		if (wxWindow::FindFocus() == editText)
+			SetFocus();
+#if defined(__WXMAC__)
 		{
 			/*  Erase the focus ring  */
-			wxRect rect = t->GetRect();
-			rect.Inflate(5, 5);
-			Refresh(true, &rect);
+			wxRect rect = editText->GetRect();
+			rect = rect.Inflate(5, 5);
+			//	Refresh(true, &rect);  /*  This somehow leaves lower side of the focus ring to remain  */
+			Refresh();
 		}
 #endif
-		editText = NULL;  /*  Clear this field first to avoid recursive call of EndEditText()  */
-		t->Destroy();
-		SetFocus();
+		editRow = editColumn = -1;
+		editText->Move(-1000, -1000);
+		editText->Hide();
 	}
 }
 
 void
 MyListCtrl::OnKillFocusOnEditText(wxFocusEvent &event)
 {
-	if (editText != NULL) {
+	if (editText != NULL && editText->IsShown()) {
 		EndEditText(true);
 	}
+}
+
+void
+MyListCtrl::OnIdle(wxIdleEvent &event)
+{
+	/*
+	wxWindow *wp;
+	if (editText != NULL && (wp = wxWindow::FindFocus()) != editText) {
+		EndEditText(true);
+	}
+	 */
 }
 
 void
@@ -393,32 +418,40 @@ MyListCtrl::OnKeyDownOnEditText(wxKeyEvent &event)
 {
 	int keyCode, ncols, nrows, ecol, erow;
 	bool shiftDown;
+	if (editText == NULL || !editText->IsShown()) {
+		event.Skip();
+		return;
+	}
 	keyCode = event.GetKeyCode();
 	ncols = GetColumnCount();
 	nrows = GetItemCount();
 	shiftDown = (event.GetModifiers() == wxMOD_SHIFT);
 	switch (keyCode) {
 		case WXK_TAB:
-			if (shiftDown) {
-				if (editColumn == 0) {
-					if (editRow == 0)
-						return;
-					ecol = ncols - 1;
-					erow = editRow - 1;
+			ecol = editColumn;
+			erow = editRow;
+			while (1) {
+				if (shiftDown) {
+					if (ecol == 0) {
+						if (erow == 0)
+							return;
+						ecol = ncols - 1;
+						erow--;
+					} else {
+						ecol--;
+					}
 				} else {
-					erow = editRow;
-					ecol = editColumn - 1;
+					if (ecol == ncols - 1) {
+						if (erow >= nrows - 1)
+							return;
+						ecol = 0;
+						erow++;
+					} else {
+						ecol++;
+					}
 				}
-			} else {
-				if (editColumn == ncols - 1) {
-					if (editRow >= nrows - 1)
-						return;
-					ecol = 0;
-					erow = editRow + 1;
-				} else {
-					ecol = editColumn + 1;
-					erow = editRow;
-				}
+				if (dataSource == NULL || dataSource->IsItemEditable(this, erow, ecol))
+					break;
 			}
 			EndEditText(true);
 			StartEditText(erow, ecol);
@@ -428,17 +461,23 @@ MyListCtrl::OnKeyDownOnEditText(wxKeyEvent &event)
 				EndEditText(true);
 				return;
 			}
-			if (shiftDown) {
-				if (editRow == 0)
-					return;
-				erow = editRow - 1;
-			} else {
-				if (editRow == nrows - 1)
-					return;
-				erow = editRow + 1;
+			ecol = editColumn;
+			erow = editRow;
+			while (1) {
+				if (shiftDown) {
+					if (erow == 0)
+						return;
+					erow--;
+				} else {
+					if (erow == nrows - 1)
+						return;
+					erow++;
+				}
+				if (dataSource == NULL || dataSource->IsItemEditable(this, erow, ecol))
+					break;
 			}
 			EndEditText(true);
-			StartEditText(erow, editColumn);
+			StartEditText(erow, ecol);
 			break;
 		case WXK_ESCAPE:
 			EndEditText(false);

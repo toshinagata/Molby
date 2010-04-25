@@ -1,10 +1,18 @@
 /*
  *  cmdtool_stubs.c
- *  Molby
  *
- *  Created by Toshi Nagata on 10/04/22.
- *  Copyright 2010 __MyCompanyName__. All rights reserved.
- *
+ *  Created by Toshi Nagata on Sun Jun 17 2001.
+ 
+ Copyright (c) 2010 Toshi Nagata. All rights reserved.
+ 
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation version 2 of the License.
+ 
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
  */
 
 /*  Empty stub functions for command-line tool  */

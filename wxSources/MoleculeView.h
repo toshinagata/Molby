@@ -78,6 +78,8 @@ public:
 	void SelectTable(int idx);
 	void OnSelectTable(wxCommandEvent &event);
 
+	void OnActivate(wxActivateEvent &event);
+	
 	/*  MyListCtrlDataSource functions  */
 	virtual int GetItemCount(MyListCtrl *ctrl);
 	virtual wxString GetItemText(MyListCtrl *ctrl, long row, long column) const;

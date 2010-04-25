@@ -20,6 +20,7 @@
 #include <ctype.h>
 #include <math.h>
 
+#include "Missing.h"
 #include "Dcd.h"
 #include "MD/MDCore.h"
 #include "MD/MDPressure.h"

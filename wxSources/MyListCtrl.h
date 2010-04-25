@@ -83,6 +83,8 @@ public:
 	void EndEditText(bool setValueFlag = true);
 	void OnKeyDownOnEditText(wxKeyEvent &event);
 	void OnKillFocusOnEditText(wxFocusEvent &event);
+	void OnIdle(wxIdleEvent &event);
+	
 	void OnPaintCallback(wxDC *dc);
 
 	/*  Override the wxListCtrl functions to take care of the internal text editor  */

@@ -82,8 +82,8 @@ BEGIN_EVENT_TABLE(MoleculeView, wxView)
 	EVT_COMMAND_SCROLL(myID_FrameSlider, MoleculeView::OnFrameSliderAction)
 	EVT_TEXT_ENTER(myID_FrameText, MoleculeView::OnFrameTextAction)
 	EVT_CHOICE(myID_TableMenu, MoleculeView::OnSelectTable)
+	EVT_ACTIVATE(MoleculeView::OnActivate)
 END_EVENT_TABLE()
-
 #define ConnectMouseDownEvents(src, func, target) \
 	(src->Connect(wxEVT_LEFT_DOWN, wxMouseEventHandler(func), NULL, target), \
 	src->Connect(wxEVT_LEFT_DCLICK, wxMouseEventHandler(func), NULL, target))
@@ -331,6 +331,9 @@ MoleculeView::OnCreate(wxDocument *doc, long WXUNUSED(flags) )
     frame->Show(true);
     Activate(true);
 
+	//  Initial keyboard focus is on the GL canvas (to accept 'S' for scale, etc.)
+	canvas->SetFocus();
+	
 	//  Connect the notification handler
 	doc->Connect(MyDocumentEvent_documentModified, MyDocumentEvent, wxCommandEventHandler(MoleculeView::OnDocumentModified), NULL, this);
 
@@ -668,6 +671,15 @@ MoleculeView::OnLeftDClickInListCtrl(wxMouseEvent &event)
 		asprintf(&parstr, "%s %s %s", params[0], params[1], params[2]);
 		MolActionCreateAndPerform(mview->mol, SCRIPT_ACTION("sssss"), "cmd_edit_local_parameter_in_mainview", ptype, names, types, value, parstr);
 	}
+}
+
+void
+MoleculeView::OnActivate(wxActivateEvent &event)
+{
+	if (!event.GetActive()) {
+		listctrl->EndEditText(true);
+	}
+	event.Skip();
 }
 
 #pragma mark ====== MyListCtrl data source ======
