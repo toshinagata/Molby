@@ -110,6 +110,14 @@ MyApp::FindResourcePath()
 #elif defined(__WXMSW__)
     wxString str;
 	wxString argv0 = wxTheApp->argv[0];
+	//  Fix dosish path (when invoked from MSYS console, the path may be unix-like)
+	//  Note: absolute paths like /c/Molby/... (== c:\Molby\...) is not supported
+	{
+		char *p = strdup(argv0.mb_str(wxConvFile));
+		fix_dosish_path(p);
+		wxString argv0_fixed(p, wxConvFile);
+		argv0 = argv0_fixed;
+	}
 	//  Is it an absolute path?
     if (wxIsAbsolutePath(argv0)) {
         return wxPathOnly(argv0);
@@ -161,8 +169,9 @@ bool MyApp::OnInit(void)
 	{
 		//  Check if the same application is already running
 		char *buf;
-		asprintf(&buf, "Molby-%s", wxGetUserId().c_str());
+		asprintf(&buf, "Molby-%s", (const char *)wxGetUserId().mb_str(wxConvUTF8));
 		wxString name(buf, wxConvUTF8);
+		malloc(16);
 		free(buf);
 		m_checker = new wxSingleInstanceChecker(name);
 		if (m_checker->IsAnotherRunning()) {
@@ -259,7 +268,7 @@ bool MyApp::OnInit(void)
 		}
 
 		wxString fnamestr(fname, wxConvUTF8);
-		Molby_startup(wxFileExists(fnamestr) ? fname : NULL, dirname.mb_str(wxConvUTF8));
+		Molby_startup(wxFileExists(fnamestr) ? fname : NULL, (const char *)dirname.mb_str(wxConvUTF8));
 		
 		wxSetWorkingDirectory(cwd);
 		MyAppCallback_showScriptMessage("%% ");
@@ -268,7 +277,7 @@ bool MyApp::OnInit(void)
 	/*  Open given files as MyDocument  */
 	if (argc == 1) {
 #if __WXMSW__
-		m_docManager->CreateDocument(_T(""), wxDOC_NEW);
+		m_docManager->CreateDocument(wxEmptyString, wxDOC_NEW);
 #endif
 	} else {
 		while (argc > 1) {
@@ -851,7 +860,9 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname)
 	FILE *fplog;
 	size_t len, len_total;
 	wxString cmdstr(cmdline, wxConvUTF8);
-
+#if defined(__WXMSW__)
+	extern int myKillAllChildren(long pid, wxSignal sig, wxKillError *krc);
+#endif
 	//  Show progress panel
 	if (procname == NULL)
 		procname = "subprocess";
@@ -868,9 +879,9 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname)
 	wxProcess *proc = new wxProcess(wxGetApp().GetProgressFrame(), sEndProcessMessageID);
 	proc->Redirect();
 	int flag = wxEXEC_ASYNC;
-#if !__WXMSW__
+//#if !__WXMSW__
 	flag |= wxEXEC_MAKE_GROUP_LEADER;
-#endif
+//#endif
 	m_processTerminated = false;
 	m_processExitCode = 0;
 	long pid = ::wxExecute(cmdstr, flag, proc);
@@ -897,13 +908,15 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname)
 		}
 		if (wxGetApp().IsInterrupted()) {
 			/*  User interrupt  */
-#if __WXMSW__
-			int kflag = wxKILL_NOCHILDREN;
-#else
 			int kflag = wxKILL_CHILDREN;
-#endif
 			wxKillError rc;
-			if (::wxKill(pid, wxSIGTERM, &rc, kflag) != 0) {
+			if (
+#if __WXMSW__
+				myKillAllChildren(pid, wxSIGKILL, &rc) != 0
+#else
+				::wxKill(pid, wxSIGTERM, &rc, kflag) != 0
+#endif
+				) {
 				const char *emsg;
 				switch (rc) {
 					case wxKILL_BAD_SIGNAL: emsg = "no such signal"; break;
