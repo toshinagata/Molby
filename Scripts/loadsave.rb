@@ -108,13 +108,13 @@ class Molecule
 
     if natoms == 0
 		new_unit = true
- #     raise MolbyError, "cannot load crd; the molecule is empty"
 	else
 		new_unit = false
     end
-	save_undo_enabled = self.undo_enabled?
-	self.undo_enabled = false
+#	save_undo_enabled = self.undo_enabled?
+#	self.undo_enabled = false
 	self.update_enabled = false
+	show_progress_panel("Loading GAMESS log file...")
 	begin
 		fp = open(filename, "rb")
 		if nframes > 0
@@ -181,15 +181,19 @@ class Molecule
 			end
 		end
 	ensure
-		self.undo_enabled = save_undo_enabled
+#		self.undo_enabled = save_undo_enabled
+        hide_progress_panel
 		self.update_enabled = true
+	end
+	if nframes > 0
+	  select_frame(nframes - 1)
 	end
 	(n > 0 ? true : false)
   end
   
   def loadxyz(filename)
-	save_undo_enabled = self.undo_enabled?
-	self.undo_enabled = false
+#	save_undo_enabled = self.undo_enabled?
+#	self.undo_enabled = false
 	fp = open(filename, "rb")
 	n = 0
 	coords = []
@@ -249,7 +253,7 @@ class Molecule
 #		end
 #	  }
 #	}
-	self.undo_enabled = save_undo_enabled
+#	self.undo_enabled = save_undo_enabled
 	(n > 0 ? true : false)
   end
   
@@ -261,8 +265,8 @@ class Molecule
 	else
 		new_unit = false
     end
-	save_undo_enabled = undo_enabled?
-	self.undo_enabled = false
+#	save_undo_enabled = undo_enabled?
+#	self.undo_enabled = false
 	fp = open(filename, "rb")
 	if nframes > 0
 		create_frame
@@ -271,6 +275,7 @@ class Molecule
 	n = 0
 	nf = 0
 	use_input_orientation = false
+	show_progress_panel("Loading Gaussian out file...")
 	while 1
 		line = fp.gets
 		if line == nil
@@ -324,13 +329,14 @@ class Molecule
 			nf += 1
 		end
 	end
-	self.undo_enabled = save_undo_enabled
+	hide_progress_panel
+#	self.undo_enabled = save_undo_enabled
 	(n > 0 ? true : false)
   end
 
   def loadcom(filename)
-	save_undo_enabled = self.undo_enabled?
-	self.undo_enabled = false
+#	save_undo_enabled = self.undo_enabled?
+#	self.undo_enabled = false
 	self.remove(All)
 	fp = open(filename, "rb")
 	section = 0
@@ -360,13 +366,13 @@ class Molecule
 	  end
 	end
 	fp.close
-	self.undo_enabled = save_undo_enabled
+#	self.undo_enabled = save_undo_enabled
 	return true
   end
   
   def loadinp(filename)
-	save_undo_enabled = self.undo_enabled?
-	self.undo_enabled = false
+#	save_undo_enabled = self.undo_enabled?
+#	self.undo_enabled = false
 	self.remove(All)
 	fp = open(filename, "rb")
 	section = 0
@@ -399,7 +405,7 @@ class Molecule
 	end
 	fp.close
 	guess_bonds
-	self.undo_enabled = save_undo_enabled
+#	self.undo_enabled = save_undo_enabled
 	return true
   end
   

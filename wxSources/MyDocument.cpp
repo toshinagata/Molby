@@ -261,9 +261,9 @@ MyDocument::OnImport(wxCommandEvent& event)
 	if (dialog->ShowModal() == wxID_OK) {
 		char *p = strdup((const char *)(dialog->GetPath().mb_str(wxConvFile)));
 		MoleculeLock(mol);
-		MolActionCallback_setUndoRegistrationEnabled(mol, 0);
+//		MolActionCallback_setUndoRegistrationEnabled(mol, 0);
 		MolActionCreateAndPerform(mol, SCRIPT_ACTION("s"), "molload", p);
-		MolActionCallback_setUndoRegistrationEnabled(mol, 1);
+//		MolActionCallback_setUndoRegistrationEnabled(mol, 1);
 		MoleculeUnlock(mol);
 		free(p);
 	}
@@ -915,9 +915,11 @@ MyDocument::OnInvokeAntechamber(wxCommandEvent &event)
 		Molby_showError(status);
 		return;
 	}
-	
+	fix_dosish_path(ante_dir);
+	fix_dosish_path(log_dir);
+
 	/*  Prepare the log directory  */
-	wxString dirname(log_dir, wxConvUTF8);
+	wxString dirname(log_dir, wxConvFile);
 	if (!wxFileName::Mkdir(dirname, 0777, wxPATH_MKDIR_FULL)) {
 		MyAppCallback_errorMessageBox("Cannot create log directory '%s'", log_dir);
 		return;
@@ -998,11 +1000,11 @@ MyDocument::OnInvokeAntechamber(wxCommandEvent &event)
 			snprintf(buf, sizeof buf, "-nc %d -c bcc", net_charge);
 		} else buf[0] = 0;
 
-		asprintf(&p, "%s/antechamber -i mol.pdb -fi pdb -o mol.ac -fo ac %s", ante_dir, buf);
+		asprintf(&p, "\"%s/antechamber\" -i mol.pdb -fi pdb -o mol.ac -fo ac %s", ante_dir, buf);
 
 		status = MyAppCallback_callSubProcess(p, "antechamber");
 		if (status == 0) {
-			asprintf(&p, "%s/parmchk -i mol.ac -f ac -o frcmod", ante_dir);
+			asprintf(&p, "\"%s/parmchk\" -i mol.ac -f ac -o frcmod", ante_dir);
 			status = MyAppCallback_callSubProcess(p, "parmchk");
 		}
 	}
@@ -1033,6 +1035,8 @@ MyDocument::OnInvokeAntechamber(wxCommandEvent &event)
 		}
 	}
 	
+	wxFileName::SetCwd(cwd);
+
 	/*  Erase log files  */
 	bool success = true;
 	wxString dir2;
@@ -1097,8 +1101,6 @@ MyDocument::OnInvokeAntechamber(wxCommandEvent &event)
 		((MoleculeView *)GetFirstView())->GetListCtrl()->Update();
 		MyAppCallback_messageBox("Antechamber succeeded.", "Success", 0, 0);
 	}
-	
-	wxFileName::SetCwd(cwd);
 }
 
 void
