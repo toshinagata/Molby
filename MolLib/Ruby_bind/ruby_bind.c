@@ -569,6 +569,20 @@ s_Kernel_DocumentHome(VALUE self)
 	return retval;
 }
 
+/*
+ *  call-seq:
+ *     call_subprocess(cmd, process_name)
+ *
+ *  Call subprocess. A progress dialog window is displayed, with a message
+ *  "Running #{process_name}...".
+ */
+static VALUE
+s_Kernel_CallSubProcess(VALUE self, VALUE cmd, VALUE procname)
+{
+	int n = MyAppCallback_callSubProcess(StringValuePtr(cmd), StringValuePtr(procname));
+	return INT2NUM(n);
+}
+
 #pragma mark ====== User defaults ======
 
 /*
@@ -1283,8 +1297,8 @@ s_ScanAtomTypes(VALUE val, Int n, UInt *types)
 			for (i = 0; i < n; i++) {
 				char buf[40];
 				int len;
-				/*  Skip leading blanks  */
-				while (*s == ' ' || *s == '\t')
+				/*  Skip leading separaters  */
+				while (*s == '-' || *s == ' ' || *s == '\t')
 					s++;
 				for (p = s; *p != 0; p++) {
 					if (*p == '-' || *p == ' ' || *p == '\t')
@@ -1310,7 +1324,7 @@ s_ScanAtomTypes(VALUE val, Int n, UInt *types)
 				} else s = p + 1;
 			}
 			if (i < n)
-				rb_raise(rb_eMolbyError, "%d atom types are required but only %d are given", n, i);
+				rb_raise(rb_eMolbyError, "%d atom types are required but only %d are given; %s", n, i, StringValuePtr(val));
 			return;
 		}
 		val = rb_ary_to_ary(val);
@@ -2992,7 +3006,7 @@ s_ParEnumerable_Insert(int argc, VALUE *argv, VALUE self)
 		UnionPar *up = s_UnionParFromValue(pval, &type, 0);
 		if (up == NULL || type != pen->parType)
 			rb_raise(rb_eMolbyError, "the parameter specification is not correct");
-		u = *up;
+		ParameterCopyOneWithType(&u, up, pen->parType);
 		u.bond.src = 0;
 	} else {
 		memset(&u, 0, sizeof(u));
@@ -4101,7 +4115,9 @@ s_Molecule_Loaddat(int argc, VALUE *argv, VALUE self)
 	Data_Get_Struct(self, Molecule, mol);
 	rb_scan_args(argc, argv, "1", &fname);
 	fstr = FileStringValuePtr(fname);
+	MyAppCallback_showProgressPanel("Loading GAMESS dat file...");
 	retval = MoleculeLoadGamessDatFile(mol, fstr, errbuf, sizeof errbuf);
+	MyAppCallback_hideProgressPanel();
 	if (retval != 0) {
 		if (retval == -1)
 			return Qnil;
@@ -7750,6 +7766,7 @@ Init_Molby(void)
 	rb_define_method(rb_mKernel, "set_global_settings", s_Kernel_SetGlobalSettings, 2);
 	rb_define_method(rb_mKernel, "execute_script", s_Kernel_ExecuteScript, 1);
 	rb_define_method(rb_mKernel, "document_home", s_Kernel_DocumentHome, 0);
+	rb_define_method(rb_mKernel, "call_subprocess", s_Kernel_CallSubProcess, 2);
 	rb_define_method(rb_mKernel, "message_box", s_Kernel_MessageBox, -1);
 	rb_define_method(rb_mKernel, "error_message_box", s_Kernel_ErrorMessageBox, 1);
 	
@@ -7845,22 +7862,28 @@ Molby_startup(const char *script, const char *dir)
 	VALUE val;
 	int status;
 	char *libpath;
+	char *respath, *p;
 
 	/*  Initialize Ruby interpreter  */
 	ruby_init();
 	
 	/*  Initialize loadpath; the specified directory, "lib" subdirectory, and "."  */
 	ruby_incpush(".");
-#if __WXMSW__
-	asprintf(&libpath, "%s\\lib", dir);
-#else
-	asprintf(&libpath, "%s/lib", dir);
-#endif
+	asprintf(&libpath, "%s%clib", dir, PATH_SEPARATOR);
 	ruby_incpush(libpath);
 	free(libpath);
 	ruby_incpush(dir);
 
 	ruby_script("Molby");
+	
+	/*  Find the resource path (the parent directory of the given directory)  */
+	respath = strdup(dir);
+	p = strrchr(respath, '/');
+	if (p == NULL && PATH_SEPARATOR != '/')
+		p = strrchr(respath, PATH_SEPARATOR);
+	if (p != NULL)
+		*p = 0;
+	rb_define_global_const("MolbyResourcePath", rb_str_new2(respath));
 	
 	/*  Define Molby classes  */
 	Init_Molby();

@@ -19,6 +19,7 @@
 
 #include "MolLib.h"
 #include "Molby_extern.h"
+#include "Missing.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -235,14 +236,16 @@ main(int argc, const char **argv)
 {
 	int fd;
 	char *wbuf;
+	char *scriptdir;
 	static const char fname[] = "startup.rb";
 	char *molbydir = getenv("MOLBYDIR");
 	if (molbydir == NULL) {
-		fprintf(stderr, "Please define the environmental variable MOLBYDIR to specify the location of the parameter files and the startup scripts.\n");
+		fprintf(stderr, "Please define the environmental variable MOLBYDIR to specify the location in which the 'Scripts' directory is present.\n");
 		exit(1);
 	}
+	asprintf(&scriptdir, "%s%cScripts", molbydir, PATH_SEPARATOR);
 	fd = open(".", O_RDONLY);
-	chdir(molbydir);
+	chdir(scriptdir);
 	
 	/*  Read atom display parameters  */
 	if (ElementParameterInitialize("element.par", &wbuf) != 0) {
@@ -257,9 +260,12 @@ main(int argc, const char **argv)
 		free(wbuf);
 	}
 	
-	Molby_startup(fname, molbydir);
+	Molby_startup(fname, scriptdir);
+
 	fchdir(fd);
 	close(fd);
+	
+	free(scriptdir);
 	
 	ruby_options(argc, argv);
 	ruby_run();
