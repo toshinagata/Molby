@@ -568,11 +568,11 @@ class Molecule
   #  "td": tetrahedral, "tr": trigonal, "py": pyramidal (like amine nitrogen), "li": linear
   def add_hydrogen(idx, atype, bond = 1.07, anum = 1)
     nc = atoms[idx].connects.length
-	p = atoms[idx].cr
+	p = atoms[idx].r
 	if nc == 0
 	  vx = Vector3D[1, 0, 0]
 	else
-	  v = atoms[idx].connects.map { |i| (atoms[i].cr - p).normalize }
+	  v = atoms[idx].connects.map { |i| (atoms[i].r - p).normalize }
 	  vx = Vector3D[0, 0, 0]
 	  v.each { |v0| vx += v0 }
 	  if nc == 3
@@ -606,7 +606,7 @@ class Molecule
 		  j = atoms[i].connects.sort_by { |n| (n == i ? 0 : atoms[n].connects.length) }
 		  vy = nil
 		  j.each { |j0|
-		    vy = vx.cross(atoms[j0].cr - atoms[i].cr)
+		    vy = vx.cross(atoms[j0].r - atoms[i].r)
 		    if vy.length > 1e-3
 			  #  The atoms j[0]-i-idx are not linear
 		      vz = vx.cross(vy).normalize
@@ -653,8 +653,8 @@ class Molecule
 	    vn << -vx
 	  else
 	    vn << vx if nc == 0
-		vn << vx * 0.5 + vy * 0.86603
-		vn << vx * 0.5 - vy * 0.86603
+		vn << vx * (-0.5) + vy * 0.86603
+		vn << vx * (-0.5) - vy * 0.86603
 	  end
 	  type = "ha" if anum == 1
 	elsif atype == "py"
