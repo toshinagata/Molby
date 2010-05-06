@@ -242,6 +242,8 @@ s_RubyDialogItem_Attr(VALUE self, VALUE key)
 		return index_val;
 	itag = NUM2INT(index_val);
 	type = rb_ivar_get(self, SYM2ID(sTypeSymbol));
+	if (key == sTypeSymbol)
+		return type;
 	if (dialog_val == Qnil || (dref = s_RubyDialog_GetController(dialog_val)) == NULL)
 		rb_raise(rb_eStandardError, "The dialog item does not belong to any dialog (internal error?)");
 	view = RubyDialogCallback_dialogItemAtIndex(dref, itag);
@@ -1204,9 +1206,11 @@ RubyDialog_validateItemContent(RubyValue self, RDItem *ip, const char *s)
 static VALUE
 s_RubyDialog_doItemAction(VALUE val)
 {
+	int i, j, n;
 	void **vp = (void **)val;
 	VALUE self = (VALUE)vp[0];
 	RDItem *ip = (RDItem *)vp[1];
+	RDItem *ip2;
 	VALUE ival, itval, actval;
 	RubyDialog *dref = s_RubyDialog_GetController(self);
 	VALUE items = rb_iv_get(self, "_items");
@@ -1218,16 +1222,28 @@ s_RubyDialog_doItemAction(VALUE val)
 	itval = s_RubyDialog_ItemAtIndex(self, ival);
 	
 	/*  Handle radio group  */
-	{
+	if (s_RubyDialogItem_Attr(itval, sTypeSymbol) == sRadioSymbol) {
 		VALUE gval = s_RubyDialogItem_Attr(itval, sRadioGroupSymbol);
-		if (gval != Qnil && TYPE(gval) == T_ARRAY) {
-			int i, j, n;
+		if (gval == Qnil) {
+			/*  All other radio buttons with no radio group will be deselected  */
+			VALUE radioval;
+			for (i = 0; i < nitems; i++) {
+				if (i == idx)
+					continue;
+				radioval = RARRAY_PTR(items)[i];
+				if (s_RubyDialogItem_Attr(radioval, sTypeSymbol) == sRadioSymbol
+					&& s_RubyDialogItem_Attr(radioval, sRadioGroupSymbol) == Qnil) {
+					ip2 = RubyDialogCallback_dialogItemAtIndex(dref, i);
+					RubyDialogCallback_setStateForItem(ip2, 0);
+				}
+			}
+		} else if (TYPE(gval) == T_ARRAY) {
 			n = RARRAY_LEN(gval);
 			for (i = 0; i < n; i++) {
 				j = NUM2INT(RARRAY_PTR(gval)[i]);
 				if (j >= 0 && j < nitems && j != idx) {
-					RDItem *iptr = RubyDialogCallback_dialogItemAtIndex(dref, j);
-					RubyDialogCallback_setStateForItem(iptr, 0);  /*  Deselect  */
+					ip2 = RubyDialogCallback_dialogItemAtIndex(dref, j);
+					RubyDialogCallback_setStateForItem(ip2, 0);  /*  Deselect  */
 				}
 			}
 		}
