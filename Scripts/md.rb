@@ -339,13 +339,9 @@ class Molecule
   end
   
   def ambertools_dialog(tool)
-	ante_dir = get_global_settings("antechamber.ante_dir")
 	log_dir = get_global_settings("antechamber.log_dir")
-	if !ante_dir
-	  ante_dir = ($platform == "mac" ? "/Applications/amber10" : ($platform == "win" ? "c:/opt/amber10" : ""))
-	end
 	if !log_dir
-	  log_dir = document_home + "/amber10"
+	  log_dir = document_home + "/antechamber"
 	end
 	if $platform == "win"
 	  suffix = ".exe"
@@ -397,17 +393,18 @@ class Molecule
 		),
 		-1
 	  )
-	  set_attr("nc", :enabled=>(attr("calc_charge", :value) == "1"))
+	  set_attr("nc", :enabled=>(attr("calc_charge", :value) != 0))
+	  set_attr("calc_charge", :enabled=>(tool != "resp"))
     }
 	hash.each_pair { |key, value|
 	  next if key == :status
 	  v = [["log_none", "none"], ["log_error_only", "error_only"], ["log_keep_latest", "latest"], ["log_all", "all"]].assoc(key)
       if v 
 	    next if value != 1
-	    tag = "log_level"
+	    key = "log_level"
 	    value = v[1]
       end
-      set_global_settings("antechamber.#{tag}", value)
+      set_global_settings("antechamber.#{key}", value)
     }
 
 	#  The hash values are set in the action() method
@@ -546,21 +543,21 @@ class Molecule
 			name, weight = s.split
 			wtable[name] = Float(weight)
 		  when 2
-		    types, k, r0, com = s.split(nil, 4)
+		    types, k, r0, com = s.split(/  +/, 4)
 		    pp = par.bonds.lookup(types, :local, :missing) || par.bonds.insert
 			pp.atom_types = types
 			pp.k = k
 			pp.r0 = r0
 			pp.comment = com
 		  when 3
-		    types, k, a0, com = s.split(nil, 4)
+		    types, k, a0, com = s.split(/  +/, 4)
 			pp = par.angles.lookup(types, :local, :missing) || par.angles.insert
 			pp.atom_types = types
 			pp.k = k
 			pp.a0 = a0
 			pp.comment = com
 		  when 4
-		    types, n, k, phi0, period, com = s.split(nil, 6)
+		    types, n, k, phi0, period, com = s.split(/  +/, 6)
 			pp = par.dihedrals.lookup(types, :local, :missing) || par.dihedrals.insert
 			pp.atom_types = types
 			pp.mult = 1
@@ -569,7 +566,7 @@ class Molecule
 			pp.period = Float(period).round
 			pp.comment = com
 		  when 5
-		    types, k, phi0, period, com = s.split(nil, 5)
+		    types, k, phi0, period, com = s.split(/  +/, 5)
 			pp = par.impropers.lookup(types, :local, :missing) || par.impropers.insert
 			pp.atom_types = types
 			pp.mult = 1
@@ -578,7 +575,7 @@ class Molecule
 			pp.period = Float(period).round
 			pp.comment = com
 		  when 6
-		    name, r_eq, eps, com = s.split(nil, 4)
+		    name, r_eq, eps, com = s.split(/  +/, 4)
 			pp = par.vdws.lookup(name, :local, :missing) || par.vdws.insert
 			pp.atom_type = name
 			pp.r_eq = r_eq
@@ -617,7 +614,7 @@ class Molecule
 	end
 	return unless ambertools_dialog("resp")
 	nc = get_global_settings("antechamber.nc")
-	ante_dir = get_global_settings("antechamber.ante_dir")
+	ante_dir = MolbyResourcePath + "/amber11/bin"
 
 	#  Create the temporary directory
 	dname = create_ante_log_dir((self.path ? File.basename(self.path, ".*") : self.name), "rs")
@@ -640,10 +637,10 @@ class Molecule
 		end
 	  }
 	  for i in [1,2]
-	    open("resp.input#{i}", "w") { |fp|
+	    open("resp.input#{i}", "wb") { |fp|
 		  fp.print " #{self.name} \n"
 		  fp.print " &cntrl\n"
-		  fp.print " ioutput=1, IQOPT=#{i}, nmol=1, ihfree=1, irstrnt=1, qwt=#{i*0.0005},\n"
+		  fp.print " ioutopt=1, IQOPT=#{i}, nmol=1, ihfree=1, irstrnt=1, qwt=#{i*0.0005},\n"
 		  fp.print " &end\n"
 		  fp.print "  1.0\n"
 		  fp.print " #{self.name} \n"
@@ -666,7 +663,7 @@ class Molecule
       #  Export as an antechamber format
   	  c = count_elements
 	  formula = c.map { |p| Parameter.builtin.elements[p[0]].name + p[1].to_s }.join(" ")
-	  open("respgen_in.ac", "w") { |fp|
+	  open("respgen_in.ac", "wb") { |fp|
 	    fp.printf("CHARGE %9.2f ( %d )\n", nc, nc)
 	    fp.printf("Formula: #{formula}\n")
 	    each_atom { |ap|
@@ -678,17 +675,18 @@ class Molecule
 	  }
 	
 	  #  Create resp input by respgen
-	  if !system("#{ante_dir}/respgen -i respgen_in.ac -o resp.input1 -f resp1") \
-	  || !system("#{ante_dir}/respgen -i respgen_in.ac -o resp.input2 -f resp2")
+	  if !call_subprocess("\"#{ante_dir}/respgen\" -i respgen_in.ac -o resp.input1 -f resp1", "respgen (stage 1)") \
+	  || !call_subprocess("\"#{ante_dir}/respgen\" -i respgen_in.ac -o resp.input2 -f resp2", "respgen (stage 2)")
 	    error_message_box("Cannot run respgen.")
 	    Dir.chdir(cwd)
 	    return
 	  end
+	  hide_progress_panel
 	end
 	
 	#  Create ESP file
 	a2b = 1.8897259885   #  angstrom to bohr
-	open("resp.esp", "w") { |fp|
+	open("resp.esp", "wb") { |fp|
 	  fp.printf("%5d%5d%5d\n", natoms, nelpots, nc)
 	  each_atom { |ap|
 	    fp.printf("                %16.7E%16.7E%16.7E\n", ap.r.x * a2b, ap.r.y * a2b, ap.r.z * a2b)
@@ -701,12 +699,13 @@ class Molecule
 	}
 
     #  Run resp
-	if !system("#{ante_dir}/resp -O -i resp.input1 -o resp.output1 -e resp.esp -t qout_stage1") \
-	|| !system("#{ante_dir}/resp -O -i resp.input2 -o resp.output2 -e resp.esp -q qout_stage1 -t qout_stage2")
+	if !call_subprocess("\"#{ante_dir}/resp\" -O -i resp.input1 -o resp.output1 -e resp.esp -t qout_stage1", "resp (stage 1)") \
+	|| !call_subprocess("\"#{ante_dir}/resp\" -O -i resp.input2 -o resp.output2 -e resp.esp -q qout_stage1 -t qout_stage2", "resp (stage 2)")
 	  error_message_box("Cannot run resp.")
 	  Dir.chdir(cwd)
 	  return 
 	end
+	hide_progress_panel
 	
 	#  Import resp output
 	open("punch", "r") { |fp|
