@@ -18,11 +18,15 @@
 #ifndef __MISSING_H__
 #define __MISSING_H__
 
-#ifdef __WXMSW__
+#if defined(__WXMSW__) || defined(__CMDMSW__)
 #define MISSING_STRSEP 1
 #define MISSING_ASPRINTF 1
 #define MISSING_STRTOK_R 1
 #define MISSING_MERGESORT 1
+#define MISSING_STRDUP 1    /*  For debug with 'external' malloc library  */
+#define PATH_SEPARATOR '\\'
+#else
+#define PATH_SEPARATOR '/'
 #endif
 
 #ifdef __cplusplus
@@ -30,7 +34,8 @@ extern "C" {
 #endif
 
 void translate_char(char *p, int from, int to);
-
+void fix_dosish_path(char *p);
+	
 #if MISSING_STRSEP
 char *strpbrk(const char *cs, const char *ct);
 char *strsep(char **stringp, const char *delim);
@@ -41,6 +46,14 @@ char *strsep(char **stringp, const char *delim);
 int asprintf(char **ret, const char *format, ...);
 int vasprintf(char **ret, const char *format, va_list ap);
 #endif /* MISSING_ASPRINTF */
+
+#if MISSING_STRDUP
+#include <wchar.h>
+char *_strdup(const char *src);
+wchar_t *_wcsdup(const wchar_t *src);
+char *strdup(const char *src);
+wchar_t *wcsdup(const wchar_t *src);
+#endif /* MISSING_STRDUP */
 
 #if MISSING_STRTOK_R
 char *strtok_r(char *str, const char *sep, char **lasts);

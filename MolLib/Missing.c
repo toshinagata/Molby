@@ -25,7 +25,7 @@
  *  Utility function
  *  Filename handling
  */
-#if __WXMSW__
+#if defined(__WXMSW__) || defined(__CMDMSW__)
 #include <windows.h>
 void
 translate_char(char *p, int from, int to)
@@ -36,13 +36,50 @@ translate_char(char *p, int from, int to)
 		p = CharNext(p);
 	}
 }
+void
+fix_dosish_path(char *p)
+{
+	translate_char(p, '/', '\\');
+}
 #else
 void
 translate_char(char *p, int from, int to)
 {
 }
+void
+fix_dosish_path(char *p)
+{
+}
 #endif
 
+#if MISSING_STRDUP
+
+char *
+_strdup(const char *src)
+{
+	char *s = (char *)malloc(strlen(src) + 1);
+	if (s != NULL)
+		strcpy(s, src);
+	return s;
+}
+
+wchar_t *
+_wcsdup(const wchar_t *src)
+{
+	wchar_t *dst;
+	size_t len;
+	
+	len = wcslen(src) + 1;
+	dst = (wchar_t *)malloc(len * sizeof(wchar_t));
+	if (dst == NULL)
+		return NULL;
+	wmemcpy(dst, src, len);
+	return dst;
+}
+char *strdup(const char *src) { return _strdup(src); }
+wchar_t *wcsdup(const wchar_t *src) { return _wcsdup(src); }
+
+#endif
 
 #if MISSING_STRSEP
 
