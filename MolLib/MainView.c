@@ -2275,7 +2275,7 @@ MainView_mouseMoved(MainView *mview, const float *mousePos, int flags)
 static int
 sCreateNewAtom(Molecule *mol, Vector pos)
 {
-	int i, j;
+	Int i, j;
 	Atom a;
 	char name[6];
 	memset(&a, 0, sizeof(Atom));
@@ -2295,7 +2295,7 @@ sCreateNewAtom(Molecule *mol, Vector pos)
 	a.type = AtomTypeEncodeToUInt("c3");
 	a.weight = WeightForAtomicNumber(a.atomicNumber);
 	a.r = pos;
-	if (MolActionCreateAndPerform(mol, gMolActionAddAnAtom, &a, -1) == 0)
+	if (MolActionCreateAndPerform(mol, gMolActionAddAnAtom, &a, -1, &i) == 0)
 		return mol->natoms - 1;
 	else return -1;
 /*	return MoleculeAddAtom(mol, &a); */
