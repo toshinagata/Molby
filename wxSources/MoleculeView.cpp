@@ -374,8 +374,8 @@ MoleculeView::OnUpdate(wxView *WXUNUSED(sender), wxObject *WXUNUSED(hint))
 bool
 MoleculeView::OnClose(bool deleteWindow)
 {
-//	if (!GetDocument()->Close())
-//		return false;
+	if (!GetDocument()->Close())
+		return false;
 
 	//  Dispose relationship between MainView and Molecule
 	MainView_setMolecule(mview, NULL);
@@ -388,7 +388,7 @@ MoleculeView::OnClose(bool deleteWindow)
 
 	// Clear the canvas in case we're in single-window mode,
 	// and the canvas stays.
-	canvas->ClearBackground();
+/*	canvas->ClearBackground();
 	canvas->view = NULL;
 	canvas = NULL;
 
@@ -398,10 +398,11 @@ MoleculeView::OnClose(bool deleteWindow)
 
 	SetFrame(NULL);
 
-	Activate(false);
+	Activate(false); */
 
 	if (deleteWindow) {
-		delete frame;
+		frame->Destroy();
+	//	delete frame;
 		return true;
 	}
 	return true;
