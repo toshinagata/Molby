@@ -31,4 +31,85 @@ OS 10.4 用のユニバーサルバイナリは、export ISYSROOT='-isysroot /De
   DialogItem の action 属性は今までと同様だが、引数としてはアイテム番号でなく DialogItem オブジェクトそのものが渡される。
 
 2010.3.21.
-  Pressure control を使えるようにしたい。フレームごとに unit cell パラメータを保持できるようにしないといけない。
+  Pressure control を使えるようにしたい。フレームごとに unit cell パラメータを保持できるようにしないといけない。→ 一応実装した。
+
+2010.4.25.
+  SVN メモ。タグの付け方。
+svn copy svn+ssh://toshinagata1964@svn.sourceforge.jp/svnroot/molby/trunk svn+ssh://toshinagata1964@svn.sourceforge.jp/svnroot/molby/tags/version_x_y_z -m "version x.y.z"
+
+2010.4.25.
+  wxWidgets 絡みの厄介なバグをいくつか退治したのでメモ。
+・wxDocument::Close() が二重に呼ばれる問題。メニューから Close コマンドを選ぶと、普通は wxDocManager::CloseDocument() が呼び出される。これは、最初に wxDocument::Close() を呼び、成功したら wxDocument::DeleteAllViews() を呼ぶのだが、この中から wxView::Close() -> wxView::OnClose() -> wxDocument::Close() という呼び出しがあるため、wxDocument::Close() が２回呼ばれてしまう。２回目に何もしないで true を返せばいいのだが、下手なコーディングをするとおかしくなってしまう。今回は、MoleculeView::OnClose() を修正して、wxDocument::Close() の呼び出しをスキップした。
+  参考： http://trac.wxwidgets.org/ticket/11367 
+・wxDocument::Close() をオーバーライドしたら、元の wxDocument::Close() を呼ばないといけない。こんな感じ。
+bool
+MyDocument::Close()
+{
+	if (mol != NULL && mol->mutex != NULL) {
+		return false;  /*  クローズを拒否  */
+	}
+	return wxDocument::Close();
+}
+　理由は、wxDocument::Close() の中で、未保存のドキュメントを保存するかどうか尋ねる処理があるため。これを忘れて "return true;" としてしまうと、未保存のドキュメントの場合は wxDocument のデストラクタからこの処理が呼ばれてしまい、変なことになる。
+・wxMac で wxMDIParentFrame を使うとき、frame->Move(-10000, -10000); frame->Show(false); などとして不可視にするが、すべてのウィンドウが閉じられている状態でアプリケーションをバックグラウンドからフォアグラウンドに持って来た時など、何かの拍子にこのウィンドウが可視化されて Window メニューに現れてしまうことがある。これを防ぐ方法：
+(1) wxMDIParentFrame のコンストラクタ中で、
+#if defined(__WXMAC__)
+	OSStatus sts;
+	sts = ChangeWindowAttributes((WindowRef)m_macWindow, 0, kWindowInWindowMenuAttribute);
+#endif
+　ChangeWindowAttributes には <Carbon/Carbon.h> が必要。ちなみに、Ruby のヘッダと同時に #include すると T_DATA が二重定義になるので、#include <Carbon/Carbon.h> の前に #undef T_DATA を置く。
+(2) wxApp で Activate Event をつかまえて、そのたびに wxMDIParentFrame を不可視にする。なんとも強引だが、確実。
+EVT_ACTIVATE(MyApp::OnActivate)
+void
+MyApp::OnActivate(wxActivateEvent &event)
+{
+#if defined(__WXMAC__)
+       MyFrame *frame = GetMainFrame();
+       frame->Show(false);
+#endif
+       event.Skip();
+}
+
+2010.4.25.
+バージョン0.5.3をリリースしました。
+・フレームごとに可変な単位格子を設定可能。
+・パラメータテーブルのコピー／カット／ペーストを改善。
+・Mac 版で、隠れウィンドウの "Molby" がときどき Window メニューに現れる不具合を修正。
+・テーブルの編集時の不具合（Windows はクラッシュ、Mac はテキストフィールドが残ってしまう）の修正。
+Version 0.5.3 is out.
+* Frames can now have variable unit cell parameters.
+* Improved handling of copy/cut/paste in the parameter table.
+* Fix the problem in the Mac version in which the hidden top-level window gets sometimes visible in the Window menu.
+* Bugs in the list control were (hopefully) fixed.
+
+2010.4.29.
+  4/25 に修正した wxDocument::Close() 二重呼び出しの件、どうも修正の仕方がまずいみたいで、Windows でクラッシュを起こす。元に戻した。
+
+2010.5.4.
+  いろいろ変なクラッシュが起きる。malloc/free 関係のバグくさいのだが、なかなか特定できない。Mac 上では GuardMalloc を使い、MolAction.c:562 の
+-				usave = *up;
++				ParameterCopyOneWithType(&usave, up, i);
+が原因と特定できた。つまり、up は BondPar/AnglePar/etc. の配列へのポインタを UnionPar * にキャストしたものなので、up が配列の最後の要素を指しているときに *up をアクセスすると、存在しないメモリ領域を読み出すことになってしまう。（これでバスエラーが起きるのは相当不運なケースだが）。
+  Windows の方は本当に困ってしまった。開発ツールへの投資をけちるとこういうところでつまづくんだな。チェック用ツールをいろいろ探して、kmmalloc (http://www.vector.co.jp/soft/dos/prog/se026997.html) を使うことにした。使い方は同梱の kmmalloc.txt に全部書いてあるのだが、少し手こずってしまったのでメモしておく。
+・インストールの仕方：
+(1) kmmalloc-2.5.3.zip をダウンロード、解凍。
+(2) $ cd kmmalloc-2.5.3
+(3) patch -c < mingw.dif
+(4) xalloc.h を編集して、次の５行を追加。
+#define EFREEP 120
+#define EFREEBLK 121
+#define EALLOCBLK 122
+#define EFREEWRT 123
+#define ETRAILWRT 124
+(5) mingw.mak を編集する。
+-LIBDIR = /usr/local/lib
++LIBDIR = /mingw/lib
+(6) make PACKAGE=KMMALLOC _MEM_DEBUG=1 -f mingw.mak
+　途中で一回「問題が発生したため、test_mem.exe を終了します。」というダイアログが出る。仕様なのか不具合なのか不明。
+(7) mkdir /mingw/include/kmmalloc; cp xalloc.h yalloc.h /mingw/include/kmmalloc
+・使い方
+(1) ビルド時に -lkmmalloc_debug フラグをリンカに渡す。これで malloc/free/realloc が kmmalloc のものと置き換わる。
+(2) 問題のソースに #include <kmmalloc/xalloc.h> を入れておくと、malloc/free/realloc のコール時に __FILE__, __LINE__ を渡すようにしてくれるが、これをしなくてもデバッガを使えば何とかなる。
+(3) export MEMCHECK=2  #  kmmalloc のデバッグ機能を有効にする。ログを書き出すなら export MEMCHECK=4; export MEMFP=ファイル名 とする。
+(4) デバッガで mem_error() 関数にブレークポイントを指定して実行。実行は非常に遅くなる場合がある（それほどでもない場合もある）。
+(5) strdup, wcsdup 中の malloc はこの方法では置き換えられないようなので、自前で malloc を使うバージョンを用意して使う。(Missing.c 参照) → どうも wxWidgets の中の strdup コールはこれでは置き換わってくれないらしく、かえって変なことが起きているような気がする。kmmalloc.a をリンクする条件で wxWidgets を再コンパイルしないとだめか？ → マルチスレッドに未対応？　無理かも…

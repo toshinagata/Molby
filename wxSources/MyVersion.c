@@ -15,5 +15,5 @@
  GNU General Public License for more details.
  */
 
-const char *gVersionString = "v0.5.3 build 20100425";
+const char *gVersionString = "v0.5.4 build 20100507";
 const char *gCopyrightString = "Copyright (c) 2008-2010 Toshi Nagata";

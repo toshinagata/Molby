@@ -5,7 +5,7 @@
     An Interactive Molecular Modeling Software
         with Integrated Ruby Interpreter
   
-          Version 0.5.3 build 20100425
+          Version 0.5.4 build 20100507
 
                   Toshi Nagata
 
@@ -52,9 +52,11 @@ Building Molby is somewhat complicated because you need static libraries of wxWi
 
 (1) Mac OS X
 
-(i) Xcode
+(i) Xcode, gfortran
 
 Install Xcode, if you have not done so yet. The Xcode project included in the source distribution is for Xcode 3.0 and later, thus you need Mac OS 10.5. It may work with Xcode 2.5 on Mac OS 10.4, but this have not been tested.
+
+To build AmberTools, you need to have gfortran installed. The author uses a binary build available at the "R for Mac OS X" website (http://r.research.att.com/tools/).
 
 (ii) wxWidgets
 
@@ -104,9 +106,11 @@ Open xcode-build/Molby.xcodeproj, and build. Note that there are two configurati
 
 The Windows binary is built by using MinGW/MSYS. If you use VC++ or Cygwin, you need to help yourself. I use Windows only occasionally, so there may be errors and misunderstandings in the following descriptions. Feedback is welcome!
 
-(i) MinGW and MSYS
+(i) MinGW, MSYS, gfortran
 
-Install MinGW and MSYS. The default configuration should be sufficient.
+Install MinGW and MSYS. The author uses MinGW-5.1.4 and MSYS-1.0.11.
+
+To build AmberTools, you need to have gfortran installed. The author has experienced problems with the gfortran of MinGW, and instead is using the binary build taken from http://quatramaran.ens.fr/~coudert/gfortran/ (version 4.5.0, 20090421, trunk revision 146519).
 
 (ii) wxWidgets
 
@@ -121,7 +125,7 @@ Build wxMSW. The commands will be as follows. Take care of the configure options
 $ cd $HOME/wxMSW-2.8.9
 $ mkdir msw-build
 $ cd msw-build
-$ ../configure --with-msw --with-opengl --disable-shared --enable-unicode --with-libjpeg-builtin --with-zlib=builtin
+$ ../configure --with-msw --with-opengl --disable-shared --enable-unicode --with-libjpeg=builtin --with-zlib=builtin
 $ make
 (You do not need to do "sudo make install".)
 
@@ -183,5 +187,6 @@ $ make setup  #  To make the installer
 
 2010.1.21.
 2010.1.31. Added notice on AmberTools1.3
+2010.4.29. Update description for MinGW/MSYS
 
 Toshi Nagata

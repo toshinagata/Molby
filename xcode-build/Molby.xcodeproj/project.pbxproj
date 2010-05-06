@@ -48,6 +48,7 @@
 		E4A02341106B652F0094DBF8 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = E4A0233F106B652F0094DBF8 /* InfoPlist.strings */; };
 		E4A02347106B65640094DBF8 /* molby_icon.icns in Resources */ = {isa = PBXBuildFile; fileRef = E4A02346106B65640094DBF8 /* molby_icon.icns */; };
 		E4A02357106B657D0094DBF8 /* Scripts in Resources */ = {isa = PBXBuildFile; fileRef = E4A0234A106B657D0094DBF8 /* Scripts */; };
+		E4A1802811897F8600B394E7 /* wxKillAddition.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E4A1802711897F8600B394E7 /* wxKillAddition.cpp */; };
 		E4A4667610C15B4300E40A9D /* listctrl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E4A4667410C15B4300E40A9D /* listctrl.cpp */; };
 		E4C0C4960F25734B00161EC2 /* Dcd.c in Sources */ = {isa = PBXBuildFile; fileRef = E4C0C4950F25734B00161EC2 /* Dcd.c */; };
 		E4C8CBDF10B83060006C4692 /* MyDocManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E4C8CBDE10B83060006C4692 /* MyDocManager.cpp */; };
@@ -155,6 +156,7 @@
 		E4A02340106B652F0094DBF8 /* English */ = {isa = PBXFileReference; fileEncoding = 10; lastKnownFileType = text.plist.strings; name = English; path = English.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		E4A02346106B65640094DBF8 /* molby_icon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = molby_icon.icns; path = ../bitmaps/molby_icon.icns; sourceTree = SOURCE_ROOT; };
 		E4A0234A106B657D0094DBF8 /* Scripts */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Scripts; path = ../Scripts; sourceTree = SOURCE_ROOT; };
+		E4A1802711897F8600B394E7 /* wxKillAddition.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = wxKillAddition.cpp; path = ../wxSources/wxKillAddition.cpp; sourceTree = SOURCE_ROOT; };
 		E4A4667410C15B4300E40A9D /* listctrl.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = listctrl.cpp; path = ../wxSources/listctrl.cpp; sourceTree = SOURCE_ROOT; };
 		E4C0C4940F25734B00161EC2 /* Dcd.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Dcd.h; sourceTree = "<group>"; };
 		E4C0C4950F25734B00161EC2 /* Dcd.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = Dcd.c; sourceTree = "<group>"; };
@@ -365,6 +367,7 @@
 				E44CEED5100E1E9C0040BD51 /* ProgressFrame.h */,
 				E44CEED4100E1E9C0040BD51 /* ProgressFrame.cpp */,
 				E472B7C41087F63200F931F3 /* MyVersion.c */,
+				E4A1802711897F8600B394E7 /* wxKillAddition.cpp */,
 				E43CCD8E0EB20BC800108D2D /* MolLib */,
 			);
 			name = wxSources;
@@ -474,7 +477,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "export TARGET_PLATFORM=MAC\nexport PATH=/usr/local/bin:$PATH\nif [ \"$BUILD_STYLE\" = \"Release\" ]; then\n  cd $PROJECT_DIR/..\n  /usr/bin/ruby \"update_version.rb\"\n  cd Documents\n  /usr/bin/ruby \"makedoc.rb\"\nfi\n(cd $PROJECT_DIR; make -f ../Makefile_amber11)\n";
+			shellScript = "export TARGET_PLATFORM=MAC\nexport PATH=/usr/local/bin:$PATH\n#if [ \"$BUILD_STYLE\" = \"Release\" ]; then\n#  cd $PROJECT_DIR/..\n#  /usr/bin/ruby \"update_version.rb\"\n#  cd Documents\n#  /usr/bin/ruby \"makedoc.rb\"\n#fi\n(cd $PROJECT_DIR; make -f ../Makefile_amber11)\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -519,6 +522,7 @@
 				E4E470C910AE6F8600F72B68 /* GlobalParameterFilesFrame.cpp in Sources */,
 				E4C8CBDF10B83060006C4692 /* MyDocManager.cpp in Sources */,
 				E4A4667610C15B4300E40A9D /* listctrl.cpp in Sources */,
+				E4A1802811897F8600B394E7 /* wxKillAddition.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
