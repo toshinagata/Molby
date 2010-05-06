@@ -21,7 +21,7 @@ ifeq ($(TARGET_PLATFORM),MSW)
 endif
 
 WXLIB_LIST = core,base,gl,adv
-OBJECTS = ConsoleFrame.o GlobalParameterFrame.o GlobalParameterFilesFrame.o MoleculeView.o MyApp.o MyCommand.o MyDocument.o MyGLCanvas.o MySlider.o MyClipboardData.o ProgressFrame.o MyListCtrl.o MyDocManager.o RubyDialogFrame.o MyVersion.o MyThread.o MolLib.a Ruby_bind.a
+OBJECTS = ConsoleFrame.o GlobalParameterFrame.o GlobalParameterFilesFrame.o MoleculeView.o MyApp.o MyCommand.o MyDocument.o MyGLCanvas.o MySlider.o MyClipboardData.o ProgressFrame.o MyListCtrl.o MyDocManager.o wxKillAddition.o RubyDialogFrame.o MyVersion.o MyThread.o MolLib.a Ruby_bind.a
 RUBY_EXTLIB = scanf.rb
 
 ifeq ($(TARGET_PLATFORM),MAC)
@@ -45,11 +45,11 @@ all: $(DESTPREFIX) $(DESTPREFIX)/$(PRODUCT)
 $(DESTPREFIX) :
 	mkdir -p $(DESTPREFIX)
 
-$(DESTPREFIX)/amber11 : ../amber11/src/antechamber/*.[ch] ../amber11/src/sqm/*.f ../amber11/src/config.h
+amber11 : ../amber11/src/antechamber/*.[ch] ../amber11/src/sqm/*.f ../amber11/src/config.h
 	make -f ../Makefile_amber11
 
 ifeq ($(TARGET_PLATFORM),MSW)
-EXTRA_OBJECTS = listctrl.o
+EXTRA_OBJECTS = listctrl.o event.o
 RESOURCE = molby_rc.o
 #  The following HOMETEMP kludges are to work around a bug where '#include "..."' 
 #  does not work when the include path is on the C: drive whereas the source is 
@@ -81,7 +81,7 @@ DESTOBJECTS = $(addprefix $(DESTPREFIX)/,$(ALL_OBJECTS))
 $(DESTPREFIX)/$(EXECUTABLE) : $(DESTOBJECTS)
 	$(CC) -o $@ $(DESTOBJECTS) $(CFLAGS) $(LDFLAGS)
 
-$(DESTPREFIX)/$(PRODUCT) : $(DESTPREFIX)/$(EXECUTABLE) ../Scripts/*.rb $(DESTPREFIX)/amber11
+$(DESTPREFIX)/$(PRODUCT) : $(DESTPREFIX)/$(EXECUTABLE) ../Scripts/*.rb amber11
 ifeq ($(TARGET_PLATFORM),MAC)
 	rm -rf $(DESTPREFIX)/$(PRODUCT)
 	mkdir -p $(DESTPREFIX)/$(PRODUCT)/Contents/MacOS
@@ -89,7 +89,7 @@ ifeq ($(TARGET_PLATFORM),MAC)
 	cp -f Info.plist $(DESTPREFIX)/$(PRODUCT)/Contents
 	echo -n "APPL????" > $(DESTPREFIX)/$(PRODUCT)/Contents/PkgInfo
 	cp -r ../Scripts $(DESTPREFIX)/$(PRODUCT)/Contents/Resources
-	cp -r $(DESTPREFIX)/amber11 $(DESTPREFIX)/$(PRODUCT)/Contents/Resources
+	cp -r amber11 $(DESTPREFIX)/$(PRODUCT)/Contents/Resources
 	mkdir -p $(DESTPREFIX)/$(PRODUCT)/Contents/Resources/Scripts/lib
 	for i in $(RUBY_EXTLIB); do cp $(RUBY_DIR)/lib/$$i $(DESTPREFIX)/$(PRODUCT)/Contents/Resources/Scripts/lib; done
 	cp $(DESTPREFIX)/$(EXECUTABLE) $(DESTPREFIX)/$(PRODUCT)/Contents/MacOS
@@ -100,7 +100,7 @@ ifeq ($(TARGET_PLATFORM),MSW)
 	cp $(DESTPREFIX)/$(EXECUTABLE) $(DESTPREFIX)/$(PRODUCT_DIR)/$(FINAL_EXECUTABLE)
 	cp `which mingwm10.dll` $(DESTPREFIX)/$(PRODUCT_DIR)
 	cp -r ../Scripts $(DESTPREFIX)/$(PRODUCT_DIR)
-	cp -r $(DESTPREFIX)/amber11 $(DESTPREFIX)/$(PRODUCT_DIR)
+	cp -r amber11 $(DESTPREFIX)/$(PRODUCT_DIR)
 	mkdir -p $(DESTPREFIX)/$(PRODUCT_DIR)/Scripts/lib
 	for i in $(RUBY_EXTLIB); do cp $(RUBY_DIR)/lib/$$i $(DESTPREFIX)/$(PRODUCT_DIR)/Scripts/lib; done
 endif
@@ -111,7 +111,8 @@ setup: $(DESTPREFIX)/$(PRODUCT_DIR)/$(FINAL_EXECUTABLE)
 endif
 
 clean:
-	rm -rf $(DESTPREFIX)/*
+
+	rm -rf $(DESTPREFIX)
 #	rm -f $(EXECUTABLE) $(OBJECTS)
 #	rm -rf $(PRODUCT)
 #	cd ../MolLib; $(MAKE) clean
