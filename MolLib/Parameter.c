@@ -283,6 +283,13 @@ ParameterGetSizeForType(int type)
 	}
 }
 
+void
+ParameterCopyOneWithType(UnionPar *dst, const UnionPar *src, int type)
+{
+	int size = ParameterGetSizeForType(type);
+	memmove(dst, src, size);
+}
+
 UnionPar *
 ParameterRefGetPar(ParameterRef *pref)
 {

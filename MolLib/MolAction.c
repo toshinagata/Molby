@@ -559,7 +559,7 @@ sMolActionUpdateSelectionAndParameterNumbering(Molecule *mol, const IntGroup *ig
 			if (!is_insert)
 				ig3 = IntGroupNew();
 			for (j = 0; (up = ParameterGetUnionParFromTypeAndIndex(mol->par, i, j)) != NULL; j++) {
-				usave = *up;
+				ParameterCopyOneWithType(&usave, up, i);  /*  Don't say usave = *up  */
 				if (ParameterRenumberAtoms(i, up, old_natoms, ip) && !is_insert) {
 					IntGroupAdd(ig3, j, 1);  /*  This parameter is to be restored on undo  */
 					AssignArray(&upary, &count_upary, sizeof(UnionPar), count_upary, &usave);
@@ -780,7 +780,7 @@ MolActionPerform(Molecule *mol, MolAction *action)
 		ip = (Int *)malloc(sizeof(Int) * 2 * result);
 		if (ip == NULL)
 			return -4;
-		memmove(ip, mol->bonds - result * 2, sizeof(Int) * 2 * result);
+		memmove(ip, mol->bonds + (mol->nbonds - result) * 2, sizeof(Int) * 2 * result);
 		act2 = MolActionNew(gMolActionDeleteBonds, result * 2, ip);
 		free(ip);
 		needsRebuildMDArena = 1;

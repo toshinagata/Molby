@@ -202,6 +202,12 @@ int ParameterInsert(Parameter *par, Int type, const UnionPar *up, struct IntGrou
 int ParameterDelete(Parameter *par, Int type, UnionPar *up, struct IntGroup *where);
 int ParameterCopy(Parameter *par, Int type, UnionPar *up, struct IntGroup *where);
 
+/*  Caution!  When up is a UnionPar pointer given by ParameterGetUnionParFromTypeAndIndex() etc and
+    u is a UnionPar variable, u = *up will cause Bad Address exception, if up is at the last
+    of the allocated array and sizeof(UnionPar) is larger than the size of actual parameter record.
+    This copy function does take care of such case.  */
+void ParameterCopyOneWithType(UnionPar *dst, const UnionPar *src, int type);
+
 int ParameterRenumberAtoms(Int type, UnionPar *up, Int oldnatoms, const Int *old2new);
 int ParameterDoesContainAtom(Int type, UnionPar *up, UInt atom_type, Int options);
 
