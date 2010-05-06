@@ -111,7 +111,11 @@ endif
 
 #  Information about Fortran compilation:
 
+ifeq ($(TARGET_PLATFORM),MAC)
 FC=gfortran $(ISYSROOT)
+else
+FC=gfortran
+endif
 FFLAGS= -O0 $(LOCALFLAGS) $(AMBERBUILDFLAGS)
 FOPTFLAGS= -O3 $(LOCALFLAGS) $(AMBERBUILDFLAGS)
 FREEFORMAT_FLAG= -ffree-form

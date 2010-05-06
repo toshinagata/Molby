@@ -31,13 +31,13 @@ serial: configured_serial
 	(cd cblas && $(MAKE) $(BLAS) )
 	(cd f2c &&  $(MAKE) $(F2C)  )
 	(cd c9x-complex && $(MAKE) $(C9XCOMPLEX) )
-#	(cd etc && $(MAKE) install )
 #	(cd protonate && $(MAKE) install )
 #	(cd chamber && $(MAKE) install )
 #	(cd pbsa && $(MAKE) install )
 
 #	antechamber:
 	mkdir -p $(BINDIR)
+	(cd etc && $(MAKE) resp$(SFX) && cp resp$(SFX) $(BINDIR) )
 	(cd antechamber && $(MAKE) install )
 	(cd sqm && $(MAKE) install )
 
@@ -127,7 +127,7 @@ clean:
 	(cd lapack && $(MAKE) clean )
 	(cd f2c && $(MAKE) clean )
 #	(cd c9x-complex && $(MAKE) clean )
-#	(cd etc && $(MAKE) clean )
+	(cd etc && $(MAKE) clean )
 #	(cd protonate && $(MAKE) clean )
 #	(cd chamber && $(MAKE) clean )
 #	(cd pbsa && $(MAKE) clean )
