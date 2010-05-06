@@ -145,6 +145,12 @@ class Molecule
 	    dfttyp = hash["dfttype"]
 	    fp.print "         DFTTYP=#{dfttyp}\n"
 	  end
+	  if hash["use_internal"] != 0 && hash["runtype"] == 2
+	    nzvar = self.natoms * 3 - 6  #  TODO: 3N-5 for linear molecules
+	    fp.print "         NZVAR=#{nzvar}\n"
+	  else
+	    nzvar = 0
+      end
 	  fp.print "         SCFTYP=#{scftyp} #{ecp_read}UNITS=ANGS $END\n"
 	  fp.print " $SCF    CONV=1.0E-06 DIRSCF=.T. FDIFF=.T. DAMP=.T. $END\n"
 	  fp.print " $STATPT NSTEP=400 OPTTOL=1.0E-06               $END\n"
@@ -152,6 +158,9 @@ class Molecule
 	  fp.print " $GUESS  GUESS=HUCKEL                           $END\n"
       if gbasis
 	    fp.print " $BASIS  GBASIS=#{gbasis} $END\n"
+	  end
+	  if nzvar > 0
+		fp.print " $ZMAT   DLC=.T. AUTO=.T. $END\n"
 	  end
 	  if hash["esp"] != 0
 	    fp.print " $ELPOT  IEPOT=1 OUTPUT=PUNCH WHERE=PDC         $END\n"
@@ -219,7 +228,11 @@ class Molecule
 		item(:text, :title=>"SCF type"),
 		item(:popup, :subitems=>["RHF", "ROHF", "UHF"], :tag=>"scftype"),
 	    item(:text, :title=>"Run type"),
-		item(:popup, :subitems=>["Energy", "Property", "Optimize"], :tag=>"runtype"),
+		item(:popup, :subitems=>["Energy", "Property", "Optimize"], :tag=>"runtype",
+		  :action=>proc { |it| set_attr("use_internal", :enabled=>(it[:value] == 2)) } ),
+
+		item(:checkbox, :title=>"Use internal coordinates for structure optimization", :tag=>"use_internal"),
+		-1, -1, -1,
 
 		item(:text, :title=>"Charge"),
 		item(:textfield, :width=>80, :tag=>"charge"),
@@ -272,6 +285,7 @@ class Molecule
 	  set_attr("secondary_elements", :enabled=>(values["use_secondary_basis"] == 1))
 	  set_attr("secondary_basis", :enabled=>(values["use_secondary_basis"] == 1))
 	  set_attr("dfttype", :enabled=>(values["dft"] == 1))
+	  set_attr("use_internal", :enabled=>(values["runtype"] == 2))
 	}
 	hash.each_pair { |key, value|
 	  next if key == :status
