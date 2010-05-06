@@ -2232,10 +2232,15 @@ MoleculeLoadGamessDatFile(Molecule *mol, const char *fname, char *errbuf, int er
 			nframes = MoleculeGetNumberOfFrames(mol);
 			continue;
 		} else if (strstr(buf, "DATA FROM NSERCH") != NULL || (strstr(buf, "RESULTS FROM SUCCESSFUL") != NULL && (n1 = 1))) {
-			/*  Skip three lines  */
-			ReadLine(buf, sizeof buf, fp, &lineNumber);
-			ReadLine(buf, sizeof buf, fp, &lineNumber);
-			ReadLine(buf, sizeof buf, fp, &lineNumber);
+			/*  Skip until the separator line is read (three or four lines)  */
+			i = 0;
+			do {
+				if (i++ >= 4) {
+					snprintf(errbuf, errbufsize, "Line %d: the separator line at the top of the coordinates is not found: bad format?", lineNumber);
+					return 6;
+				}
+				ReadLine(buf, sizeof buf, fp, &lineNumber);
+			} while (strstr(buf, "----------------------------") == NULL);
 			for (i = 0; i < natoms; i++) {
 				if (ReadLine(buf, sizeof buf, fp, &lineNumber) <= 0) {
 					snprintf(errbuf, errbufsize, "Unexpected end of file in reading NSERCH data");
