@@ -2667,6 +2667,7 @@ md_main(MDArena *arena, int minimize)
 		MoleculeUnlock(arena->xmol);
 		if (retval != 0)
 			return retval;
+		arena->last_verlet_step = -1;  /*  The Verlet list needs update  */
 	}
 	
 	arena->is_running = 1;

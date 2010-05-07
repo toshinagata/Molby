@@ -999,6 +999,7 @@ MolActionPerform(Molecule *mol, MolAction *action)
 		}			
 		act2 = MolActionNew(gMolActionRemoveFrames, ig);
 		act2->frame = mol->cframe;
+		needsSymmetryAmendment = 1;
 	} else if (strcmp(action->name, gMolActionRemoveFrames) == 0) {
 		Vector *vp2;
 		ig = action->args[0].u.igval;
@@ -1016,6 +1017,7 @@ MolActionPerform(Molecule *mol, MolAction *action)
 		free(vp);
 		if (vp2 != NULL)
 			free(vp2);
+		needsSymmetryAmendment = 1;
 	} else if (strcmp(action->name, gMolActionSetSelection) == 0) {
 		IntGroup *ig2;
 		ig2 = MoleculeGetSelection(mol);
@@ -1172,6 +1174,7 @@ MolActionPerform(Molecule *mol, MolAction *action)
 		else
 			MoleculeSetCell(mol, dp[0], dp[1], dp[2], dp[3], dp[4], dp[5], n1);
 		act2 = MolActionNew(gMolActionSetCell, (d[0] == 0.0 ? 0 : 6), d, n1);
+		needsRebuildMDArena = 1;
 	} else if (strcmp(action->name, gMolActionSetBox) == 0) {
 		Vector v[4];
 		char flags[3];
