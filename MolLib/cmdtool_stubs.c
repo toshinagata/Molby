@@ -223,7 +223,10 @@ MoleculeCallback_displayName(Molecule *mol, char *buf, int bufsize)
 void
 MoleculeCallback_pathName(Molecule *mol, char *buf, int bufsize)
 {
-	buf[0] = 0;
+	if (mol != NULL && mol->path != NULL) {
+		strncpy(buf, mol->path, bufsize - 1);
+		buf[bufsize - 1] = 0;
+	} else buf[0] = 0;
 }
 
 IntGroup *

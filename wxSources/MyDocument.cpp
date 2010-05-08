@@ -801,6 +801,7 @@ MyDocument::OnInsertFrameFromMD(wxCommandEvent &event)
 				ap->r = rp[j];
 		}
 		ring->count = 0;
+		mol->needsMDCopyCoordinates = 0;  /*  This flag needs to be negated because the coordinates come from the MD run  */
 	}
 	MoleculeUnlock(mol);
 }

@@ -4246,10 +4246,13 @@ s_Molecule_LoadSave(int argc, VALUE *argv, VALUE self, int loadFlag)
 			methname[i] = tolower(methname[i]);
 		mid = rb_intern(methname);
 		free(methname);
-		rval = rb_funcall2(self, mid, argc - 1, argv + 1);
+		argc--;
+		argv++;
+		rval = rb_funcall2(self, mid, argc, argv);
 		if (rval == Qnil)
 			rb_raise(rb_eMolbyError, "the format specification \'%s\' seems to be wrong", argstr);
-		else return rval;
+		else
+			goto success;
 	}
 	/*  Guess file type from extension  */
 	p = strrchr(argstr, '.');
@@ -4274,15 +4277,26 @@ s_Molecule_LoadSave(int argc, VALUE *argv, VALUE self, int loadFlag)
 					/*  Load: try to call the load procedure only if it is available  */
 					rval = rb_funcall2(self, mid, argc, argv);
 					if (rval != Qnil)
-						return rval; /* Successful */
+						goto success;
 				}
 			} else {
 				/*  Save: call the save procedure, and if not found then call 'method_missing'  */
-				return rb_funcall2(self, mid, argc, argv);
+				rval = rb_funcall2(self, mid, argc, argv);
+				if (rval != Qnil)
+					goto success;
 			}
 		}
 	}
 	rb_raise(rb_eMolbyError, "the file %s cannot be %s", argstr, (loadFlag ? "loaded" : "saved"));
+	
+success:
+	/*  Register the path  */
+	{
+		Molecule *mol;
+		Data_Get_Struct(self, Molecule, mol);
+		MoleculeSetPath(mol, StringValuePtr(argv[0]));
+	}
+	return rval;
 }
 
 /*

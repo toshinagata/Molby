@@ -257,6 +257,33 @@ MoleculeWithName(const char *name)
 	return (Molecule *)ObjectWithName(name, (Object *)sMoleculeRoot);
 }
 
+void
+MoleculeSetPath(Molecule *mol, const char *fname)
+{
+	char *buf, *cwd;
+	if (mol == NULL || fname == NULL)
+		return;
+	if (mol->path != NULL)
+		free(mol->path);
+	if (fname[0] == '/' || (isalpha(fname[0]) && fname[1] == ':')) {
+		/*  Full path  */
+		mol->path = strdup(fname);
+		return;
+	}
+	cwd = getcwd(NULL, 0);
+	asprintf(&buf, "%s/%s", cwd, fname);
+	free(cwd);
+	mol->path = buf;
+}
+
+const char *
+MoleculeGetPath(Molecule *mol)
+{
+	if (mol == NULL)
+		return NULL;
+	return mol->path;
+}
+
 Molecule *
 MoleculeRetain(Molecule *mp)
 {
@@ -292,6 +319,8 @@ MoleculeRelease(Molecule *mp)
 			ParameterRelease(mp->par);
 		if (mp->elpots != NULL)
 			free(mp->elpots);
+		if (mp->path != NULL)
+			free(mp->path);
 		ObjectDealloc((Object *)mp, (Object **)&sMoleculeRoot);
 	}
 }
@@ -432,6 +461,8 @@ MoleculeLoadFile(Molecule *mp, const char *fname, const char *ftype, char *errbu
 /*	if (retval != 0) {
 		retval = MoleculeLoadPsfFile(mp, fname, errbuf, errbufsize);
 	} */
+	if (retval == 0)
+		MoleculeSetPath(mp, fname);
 	return retval;
 }
 
@@ -2737,7 +2768,8 @@ MoleculeWriteToFile(Molecule *mp, const char *fname, const char *ftype, char *er
 		snprintf(errbuf, errbufsize, "The file format should be specified");
 		retval = 1;
 	}
-
+	if (retval == 0)
+		MoleculeSetPath(mp, fname);
 	return retval;
 }
 

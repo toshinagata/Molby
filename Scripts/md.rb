@@ -37,7 +37,7 @@ class Molecule
 	i = 0
 	keys = keys.sort_by { |k| i += 1; (i > n ? i - n + 0.5 : i) }
 	#  Do dialog
-    hash = Dialog.run("Molecular Dynamics Advanced Settings") {
+    hash = Dialog.run("Molecular Dynamics Advanced Settings", "Close", nil) {
 	  items = []
 	  keys.each { |k|
 	    enabled = !read_only.include?(k)
@@ -52,16 +52,17 @@ class Molecule
 	  }
 	  layout(4, *items)
 	}
-	if hash[:status] == 0
+#	if hash[:status] == 0
 	  hash.keys.each { |k|
 	    next if k == :status || read_only.include?(k)
 	    arena[k] = hash[k]
 	  }
-#	  arena.prepare
 	  return hash
-	else
-	  return nil
-	end
+#	  arena.prepare
+#	  return hash
+#	else
+#	  return nil
+#	end
   end
   
   def prepare_arena
@@ -80,7 +81,7 @@ class Molecule
     #  Initialize some fields at first invocation
     if !@arena_created
 	  if arena.log_file == nil && self.dir != nil
-	    arena.log_file = self.dir + "/" + self.name.gsub(/\.\w+$/, ".log")
+	    arena.log_file = self.name.gsub(/\.\w+$/, ".log")
 	  end
 	  @md_spf = 500
 	  @md_nf = 200
@@ -104,13 +105,13 @@ class Molecule
 	nf = @md_nf
 	mol = self
 	files_save = Hash.new
-	[:log_file, :coord_file, :vel_file, :force_file, :debug_file].each { |k|
-	  s = arena[k]
-	  files_save[k] = s
-	  if s != nil
-	    arena[k] = File.basename(s)
-	  end
-	}
+#	[:log_file, :coord_file, :vel_file, :force_file, :debug_file].each { |k|
+#	  s = arena[k]
+#	  files_save[k] = s
+#	  if s != nil
+#	    arena[k] = File.basename(s)
+#	  end
+#	}
 	title = (minimize ? "Minimize" : "Molecular Dynamics")
 	hash = Dialog.run(title) {
 	  items = []
@@ -141,31 +142,18 @@ class Molecule
 	}
 	dirstr = (self.dir || document_home)
 	status = hash[:status]
-	if status == 0
-	  arena[:log_file] = hash[:log_file]
-	end
-	[:log_file, :coord_file, :vel_file, :force_file, :debug_file].each { |k|
-	  if status == 0
-	    s = arena[k]
-	    if s != nil && s != ""
-	      arena[k] = dirstr + "/" + s
-		else
-		  arena[k] = nil
-		end
-	  else
-	    arena[k] = files_save[k]
-      end
-	}
-	if status != 0
-	  return -1
-	end
 	if !minimize
 	  arena.temperature = Float(hash["temperature"])
 	  arena.timestep = Float(hash["timestep"])
 	end
 	arena.coord_output_freq = Integer(hash["steps_per_frame"])
 	arena.energy_output_freq = arena.coord_output_freq
-	return Integer(hash["number_of_frames"])
+	arena.log_file = hash["log_file"]
+	if hash[:status] == 0
+	  return Integer(hash["number_of_frames"])
+	else
+	  return -1
+	end
   end
   
   def cmd_define_unit_cell

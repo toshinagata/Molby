@@ -22,6 +22,7 @@
 #include <string.h>
 #include <math.h>
 #include <time.h>
+#include <unistd.h>
 
 #if __WXMSW__
 #define ftello(x) ftell(x)
@@ -1384,36 +1385,57 @@ md_prepare(MDArena *arena, int check_only)
 
 	/*  Open files  */
 	if (!check_only) {
+		char *cwd = NULL;
+		const char *err = NULL;
+		if (mol->path != NULL) {
+			/*  Temporarily change to the document directory  */
+			char *p;
+			char *fname = strdup(mol->path);
+			if ((p = strrchr(fname, '/')) != NULL
+				|| (p = strrchr(fname, '\\')) != NULL
+				) {
+				*p = 0;
+				cwd = getcwd(NULL, 0);
+				chdir(fname);
+			}
+			free(fname);
+		}
 		if (arena->log_result_name != NULL && arena->log_result == NULL) {
 			arena->log_result = fopen(arena->log_result_name, "wb");
 			if (arena->log_result == NULL)
-				return "cannot create log file";
+				err = "cannot create log file";
 		}
-		if (arena->coord_result_name != NULL && arena->coord_result == NULL) {
+		if (err == NULL && arena->coord_result_name != NULL && arena->coord_result == NULL) {
 			arena->coord_result = fopen(arena->coord_result_name, "wb");
 			if (arena->coord_result == NULL)
-				return "cannot create coord file";
+				err = "cannot create coord file";
 		}
-		if (arena->vel_result_name != NULL && arena->vel_result == NULL) {
+		if (err == NULL && arena->vel_result_name != NULL && arena->vel_result == NULL) {
 			arena->vel_result = fopen(arena->vel_result_name, "wb");
 			if (arena->vel_result == NULL)
-				return "cannot create vel file";
+				err = "cannot create vel file";
 		}
-		if (arena->force_result_name != NULL && arena->force_result == NULL) {
+		if (err == NULL && arena->force_result_name != NULL && arena->force_result == NULL) {
 			arena->force_result = fopen(arena->force_result_name, "wb");
 			if (arena->force_result == NULL)
-				return "cannot create force file";
+				err = "cannot create force file";
 		}
-		if (arena->extend_result_name != NULL && arena->extend_result == NULL) {
+		if (err == NULL && arena->extend_result_name != NULL && arena->extend_result == NULL) {
 			arena->extend_result = fopen(arena->extend_result_name, "wb");
 			if (arena->extend_result == NULL)
-				return "cannot create extend file";
+				err = "cannot create extend file";
 		}
-		if (arena->debug_result_name != NULL && arena->debug_result == NULL) {
+		if (err == NULL && arena->debug_result_name != NULL && arena->debug_result == NULL) {
 			arena->debug_result = fopen(arena->debug_result_name, "wb");
 			if (arena->debug_result == NULL)
-				return "cannot create debug file";
+				err = "cannot create debug file";
 		}
+		if (cwd != NULL) {
+			chdir(cwd);
+			free(cwd);
+		}
+		if (err != NULL)
+			return err;
 	}
 	
 	/*  Count symmetry unique atoms  */
@@ -2919,6 +2941,8 @@ md_arena_set_molecule(MDArena *arena, Molecule *xmol)
 			mol->cell = (XtalCell *)malloc(sizeof(XtalCell));
 			memmove(mol->cell, xmol->cell, sizeof(XtalCell));
 		}
+		if (xmol->path != NULL)
+			mol->path = strdup(xmol->path);
 /*		if (xmol->box != NULL) {
 			mol->box = (PeriodicBox *)malloc(sizeof(PeriodicBox));
 			memmove(mol->box, xmol->box, sizeof(PeriodicBox));

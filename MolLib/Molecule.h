@@ -264,6 +264,8 @@ typedef struct Molecule {
 
 	struct MDArena *arena;  /*  Reference to the MDArena record during MM/MD run (no retain)  */
 
+	const char *path;     /*  The full path of the molecule, when this molecule is last saved to/loaded from file. Only used in the command-line version. (In GUI version, the path is obtained by the Document mechanism) */
+
 	/*  Information from the dcd files  */
 	Int    startStep;     /*  the timestep for frame 0  */
 	Int    stepsPerFrame; /*  the number of timesteps between neighboring frames  */
@@ -315,6 +317,8 @@ Molecule *MoleculeInitWithAtoms(Molecule *mp, const Atom *atoms, int natoms);
 Molecule *MoleculeInitWithMolecule(Molecule *mp2, const Molecule *mp);
 void MoleculeSetName(Molecule *par, const char *name);
 const char *MoleculeGetName(Molecule *mp);
+void MoleculeSetPath(Molecule *mol, const char *fname);
+const char *MoleculeGetPath(Molecule *mol);
 Molecule *MoleculeWithName(const char *name);
 Molecule *MoleculeRetain(Molecule *mp);
 void MoleculeRelease(Molecule *mp);
