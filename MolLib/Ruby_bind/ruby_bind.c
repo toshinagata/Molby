@@ -6741,11 +6741,11 @@ s_Molecule_WrapUnitCell(VALUE self, VALUE gval)
 	s_Molecule_DoCenterOfMass(mol, &cv, ig);
 	TransformVec(&v, mol->cell->rtr, &cv);
 	if (mol->cell->flags[0])
-		v.x -= floor(v.x + 0.5);
+		v.x -= floor(v.x);
 	if (mol->cell->flags[1])
-		v.y -= floor(v.y + 0.5);
+		v.y -= floor(v.y);
 	if (mol->cell->flags[2])
-		v.z -= floor(v.z + 0.5);
+		v.z -= floor(v.z);
 	TransformVec(&dv, mol->cell->tr, &v);
 	VecDec(dv, cv);
 	MolActionCreateAndPerform(mol, gMolActionTranslateAtoms, &dv, ig);

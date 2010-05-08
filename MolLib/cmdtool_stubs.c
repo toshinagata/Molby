@@ -147,6 +147,12 @@ MyAppCallback_getTextWithPrompt(const char *prompt, char *buf, int bufsize)
 	return 0;
 }
 
+int
+MyAppCallback_callSubProcess(const char *cmdline, const char *procname)
+{
+	return system(cmdline);
+}
+
 void
 MainViewCallback_display(MainView *mview)
 {
