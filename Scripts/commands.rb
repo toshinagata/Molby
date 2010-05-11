@@ -416,13 +416,17 @@ end_of_header
      
   def cmd_show_graphite
     n = self.show_graphite
+	flag = self.show_graphite?
 	hash = Dialog.run("Show Graphite") {
       layout(1,
-	    item(:text, :title=>"Number of graphite rings for each direction:\n(0 to suppress display)"),
-	    item(:textfield, :width=>120, :tag=>"graphite", :value=>n.to_s))
+	    item(:checkbox, :title=>"Show graphite", :tag=>"show_graphite", :value=>(flag ? 1 : 0),
+		  :action=>proc { |it| set_attr("graphite", :enabled=>(it[:value] == 1)) } ),
+	    item(:text, :title=>"Number of graphite rings for each direction:"),
+	    item(:textfield, :width=>120, :tag=>"graphite", :value=>n.to_s, :enabled=>flag))
 	}
 	if hash[:status] == 0
 	  self.show_graphite(hash["graphite"])
+	  self.show_graphite(hash["show_graphite"] == 1 ? true : false)
 	end
   end
   

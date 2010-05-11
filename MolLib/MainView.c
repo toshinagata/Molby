@@ -1010,80 +1010,85 @@ drawGraphite(MainView *mview)
 	static GLfloat sDarkCyanColor[] = {0, 0.75, 0.75, 1};
 	MDArena *arena;
 	MDGraphiteArena *graphite;
+	Vector xaxis, yaxis, zaxis, origin;
+	Double R;
+	int i, j, i0, i1, j0, j1, ir;
+	Double x, dx, y, dy, xx, yy;
+	GLfloat p[12];
 	if ((arena = mview->mol->arena) != NULL && (graphite = arena->graphite) != NULL) {
-		Vector xaxis, yaxis, zaxis, origin;
-		Double R;
-		int i, j, i0, i1, j0, j1, ir;
-		Double x, dx, y, dy, xx, yy;
-		GLfloat p[12];
 		graphite_get_axes(graphite, &origin, &xaxis, &yaxis, &zaxis, &R);
-		i0 = -(mview->showGraphite / 2) - 1;
-		i1 = i0 + mview->showGraphite + 1;
-		j0 = -(mview->showGraphite / 2);
-		j1 = j0 + mview->showGraphite;
-		dx = 0.5 * R;
-		dy = 0.866025403784439 * R;
-		glDisable(GL_LIGHTING);	
-		glColor3fv(sDarkCyanColor);
-		for (i = i0; i <= i1; i++) {
-			for (j = j0; j <= j1; j++) {
-				Byte f1, f2, f3;
-				ir = (i % 2 == 0 ? 0 : 1);
-				x = 3 * i * dx;
-				y = (2 * j + ir) * dy;
-				yy = y - dy;
-				xx = x - 2 * dx;
-				p[0] = xaxis.x * xx + yaxis.x * y + origin.x;
-				p[1] = xaxis.y * xx + yaxis.y * y + origin.y;
-				p[2] = xaxis.z * xx + yaxis.z * y + origin.z;
-				xx += dx;
-				p[3] = xaxis.x * xx + yaxis.x * yy + origin.x;
-				p[4] = xaxis.y * xx + yaxis.y * yy + origin.y;
-				p[5] = xaxis.z * xx + yaxis.z * yy + origin.z;
-				xx += 2 * dx;
-				p[6] = xaxis.x * xx + yaxis.x * yy + origin.x;
-				p[7] = xaxis.y * xx + yaxis.y * yy + origin.y;
-				p[8] = xaxis.z * xx + yaxis.z * yy + origin.z;
-				xx += dx;
-				p[9] = xaxis.x * xx + yaxis.x * y + origin.x;
-				p[10] = xaxis.y * xx + yaxis.y * y + origin.y;
-				p[11] = xaxis.z * xx + yaxis.z * y + origin.z;
-				f1 = f2 = f3 = 1;
-				if (i == i0) {
-					f1 = f2 = 0;
-					if ((ir == 0 && j == j0) || (ir == 1 && j == j1))
-						continue;
-				} else if (i == i1) {
-					f2 = f3 = 0;
-					if ((ir == 0 && j == j0) || (ir == 1 && j == j1))
-						continue;
-				} else if (j == j1) {
-					if (ir == 1) {
-						f1 = f3 = 0;
-					} else if (i == i0 + 1) {
-						f1 = 0;
-					} else if (i == i1 - 1) {
-						f3 = 0;
-					}
-				}
-				glBegin(GL_LINES);
-				if (f1) { 
-					glVertex3fv(p);
-					glVertex3fv(p + 3);
-				}
-				if (f2) {
-					glVertex3fv(p + 3);
-					glVertex3fv(p + 6);
-				}
-				if (f3) {
-					glVertex3fv(p + 6);
-					glVertex3fv(p + 9);
-				}
-				glEnd();
-			}
-		}
-		glEnable(GL_LIGHTING);	
+	} else {
+		origin.x = origin.y = origin.z = 0.0;
+		xaxis.x = yaxis.y = zaxis.z = 1.0;
+		xaxis.y = xaxis.z = yaxis.x = yaxis.z = zaxis.x = zaxis.y = 0.0;
+		R = 1.23;
 	}
+	i0 = -(mview->showGraphite / 2) - 1;
+	i1 = i0 + mview->showGraphite + 1;
+	j0 = -(mview->showGraphite / 2);
+	j1 = j0 + mview->showGraphite;
+	dx = 0.5 * R;
+	dy = 0.866025403784439 * R;
+	glDisable(GL_LIGHTING);	
+	glColor3fv(sDarkCyanColor);
+	for (i = i0; i <= i1; i++) {
+		for (j = j0; j <= j1; j++) {
+			Byte f1, f2, f3;
+			ir = (i % 2 == 0 ? 0 : 1);
+			x = 3 * i * dx;
+			y = (2 * j + ir) * dy;
+			yy = y - dy;
+			xx = x - 2 * dx;
+			p[0] = xaxis.x * xx + yaxis.x * y + origin.x;
+			p[1] = xaxis.y * xx + yaxis.y * y + origin.y;
+			p[2] = xaxis.z * xx + yaxis.z * y + origin.z;
+			xx += dx;
+			p[3] = xaxis.x * xx + yaxis.x * yy + origin.x;
+			p[4] = xaxis.y * xx + yaxis.y * yy + origin.y;
+			p[5] = xaxis.z * xx + yaxis.z * yy + origin.z;
+			xx += 2 * dx;
+			p[6] = xaxis.x * xx + yaxis.x * yy + origin.x;
+			p[7] = xaxis.y * xx + yaxis.y * yy + origin.y;
+			p[8] = xaxis.z * xx + yaxis.z * yy + origin.z;
+			xx += dx;
+			p[9] = xaxis.x * xx + yaxis.x * y + origin.x;
+			p[10] = xaxis.y * xx + yaxis.y * y + origin.y;
+			p[11] = xaxis.z * xx + yaxis.z * y + origin.z;
+			f1 = f2 = f3 = 1;
+			if (i == i0) {
+				f1 = f2 = 0;
+				if ((ir == 0 && j == j0) || (ir == 1 && j == j1))
+					continue;
+			} else if (i == i1) {
+				f2 = f3 = 0;
+				if ((ir == 0 && j == j0) || (ir == 1 && j == j1))
+					continue;
+			} else if (j == j1) {
+				if (ir == 1) {
+					f1 = f3 = 0;
+				} else if (i == i0 + 1) {
+					f1 = 0;
+				} else if (i == i1 - 1) {
+					f3 = 0;
+				}
+			}
+			glBegin(GL_LINES);
+			if (f1) { 
+				glVertex3fv(p);
+				glVertex3fv(p + 3);
+			}
+			if (f2) {
+				glVertex3fv(p + 3);
+				glVertex3fv(p + 6);
+			}
+			if (f3) {
+				glVertex3fv(p + 6);
+				glVertex3fv(p + 9);
+			}
+			glEnd();
+		}
+	}
+	glEnable(GL_LIGHTING);	
 }
 
 static GLfloat sRedColor[] = {1, 0, 0, 1};
@@ -1387,21 +1392,21 @@ drawModel(MainView *mview)
 		calcDragOffset(mview, &dragOffset);
 	else dragOffset.x = dragOffset.y = dragOffset.z = 0;
 	
-	if (mview->showGraphite) {
+	if (mview->showGraphite > 0 && mview->showGraphiteFlag) {
 		drawGraphite(mview);
 	}
 	
 	amin = amax = bmin = bmax = cmin = cmax = 0;
 	if (mview->showExpandedAtoms && mol->cell != NULL) {
-		if (mol->cell->flags[0]) {
+		if (mol->cell->flags[0] && mview->showPeriodicImageFlag) {
 			amin = mview->showPeriodicImage[0];
 			amax = mview->showPeriodicImage[1];
 		}
-		if (mol->cell->flags[1]) {
+		if (mol->cell->flags[1] && mview->showPeriodicImageFlag) {
 			bmin = mview->showPeriodicImage[2];
 			bmax = mview->showPeriodicImage[3];
 		}
-		if (mol->cell->flags[2]) {
+		if (mol->cell->flags[2] && mview->showPeriodicImageFlag) {
 			cmin = mview->showPeriodicImage[4];
 			cmax = mview->showPeriodicImage[5];
 		}

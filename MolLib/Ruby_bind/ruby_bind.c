@@ -7007,9 +7007,11 @@ s_Molecule_ShowEllipsoids(int argc, VALUE *argv, VALUE self)
  *  call-seq:
  *     show_graphite -> Integer
  *     show_graphite = Integer
+ *     show_graphite = boolean
  *
  *  Set whether to show the graphite plane. If the argument is positive, it also indicates the
  *  number of rings to display for each direction.
+ *  If the argument is boolean, only the show/hide flag is set.
  */
 static VALUE
 s_Molecule_ShowGraphite(int argc, VALUE *argv, VALUE self)
@@ -7019,10 +7021,16 @@ s_Molecule_ShowGraphite(int argc, VALUE *argv, VALUE self)
 	if (mol->mview == NULL)
 		return Qnil;
 	if (argc > 0) {
-		int n = NUM2INT(rb_Integer(argv[0]));
-		if (n < 0)
-			rb_raise(rb_eMolbyError, "The argument must be non-negative integer");
-		mol->mview->showGraphite = n;
+		if (argv[0] == Qnil || argv[0] == Qfalse)
+			mol->mview->showGraphiteFlag = 0;
+		else if (argv[0] == Qtrue)
+			mol->mview->showGraphiteFlag = 1;
+		else {
+			int n = NUM2INT(rb_Integer(argv[0]));
+			if (n < 0)
+				rb_raise(rb_eMolbyError, "The argument must be non-negative integer");
+			mol->mview->showGraphite = n;
+		}
 		MainViewCallback_setNeedsDisplay(mol->mview, 1);
 	}
 	return INT2NUM(mol->mview->showGraphite);
@@ -7030,10 +7038,29 @@ s_Molecule_ShowGraphite(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
+ *     show_graphite? -> boolean
+ *
+ *  Return whether the graphite is set visible or not.
+*/
+static VALUE
+s_Molecule_ShowGraphiteFlag(VALUE self)
+{
+    Molecule *mol;
+    Data_Get_Struct(self, Molecule, mol);
+	if (mol->mview == NULL)
+		return Qnil;
+	return (mol->mview->showGraphiteFlag ? Qtrue : Qfalse);
+}
+	
+/*
+ *  call-seq:
+ *     show_periodic_image -> [amin, amax, bmin, bmax, cmin, cmax]
  *     show_periodic_image = [amin, amax, bmin, bmax, cmin, cmax]
+ *     show_periodic_image = boolean
  *
  *  Set to show the periodic image of the atoms. If the unit cell is not defined, the values are
  *  set but no visual effects are observed.
+ *  If the argument is boolean, only the show/hide flag is modified.
  */
 static VALUE
 s_Molecule_ShowPeriodicImage(int argc, VALUE *argv, VALUE self)
@@ -7046,16 +7073,23 @@ s_Molecule_ShowPeriodicImage(int argc, VALUE *argv, VALUE self)
 	if (mol->mview == NULL)
 		return Qnil;
 	rb_scan_args(argc, argv, "01", &val);
-	if (val != Qnil) {
-		val = rb_ary_to_ary(val);
-		for (i = 0; i < 6; i++) {
-			if (i < RARRAY_LEN(val))
-				ival[i] = NUM2INT(rb_Integer(RARRAY_PTR(val)[i]));
+	if (argc > 0) {
+		/*  Change current settings  */
+		if (val == Qnil || val == Qfalse)
+			mol->mview->showPeriodicImageFlag = 0;
+		else if (val == Qtrue)
+			mol->mview->showPeriodicImageFlag = 1;
+		else {
+			val = rb_ary_to_ary(val);
+			for (i = 0; i < 6; i++) {
+				if (i < RARRAY_LEN(val))
+					ival[i] = NUM2INT(rb_Integer(RARRAY_PTR(val)[i]));
+			}
+			if (ival[0] > 0 || ival[1] < 0 || ival[2] > 0 || ival[3] < 0 || ival[4] > 0 || ival[5] < 0)
+				rb_raise(rb_eMolbyError, "bad arguments");
+			for (i = 0; i < 6; i++)
+				mol->mview->showPeriodicImage[i] = ival[i];
 		}
-		if (ival[0] > 0 || ival[1] < 0 || ival[2] > 0 || ival[3] < 0 || ival[4] > 0 || ival[5] < 0)
-			rb_raise(rb_eMolbyError, "bad arguments");
-		for (i = 0; i < 6; i++)
-			mol->mview->showPeriodicImage[i] = ival[i];
 		MainViewCallback_setNeedsDisplay(mol->mview, 1);
 	}
 	val = rb_ary_new();
@@ -7064,6 +7098,23 @@ s_Molecule_ShowPeriodicImage(int argc, VALUE *argv, VALUE self)
 	return val;
 }
 
+/*
+ *  call-seq:
+ *     show_periodic_image? -> boolean
+ *
+ *  Return whether the periodic images are set to visible or not. This flag is
+ *  independent from the show_periodic_image settings.
+ */
+static VALUE
+s_Molecule_ShowPeriodicImageFlag(VALUE self)
+{
+    Molecule *mol;
+	VALUE val;
+    Data_Get_Struct(self, Molecule, mol);
+	if (mol->mview == NULL)
+		return Qnil;
+	return (mol->mview->showPeriodicImageFlag ? Qtrue : Qfalse);
+}
 
 /*
  *  call-seq:
@@ -7645,8 +7696,10 @@ Init_Molby(void)
 	rb_define_method(rb_cMolecule, "show_ellipsoids=", s_Molecule_ShowEllipsoids, -1);
 	rb_define_method(rb_cMolecule, "show_graphite", s_Molecule_ShowGraphite, -1);
 	rb_define_method(rb_cMolecule, "show_graphite=", s_Molecule_ShowGraphite, -1);
+	rb_define_method(rb_cMolecule, "show_graphite?", s_Molecule_ShowGraphiteFlag, 0);
 	rb_define_method(rb_cMolecule, "show_periodic_image", s_Molecule_ShowPeriodicImage, -1);
 	rb_define_method(rb_cMolecule, "show_periodic_image=", s_Molecule_ShowPeriodicImage, -1);
+	rb_define_method(rb_cMolecule, "show_periodic_image?", s_Molecule_ShowPeriodicImageFlag, 0);
 	rb_define_alias(rb_cMolecule, "show_unitcell=", "show_unitcell");
 	rb_define_alias(rb_cMolecule, "show_hydrogens=", "show_hydrogens");
 	rb_define_alias(rb_cMolecule, "show_dummy_atoms=", "show_dummy_atoms");

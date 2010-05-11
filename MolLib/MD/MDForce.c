@@ -316,6 +316,73 @@ s_calc_improper_force(MDArena *arena)
 	s_calc_dihedral_force_sub(arena, mol->atoms, mol->nimpropers, mol->impropers, arena->improper_par_i, par->improperPars, NULL/*arena->sym_improper_uniq*/, energies, forces);
 }
 
+void
+md_dump_verlet_list(MDArena *arena)
+{
+	int i, j, k;
+	Atom *api, *apj;
+	for (i = 0, api = arena->mol->atoms; i < arena->mol->natoms; i++, api = ATOM_NEXT(api)) {
+		for (j = i + 1, apj = ATOM_AT_INDEX(arena->mol->atoms, j); j < arena->mol->natoms; j++, apj = ATOM_NEXT(apj)) {
+			Vector dr;
+			Double d;
+			int ex;
+			VecSub(dr, api->r, apj->r);
+			d = VecLength(dr);
+			if (d > arena->cutoff && d > arena->electro_cutoff)
+				continue;
+			{
+				/*  Check 1-2, 1-3, 1-4 exclusions  */
+				int i1;				
+				ex = 0;
+				for (i1 = 0; i1 < api->nconnects; i1++) {
+					Atom *api1;
+					int ni1, i2;
+					ni1 = api->connects[i1];
+					api1 = ATOM_AT_INDEX(arena->mol->atoms, ni1);
+					if (ni1 == j) {
+						ex = 1;
+						goto fin;
+					}
+					for (i2 = 0; i2 < api1->nconnects; i2++) {
+						Atom *api2;
+						int ni2, i3;
+						ni2 = api1->connects[i2];
+						api2 = ATOM_AT_INDEX(arena->mol->atoms, ni2);
+						if (ni2 == i)
+							continue;
+						if (ni2 == j) {
+							ex = 2;
+							goto fin;
+						}
+						for (i3 = 0; i3 < api2->nconnects; i3++) {
+							int ni3;
+							ni3 = api2->connects[i3];
+							if (ni3 == i || ni3 == ni1)
+								continue;
+							if (ni3 == j) {
+								ex = 3;
+								goto fin;
+							}
+						}
+					}
+				}
+			fin:
+				if (ex > 0 && ex != 3)
+					continue;
+			}
+				
+			for (k = arena->verlet_i[i]; k < arena->verlet_i[i + 1]; k++) {
+				if (j == arena->verlets[k].n2)
+					break;
+			}
+			if (k >= arena->verlet_i[i + 1]) {
+				/*  Not found  */
+				printf("Pair %d %d, dist = %f%s\n", i, j, d, (ex > 0 ? " (1-4)" : ""));
+			}
+		}
+	}
+}
+
 /*  Update the Verlet list (for non-bonding interaction)  */
 static void
 s_make_verlet_list(MDArena *arena)

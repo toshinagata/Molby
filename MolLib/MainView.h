@@ -107,7 +107,9 @@ typedef struct MainView {
 	Byte showDummyAtoms;
 	Byte showRotationCenter;
 
+	Byte showGraphiteFlag;
 	Int  showGraphite;
+	Byte showPeriodicImageFlag;
 	Int  showPeriodicImage[6];  /* amin, amax, bmin, bmax, cmin, cmax  */
 
 	Byte *visibleFlags;     /*  This is used only as internal cache;

@@ -237,10 +237,13 @@ class Molecule
 		  end
 		}
 	    @mol.show_periodic_image(a)
+		@mol.show_periodic_image = (attr("show_flag", :value) == 1 ? true : false)
 	  end
 	  pimage = @mol.show_periodic_image
+	  flag = @mol.show_periodic_image?
 	  layout(4,
-	    item(:text, :title=>"Show Periodic Image:"),
+	    item(:checkbox, :title=>"Show Periodic Image", :value=>(flag ? 1 : 0),
+		  :action=>proc { |it| @mol.show_periodic_image = (it[:value] == 1 ? true : false) } ),
 		-1, -1, -1,
 		item(:text, :title=>"a-axis"),
 		item(:textfield, :width=>80, :tag=>"amin", :value=>pimage[0].to_s),

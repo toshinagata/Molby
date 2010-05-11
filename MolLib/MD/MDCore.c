@@ -2344,7 +2344,7 @@ md_minimize_step(MDArena *arena)
 	Atom *atoms = arena->mol->atoms;
 	Atom *ap;
 	Int natoms = arena->mol->natoms;
-	Vector *vp;
+	Vector r, *vp, *vdr;
 	const Double phi = 0.618033988749895;  /*  The golden ratio  */
 
 	md_amend_by_symmetry(arena);
@@ -2359,6 +2359,7 @@ md_minimize_step(MDArena *arena)
 		w2 += VecDot(ap->f, *vp);
 		natoms_movable++;
 	}
+
 	arena->f_len2 = w1;
 	if (arena->old_f_len2 == 0.0) {
 		/*  New direction  */
@@ -2413,12 +2414,15 @@ md_minimize_step(MDArena *arena)
 	lambda = high_limit;
 	high = lambda;
 	while (1) {
-		for (j = 0, ap = atoms, vp = arena->old_pos; j < natoms; j++, ap++, vp++) {
+		for (j = 0, ap = atoms, vp = arena->old_pos, vdr = arena->verlets_dr; j < natoms; j++, ap++, vp++, vdr++) {
 			if (ap->fix_force < 0)
 				continue;
+			r = ap->r;
 			ap->r.x = vp->x + ap->v.x * lambda;
 			ap->r.y = vp->y + ap->v.y * lambda;
 			ap->r.z = vp->z + ap->v.z * lambda;
+			VecDec(r, ap->r);
+			VecInc(*vdr, r);
 		}
 		calc_force(arena);
 		mid = lambda;
@@ -2441,7 +2445,10 @@ md_minimize_step(MDArena *arena)
 			for (j = 0, ap = atoms, vp = arena->old_pos; j < natoms; j++, ap++, vp++) {
 				if (ap->fix_force < 0)
 					continue;
+				r = ap->r;
 				ap->r = *vp;
+				VecDec(r, ap->r);
+				VecInc(*vdr, r);
 			}
 			calc_force(arena);
 			lambda = 0.0;
@@ -2456,12 +2463,15 @@ md_minimize_step(MDArena *arena)
 	for (i = 0; i < 10; i++) {
 		if (high - mid > mid - low) {
 			lambda = high - (high - mid) * phi;
-			for (j = 0, ap = atoms, vp = arena->old_pos; j < natoms; j++, ap++, vp++) {
+			for (j = 0, ap = atoms, vp = arena->old_pos, vdr = arena->verlets_dr; j < natoms; j++, ap++, vp++, vdr++) {
 				if (ap->fix_force < 0)
 					continue;
+				r = ap->r;
 				ap->r.x = vp->x + ap->v.x * lambda;
 				ap->r.y = vp->y + ap->v.y * lambda;
 				ap->r.z = vp->z + ap->v.z * lambda;
+				VecDec(r, ap->r);
+				VecInc(*vdr, r);
 			}	
 			calc_force(arena);
 			if (arena->total_energy < mid_energy) {
@@ -2475,12 +2485,15 @@ md_minimize_step(MDArena *arena)
 			}
 		} else {
 			lambda = mid - (mid - low) * phi;
-			for (j = 0, ap = atoms, vp = arena->old_pos; j < natoms; j++, ap++, vp++) {
+			for (j = 0, ap = atoms, vp = arena->old_pos, vdr = arena->verlets_dr; j < natoms; j++, ap++, vp++, vdr++) {
 				if (ap->fix_force < 0)
 					continue;
+				r = ap->r;
 				ap->r.x = vp->x + ap->v.x * lambda;
 				ap->r.y = vp->y + ap->v.y * lambda;
 				ap->r.z = vp->z + ap->v.z * lambda;
+				VecDec(r, ap->r);
+				VecInc(*vdr, r);
 			}	
 			calc_force(arena);
 			if (arena->total_energy < mid_energy) {
