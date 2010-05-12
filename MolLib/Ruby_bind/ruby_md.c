@@ -94,10 +94,22 @@ s_MDArena_Run_or_minimize(VALUE self, VALUE arg, int minimize)
 /*	arena->md_panic_func = NULL; */
 	
 	if (arena->step > start_step) {
-		/*  Create a new frame and copy new coordinates  */
-		ig = IntGroupNewWithPoints(MoleculeGetNumberOfFrames(arena->xmol), 1, -1);
+		/*  Create a new frame  */
+	/*	ig = IntGroupNewWithPoints(MoleculeGetNumberOfFrames(arena->xmol), 1, -1);
 		MolActionCreateAndPerform(arena->xmol, gMolActionInsertFrames, ig, 0, NULL, 0, NULL);
+		IntGroupRelease(ig); */
+		/*  Copy new coordinates  */
+		int i, natoms = arena->xmol->natoms;
+		Atom *ap;
+		Vector *vp = (Vector *)malloc(sizeof(Vector) * natoms);
+		/*  Copy from mol (not xmol)  */
+		for (i = 0, ap = arena->mol->atoms; i < natoms; i++, ap = ATOM_NEXT(ap))
+			vp[i] = ap->r;
+		ig = IntGroupNewWithPoints(0, natoms, -1);
+		MolActionCreateAndPerform(arena->xmol, gMolActionSetAtomPositions, ig, natoms, vp);
+		free(vp);
 		IntGroupRelease(ig);
+		/*  TODO: support undo for velocities and forces  */
 		md_copy_coordinates_from_internal(arena);
 	}
 	

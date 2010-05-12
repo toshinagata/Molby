@@ -80,6 +80,7 @@ typedef struct MDVerlet {
 	Byte   vdw_type;            /*  0: vdw, 1: scaled (1-4) vdw  */
 	unsigned int index;         /*  The index to arena->vdw_cache  */
 	Double  vdw_cutoff;          /*  Specific vdw cutoff  */
+	Double  length;
 	/*	Double  vcut;   */           /*  Value at the specific cutoff distance  */
 } MDVerlet;
 

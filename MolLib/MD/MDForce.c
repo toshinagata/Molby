@@ -316,78 +316,118 @@ s_calc_improper_force(MDArena *arena)
 	s_calc_dihedral_force_sub(arena, mol->atoms, mol->nimpropers, mol->impropers, arena->improper_par_i, par->improperPars, NULL/*arena->sym_improper_uniq*/, energies, forces);
 }
 
+/*  ==================================================================== */
+/*  md_check_verlet_list: only for debugging the verlet list generation  */
+/*  ==================================================================== */
+
+typedef struct md_check_record {
+	Int i, j, dx, dy, n;
+	Double len;
+} md_check_record;
+
+static int
+s_md_check_verlet_comparator(const void *ap, const void *bp)
+{
+	Double d = ((const md_check_record *)ap)->len - ((const md_check_record *)bp)->len;
+	return (d < 0 ? -1 : (d > 0 ? 1 : 0));
+}
+
 void
-md_dump_verlet_list(MDArena *arena)
+md_check_verlet_list(MDArena *arena)
 {
 	int i, j, k;
+	int dx, dy, dz, nn;
+	int ndx, ndy, ndz;
 	Atom *api, *apj;
-	for (i = 0, api = arena->mol->atoms; i < arena->mol->natoms; i++, api = ATOM_NEXT(api)) {
-		for (j = i + 1, apj = ATOM_AT_INDEX(arena->mol->atoms, j); j < arena->mol->natoms; j++, apj = ATOM_NEXT(apj)) {
-			Vector dr;
-			Double d;
-			int ex;
-			VecSub(dr, api->r, apj->r);
-			d = VecLength(dr);
-			if (d > arena->cutoff && d > arena->electro_cutoff)
-				continue;
-			{
-				/*  Check 1-2, 1-3, 1-4 exclusions  */
-				int i1;				
-				ex = 0;
-				for (i1 = 0; i1 < api->nconnects; i1++) {
-					Atom *api1;
-					int ni1, i2;
-					ni1 = api->connects[i1];
-					api1 = ATOM_AT_INDEX(arena->mol->atoms, ni1);
-					if (ni1 == j) {
-						ex = 1;
-						goto fin;
-					}
-					for (i2 = 0; i2 < api1->nconnects; i2++) {
-						Atom *api2;
-						int ni2, i3;
-						ni2 = api1->connects[i2];
-						api2 = ATOM_AT_INDEX(arena->mol->atoms, ni2);
-						if (ni2 == i)
-							continue;
-						if (ni2 == j) {
-							ex = 2;
-							goto fin;
-						}
-						for (i3 = 0; i3 < api2->nconnects; i3++) {
-							int ni3;
-							ni3 = api2->connects[i3];
-							if (ni3 == i || ni3 == ni1)
-								continue;
-							if (ni3 == j) {
-								ex = 3;
-								goto fin;
-							}
-						}
-					}
+	Vector cell_offsets[27];
+	XtalCell *cell = arena->mol->cell;
+	md_check_record *cr;
+	int ncr;
+
+	ndx = (arena->periodic_a ? 1 : 0);
+	ndy = (arena->periodic_b ? 1 : 0);
+	ndz = (arena->periodic_c ? 1 : 0);
+	if (cell != NULL && (ndx != 0 || ndy != 0 || ndz != 0)) {
+		nn = 0;
+		for (i = -1; i <= 1; i++) {
+			for (j = -1; j <= 1; j++) {
+				for (k = -1; k <= 1; k++) {
+					VecZero(cell_offsets[nn]);
+					VecScaleInc(cell_offsets[nn], cell->axes[0], i);
+					VecScaleInc(cell_offsets[nn], cell->axes[1], j);
+					VecScaleInc(cell_offsets[nn], cell->axes[2], k);
+					nn++;
 				}
-			fin:
-				if (ex > 0 && ex != 3)
-					continue;
-			}
-				
-			for (k = arena->verlet_i[i]; k < arena->verlet_i[i + 1]; k++) {
-				if (j == arena->verlets[k].n2)
-					break;
-			}
-			if (k >= arena->verlet_i[i + 1]) {
-				/*  Not found  */
-				printf("Pair %d %d, dist = %f%s\n", i, j, d, (ex > 0 ? " (1-4)" : ""));
 			}
 		}
 	}
+	/*  Debugging is done with x-y 2-dimensional system  */
+	ncr = arena->mol->natoms * (arena->mol->natoms - 1) / 2 * 9;
+	cr = (md_check_record *)malloc(sizeof(md_check_record) * ncr);
+	k = 0;
+	for (i = 0, api = arena->mol->atoms; i < arena->mol->natoms; i++, api = ATOM_NEXT(api)) {
+		for (j = i + 1, apj = ATOM_AT_INDEX(arena->mol->atoms, j); j < arena->mol->natoms; j++, apj = ATOM_NEXT(apj)) {
+			Vector dr;
+			VecSub(dr, apj->r, api->r);
+			for (dx = -1; dx <= 1; dx++) {
+				for (dy = -1; dy <= 1; dy++) {
+					Vector dr2 = dr;
+					nn = dx * 9 + dy * 3 + 13;
+					VecInc(dr2, cell_offsets[nn]);
+					cr[k].i = i;
+					cr[k].j = j;
+					cr[k].dx = dx;
+					cr[k].dy = dy;
+					cr[k].n = -1;
+					cr[k].len = VecLength(dr2);
+					k++;
+				}
+			}
+		}
+	}
+	for (k = 0; k < arena->nverlets; k++) {
+		i = arena->verlets[k].n1;
+		j = arena->verlets[k].n2;
+		if (i > j) {
+			j = i;
+			i = arena->verlets[k].n2;
+		}
+		dx = arena->verlets[k].symop.dx;
+		dy = arena->verlets[k].symop.dy;
+		nn = (i * arena->mol->natoms - i * (i + 1) / 2 + (j - i) - 1) * 9 + (dx + 1) * 3 + dy + 1;
+		if (cr[nn].i != i || cr[nn].j != j || cr[nn].dx != dx || cr[nn].dy != dy)
+			fprintf(arena->log_result, "Debug: internal inconsistency\n");
+		cr[nn].n = k;
+	}
+		
+	mergesort(cr, ncr, sizeof(md_check_record), s_md_check_verlet_comparator);
+	for (i = 0; i < ncr; i++) {
+		Double len2;
+		len2 = -1;
+		if (cr[i].n >= 0)
+			len2 = arena->verlets[cr[i].n].length;
+		fprintf(arena->log_result, "Debug: %5d (i=%4d,j=%4d) [dx=%4d, dy=%4d] n=%4d %f %f\n", i, cr[i].i, cr[i].j, cr[i].dx, cr[i].dy, cr[i].n, cr[i].len, len2);
+		if (cr[i].len > arena->pairlist_distance)
+			break;
+	}
+	while (i < ncr) {
+		if (cr[i].n != -1) {
+			fprintf(arena->log_result, "Debug: %5d (i=%4d,j=%4d) [dx=%4d, dy=%4d] n=%4d %f %f\n", i, cr[i].i, cr[i].j, cr[i].dx, cr[i].dy, cr[i].n, cr[i].len, arena->verlets[cr[i].n].length);
+		}
+		i++;
+	}
+	fflush(arena->log_result);
+	free(cr);
 }
+
+/*  ==================================================================== */
+
 
 /*  Update the Verlet list (for non-bonding interaction)  */
 static void
 s_make_verlet_list(MDArena *arena)
 {
-	int i, j, k, n, natoms;
+	int i, j, k, n, nn, natoms;
 	int dx, dy, dz, ndx, ndy, ndz;
 	Molecule *mol = arena->mol;
 	Atom *atoms = mol->atoms;
@@ -397,7 +437,10 @@ s_make_verlet_list(MDArena *arena)
 	Double limit;
 	Byte use_sym;
 	XtalCell *cell = mol->cell;
-
+	Vector cell_offsets[27];
+	Parameter *par = arena->par;
+	Double vdw_cutoff;
+	
 	natoms = mol->natoms;
 	for (i = 0; i < natoms; i++)
 		VecZero(vdr[i]);
@@ -406,6 +449,21 @@ s_make_verlet_list(MDArena *arena)
 	ndy = (arena->periodic_b ? 1 : 0);
 	ndz = (arena->periodic_c ? 1 : 0);
 
+	if (cell != NULL && (ndx != 0 || ndy != 0 || ndz != 0)) {
+		nn = 0;
+		for (i = -1; i <= 1; i++) {
+			for (j = -1; j <= 1; j++) {
+				for (k = -1; k <= 1; k++) {
+					VecZero(cell_offsets[nn]);
+					VecScaleInc(cell_offsets[nn], cell->axes[0], i);
+					VecScaleInc(cell_offsets[nn], cell->axes[1], j);
+					VecScaleInc(cell_offsets[nn], cell->axes[2], k);
+					nn++;
+				}
+			}
+		}
+	}
+	
 	limit = arena->pairlist_distance * arena->pairlist_distance;
 	n = 0;
 	use_sym = (arena->mol->nsyms > 0);
@@ -413,21 +471,15 @@ s_make_verlet_list(MDArena *arena)
 		MDExclusion *exinfo = arena->exinfo + i;
 		Int index4 = (exinfo + 1)->index0;
 		Int vdw_idx1 = arena->vdw_par_i[i];
+		Int vdw_idx, vdw_idx2;
 		arena->verlet_i[i] = n;
-
-	/*	for (dx = -ndx; dx <= ndx; dx++) {
-			for (dy = -ndy; dy <= ndy; dy++) {
-				for (dz = -ndz; dz <= ndz; dz++) { */
-
 
 		for (j = i + 1, apj = atoms + j; j < natoms; j++, apj++) {
 			Vector rij;
-			Double lenij2, w;
+			Double lenij2;
 			Int *ip, index0;
-			Double *rtp;
 			int exflag = 0;
 			int mult = 1;
-		/*	int uniq; */
 
 			/*  Fixed atoms  */
 			if (api->fix_force < 0 && apj->fix_force < 0)
@@ -435,6 +487,7 @@ s_make_verlet_list(MDArena *arena)
 
 			VecSub(rij, apj->r, api->r);
 
+#if 0
 			/*  Calculate the cell offset for the nearest neighbor  */
 			/*  NOTE: the offset is calculated independently for each axis. This may result
 			    in unexpected choice when the angles between the axes are far from 90 deg */
@@ -457,83 +510,86 @@ s_make_verlet_list(MDArena *arena)
 			/*  Non unique atom pair  */
 		/*	if (use_sym && api->symop.alive && apj->symop.alive)
 				continue; */
-			
-			if (dx == 0 && dy == 0 && dz == 0) {
-				/*  Pair within the unit cell  */
-			/*	if (i >= j)
-					continue; */
-				/*  Is this pair to be excluded?  */
-				for (index0 = exinfo->index0, ip = arena->exlist + index0; index0 < index4; index0++, ip++) {
-					if (*ip == j)
+#endif
+			/*  Check the specific cutoff table for (i, j) pair  */
+			vdw_idx2 = arena->vdw_par_i[j];
+			if (vdw_idx1 < 0 || vdw_idx2 < 0)
+				vdw_idx = par->nvdwPars * par->nvdwPars;  /*  A null record  */
+			else if (vdw_idx1 < vdw_idx2)
+				vdw_idx = vdw_idx1 * par->nvdwPars + vdw_idx2;
+			else
+				vdw_idx = vdw_idx2 * par->nvdwPars + vdw_idx1;
+			vdw_cutoff = arena->cutoff;
+			for (k = par->nvdwCutoffPars - 1; k >= 0; k--) {
+				VdwCutoffPar *cr = par->vdwCutoffPars + k;
+				if (cr->type == 0) {
+					if (((cr->n1 < 0 || cr->n1 == api->type) && (cr->n2 < 0 || cr->n2 == apj->type)) ||
+						((cr->n1 < 0 || cr->n1 == apj->type) && (cr->n2 < 0 || cr->n2 == api->type))) {
+						vdw_cutoff = cr->cutoff;
 						break;
-				}
-				if (index0 < exinfo->index3)
-					continue;  /*  Special exclusion, 1-2, 1-3  */
-				if (index0 < index4)
-					exflag = 1;  /*  1-4 interaction  */
-			} else {
-				VecScaleInc(rij, cell->axes[0], dx);
-				VecScaleInc(rij, cell->axes[1], dy);
-				VecScaleInc(rij, cell->axes[2], dz);
-				exflag = 0;
-			/*	if (i != j)
-					mult = 2; */
-			}
-
-			lenij2 = VecLength2(rij);
-			if (lenij2 <= limit) {
-				Parameter *par = arena->par;
-				Int vdw_idx2 = arena->vdw_par_i[j];
-				Int vdw_idx;
-				Double vdw_cutoff = arena->cutoff;
-				if (vdw_idx1 < 0 || vdw_idx2 < 0)
-					vdw_idx = par->nvdwPars * par->nvdwPars;  /*  A null record  */
-				else if (vdw_idx1 < vdw_idx2)
-					vdw_idx = vdw_idx1 * par->nvdwPars + vdw_idx2;
-				else
-					vdw_idx = vdw_idx2 * par->nvdwPars + vdw_idx1;
-				/*  Check the specific cutoff table  */
-				for (k = par->nvdwCutoffPars - 1; k >= 0; k--) {
-					VdwCutoffPar *cr = par->vdwCutoffPars + k;
-					if (cr->type == 0) {
-						if (((cr->n1 < 0 || cr->n1 == api->type) && (cr->n2 < 0 || cr->n2 == apj->type)) ||
-							((cr->n1 < 0 || cr->n1 == apj->type) && (cr->n2 < 0 || cr->n2 == api->type))) {
-							vdw_cutoff = cr->cutoff;
-							break;
-						}
-					} else {
-						if ((cr->n1 <= i && i <= cr->n2 && cr->n3 <= j && j <= cr->n4)||
-							(cr->n3 <= i && i <= cr->n4 && cr->n1 <= j && j <= cr->n2)) {
-							vdw_cutoff = cr->cutoff;
-							break;
-						}
+					}
+				} else {
+					if ((cr->n1 <= i && i <= cr->n2 && cr->n3 <= j && j <= cr->n4)||
+						(cr->n3 <= i && i <= cr->n4 && cr->n1 <= j && j <= cr->n2)) {
+						vdw_cutoff = cr->cutoff;
+						break;
 					}
 				}
-				if (vdw_cutoff < 0) {
-					/*  A negative value of specific cutoff means "cutoff at r_eq * (-specific_cutoff)  */
-					MDVdwCache *cp = &(arena->vdw_cache[vdw_idx]);
-					Double r_eq = pow(cp->par.A / cp->par.B * 2.0, 1.0/6.0);
-					vdw_cutoff = r_eq * (-vdw_cutoff);
-				}
-				if (n >= arena->max_nverlets) {
-					arena->max_nverlets += 32;
-					vl = (MDVerlet *)realloc(vl, sizeof(MDVerlet) * arena->max_nverlets);
-					if (vl == NULL)
-						md_panic(arena, "Low memory");
-				}
-				vl[n].vdw_type = (exflag ? 1 : 0);
-				vl[n].mult = mult;
-				vl[n].symop.dx = dx;
-				vl[n].symop.dy = dy;
-				vl[n].symop.dz = dz;
-				vl[n].symop.sym = 0;
-				vl[n].symop.alive = (dx != 0 || dy != 0 || dz != 0);
-				vl[n].index = vdw_idx;
-				vl[n].n1 = i;
-				vl[n].n2 = j;
-				vl[n].vdw_cutoff = vdw_cutoff;
-				n++;
-			} /* end if lenij2 <= limit */
+			}
+			if (vdw_cutoff < 0) {
+				/*  A negative value of specific cutoff means "cutoff at r_eq * (-specific_cutoff)  */
+				MDVdwCache *cp = &(arena->vdw_cache[vdw_idx]);
+				Double r_eq = pow(cp->par.A / cp->par.B * 2.0, 1.0/6.0);
+				vdw_cutoff = r_eq * (-vdw_cutoff);
+			}
+
+			/*  Search for pairs, taking periodicity into account  */
+			for (dx = -ndx; dx <= ndx; dx++) {
+				for (dy = -ndy; dy <= ndy; dy++) {
+					for (dz = -ndz; dz <= ndz; dz++) {
+						Vector rij0 = rij;
+						nn = dx * 9 + dy * 3 + dz + 13; 
+						if (nn == 13) {
+							/*  Pair within the unit cell  */
+							/*  Is this pair to be excluded?  */
+							for (index0 = exinfo->index0, ip = arena->exlist + index0; index0 < index4; index0++, ip++) {
+								if (*ip == j)
+									break;
+							}
+							if (index0 < exinfo->index3)
+								continue;  /*  Special exclusion, 1-2, 1-3  */
+							if (index0 < index4)
+								exflag = 1;  /*  1-4 interaction  */
+						} else {
+							VecInc(rij0, cell_offsets[nn]);
+							exflag = 0;
+						}
+
+						lenij2 = VecLength2(rij0);
+						if (lenij2 <= limit) {
+							if (n >= arena->max_nverlets) {
+								arena->max_nverlets += 32;
+								vl = (MDVerlet *)realloc(vl, sizeof(MDVerlet) * arena->max_nverlets);
+								if (vl == NULL)
+									md_panic(arena, "Low memory");
+							}
+							vl[n].vdw_type = (exflag ? 1 : 0);
+							vl[n].mult = mult;
+							vl[n].symop.dx = dx;
+							vl[n].symop.dy = dy;
+							vl[n].symop.dz = dz;
+							vl[n].symop.sym = 0;
+							vl[n].symop.alive = (dx != 0 || dy != 0 || dz != 0);
+							vl[n].index = vdw_idx;
+							vl[n].n1 = i;
+							vl[n].n2 = j;
+							vl[n].vdw_cutoff = vdw_cutoff;
+							vl[n].length = sqrt(lenij2);
+							n++;
+						} /* end if lenij2 <= limit */
+					} /* end loop dz */
+				} /* end loop dy */
+			} /* end loop dx */
 		} /* end loop j */
 
 	} /* end loop i */
