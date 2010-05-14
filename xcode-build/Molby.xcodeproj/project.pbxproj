@@ -165,7 +165,7 @@
 		E4CBF38C10A91EAC00C7C74A /* doc_source.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; name = doc_source.html; path = ../Documents/src/doc_source.html; sourceTree = SOURCE_ROOT; };
 		E4CBF39510A91ED500C7C74A /* style.css */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.css; name = style.css; path = ../Documents/etc/style.css; sourceTree = SOURCE_ROOT; };
 		E4CBF39710A91EDA00C7C74A /* makedoc.rb */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.ruby; name = makedoc.rb; path = ../Documents/makedoc.rb; sourceTree = SOURCE_ROOT; };
-		E4CFBB16111096CF0081C481 /* amber11 */ = {isa = PBXFileReference; lastKnownFileType = folder; name = amber11; path = build/amber11; sourceTree = "<group>"; };
+		E4CFBB16111096CF0081C481 /* amber11 */ = {isa = PBXFileReference; lastKnownFileType = folder; path = amber11; sourceTree = "<group>"; };
 		E4D5AD651180852F00B1D8A4 /* Molby_command */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Molby_command; sourceTree = BUILT_PRODUCTS_DIR; };
 		E4D5ADA511808A2C00B1D8A4 /* cmdtool_stubs.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = cmdtool_stubs.c; sourceTree = "<group>"; };
 		E4E2D5C310A249820007644A /* GlobalParameterFrame.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = GlobalParameterFrame.h; path = ../wxSources/GlobalParameterFrame.h; sourceTree = SOURCE_ROOT; };

@@ -242,7 +242,7 @@ class Molecule
 	  pimage = @mol.show_periodic_image
 	  flag = @mol.show_periodic_image?
 	  layout(4,
-	    item(:checkbox, :title=>"Show Periodic Image", :value=>(flag ? 1 : 0),
+	    item(:checkbox, :title=>"Show Periodic Image", :tag=>"show_flag", :value=>(flag ? 1 : 0),
 		  :action=>proc { |it| @mol.show_periodic_image = (it[:value] == 1 ? true : false) } ),
 		-1, -1, -1,
 		item(:text, :title=>"a-axis"),
