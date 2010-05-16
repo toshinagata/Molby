@@ -159,8 +159,8 @@ MyDocument::SetMolecule(Molecule *aMolecule)
 	MoleculeView *view = (MoleculeView *)GetFirstView();
 	if (view != NULL) {
 		MainView_setMolecule(view->mview, aMolecule);
-		if (aMolecule->natoms >= 1000)
-			view->mview->lineMode = 1;
+	/*	if (aMolecule->natoms >= 1000)
+			view->mview->lineMode = 1; */
 	}
 }
 
@@ -213,9 +213,12 @@ MyDocument::DoOpenDocument(const wxString& file)
 	Molecule *newmol;
 	p = strdup((const char *)file.mb_str(wxConvFile));
 	newmol = MoleculeNew();
+	SetMolecule(newmol);
+	MoleculeRelease(newmol);
 	SetUndoEnabled(false);
 	if (MolActionCreateAndPerform(newmol, SCRIPT_ACTION("s"), "molload", p) != 0) {
 		free(p);
+		SetMolecule(NULL);
 		SetUndoEnabled(true);
 		return false;
 	}
@@ -232,10 +235,14 @@ MyDocument::DoOpenDocument(const wxString& file)
 		MoleculeReadExtendedInfo(newmol, p, buf, sizeof buf);
 	}
 	free(p);
-	SetMolecule(newmol);
 	Modify(false);
 	GetCommandProcessor()->MarkAsSaved();
 	hasFile = true;
+	if (newmol->natoms > 1000)
+		newmol->mview->lineMode = 1;
+	if (TrackballGetModifyCount(newmol->mview->track) == 0)
+		MainView_resizeToFit(newmol->mview);
+	MoleculeCallback_notifyModification(newmol, 0);
 	SetUndoEnabled(true);
 	return true;
 }

@@ -438,6 +438,7 @@ end_of_header
 	}
 	fp.print " $END\n"
 	fp.close
+	return true
   end
 
   def savecom(filename)
@@ -459,6 +460,7 @@ end_of_header
 	}
 	fp.print "\n"
 	fp.close
+	return true
   end
 
   alias :loadgjf :loadcom

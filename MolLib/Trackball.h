@@ -62,19 +62,25 @@ typedef struct Trackball {
     float tempTrans[3];	/*  Temporary translation  */
     float scale;		/*  Scale  */
     float tempScale;	/*  Temporary scale */
+	
+	int   modifyCount;
 } Trackball;
 
 Trackball *TrackballNew(void);
 void TrackballRetain(Trackball *track);
 void TrackballRelease(Trackball *track);
 
+float TrackballGetScale(const Trackball *track);
 void TrackballGetRotate(const Trackball *track, float *a);
 void TrackballGetTranslate(const Trackball *track, float *a);
 void TrackballGetPerspective(const Trackball *track, float *a);
 
 void TrackballReset(Trackball *track);
 void TrackballSetScale(Trackball *track, float scale);
+void TrackballSetRotate(Trackball *track, const float *a);
 void TrackballSetTranslate(Trackball *track, const float *a);
+
+int  TrackballGetModifyCount(Trackball *track);
 
 void TrackballStartDragging(Trackball *track, const float *mousePos, TrackballMode mode);
 void TrackballSetTemporaryRotation(Trackball *track, const float *q);

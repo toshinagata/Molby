@@ -117,6 +117,12 @@ TrackballRelease(Trackball *track)
 	}
 }
 
+float
+TrackballGetScale(const Trackball *track)
+{
+	NULL_CHECK(track, "TrackballGetScale");	
+    return track->tempScale + track->scale;
+}
 
 /*  Get the current rotation (in GL format)  */
 //- (void)getRotate:(float *)a
@@ -190,6 +196,12 @@ TrackballGetPerspective(const Trackball *track, float *a)
     }
 }
 
+int
+TrackballGetModifyCount(Trackball *track)
+{
+	return (track != NULL ? track->modifyCount : 0);
+}
+
 void
 TrackballReset(Trackball *track)
 {
@@ -201,6 +213,7 @@ TrackballReset(Trackball *track)
     track->quat[0] = track->tempQuat[0] = 1.0;
 	track->tempScale = 0;
 	track->scale = 0;
+	track->modifyCount++;
 }
 
 void
@@ -209,6 +222,22 @@ TrackballSetScale(Trackball *track, float scale)
 	NULL_CHECK(track, "TrackballSetScale");
 	track->tempScale = 0;
 	track->scale = scale;
+	track->modifyCount++;
+}
+
+void
+TrackballSetRotate(Trackball *track, const float *a)
+{
+	float k; 
+	NULL_CHECK(track, "TrackballSetRotate");
+	track->tempQuat[0] = 1.0;
+	track->tempQuat[1] = track->tempQuat[2] = track->tempQuat[3] = 0.0;
+	track->quat[0] = cos(a[0] * 0.5 * kDeg2Rad);
+	k = sin(a[0] * 0.5 * kDeg2Rad);
+	track->quat[1] = k * a[1];
+	track->quat[2] = k * a[2];
+	track->quat[3] = k * a[3];
+	track->modifyCount++;
 }
 
 void
@@ -219,6 +248,7 @@ TrackballSetTranslate(Trackball *track, const float *a)
 	track->trans[0] = a[0];
 	track->trans[1] = a[1];
 	track->trans[2] = a[2];
+	track->modifyCount++;
 }
 
 #pragma mark ====== Mouse operations ======

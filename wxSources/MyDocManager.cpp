@@ -23,7 +23,7 @@ EVT_MENU(wxID_SAVEAS, MyDocManager::OnFileSaveAs)
 END_EVENT_TABLE()
 
 static const char *sReadOnlyTypes[] = {
-	"out", "fchk", "log", NULL
+	"out", "fchk", "log", "dat", "ins", "res", "xyz", NULL
 };
 
 void

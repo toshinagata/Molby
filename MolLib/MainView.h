@@ -99,6 +99,7 @@ typedef struct MainView {
 	float bondRadius; /* in angstrom */
 	float probabilityScale;
 	float dimension;
+	
 	Byte showUnitCell;
 	Byte showPeriodicBox;
 	Byte showExpandedAtoms;

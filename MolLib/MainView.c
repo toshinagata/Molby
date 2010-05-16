@@ -99,7 +99,7 @@ MainView_setMolecule(MainView *mview, struct Molecule *mol)
 		MoleculeRetain(mol);
 		mol->mview = mview;  /*  No retain  */
 		MainViewCallback_moleculeReplaced(mview, mol);
-		MainView_resizeToFit(mview);
+	/*	MainView_resizeToFit(mview); */
 		MoleculeCallback_notifyModification(mol, 0);
 	/*	MainViewCallback_setNeedsDisplay(mview, 1); */
 	}

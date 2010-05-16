@@ -329,19 +329,30 @@ void
 MoleculeExchange(Molecule *mp1, Molecule *mp2)
 {
 	Molecule mp_temp;
+	struct MainView *mview1, *mview2;
+	struct MDArena *arena1, *arena2;
+	/*  mview and arena must be kept as they are  */
+	mview1 = mp1->mview;
+	mview2 = mp2->mview;
+	arena1 = mp1->arena;
+	arena2 = mp2->arena;
 	/*  'natoms' is the first member to be copied  */
 	int ofs = offsetof(Molecule, natoms);
 	memmove((char *)(&mp_temp) + ofs, (char *)mp1 + ofs, sizeof(Molecule) - ofs);
 	memmove((char *)mp1 + ofs, (char *)mp2 + ofs, sizeof(Molecule) - ofs);
 	memmove((char *)mp2 + ofs, (char *)(&mp_temp) + ofs, sizeof(Molecule) - ofs);
-	if (mp1->arena != NULL && mp1->arena->mol == mp2)
+	mp1->arena = arena1;
+	mp2->arena = arena2;
+	mp1->mview = mview1;
+	mp2->mview = mview2;
+/*	if (mp1->arena != NULL && mp1->arena->mol == mp2)
 		mp1->arena->mol = mp1;
 	if (mp1->arena != NULL && mp1->arena->xmol == mp2)
 		mp1->arena->xmol = mp1;
 	if (mp2->arena != NULL && mp2->arena->mol == mp1)
 		mp2->arena->mol = mp2;
 	if (mp2->arena != NULL && mp2->arena->xmol == mp1)
-		mp2->arena->xmol = mp2;
+		mp2->arena->xmol = mp2; */
 }
 
 #pragma mark ====== Mutex ======
@@ -470,13 +481,15 @@ int
 MoleculeLoadMbsfFile(Molecule *mol, const char *fname, char *errbuf, int errbufsize)
 {
 	FILE *fp;
-	Molecule *mp;
 	char buf[1024];
 	int i, j, k, n, err, fn, nframes;
 	int lineNumber;
+	Molecule *mp;
 	int ibuf[12];
 	Int iibuf[4];
 	double dbuf[12];
+	int mview_ibuf[16];
+	float mview_fbuf[8];
 	char cbuf[12][6];
 	const char **pp;
 	char *bufp, *valp, *comp;
@@ -484,18 +497,27 @@ MoleculeLoadMbsfFile(Molecule *mol, const char *fname, char *errbuf, int errbufs
 	Double *dp;
 	Vector v;
 	Atom *ap;
+	const int kUndefined = -10000000;
 	err = 0;
 	if (errbuf == NULL) {
 		errbuf = buf;
 		errbufsize = 1024;
 	}
 	errbuf[0] = 0;
-	mp = MoleculeNew();
+	if (mol->natoms != 0) {
+		snprintf(errbuf, errbufsize, "The molecule must be empty");
+		return 1;
+	}
 	fp = fopen(fname, "rb");
 	if (fp == NULL) {
 		snprintf(errbuf, errbufsize, "Cannot open file");
 		return 1;
 	}
+	mp = MoleculeNew();  /*  Temporary molecule  */
+	for (i = 0; i < 8; i++)
+		mview_fbuf[i] = kUndefined;
+	for (i = 0; i < 16; i++)
+		mview_ibuf[i] = kUndefined;
 	/*	flockfile(fp); */
 	lineNumber = 0;
 	fn = 0;
@@ -965,6 +987,57 @@ MoleculeLoadMbsfFile(Molecule *mol, const char *fname, char *errbuf, int errbufs
 				free(bufp);
 			}
 			continue;
+		} else if (strstr(buf, "!:trackball") == buf) {
+			i = 0;
+			while (ReadLine(buf, sizeof buf, fp, &lineNumber) > 0) {
+				if (buf[0] == '!')
+					continue;
+				if (buf[0] == '\n')
+					break;
+				/* scale; trx try trz; theta_deg x y z */
+				if ((i == 0 && sscanf(buf, "%f", &mview_fbuf[0]) < 1)
+					|| (i == 1 && sscanf(buf, "%f %f %f",
+										 &mview_fbuf[1], &mview_fbuf[2], &mview_fbuf[3]) < 3)
+					|| (i == 2 && sscanf(buf, "%f %f %f %f",
+										 &mview_fbuf[4], &mview_fbuf[5], &mview_fbuf[6], &mview_fbuf[7]) < 4)) {
+					snprintf(errbuf, errbufsize, "line %d: bad trackball format", lineNumber);
+					goto exit;
+				}
+				i++;
+			}
+			continue;
+		} else if (strstr(buf, "!:view") == buf) {
+			while (ReadLine(buf, sizeof buf, fp, &lineNumber) > 0) {
+				if (buf[0] == '!')
+					continue;
+				if (buf[0] == '\n')
+					break;
+				bufp = buf;
+				comp = strsep(&bufp, " \t");
+				if (bufp != NULL) {
+					while (*bufp == ' ' || *bufp == '\t')
+						bufp++;
+					valp = strsep(&bufp, "\n");
+				} else valp = NULL;
+				/*  In the following, the redundant "!= NULL" is to suppress suprious warning  */
+				if ((strcmp(comp, "show_unit_cell") == 0 && (i = 1))
+					|| (strcmp(comp, "show_periodic_box") == 0 && (i = 2))
+					|| (strcmp(comp, "show_expanded_atoms") == 0 && (i = 3))
+					|| (strcmp(comp, "show_ellipsoids") == 0 && (i = 4))
+					|| (strcmp(comp, "show_hydrogens") == 0 && (i = 5))
+					|| (strcmp(comp, "show_dummy_atoms") == 0 && (i = 6))
+					|| (strcmp(comp, "show_rotation_center") == 0 && (i = 7))
+					|| (strcmp(comp, "show_graphite_flag") == 0 && (i = 8))
+					|| (strcmp(comp, "show_periodic_image_flag") == 0 && (i = 9))
+					|| (strcmp(comp, "show_graphite") == 0 && (i = 10))) {
+					mview_ibuf[i - 1] = atoi(valp);
+				} else if (strcmp(comp, "show_periodic_image") == 0) {
+					sscanf(valp, "%d %d %d %d %d %d",
+						   &mview_ibuf[10], &mview_ibuf[11], &mview_ibuf[12],
+						   &mview_ibuf[13], &mview_ibuf[14], &mview_ibuf[15]);
+				}
+			}
+			continue;
 		}
 		/*  Unknown sections are silently ignored  */
 	}
@@ -976,14 +1049,47 @@ MoleculeLoadMbsfFile(Molecule *mol, const char *fname, char *errbuf, int errbufs
 exit:
 	fclose(fp);
 	if (errbuf[0] != 0) {
-		free(mp);
+		MoleculeRelease(mp);
 		return -1;
 	} else {
 		MoleculeExchange(mp, mol);
 		MoleculeRelease(mp);
+		if (mol->mview != NULL) {
+			if (mview_ibuf[0] != kUndefined)
+				mol->mview->showUnitCell = mview_ibuf[0];
+			if (mview_ibuf[1] != kUndefined)
+				mol->mview->showPeriodicBox = mview_ibuf[1];
+			if (mview_ibuf[2] != kUndefined)
+				mol->mview->showExpandedAtoms = mview_ibuf[2];
+			if (mview_ibuf[3] != kUndefined)
+				mol->mview->showEllipsoids = mview_ibuf[3];
+			if (mview_ibuf[4] != kUndefined)
+				mol->mview->showHydrogens = mview_ibuf[4];
+			if (mview_ibuf[5] != kUndefined)
+				mol->mview->showDummyAtoms = mview_ibuf[5];
+			if (mview_ibuf[6] != kUndefined)
+				mol->mview->showRotationCenter = mview_ibuf[6];
+			if (mview_ibuf[7] != kUndefined)
+				mol->mview->showGraphiteFlag = mview_ibuf[7];
+			if (mview_ibuf[8] != kUndefined)
+				mol->mview->showPeriodicImageFlag = mview_ibuf[8];
+			if (mview_ibuf[9] != kUndefined)
+				mol->mview->showGraphite = mview_ibuf[9];
+			for (i = 0; i < 6; i++) {
+				if (mview_ibuf[10 + i] != kUndefined)
+					mol->mview->showPeriodicImage[i] = mview_ibuf[10 + i];
+			}
+			if (mol->mview->track != NULL) {
+				if (mview_fbuf[0] != kUndefined)
+					TrackballSetScale(mol->mview->track, mview_fbuf[0]);
+				if (mview_fbuf[1] != kUndefined)
+					TrackballSetTranslate(mol->mview->track, mview_fbuf + 1);
+				if (mview_fbuf[4] != kUndefined)
+					TrackballSetRotate(mol->mview->track, mview_fbuf + 4);
+			}
+		}
 	}
 	return 0;
-	
 }
 
 int
@@ -2981,7 +3087,37 @@ MoleculeWriteToMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbu
 			fprintf(fp, "%d %.8f %.8f %.8f\n", i, ap->f.x, ap->f.y, ap->f.z);
 		}
 		fprintf(fp, "\n");
-		
+	}
+	
+	if (mp->mview != NULL) {
+		float f[4];
+		if (mp->mview->track != NULL) {
+			fprintf(fp, "!:trackball\n");
+			fprintf(fp, "! scale; trx try trz; theta_deg x y z\n");
+			f[0] = TrackballGetScale(mp->mview->track);
+			fprintf(fp, "%f\n", f[0]);
+			TrackballGetTranslate(mp->mview->track, f);
+			fprintf(fp, "%f %f %f\n", f[0], f[1], f[2]);
+			TrackballGetRotate(mp->mview->track, f);
+			fprintf(fp, "%f %f %f %f\n", f[0], f[1], f[2], f[3]);
+			fprintf(fp, "\n");
+		}
+		fprintf(fp, "!:view\n");
+		fprintf(fp, "show_unit_cell %d\n", mp->mview->showUnitCell);
+		fprintf(fp, "show_periodic_box %d\n", mp->mview->showPeriodicBox);
+		fprintf(fp, "show_expanded_atoms %d\n", mp->mview->showExpandedAtoms);
+		fprintf(fp, "show_ellipsoids %d\n", mp->mview->showEllipsoids);
+		fprintf(fp, "show_hydrogens %d\n", mp->mview->showHydrogens);
+		fprintf(fp, "show_dummy_atoms %d\n", mp->mview->showDummyAtoms);
+		fprintf(fp, "show_rotation_center %d\n", mp->mview->showRotationCenter);
+		fprintf(fp, "show_graphite_flag %d\n", mp->mview->showGraphiteFlag);
+		fprintf(fp, "show_graphite %d\n", mp->mview->showGraphite);
+		fprintf(fp, "show_periodic_image_flag %d\n", mp->mview->showPeriodicImageFlag);
+		fprintf(fp, "show_periodic_image %d %d %d %d %d %d\n",
+				mp->mview->showPeriodicImage[0], mp->mview->showPeriodicImage[1],
+				mp->mview->showPeriodicImage[2], mp->mview->showPeriodicImage[3],
+				mp->mview->showPeriodicImage[4], mp->mview->showPeriodicImage[5]);
+		fprintf(fp, "\n");
 	}
 
 	fclose(fp);

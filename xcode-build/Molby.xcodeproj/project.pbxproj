@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		9E12580F119EC42E00E95DC3 /* docview.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9E12580E119EC42E00E95DC3 /* docview.cpp */; };
 		E4299DA70F2A191600780B44 /* ruby_types.c in Sources */ = {isa = PBXBuildFile; fileRef = E4299DA60F2A191600780B44 /* ruby_types.c */; };
 		E42D8AF81030193F00C20247 /* MDGraphite.c in Sources */ = {isa = PBXBuildFile; fileRef = E42D8AEF1030193F00C20247 /* MDGraphite.c */; };
 		E42D8AF91030193F00C20247 /* MDCore.c in Sources */ = {isa = PBXBuildFile; fileRef = E42D8AF11030193F00C20247 /* MDCore.c */; };
@@ -84,6 +85,7 @@
 		29B97324FDCFA39411CA2CEA /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = /System/Library/Frameworks/AppKit.framework; sourceTree = "<absolute>"; };
 		29B97325FDCFA39411CA2CEA /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = /System/Library/Frameworks/Foundation.framework; sourceTree = "<absolute>"; };
 		8D1107320486CEB800E47090 /* Molby.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Molby.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		9E12580E119EC42E00E95DC3 /* docview.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = docview.cpp; path = ../wxSources/docview.cpp; sourceTree = SOURCE_ROOT; };
 		E4299DA60F2A191600780B44 /* ruby_types.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ruby_types.c; sourceTree = "<group>"; };
 		E42D8AEF1030193F00C20247 /* MDGraphite.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = MDGraphite.c; sourceTree = "<group>"; };
 		E42D8AF01030193F00C20247 /* MDGraphite.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MDGraphite.h; sourceTree = "<group>"; };
@@ -336,6 +338,7 @@
 			isa = PBXGroup;
 			children = (
 				E4A4667410C15B4300E40A9D /* listctrl.cpp */,
+				9E12580E119EC42E00E95DC3 /* docview.cpp */,
 				E4513F530EED72C0009DF1F7 /* MyListCtrl.h */,
 				E4513F540EED72C0009DF1F7 /* MyListCtrl.cpp */,
 				E4C8CBDD10B83060006C4692 /* MyDocManager.h */,
@@ -523,6 +526,7 @@
 				E4C8CBDF10B83060006C4692 /* MyDocManager.cpp in Sources */,
 				E4A4667610C15B4300E40A9D /* listctrl.cpp in Sources */,
 				E4A1802811897F8600B394E7 /* wxKillAddition.cpp in Sources */,
+				9E12580F119EC42E00E95DC3 /* docview.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

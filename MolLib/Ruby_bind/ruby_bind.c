@@ -5268,10 +5268,7 @@ s_Molecule_Extract(int argc, VALUE *argv, VALUE self)
 	if (MoleculeExtract(mol1, &mol2, ig, (dummy_flag != Qnil && dummy_flag != Qfalse)) != 0) {
 		retval = Qnil;
 	} else {
-		retval = s_Molecule_Alloc(rb_cMolecule);
-		Data_Get_Struct(retval, Molecule, mol1);
-		MoleculeExchange(mol1, mol2);
-		MoleculeRelease(mol2);
+		retval = ValueFromMolecule(mol2);
 	}
 	IntGroupRelease(ig);
 	return retval;
