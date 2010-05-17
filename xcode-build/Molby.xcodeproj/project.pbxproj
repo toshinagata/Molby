@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		9E12580F119EC42E00E95DC3 /* docview.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9E12580E119EC42E00E95DC3 /* docview.cpp */; };
+		9ECE828311A191A2001B435E /* Trackball.c in Sources */ = {isa = PBXBuildFile; fileRef = E433CE8B0EC709BD00675985 /* Trackball.c */; };
 		E4299DA70F2A191600780B44 /* ruby_types.c in Sources */ = {isa = PBXBuildFile; fileRef = E4299DA60F2A191600780B44 /* ruby_types.c */; };
 		E42D8AF81030193F00C20247 /* MDGraphite.c in Sources */ = {isa = PBXBuildFile; fileRef = E42D8AEF1030193F00C20247 /* MDGraphite.c */; };
 		E42D8AF91030193F00C20247 /* MDCore.c in Sources */ = {isa = PBXBuildFile; fileRef = E42D8AF11030193F00C20247 /* MDCore.c */; };
@@ -552,6 +553,7 @@
 				E4D5AD841180870900B1D8A4 /* Types.c in Sources */,
 				E4D5AD9C1180890A00B1D8A4 /* Dcd.c in Sources */,
 				E4D5ADA611808A2C00B1D8A4 /* cmdtool_stubs.c in Sources */,
+				9ECE828311A191A2001B435E /* Trackball.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
