@@ -292,35 +292,73 @@ MoleculeRetain(Molecule *mp)
 }
 
 void
+MoleculeClear(Molecule *mp)
+{
+	if (mp == NULL)
+		return;
+	if (mp->arena != NULL) {
+		md_arena_set_molecule(mp->arena, NULL);
+		mp->arena = NULL;
+	}
+	if (mp->par != NULL) {
+		ParameterRelease(mp->par);
+		mp->par = NULL;
+	}
+	if (mp->bset != NULL) {
+		BasisSetRelease(mp->bset);
+		mp->bset = NULL;
+	}
+	if (mp->atoms != NULL) {
+		int i;
+		for (i = 0; i < mp->natoms; i++)
+			AtomClean(mp->atoms + i);
+		free(mp->atoms);
+		mp->atoms = NULL;
+		mp->natoms = 0;
+	}
+	if (mp->bonds != NULL) {
+		free(mp->bonds);
+		mp->bonds = NULL;
+		mp->nbonds = 0;
+	}
+	if (mp->angles != NULL) {
+		free(mp->angles);
+		mp->angles = NULL;
+		mp->nangles = 0;
+	}
+	if (mp->dihedrals != NULL) {
+		free(mp->dihedrals);
+		mp->dihedrals = NULL;
+		mp->ndihedrals = 0;
+	}
+	if (mp->impropers != NULL) {
+		free(mp->impropers);
+		mp->impropers = NULL;
+		mp->nimpropers = 0;
+	}
+	if (mp->residues != NULL) {
+		free(mp->residues);
+		mp->residues = NULL;
+		mp->nresidues = 0;
+	}
+	if (mp->elpots != NULL) {
+		free(mp->elpots);
+		mp->elpots = NULL;
+		mp->nelpots = 0;
+	}
+	if (mp->path != NULL) {
+		free((void *)mp->path);
+		mp->path = NULL;
+	}
+}
+
+void
 MoleculeRelease(Molecule *mp)
 {
 	if (mp == NULL)
 		return;
 	if (ObjectDecrRefCount((Object *)mp) == 0) {
-		if (mp->atoms != NULL) {
-			int i;
-			for (i = 0; i < mp->natoms; i++)
-				AtomClean(mp->atoms + i);
-			free(mp->atoms);
-		}
-		if (mp->bonds != NULL)
-			free(mp->bonds);
-		if (mp->angles != NULL)
-			free(mp->angles);
-		if (mp->dihedrals != NULL)
-			free(mp->dihedrals);
-		if (mp->impropers != NULL)
-			free(mp->impropers);
-		if (mp->residues != NULL)
-			free(mp->residues);
-		if (mp->bset != NULL)
-			BasisSetRelease(mp->bset);
-		if (mp->par != NULL)
-			ParameterRelease(mp->par);
-		if (mp->elpots != NULL)
-			free(mp->elpots);
-		if (mp->path != NULL)
-			free(mp->path);
+		MoleculeClear(mp);
 		ObjectDealloc((Object *)mp, (Object **)&sMoleculeRoot);
 	}
 }
@@ -478,13 +516,12 @@ MoleculeLoadFile(Molecule *mp, const char *fname, const char *ftype, char *errbu
 }
 
 int
-MoleculeLoadMbsfFile(Molecule *mol, const char *fname, char *errbuf, int errbufsize)
+MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsize)
 {
 	FILE *fp;
 	char buf[1024];
 	int i, j, k, n, err, fn, nframes;
 	int lineNumber;
-	Molecule *mp;
 	int ibuf[12];
 	Int iibuf[4];
 	double dbuf[12];
@@ -504,7 +541,7 @@ MoleculeLoadMbsfFile(Molecule *mol, const char *fname, char *errbuf, int errbufs
 		errbufsize = 1024;
 	}
 	errbuf[0] = 0;
-	if (mol->natoms != 0) {
+	if (mp->natoms != 0 || mp->par != NULL || mp->arena != NULL) {
 		snprintf(errbuf, errbufsize, "The molecule must be empty");
 		return 1;
 	}
@@ -513,7 +550,6 @@ MoleculeLoadMbsfFile(Molecule *mol, const char *fname, char *errbuf, int errbufs
 		snprintf(errbuf, errbufsize, "Cannot open file");
 		return 1;
 	}
-	mp = MoleculeNew();  /*  Temporary molecule  */
 	for (i = 0; i < 8; i++)
 		mview_fbuf[i] = kUndefined;
 	for (i = 0; i < 16; i++)
@@ -1049,43 +1085,43 @@ MoleculeLoadMbsfFile(Molecule *mol, const char *fname, char *errbuf, int errbufs
 exit:
 	fclose(fp);
 	if (errbuf[0] != 0) {
-		MoleculeRelease(mp);
+		/*  The content of mp may be broken, so make it empty  */
+		MoleculeClear(mp);
 		return -1;
 	} else {
-		MoleculeExchange(mp, mol);
-		MoleculeRelease(mp);
-		if (mol->mview != NULL) {
+		MainView *mview = mp->mview;
+		if (mview != NULL) {
 			if (mview_ibuf[0] != kUndefined)
-				mol->mview->showUnitCell = mview_ibuf[0];
+				mview->showUnitCell = mview_ibuf[0];
 			if (mview_ibuf[1] != kUndefined)
-				mol->mview->showPeriodicBox = mview_ibuf[1];
+				mview->showPeriodicBox = mview_ibuf[1];
 			if (mview_ibuf[2] != kUndefined)
-				mol->mview->showExpandedAtoms = mview_ibuf[2];
+				mview->showExpandedAtoms = mview_ibuf[2];
 			if (mview_ibuf[3] != kUndefined)
-				mol->mview->showEllipsoids = mview_ibuf[3];
+				mview->showEllipsoids = mview_ibuf[3];
 			if (mview_ibuf[4] != kUndefined)
-				mol->mview->showHydrogens = mview_ibuf[4];
+				mview->showHydrogens = mview_ibuf[4];
 			if (mview_ibuf[5] != kUndefined)
-				mol->mview->showDummyAtoms = mview_ibuf[5];
+				mview->showDummyAtoms = mview_ibuf[5];
 			if (mview_ibuf[6] != kUndefined)
-				mol->mview->showRotationCenter = mview_ibuf[6];
+				mview->showRotationCenter = mview_ibuf[6];
 			if (mview_ibuf[7] != kUndefined)
-				mol->mview->showGraphiteFlag = mview_ibuf[7];
+				mview->showGraphiteFlag = mview_ibuf[7];
 			if (mview_ibuf[8] != kUndefined)
-				mol->mview->showPeriodicImageFlag = mview_ibuf[8];
+				mview->showPeriodicImageFlag = mview_ibuf[8];
 			if (mview_ibuf[9] != kUndefined)
-				mol->mview->showGraphite = mview_ibuf[9];
+				mview->showGraphite = mview_ibuf[9];
 			for (i = 0; i < 6; i++) {
 				if (mview_ibuf[10 + i] != kUndefined)
-					mol->mview->showPeriodicImage[i] = mview_ibuf[10 + i];
+					mview->showPeriodicImage[i] = mview_ibuf[10 + i];
 			}
-			if (mol->mview->track != NULL) {
+			if (mview->track != NULL) {
 				if (mview_fbuf[0] != kUndefined)
-					TrackballSetScale(mol->mview->track, mview_fbuf[0]);
+					TrackballSetScale(mview->track, mview_fbuf[0]);
 				if (mview_fbuf[1] != kUndefined)
-					TrackballSetTranslate(mol->mview->track, mview_fbuf + 1);
+					TrackballSetTranslate(mview->track, mview_fbuf + 1);
 				if (mview_fbuf[4] != kUndefined)
-					TrackballSetRotate(mol->mview->track, mview_fbuf + 4);
+					TrackballSetRotate(mview->track, mview_fbuf + 4);
 			}
 		}
 	}
@@ -2895,7 +2931,7 @@ MoleculeWriteToMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbu
 	errbuf[0] = 0;
 
 	fprintf(fp, "!:atoms\n");
-	fprintf(fp, "! idx seg_name res_seq res_name name type weight element atomic_number occupancy temp_factor int_charge\n");
+	fprintf(fp, "! idx seg_name res_seq res_name name type charge weight element atomic_number occupancy temp_factor int_charge\n");
 	n1 = n2 = 0;
 	for (i = 0, ap = mp->atoms; i < mp->natoms; i++, ap = ATOM_NEXT(ap)) {
 		strncpy(bufs[0], ap->segName, 4);
