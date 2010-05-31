@@ -480,6 +480,7 @@ s_make_verlet_list(MDArena *arena)
 			Int *ip, index0;
 			int exflag = 0;
 			int mult = 1;
+			int dxbase, dybase, dzbase;
 
 			/*  Fixed atoms  */
 			if (api->fix_force < 0 && apj->fix_force < 0)
@@ -487,30 +488,34 @@ s_make_verlet_list(MDArena *arena)
 
 			VecSub(rij, apj->r, api->r);
 
-#if 0
 			/*  Calculate the cell offset for the nearest neighbor  */
 			/*  NOTE: the offset is calculated independently for each axis. This may result
 			    in unexpected choice when the angles between the axes are far from 90 deg */
 			if (apj->periodic_exclude == 0) {
-				rtp = cell->rtr;
+				TransformPtr rtp = cell->rtr;
+				TransformPtr tp = cell->tr;
+				Double w;
 				if (arena->periodic_a) {
 					w = rtp[0] * rij.x + rtp[1] * rij.y + rtp[2] * rij.z;
-					dx = floor(-w + 0.5);
-				} else dx = 0;
+					dxbase = floor(-w + 0.5);
+				} else dxbase = 0;
 				if (arena->periodic_b) {
 					w = rtp[3] * rij.x + rtp[4] * rij.y + rtp[5] * rij.z;
-					dy = floor(-w + 0.5);
-				} else dy = 0;
+					dybase = floor(-w + 0.5);
+				} else dybase = 0;
 				if (arena->periodic_c) {
 					w = rtp[6] * rij.x + rtp[7] * rij.y + rtp[8] * rij.z;
-					dz = floor(-w + 0.5);
-				} else dz = 0;
-			} else dx = dy = dz = 0;
+					dzbase = floor(-w + 0.5);
+				} else dzbase = 0;
+				rij.x += tp[0] * dxbase + tp[1] * dybase + tp[2] * dzbase;
+				rij.y += tp[3] * dxbase + tp[4] * dybase + tp[5] * dzbase;
+				rij.z += tp[6] * dxbase + tp[7] * dybase + tp[8] * dzbase;
+			} else dxbase = dybase = dzbase = 0;
 
 			/*  Non unique atom pair  */
 		/*	if (use_sym && api->symop.alive && apj->symop.alive)
 				continue; */
-#endif
+
 			/*  Check the specific cutoff table for (i, j) pair  */
 			vdw_idx2 = arena->vdw_par_i[j];
 			if (vdw_idx1 < 0 || vdw_idx2 < 0)
@@ -560,6 +565,8 @@ s_make_verlet_list(MDArena *arena)
 								continue;  /*  Special exclusion, 1-2, 1-3  */
 							if (index0 < index4)
 								exflag = 1;  /*  1-4 interaction  */
+						} else if (apj->periodic_exclude) {
+							continue;
 						} else {
 							VecInc(rij0, cell_offsets[nn]);
 							exflag = 0;
@@ -567,24 +574,26 @@ s_make_verlet_list(MDArena *arena)
 
 						lenij2 = VecLength2(rij0);
 						if (lenij2 <= limit) {
+							MDVerlet *vlp;
 							if (n >= arena->max_nverlets) {
 								arena->max_nverlets += 32;
 								vl = (MDVerlet *)realloc(vl, sizeof(MDVerlet) * arena->max_nverlets);
 								if (vl == NULL)
 									md_panic(arena, "Low memory");
 							}
-							vl[n].vdw_type = (exflag ? 1 : 0);
-							vl[n].mult = mult;
-							vl[n].symop.dx = dx;
-							vl[n].symop.dy = dy;
-							vl[n].symop.dz = dz;
-							vl[n].symop.sym = 0;
-							vl[n].symop.alive = (dx != 0 || dy != 0 || dz != 0);
-							vl[n].index = vdw_idx;
-							vl[n].n1 = i;
-							vl[n].n2 = j;
-							vl[n].vdw_cutoff = vdw_cutoff;
-							vl[n].length = sqrt(lenij2);
+							vlp = &vl[n];
+							vlp->vdw_type = (exflag ? 1 : 0);
+							vlp->mult = mult;
+							vlp->symop.dx = dx + dxbase;
+							vlp->symop.dy = dy + dybase;
+							vlp->symop.dz = dz + dzbase;
+							vlp->symop.sym = 0;
+							vlp->symop.alive = (vlp->symop.dx != 0 || vlp->symop.dy != 0 || vlp->symop.dz != 0);
+							vlp->index = vdw_idx;
+							vlp->n1 = i;
+							vlp->n2 = j;
+							vlp->vdw_cutoff = vdw_cutoff;
+							vlp->length = sqrt(lenij2);
 							n++;
 						} /* end if lenij2 <= limit */
 					} /* end loop dz */

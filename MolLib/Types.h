@@ -72,6 +72,7 @@ typedef Double Mat33[9];
     {a11, a12, a13, a21, a22, a23, a31, a32, a33, a14, a24, a34}
    Sorry for confusion!  */
 typedef Double Transform[12];
+typedef Double *TransformPtr;
 /*typedef Double Matrix[4][4]; */
 
 #define VecAdd(v3, v1, v2) ((v3).x=(v1).x+(v2).x, (v3).y=(v1).y+(v2).y, (v3).z=(v1).z+(v2).z)
