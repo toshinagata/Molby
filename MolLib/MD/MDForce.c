@@ -491,7 +491,7 @@ s_make_verlet_list(MDArena *arena)
 			/*  Calculate the cell offset for the nearest neighbor  */
 			/*  NOTE: the offset is calculated independently for each axis. This may result
 			    in unexpected choice when the angles between the axes are far from 90 deg */
-			if (apj->periodic_exclude == 0) {
+			if (apj->periodic_exclude == 0 && cell != NULL) {
 				TransformPtr rtp = cell->rtr;
 				TransformPtr tp = cell->tr;
 				Double w;
