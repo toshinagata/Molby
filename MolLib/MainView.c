@@ -2753,8 +2753,10 @@ MainView_pasteParameters(MainView *mview)
 	char *p, *pp;
 	Int len, i;
 	IntGroup *newsel;
-	if (mview == NULL || mview->mol == NULL || mview->mol->par == NULL)
+	if (mview == NULL || mview->mol == NULL)
 		return -1;
+	if (mview->mol->par == NULL)
+		mview->mol->par = ParameterNew();
 	if (!MoleculeCallback_isDataInPasteboard(kParameterPasteboardType))
 		return 1;
 	if (MoleculeCallback_readFromPasteboard(kParameterPasteboardType, (void **)&p, &len) != 0)
