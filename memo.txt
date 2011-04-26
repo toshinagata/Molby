@@ -113,3 +113,26 @@ Version 0.5.3 is out.
 (3) export MEMCHECK=2  #  kmmalloc のデバッグ機能を有効にする。ログを書き出すなら export MEMCHECK=4; export MEMFP=ファイル名 とする。
 (4) デバッガで mem_error() 関数にブレークポイントを指定して実行。実行は非常に遅くなる場合がある（それほどでもない場合もある）。
 (5) strdup, wcsdup 中の malloc はこの方法では置き換えられないようなので、自前で malloc を使うバージョンを用意して使う。(Missing.c 参照) → どうも wxWidgets の中の strdup コールはこれでは置き換わってくれないらしく、かえって変なことが起きているような気がする。kmmalloc.a をリンクする条件で wxWidgets を再コンパイルしないとだめか？ → マルチスレッドに未対応？　無理かも…
+
+2011.4.26.
+　GaussianW のフォーマットチェックポイントファイルが読めないことが判明。改行コードの問題だった。Molecule.c の sSeparateTokens() を修正して解決。
+　また、GaussianW では formchk で作ったファイルの拡張子が fch になるので、fch, fchk 両方とも Gaussian Checkpoint File として認識するように修正。
+
+2011.4.26.
+バージョン 0.5.5 をリリース。
+
+原子座標を修正したあとの MM/MD の不具合を修正。
+wrap_unit_cell コマンドの不具合を修正。
+単位格子が定義されているときに、周期的なイメージを表示する機能を実装。
+周期境界条件での vdW／静電力計算の不具合を修正。
+mbsf ファイルにスケール、配向などの表示に関する設定を保存。
+MD パラメータがない分子に他の分子からのパラメータをペーストできない不具合を修正。
+GaussianW の fch(k) ファイルが読めない不具合を修正。また、拡張子 ".fch" を Gaussian Checkpoint File として認識するよう設定。
+
+Incomplete MM/MD re-initialization after modification of coordinates was fixed.
+The Ruby command wrap_unit_cell now works correctly.
+Periodic images can be displayed when a unit cell is defined.
+Wrong calculation of vdw/elect forces under periodic boundary conditions was fixed.
+The native format (mbsf) now preserves the display conditions, such as scale, orientation etc.
+Pasting MD parameters to a molecule with no parameters now works correctly.
+Importing GaussianW fch(k) files was not working; fixed. The extension ".fch" is now recognized as a Gaussian formatted checkpoint files.
