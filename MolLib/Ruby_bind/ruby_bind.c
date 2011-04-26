@@ -7570,6 +7570,7 @@ Init_Molby(void)
     rb_define_method(rb_cMolecule, "loadtep", s_Molecule_Loadtep, -1);
     rb_define_method(rb_cMolecule, "loadres", s_Molecule_Loadres, -1);
     rb_define_method(rb_cMolecule, "loadfchk", s_Molecule_Loadfchk, -1);
+    rb_define_alias(rb_cMolecule, "loadfch", "loadfchk");
     rb_define_method(rb_cMolecule, "loaddat", s_Molecule_Loaddat, -1);
     rb_define_method(rb_cMolecule, "molload", s_Molecule_Load, -1);
     rb_define_method(rb_cMolecule, "molsave", s_Molecule_Save, -1);

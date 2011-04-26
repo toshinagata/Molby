@@ -190,7 +190,7 @@ bool MyApp::OnInit(void)
 	new wxDocTemplate(m_docManager, _T("Protein Data Bank File"), _T("*.pdb"), _T(""), _T("pdb"), _T("Molecule Doc"), _T("Molecule View"), CLASSINFO(MyDocument), CLASSINFO(MoleculeView));
 	new wxDocTemplate(m_docManager, _T("Gaussian Input File"), _T("*.com;*.gjf"), _T(""), _T("com"), _T("Molecule Doc"), _T("Molecule View"), CLASSINFO(MyDocument), CLASSINFO(MoleculeView));
 	new wxDocTemplate(m_docManager, _T("Gaussian Output File"), _T("*.out"), _T(""), _T("out"), _T("Molecule Doc"), _T("Molecule View"), CLASSINFO(MyDocument), CLASSINFO(MoleculeView));
-	new wxDocTemplate(m_docManager, _T("Gaussian Checkpoint File"), _T("*.fchk"), _T(""), _T("fchk"), _T("Molecule Doc"), _T("Molecule View"), CLASSINFO(MyDocument), CLASSINFO(MoleculeView));
+	new wxDocTemplate(m_docManager, _T("Gaussian Checkpoint File"), _T("*.fchk;*.fch"), _T(""), _T("fchk"), _T("Molecule Doc"), _T("Molecule View"), CLASSINFO(MyDocument), CLASSINFO(MoleculeView));
 	new wxDocTemplate(m_docManager, _T("GAMESS Input File"), _T("*.inp"), _T(""), _T("inp"), _T("Molecule Doc"), _T("Molecule View"), CLASSINFO(MyDocument), CLASSINFO(MoleculeView));
 	new wxDocTemplate(m_docManager, _T("GAMESS Output File"), _T("*.log"), _T(""), _T("log"), _T("Molecule Doc"), _T("Molecule View"), CLASSINFO(MyDocument), CLASSINFO(MoleculeView));
 	new wxDocTemplate(m_docManager, _T("GAMESS DAT File"), _T("*.dat"), _T(""), _T("dat"), _T("Molecule Doc"), _T("Molecule View"), CLASSINFO(MyDocument), CLASSINFO(MoleculeView));

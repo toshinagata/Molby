@@ -501,7 +501,7 @@ MoleculeLoadFile(Molecule *mp, const char *fname, const char *ftype, char *errbu
 		retval = MoleculeLoadTepFile(mp, fname, errbuf, errbufsize);
 	} else if (strcasecmp(ftype, "res") == 0 || strcasecmp(ftype, "ins") == 0) {
 		retval = MoleculeLoadShelxFile(mp, fname, errbuf, errbufsize);
-	} else if (strcasecmp(ftype, "fchk") == 0) {
+	} else if (strcasecmp(ftype, "fchk") == 0 || strcasecmp(ftype, "fch") == 0) {
 		retval = MoleculeLoadGaussianFchkFile(mp, fname, errbuf, errbufsize);
 	} else {
 		snprintf(errbuf, errbufsize, "Unknown format %s", ftype);
@@ -1830,7 +1830,7 @@ sSeparateTokens(char *inString, char **outPtr, int size)
 	char *p;
 	int i;
 	for (i = 0; i < size; i++) {
-		p = strtok((i == 0 ? inString : NULL), " \n");
+		p = strtok((i == 0 ? inString : NULL), " \r\n");
 		if (p == NULL)
 			break;
 		outPtr[i] = p;
