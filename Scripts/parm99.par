@@ -5,124 +5,188 @@
 ! Thanks to the AMBER development team, the force field parameters are in the public domain. Hereby I acknowledge their great scientific contribution, with references to the literature as below.
 ! 1. D.A. Case, T.E. Cheatham, III, T. Darden, H. Gohlke, R. Luo, K.M. Merz, Jr., A. Onufriev, C. Simmerling, B. Wang and R. Woods. The Amber biomolecular simulation programs. J. Computat. Chem. 26, 1668-1688 (2005).
 ! 2. J.W. Ponder and D.A. Case. Force fields for protein simulations. Adv. Prot. Chem. 66, 27-85 (2003). Similar information for nucleic acids is given by T.E. Cheatham, III and M.A. Young. Molecular dynamics simulation of nucleic acids: Successes, limitations and promise. Biopolymers 56, 232-256 (2001).
-! 3. D.A. Case, T.A. Darden, T.E. Cheatham, III, C.L. Simmerling, J. Wang, R.E. Duke, R. Luo, M. Crowley, Ross C. Walker,W. Zhang, K.M. Merz, B.Wang, S. Hayik, A. Roitberg, G. Seabra, I. Kolossváry, K.F.Wong, F. Paesani, J. Vanicek, X.Wu, S.R. Brozell, T. Steinbrecher, H. Gohlke, L. Yang, C. Tan, J. Mongan, V. Hornak, G. Cui, D.H. Mathews, M.G. Seetin, C. Sagui, V. Babin, and P.A. Kollman (2008), AMBER 10, University of California, San Francisco.
-!
-bond OW   HW     553.0  0.96 ! TIP3P water
-bond HW   HW     553.0  1.51 ! TIP3P water
-bond C    C      310.0  1.52 ! Junmei et al, 1999
-bond C    CA     469.0  1.41 ! JCC,7,(1986),230; (not used any more in TYR)
-bond C    CB     447.0  1.42 ! JCC,7,(1986),230; GUA
-bond C    CM     410.0  1.44 ! JCC,7,(1986),230; THY,URA
-bond C    CT     317.0  1.52 ! JCC,7,(1986),230; AA
-bond C    N      490.0  1.33 ! JCC,7,(1986),230; AA
-bond C    N*     424.0  1.38 ! JCC,7,(1986),230; CYT,URA
-bond C    NA     418.0  1.39 ! JCC,7,(1986),230; GUA.URA
-bond C    NC     457.0  1.36 ! JCC,7,(1986),230; CYT
-bond C    O      570.0  1.23 ! JCC,7,(1986),230; AA,CYT,GUA,THY,URA
-bond C    O2     656.0  1.25 ! JCC,7,(1986),230; GLU,ASP
-bond C    OH     450.0  1.36 ! JCC,7,(1986),230; (not used any more for TYR)
-bond C    OS     450.0  1.32 ! Junmei et al, 1999
-bond C    H4     367.0  1.08 ! Junmei et al, 1999
-bond C    H5     367.0  1.08 ! Junmei et al, 1999
-bond CA   CA     469.0  1.40 ! JCC,7,(1986),230; BENZENE,PHE,TRP,TYR
-bond CA   CB     469.0  1.40 ! JCC,7,(1986),230; ADE,TRP
-bond CA   CM     427.0  1.43 ! JCC,7,(1986),230; CYT
-bond CA   CN     469.0  1.40 ! JCC,7,(1986),230; TRP
-bond CA   CT     317.0  1.51 ! JCC,7,(1986),230; PHE,TYR
-bond CA   HA     367.0  1.08 ! changed from 340. bsd on C6H6 nmodes; PHE,TRP,TYR
-bond CA   H4     367.0  1.08 ! changed from 340. bsd on C6H6 nmodes; no assigned
-bond CA   N2     481.0  1.34 ! JCC,7,(1986),230; ARG,CYT,GUA
-bond CA   NA     427.0  1.38 ! JCC,7,(1986),230; GUA
-bond CA   NC     483.0  1.34 ! JCC,7,(1986),230; ADE,CYT,GUA
-bond CA   OH     450.0  1.36 ! substituted for C-OH in tyr
-bond CB   CB     520.0  1.37 ! JCC,7,(1986),230; ADE,GUA
-bond CB   N*     436.0  1.37 ! JCC,7,(1986),230; ADE,GUA
-bond CB   NB     414.0  1.39 ! JCC,7,(1986),230; ADE,GUA
-bond CB   NC     461.0  1.35 ! JCC,7,(1986),230; ADE,GUA
-bond CD   HA     367.0  1.08 ! Junmei et al, 1999
-bond CD   CD     469.0  1.40 ! Junmei et al, 1999
-bond CD   CM     549.0  1.35 ! Junmei et al, 1999
-bond CD   CT     317.0  1.51 ! Junmei et al, 1999
-bond CK   H5     367.0  1.08 ! changed from 340. bsd on C6H6 nmodes; ADE,GUA
-bond CK   N*     440.0  1.37 ! JCC,7,(1986),230; ADE,GUA
-bond CK   NB     529.0  1.30 ! JCC,7,(1986),230; ADE,GUA
-bond CM   CM     549.0  1.35 ! JCC,7,(1986),230; CYT,THY,URA
-bond CM   CT     317.0  1.51 ! JCC,7,(1986),230; THY
-bond CM   HA     367.0  1.08 ! changed from 340. bsd on C6H6 nmodes; CYT,URA
-bond CM   H4     367.0  1.08 ! changed from 340. bsd on C6H6 nmodes; CYT,URA
-bond CM   H5     367.0  1.08 ! changed from 340. bsd on C6H6 nmodes; not assigned
-bond CM   N*     448.0  1.36 ! JCC,7,(1986),230; CYT,THY,URA
-bond CM   OS     480.0  1.24 ! Junmei et al, 1999
-bond CQ   H5     367.0  1.08 ! changed from 340. bsd on C6H6 nmodes; ADE
-bond CQ   NC     502.0  1.32 ! JCC,7,(1986),230; ADE
-bond CT   CT     310.0  1.53 ! JCC,7,(1986),230; AA, SUGARS
-bond CT   HC     340.0  1.09 ! changed from 331 bsd on NMA nmodes; AA, SUGARS
-bond CT   H1     340.0  1.09 ! changed from 331 bsd on NMA nmodes; AA, RIBOSE
-bond CT   H2     340.0  1.09 ! changed from 331 bsd on NMA nmodes; SUGARS
-bond CT   H3     340.0  1.09 ! changed from 331 bsd on NMA nmodes; not assigned
-bond CT   HP     340.0  1.09 ! changed from 331; AA-lysine, methyl ammonium cation
-bond CT   N*     337.0  1.48 ! JCC,7,(1986),230; ADE,CYT,GUA,THY,URA
-bond CT   N2     337.0  1.46 ! JCC,7,(1986),230; ARG
-bond CT   OH     320.0  1.41 ! JCC,7,(1986),230; SUGARS
-bond CT   OS     320.0  1.41 ! JCC,7,(1986),230; NUCLEIC ACIDS
-bond C*   HC     367.0  1.08 ! changed from 340. bsd on C6H6 nmodes, not needed AA
-bond C*   CB     388.0  1.46 ! JCC,7,(1986),230; TRP
-bond C*   CT     317.0  1.50 ! JCC,7,(1986),230; TRP
-bond C*   CW     546.0  1.35 ! JCC,7,(1986),230; TRP
-bond CB   CN     447.0  1.42 ! JCC,7,(1986),230; TRP
-bond CC   CT     317.0  1.50 ! JCC,7,(1986),230; HIS
-bond CC   CV     512.0  1.38 ! JCC,7,(1986),230; HIS(delta)
-bond CC   CW     518.0  1.37 ! JCC,7,(1986),230; HIS(epsilon)
-bond CC   NA     422.0  1.39 ! JCC,7,(1986),230; HIS
-bond CC   NB     410.0  1.39 ! JCC,7,(1986),230; HIS
-bond CN   NA     428.0  1.38 ! JCC,7,(1986),230; TRP
-bond CR   H5     367.0  1.08 ! changed from 340. bsd on C6H6 nmodes;HIS
-bond CR   NA     477.0  1.34 ! JCC,7,(1986),230; HIS
-bond CR   NB     488.0  1.33 ! JCC,7,(1986),230; HIS
-bond CT   N      337.0  1.45 ! JCC,7,(1986),230; AA
-bond CT   N3     367.0  1.47 ! JCC,7,(1986),230; LYS
-bond CT   NT     367.0  1.47 ! for neutral amines
-bond CT   S      227.0  1.81 ! changed from 222.0 based on dimethylS nmodes
-bond CT   SH     237.0  1.81 ! changed from 222.0 based on methanethiol nmodes
-bond CT   CY     400.0  1.46 ! Howard et al JCC.16,243,1995
-bond CT   CZ     400.0  1.46 ! Howard et al JCC,16,243,1995
-bond CV   H4     367.0  1.08 ! changed from 340. bsd on C6H6 nmodes; HIS
-bond CV   NB     410.0  1.39 ! JCC,7,(1986),230; HIS
-bond CW   H4     367.0  1.08 ! changed from 340. bsd on C6H6 nmodes;HIS(epsilon,+)
-bond CW   NA     427.0  1.38 ! JCC,7,(1986),230; HIS,TRP
-bond CY   NY     600.0  1.15 ! Howard et al JCC,16,243,1995
-bond CZ   CZ     600.0  1.21 ! Howard et al JCC,16,243,1995
-bond CZ   HZ     400.0  1.06 ! Howard et al JCC,16,243,1995
-bond O2   P      525.0  1.48 ! JCC,7,(1986),230; NA PHOSPHATES
-bond OH   P      230.0  1.61 ! JCC,7,(1986),230; NA PHOSPHATES
-bond OS   P      230.0  1.61 ! JCC,7,(1986),230; NA PHOSPHATES
-bond H    N2     434.0  1.01 ! JCC,7,(1986),230; ADE,CYT,GUA,ARG
-bond H    N*     434.0  1.01 ! for plain unmethylated bases ADE,CYT,GUA,ARG
-bond H    NA     434.0  1.01 ! JCC,7,(1986),230; GUA,URA,HIS
-bond H    N      434.0  1.01 ! JCC,7,(1986),230; AA
-bond H    N3     434.0  1.01 ! JCC,7,(1986),230; LYS
-bond H    NT     434.0  1.01 ! for neutral amines
-bond HO   OH     553.0  0.96 ! JCC,7,(1986),230; SUGARS,SER,TYR
-bond HO   OS     553.0  0.96 ! JCC,7,(1986),230; NUCLEOTIDE ENDS
-bond HS   SH     274.0  1.34 ! JCC,7,(1986),230; CYS
-bond S    S      166.0  2.04 ! JCC,7,(1986),230; CYX   (SCHERAGA)
-bond F    CT     367.0  1.38 ! JCC,13,(1992),963;CF4; R0=1.332 FOR CHF3
-bond Cl   CT     232.0  1.77 ! 6-31g* opt
-bond Br   CT     159.0  1.94 ! Junmei et al,99
-bond I    CT     148.0  2.17 ! Junmei et al,99
-bond F    CA     386.0  1.36 ! Junmei et al,99
-bond Cl   CA     193.0  1.73 ! Junmei et al,99
-bond I    CA     171.0  2.08 ! Junmei et al,99
-bond Br   CA     172.0  1.89 ! Junmei et al,99
-bond LP   O      600.0  0.20 ! or 0.35
-bond LP   OH     600.0  0.20 ! or 0.35
-bond LP   OS     600.0  0.20 ! or 0.35
-bond LP   N3     600.0  0.20 ! or 0.35
-bond LP   NT     600.0  0.20 ! or 0.35
-bond LP   NB     600.0  0.20 ! or 0.35 histidines, nucleic acids
-bond LP   NC     600.0  0.20 ! or 0.35 nucleic acids
-bond LP   S      600.0  0.70 ! cys,cyx,met
-bond LP   SH     600.0  0.70 ! cys,cyx
+! 3. D.A. Case, T.A. Darden, T.E. Cheatham, III, C.L. Simmerling, J. Wang, R.E. Duke, R. Luo, M. Crowley, Ross C. Walker,W. Zhang, K.M. Merz, B.Wang, S. Hayik, A. Roitberg, G. Seabra, I. Kolossvﾃ｡ry, K.F.Wong, F. Paesani, J. Vanicek, X.Wu, S.R. Brozell, T. Steinbrecher, H. Gohlke, L. Yang, C. Tan, J. Mongan, V. Hornak, G. Cui, D.H. Mathews, M.G. Seetin, C. Sagui, V. Babin, and P.A. Kollman (2008), AMBER 10, University of California, San Francisco.
+
+vdw H   0.0157  0.6000  0.0157  0.6000 0   1.008 ! H bonded to nitrogen atoms
+vdw HO  0.0000  0.0000  0.0000  0.0000 0   1.008 ! hydroxyl group
+vdw HS  0.0157  0.6000  0.0157  0.6000 0   1.008 ! hydrogen bonded to sulphur (pol?)
+vdw HC  0.0157  1.4870  0.0157  1.4870 0   1.008 ! H aliph. bond. to C without electrwd.group
+vdw H1  0.0157  1.3870  0.0157  1.3870 0   1.008 ! H aliph. bond. to C with 1 electrwd. group
+vdw H2  0.0157  1.2870  0.0157  1.2870 0   1.008 ! H aliph. bond. to C with 2 electrwd.groups
+vdw H3  0.0157  1.1870  0.0157  1.1870 0   1.008 ! H aliph. bond. to C with 3 eletrwd.groups
+vdw HP  0.0157  1.1000  0.0157  1.1000 0   1.008 ! H bonded to C next to positively charged gr
+vdw HA  0.0150  1.4590  0.0150  1.4590 0   1.008 ! H arom. bond. to C without elctrwd. groups
+vdw H4  0.0150  1.4090  0.0150  1.4090 0   1.008 ! H arom. bond. to C with 1 electrwd. group
+vdw H5  0.0150  1.3590  0.0150  1.3590 0   1.008 ! H arom.at C with 2 elctrwd. gr,+HCOO group
+vdw HW  0.0000  0.0000  0.0000  0.0000 0   1.008 ! H in TIP3P water
+vdw HZ  0.0150  1.4590  0.0150  1.4590 0   1.008 ! H bond sp C (Howard et al.JCC,16,243,1995)
+vdw O   0.2100  1.6612  0.2100  1.6612 0  16.000 ! carbonyl group oxygen
+vdw O2  0.2100  1.6612  0.2100  1.6612 0  16.000 ! carboxyl and phosphate group oxygen
+vdw OW  0.1520  1.7683  0.1520  1.7683 0  16.000 ! oxygen in TIP3P water
+vdw OH  0.2104  1.7210  0.2104  1.7210 0  16.000 ! oxygen in hydroxyl group
+vdw OS  0.1700  1.6837  0.1700  1.6837 0  16.000 ! ether and ester oxygen
+vdw C*  0.0860  1.9080  0.0860  1.9080 0  12.010 ! sp2 arom. 5 memb.ring w/1 subst. (TRP)
+vdw CA  0.0860  1.9080  0.0860  1.9080 0  12.010 ! sp2 C pure aromatic (benzene)
+vdw CB  0.0860  1.9080  0.0860  1.9080 0  12.010 ! sp2 aromatic C, 5&6 membered ring junction
+vdw CC  0.0860  1.9080  0.0860  1.9080 0  12.010 ! sp2 aromatic C, 5 memb. ring HIS
+vdw CD  0.0860  1.9080  0.0860  1.9080 0  12.010 ! sp2 C atom in the middle of: C=CD-CD=C
+vdw CK  0.0860  1.9080  0.0860  1.9080 0  12.010 ! sp2 C 5 memb.ring in purines
+vdw CM  0.0860  1.9080  0.0860  1.9080 0  12.010 ! sp2 C  pyrimidines in pos. 5 & 6
+vdw CN  0.0860  1.9080  0.0860  1.9080 0  12.010 ! sp2 C aromatic 5&6 memb.ring junct.(TRP)
+vdw CQ  0.0860  1.9080  0.0860  1.9080 0  12.010 ! sp2 C in 5 mem.ring of purines between 2 N
+vdw CR  0.0860  1.9080  0.0860  1.9080 0  12.010 ! sp2 arom as CQ but in HIS
+vdw CV  0.0860  1.9080  0.0860  1.9080 0  12.010 ! sp2 arom. 5 memb.ring w/1 N and 1 H (HIS)
+vdw CW  0.0860  1.9080  0.0860  1.9080 0  12.010 ! sp2 arom. 5 memb.ring w/1 N-H and 1 H (HIS)
+vdw CY  0.0860  1.9080  0.0860  1.9080 0  12.010 ! nitrile C (Howard et al.JCC,16,243,1995)
+vdw CZ  0.0860  1.9080  0.0860  1.9080 0  12.010 ! sp C (Howard et al.JCC,16,243,1995)
+vdw CT  0.1094  1.9080  0.1094  1.9080 0  12.010 ! sp3 aliphatic C
+vdw C   0.0860  1.9080  0.0860  1.9080 0  12.010 ! sp2 C carbonyl group
+vdw N   0.1700  1.8240  0.1700  1.8240 0  14.010 ! sp2 nitrogen in amide groups
+vdw NA  0.1700  1.8240  0.1700  1.8240 0  14.010 ! sp2 N in 5 memb.ring w/H atom (HIS)
+vdw N2  0.1700  1.8240  0.1700  1.8240 0  14.010 ! sp2 N in amino groups
+vdw N*  0.1700  1.8240  0.1700  1.8240 0  14.010 ! sp2 N
+vdw NC  0.1700  1.8240  0.1700  1.8240 0  14.010 ! sp2 N in 6 memb.ring w/LP (ADE,GUA)
+vdw NB  0.1700  1.8240  0.1700  1.8240 0  14.010 ! sp2 N in 5 memb.ring w/LP (HIS,ADE,GUA)
+vdw NT  0.1700  1.8240  0.1700  1.8240 0  14.010 ! sp3 N for amino groups amino groups
+vdw NY  0.1700  1.8240  0.1700  1.8240 0  14.010 ! nitrile N (Howard et al.JCC,16,243,1995)
+vdw N3  0.1700  1.8240  0.1700  1.8240 0  14.010 ! sp3 N for charged amino groups (Lys, etc)
+vdw NY  0.1700  1.8240  0.1700  1.8240 0  14.010 ! nitrile N (Howard et al.JCC,16,243,1995)
+vdw S   0.2500  2.0000  0.2500  2.0000 0  32.060 ! S in disulfide linkage,pol:JPC,102,2399,98
+vdw SH  0.2500  2.0000  0.2500  2.0000 0  32.060 ! S in cystine
+vdw P   0.2000  2.1000  0.2000  2.1000 0  30.970 ! phosphate,pol:JACS,112,8543,90,K.J.Miller
+vdw IM  0.1000  2.4700  0.1000  2.4700 0  35.450 ! assumed to be Cl- (ion minus)
+vdw Li  0.0183  1.1370  0.0183  1.1370 0   6.940 ! lithium, ions pol:J.PhysC,11,1541,(1978)
+vdw IP  0.0028  1.8680  0.0028  1.8680 0  22.990 ! assumed to be Na+ (ion plus)
+vdw Na  0.0028  1.8680  0.0028  1.8680 0  22.990 ! Na+, ions pol:J.PhysC,11,1541,(1978)
+vdw K   0.0003  2.6580  0.0003  2.6580 0  39.100 ! potassium
+vdw Rb  0.0002  2.9560  0.0002  2.9560 0  85.470 ! rubidium
+vdw Cs  0.0001  3.3950  0.0001  3.3950 0 132.910 ! cesium
+vdw MG  0.8947  0.7926  0.8947  0.7926 0  24.305 ! magnesium
+vdw C0  0.4598  1.7131  0.4598  1.7131 0  40.080 ! calcium
+vdw Zn  0.0125  1.1000  0.0125  1.1000 0  65.400 ! Zn2+
+vdw F   0.0610  1.7500  0.0610  1.7500 0  19.000 ! fluorine
+vdw Cl  0.2650  1.9480  0.2650  1.9480 0  35.450 ! chlorine  (Applequist)
+vdw Br  0.3200  2.2200  0.3200  2.2200 0  79.900 ! bromine  (Applequist)
+vdw I   0.4000  2.3500  0.4000  2.3500 0 126.900 ! iodine   (Applequist)
+vdw IB  0.1000  5.0000  0.1000  5.0000 0 131.000 ! 'big ion w/ waters' for vacuum (Na+, 6H2O)
+vdw LP  0.0000  0.0000  0.0000  0.0000 0   3.000 ! lone pair
+
+bond OW   HW     553.0 0.957 ! TIP3P water
+bond HW   HW     553.0 1.514 ! TIP3P water
+bond C    C      310.0 1.525 ! Junmei et al, 1999
+bond C    CA     469.0 1.409 ! JCC,7,(1986),230; (not used any more in TYR)
+bond C    CB     447.0 1.419 ! JCC,7,(1986),230; GUA
+bond C    CM     410.0 1.444 ! JCC,7,(1986),230; THY,URA
+bond C    CT     317.0 1.522 ! JCC,7,(1986),230; AA
+bond C    N      490.0 1.335 ! JCC,7,(1986),230; AA
+bond C    N*     424.0 1.383 ! JCC,7,(1986),230; CYT,URA
+bond C    NA     418.0 1.388 ! JCC,7,(1986),230; GUA.URA
+bond C    NC     457.0 1.358 ! JCC,7,(1986),230; CYT
+bond C    O      570.0 1.229 ! JCC,7,(1986),230; AA,CYT,GUA,THY,URA
+bond C    O2     656.0 1.250 ! JCC,7,(1986),230; GLU,ASP
+bond C    OH     450.0 1.364 ! JCC,7,(1986),230; (not used any more for TYR)
+bond C    OS     450.0 1.323 ! Junmei et al, 1999
+bond C    H4     367.0 1.080 ! Junmei et al, 1999
+bond C    H5     367.0 1.080 ! Junmei et al, 1999
+bond CA   CA     469.0 1.400 ! JCC,7,(1986),230; BENZENE,PHE,TRP,TYR
+bond CA   CB     469.0 1.404 ! JCC,7,(1986),230; ADE,TRP
+bond CA   CM     427.0 1.433 ! JCC,7,(1986),230; CYT
+bond CA   CN     469.0 1.400 ! JCC,7,(1986),230; TRP
+bond CA   CT     317.0 1.510 ! JCC,7,(1986),230; PHE,TYR
+bond CA   HA     367.0 1.080 ! changed from 340. bsd on C6H6 nmodes; PHE,TRP,TYR
+bond CA   H4     367.0 1.080 ! changed from 340. bsd on C6H6 nmodes; no assigned
+bond CA   N2     481.0 1.340 ! JCC,7,(1986),230; ARG,CYT,GUA
+bond CA   NA     427.0 1.381 ! JCC,7,(1986),230; GUA
+bond CA   NC     483.0 1.339 ! JCC,7,(1986),230; ADE,CYT,GUA
+bond CA   OH     450.0 1.364 ! substituted for C-OH in tyr
+bond CB   CB     520.0 1.370 ! JCC,7,(1986),230; ADE,GUA
+bond CB   N*     436.0 1.374 ! JCC,7,(1986),230; ADE,GUA
+bond CB   NB     414.0 1.391 ! JCC,7,(1986),230; ADE,GUA
+bond CB   NC     461.0 1.354 ! JCC,7,(1986),230; ADE,GUA
+bond CD   HA     367.0 1.080 ! Junmei et al, 1999
+bond CD   CD     469.0 1.400 ! Junmei et al, 1999
+bond CD   CM     549.0 1.350 ! Junmei et al, 1999
+bond CD   CT     317.0 1.510 ! Junmei et al, 1999
+bond CK   H5     367.0 1.080 ! changed from 340. bsd on C6H6 nmodes; ADE,GUA
+bond CK   N*     440.0 1.371 ! JCC,7,(1986),230; ADE,GUA
+bond CK   NB     529.0 1.304 ! JCC,7,(1986),230; ADE,GUA
+bond CM   CM     549.0 1.350 ! JCC,7,(1986),230; CYT,THY,URA
+bond CM   CT     317.0 1.510 ! JCC,7,(1986),230; THY
+bond CM   HA     367.0 1.080 ! changed from 340. bsd on C6H6 nmodes; CYT,URA
+bond CM   H4     367.0 1.080 ! changed from 340. bsd on C6H6 nmodes; CYT,URA
+bond CM   H5     367.0 1.080 ! changed from 340. bsd on C6H6 nmodes; not assigned
+bond CM   N*     448.0 1.365 ! JCC,7,(1986),230; CYT,THY,URA
+bond CM   OS     480.0 1.240 ! Junmei et al, 1999
+bond CQ   H5     367.0 1.080 ! changed from 340. bsd on C6H6 nmodes; ADE
+bond CQ   NC     502.0 1.324 ! JCC,7,(1986),230; ADE
+bond CT   CT     310.0 1.526 ! JCC,7,(1986),230; AA, SUGARS
+bond CT   HC     340.0 1.090 ! changed from 331 bsd on NMA nmodes; AA, SUGARS
+bond CT   H1     340.0 1.090 ! changed from 331 bsd on NMA nmodes; AA, RIBOSE
+bond CT   H2     340.0 1.090 ! changed from 331 bsd on NMA nmodes; SUGARS
+bond CT   H3     340.0 1.090 ! changed from 331 bsd on NMA nmodes; not assigned
+bond CT   HP     340.0 1.090 ! changed from 331; AA-lysine, methyl ammonium cation
+bond CT   N*     337.0 1.475 ! JCC,7,(1986),230; ADE,CYT,GUA,THY,URA
+bond CT   N2     337.0 1.463 ! JCC,7,(1986),230; ARG
+bond CT   OH     320.0 1.410 ! JCC,7,(1986),230; SUGARS
+bond CT   OS     320.0 1.410 ! JCC,7,(1986),230; NUCLEIC ACIDS
+bond C*   HC     367.0 1.080 ! changed from 340. bsd on C6H6 nmodes, not needed AA
+bond C*   CB     388.0 1.459 ! JCC,7,(1986),230; TRP
+bond C*   CT     317.0 1.495 ! JCC,7,(1986),230; TRP
+bond C*   CW     546.0 1.352 ! JCC,7,(1986),230; TRP
+bond CB   CN     447.0 1.419 ! JCC,7,(1986),230; TRP
+bond CC   CT     317.0 1.504 ! JCC,7,(1986),230; HIS
+bond CC   CV     512.0 1.375 ! JCC,7,(1986),230; HIS(delta)
+bond CC   CW     518.0 1.371 ! JCC,7,(1986),230; HIS(epsilon)
+bond CC   NA     422.0 1.385 ! JCC,7,(1986),230; HIS
+bond CC   NB     410.0 1.394 ! JCC,7,(1986),230; HIS
+bond CN   NA     428.0 1.380 ! JCC,7,(1986),230; TRP
+bond CR   H5     367.0 1.080 ! changed from 340. bsd on C6H6 nmodes;HIS
+bond CR   NA     477.0 1.343 ! JCC,7,(1986),230; HIS
+bond CR   NB     488.0 1.335 ! JCC,7,(1986),230; HIS
+bond CT   N      337.0 1.449 ! JCC,7,(1986),230; AA
+bond CT   N3     367.0 1.471 ! JCC,7,(1986),230; LYS
+bond CT   NT     367.0 1.471 ! for neutral amines
+bond CT   S      227.0 1.810 ! changed from 222.0 based on dimethylS nmodes
+bond CT   SH     237.0 1.810 ! changed from 222.0 based on methanethiol nmodes
+bond CT   CY     400.0 1.458 ! Howard et al JCC.16,243,1995
+bond CT   CZ     400.0 1.459 ! Howard et al JCC,16,243,1995
+bond CV   H4     367.0 1.080 ! changed from 340. bsd on C6H6 nmodes; HIS
+bond CV   NB     410.0 1.394 ! JCC,7,(1986),230; HIS
+bond CW   H4     367.0 1.080 ! changed from 340. bsd on C6H6 nmodes;HIS(epsilon,+)
+bond CW   NA     427.0 1.381 ! JCC,7,(1986),230; HIS,TRP
+bond CY   NY     600.0 1.150 ! Howard et al JCC,16,243,1995
+bond CZ   CZ     600.0 1.206 ! Howard et al JCC,16,243,1995
+bond CZ   HZ     400.0 1.056 ! Howard et al JCC,16,243,1995
+bond O2   P      525.0 1.480 ! JCC,7,(1986),230; NA PHOSPHATES
+bond OH   P      230.0 1.610 ! JCC,7,(1986),230; NA PHOSPHATES
+bond OS   P      230.0 1.610 ! JCC,7,(1986),230; NA PHOSPHATES
+bond H    N2     434.0 1.010 ! JCC,7,(1986),230; ADE,CYT,GUA,ARG
+bond H    N*     434.0 1.010 ! for plain unmethylated bases ADE,CYT,GUA,ARG
+bond H    NA     434.0 1.010 ! JCC,7,(1986),230; GUA,URA,HIS
+bond H    N      434.0 1.010 ! JCC,7,(1986),230; AA
+bond H    N3     434.0 1.010 ! JCC,7,(1986),230; LYS
+bond H    NT     434.0 1.010 ! for neutral amines
+bond HO   OH     553.0 0.960 ! JCC,7,(1986),230; SUGARS,SER,TYR
+bond HO   OS     553.0 0.960 ! JCC,7,(1986),230; NUCLEOTIDE ENDS
+bond HS   SH     274.0 1.336 ! JCC,7,(1986),230; CYS
+bond S    S      166.0 2.038 ! JCC,7,(1986),230; CYX   (SCHERAGA)
+bond F    CT     367.0 1.380 ! JCC,13,(1992),963;CF4; R0=1.332 FOR CHF3
+bond Cl   CT     232.0 1.766 ! 6-31g* opt
+bond Br   CT     159.0 1.944 ! Junmei et al,99
+bond I    CT     148.0 2.166 ! Junmei et al,99
+bond F    CA     386.0 1.359 ! Junmei et al,99
+bond Cl   CA     193.0 1.727 ! Junmei et al,99
+bond I    CA     171.0 2.075 ! Junmei et al,99
+bond Br   CA     172.0 1.890 ! Junmei et al,99
+bond LP   O      600.0 0.200 ! or 0.35
+bond LP   OH     600.0 0.200 ! or 0.35
+bond LP   OS     600.0 0.200 ! or 0.35
+bond LP   N3     600.0 0.200 ! or 0.35
+bond LP   NT     600.0 0.200 ! or 0.35
+bond LP   NB     600.0 0.200 ! or 0.35 histidines, nucleic acids
+bond LP   NC     600.0 0.200 ! or 0.35 nucleic acids
+bond LP   S      600.0 0.700 ! cys,cyx,met
+bond LP   SH     600.0 0.700 ! cys,cyx
 
 angle HW   OW   HW     100.0 104.52 ! TIP3P water
 angle HW   HW   OW       0.0 127.74 ! (found in crystallographic water with 3 bonds)
@@ -277,8 +341,6 @@ angle C*   CT   HC      50.0 109.50 ! AA trp    changed based on NMA nmodes
 angle OS   CT   OS     160.0 101.00 ! Junmei et al, 1999
 angle OS   CT   CY      50.0 110.00 ! Junmei et al, 1999
 angle OS   CT   CZ      50.0 110.00 ! Junmei et al, 1999
-angle OS   CT   CZ      50.0 110.00 ! Junmei et al, 1999
-angle OS   CT   CY      50.0 110.00 ! Junmei et al, 1999
 angle OS   CT   N*      50.0 109.50
 angle F    CT   F       77.0 109.10 ! JCC,13,(1992),963;
 angle F    CT   H1      50.0 109.50 ! JCC,13,(1992),963;
@@ -544,93 +606,27 @@ impr X    X    CM   H4    1.10       2  180.00
 impr X    X    CM   HA    1.10       2  180.00
 impr X    X    CA   H4    1.10       2  180.00 ! bsd.on C6H6 nmodes
 impr X    X    CA   H5    1.10       2  180.00 ! bsd.on C6H6 nmodes
-impr CK   CB   N*   CT    1.00       2  180.00
-impr CM   C    N*   CT    1.00       2  180.00 ! dac guess, 9/94
-impr CM   C    CM   CT    1.10       2  180.00
+impr CB   CK   N*   CT    1.00       2  180.00
+impr C    CM   N*   CT    1.00       2  180.00 ! dac guess, 9/94
+impr C    CM   CM   CT    1.10       2  180.00
 impr CT   O    C    OH   10.50       2  180.00
-impr NA   CV   CC   CT    1.10       2  180.00
-impr NB   CW   CC   CT    1.10       2  180.00
-impr NA   CW   CC   CT    1.10       2  180.00
-impr CW   CB   C*   CT    1.10       2  180.00
+impr CT   CV   CC   NA    1.10       2  180.00
+impr CT   CW   CC   NB    1.10       2  180.00
+impr CT   CW   CC   NA    1.10       2  180.00
+impr CB   CT   C*   CW    1.10       2  180.00
 impr CA   CA   CA   CT    1.10       2  180.00
 impr C    CM   CM   CT    1.10       2  180.00 ! dac guess, 9/94
-impr NC   CM   CA   N2    1.10       2  180.00 ! dac guess, 9/94
-impr CB   NC   CA   N2    1.10       2  180.00 ! dac, 10/94
-impr NA   NC   CA   N2    1.10       2  180.00 ! dac, 10/94
+impr CM   N2   CA   NC    1.10       2  180.00 ! dac guess, 9/94
+impr CB   N2   CA   NC    1.10       2  180.00 ! dac, 10/94
+impr N2   NA   CA   NC    1.10       2  180.00 ! dac, 10/94
 impr CA   CA   C    OH    1.10       2  180.00 ! (not used in tyr!)
 impr CA   CA   CA   OH    1.10       2  180.00 ! in tyr
 impr H5   O    C    OH    1.10       2  180.00 ! Junmei et al.1999
 impr H5   O    C    OS    1.10       2  180.00
 impr CM   CT   CM   HA    1.10       2  180.00 ! Junmei et al.1999
-impr CA   CA   CA   Br    1.10       2  180.00 ! Junmei et al.1999
+impr Br   CA   CA   CA    1.10       2  180.00 ! Junmei et al.1999
 impr CM   H4   C    O     1.10       2  180.00 ! Junmei et al.1999
 impr C    CT   N    H     1.10       2  180.00 ! Junmei et al.1999
 impr C    CT   N    O     1.10       2  180.00 ! Junmei et al.1999
 
-vdw H   0.0157  0.6000  0.0157  0.6000 0   1.008 ! H bonded to nitrogen atoms
-vdw HO  0.0000  0.0000  0.0000  0.0000 0   1.008 ! hydroxyl group
-vdw HS  0.0157  0.6000  0.0157  0.6000 0   1.008 ! hydrogen bonded to sulphur (pol?)
-vdw HC  0.0157  1.4870  0.0157  1.4870 0   1.008 ! H aliph. bond. to C without electrwd.group
-vdw H1  0.0157  1.3870  0.0157  1.3870 0   1.008 ! H aliph. bond. to C with 1 electrwd. group
-vdw H2  0.0157  1.2870  0.0157  1.2870 0   1.008 ! H aliph. bond. to C with 2 electrwd.groups
-vdw H3  0.0157  1.1870  0.0157  1.1870 0   1.008 ! H aliph. bond. to C with 3 eletrwd.groups
-vdw HP  0.0157  1.1000  0.0157  1.1000 0   1.008 ! H bonded to C next to positively charged gr
-vdw HA  0.0150  1.4590  0.0150  1.4590 0   1.008 ! H arom. bond. to C without elctrwd. groups
-vdw H4  0.0150  1.4090  0.0150  1.4090 0   1.008 ! H arom. bond. to C with 1 electrwd. group
-vdw H5  0.0150  1.3590  0.0150  1.3590 0   1.008 ! H arom.at C with 2 elctrwd. gr,+HCOO group
-vdw HW  0.0000  0.0000  0.0000  0.0000 0   1.008 ! H in TIP3P water
-vdw HZ  0.0150  1.4590  0.0150  1.4590 0   1.008 ! H bond sp C (Howard et al.JCC,16,243,1995)
-vdw O   0.2100  1.6612  0.2100  1.6612 0  16.000 ! carbonyl group oxygen
-vdw O2  0.2100  1.6612  0.2100  1.6612 0  16.000 ! carboxyl and phosphate group oxygen
-vdw OW  0.1520  1.7683  0.1520  1.7683 0  16.000 ! oxygen in TIP3P water
-vdw OH  0.2104  1.7210  0.2104  1.7210 0  16.000 ! oxygen in hydroxyl group
-vdw OS  0.1700  1.6837  0.1700  1.6837 0  16.000 ! ether and ester oxygen
-vdw C*  0.0860  1.9080  0.0860  1.9080 0  12.010 ! sp2 arom. 5 memb.ring w/1 subst. (TRP)
-vdw CA  0.0860  1.9080  0.0860  1.9080 0  12.010 ! sp2 C pure aromatic (benzene)
-vdw CB  0.0860  1.9080  0.0860  1.9080 0  12.010 ! sp2 aromatic C, 5&6 membered ring junction
-vdw CC  0.0860  1.9080  0.0860  1.9080 0  12.010 ! sp2 aromatic C, 5 memb. ring HIS
-vdw CD  0.0860  1.9080  0.0860  1.9080 0  12.010 ! sp2 C atom in the middle of: C=CD-CD=C
-vdw CK  0.0860  1.9080  0.0860  1.9080 0  12.010 ! sp2 C 5 memb.ring in purines
-vdw CM  0.0860  1.9080  0.0860  1.9080 0  12.010 ! sp2 C  pyrimidines in pos. 5 & 6
-vdw CN  0.0860  1.9080  0.0860  1.9080 0  12.010 ! sp2 C aromatic 5&6 memb.ring junct.(TRP)
-vdw CQ  0.0860  1.9080  0.0860  1.9080 0  12.010 ! sp2 C in 5 mem.ring of purines between 2 N
-vdw CR  0.0860  1.9080  0.0860  1.9080 0  12.010 ! sp2 arom as CQ but in HIS
-vdw CV  0.0860  1.9080  0.0860  1.9080 0  12.010 ! sp2 arom. 5 memb.ring w/1 N and 1 H (HIS)
-vdw CW  0.0860  1.9080  0.0860  1.9080 0  12.010 ! sp2 arom. 5 memb.ring w/1 N-H and 1 H (HIS)
-vdw CX  0.0860  1.9080  0.0860  1.9080 0   0.000
-vdw CY  0.0860  1.9080  0.0860  1.9080 0  12.010 ! nitrile C (Howard et al.JCC,16,243,1995)
-vdw CZ  0.0860  1.9080  0.0860  1.9080 0  12.010 ! sp C (Howard et al.JCC,16,243,1995)
-vdw CT  0.1094  1.9080  0.1094  1.9080 0  12.010 ! sp3 aliphatic C
-vdw C   0.0860  1.9080  0.0860  1.9080 0  12.010 ! sp2 C carbonyl group
-vdw N   0.1700  1.8240  0.1700  1.8240 0  14.010 ! sp2 nitrogen in amide groups
-vdw NA  0.1700  1.8240  0.1700  1.8240 0  14.010 ! sp2 N in 5 memb.ring w/H atom (HIS)
-vdw N2  0.1700  1.8240  0.1700  1.8240 0  14.010 ! sp2 N in amino groups
-vdw N*  0.1700  1.8240  0.1700  1.8240 0  14.010 ! sp2 N
-vdw NC  0.1700  1.8240  0.1700  1.8240 0  14.010 ! sp2 N in 6 memb.ring w/LP (ADE,GUA)
-vdw NB  0.1700  1.8240  0.1700  1.8240 0  14.010 ! sp2 N in 5 memb.ring w/LP (HIS,ADE,GUA)
-vdw N3  0.1700  1.8240  0.1700  1.8240 0  14.010 ! sp3 N for charged amino groups (Lys, etc)
-vdw NT  0.1700  1.8240  0.1700  1.8240 0  14.010 ! sp3 N for amino groups amino groups
-vdw NP  0.1700  1.8240  0.1700  1.8240 0   0.000
-vdw NO  0.1700  1.8240  0.1700  1.8240 0   0.000
-vdw NY  0.1700  1.8240  0.1700  1.8240 0  14.010 ! nitrile N (Howard et al.JCC,16,243,1995)
-vdw NY  0.1700  1.8240  0.1700  1.8240 0  14.010 ! nitrile N (Howard et al.JCC,16,243,1995)
-vdw S   0.2500  2.0000  0.2500  2.0000 0  32.060 ! S in disulfide linkage,pol:JPC,102,2399,98
-vdw SH  0.2500  2.0000  0.2500  2.0000 0  32.060 ! S in cystine
-vdw P   0.2000  2.1000  0.2000  2.1000 0  30.970 ! phosphate,pol:JACS,112,8543,90,K.J.Miller
-vdw IM  0.1000  2.4700  0.1000  2.4700 0  35.450 ! assumed to be Cl- (ion minus)
-vdw Li  0.0183  1.1370  0.0183  1.1370 0   6.940 ! lithium, ions pol:J.PhysC,11,1541,(1978)
-vdw IP  0.0028  1.8680  0.0028  1.8680 0  22.990 ! assumed to be Na+ (ion plus)
-vdw Na  0.0028  1.8680  0.0028  1.8680 0  22.990 ! Na+, ions pol:J.PhysC,11,1541,(1978)
-vdw K   0.0003  2.6580  0.0003  2.6580 0  39.100 ! potassium
-vdw Rb  0.0002  2.9560  0.0002  2.9560 0  85.470 ! rubidium
-vdw Cs  0.0001  3.3950  0.0001  3.3950 0 132.910 ! cesium
-vdw MG  0.8947  0.7926  0.8947  0.7926 0  24.305 ! magnesium
-vdw C0  0.4598  1.7131  0.4598  1.7131 0  40.080 ! calcium
-vdw Zn  0.0125  1.1000  0.0125  1.1000 0  65.400 ! Zn2+
-vdw F   0.0610  1.7500  0.0610  1.7500 0  19.000 ! fluorine
-vdw Cl  0.2650  1.9480  0.2650  1.9480 0  35.450 ! chlorine  (Applequist)
-vdw Br  0.3200  2.2200  0.3200  2.2200 0  79.900 ! bromine  (Applequist)
-vdw I   0.4000  2.3500  0.4000  2.3500 0 126.900 ! iodine   (Applequist)
-vdw IB  0.1000  5.0000  0.1000  5.0000 0 131.000 ! 'big ion w/ waters' for vacuum (Na+, 6H2O)
-vdw LP  0.0000  0.0000  0.0000  0.0000 0   3.000 ! lone pair
 

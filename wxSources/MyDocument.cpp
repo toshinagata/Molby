@@ -713,8 +713,10 @@ sDoMolecularDynamics(void *argptr, int argnum)
 					md_copy_coordinates_from_internal(mol->arena);
 					MoleculeUnlock(mol); */
 
-					if (minimize && mol->arena->minimize_complete)
+					if (minimize && mol->arena->minimize_complete) {
+						r = -2;  /*  Minimization complete  */
 						break;
+					}
 					wxPostEvent(doc, insertFrameEvent);
 				}
 			}

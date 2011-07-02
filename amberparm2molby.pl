@@ -4,6 +4,7 @@
 #  output (stdout): a Molby parm file
 #  Written as amberparm2namd.pl by Toshi Nagata, Dec 2 2004
 #  Updated for Molby, Nov 13 2009
+#  Revised Jul 2 2011
 
 $title = <>;
 print "! ", $title;
@@ -39,7 +40,7 @@ while (<>) {
 	chomp;
 	last if /^\s*$/;
 	($a1, $a2, $fc, $len, $com) = unpack("A2 x1 A2 A10 A10 A75", $_ . $blanks);
-	printf "bond %-2s   %-2s   %7.1f %5.2f%s\n", $a1, $a2, $fc, $len, format_com($com);
+	printf "bond %-2s   %-2s   %7.1f %5.3f%s\n", $a1, $a2, $fc, $len, format_com($com);
 }
 print "\n";
 

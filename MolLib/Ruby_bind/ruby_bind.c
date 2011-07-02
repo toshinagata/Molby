@@ -58,7 +58,8 @@ static VALUE
 	s_RSym, s_XSym, s_YSym, s_ZSym,
 	s_FractRSym, s_FractXSym, s_FractYSym, s_FractZSym,
 	s_VSym, s_FSym, s_OccupancySym, s_TempFactorSym,
-	s_AnisoSym, s_IntChargeSym, s_FixForceSym, s_FixPosSym;
+	s_AnisoSym, s_IntChargeSym, s_FixForceSym, s_FixPosSym,
+	s_ExclusionSym;
 
 /*  Symbols for parameter attributes  */
 static VALUE
@@ -3293,6 +3294,34 @@ static VALUE s_AtomRef_GetFixPos(VALUE self) {
 	return ValueFromVector(&(s_AtomFromValue(self)->fix_pos));
 }
 
+static VALUE s_AtomRef_GetExclusion(VALUE self) {
+	Molecule *mol;
+	Atom *ap;
+	int idx, i;
+	MDExclusion *exinfo;
+	Int *exlist;
+	VALUE retval, aval;
+	idx = s_AtomIndexFromValue(self, &ap, &mol);
+	if (mol->arena == NULL || mol->arena->is_initialized == 0 || mol->needsMDRebuild)
+		rb_raise(rb_eMolbyError, "Molecular dynamics is not ready. Please consider doing 'minimize' by hand or 'mol.md_arena.prepare' from script.");
+	exinfo = mol->arena->exinfo + idx;
+	exlist = mol->arena->exlist;
+	retval = rb_ary_new();
+	aval = rb_ary_new();
+	for (i = exinfo->index1; i < exinfo->index2; i++)  /* 1-2 exclusion  */
+		rb_ary_push(aval, INT2NUM(exlist[i]));
+	rb_ary_push(retval, aval);
+	aval = rb_ary_new();
+	for (i = exinfo->index2; i < exinfo->index3; i++)  /* 1-3 exclusion  */
+		rb_ary_push(aval, INT2NUM(exlist[i]));
+	rb_ary_push(retval, aval);
+	aval = rb_ary_new();
+	for (i = exinfo->index3; i < (exinfo + 1)->index0; i++)  /* 1-4 exclusion  */
+		rb_ary_push(aval, INT2NUM(exlist[i]));
+	rb_ary_push(retval, aval);
+	return retval;
+}
+
 static VALUE s_AtomRef_SetIndex(VALUE self, VALUE val) {
 	rb_raise(rb_eMolbyError, "index cannot be directly set");
 	return Qnil;
@@ -3608,6 +3637,11 @@ static VALUE s_AtomRef_SetFixPos(VALUE self, VALUE val) {
 	return val;
 }
 
+static VALUE s_AtomRef_SetExclusion(VALUE self, VALUE val) {
+	rb_raise(rb_eMolbyError, "exclusion table is read-only.");
+	return val; /* Not reached */
+}
+
 static struct s_AtomAttrDef {
 	char *name;
 	VALUE *symref;  /*  Address of s_IndexSymbol etc. */
@@ -3643,6 +3677,7 @@ static struct s_AtomAttrDef {
 	{"int_charge",   &s_IntChargeSym,    0, s_AtomRef_GetIntCharge,    s_AtomRef_SetIntCharge},
 	{"fix_force",    &s_FixForceSym,     0, s_AtomRef_GetFixForce,     s_AtomRef_SetFixForce},
 	{"fix_pos",      &s_FixPosSym,       0, s_AtomRef_GetFixPos,       s_AtomRef_SetFixPos},
+	{"exclusion",    &s_ExclusionSym,    0, s_AtomRef_GetExclusion,    s_AtomRef_SetExclusion},
 	{NULL} /* Sentinel */
 };
 

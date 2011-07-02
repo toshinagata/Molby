@@ -186,6 +186,26 @@ Setting the chemical element also causes change of the <a href="AtomRef.html#ato
 </div>
 
 <div id="method-atom_type" class="method-detail">
+<a name="exclusion"></a>
+<div class="method-heading">
+<span class="method-name">
+exclusion       &rarr; [[i1, i2, ...], [j1, j2, ...], [k1, k2, ...]]<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get the exclusion table, which is used to "exclude" the pair of atoms from the calculation of the non-bonding interaction. [i1, i2, ...] are the atoms which are directly connected to this atom (1-2 exclusion). [j1, j2, ...] are the atoms (other than self) that are connected to [i1, i2, ...] and not in the 1-2 exclusion list (1-3 exclusion). [k1, k2, ...] are the atoms (other than self) that are connected to [j1, j2, ...] and not in the 1-2 nor 1-3 exclusion list.
+</p>
+<p>
+This is a read-only attribute.
+</p>
+<p>
+This method requires that the <a href="MDArena.html">MDArena</a> object for the parent molecule is already established and <a href="MDArena.html#M000046">prepare</a>'d.
+</p>
+</div>
+</div>
+
+<div id="method-atom_type" class="method-detail">
 <a name="f"></a>
 <div class="method-heading">
 <span class="method-name">

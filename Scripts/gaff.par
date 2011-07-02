@@ -5,7 +5,7 @@
 ! Thanks to the AMBER development team, the force field parameters are in the public domain. Hereby I acknowledge their great scientific contribution, with references to the literature as below.
 ! 1. D.A. Case, T.E. Cheatham, III, T. Darden, H. Gohlke, R. Luo, K.M. Merz, Jr., A. Onufriev, C. Simmerling, B. Wang and R. Woods. The Amber biomolecular simulation programs. J. Computat. Chem. 26, 1668-1688 (2005).
 ! 2. J.W. Ponder and D.A. Case. Force fields for protein simulations. Adv. Prot. Chem. 66, 27-85 (2003). Similar information for nucleic acids is given by T.E. Cheatham, III and M.A. Young. Molecular dynamics simulation of nucleic acids: Successes, limitations and promise. Biopolymers 56, 232-256 (2001).
-! 3. D.A. Case, T.A. Darden, T.E. Cheatham, III, C.L. Simmerling, J. Wang, R.E. Duke, R. Luo, M. Crowley, Ross C. Walker,W. Zhang, K.M. Merz, B.Wang, S. Hayik, A. Roitberg, G. Seabra, I. Kolossváry, K.F.Wong, F. Paesani, J. Vanicek, X.Wu, S.R. Brozell, T. Steinbrecher, H. Gohlke, L. Yang, C. Tan, J. Mongan, V. Hornak, G. Cui, D.H. Mathews, M.G. Seetin, C. Sagui, V. Babin, and P.A. Kollman (2008), AMBER 10, University of California, San Francisco.
+! 3. D.A. Case, T.A. Darden, T.E. Cheatham, III, C.L. Simmerling, J. Wang, R.E. Duke, R. Luo, M. Crowley, Ross C. Walker,W. Zhang, K.M. Merz, B.Wang, S. Hayik, A. Roitberg, G. Seabra, I. Kolossvﾃ｡ry, K.F.Wong, F. Paesani, J. Vanicek, X.Wu, S.R. Brozell, T. Steinbrecher, H. Gohlke, L. Yang, C. Tan, J. Mongan, V. Hornak, G. Cui, D.H. Mathews, M.G. Seetin, C. Sagui, V. Babin, and P.A. Kollman (2008), AMBER 10, University of California, San Francisco.
 !
 vdw h1  0.0157  1.3870  0.0157  1.3870 0   1.008 ! H bonded to aliphatic carbon with 1 electrwd. group
 vdw h2  0.0157  1.2870  0.0157  1.2870 0   1.008 ! H bonded to aliphatic carbon with 2 electrwd. group
@@ -42,7 +42,6 @@ vdw cv  0.0860  1.9080  0.0860  1.9080 0  12.010 ! Sp2 carbons in square systems
 vdw cx  0.0860  1.9080  0.0860  1.9080 0  12.010 ! Sp3 carbons in triangle systems
 vdw cy  0.0860  1.9080  0.0860  1.9080 0  12.010 ! Sp3 carbons in square systems
 vdw n   0.1700  1.8240  0.1700  1.8240 0  14.010 ! Sp2 nitrogen in amide groups
-vdw  n  0.1700  1.8240  0.1700  1.8240 0   0.000
 vdw n1  0.1700  1.8240  0.1700  1.8240 0  14.010 ! Sp N
 vdw n2  0.1700  1.8240  0.1700  1.8240 0  14.010 ! aliphatic Sp2 N with two connected atoms
 vdw n3  0.1700  1.8240  0.1700  1.8240 0  14.010 ! Sp3 N with three connected atoms
@@ -75,753 +74,745 @@ vdw cl  0.2650  1.9480  0.2650  1.9480 0  35.450 ! Chlorine
 vdw br  0.3200  2.2200  0.3200  2.2200 0  79.900 ! Bromine
 vdw i   0.4000  2.3500  0.4000  2.3500 0 126.900 ! Iodine
 
-bond ow   hw     553.0  0.96 ! TIP3P water
-bond br   br     123.2  2.54 ! SOURCE1     4    0.0000    0.0000
-bond br   c      240.3  1.95 ! SOURCE2     2    0.0285    0.0285
-bond br   c1     352.7  1.79 ! SOURCE2     4    0.0022    0.0024
-bond br   c2     278.7  1.88 ! SOURCE1    31    0.0000    0.0000
-bond br   c3     229.5  1.97 ! SOURCE1   100    0.0000    0.0000
-bond br   ca     269.6  1.90 ! SOURCE1   127    0.0028    0.0058
-bond br   cx     261.4  1.91 ! SOURCE1     8    0.0000    0.0000
-bond br   i      142.4  2.67 ! SOURCE1     2    0.0245    0.0245
-bond br   n      320.2  1.87 ! SOURCE3     4    0.0037    0.0046
-bond br   n1     330.4  1.86 ! SOURCE0     1
-bond br   n2     219.0  2.04 ! SOURCE3     5    0.0956    0.1082
-bond br   n3     265.9  1.95 ! SOURCE3     2    0.0000    0.0000
-bond br   n4     282.4  1.93 ! SOURCE3     3    0.0012    0.0013
-bond br   na     237.3  2.00 ! SOURCE3     7    0.1938    0.2156
-bond br   nh     270.9  1.94 ! SOURCE3     1    0.0000    0.0000
-bond br   no     191.0  2.10 ! SOURCE3     1    0.0000    0.0000
-bond br   o      278.9  1.80 ! SOURCE0     1
-bond br   oh     237.2  1.87 ! SOURCE3     1    0.0000    0.0000
-bond br   os     225.6  1.89 ! SOURCE3     2    0.0000    0.0000
-bond br   p2     174.3  2.21 ! SOURCE3     9    0.0470    0.0510
-bond br   p3     167.0  2.23 ! SOURCE3     3    0.0096    0.0101
-bond br   p4     188.8  2.17 ! SOURCE0     1
-bond br   p5     179.3  2.20 ! SOURCE3     3    0.0094    0.0099
-bond br   s      170.6  2.22 ! SOURCE0     1
-bond br   s4     134.3  2.34 ! SOURCE3     1    0.0000    0.0000
-bond br   s6     172.7  2.21 ! SOURCE3     3    0.0417    0.0443
-bond br   sh     174.4  2.21 ! SOURCE3     1    0.0000    0.0000
-bond br   ss     176.6  2.20 ! SOURCE3     3    0.0033    0.0035
-bond c    c      290.1  1.55 ! SOURCE1    31    0.0080    0.0100
-bond c    c1     379.8  1.46 ! SOURCE0     1
-bond c    c2     449.9  1.41 ! SOURCE3     2    0.0370    0.0370
-bond c    c3     328.3  1.51 ! SOURCE1  2949    0.0049    0.0060
-bond c    ca     349.7  1.49 ! SOURCE1   480    0.0031    0.0055
-bond c    cc     377.4  1.46 ! SOURCE3   132    0.0165    0.0210
-bond c    cd     377.4  1.46 ! SOURCE3   132    0.0165    0.0210
-bond c    ce     363.8  1.47 ! SOURCE1   601    0.0091    0.0105
-bond c    cf     363.8  1.47 ! SOURCE1   601    0.0091    0.0105
-bond c    cg     389.3  1.45 ! SOURCE3     2    0.0000    0.0000
-bond c    ch     389.3  1.45 ! SOURCE3     2    same as    c -cg
-bond c    cl     293.5  1.77 ! SOURCE3     6    0.0235    0.0250
-bond c    cu     441.4  1.41 ! SOURCE2     1    0.0000    0.0000
-bond c    cx     350.8  1.49 ! SOURCE1   105    0.0000    0.0000
-bond c    cy     308.5  1.53 ! SOURCE1    18    0.0000    0.0000
-bond c    f      387.9  1.32 ! SOURCE2     6    0.0140    0.0147
-bond c    ha     325.1  1.10 ! SOURCE3    53    0.0078    0.0102
-bond c    i      198.9  2.21 ! SOURCE3     4    0.0332    0.0365
-bond c    n      478.2  1.34 ! SOURCE1  1235    0.0162    0.0215
-bond c    n2     374.6  1.42 ! SOURCE0     1
-bond c    n4     255.5  1.55 ! SOURCE3     4    0.0388    0.0388
-bond c    nc     438.8  1.37 ! SOURCE3     2    0.0108    0.0108
-bond c    nd     438.8  1.37 ! SOURCE3     2    same as    c -nc
-bond c    ne     388.0  1.41 ! SOURCE3     3    0.0088    0.0094
-bond c    nf     388.0  1.41 ! SOURCE3     3    same as    c -ne
-bond c    no     260.1  1.54 ! SOURCE0     1
-bond c    o      648.0  1.21 ! SOURCE1  3682    0.0134    0.0165
-bond c    oh     466.4  1.31 ! SOURCE1   271    0.0026    0.0041
-bond c    os     411.3  1.34 ! SOURCE1  1044    0.0114    0.0171
-bond c    p2     210.3  1.90 ! SOURCE0     1
-bond c    p3     219.0  1.88 ! SOURCE3     6    0.0094    0.0129
-bond c    p4     220.6  1.88 ! SOURCE0     1
-bond c    p5     225.9  1.87 ! SOURCE0     1
-bond c    pe     204.9  1.91 ! SOURCE3     3    0.0023    0.0025
-bond c    pf     204.9  1.91 ! SOURCE3     3    same as    c -pe
-bond c    px     208.3  1.90 ! SOURCE3     1    0.0000    0.0000
-bond c    py     227.6  1.87 ! SOURCE3     6    0.0141    0.0199
-bond c    s      328.9  1.68 ! SOURCE1   401    0.0077    0.0128
-bond c    s4     200.4  1.87 ! SOURCE0     1
-bond c    s6     200.4  1.87 ! SOURCE0     1
-bond c    sh     249.6  1.78 ! SOURCE3     6    0.0157    0.0171
-bond c    ss     261.9  1.76 ! SOURCE1    20    0.0000    0.0000
-bond c    sx     193.3  1.89 ! SOURCE3     5    0.0070    0.0088
-bond c    sy     202.8  1.86 ! SOURCE3     5    0.0063    0.0085
-bond c1   c1     986.2  1.18 ! SOURCE1   265    0.0022    0.0031
-bond c1   c2     625.0  1.31 ! SOURCE1    18    0.0000    0.0000
-bond c1   c3     368.3  1.47 ! SOURCE1   215    0.0013    0.0017
-bond c1   ca     404.1  1.44 ! SOURCE0     1
-bond c1   cg     845.8  1.22 ! SOURCE3    22    0.0074    0.0101
-bond c1   ch     845.8  1.22 ! SOURCE3    22    same as    c1-cg
-bond c1   cl     419.7  1.63 ! SOURCE2     6    0.0046    0.0050
-bond c1   cx     399.1  1.44 ! SOURCE1    38    0.0000    0.0000
-bond c1   f      469.4  1.27 ! SOURCE2     2    0.0085    0.0085
-bond c1   ha     375.9  1.07 ! SOURCE3    63    0.0022    0.0035
-bond c1   hc     385.6  1.06 ! SOURCE0     1
-bond c1   i      318.8  1.99 ! SOURCE2     4    0.0025    0.0032
-bond c1   n      503.0  1.33 ! SOURCE0     1
-bond c1   n1    1014.5  1.14 ! SOURCE1   170    0.0038    0.0055
-bond c1   n2     769.8  1.21 ! SOURCE3     5    0.0089    0.0115
-bond c1   n3     409.8  1.39 ! SOURCE2     1    0.0000    0.0000
-bond c1   n4     378.2  1.42 ! SOURCE3     3    0.0030    0.0032
-bond c1   na     452.0  1.36 ! SOURCE3     8    0.0031    0.0034
-bond c1   ne     741.8  1.22 ! SOURCE3     1    0.0000    0.0000
-bond c1   nf     741.8  1.22 ! SOURCE3     1    same as    c1-ne
-bond c1   ng     465.7  1.35 ! SOURCE3     3    0.0025    0.0027
-bond c1   nh     465.7  1.35 ! SOURCE3     3    0.0025    0.0027
-bond c1   no     393.0  1.41 ! SOURCE3     3    0.0004    0.0005
-bond c1   o      777.0  1.17 ! SOURCE2     9    0.0044    0.0052
-bond c1   oh     435.6  1.33 ! SOURCE3     1    0.0000    0.0000
-bond c1   os     437.1  1.32 ! SOURCE3     3    0.0139    0.0148
-bond c1   p2     289.3  1.77 ! SOURCE0     1
-bond c1   p3     275.1  1.79 ! SOURCE0     1
-bond c1   p4     275.1  1.79 ! SOURCE0     1
-bond c1   p5     302.2  1.75 ! SOURCE3     2    0.0000    0.0000
-bond c1   s      371.8  1.63 ! SOURCE1    14    0.0000    0.0000
-bond c1   s2     410.0  1.59 ! SOURCE3     1    0.0000    0.0000
-bond c1   s4     272.9  1.75 ! SOURCE3     2    0.0000    0.0000
-bond c1   s6     290.4  1.72 ! SOURCE3     2    0.0000    0.0000
-bond c1   sh     324.5  1.68 ! SOURCE0     1
-bond c1   ss     325.4  1.68 ! SOURCE1    10    0.0000    0.0000
-bond c2   c2     589.7  1.32 ! SOURCE1   974    0.0048    0.0096
-bond c2   c3     328.3  1.51 ! SOURCE1  2536    0.0016    0.0021
-bond c2   ca     357.2  1.48 ! SOURCE0     1
-bond c2   cc     522.6  1.36 ! SOURCE1   771    0.0152    0.0185
-bond c2   cd     522.6  1.36 ! SOURCE1   771    0.0152    0.0185
-bond c2   ce     560.5  1.34 ! SOURCE3    62    0.0085    0.0128
-bond c2   cf     560.5  1.34 ! SOURCE3    62    same as    c2-ce
-bond c2   cl     328.8  1.72 ! SOURCE1   163    0.0093    0.0098
-bond c2   cu     573.9  1.33 ! SOURCE2     1    0.0000    0.0000
-bond c2   cx     333.3  1.50 ! SOURCE2     1    0.0000    0.0000
-bond c2   cy     309.4  1.53 ! SOURCE2     1    0.0000    0.0000
-bond c2   f      368.7  1.34 ! SOURCE1    34    0.0000    0.0000
-bond c2   h4     348.6  1.08 ! SOURCE3    40    0.0037    0.0058
-bond c2   h5     357.5  1.08 ! SOURCE3     3    0.0061    0.0067
-bond c2   ha     344.3  1.09 ! SOURCE3   797    0.0030    0.0046
-bond c2   hc     344.3  1.09 ! SOURCE3   789    0.0030    0.0046
-bond c2   hx     350.1  1.08 ! SOURCE3     3    0.0008    0.0008
-bond c2   i      223.2  2.15 ! SOURCE3     2    0.0000    0.0000
-bond c2   n      390.5  1.41 ! SOURCE3     9    0.0109    0.0124
-bond c2   n1     546.0  1.31 ! SOURCE3     4    0.0161    0.0161
-bond c2   n2     581.1  1.29 ! SOURCE1   103    0.0095    0.0100
-bond c2   n3     486.3  1.34 ! SOURCE0     1
-bond c2   n4     309.1  1.48 ! SOURCE3     5    0.0047    0.0064
-bond c2   na     411.1  1.39 ! SOURCE3    31    0.0271    0.0289
-bond c2   nc     533.0  1.31 ! SOURCE1    99    0.0065    0.0095
-bond c2   nd     533.0  1.31 ! SOURCE1    99    same as    c2-nc
-bond c2   ne     597.7  1.28 ! SOURCE3    37    0.0090    0.0110
-bond c2   nf     597.7  1.28 ! SOURCE3    37    same as    c2-ne
-bond c2   nh     462.6  1.35 ! SOURCE3    38    0.0385    0.0413
-bond c2   no     327.6  1.46 ! SOURCE3     4    0.0013    0.0013
-bond c2   o      546.2  1.26 ! SOURCE3     4    0.0144    0.0144
-bond c2   oh     425.4  1.33 ! SOURCE1    53    0.0000    0.0000
-bond c2   os     392.6  1.36 ! SOURCE1   315    0.0088    0.0097
-bond c2   p2     375.9  1.67 ! SOURCE3    62    0.0078    0.0147
-bond c2   p3     246.6  1.83 ! SOURCE3     5    0.0041    0.0042
-bond c2   p4     254.0  1.82 ! SOURCE0     1
-bond c2   p5     255.2  1.82 ! SOURCE0     1
-bond c2   pe     355.3  1.69 ! SOURCE3    52    0.0318    0.0542
-bond c2   pf     355.3  1.69 ! SOURCE3    52    same as    c2-pe
-bond c2   s      281.5  1.73 ! SOURCE3     4    0.0034    0.0034
-bond c2   s2     393.1  1.61 ! SOURCE2     1    0.0000    0.0000
-bond c2   s4     263.2  1.76 ! SOURCE0     1
-bond c2   s6     263.2  1.76 ! SOURCE0     1
-bond c2   sh     255.3  1.77 ! SOURCE3     3    0.0068    0.0072
-bond c2   ss     280.0  1.74 ! SOURCE1   209    0.0135    0.0155
-bond c3   c3     303.1  1.54 ! SOURCE1 14664    0.0043    0.0048
-bond c3   ca     323.5  1.51 ! SOURCE1  1813    0.0000    0.0000
-bond c3   cc     337.3  1.50 ! SOURCE3    50    0.0059    0.0096
-bond c3   cd     337.3  1.50 ! SOURCE3    50    0.0059    0.0096
-bond c3   ce     331.3  1.50 ! SOURCE3     9    0.0019    0.0024
-bond c3   cf     331.3  1.50 ! SOURCE3     9    same as    c3-ce
-bond c3   cl     279.0  1.79 ! SOURCE1   267    0.0151    0.0194
-bond c3   cu     359.4  1.48 ! SOURCE1     7    0.0000    0.0000
-bond c3   cv     347.6  1.49 ! SOURCE1    11    0.0000    0.0000
-bond c3   cx     322.5  1.51 ! SOURCE1   712    0.0044    0.0045
-bond c3   cy     308.5  1.53 ! SOURCE1   376    0.0000    0.0000
-bond c3   f      363.8  1.34 ! SOURCE1   617    0.0241    0.0281
-bond c3   h1     335.9  1.09 ! SOURCE3  2175    0.0045    0.0082
-bond c3   h2     326.4  1.10 ! SOURCE3    66    0.0110    0.0280
-bond c3   h3     335.9  1.09 ! SOURCE2     1    0.0000    0.0000
-bond c3   hc     337.3  1.09 ! SOURCE3  2815    0.0040    0.0059
-bond c3   hx     338.7  1.09 ! SOURCE3   146    0.0023    0.0066
-bond c3   i      219.1  2.16 ! SOURCE1    15    0.0000    0.0000
-bond c3   n      330.6  1.46 ! SOURCE1   187    0.0065    0.0079
-bond c3   n1     325.1  1.47 ! SOURCE3
-bond c3   n2     313.8  1.48 ! SOURCE1   129    0.0136    0.0138
-bond c3   n3     320.6  1.47 ! SOURCE1  1678    0.0013    0.0017
-bond c3   n4     293.6  1.50 ! SOURCE1  1370    0.0000    0.0000
-bond c3   na     334.7  1.46 ! SOURCE3    23    0.0096    0.0119
-bond c3   nc     334.7  1.46 ! SOURCE3     9    0.0091    0.0109
-bond c3   nd     334.7  1.46 ! SOURCE3     9    same as    c3-nc
-bond c3   nh     332.7  1.46 ! SOURCE3    27    0.0067    0.0085
-bond c3   no     265.4  1.53 ! SOURCE1    83    0.0163    0.0212
-bond c3   o      422.6  1.33 ! SOURCE3     4    0.0100    0.0100
-bond c3   oh     314.1  1.43 ! SOURCE1   914    0.0110    0.0129
-bond c3   os     301.5  1.44 ! SOURCE1  3123    0.0112    0.0126
-bond c3   p2     234.3  1.85 ! SOURCE3     9    0.0100    0.0125
-bond c3   p3     240.6  1.84 ! SOURCE3   109    0.0091    0.0107
-bond c3   p4     247.2  1.83 ! SOURCE3    29    0.0091    0.0138
-bond c3   p5     259.7  1.81 ! SOURCE1    84    0.0000    0.0000
-bond c3   px     252.7  1.82 ! SOURCE3    28    0.0079    0.0098
-bond c3   py     259.7  1.81 ! SOURCE3    13    0.0144    0.0163
-bond c3   s      212.9  1.84 ! SOURCE3     4    0.0185    0.0185
-bond c3   s4     233.8  1.81 ! SOURCE1   139    0.0022    0.0023
-bond c3   s6     254.0  1.77 ! SOURCE1   118    0.0080    0.0103
-bond c3   sh     225.3  1.82 ! SOURCE3    12    0.0042    0.0051
-bond c3   ss     225.8  1.82 ! SOURCE1   358    0.0049    0.0075
-bond c3   sx     232.6  1.81 ! SOURCE3    30    0.0050    0.0067
-bond c3   sy     248.9  1.78 ! SOURCE3    31    0.0034    0.0039
-bond ca   ca     478.4  1.39 ! SOURCE1  6228    0.0096    0.0147
-bond ca   cc     411.7  1.43 ! SOURCE1    80    0.0000    0.0000
-bond ca   cd     411.7  1.43 ! SOURCE1    80    0.0000    0.0000
-bond ca   ce     366.0  1.47 ! SOURCE1    71    0.0029    0.0030
-bond ca   cf     366.0  1.47 ! SOURCE1    71    0.0029    0.0030
-bond ca   cg     406.6  1.44 ! SOURCE1    71    0.0045    0.0045
-bond ca   ch     406.6  1.44 ! SOURCE1    71    0.0045    0.0045
-bond ca   cl     322.8  1.73 ! SOURCE1   704    0.0095    0.0095
-bond ca   cp     466.1  1.40 ! SOURCE3    14    0.0098    0.0110
-bond ca   cx     350.8  1.49 ! SOURCE1    98    0.0064    0.0118
-bond ca   f      363.8  1.34 ! SOURCE1   205    0.0069    0.0089
-bond ca   h4     342.9  1.09 ! SOURCE3    57    0.0016    0.0026
-bond ca   h5     347.2  1.08 ! SOURCE3    15    0.0038    0.0048
-bond ca   ha     344.3  1.09 ! SOURCE3  1496    0.0024    0.0045
-bond ca   i      252.4  2.10 ! SOURCE1    51    0.0000    0.0000
-bond ca   n      372.3  1.42 ! SOURCE3     9    0.0092    0.0098
-bond ca   n1     398.1  1.40 ! SOURCE3
-bond ca   n2     320.6  1.47 ! SOURCE2     1    0.0000    0.0000
-bond ca   n4     325.6  1.47 ! SOURCE1    23    0.0000    0.0000
-bond ca   na     470.3  1.35 ! SOURCE1   150    0.0091    0.0103
-bond ca   nb     483.1  1.34 ! SOURCE3   104    0.0052    0.0076
-bond ca   nc     492.9  1.34 ! SOURCE1  1826    0.0012    0.0020
-bond ca   nd     492.9  1.34 ! SOURCE1  1826    0.0012    0.0020
-bond ca   ne     361.8  1.43 ! SOURCE1    52    0.0000    0.0000
-bond ca   nf     361.8  1.43 ! SOURCE1    52    0.0000    0.0000
-bond ca   nh     449.0  1.36 ! SOURCE1   137    0.0084    0.0085
-bond ca   no     322.6  1.47 ! SOURCE1   556    0.0000    0.0000
-bond ca   o      519.7  1.27 ! SOURCE3     2    0.0000    0.0000
-bond ca   oh     386.1  1.36 ! SOURCE1   551    0.0000    0.0000
-bond ca   os     372.4  1.37 ! SOURCE1  1092    0.0048    0.0071
-bond ca   p2     243.0  1.84 ! SOURCE0     1
-bond ca   p3     252.7  1.82 ! SOURCE1   145    0.0171    0.0187
-bond ca   p4     264.3  1.81 ! SOURCE0     1
-bond ca   p5     271.6  1.79 ! SOURCE1   571    0.0020    0.0028
-bond ca   pe     249.6  1.83 ! SOURCE3    10    0.0034    0.0042
-bond ca   pf     249.6  1.83 ! SOURCE3    10    0.0034    0.0042
-bond ca   px     252.1  1.82 ! SOURCE3     5    0.0153    0.0168
-bond ca   py     268.3  1.80 ! SOURCE3     3    0.0051    0.0054
-bond ca   s      277.9  1.74 ! SOURCE3     2    0.0000    0.0000
-bond ca   s4     245.2  1.79 ! SOURCE1    51    0.0038    0.0048
-bond ca   s6     263.9  1.76 ! SOURCE1   229    0.0030    0.0036
-bond ca   sh     245.8  1.79 ! SOURCE3     2    0.0055    0.0055
-bond ca   ss     256.6  1.77 ! SOURCE1   297    0.0034    0.0041
-bond ca   sx     233.8  1.81 ! SOURCE3     3    0.0015    0.0016
-bond ca   sy     247.7  1.78 ! SOURCE3    13    0.0068    0.0094
-bond cc   cc     418.3  1.43 ! SOURCE1   740    0.0058    0.0069
-bond cc   cd     504.0  1.37 ! SOURCE3   523    0.0156    0.0217
-bond cc   cf     519.2  1.36 ! SOURCE3     1    0.0000    0.0000
-bond cc   cg     420.9  1.43 ! SOURCE1   560    0.0000    0.0000
-bond cc   ch     420.9  1.43 ! SOURCE1   560    0.0000    0.0000
-bond cc   cl     348.3  1.70 ! SOURCE3     1    0.0000    0.0000
-bond cc   h4     350.1  1.08 ! SOURCE3   599    0.0028    0.0037
-bond cc   h5     356.0  1.08 ! SOURCE3    40    0.0040    0.0051
-bond cc   ha     347.2  1.08 ! SOURCE3   740    0.0029    0.0039
-bond cc   n      426.0  1.38 ! SOURCE3    56    0.0075    0.0109
-bond cc   n2     561.3  1.30 ! SOURCE3     4    0.0096    0.0096
-bond cc   na     438.8  1.37 ! SOURCE3   440    0.0107    0.0144
-bond cc   nc     431.6  1.38 ! SOURCE1    88    0.0000    0.0000
-bond cc   nd     494.6  1.33 ! SOURCE3   203    0.0171    0.0239
-bond cc   nh     449.0  1.36 ! SOURCE3     6    0.0038    0.0040
-bond cc   oh     405.9  1.35 ! SOURCE3     3    0.0077    0.0077
-bond cc   os     376.1  1.37 ! SOURCE3    86    0.0139    0.0192
-bond cc   pd     318.2  1.73 ! SOURCE3    84    same as    cd-pc
-bond cc   ss     279.3  1.74 ! SOURCE3    52    0.0162    0.0194
-!bond cd   cd     418.3  1.43 ! SOURCE1   740    0.0058    0.0069
-bond cd   cd     504.0  1.37 ! SOURCE3   523    same as    cc-cd
-bond cd   ce     519.2  1.36 ! SOURCE3     1    same as    cc-cf
-bond cd   cg     420.9  1.43 ! SOURCE1   560    0.0000    0.0000
-bond cd   ch     420.9  1.43 ! SOURCE1   560    0.0000    0.0000
-bond cd   cl     348.3  1.70 ! SOURCE3     1    same as    cc-cl
-bond cd   h4     350.1  1.08 ! SOURCE3   599    0.0028    0.0037
-bond cd   h5     356.0  1.08 ! SOURCE3    40    0.0040    0.0051
-bond cd   ha     347.2  1.08 ! SOURCE3   740    0.0029    0.0039
-bond cd   n      426.0  1.38 ! SOURCE3    56    0.0075    0.0109
-bond cd   n2     561.3  1.30 ! SOURCE3     4    0.0096    0.0096
-bond cd   na     438.8  1.37 ! SOURCE3   440    0.0107    0.0144
-bond cd   nc     494.6  1.33 ! SOURCE3   203    0.0171    0.0239
-bond cd   nd     431.6  1.38 ! SOURCE1    88    0.0000    0.0000
-bond cd   nh     449.0  1.36 ! SOURCE3     6    0.0038    0.0040
-bond cd   oh     405.9  1.35 ! SOURCE3     3    0.0077    0.0077
-bond cd   os     376.1  1.37 ! SOURCE3    86    0.0139    0.0192
-bond cd   pc     318.2  1.73 ! SOURCE3    84    0.0088    0.0161
-bond cd   ss     279.3  1.74 ! SOURCE3    52    0.0162    0.0194
-bond ce   ce     390.5  1.45 ! SOURCE1    66    0.0060    0.0060
-bond ce   cf     562.4  1.34 ! SOURCE1   543    0.0035    0.0045
-bond ce   cg     415.6  1.43 ! SOURCE1    22    0.0000    0.0000
-bond ce   ch     415.6  1.43 ! SOURCE1    22    0.0000    0.0000
-bond ce   ha     341.5  1.09 ! SOURCE3    55    0.0030    0.0056
-bond ce   n1     522.2  1.32 ! SOURCE3     3    0.0121    0.0121
-bond ce   n2     599.8  1.28 ! SOURCE1    75    0.0000    0.0000
-bond ce   ne     381.8  1.41 ! SOURCE3     7    0.0093    0.0103
-bond ce   nh     484.7  1.34 ! SOURCE3     1    0.0000    0.0000
-bond ce   p2     259.1  1.81 ! SOURCE0     1
-bond ce   pe     256.5  1.82 ! SOURCE3     8    0.0090    0.0108
-bond ce   px     254.6  1.82 ! SOURCE3     6    0.0034    0.0046
-bond ce   py     272.3  1.79 ! SOURCE3     5    0.0034    0.0045
-bond ce   s      324.5  1.68 ! SOURCE0     1
-bond ce   sx     239.7  1.80 ! SOURCE3     5    0.0080    0.0082
-bond ce   sy     248.9  1.78 ! SOURCE3     5    0.0105    0.0114
-!bond cf   cf     390.5  1.45 ! SOURCE1    66    0.0060    0.0060
-bond cf   cf     562.4  1.34 ! SOURCE1   543    same as    ce-cf
-bond cf   cg     415.6  1.43 ! SOURCE1    22    0.0000    0.0000
-bond cf   ch     415.6  1.43 ! SOURCE1    22    0.0000    0.0000
-bond cf   ha     341.5  1.09 ! SOURCE3    55    0.0030    0.0056
-bond cf   n1     522.2  1.32 ! SOURCE3     3    0.0121    0.0121
-bond cf   n2     599.8  1.28 ! SOURCE1    75    same as    ce-n2
-bond cf   nf     381.8  1.41 ! SOURCE3     7    same as    ce-ne
-bond cf   nh     484.7  1.34 ! SOURCE3     1    same as    ce-nh
-bond cf   p2     259.1  1.81 ! SOURCE0     1    same as    ce-p2
-bond cf   pf     256.5  1.82 ! SOURCE3     8    same as    ce-pe
-bond cf   px     254.6  1.82 ! SOURCE3     6    same as    ce-px
-bond cf   py     272.3  1.79 ! SOURCE3     5    same as    ce-py
-bond cf   s      324.5  1.68 ! SOURCE0     1    same as    ce- s
-bond cf   sx     239.7  1.80 ! SOURCE3     5    same as    ce-sx
-bond cf   sy     248.9  1.78 ! SOURCE3     5    same as    ce-sy
-bond cg   cg     494.2  1.38 ! SOURCE1    42    0.0000    0.0000
-bond cg   ch     949.5  1.19 ! SOURCE1    80    0.0015    0.0015
-bond cg   n1     994.7  1.14 ! SOURCE1   316    0.0011    0.0018
-bond cg   ne     450.5  1.36 ! SOURCE3     4    0.0189    0.0204
-bond cg   pe     429.8  1.62 ! SOURCE3    11    0.1928    0.2008
-!bond ch   ch     494.2  1.38 ! SOURCE1    42    0.0000    0.0000
-bond ch   ch     949.5  1.19 ! SOURCE1    80    same as    cg-ch
-bond ch   n1     994.7  1.14 ! SOURCE1   316    0.0011    0.0018
-bond ch   nf     450.5  1.36 ! SOURCE3     4    same as    cg-ne
-bond ch   pf     429.8  1.62 ! SOURCE3    11    same as    cg-pe
-bond cl   cl     143.3  2.27 ! SOURCE1     2    0.0395    0.0395
-bond cl   cx     301.8  1.75 ! SOURCE1    64    0.0000    0.0000
-bond cl   cy     292.0  1.77 ! SOURCE2     2    0.0070    0.0070
-bond cl   f      298.6  1.65 ! SOURCE2     2    0.0500    0.0500
-bond cl   i      163.5  2.55 ! SOURCE1     6    0.0605    0.0893
-bond cl   n      331.8  1.73 ! SOURCE3     3    0.0107    0.0113
-bond cl   n1     431.6  1.63 ! SOURCE0     1
-bond cl   n2     263.4  1.82 ! SOURCE3     6    0.0784    0.1020
-bond cl   n3     298.6  1.77 ! SOURCE3     4    0.0070    0.0095
-bond cl   n4     311.1  1.75 ! SOURCE3     4    0.0085    0.0098
-bond cl   na     253.2  1.83 ! SOURCE3     7    0.1858    0.2083
-bond cl   nh     303.2  1.76 ! SOURCE3     1    0.0000    0.0000
-bond cl   no     250.1  1.84 ! SOURCE2     1    0.0000    0.0000
-bond cl   o      557.6  1.48 ! SOURCE3     4    0.0000    0.0000
-bond cl   oh     309.7  1.69 ! SOURCE2     1    0.0000    0.0000
-bond cl   os     278.8  1.73 ! SOURCE3     4    0.0000    0.0000
-bond cl   p2     217.5  2.07 ! SOURCE3     6    0.0086    0.0108
-bond cl   p3     249.4  2.01 ! SOURCE1   111    0.0000    0.0000
-bond cl   p4     249.4  2.01 ! SOURCE1   111    0.0000    0.0000
-bond cl   p5     249.4  2.01 ! SOURCE1   111    0.0000    0.0000
-bond cl   pb     255.6  2.00 ! SOURCE1    46    0.0000    0.0000
-bond cl   s      208.7  2.07 ! SOURCE1     6    0.0000    0.0000
-bond cl   s2     172.7  2.16 ! SOURCE2     1    0.0000    0.0000
-bond cl   s4     208.7  2.07 ! SOURCE1     6    0.0000    0.0000
-bond cl   s6     208.7  2.07 ! SOURCE1     6    0.0000    0.0000
-bond cl   sh     208.7  2.07 ! SOURCE1     6    0.0000    0.0000
-bond cl   ss     208.7  2.07 ! SOURCE1     6    0.0000    0.0000
-bond cl   sx     208.7  2.07 ! SOURCE1     6    0.0000    0.0000
-bond cl   sy     208.7  2.07 ! SOURCE1     6    0.0000    0.0000
-bond cp   cp     346.5  1.49 ! SOURCE1   242    0.0007    0.0010
-bond cp   nb     470.3  1.35 ! SOURCE3     2    0.0000    0.0000
-bond cq   cq     346.5  1.49 ! SOURCE1   242    0.0007    0.0010
-bond cu   cu     653.7  1.29 ! SOURCE1    10    0.0000    0.0000
-bond cu   cx     327.3  1.51 ! SOURCE1    20    0.0000    0.0000
-bond cu   ha     353.0  1.08 ! SOURCE2     3    0.0104    0.0111
-bond cv   cv     568.1  1.33 ! SOURCE1    25    0.0000    0.0000
-bond cv   cy     323.5  1.51 ! SOURCE1    50    0.0000    0.0000
-bond cv   ha     344.3  1.09 ! SOURCE3     2    0.0000    0.0000
-bond cx   cv     328.3  1.51 ! SOURCE1  2536      Same        as
-bond cx   cx     337.3  1.50 ! SOURCE1  1204    0.0159    0.0183
-bond cx   cy     321.5  1.52 ! SOURCE3     2    0.0000    0.0000
-bond cx   f      347.2  1.36 ! SOURCE2     3    0.0047    0.0050
-bond cx   h1     344.3  1.09 ! SOURCE3    10    0.0013    0.0017
-bond cx   h2     350.1  1.08 ! SOURCE3     2    0.0000    0.0000
-bond cx   hc     345.8  1.09 ! SOURCE3    44    0.0009    0.0011
-bond cx   n      315.7  1.48 ! SOURCE3     1    0.0000    0.0000
-bond cx   n2     309.1  1.48 ! SOURCE3     2    0.0000    0.0000
-bond cx   n3     318.7  1.47 ! SOURCE1   134    0.0000    0.0000
-bond cx   oh     387.4  1.36 ! SOURCE3     3    0.0017    0.0018
-bond cx   os     320.1  1.42 ! SOURCE3     7    0.0205    0.0222
-bond cx   p3     227.6  1.87 ! SOURCE2     1    0.0000    0.0000
-bond cx   s4     225.3  1.82 ! SOURCE2     1    0.0000    0.0000
-bond cx   s6     283.7  1.73 ! SOURCE2     1    0.0000    0.0000
-bond cx   ss     229.2  1.81 ! SOURCE2     1    0.0000    0.0000
-bond cy   cy     286.8  1.55 ! SOURCE1   742    0.0013    0.0041
-bond cy   h1     330.4  1.10 ! SOURCE3    17    0.0042    0.0058
-bond cy   hc     334.5  1.09 ! SOURCE3    63    0.0012    0.0014
-bond cy   n3     307.2  1.48 ! SOURCE1    21    0.0000    0.0000
-bond cy   oh     325.2  1.42 ! SOURCE3     2    0.0000    0.0000
-bond cy   os     280.7  1.46 ! SOURCE3     4    0.0101    0.0101
-bond f    n      391.7  1.40 ! SOURCE3     3    0.0106    0.0112
-bond f    n1     375.7  1.41 ! SOURCE0     1
-bond f    n2     337.5  1.44 ! SOURCE3     5    0.0292    0.0377
-bond f    n3     380.6  1.41 ! SOURCE1     9    0.0000    0.0000
-bond f    n4     526.8  1.31 ! SOURCE3     2    0.0000    0.0000
-bond f    na     374.5  1.41 ! SOURCE3     7    0.0537    0.0611
-bond f    nh     357.1  1.43 ! SOURCE3     3    0.0080    0.0085
-bond f    no     314.4  1.47 ! SOURCE2     1    0.0000    0.0000
-bond f    o      442.2  1.33 ! SOURCE0     1
-bond f    oh     305.4  1.44 ! SOURCE3     1    0.0000    0.0000
-bond f    os     326.2  1.42 ! SOURCE3     2    0.0000    0.0000
-bond f    p2     287.3  1.54 ! SOURCE3     7    0.1437    0.2054
-bond f    p3     254.5  1.58 ! SOURCE2     8    0.0093    0.0103
-bond f    p4     246.0  1.59 ! SOURCE0     1
-bond f    p5     253.8  1.58 ! SOURCE1    72    0.0000    0.0000
-bond f    s      233.3  1.66 ! SOURCE0     1
-bond f    s2     244.4  1.64 ! SOURCE2     1    0.0000    0.0000
-bond f    s4     282.4  1.59 ! SOURCE2     4    0.0065    0.0065
-bond f    s6     312.1  1.56 ! SOURCE2     5    0.0163    0.0220
-bond f    sh     240.4  1.65 ! SOURCE3     1    0.0000    0.0000
-bond f    ss     250.5  1.63 ! SOURCE3     3    0.0147    0.0156
-bond hn   n      410.2  1.01 ! SOURCE3   149    0.0089    0.0098
-bond hn   n1     455.1  0.99 ! SOURCE2     1    0.0000    0.0000
-bond hn   n2     375.5  1.03 ! SOURCE3   108    0.0070    0.0096
-bond hn   n3     394.1  1.02 ! SOURCE3   157    0.0063    0.0086
-bond hn   n4     369.0  1.03 ! SOURCE3   264    0.0054    0.0082
-bond hn   na     406.6  1.01 ! SOURCE3    46    0.0076    0.0107
-bond hn   nh     401.2  1.01 ! SOURCE3   209    0.0068    0.0091
-bond hn   no     385.6  1.02 ! SOURCE3     1    0.0000    0.0000
-bond ho   o      357.9  0.98 ! SOURCE3     1    0.0000    0.0000
-bond ho   oh     369.6  0.97 ! SOURCE3   367    0.0069    0.0105
-bond hp   p2     385.1  1.34 ! SOURCE3    87    0.1430    0.1706
-bond hp   p3     303.1  1.41 ! SOURCE3   101    0.0170    0.0617
-bond hp   p4     368.7  1.35 ! SOURCE3    17    0.1277    0.1577
-bond hp   p5     305.0  1.41 ! SOURCE3     7    0.0049    0.0062
-bond hs   s      286.4  1.35 ! SOURCE3     1    0.0000    0.0000
-bond hs   s4     266.4  1.38 ! SOURCE3     5    0.0004    0.0004
-bond hs   s6     280.8  1.36 ! SOURCE3     5    0.0012    0.0015
-bond hs   sh     302.2  1.34 ! SOURCE3    98    0.0150    0.0486
-bond i    i      109.2  2.92 ! SOURCE1     1    0.0000    0.0000
-bond i    n      278.3  2.10 ! SOURCE3     5    0.0153    0.0156
-bond i    n1     302.1  2.06 ! SOURCE0     1
-bond i    n2     182.6  2.30 ! SOURCE3     6    0.1010    0.1186
-bond i    n3     231.8  2.19 ! SOURCE3     3    0.0412    0.0437
-bond i    n4     246.6  2.15 ! SOURCE3     3    0.0158    0.0168
-bond i    na     260.5  2.13 ! SOURCE3     8    0.0838    0.1276
-bond i    nh     249.2  2.15 ! SOURCE3     1    0.0000    0.0000
-bond i    no     211.0  2.23 ! SOURCE3     1    0.0000    0.0000
-bond i    o      323.8  1.98 ! SOURCE0     1
-bond i    oh     247.9  2.10 ! SOURCE3     2    0.0000    0.0000
-bond i    os     233.6  2.13 ! SOURCE3     3    0.0138    0.0146
-bond i    p2     108.2  2.64 ! SOURCE3     6    0.0266    0.0297
-bond i    p3     123.6  2.57 ! SOURCE3     3    0.0015    0.0016
-bond i    p4     183.0  2.35 ! SOURCE3     4    0.2600    0.2600
-bond i    p5     117.3  2.60 ! SOURCE3     3    0.0135    0.0143
-bond i    s      175.1  2.43 ! SOURCE0     1
-bond i    s4      82.8  2.87 ! SOURCE0     1
-bond i    s6      82.8  2.87 ! SOURCE3     1    0.0000    0.0000
-bond i    sh     138.5  2.56 ! SOURCE0     1
-bond i    ss     135.9  2.57 ! SOURCE3     3    0.0061    0.0065
-bond n    n      469.7  1.39 ! SOURCE3     5    0.0035    0.0038
-bond n    n1     553.9  1.34 ! SOURCE0     1
-bond n    n2     499.7  1.37 ! SOURCE3     9    0.0164    0.0200
-bond n    n3     443.3  1.41 ! SOURCE3     5    0.0077    0.0087
-bond n    n4     410.8  1.43 ! SOURCE3     5    0.0096    0.0098
-bond n    na     486.8  1.38 ! SOURCE3    11    0.0052    0.0071
-bond n    nc     532.1  1.35 ! SOURCE3     4    0.0055    0.0058
-bond n    nd     532.1  1.35 ! SOURCE3     4    same as    n -nc
-bond n    nh     437.7  1.41 ! SOURCE3     4    0.0035    0.0037
-bond n    no     381.2  1.46 ! SOURCE3     4    0.0278    0.0327
-bond n    o      646.6  1.26 ! SOURCE3     9    0.0336    0.0381
-bond n    oh     395.4  1.41 ! SOURCE3     6    0.0078    0.0106
-bond n    os     372.3  1.43 ! SOURCE3     7    0.0364    0.0528
-bond n    p2     310.3  1.73 ! SOURCE3     8    0.0143    0.0217
-bond n    p3     282.2  1.77 ! SOURCE3     9    0.0102    0.0118
-bond n    p4     309.5  1.73 ! SOURCE3     1    0.0000    0.0000
-bond n    p5     327.0  1.71 ! SOURCE3     4    0.0084    0.0109
-bond n    pc     304.8  1.74 ! SOURCE3     3    0.0009    0.0010
-bond n    pd     304.8  1.74 ! SOURCE3     3    same as    n -pc
-bond n    s      247.5  1.77 ! SOURCE3     3    0.0011    0.0011
-bond n    s4     238.2  1.78 ! SOURCE3     4    0.0154    0.0214
-bond n    s6     270.8  1.73 ! SOURCE3     4    0.0177    0.0224
-bond n    sh     273.6  1.73 ! SOURCE3     4    0.0108    0.0128
-bond n    ss     281.6  1.72 ! SOURCE3     7    0.0120    0.0133
-!bond n1   n1    1221.7  1.12 ! SOURCE1    19    0.0000    0.0000
-bond n1   n1    1365.7  1.10 ! SOURCE3
-bond n1   n2     857.4  1.22 ! SOURCE1    19    0.0000    0.0000
-bond n1   n3     535.7  1.35 ! SOURCE0     1
-bond n1   n4     518.2  1.36 ! SOURCE0     1
-bond n1   na     535.7  1.35 ! SOURCE0     1
-bond n1   nc     857.4  1.22 ! SOURCE1    38    0.0000    0.0000
-bond n1   nd     857.4  1.22 ! SOURCE1    38    0.0000    0.0000
-bond n1   ne     751.9  1.25 ! SOURCE2     1    0.0000    0.0000
-bond n1   nf     751.9  1.25 ! SOURCE2     1    same as    n1-ne
-bond n1   nh     553.9  1.34 ! SOURCE0     1
-bond n1   no     454.8  1.40 ! SOURCE0     1
-bond n1   o      617.5  1.28 ! SOURCE3     5    0.0340    0.0438
-bond n1   oh     569.8  1.30 ! SOURCE0     1
-bond n1   os     550.5  1.31 ! SOURCE0     1
-bond n1   p2     358.8  1.68 ! SOURCE3     2    0.0282    0.0282
-bond n1   p3     376.7  1.66 ! SOURCE0     1
-bond n1   p4     353.0  1.68 ! SOURCE3
-bond n1   p5     482.7  1.57 ! SOURCE1   132    0.0000    0.0000
-bond n1   s      328.7  1.66 ! SOURCE3     6    0.0693    0.0789
-bond n1   s2     604.3  1.45 ! SOURCE2     2    0.0010    0.0010
-bond n1   s4     336.8  1.65 ! SOURCE0     1
-bond n1   s6     670.3  1.42 ! SOURCE2     2    0.0000    0.0000
-bond n1   sh     376.1  1.61 ! SOURCE0     1
-bond n1   ss     376.1  1.61 ! SOURCE0     1
-bond n2   n2     702.7  1.27 ! SOURCE3    27    0.0228    0.0347
-bond n2   n3     574.8  1.33 ! SOURCE2     1    0.0000    0.0000
-bond n2   n4     200.8  1.68 ! SOURCE3     7    0.2778    0.3138
-bond n2   na     450.4  1.40 ! SOURCE3    14    0.0399    0.0575
-bond n2   nc     743.9  1.25 ! SOURCE1    13    same as    n2-nd
-bond n2   nd     743.9  1.25 ! SOURCE1    13    0.0000    0.0000
-bond n2   ne     685.5  1.28 ! SOURCE3    30    0.0224    0.0302
-bond n2   nf     685.5  1.28 ! SOURCE3    30    same as    n2-ne
-bond n2   nh     525.1  1.36 ! SOURCE3    22    0.0218    0.0300
-bond n2   no     231.9  1.63 ! SOURCE3     4    0.1591    0.1933
-bond n2   o      789.9  1.21 ! SOURCE3    20    0.0284    0.0344
-bond n2   oh     416.2  1.39 ! SOURCE1    67    0.0000    0.0000
-bond n2   os     400.5  1.41 ! SOURCE3    10    0.0120    0.0147
-bond n2   p2     438.3  1.60 ! SOURCE3    35    0.0392    0.0737
-bond n2   p3     286.5  1.76 ! SOURCE3     7    0.0320    0.0374
-bond n2   p4     317.7  1.72 ! SOURCE0     1
-bond n2   p5     445.8  1.60 ! SOURCE1     7    0.0000    0.0000
-bond n2   pe     527.9  1.54 ! SOURCE3    20    0.1112    0.1392
-bond n2   pf     527.9  1.54 ! SOURCE3    20    same as    n2-pe
-bond n2   s      458.1  1.54 ! SOURCE1    37    0.0000    0.0000
-bond n2   s2     499.0  1.51 ! SOURCE2     1    0.0000    0.0000
-bond n2   s4     376.1  1.61 ! SOURCE0     1
-bond n2   s6     468.9  1.53 ! SOURCE3     3    0.0144    0.0144
-bond n2   sh     266.6  1.74 ! SOURCE3     5    0.0405    0.0511
-bond n2   ss     331.4  1.66 ! SOURCE1    36    0.0000    0.0000
-bond n3   n3     383.6  1.45 ! SOURCE1    44    0.0000    0.0000
-bond n3   n4     434.9  1.41 ! SOURCE1    13    0.0000    0.0000
-bond n3   na     426.7  1.42 ! SOURCE1    68    0.0000    0.0000
-bond n3   nh     426.7  1.42 ! SOURCE1    68    0.0000    0.0000
-bond n3   no     394.5  1.45 ! SOURCE3     3    0.0196    0.0208
-bond n3   o      564.0  1.30 ! SOURCE3     4    0.1197    0.1217
-bond n3   oh     413.5  1.40 ! SOURCE1    28    0.0000    0.0000
-bond n3   os     359.6  1.44 ! SOURCE1    34    0.0301    0.0315
-bond n3   p2     366.6  1.67 ! SOURCE0     1
-bond n3   p3     312.8  1.73 ! SOURCE1    40    0.0000    0.0000
-bond n3   p4     341.1  1.70 ! SOURCE1    88    0.0000    0.0000
-bond n3   p5     373.6  1.66 ! SOURCE1   501    0.0033    0.0086
-bond n3   s      232.3  1.79 ! SOURCE3     3    0.0168    0.0178
-bond n3   s4     251.3  1.76 ! SOURCE3     6    0.0563    0.0766
-bond n3   s6     353.8  1.63 ! SOURCE1    99    0.0090    0.0136
-bond n3   sh     265.9  1.74 ! SOURCE3     3    0.0145    0.0154
-bond n3   ss     277.9  1.72 ! SOURCE3     5    0.0172    0.0207
-bond n4   n4     349.9  1.48 ! SOURCE3     4    0.0089    0.0089
-bond n4   na     407.0  1.44 ! SOURCE3     9    0.0242    0.0390
-bond n4   nh     369.7  1.47 ! SOURCE3     5    0.0097    0.0108
-bond n4   no     354.2  1.48 ! SOURCE0     1
-bond n4   o      463.6  1.36 ! SOURCE3     3    0.0039    0.0041
-bond n4   oh     408.2  1.40 ! SOURCE3     3    0.0108    0.0115
-bond n4   os     381.8  1.42 ! SOURCE3     5    0.0225    0.0249
-bond n4   p2     185.9  1.94 ! SOURCE3    10    0.0514    0.0643
-bond n4   p3     215.1  1.88 ! SOURCE3     5    0.0143    0.0146
-bond n4   p4     187.6  1.94 ! SOURCE3     1    0.0000    0.0000
-bond n4   p5     242.9  1.83 ! SOURCE3     5    0.0082    0.0087
-bond n4   py     204.2  1.90 ! SOURCE3     4    0.0000    0.0000
-bond n4   s      210.3  1.83 ! SOURCE3     3    0.0004    0.0004
-bond n4   s4     151.0  1.97 ! SOURCE3     3    0.0187    0.0198
-bond n4   s6     172.7  1.91 ! SOURCE3     5    0.0414    0.0432
-bond n4   sh     221.5  1.81 ! SOURCE3     3    0.0025    0.0027
-bond n4   ss     221.0  1.81 ! SOURCE3     5    0.0061    0.0064
-bond na   na     453.3  1.40 ! SOURCE1    40    0.0000    0.0000
-bond na   nc     535.7  1.35 ! SOURCE3   152    0.0117    0.0180
-bond na   nd     535.7  1.35 ! SOURCE3   152    0.0117    0.0180
-bond na   nh     453.3  1.40 ! SOURCE1    40    0.0000    0.0000
-bond na   no     401.9  1.44 ! SOURCE3     9    0.0241    0.0289
-bond na   o      644.3  1.27 ! SOURCE1    25    0.0345    0.0347
-bond na   oh     412.2  1.40 ! SOURCE3     9    0.0161    0.0217
-bond na   os     355.2  1.44 ! SOURCE3    45    0.0349    0.0423
-bond na   p2     297.8  1.75 ! SOURCE3    11    0.0164    0.0192
-bond na   p3     288.0  1.76 ! SOURCE3     8    0.0101    0.0113
-bond na   p4     492.4  1.56 ! SOURCE3     5    0.2116    0.2161
-bond na   p5     325.3  1.71 ! SOURCE3    11    0.0197    0.0238
-bond na   pc     311.1  1.73 ! SOURCE3    81    0.0124    0.0207
-bond na   pd     311.1  1.73 ! SOURCE3    81    same as    na-pc
-bond na   py     327.8  1.71 ! SOURCE3     2    0.0000    0.0000
-bond na   s      248.7  1.77 ! SOURCE3     8    0.0083    0.0095
-bond na   s4     231.7  1.79 ! SOURCE3    10    0.0316    0.0421
-bond na   s6     274.3  1.73 ! SOURCE3    10    0.0169    0.0201
-bond na   sh     278.6  1.72 ! SOURCE3     9    0.0101    0.0113
-bond na   ss     270.1  1.73 ! SOURCE3    38    0.0280    0.0412
-bond na   sy     274.3  1.73 ! SOURCE3     1
-bond nb   nb     550.2  1.34 ! SOURCE1    15    0.0307    0.0314
-bond nb   pb     461.1  1.59 ! SOURCE1   162    0.0076    0.0091
-bond nc   nc     486.8  1.38 ! SOURCE3     9    0.0145    0.0164
-bond nc   nd     602.9  1.31 ! SOURCE3     9    0.0205    0.0221
-bond nc   os     414.9  1.40 ! SOURCE1    46    0.0163    0.0188
-bond nc   ss     433.5  1.56 ! SOURCE1    74    0.0000    0.0000
-bond nc   sy     439.8  1.56 ! SOURCE3     2
-!bond nd   nd     486.8  1.38 ! SOURCE3     9    0.0145    0.0164
-bond nd   nd     602.9  1.31 ! SOURCE3     9    same as    nc-nd
-bond nd   os     414.9  1.40 ! SOURCE1    46    0.0163    0.0188
-bond nd   ss     433.5  1.56 ! SOURCE1    74    0.0000    0.0000
-bond nd   sy     439.8  1.56 ! SOURCE3     2
-bond ne   ne     355.3  1.48 ! SOURCE3    19    0.0960    0.1705
-bond ne   nf     738.6  1.26 ! SOURCE3     1    0.0000    0.0000
-bond ne   o      736.4  1.23 ! SOURCE3    40    0.0207    0.0255
-bond ne   p2     493.9  1.56 ! SOURCE3    14    0.0950    0.1325
-bond ne   pe     327.8  1.71 ! SOURCE3    28    0.0848    0.1076
-bond ne   px     336.6  1.70 ! SOURCE3    11    0.0578    0.0883
-bond ne   py     320.2  1.72 ! SOURCE3    15    0.0497    0.0702
-bond ne   s      463.5  1.54 ! SOURCE3    22    0.1396    0.1708
-bond ne   sx     207.3  1.84 ! SOURCE3     7    0.0760    0.1060
-bond ne   sy     257.1  1.75 ! SOURCE3     7    0.0640    0.0814
-!bond nf   nf     355.3  1.48 ! SOURCE3    19    same as    ne-ne
-bond nf   nf     738.6  1.26 ! SOURCE3     1    same as    ne-nf
-bond nf   o      736.4  1.23 ! SOURCE3    40    same as    ne- o
-bond nf   p2     493.9  1.56 ! SOURCE3    14    same as    ne-p2
-bond nf   pf     327.8  1.71 ! SOURCE3    28    same as    ne-pe
-bond nf   px     336.6  1.70 ! SOURCE3    11    same as    ne-px
-bond nf   py     320.2  1.72 ! SOURCE3    15    same as    ne-py
-bond nf   s      463.5  1.54 ! SOURCE3    22    same as    ne- s
-bond nf   sx     207.3  1.84 ! SOURCE3     7    same as    ne-sx
-bond nf   sy     257.1  1.75 ! SOURCE3     7    same as    ne-sy
-bond nh   nh     453.3  1.40 ! SOURCE1    40    0.0000    0.0000
-bond nh   no     381.2  1.46 ! SOURCE3     4    0.0364    0.0370
-bond nh   o      596.2  1.29 ! SOURCE3     3    0.0424    0.0450
-bond nh   oh     359.6  1.44 ! SOURCE3     1    0.0000    0.0000
-bond nh   os     358.5  1.44 ! SOURCE3     3    0.0029    0.0031
-bond nh   p2     357.8  1.68 ! SOURCE3    17    0.0422    0.0872
-bond nh   p3     312.8  1.73 ! SOURCE3     3    0.0015    0.0016
-bond nh   p4     333.1  1.71 ! SOURCE3     3    0.0008    0.0008
-bond nh   p5     365.6  1.67 ! SOURCE3     3    0.0007    0.0007
-bond nh   s      237.0  1.78 ! SOURCE3     3    0.0072    0.0076
-bond nh   s4     259.1  1.75 ! SOURCE3     3    0.0192    0.0203
-bond nh   s6     300.0  1.69 ! SOURCE3     3    0.0036    0.0038
-bond nh   sh     288.3  1.71 ! SOURCE3     1    0.0000    0.0000
-bond nh   ss     288.3  1.71 ! SOURCE1    52    0.0015    0.0015
-bond nh   sy     324.2  1.66 ! SOURCE3     1    0.0000    0.0000
-bond no   no     138.3  1.82 ! SOURCE3     1    0.0000    0.0000
-bond no   o      761.2  1.22 ! SOURCE1  1838    0.0023    0.0049
-bond no   oh     400.5  1.41 ! SOURCE2     1    0.0000    0.0000
-bond no   os     320.8  1.48 ! SOURCE3     4    0.0526    0.0532
-bond no   p2     306.3  1.74 ! SOURCE3    10    0.2024    0.2231
-bond no   p3     234.7  1.84 ! SOURCE3     3    0.0005    0.0005
-bond no   p4     220.4  1.87 ! SOURCE3     3    0.0005    0.0006
-bond no   p5     240.5  1.83 ! SOURCE3     4    0.0019    0.0020
-bond no   s      263.8  1.74 ! SOURCE3     2    0.0000    0.0000
-bond no   s4     143.0  2.00 ! SOURCE3     3    0.0295    0.0313
-bond no   s6     149.6  1.98 ! SOURCE3     3    0.0490    0.0520
-bond no   sh     225.4  1.80 ! SOURCE3     1    0.0000    0.0000
-bond no   ss     212.4  1.83 ! SOURCE3     3    0.0230    0.0244
-bond o    o      384.3  1.43 ! SOURCE3     2    0.0500    0.0500
-bond o    oh     294.6  1.52 ! SOURCE3     2    0.0000    0.0000
-bond o    os     306.3  1.50 ! SOURCE3     3    0.0110    0.0117
-bond o    p2     449.7  1.51 ! SOURCE3    17    0.0167    0.0306
-bond o    p3     440.4  1.52 ! SOURCE3    35    0.0214    0.0297
-bond o    p4     456.4  1.50 ! SOURCE3    42    0.0343    0.0749
-bond o    p5     487.7  1.48 ! SOURCE1   263    0.0180    0.0205
-bond o    pe     432.6  1.52 ! SOURCE3    20    0.0138    0.0171
-bond o    pf     432.6  1.52 ! SOURCE3    20    same as    o -pe
-bond o    px     459.2  1.50 ! SOURCE3    37    0.0125    0.0160
-bond o    py     477.5  1.49 ! SOURCE3    63    0.0063    0.0091
-bond o    s      194.8  1.80 ! SOURCE3     2    0.0000    0.0000
-bond o    s2     333.6  1.60 ! SOURCE3     3    0.0666    0.0707
-bond o    s4     448.7  1.50 ! SOURCE1    90    0.0000    0.0000
-bond o    s6     541.1  1.44 ! SOURCE1  1038    0.0072    0.0128
-bond o    sh     328.0  1.60 ! SOURCE3     2    0.0000    0.0000
-bond o    ss     398.5  1.54 ! SOURCE3     3    0.0434    0.0501
-bond o    sx     434.2  1.51 ! SOURCE3    40    0.0083    0.0130
-bond o    sy     493.0  1.47 ! SOURCE3    92    0.0077    0.0114
-bond oh   oh     340.5  1.47 ! SOURCE3     1    0.0000    0.0000
-bond oh   os     342.6  1.47 ! SOURCE3     3    0.0065    0.0072
-bond oh   p2     316.8  1.63 ! SOURCE3     8    0.0600    0.0916
-bond oh   p3     278.8  1.68 ! SOURCE3     3    0.0140    0.0148
-bond oh   p4     307.4  1.64 ! SOURCE3     4    0.0092    0.0092
-bond oh   p5     321.2  1.62 ! SOURCE3    92    0.0293    0.0451
-bond oh   py     332.1  1.61 ! SOURCE3    79    0.0111    0.0138
-bond oh   s      190.0  1.81 ! SOURCE3     2    0.0000    0.0000
-bond oh   s4     274.3  1.67 ! SOURCE3     3    0.0173    0.0184
-bond oh   s6     344.1  1.59 ! SOURCE3    13    0.0072    0.0091
-bond oh   sh     258.6  1.69 ! SOURCE3     2    0.0003    0.0003
-bond oh   ss     265.6  1.68 ! SOURCE3     4    0.0131    0.0131
-bond oh   sy     302.6  1.63 ! SOURCE3     4    0.0153    0.0154
-bond os   os     343.6  1.47 ! SOURCE1    20    0.0047    0.0067
-bond os   p2     371.9  1.57 ! SOURCE1    16    0.0000    0.0000
-bond os   p3     272.2  1.69 ! SOURCE3     6    0.0141    0.0201
-bond os   p4     311.6  1.64 ! SOURCE3     4    0.0056    0.0057
-bond os   p5     342.5  1.60 ! SOURCE1   248    0.0332    0.0400
-bond os   py     328.5  1.62 ! SOURCE3    17    0.0082    0.0139
-bond os   s      195.8  1.80 ! SOURCE3     3    0.0049    0.0052
-bond os   s4     253.9  1.70 ! SOURCE3     8    0.0194    0.0223
-bond os   s6     355.0  1.58 ! SOURCE1    75    0.0019    0.0030
-bond os   sh     273.6  1.67 ! SOURCE3     3    0.0100    0.0106
-bond os   ss     250.5  1.70 ! SOURCE3     9    0.0241    0.0277
-bond os   sy     253.9  1.70 ! SOURCE3     1    0.0000    0.0000
-bond p2   p2     490.3  1.79 ! SOURCE3    25    0.3198    0.3488
-bond p2   p3     211.9  2.15 ! SOURCE3     9    0.1116    0.1777
-bond p2   p4     200.4  2.18 ! SOURCE0     1
-bond p2   p5     199.9  2.18 ! SOURCE0     1
-bond p2   pe     401.6  1.87 ! SOURCE3    16    0.3079    0.3571
-bond p2   pf     401.6  1.87 ! SOURCE3    16    same as    p2-pe
-bond p2   s      361.6  1.77 ! SOURCE3    26    0.2523    0.3014
-bond p2   s4     139.4  2.19 ! SOURCE0     1
-bond p2   s6     142.3  2.18 ! SOURCE0     1
-bond p2   sh     224.0  1.97 ! SOURCE3    10    0.2263    0.2829
-bond p2   ss     226.6  1.97 ! SOURCE3    10    0.2189    0.2739
-bond p3   p3     186.5  2.21 ! SOURCE1    41    0.0000    0.0000
-bond p3   p4     185.7  2.22 ! SOURCE3     3    0.0010    0.0011
-bond p3   p5     186.9  2.21 ! SOURCE3     9    0.0257    0.0265
-bond p3   s      179.7  2.07 ! SOURCE0     1
-bond p3   s4     173.2  2.09 ! SOURCE3     8    0.1935    0.2235
-bond p3   s6     176.9  2.08 ! SOURCE3    11    0.1085    0.1420
-bond p3   sh     157.3  2.13 ! SOURCE3     3    0.0073    0.0078
-bond p3   ss     161.0  2.12 ! SOURCE3     3    0.0056    0.0059
-bond p4   p4     273.1  2.03 ! SOURCE1     1    0.0000    0.0000
-bond p4   p5     178.0  2.24 ! SOURCE0     1
-bond p4   s      152.7  2.15 ! SOURCE3     5    0.0571    0.0601
-bond p4   s4     123.2  2.25 ! SOURCE0     1
-bond p4   s6     118.9  2.27 ! SOURCE0     1
-bond p4   sh     163.1  2.12 ! SOURCE3     4    0.0006    0.0008
-bond p4   ss     167.0  2.10 ! SOURCE3     4    0.0042    0.0044
-bond p5   p5     261.4  2.05 ! SOURCE1     1    0.0000    0.0000
-bond p5   s      250.8  1.92 ! SOURCE1    89    0.0097    0.0140
-bond p5   s4     191.9  2.04 ! SOURCE0     1
-bond p5   s6     191.9  2.04 ! SOURCE0     1
-bond p5   sh     175.0  2.08 ! SOURCE3     3    0.0033    0.0035
-bond p5   ss     164.8  2.11 ! SOURCE3     6    0.0379    0.0531
-bond pe   pe     240.7  2.09 ! SOURCE3     7    0.1280    0.1369
-bond pe   pf     260.8  2.06 ! SOURCE3     1    0.0000    0.0000
-bond pe   px     291.4  2.00 ! SOURCE3    12    0.2364    0.2609
-bond pe   py     278.6  2.02 ! SOURCE3    12    0.2453    0.2617
-bond pe   s      374.7  1.76 ! SOURCE3    31    0.2925    0.3197
-bond pe   sx     145.9  2.17 ! SOURCE3     9    0.1092    0.1743
-bond pe   sy     133.0  2.21 ! SOURCE3     6    0.0106    0.0127
-!bond pf   pf     240.7  2.09 ! SOURCE3     7    same as    pe-pe
-bond pf   pf     260.8  2.06 ! SOURCE3     1    same as    pe-pf
-bond pf   px     291.4  2.00 ! SOURCE3    12    same as    pe-px
-bond pf   py     278.6  2.02 ! SOURCE3    12    same as    pe-py
-bond pf   s      374.7  1.76 ! SOURCE3    31    same as    pe- s
-bond pf   sx     145.9  2.17 ! SOURCE3     9    same as    pe-sx
-bond pf   sy     133.0  2.21 ! SOURCE3     6    same as    pe-sy
-bond px   py     192.3  2.20 ! SOURCE3     5    0.0221    0.0238
-bond px   sx     125.4  2.24 ! SOURCE3     3    0.0112    0.0119
-bond px   sy     123.7  2.25 ! SOURCE3     3    0.0256    0.0272
-bond py   py     197.5  2.19 ! SOURCE3     8    0.0110    0.0132
-bond py   sx     121.2  2.26 ! SOURCE3     7    0.0595    0.0603
-bond py   sy     141.7  2.18 ! SOURCE3     5    0.0044    0.0047
-bond s    s      169.0  2.03 ! SOURCE3     1    0.0000    0.0000
-bond s    s2     229.2  1.90 ! SOURCE1     5    0.0000    0.0000
-bond s    s4     152.8  2.08 ! SOURCE3     4    0.0345    0.0345
-bond s    s6     166.0  2.04 ! SOURCE3     3    0.0293    0.0311
-bond s    sh     142.0  2.11 ! SOURCE3     2    0.0000    0.0000
-bond s    ss     148.5  2.09 ! SOURCE3     1    0.0000    0.0000
-bond s4   s4     151.5  2.08 ! SOURCE0     1
-bond s4   s6     151.5  2.08 ! SOURCE0     1
-bond s4   sh     125.7  2.17 ! SOURCE3     3    0.0214    0.0227
-bond s4   ss     126.2  2.17 ! SOURCE3     5    0.0241    0.0247
-bond s6   s6     151.5  2.08 ! SOURCE0     1
-bond s6   sh     142.6  2.11 ! SOURCE3     3    0.0136    0.0144
-bond s6   ss     139.6  2.12 ! SOURCE3     5    0.0198    0.0209
-bond sh   sh     158.9  2.06 ! SOURCE2     1    0.0000    0.0000
-bond sh   ss     155.8  2.07 ! SOURCE3     3    0.0027    0.0029
-bond ss   ss     161.7  2.05 ! SOURCE1   225    0.0015    0.0015
-bond sx   sx      80.9  2.39 ! SOURCE3     3    0.0174    0.0185
-bond sx   sy     105.3  2.25 ! SOURCE3     5    0.0703    0.0737
-bond sy   sy     106.4  2.25 ! SOURCE3     3    0.0272    0.0289
+bond ow   hw     553.0 0.957 ! TIP3P water
+bond br   br     123.2 2.542 ! SOURCE1     4    0.0000    0.0000
+bond br   c      240.3 1.946 ! SOURCE2     2    0.0285    0.0285
+bond br   c1     352.7 1.787 ! SOURCE2     4    0.0022    0.0024
+bond br   c2     278.7 1.883 ! SOURCE1    31    0.0000    0.0000
+bond br   c3     229.5 1.966 ! SOURCE1   100    0.0000    0.0000
+bond br   ca     269.6 1.897 ! SOURCE1   127    0.0028    0.0058
+bond br   cx     261.4 1.910 ! SOURCE1     8    0.0000    0.0000
+bond br   i      142.4 2.671 ! SOURCE1     2    0.0245    0.0245
+bond br   n      320.2 1.873 ! SOURCE3     4    0.0037    0.0046
+bond br   n1     330.4 1.860 ! SOURCE0     1
+bond br   n2     219.0 2.038 ! SOURCE3     5    0.0956    0.1082
+bond br   n3     265.9 1.952 ! SOURCE3     2    0.0000    0.0000
+bond br   n4     282.4 1.926 ! SOURCE3     3    0.0012    0.0013
+bond br   na     237.3 2.002 ! SOURCE3     7    0.1938    0.2156
+bond br   nh     270.9 1.944 ! SOURCE3     1    0.0000    0.0000
+bond br   no     191.0 2.101 ! SOURCE3     1    0.0000    0.0000
+bond br   o      278.9 1.800 ! SOURCE0     1
+bond br   oh     237.2 1.866 ! SOURCE3     1    0.0000    0.0000
+bond br   os     225.6 1.887 ! SOURCE3     2    0.0000    0.0000
+bond br   p2     174.3 2.210 ! SOURCE3     9    0.0470    0.0510
+bond br   p3     167.0 2.231 ! SOURCE3     3    0.0096    0.0101
+bond br   p4     188.8 2.171 ! SOURCE0     1
+bond br   p5     179.3 2.196 ! SOURCE3     3    0.0094    0.0099
+bond br   s      170.6 2.220 ! SOURCE0     1
+bond br   s4     134.3 2.341 ! SOURCE3     1    0.0000    0.0000
+bond br   s6     172.7 2.214 ! SOURCE3     3    0.0417    0.0443
+bond br   sh     174.4 2.209 ! SOURCE3     1    0.0000    0.0000
+bond br   ss     176.6 2.203 ! SOURCE3     3    0.0033    0.0035
+bond c    c      290.1 1.550 ! SOURCE1    31    0.0080    0.0100
+bond c    c1     379.8 1.460 ! SOURCE0     1
+bond c    c2     449.9 1.406 ! SOURCE3     2    0.0370    0.0370
+bond c    c3     328.3 1.508 ! SOURCE1  2949    0.0049    0.0060
+bond c    ca     349.7 1.487 ! SOURCE1   480    0.0031    0.0055
+bond c    cc     377.4 1.462 ! SOURCE3   132    0.0165    0.0210
+bond c    cd     377.4 1.462 ! SOURCE3   132    0.0165    0.0210
+bond c    ce     363.8 1.474 ! SOURCE1   601    0.0091    0.0105
+bond c    cf     363.8 1.474 ! SOURCE1   601    0.0091    0.0105
+bond c    cg     389.3 1.452 ! SOURCE3     2    0.0000    0.0000
+bond c    ch     389.3 1.452 ! SOURCE3     2    same as    c -cg
+bond c    cl     293.5 1.766 ! SOURCE3     6    0.0235    0.0250
+bond c    cu     441.4 1.412 ! SOURCE2     1    0.0000    0.0000
+bond c    cx     350.8 1.486 ! SOURCE1   105    0.0000    0.0000
+bond c    cy     308.5 1.529 ! SOURCE1    18    0.0000    0.0000
+bond c    f      387.9 1.325 ! SOURCE2     6    0.0140    0.0147
+bond c    ha     325.1 1.101 ! SOURCE3    53    0.0078    0.0102
+bond c    i      198.9 2.209 ! SOURCE3     4    0.0332    0.0365
+bond c    n      478.2 1.345 ! SOURCE1  1235    0.0162    0.0215
+bond c    n2     374.6 1.420 ! SOURCE0     1
+bond c    n4     255.5 1.546 ! SOURCE3     4    0.0388    0.0388
+bond c    nc     438.8 1.371 ! SOURCE3     2    0.0108    0.0108
+bond c    nd     438.8 1.371 ! SOURCE3     2    same as    c -nc
+bond c    ne     388.0 1.409 ! SOURCE3     3    0.0088    0.0094
+bond c    nf     388.0 1.409 ! SOURCE3     3    same as    c -ne
+bond c    no     260.1 1.540 ! SOURCE0     1
+bond c    o      648.0 1.214 ! SOURCE1  3682    0.0134    0.0165
+bond c    oh     466.4 1.306 ! SOURCE1   271    0.0026    0.0041
+bond c    os     411.3 1.343 ! SOURCE1  1044    0.0114    0.0171
+bond c    p2     210.3 1.900 ! SOURCE0     1
+bond c    p3     219.0 1.883 ! SOURCE3     6    0.0094    0.0129
+bond c    p4     220.6 1.880 ! SOURCE0     1
+bond c    p5     225.9 1.870 ! SOURCE0     1
+bond c    pe     204.9 1.911 ! SOURCE3     3    0.0023    0.0025
+bond c    pf     204.9 1.911 ! SOURCE3     3    same as    c -pe
+bond c    px     208.3 1.904 ! SOURCE3     1    0.0000    0.0000
+bond c    py     227.6 1.867 ! SOURCE3     6    0.0141    0.0199
+bond c    s      328.9 1.675 ! SOURCE1   401    0.0077    0.0128
+bond c    s4     200.4 1.870 ! SOURCE0     1
+bond c    s6     200.4 1.870 ! SOURCE0     1
+bond c    sh     249.6 1.781 ! SOURCE3     6    0.0157    0.0171
+bond c    ss     261.9 1.762 ! SOURCE1    20    0.0000    0.0000
+bond c    sx     193.3 1.885 ! SOURCE3     5    0.0070    0.0088
+bond c    sy     202.8 1.865 ! SOURCE3     5    0.0063    0.0085
+bond c1   c1     986.2 1.181 ! SOURCE1   265    0.0022    0.0031
+bond c1   c2     625.0 1.307 ! SOURCE1    18    0.0000    0.0000
+bond c1   c3     368.3 1.470 ! SOURCE1   215    0.0013    0.0017
+bond c1   ca     404.1 1.440 ! SOURCE0     1
+bond c1   cg     845.8 1.222 ! SOURCE3    22    0.0074    0.0101
+bond c1   ch     845.8 1.222 ! SOURCE3    22    same as    c1-cg
+bond c1   cl     419.7 1.631 ! SOURCE2     6    0.0046    0.0050
+bond c1   cx     399.1 1.444 ! SOURCE1    38    0.0000    0.0000
+bond c1   f      469.4 1.270 ! SOURCE2     2    0.0085    0.0085
+bond c1   ha     375.9 1.066 ! SOURCE3    63    0.0022    0.0035
+bond c1   hc     385.6 1.060 ! SOURCE0     1
+bond c1   i      318.8 1.989 ! SOURCE2     4    0.0025    0.0032
+bond c1   n      503.0 1.330 ! SOURCE0     1
+bond c1   n1    1014.5 1.138 ! SOURCE1   170    0.0038    0.0055
+bond c1   n2     769.8 1.210 ! SOURCE3     5    0.0089    0.0115
+bond c1   n3     409.8 1.392 ! SOURCE2     1    0.0000    0.0000
+bond c1   n4     378.2 1.417 ! SOURCE3     3    0.0030    0.0032
+bond c1   na     452.0 1.362 ! SOURCE3     8    0.0031    0.0034
+bond c1   ne     741.8 1.220 ! SOURCE3     1    0.0000    0.0000
+bond c1   nf     741.8 1.220 ! SOURCE3     1    same as    c1-ne
+bond c1   nh     465.7 1.353 ! SOURCE3     3    0.0025    0.0027
+bond c1   no     393.0 1.405 ! SOURCE3     3    0.0004    0.0005
+bond c1   o      777.0 1.166 ! SOURCE2     9    0.0044    0.0052
+bond c1   oh     435.6 1.326 ! SOURCE3     1    0.0000    0.0000
+bond c1   os     437.1 1.325 ! SOURCE3     3    0.0139    0.0148
+bond c1   p2     289.3 1.770 ! SOURCE0     1
+bond c1   p3     275.1 1.790 ! SOURCE0     1
+bond c1   p4     275.1 1.790 ! SOURCE0     1
+bond c1   p5     302.2 1.753 ! SOURCE3     2    0.0000    0.0000
+bond c1   s      371.8 1.630 ! SOURCE1    14    0.0000    0.0000
+bond c1   s2     410.0 1.595 ! SOURCE3     1    0.0000    0.0000
+bond c1   s4     272.9 1.746 ! SOURCE3     2    0.0000    0.0000
+bond c1   s6     290.4 1.722 ! SOURCE3     2    0.0000    0.0000
+bond c1   sh     324.5 1.680 ! SOURCE0     1
+bond c1   ss     325.4 1.679 ! SOURCE1    10    0.0000    0.0000
+bond c2   c2     589.7 1.324 ! SOURCE1   974    0.0048    0.0096
+bond c2   c3     328.3 1.508 ! SOURCE1  2536    0.0016    0.0021
+bond c2   ca     357.2 1.480 ! SOURCE0     1
+bond c2   cc     522.6 1.360 ! SOURCE1   771    0.0152    0.0185
+bond c2   cd     522.6 1.360 ! SOURCE1   771    0.0152    0.0185
+bond c2   ce     560.5 1.339 ! SOURCE3    62    0.0085    0.0128
+bond c2   cf     560.5 1.339 ! SOURCE3    62    same as    c2-ce
+bond c2   cl     328.8 1.722 ! SOURCE1   163    0.0093    0.0098
+bond c2   cu     573.9 1.332 ! SOURCE2     1    0.0000    0.0000
+bond c2   cx     333.3 1.503 ! SOURCE2     1    0.0000    0.0000
+bond c2   cy     309.4 1.528 ! SOURCE2     1    0.0000    0.0000
+bond c2   f      368.7 1.340 ! SOURCE1    34    0.0000    0.0000
+bond c2   h4     348.6 1.084 ! SOURCE3    40    0.0037    0.0058
+bond c2   h5     357.5 1.078 ! SOURCE3     3    0.0061    0.0067
+bond c2   ha     344.3 1.087 ! SOURCE3   797    0.0030    0.0046
+bond c2   hc     344.3 1.087 ! SOURCE3   789    0.0030    0.0046
+bond c2   hx     350.1 1.083 ! SOURCE3     3    0.0008    0.0008
+bond c2   i      223.2 2.153 ! SOURCE3     2    0.0000    0.0000
+bond c2   n      390.5 1.407 ! SOURCE3     9    0.0109    0.0124
+bond c2   n1     546.0 1.306 ! SOURCE3     4    0.0161    0.0161
+bond c2   n2     581.1 1.288 ! SOURCE1   103    0.0095    0.0100
+bond c2   n3     486.3 1.340 ! SOURCE0     1
+bond c2   n4     309.1 1.482 ! SOURCE3     5    0.0047    0.0064
+bond c2   na     411.1 1.391 ! SOURCE3    31    0.0271    0.0289
+bond c2   nc     533.0 1.313 ! SOURCE1    99    0.0065    0.0095
+bond c2   nd     533.0 1.313 ! SOURCE1    99    same as    c2-nc
+bond c2   ne     597.7 1.280 ! SOURCE3    37    0.0090    0.0110
+bond c2   nf     597.7 1.280 ! SOURCE3    37    same as    c2-ne
+bond c2   nh     462.6 1.355 ! SOURCE3    38    0.0385    0.0413
+bond c2   no     327.6 1.463 ! SOURCE3     4    0.0013    0.0013
+bond c2   o      546.2 1.261 ! SOURCE3     4    0.0144    0.0144
+bond c2   oh     425.4 1.333 ! SOURCE1    53    0.0000    0.0000
+bond c2   os     392.6 1.357 ! SOURCE1   315    0.0088    0.0097
+bond c2   p2     375.9 1.670 ! SOURCE3    62    0.0078    0.0147
+bond c2   p3     246.6 1.834 ! SOURCE3     5    0.0041    0.0042
+bond c2   p4     254.0 1.822 ! SOURCE0     1
+bond c2   p5     255.2 1.820 ! SOURCE0     1
+bond c2   pe     355.3 1.691 ! SOURCE3    52    0.0318    0.0542
+bond c2   pf     355.3 1.691 ! SOURCE3    52    same as    c2-pe
+bond c2   s      281.5 1.734 ! SOURCE3     4    0.0034    0.0034
+bond c2   s2     393.1 1.610 ! SOURCE2     1    0.0000    0.0000
+bond c2   s4     263.2 1.760 ! SOURCE0     1
+bond c2   s6     263.2 1.760 ! SOURCE0     1
+bond c2   sh     255.3 1.772 ! SOURCE3     3    0.0068    0.0072
+bond c2   ss     280.0 1.736 ! SOURCE1   209    0.0135    0.0155
+bond c3   c3     303.1 1.535 ! SOURCE1 14664    0.0043    0.0048
+bond c3   ca     323.5 1.513 ! SOURCE1  1813    0.0000    0.0000
+bond c3   cc     337.3 1.499 ! SOURCE3    50    0.0059    0.0096
+bond c3   cd     337.3 1.499 ! SOURCE3    50    0.0059    0.0096
+bond c3   ce     331.3 1.505 ! SOURCE3     9    0.0019    0.0024
+bond c3   cf     331.3 1.505 ! SOURCE3     9    same as    c3-ce
+bond c3   cl     279.0 1.786 ! SOURCE1   267    0.0151    0.0194
+bond c3   cu     359.4 1.478 ! SOURCE1     7    0.0000    0.0000
+bond c3   cv     347.6 1.489 ! SOURCE1    11    0.0000    0.0000
+bond c3   cx     322.5 1.514 ! SOURCE1   712    0.0044    0.0045
+bond c3   cy     308.5 1.529 ! SOURCE1   376    0.0000    0.0000
+bond c3   f      363.8 1.344 ! SOURCE1   617    0.0241    0.0281
+bond c3   h1     335.9 1.093 ! SOURCE3  2175    0.0045    0.0082
+bond c3   h2     326.4 1.100 ! SOURCE3    66    0.0110    0.0280
+bond c3   h3     335.9 1.093 ! SOURCE2     1    0.0000    0.0000
+bond c3   hc     337.3 1.092 ! SOURCE3  2815    0.0040    0.0059
+bond c3   hx     338.7 1.091 ! SOURCE3   146    0.0023    0.0066
+bond c3   i      219.1 2.162 ! SOURCE1    15    0.0000    0.0000
+bond c3   n      330.6 1.460 ! SOURCE1   187    0.0065    0.0079
+bond c3   n1     325.1 1.470 ! SOURCE3
+bond c3   n2     313.8 1.477 ! SOURCE1   129    0.0136    0.0138
+bond c3   n3     320.6 1.470 ! SOURCE1  1678    0.0013    0.0017
+bond c3   n4     293.6 1.499 ! SOURCE1  1370    0.0000    0.0000
+bond c3   na     334.7 1.456 ! SOURCE3    23    0.0096    0.0119
+bond c3   nc     334.7 1.456 ! SOURCE3     9    0.0091    0.0109
+bond c3   nd     334.7 1.456 ! SOURCE3     9    same as    c3-nc
+bond c3   nh     332.7 1.458 ! SOURCE3    27    0.0067    0.0085
+bond c3   no     265.4 1.533 ! SOURCE1    83    0.0163    0.0212
+bond c3   o      422.6 1.335 ! SOURCE3     4    0.0100    0.0100
+bond c3   oh     314.1 1.426 ! SOURCE1   914    0.0110    0.0129
+bond c3   os     301.5 1.439 ! SOURCE1  3123    0.0112    0.0126
+bond c3   p2     234.3 1.855 ! SOURCE3     9    0.0100    0.0125
+bond c3   p3     240.6 1.844 ! SOURCE3   109    0.0091    0.0107
+bond c3   p4     247.2 1.833 ! SOURCE3    29    0.0091    0.0138
+bond c3   p5     259.7 1.813 ! SOURCE1    84    0.0000    0.0000
+bond c3   px     252.7 1.824 ! SOURCE3    28    0.0079    0.0098
+bond c3   py     259.7 1.813 ! SOURCE3    13    0.0144    0.0163
+bond c3   s      212.9 1.845 ! SOURCE3     4    0.0185    0.0185
+bond c3   s4     233.8 1.807 ! SOURCE1   139    0.0022    0.0023
+bond c3   s6     254.0 1.774 ! SOURCE1   118    0.0080    0.0103
+bond c3   sh     225.3 1.822 ! SOURCE3    12    0.0042    0.0051
+bond c3   ss     225.8 1.821 ! SOURCE1   358    0.0049    0.0075
+bond c3   sx     232.6 1.809 ! SOURCE3    30    0.0050    0.0067
+bond c3   sy     248.9 1.782 ! SOURCE3    31    0.0034    0.0039
+bond ca   ca     478.4 1.387 ! SOURCE1  6228    0.0096    0.0147
+bond ca   cc     411.7 1.434 ! SOURCE1    80    0.0000    0.0000
+bond ca   cd     411.7 1.434 ! SOURCE1    80    0.0000    0.0000
+bond ca   ce     366.0 1.472 ! SOURCE1    71    0.0029    0.0030
+bond ca   cf     366.0 1.472 ! SOURCE1    71    0.0029    0.0030
+bond ca   cg     406.6 1.438 ! SOURCE1    71    0.0045    0.0045
+bond ca   ch     406.6 1.438 ! SOURCE1    71    0.0045    0.0045
+bond ca   cl     322.8 1.729 ! SOURCE1   704    0.0095    0.0095
+bond ca   cp     466.1 1.395 ! SOURCE3    14    0.0098    0.0110
+bond ca   cx     350.8 1.486 ! SOURCE1    98    0.0064    0.0118
+bond ca   f      363.8 1.344 ! SOURCE1   205    0.0069    0.0089
+bond ca   h4     342.9 1.088 ! SOURCE3    57    0.0016    0.0026
+bond ca   h5     347.2 1.085 ! SOURCE3    15    0.0038    0.0048
+bond ca   ha     344.3 1.087 ! SOURCE3  1496    0.0024    0.0045
+bond ca   i      252.4 2.095 ! SOURCE1    51    0.0000    0.0000
+bond ca   n      372.3 1.422 ! SOURCE3     9    0.0092    0.0098
+bond ca   n1     398.1 1.400 ! SOURCE3
+bond ca   n2     320.6 1.470 ! SOURCE2     1    0.0000    0.0000
+bond ca   n4     325.6 1.465 ! SOURCE1    23    0.0000    0.0000
+bond ca   na     470.3 1.350 ! SOURCE1   150    0.0091    0.0103
+bond ca   nb     483.1 1.342 ! SOURCE3   104    0.0052    0.0076
+bond ca   nc     492.9 1.336 ! SOURCE1  1826    0.0012    0.0020
+bond ca   nd     492.9 1.336 ! SOURCE1  1826    0.0012    0.0020
+bond ca   ne     361.8 1.431 ! SOURCE1    52    0.0000    0.0000
+bond ca   nf     361.8 1.431 ! SOURCE1    52    0.0000    0.0000
+bond ca   nh     449.0 1.364 ! SOURCE1   137    0.0084    0.0085
+bond ca   no     322.6 1.468 ! SOURCE1   556    0.0000    0.0000
+bond ca   o      519.7 1.275 ! SOURCE3     2    0.0000    0.0000
+bond ca   oh     386.1 1.362 ! SOURCE1   551    0.0000    0.0000
+bond ca   os     372.4 1.373 ! SOURCE1  1092    0.0048    0.0071
+bond ca   p2     243.0 1.840 ! SOURCE0     1
+bond ca   p3     252.7 1.824 ! SOURCE1   145    0.0171    0.0187
+bond ca   p4     264.3 1.806 ! SOURCE0     1
+bond ca   p5     271.6 1.795 ! SOURCE1   571    0.0020    0.0028
+bond ca   pe     249.6 1.829 ! SOURCE3    10    0.0034    0.0042
+bond ca   pf     249.6 1.829 ! SOURCE3    10    0.0034    0.0042
+bond ca   px     252.1 1.825 ! SOURCE3     5    0.0153    0.0168
+bond ca   py     268.3 1.800 ! SOURCE3     3    0.0051    0.0054
+bond ca   s      277.9 1.739 ! SOURCE3     2    0.0000    0.0000
+bond ca   s4     245.2 1.788 ! SOURCE1    51    0.0038    0.0048
+bond ca   s6     263.9 1.759 ! SOURCE1   229    0.0030    0.0036
+bond ca   sh     245.8 1.787 ! SOURCE3     2    0.0055    0.0055
+bond ca   ss     256.6 1.770 ! SOURCE1   297    0.0034    0.0041
+bond ca   sx     233.8 1.807 ! SOURCE3     3    0.0015    0.0016
+bond ca   sy     247.7 1.784 ! SOURCE3    13    0.0068    0.0094
+bond cc   cc     418.3 1.429 ! SOURCE1   740    0.0058    0.0069
+bond cc   cd     504.0 1.371 ! SOURCE3   523    0.0156    0.0217
+bond cc   cf     519.2 1.362 ! SOURCE3     1    0.0000    0.0000
+bond cc   cg     420.9 1.427 ! SOURCE1   560    0.0000    0.0000
+bond cc   ch     420.9 1.427 ! SOURCE1   560    0.0000    0.0000
+bond cc   cl     348.3 1.700 ! SOURCE3     1    0.0000    0.0000
+bond cc   h4     350.1 1.083 ! SOURCE3   599    0.0028    0.0037
+bond cc   h5     356.0 1.079 ! SOURCE3    40    0.0040    0.0051
+bond cc   ha     347.2 1.085 ! SOURCE3   740    0.0029    0.0039
+bond cc   n      426.0 1.380 ! SOURCE3    56    0.0075    0.0109
+bond cc   n2     561.3 1.298 ! SOURCE3     4    0.0096    0.0096
+bond cc   na     438.8 1.371 ! SOURCE3   440    0.0107    0.0144
+bond cc   nc     431.6 1.376 ! SOURCE1    88    0.0000    0.0000
+bond cc   nd     494.6 1.335 ! SOURCE3   203    0.0171    0.0239
+bond cc   nh     449.0 1.364 ! SOURCE3     6    0.0038    0.0040
+bond cc   oh     405.9 1.347 ! SOURCE3     3    0.0077    0.0077
+bond cc   os     376.1 1.370 ! SOURCE3    86    0.0139    0.0192
+bond cc   pd     318.2 1.733 ! SOURCE3    84    same as    cd-pc
+bond cc   ss     279.3 1.737 ! SOURCE3    52    0.0162    0.0194
+bond cd   cd     418.3 1.429 ! SOURCE1   740    0.0058    0.0069
+bond cd   ce     519.2 1.362 ! SOURCE3     1    same as    cc-cf
+bond cd   cg     420.9 1.427 ! SOURCE1   560    0.0000    0.0000
+bond cd   ch     420.9 1.427 ! SOURCE1   560    0.0000    0.0000
+bond cd   cl     348.3 1.700 ! SOURCE3     1    same as    cc-cl
+bond cd   h4     350.1 1.083 ! SOURCE3   599    0.0028    0.0037
+bond cd   h5     356.0 1.079 ! SOURCE3    40    0.0040    0.0051
+bond cd   ha     347.2 1.085 ! SOURCE3   740    0.0029    0.0039
+bond cd   n      426.0 1.380 ! SOURCE3    56    0.0075    0.0109
+bond cd   n2     561.3 1.298 ! SOURCE3     4    0.0096    0.0096
+bond cd   na     438.8 1.371 ! SOURCE3   440    0.0107    0.0144
+bond cd   nc     494.6 1.335 ! SOURCE3   203    0.0171    0.0239
+bond cd   nd     431.6 1.376 ! SOURCE1    88    0.0000    0.0000
+bond cd   nh     449.0 1.364 ! SOURCE3     6    0.0038    0.0040
+bond cd   oh     405.9 1.347 ! SOURCE3     3    0.0077    0.0077
+bond cd   os     376.1 1.370 ! SOURCE3    86    0.0139    0.0192
+bond cd   pc     318.2 1.733 ! SOURCE3    84    0.0088    0.0161
+bond cd   ss     279.3 1.737 ! SOURCE3    52    0.0162    0.0194
+bond ce   ce     390.5 1.451 ! SOURCE1    66    0.0060    0.0060
+bond ce   cf     562.4 1.338 ! SOURCE1   543    0.0035    0.0045
+bond ce   cg     415.6 1.431 ! SOURCE1    22    0.0000    0.0000
+bond ce   ch     415.6 1.431 ! SOURCE1    22    0.0000    0.0000
+bond ce   ha     341.5 1.089 ! SOURCE3    55    0.0030    0.0056
+bond ce   n1     522.2 1.319 ! SOURCE3     3    0.0121    0.0121
+bond ce   n2     599.8 1.279 ! SOURCE1    75    0.0000    0.0000
+bond ce   ne     381.8 1.414 ! SOURCE3     7    0.0093    0.0103
+bond ce   nh     484.7 1.341 ! SOURCE3     1    0.0000    0.0000
+bond ce   p2     259.1 1.814 ! SOURCE0     1
+bond ce   pe     256.5 1.818 ! SOURCE3     8    0.0090    0.0108
+bond ce   px     254.6 1.821 ! SOURCE3     6    0.0034    0.0046
+bond ce   py     272.3 1.794 ! SOURCE3     5    0.0034    0.0045
+bond ce   s      324.5 1.680 ! SOURCE0     1
+bond ce   sx     239.7 1.797 ! SOURCE3     5    0.0080    0.0082
+bond ce   sy     248.9 1.782 ! SOURCE3     5    0.0105    0.0114
+bond cf   cf     390.5 1.451 ! SOURCE1    66    0.0060    0.0060
+bond cf   cg     415.6 1.431 ! SOURCE1    22    0.0000    0.0000
+bond cf   ch     415.6 1.431 ! SOURCE1    22    0.0000    0.0000
+bond cf   ha     341.5 1.089 ! SOURCE3    55    0.0030    0.0056
+bond cf   n1     522.2 1.319 ! SOURCE3     3    0.0121    0.0121
+bond cf   n2     599.8 1.279 ! SOURCE1    75    same as    ce-n2
+bond cf   nf     381.8 1.414 ! SOURCE3     7    same as    ce-ne
+bond cf   nh     484.7 1.341 ! SOURCE3     1    same as    ce-nh
+bond cf   p2     259.1 1.814 ! SOURCE0     1    same as    ce-p2
+bond cf   pf     256.5 1.818 ! SOURCE3     8    same as    ce-pe
+bond cf   px     254.6 1.821 ! SOURCE3     6    same as    ce-px
+bond cf   py     272.3 1.794 ! SOURCE3     5    same as    ce-py
+bond cf   s      324.5 1.680 ! SOURCE0     1    same as    ce- s
+bond cf   sx     239.7 1.797 ! SOURCE3     5    same as    ce-sx
+bond cf   sy     248.9 1.782 ! SOURCE3     5    same as    ce-sy
+bond cg   cg     494.2 1.377 ! SOURCE1    42    0.0000    0.0000
+bond cg   ch     949.5 1.191 ! SOURCE1    80    0.0015    0.0015
+bond cg   n1     994.7 1.143 ! SOURCE1   316    0.0011    0.0018
+bond cg   ne     450.5 1.363 ! SOURCE3     4    0.0189    0.0204
+bond cg   pe     429.8 1.621 ! SOURCE3    11    0.1928    0.2008
+bond ch   ch     494.2 1.377 ! SOURCE1    42    0.0000    0.0000
+bond ch   n1     994.7 1.143 ! SOURCE1   316    0.0011    0.0018
+bond ch   nf     450.5 1.363 ! SOURCE3     4    same as    cg-ne
+bond ch   pf     429.8 1.621 ! SOURCE3    11    same as    cg-pe
+bond cl   cl     143.3 2.267 ! SOURCE1     2    0.0395    0.0395
+bond cl   cx     301.8 1.755 ! SOURCE1    64    0.0000    0.0000
+bond cl   cy     292.0 1.768 ! SOURCE2     2    0.0070    0.0070
+bond cl   f      298.6 1.648 ! SOURCE2     2    0.0500    0.0500
+bond cl   i      163.5 2.550 ! SOURCE1     6    0.0605    0.0893
+bond cl   n      331.8 1.728 ! SOURCE3     3    0.0107    0.0113
+bond cl   n1     431.6 1.630 ! SOURCE0     1
+bond cl   n2     263.4 1.819 ! SOURCE3     6    0.0784    0.1020
+bond cl   n3     298.6 1.769 ! SOURCE3     4    0.0070    0.0095
+bond cl   n4     311.1 1.753 ! SOURCE3     4    0.0085    0.0098
+bond cl   na     253.2 1.835 ! SOURCE3     7    0.1858    0.2083
+bond cl   nh     303.2 1.763 ! SOURCE3     1    0.0000    0.0000
+bond cl   no     250.1 1.840 ! SOURCE2     1    0.0000    0.0000
+bond cl   o      557.6 1.483 ! SOURCE3     4    0.0000    0.0000
+bond cl   oh     309.7 1.690 ! SOURCE2     1    0.0000    0.0000
+bond cl   os     278.8 1.730 ! SOURCE3     4    0.0000    0.0000
+bond cl   p2     217.5 2.070 ! SOURCE3     6    0.0086    0.0108
+bond cl   p3     249.4 2.008 ! SOURCE1   111    0.0000    0.0000
+bond cl   p4     249.4 2.008 ! SOURCE1   111    0.0000    0.0000
+bond cl   p5     249.4 2.008 ! SOURCE1   111    0.0000    0.0000
+bond cl   pb     255.6 1.997 ! SOURCE1    46    0.0000    0.0000
+bond cl   s      208.7 2.072 ! SOURCE1     6    0.0000    0.0000
+bond cl   s2     172.7 2.161 ! SOURCE2     1    0.0000    0.0000
+bond cl   s4     208.7 2.072 ! SOURCE1     6    0.0000    0.0000
+bond cl   s6     208.7 2.072 ! SOURCE1     6    0.0000    0.0000
+bond cl   sh     208.7 2.072 ! SOURCE1     6    0.0000    0.0000
+bond cl   ss     208.7 2.072 ! SOURCE1     6    0.0000    0.0000
+bond cl   sx     208.7 2.072 ! SOURCE1     6    0.0000    0.0000
+bond cl   sy     208.7 2.072 ! SOURCE1     6    0.0000    0.0000
+bond cp   cp     346.5 1.490 ! SOURCE1   242    0.0007    0.0010
+bond cp   nb     470.3 1.350 ! SOURCE3     2    0.0000    0.0000
+bond cq   cq     346.5 1.490 ! SOURCE1   242    0.0007    0.0010
+bond cu   cu     653.7 1.294 ! SOURCE1    10    0.0000    0.0000
+bond cu   cx     327.3 1.509 ! SOURCE1    20    0.0000    0.0000
+bond cu   ha     353.0 1.081 ! SOURCE2     3    0.0104    0.0111
+bond cv   cv     568.1 1.335 ! SOURCE1    25    0.0000    0.0000
+bond cv   cy     323.5 1.513 ! SOURCE1    50    0.0000    0.0000
+bond cv   ha     344.3 1.087 ! SOURCE3     2    0.0000    0.0000
+bond cx   cv     328.3 1.508 ! SOURCE1  2536      Same        as
+bond cx   cx     337.3 1.499 ! SOURCE1  1204    0.0159    0.0183
+bond cx   cy     321.5 1.515 ! SOURCE3     2    0.0000    0.0000
+bond cx   f      347.2 1.358 ! SOURCE2     3    0.0047    0.0050
+bond cx   h1     344.3 1.087 ! SOURCE3    10    0.0013    0.0017
+bond cx   h2     350.1 1.083 ! SOURCE3     2    0.0000    0.0000
+bond cx   hc     345.8 1.086 ! SOURCE3    44    0.0009    0.0011
+bond cx   n      315.7 1.475 ! SOURCE3     1    0.0000    0.0000
+bond cx   n2     309.1 1.482 ! SOURCE3     2    0.0000    0.0000
+bond cx   n3     318.7 1.472 ! SOURCE1   134    0.0000    0.0000
+bond cx   oh     387.4 1.361 ! SOURCE3     3    0.0017    0.0018
+bond cx   os     320.1 1.420 ! SOURCE3     7    0.0205    0.0222
+bond cx   p3     227.6 1.867 ! SOURCE2     1    0.0000    0.0000
+bond cx   s4     225.3 1.822 ! SOURCE2     1    0.0000    0.0000
+bond cx   s6     283.7 1.731 ! SOURCE2     1    0.0000    0.0000
+bond cx   ss     229.2 1.815 ! SOURCE2     1    0.0000    0.0000
+bond cy   cy     286.8 1.554 ! SOURCE1   742    0.0013    0.0041
+bond cy   h1     330.4 1.097 ! SOURCE3    17    0.0042    0.0058
+bond cy   hc     334.5 1.094 ! SOURCE3    63    0.0012    0.0014
+bond cy   n3     307.2 1.484 ! SOURCE1    21    0.0000    0.0000
+bond cy   oh     325.2 1.415 ! SOURCE3     2    0.0000    0.0000
+bond cy   os     280.7 1.462 ! SOURCE3     4    0.0101    0.0101
+bond f    n      391.7 1.397 ! SOURCE3     3    0.0106    0.0112
+bond f    n1     375.7 1.410 ! SOURCE0     1
+bond f    n2     337.5 1.444 ! SOURCE3     5    0.0292    0.0377
+bond f    n3     380.6 1.406 ! SOURCE1     9    0.0000    0.0000
+bond f    n4     526.8 1.308 ! SOURCE3     2    0.0000    0.0000
+bond f    na     374.5 1.411 ! SOURCE3     7    0.0537    0.0611
+bond f    nh     357.1 1.426 ! SOURCE3     3    0.0080    0.0085
+bond f    no     314.4 1.467 ! SOURCE2     1    0.0000    0.0000
+bond f    o      442.2 1.330 ! SOURCE0     1
+bond f    oh     305.4 1.444 ! SOURCE3     1    0.0000    0.0000
+bond f    os     326.2 1.423 ! SOURCE3     2    0.0000    0.0000
+bond f    p2     287.3 1.536 ! SOURCE3     7    0.1437    0.2054
+bond f    p3     254.5 1.578 ! SOURCE2     8    0.0093    0.0103
+bond f    p4     246.0 1.590 ! SOURCE0     1
+bond f    p5     253.8 1.579 ! SOURCE1    72    0.0000    0.0000
+bond f    s      233.3 1.660 ! SOURCE0     1
+bond f    s2     244.4 1.643 ! SOURCE2     1    0.0000    0.0000
+bond f    s4     282.4 1.591 ! SOURCE2     4    0.0065    0.0065
+bond f    s6     312.1 1.556 ! SOURCE2     5    0.0163    0.0220
+bond f    sh     240.4 1.649 ! SOURCE3     1    0.0000    0.0000
+bond f    ss     250.5 1.634 ! SOURCE3     3    0.0147    0.0156
+bond hn   n      410.2 1.009 ! SOURCE3   149    0.0089    0.0098
+bond hn   n1     455.1 0.986 ! SOURCE2     1    0.0000    0.0000
+bond hn   n2     375.5 1.029 ! SOURCE3   108    0.0070    0.0096
+bond hn   n3     394.1 1.018 ! SOURCE3   157    0.0063    0.0086
+bond hn   n4     369.0 1.033 ! SOURCE3   264    0.0054    0.0082
+bond hn   na     406.6 1.011 ! SOURCE3    46    0.0076    0.0107
+bond hn   nh     401.2 1.014 ! SOURCE3   209    0.0068    0.0091
+bond hn   no     385.6 1.023 ! SOURCE3     1    0.0000    0.0000
+bond ho   o      357.9 0.981 ! SOURCE3     1    0.0000    0.0000
+bond ho   oh     369.6 0.974 ! SOURCE3   367    0.0069    0.0105
+bond hp   p2     385.1 1.336 ! SOURCE3    87    0.1430    0.1706
+bond hp   p3     303.1 1.409 ! SOURCE3   101    0.0170    0.0617
+bond hp   p4     368.7 1.349 ! SOURCE3    17    0.1277    0.1577
+bond hp   p5     305.0 1.407 ! SOURCE3     7    0.0049    0.0062
+bond hs   s      286.4 1.353 ! SOURCE3     1    0.0000    0.0000
+bond hs   s4     266.4 1.375 ! SOURCE3     5    0.0004    0.0004
+bond hs   s6     280.8 1.359 ! SOURCE3     5    0.0012    0.0015
+bond hs   sh     302.2 1.337 ! SOURCE3    98    0.0150    0.0486
+bond i    i      109.2 2.917 ! SOURCE1     1    0.0000    0.0000
+bond i    n      278.3 2.098 ! SOURCE3     5    0.0153    0.0156
+bond i    n1     302.1 2.060 ! SOURCE0     1
+bond i    n2     182.6 2.304 ! SOURCE3     6    0.1010    0.1186
+bond i    n3     231.8 2.185 ! SOURCE3     3    0.0412    0.0437
+bond i    n4     246.6 2.155 ! SOURCE3     3    0.0158    0.0168
+bond i    na     260.5 2.129 ! SOURCE3     8    0.0838    0.1276
+bond i    nh     249.2 2.150 ! SOURCE3     1    0.0000    0.0000
+bond i    no     211.0 2.231 ! SOURCE3     1    0.0000    0.0000
+bond i    o      323.8 1.980 ! SOURCE0     1
+bond i    oh     247.9 2.101 ! SOURCE3     2    0.0000    0.0000
+bond i    os     233.6 2.129 ! SOURCE3     3    0.0138    0.0146
+bond i    p2     108.2 2.643 ! SOURCE3     6    0.0266    0.0297
+bond i    p3     123.6 2.566 ! SOURCE3     3    0.0015    0.0016
+bond i    p4     183.0 2.352 ! SOURCE3     4    0.2600    0.2600
+bond i    p5     117.3 2.596 ! SOURCE3     3    0.0135    0.0143
+bond i    s      175.1 2.430 ! SOURCE0     1
+bond i    s4      82.8 2.870 ! SOURCE0     1
+bond i    s6      82.8 2.870 ! SOURCE3     1    0.0000    0.0000
+bond i    sh     138.5 2.560 ! SOURCE0     1
+bond i    ss     135.9 2.571 ! SOURCE3     3    0.0061    0.0065
+bond n    n      469.7 1.390 ! SOURCE3     5    0.0035    0.0038
+bond n    n1     553.9 1.340 ! SOURCE0     1
+bond n    n2     499.7 1.371 ! SOURCE3     9    0.0164    0.0200
+bond n    n3     443.3 1.408 ! SOURCE3     5    0.0077    0.0087
+bond n    n4     410.8 1.432 ! SOURCE3     5    0.0096    0.0098
+bond n    na     486.8 1.379 ! SOURCE3    11    0.0052    0.0071
+bond n    nc     532.1 1.352 ! SOURCE3     4    0.0055    0.0058
+bond n    nd     532.1 1.352 ! SOURCE3     4    same as    n -nc
+bond n    nh     437.7 1.412 ! SOURCE3     4    0.0035    0.0037
+bond n    no     381.2 1.456 ! SOURCE3     4    0.0278    0.0327
+bond n    o      646.6 1.264 ! SOURCE3     9    0.0336    0.0381
+bond n    oh     395.4 1.410 ! SOURCE3     6    0.0078    0.0106
+bond n    os     372.3 1.429 ! SOURCE3     7    0.0364    0.0528
+bond n    p2     310.3 1.733 ! SOURCE3     8    0.0143    0.0217
+bond n    p3     282.2 1.770 ! SOURCE3     9    0.0102    0.0118
+bond n    p4     309.5 1.734 ! SOURCE3     1    0.0000    0.0000
+bond n    p5     327.0 1.713 ! SOURCE3     4    0.0084    0.0109
+bond n    pc     304.8 1.740 ! SOURCE3     3    0.0009    0.0010
+bond n    pd     304.8 1.740 ! SOURCE3     3    same as    n -pc
+bond n    s      247.5 1.767 ! SOURCE3     3    0.0011    0.0011
+bond n    s4     238.2 1.782 ! SOURCE3     4    0.0154    0.0214
+bond n    s6     270.8 1.732 ! SOURCE3     4    0.0177    0.0224
+bond n    sh     273.6 1.728 ! SOURCE3     4    0.0108    0.0128
+bond n    ss     281.6 1.717 ! SOURCE3     7    0.0120    0.0133
+bond n1   n1    1221.7 1.124 ! SOURCE1    19    0.0000    0.0000
+bond n1   n2     857.4 1.216 ! SOURCE1    19    0.0000    0.0000
+bond n1   n3     535.7 1.350 ! SOURCE0     1
+bond n1   n4     518.2 1.360 ! SOURCE0     1
+bond n1   na     535.7 1.350 ! SOURCE0     1
+bond n1   nc     857.4 1.216 ! SOURCE1    38    0.0000    0.0000
+bond n1   nd     857.4 1.216 ! SOURCE1    38    0.0000    0.0000
+bond n1   ne     751.9 1.252 ! SOURCE2     1    0.0000    0.0000
+bond n1   nf     751.9 1.252 ! SOURCE2     1    same as    n1-ne
+bond n1   nh     553.9 1.340 ! SOURCE0     1
+bond n1   no     454.8 1.400 ! SOURCE0     1
+bond n1   o      617.5 1.277 ! SOURCE3     5    0.0340    0.0438
+bond n1   oh     569.8 1.300 ! SOURCE0     1
+bond n1   os     550.5 1.310 ! SOURCE0     1
+bond n1   p2     358.8 1.678 ! SOURCE3     2    0.0282    0.0282
+bond n1   p3     376.7 1.660 ! SOURCE0     1
+bond n1   p4     353.0 1.680 ! SOURCE3
+bond n1   p5     482.7 1.571 ! SOURCE1   132    0.0000    0.0000
+bond n1   s      328.7 1.659 ! SOURCE3     6    0.0693    0.0789
+bond n1   s2     604.3 1.449 ! SOURCE2     2    0.0010    0.0010
+bond n1   s4     336.8 1.650 ! SOURCE0     1
+bond n1   s6     670.3 1.416 ! SOURCE2     2    0.0000    0.0000
+bond n1   sh     376.1 1.610 ! SOURCE0     1
+bond n1   ss     376.1 1.610 ! SOURCE0     1
+bond n2   n2     702.7 1.271 ! SOURCE3    27    0.0228    0.0347
+bond n2   n3     574.8 1.329 ! SOURCE2     1    0.0000    0.0000
+bond n2   n4     200.8 1.679 ! SOURCE3     7    0.2778    0.3138
+bond n2   na     450.4 1.403 ! SOURCE3    14    0.0399    0.0575
+bond n2   nc     743.9 1.255 ! SOURCE1    13    same as    n2-nd
+bond n2   nd     743.9 1.255 ! SOURCE1    13    0.0000    0.0000
+bond n2   ne     685.5 1.278 ! SOURCE3    30    0.0224    0.0302
+bond n2   nf     685.5 1.278 ! SOURCE3    30    same as    n2-ne
+bond n2   nh     525.1 1.356 ! SOURCE3    22    0.0218    0.0300
+bond n2   no     231.9 1.626 ! SOURCE3     4    0.1591    0.1933
+bond n2   o      789.9 1.209 ! SOURCE3    20    0.0284    0.0344
+bond n2   oh     416.2 1.394 ! SOURCE1    67    0.0000    0.0000
+bond n2   os     400.5 1.406 ! SOURCE3    10    0.0120    0.0147
+bond n2   p2     438.3 1.605 ! SOURCE3    35    0.0392    0.0737
+bond n2   p3     286.5 1.764 ! SOURCE3     7    0.0320    0.0374
+bond n2   p4     317.7 1.724 ! SOURCE0     1
+bond n2   p5     445.8 1.599 ! SOURCE1     7    0.0000    0.0000
+bond n2   pe     527.9 1.540 ! SOURCE3    20    0.1112    0.1392
+bond n2   pf     527.9 1.540 ! SOURCE3    20    same as    n2-pe
+bond n2   s      458.1 1.541 ! SOURCE1    37    0.0000    0.0000
+bond n2   s2     499.0 1.512 ! SOURCE2     1    0.0000    0.0000
+bond n2   s4     376.1 1.610 ! SOURCE0     1
+bond n2   s6     468.9 1.533 ! SOURCE3     3    0.0144    0.0144
+bond n2   sh     266.6 1.738 ! SOURCE3     5    0.0405    0.0511
+bond n2   ss     331.4 1.656 ! SOURCE1    36    0.0000    0.0000
+bond n3   n3     383.6 1.454 ! SOURCE1    44    0.0000    0.0000
+bond n3   n4     434.9 1.414 ! SOURCE1    13    0.0000    0.0000
+bond n3   na     426.7 1.420 ! SOURCE1    68    0.0000    0.0000
+bond n3   nh     426.7 1.420 ! SOURCE1    68    0.0000    0.0000
+bond n3   no     394.5 1.445 ! SOURCE3     3    0.0196    0.0208
+bond n3   o      564.0 1.303 ! SOURCE3     4    0.1197    0.1217
+bond n3   oh     413.5 1.396 ! SOURCE1    28    0.0000    0.0000
+bond n3   os     359.6 1.440 ! SOURCE1    34    0.0301    0.0315
+bond n3   p2     366.6 1.670 ! SOURCE0     1
+bond n3   p3     312.8 1.730 ! SOURCE1    40    0.0000    0.0000
+bond n3   p4     341.1 1.697 ! SOURCE1    88    0.0000    0.0000
+bond n3   p5     373.6 1.663 ! SOURCE1   501    0.0033    0.0086
+bond n3   s      232.3 1.792 ! SOURCE3     3    0.0168    0.0178
+bond n3   s4     251.3 1.761 ! SOURCE3     6    0.0563    0.0766
+bond n3   s6     353.8 1.632 ! SOURCE1    99    0.0090    0.0136
+bond n3   sh     265.9 1.739 ! SOURCE3     3    0.0145    0.0154
+bond n3   ss     277.9 1.722 ! SOURCE3     5    0.0172    0.0207
+bond n4   n4     349.9 1.484 ! SOURCE3     4    0.0089    0.0089
+bond n4   na     407.0 1.435 ! SOURCE3     9    0.0242    0.0390
+bond n4   nh     369.7 1.466 ! SOURCE3     5    0.0097    0.0108
+bond n4   no     354.2 1.480 ! SOURCE0     1
+bond n4   o      463.6 1.361 ! SOURCE3     3    0.0039    0.0041
+bond n4   oh     408.2 1.400 ! SOURCE3     3    0.0108    0.0115
+bond n4   os     381.8 1.421 ! SOURCE3     5    0.0225    0.0249
+bond n4   p2     185.9 1.942 ! SOURCE3    10    0.0514    0.0643
+bond n4   p3     215.1 1.880 ! SOURCE3     5    0.0143    0.0146
+bond n4   p4     187.6 1.938 ! SOURCE3     1    0.0000    0.0000
+bond n4   p5     242.9 1.830 ! SOURCE3     5    0.0082    0.0087
+bond n4   py     204.2 1.902 ! SOURCE3     4    0.0000    0.0000
+bond n4   s      210.3 1.832 ! SOURCE3     3    0.0004    0.0004
+bond n4   s4     151.0 1.972 ! SOURCE3     3    0.0187    0.0198
+bond n4   s6     172.7 1.914 ! SOURCE3     5    0.0414    0.0432
+bond n4   sh     221.5 1.811 ! SOURCE3     3    0.0025    0.0027
+bond n4   ss     221.0 1.812 ! SOURCE3     5    0.0061    0.0064
+bond na   na     453.3 1.401 ! SOURCE1    40    0.0000    0.0000
+bond na   nc     535.7 1.350 ! SOURCE3   152    0.0117    0.0180
+bond na   nd     535.7 1.350 ! SOURCE3   152    0.0117    0.0180
+bond na   nh     453.3 1.401 ! SOURCE1    40    0.0000    0.0000
+bond na   no     401.9 1.439 ! SOURCE3     9    0.0241    0.0289
+bond na   o      644.3 1.265 ! SOURCE1    25    0.0345    0.0347
+bond na   oh     412.2 1.397 ! SOURCE3     9    0.0161    0.0217
+bond na   os     355.2 1.444 ! SOURCE3    45    0.0349    0.0423
+bond na   p2     297.8 1.749 ! SOURCE3    11    0.0164    0.0192
+bond na   p3     288.0 1.762 ! SOURCE3     8    0.0101    0.0113
+bond na   p4     492.4 1.564 ! SOURCE3     5    0.2116    0.2161
+bond na   p5     325.3 1.715 ! SOURCE3    11    0.0197    0.0238
+bond na   pc     311.1 1.732 ! SOURCE3    81    0.0124    0.0207
+bond na   pd     311.1 1.732 ! SOURCE3    81    same as    na-pc
+bond na   py     327.8 1.712 ! SOURCE3     2    0.0000    0.0000
+bond na   s      248.7 1.765 ! SOURCE3     8    0.0083    0.0095
+bond na   s4     231.7 1.793 ! SOURCE3    10    0.0316    0.0421
+bond na   s6     274.3 1.727 ! SOURCE3    10    0.0169    0.0201
+bond na   sh     278.6 1.721 ! SOURCE3     9    0.0101    0.0113
+bond na   ss     270.1 1.733 ! SOURCE3    38    0.0280    0.0412
+bond na   sy     274.3 1.727 ! SOURCE3     1
+bond nb   nb     550.2 1.342 ! SOURCE1    15    0.0307    0.0314
+bond nb   pb     461.1 1.587 ! SOURCE1   162    0.0076    0.0091
+bond nc   nc     486.8 1.379 ! SOURCE3     9    0.0145    0.0164
+bond nc   nd     602.9 1.315 ! SOURCE3     9    0.0205    0.0221
+bond nc   os     414.9 1.395 ! SOURCE1    46    0.0163    0.0188
+bond nc   ss     433.5 1.560 ! SOURCE1    74    0.0000    0.0000
+bond nc   sy     439.8 1.555 ! SOURCE3     2
+bond nd   nd     486.8 1.379 ! SOURCE3     9    0.0145    0.0164
+bond nd   os     414.9 1.395 ! SOURCE1    46    0.0163    0.0188
+bond nd   ss     433.5 1.560 ! SOURCE1    74    0.0000    0.0000
+bond nd   sy     439.8 1.555 ! SOURCE3     2
+bond ne   ne     355.3 1.479 ! SOURCE3    19    0.0960    0.1705
+bond ne   nf     738.6 1.257 ! SOURCE3     1    0.0000    0.0000
+bond ne   o      736.4 1.228 ! SOURCE3    40    0.0207    0.0255
+bond ne   p2     493.9 1.563 ! SOURCE3    14    0.0950    0.1325
+bond ne   pe     327.8 1.712 ! SOURCE3    28    0.0848    0.1076
+bond ne   px     336.6 1.702 ! SOURCE3    11    0.0578    0.0883
+bond ne   py     320.2 1.721 ! SOURCE3    15    0.0497    0.0702
+bond ne   s      463.5 1.537 ! SOURCE3    22    0.1396    0.1708
+bond ne   sx     207.3 1.838 ! SOURCE3     7    0.0760    0.1060
+bond ne   sy     257.1 1.752 ! SOURCE3     7    0.0640    0.0814
+bond nf   nf     355.3 1.479 ! SOURCE3    19    same as    ne-ne
+bond nf   o      736.4 1.228 ! SOURCE3    40    same as    ne- o
+bond nf   p2     493.9 1.563 ! SOURCE3    14    same as    ne-p2
+bond nf   pf     327.8 1.712 ! SOURCE3    28    same as    ne-pe
+bond nf   px     336.6 1.702 ! SOURCE3    11    same as    ne-px
+bond nf   py     320.2 1.721 ! SOURCE3    15    same as    ne-py
+bond nf   s      463.5 1.537 ! SOURCE3    22    same as    ne- s
+bond nf   sx     207.3 1.838 ! SOURCE3     7    same as    ne-sx
+bond nf   sy     257.1 1.752 ! SOURCE3     7    same as    ne-sy
+bond nh   nh     453.3 1.401 ! SOURCE1    40    0.0000    0.0000
+bond nh   no     381.2 1.456 ! SOURCE3     4    0.0364    0.0370
+bond nh   o      596.2 1.287 ! SOURCE3     3    0.0424    0.0450
+bond nh   oh     359.6 1.440 ! SOURCE3     1    0.0000    0.0000
+bond nh   os     358.5 1.441 ! SOURCE3     3    0.0029    0.0031
+bond nh   p2     357.8 1.679 ! SOURCE3    17    0.0422    0.0872
+bond nh   p3     312.8 1.730 ! SOURCE3     3    0.0015    0.0016
+bond nh   p4     333.1 1.706 ! SOURCE3     3    0.0008    0.0008
+bond nh   p5     365.6 1.671 ! SOURCE3     3    0.0007    0.0007
+bond nh   s      237.0 1.784 ! SOURCE3     3    0.0072    0.0076
+bond nh   s4     259.1 1.749 ! SOURCE3     3    0.0192    0.0203
+bond nh   s6     300.0 1.693 ! SOURCE3     3    0.0036    0.0038
+bond nh   sh     288.3 1.708 ! SOURCE3     1    0.0000    0.0000
+bond nh   ss     288.3 1.708 ! SOURCE1    52    0.0015    0.0015
+bond nh   sy     324.2 1.664 ! SOURCE3     1    0.0000    0.0000
+bond no   no     138.3 1.824 ! SOURCE3     1    0.0000    0.0000
+bond no   o      761.2 1.219 ! SOURCE1  1838    0.0023    0.0049
+bond no   oh     400.5 1.406 ! SOURCE2     1    0.0000    0.0000
+bond no   os     320.8 1.477 ! SOURCE3     4    0.0526    0.0532
+bond no   p2     306.3 1.738 ! SOURCE3    10    0.2024    0.2231
+bond no   p3     234.7 1.844 ! SOURCE3     3    0.0005    0.0005
+bond no   p4     220.4 1.870 ! SOURCE3     3    0.0005    0.0006
+bond no   p5     240.5 1.834 ! SOURCE3     4    0.0019    0.0020
+bond no   s      263.8 1.742 ! SOURCE3     2    0.0000    0.0000
+bond no   s4     143.0 1.996 ! SOURCE3     3    0.0295    0.0313
+bond no   s6     149.6 1.976 ! SOURCE3     3    0.0490    0.0520
+bond no   sh     225.4 1.804 ! SOURCE3     1    0.0000    0.0000
+bond no   ss     212.4 1.828 ! SOURCE3     3    0.0230    0.0244
+bond o    o      384.3 1.430 ! SOURCE3     2    0.0500    0.0500
+bond o    oh     294.6 1.517 ! SOURCE3     2    0.0000    0.0000
+bond o    os     306.3 1.504 ! SOURCE3     3    0.0110    0.0117
+bond o    p2     449.7 1.508 ! SOURCE3    17    0.0167    0.0306
+bond o    p3     440.4 1.515 ! SOURCE3    35    0.0214    0.0297
+bond o    p4     456.4 1.503 ! SOURCE3    42    0.0343    0.0749
+bond o    p5     487.7 1.481 ! SOURCE1   263    0.0180    0.0205
+bond o    pe     432.6 1.521 ! SOURCE3    20    0.0138    0.0171
+bond o    pf     432.6 1.521 ! SOURCE3    20    same as    o -pe
+bond o    px     459.2 1.501 ! SOURCE3    37    0.0125    0.0160
+bond o    py     477.5 1.488 ! SOURCE3    63    0.0063    0.0091
+bond o    s      194.8 1.802 ! SOURCE3     2    0.0000    0.0000
+bond o    s2     333.6 1.599 ! SOURCE3     3    0.0666    0.0707
+bond o    s4     448.7 1.497 ! SOURCE1    90    0.0000    0.0000
+bond o    s6     541.1 1.436 ! SOURCE1  1038    0.0072    0.0128
+bond o    sh     328.0 1.605 ! SOURCE3     2    0.0000    0.0000
+bond o    ss     398.5 1.537 ! SOURCE3     3    0.0434    0.0501
+bond o    sx     434.2 1.508 ! SOURCE3    40    0.0083    0.0130
+bond o    sy     493.0 1.466 ! SOURCE3    92    0.0077    0.0114
+bond oh   oh     340.5 1.469 ! SOURCE3     1    0.0000    0.0000
+bond oh   os     342.6 1.467 ! SOURCE3     3    0.0065    0.0072
+bond oh   p2     316.8 1.630 ! SOURCE3     8    0.0600    0.0916
+bond oh   p3     278.8 1.677 ! SOURCE3     3    0.0140    0.0148
+bond oh   p4     307.4 1.641 ! SOURCE3     4    0.0092    0.0092
+bond oh   p5     321.2 1.625 ! SOURCE3    92    0.0293    0.0451
+bond oh   py     332.1 1.613 ! SOURCE3    79    0.0111    0.0138
+bond oh   s      190.0 1.812 ! SOURCE3     2    0.0000    0.0000
+bond oh   s4     274.3 1.670 ! SOURCE3     3    0.0173    0.0184
+bond oh   s6     344.1 1.588 ! SOURCE3    13    0.0072    0.0091
+bond oh   sh     258.6 1.692 ! SOURCE3     2    0.0003    0.0003
+bond oh   ss     265.6 1.682 ! SOURCE3     4    0.0131    0.0131
+bond oh   sy     302.6 1.634 ! SOURCE3     4    0.0153    0.0154
+bond os   os     343.6 1.466 ! SOURCE1    20    0.0047    0.0067
+bond os   p2     371.9 1.573 ! SOURCE1    16    0.0000    0.0000
+bond os   p3     272.2 1.686 ! SOURCE3     6    0.0141    0.0201
+bond os   p4     311.6 1.636 ! SOURCE3     4    0.0056    0.0057
+bond os   p5     342.5 1.602 ! SOURCE1   248    0.0332    0.0400
+bond os   py     328.5 1.617 ! SOURCE3    17    0.0082    0.0139
+bond os   s      195.8 1.800 ! SOURCE3     3    0.0049    0.0052
+bond os   s4     253.9 1.699 ! SOURCE3     8    0.0194    0.0223
+bond os   s6     355.0 1.577 ! SOURCE1    75    0.0019    0.0030
+bond os   sh     273.6 1.671 ! SOURCE3     3    0.0100    0.0106
+bond os   ss     250.5 1.704 ! SOURCE3     9    0.0241    0.0277
+bond os   sy     253.9 1.699 ! SOURCE3     1    0.0000    0.0000
+bond p2   p2     490.3 1.786 ! SOURCE3    25    0.3198    0.3488
+bond p2   p3     211.9 2.152 ! SOURCE3     9    0.1116    0.1777
+bond p2   p4     200.4 2.179 ! SOURCE0     1
+bond p2   p5     199.9 2.180 ! SOURCE0     1
+bond p2   pe     401.6 1.867 ! SOURCE3    16    0.3079    0.3571
+bond p2   pf     401.6 1.867 ! SOURCE3    16    same as    p2-pe
+bond p2   s      361.6 1.772 ! SOURCE3    26    0.2523    0.3014
+bond p2   s4     139.4 2.190 ! SOURCE0     1
+bond p2   s6     142.3 2.180 ! SOURCE0     1
+bond p2   sh     224.0 1.971 ! SOURCE3    10    0.2263    0.2829
+bond p2   ss     226.6 1.966 ! SOURCE3    10    0.2189    0.2739
+bond p3   p3     186.5 2.214 ! SOURCE1    41    0.0000    0.0000
+bond p3   p4     185.7 2.216 ! SOURCE3     3    0.0010    0.0011
+bond p3   p5     186.9 2.213 ! SOURCE3     9    0.0257    0.0265
+bond p3   s      179.7 2.070 ! SOURCE0     1
+bond p3   s4     173.2 2.087 ! SOURCE3     8    0.1935    0.2235
+bond p3   s6     176.9 2.077 ! SOURCE3    11    0.1085    0.1420
+bond p3   sh     157.3 2.132 ! SOURCE3     3    0.0073    0.0078
+bond p3   ss     161.0 2.121 ! SOURCE3     3    0.0056    0.0059
+bond p4   p4     273.1 2.034 ! SOURCE1     1    0.0000    0.0000
+bond p4   p5     178.0 2.237 ! SOURCE0     1
+bond p4   s      152.7 2.146 ! SOURCE3     5    0.0571    0.0601
+bond p4   s4     123.2 2.251 ! SOURCE0     1
+bond p4   s6     118.9 2.269 ! SOURCE0     1
+bond p4   sh     163.1 2.115 ! SOURCE3     4    0.0006    0.0008
+bond p4   ss     167.0 2.104 ! SOURCE3     4    0.0042    0.0044
+bond p5   p5     261.4 2.054 ! SOURCE1     1    0.0000    0.0000
+bond p5   s      250.8 1.922 ! SOURCE1    89    0.0097    0.0140
+bond p5   s4     191.9 2.040 ! SOURCE0     1
+bond p5   s6     191.9 2.040 ! SOURCE0     1
+bond p5   sh     175.0 2.082 ! SOURCE3     3    0.0033    0.0035
+bond p5   ss     164.8 2.110 ! SOURCE3     6    0.0379    0.0531
+bond pe   pe     240.7 2.092 ! SOURCE3     7    0.1280    0.1369
+bond pe   pf     260.8 2.055 ! SOURCE3     1    0.0000    0.0000
+bond pe   px     291.4 2.005 ! SOURCE3    12    0.2364    0.2609
+bond pe   py     278.6 2.025 ! SOURCE3    12    0.2453    0.2617
+bond pe   s      374.7 1.758 ! SOURCE3    31    0.2925    0.3197
+bond pe   sx     145.9 2.168 ! SOURCE3     9    0.1092    0.1743
+bond pe   sy     133.0 2.213 ! SOURCE3     6    0.0106    0.0127
+bond pf   pf     240.7 2.092 ! SOURCE3     7    same as    pe-pe
+bond pf   px     291.4 2.005 ! SOURCE3    12    same as    pe-px
+bond pf   py     278.6 2.025 ! SOURCE3    12    same as    pe-py
+bond pf   s      374.7 1.758 ! SOURCE3    31    same as    pe- s
+bond pf   sx     145.9 2.168 ! SOURCE3     9    same as    pe-sx
+bond pf   sy     133.0 2.213 ! SOURCE3     6    same as    pe-sy
+bond px   py     192.3 2.199 ! SOURCE3     5    0.0221    0.0238
+bond px   sx     125.4 2.242 ! SOURCE3     3    0.0112    0.0119
+bond px   sy     123.7 2.249 ! SOURCE3     3    0.0256    0.0272
+bond py   py     197.5 2.186 ! SOURCE3     8    0.0110    0.0132
+bond py   sx     121.2 2.259 ! SOURCE3     7    0.0595    0.0603
+bond py   sy     141.7 2.182 ! SOURCE3     5    0.0044    0.0047
+bond s    s      169.0 2.030 ! SOURCE3     1    0.0000    0.0000
+bond s    s2     229.2 1.897 ! SOURCE1     5    0.0000    0.0000
+bond s    s4     152.8 2.076 ! SOURCE3     4    0.0345    0.0345
+bond s    s6     166.0 2.038 ! SOURCE3     3    0.0293    0.0311
+bond s    sh     142.0 2.110 ! SOURCE3     2    0.0000    0.0000
+bond s    ss     148.5 2.089 ! SOURCE3     1    0.0000    0.0000
+bond s4   s4     151.5 2.080 ! SOURCE0     1
+bond s4   s6     151.5 2.080 ! SOURCE0     1
+bond s4   sh     125.7 2.168 ! SOURCE3     3    0.0214    0.0227
+bond s4   ss     126.2 2.166 ! SOURCE3     5    0.0241    0.0247
+bond s6   s6     151.5 2.080 ! SOURCE0     1
+bond s6   sh     142.6 2.108 ! SOURCE3     3    0.0136    0.0144
+bond s6   ss     139.6 2.118 ! SOURCE3     5    0.0198    0.0209
+bond sh   sh     158.9 2.058 ! SOURCE2     1    0.0000    0.0000
+bond sh   ss     155.8 2.067 ! SOURCE3     3    0.0027    0.0029
+bond ss   ss     161.7 2.050 ! SOURCE1   225    0.0015    0.0015
+bond sx   sx      80.9 2.391 ! SOURCE3     3    0.0174    0.0185
+bond sx   sy     105.3 2.255 ! SOURCE3     5    0.0703    0.0737
+bond sy   sy     106.4 2.250 ! SOURCE3     3    0.0272    0.0289
 
 angle hw   ow   hw     100.0 104.52 ! TIP3P water
 angle hw   hw   ow       0.0 127.74 ! (found in crystallographic water with 3 bonds)
@@ -1043,7 +1034,7 @@ angle c2   c1   s2      56.7 172.98 ! SOURCE3    1   0.0000   0.0000
 angle c3   c1   n1      58.3 177.57 ! SOURCE2    3   2.3778   2.5773
 angle cg   c1   ha      44.0 177.41 ! SOURCE3   22   2.3752   2.4947
 angle ch   c1   ha      44.0 177.41 ! SOURCE3   22  same as cg-c1-ha
-!angle n1   c1   n1      93.2 102.01 ! SOURCE0    1
+angle n1   c1   n1      93.2 102.01 ! SOURCE0    1
 angle n1   c1   n3      63.7 169.70 ! SOURCE2    1   0.0000   0.0000
 angle n1   c1   os      64.7 178.59 ! SOURCE3    1   0.0000   0.0000
 angle n1   c1   p3      67.7 171.20 ! SOURCE2    1   0.0000   0.0000
@@ -2077,7 +2068,7 @@ angle cf   n1   s       64.8 117.34 ! SOURCE3    1   0.0000   0.0000
 angle ce   n1   s       64.8 117.34 ! SOURCE3    1  same as cf-n1-s
 angle o    n1   p2      84.7 116.05 ! SOURCE3    1   0.0000   0.0000
 angle p2   n1   s       80.3 119.93 ! SOURCE3    1   0.0000   0.0000
-!angle n1   n1   s       54.6 180.00 ! SOURCE3    1   0.0000   0.0000
+angle n1   n1   s       54.6 180.00 ! SOURCE3    1   0.0000   0.0000
 angle br   n2   br      63.9 106.60 ! SOURCE0    1
 angle br   n2   c2      59.1 112.40 ! SOURCE3    1   0.0000   0.0000
 angle br   n2   n2      61.1 110.42 ! SOURCE3    1   0.0000   0.0000
@@ -4018,6 +4009,7 @@ angle sh   s6   ss      60.4 102.64 ! SOURCE0    1
 angle ss   s6   ss      60.5 101.82 ! SOURCE3    1   0.0000   0.0000
 angle br   sh   hs      43.5 95.64 ! SOURCE3    1   0.0000   0.0000
 angle c    sh   hs      46.0 96.07 ! SOURCE3    6   0.9968   1.1164
+angle c1   sh   hs      29.9 95.99 ! calculated based on C#C-SH
 angle c2   sh   hs      46.2 95.94 ! SOURCE3    3   0.3373   0.3578
 angle c3   sh   hs      44.9 96.60 ! SOURCE3   12   0.6315   0.8009
 angle ca   sh   hs      45.7 96.61 ! SOURCE3    2   0.2867   0.2867
@@ -4240,7 +4232,6 @@ angle c1   n1   s4      55.2 169.60 ! HF/6-31G*
 angle c1   n1   s6      61.8 175.92 ! HF/6-31G*
 angle c1   n1   sh      55.7 174.25 ! HF/6-31G*
 angle c1   n1   ss      55.4 176.06 ! HF/6-31G*
-angle c1   ng   ng      51.9 179.97 ! HF/6-31G*
 angle c2   c1   n1      63.1 180.00 ! HF/6-31G*
 angle c2   c2   n1      71.7 122.98 ! HF/6-31G*
 angle c2   n1   n1      61.6 180.00 ! HF/6-31G*
@@ -4278,7 +4269,6 @@ angle n1   n1   oh      64.8 173.77 ! HF/6-31G*
 angle n1   n1   os      64.0 176.12 ! HF/6-31G*
 angle n1   n1   p2      69.4 174.71 ! HF/6-31G*
 angle n1   n1   p3      70.2 174.27 ! HF/6-31G*
-angle n1   n1   s       54.6 179.96 ! HF/6-31G*
 angle n1   n1   sh      57.0 175.07 ! HF/6-31G*
 angle n1   n1   ss      56.9 175.61 ! HF/6-31G*
 angle n1   p4   o       49.7 114.59 ! HF/6-31G*
@@ -4286,7 +4276,6 @@ angle n1   p5   o       44.7 113.78 ! HF/6-31G*
 angle n1   s2   o       73.1 108.46 ! HF/6-31G*
 angle n1   s4   o       70.2 110.09 ! HF/6-31G*
 angle n1   s6   o       78.8 107.52 ! HF/6-31G*
-angle n1   c1   n1      70.2 180.00 ! HF/6-31G*
 angle n1   c2   n1      73.6 124.15 ! HF/6-31G*
 angle n1   c3   n1      80.0 105.07 ! HF/6-31G*
 angle n1   ca   n1      75.8 117.03 ! HF/6-31G*
@@ -4329,8 +4318,6 @@ angle n4   c1   n4      56.3 180.00 ! Guess
 angle nh   c1   nh      59.0 180.00 ! Guess
 angle no   c1   no      56.8 180.00 ! Guess
 angle na   c1   na      58.6 180.00 ! Guess
-angle na   c1   na      58.6 180.00 ! Guess
-angle na   c1   na      58.6 180.00 ! Guess
 
 dihe X    c    c    X     0.30       2  180.00
 dihe X    c    c1   X     0.00       2  180.00
@@ -4357,7 +4344,6 @@ dihe X    c    na   X     0.35       4  180.00
 dihe X    c    no   X     0.45       2  180.00
 dihe X    c    oh   X     2.30       2  180.00 ! Junmei et al, 1999
 dihe X    c    os   X     2.70       2  180.00 ! Junmei et al, 1999
-dihe X    c    pc   X     2.00       2  180.00 ! estimated
 dihe X    c    p2   X     6.65       2  180.00 ! double bond, same as X-c2-p2-X
 dihe X    c    pc   X     2.00       2  180.00 ! estimated
 dihe X    c    pd   X     2.00       2  180.00 ! estimated
@@ -4875,7 +4861,6 @@ dihe X    p3   p5   X     1.83       2  180.00
 dihe X    p3   py   X     1.83       2  180.00
 dihe X    p3   sh   X     4.60       2    0.00
 dihe X    p3   ss   X     1.15       3    0.00
-dihe X    p3   ss   X     1.15       3    0.00
 dihe X    p3   s4   X     3.85       2    0.00
 dihe X    p3   sx   X     3.85       2    0.00
 dihe X    p3   s6   X     0.27       3    0.00
@@ -4927,12 +4912,12 @@ dihe n    c3   c    n     2.00       2  180.00
 dihe c    n    c3   c     0.80       1    0.00
 dihe c3   c3   n    c     0.53       1    0.00 ! phi,psi,parm94
 dihe c3   c3   c    n     0.07       2    0.00 ! phi,psi,parm94
-dihe c2   ne   p5   o     2.30       1    0.00 ! phi,psi,parm94
-dihe c2   nf   p5   o     2.30       1    0.00 ! phi,psi,parm94
-dihe ce   ne   p5   o     2.30       1    0.00 ! phi,psi,parm94
-dihe ce   nf   p5   o     2.30       1    0.00 ! phi,psi,parm94
-dihe cf   ne   p5   o     2.30       1    0.00 ! phi,psi,parm94
-dihe cf   nf   p5   o     2.30       1    0.00 ! phi,psi,parm94
+dihe c2   ne   p5   o     2.30       1    0.00
+dihe c2   nf   p5   o     2.30       1    0.00
+dihe ce   ne   p5   o     2.30       1    0.00
+dihe ce   nf   p5   o     2.30       1    0.00
+dihe cf   ne   p5   o     2.30       1    0.00
+dihe cf   nf   p5   o     2.30       1    0.00
 dihe hn   n    c    o     2.00       1    0.00 ! J.C.cistrans-NMA DE
 dihe c3   ss   ss   c3    0.60       3    0.00 ! JCC,7,(1986),230
 dihe c3   n3   nh   ca    1.90       3    0.00
@@ -4988,7 +4973,6 @@ impr c    c3   n    hn    1.10       2  180.00 ! Junmei et al.1999
 impr c    c3   n    o     1.10       2  180.00 ! Junmei et al.1999
 impr c2   c2   na   c3    1.10       2  180.00
 impr c2   c    c2   c3    1.10       2  180.00
-impr c3   o    c    oh    1.10       2  180.00
 impr c2   c3   c2   hc    1.10       2  180.00 ! Junmei et al.1999
 impr c2   c3   ca   hc    1.10       2  180.00 ! Junmei et al.1999
 impr c2   hc   c    o     1.10       2  180.00 ! Junmei et al.1999
@@ -5011,8 +4995,6 @@ impr ca   n2   ca   n2    1.10       2  180.00 ! dac, 10/94
 impr hc   o    c    oh    1.10       2  180.00 ! Junmei et al.1999
 impr hc   o    c    os    1.10       2  180.00
 impr n2   c2   ca   n2    1.10       2  180.00 ! dac guess, 9/94
-impr n2   ca   ca   c3    1.10       2  180.00
 impr n2   ca   ca   n2    1.10       2  180.00 ! dac guess, 9/94
-impr na   ca   ca   c3    1.10       2  180.00
 impr na   n2   ca   n2    1.10       2  180.00 ! dac, 10/94
 

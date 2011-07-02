@@ -583,6 +583,88 @@ class Molecule
     }
   end
   
+  def export_ac(acfile)
+    open(acfile, "w") { |fp|
+	  charge = 0.0
+	  each_atom { |ap|
+		charge += ap.charge
+	  }
+	  fp.printf "CHARGE    %6.3f\n", charge
+	  form = []
+	  each_atom { |ap|
+		form[ap.atomic_number] = (form[ap.atomic_number] || 0) + 1
+	  }
+	  fp.print "Formula: "
+	  form.each_with_index { |n, i|
+		if n != nil
+		  fp.print Parameter.builtin.elements[i].name + n.to_s
+		end
+	  }
+	  fp.print "\n"
+	  each_atom { |ap|
+		fp.printf "ATOM %6d  %-4s%3.3s     1    %8.3f%8.3f%8.3f%10.5f      %-4s    %s\n", ap.index + 1, ap.name, ap.res_name, ap.x, ap.y, ap.z, ap.charge, ap.atom_type, ap.name
+	  }
+	  bonds.each_with_index { |bd, i|
+		n1, n2 = bd
+		fp.printf "BOND%5d%5d%5d%5d   %4s%4s\n", i + 1, n1 + 1, n2 + 1, 0, atoms[n1].name, atoms[n2].name
+	  }
+	}
+  end
+  
+  def export_frcmod(frcfile)
+    p = self.parameter
+	open(frcfile, "w") { |fp|
+	  fp.print "remark goes here\n"
+	  fp.print "MASS\n"
+	  p.vdws.each { |np|
+		if np.source != "gaff" && np.source != "parm99"
+		  fp.printf "%s   %10.5f    %s\n", np.atom_type, np.weight, np.comment
+		end
+	  }
+	  fp.print "\n"
+	  fp.print "BOND\n"
+	  p.bonds.each { |bp|
+		if bp.source != "gaff" && bp.source != "parm99"
+		  types = sprintf("%-2s-%-2s", bp.atom_types[0], bp.atom_types[1])
+		  fp.printf "%s  %6.3f     %7.3f   %s\n", types, bp.k, bp.r0, bp.comment
+		end
+	  }
+	  fp.print "\n"
+	  fp.print "ANGLE\n"
+	  p.angles.each { |ap|
+		if ap.source != "gaff" && ap.source != "parm99"
+		  types = sprintf("%-2s-%-2s-%-2s", ap.atom_types[0], ap.atom_types[1], ap.atom_types[2])
+		  fp.printf "%s  %7.3f     %7.3f   %s\n", types, ap.k, ap.a0, ap.comment
+		end
+	  }
+	  fp.print "\n"
+	  fp.print "DIHE\n"
+	  p.dihedrals.each { |dp|
+		if dp.source != "gaff" && dp.source != "parm99"
+		  types = sprintf("%-2s-%-2s-%-2s-%-2s", dp.atom_types[0], dp.atom_types[1], dp.atom_types[2], dp.atom_types[3])
+		  fp.printf "%s   %d   %6.3f      %7.3f          %6.3f   %s\n", types, dp.mult, dp.k, dp.phi0, dp.period, dp.comment
+		end
+	  }
+	  fp.print "\n"
+	  fp.print "IMPROPER\n"
+	  p.impropers.each { |dp|
+		if dp.source != "gaff" && dp.source != "parm99"
+		  types = sprintf("%-2s-%-2s-%-2s-%-2s", dp.atom_types[0], dp.atom_types[1], dp.atom_types[2], dp.atom_types[3])
+		  fp.printf "%s      %6.2f      %7.3f          %6.2f   %s\n", types, dp.k, dp.phi0, dp.period, dp.comment
+		end
+	  }
+	  fp.print "\n"
+	  fp.print "NONBON\n"
+	  p.vdws.each { |np|
+		if np.source != "gaff" && np.source != "parm99"
+		  types = sprintf("%2s", np.atom_types[0])
+		  fp.printf "%s   %10.5f    %10.5f    %s\n", np.atom_type, np.r_eq, np.eps, np.comment
+		end
+	  }
+	  fp.print "\n"
+	}
+  end
+  
   def count_elements
     elements = []
 	each_atom { |ap|
