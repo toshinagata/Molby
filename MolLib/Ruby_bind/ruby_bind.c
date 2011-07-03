@@ -2027,20 +2027,29 @@ s_ParameterRef_ToString(VALUE self)
 /*  The Parameter class actually encapsulate Molecule record. If the record pointer
  *  is NULL, then the global parameters are looked for.  */
 
+/*  Rebuild the MD parameter record if necessary: may throw an exception  */
+static void
+s_RebuildMDParameterIfNecessary(VALUE val)
+{
+	Molecule *mol;
+	Data_Get_Struct(val, Molecule, mol);
+	if (mol == NULL)
+		rb_raise(rb_eMolbyError, "the molecule is empty");
+	if (mol->par == NULL || mol->arena == NULL || mol->arena->is_initialized == 0 || mol->needsMDRebuild) {
+		/*  Do self.md_arena.prepare  */
+		VALUE val2 = rb_funcall(val, rb_intern("md_arena"), 0);
+		if (val2 != Qnil)
+			val2 = rb_funcall(val2, rb_intern("prepare"), 1, Qtrue);
+	}
+}
+
 static VALUE
 s_NewParameterValueFromValue(VALUE val)
 {
 	Molecule *mol;
 	if (rb_obj_is_kind_of(val, rb_cMolecule)) {
 		Data_Get_Struct(val, Molecule, mol);
-		if (mol == NULL)
-			rb_raise(rb_eMolbyError, "the molecule is empty");
-		if (mol->par == NULL) {
-			/*  Do self.md_arena.prepare  */
-			VALUE val2 = rb_funcall(val, rb_intern("md_arena"), 0);
-			if (val2 != Qnil)
-				val2 = rb_funcall(val2, rb_intern("prepare"), 1, Qtrue);
-		}
+		s_RebuildMDParameterIfNecessary(val);
 		MoleculeRetain(mol);
 		return Data_Wrap_Struct(rb_cParameter, 0, (void (*)(void *))MoleculeRelease, mol);
 	} else {
@@ -3302,8 +3311,7 @@ static VALUE s_AtomRef_GetExclusion(VALUE self) {
 	Int *exlist;
 	VALUE retval, aval;
 	idx = s_AtomIndexFromValue(self, &ap, &mol);
-	if (mol->arena == NULL || mol->arena->is_initialized == 0 || mol->needsMDRebuild)
-		rb_raise(rb_eMolbyError, "Molecular dynamics is not ready. Please consider doing 'minimize' by hand or 'mol.md_arena.prepare' from script.");
+	s_RebuildMDParameterIfNecessary(self);
 	exinfo = mol->arena->exinfo + idx;
 	exlist = mol->arena->exlist;
 	retval = rb_ary_new();
@@ -4675,6 +4683,111 @@ s_Molecule_Nresidues(VALUE self)
 
 /*
  *  call-seq:
+ *     bond_par(idx)    -> ParameterRef
+ *
+ *  Returns the MD parameter for the idx-th bond.
+ */
+static VALUE
+s_Molecule_BondPar(VALUE self, VALUE val)
+{
+    Molecule *mol;
+	Int ival;
+    Data_Get_Struct(self, Molecule, mol);
+	ival = NUM2INT(rb_Integer(val));
+	if (ival < -mol->nbonds || ival >= mol->nbonds)
+		rb_raise(rb_eMolbyError, "bond index (%d) out of range", ival);
+	if (ival < 0)
+		ival += mol->nbonds;
+	s_RebuildMDParameterIfNecessary(self);
+	return ValueFromMoleculeWithParameterTypeAndIndex(mol, kBondParType, mol->arena->bond_par_i[ival]);
+}
+
+/*
+ *  call-seq:
+ *     angle_par(idx)    -> ParameterRef
+ *
+ *  Returns the MD parameter for the idx-th angle.
+ */
+static VALUE
+s_Molecule_AnglePar(VALUE self, VALUE val)
+{
+    Molecule *mol;
+	Int ival;
+    Data_Get_Struct(self, Molecule, mol);
+	ival = NUM2INT(rb_Integer(val));
+	if (ival < -mol->nangles || ival >= mol->nangles)
+		rb_raise(rb_eMolbyError, "angle index (%d) out of range", ival);
+	if (ival < 0)
+		ival += mol->nangles;
+	s_RebuildMDParameterIfNecessary(self);
+	return ValueFromMoleculeWithParameterTypeAndIndex(mol, kAngleParType, mol->arena->angle_par_i[ival]);
+}
+
+/*
+ *  call-seq:
+ *     dihedral_par(idx)    -> ParameterRef
+ *
+ *  Returns the MD parameter for the idx-th dihedral.
+ */
+static VALUE
+s_Molecule_DihedralPar(VALUE self, VALUE val)
+{
+    Molecule *mol;
+	Int ival;
+    Data_Get_Struct(self, Molecule, mol);
+	ival = NUM2INT(rb_Integer(val));
+	if (ival < -mol->ndihedrals || ival >= mol->ndihedrals)
+		rb_raise(rb_eMolbyError, "dihedral index (%d) out of range", ival);
+	if (ival < 0)
+		ival += mol->ndihedrals;
+	s_RebuildMDParameterIfNecessary(self);
+	return ValueFromMoleculeWithParameterTypeAndIndex(mol, kDihedralParType, mol->arena->dihedral_par_i[ival]);
+}
+
+/*
+ *  call-seq:
+ *     improper_par(idx)    -> ParameterRef
+ *
+ *  Returns the MD parameter for the idx-th improper.
+ */
+static VALUE
+s_Molecule_ImproperPar(VALUE self, VALUE val)
+{
+    Molecule *mol;
+	Int ival;
+    Data_Get_Struct(self, Molecule, mol);
+	ival = NUM2INT(rb_Integer(val));
+	if (ival < -mol->nimpropers || ival >= mol->nimpropers)
+		rb_raise(rb_eMolbyError, "improper index (%d) out of range", ival);
+	if (ival < 0)
+		ival += mol->nimpropers;
+	s_RebuildMDParameterIfNecessary(self);
+	return ValueFromMoleculeWithParameterTypeAndIndex(mol, kImproperParType, mol->arena->improper_par_i[ival]);
+}
+
+/*
+ *  call-seq:
+ *     vdw_par(idx)    -> ParameterRef
+ *
+ *  Returns the vdw parameter for the idx-th atom.
+ */
+static VALUE
+s_Molecule_VdwPar(VALUE self, VALUE val)
+{
+    Molecule *mol;
+	Int ival;
+    Data_Get_Struct(self, Molecule, mol);
+	ival = NUM2INT(rb_Integer(val));
+	if (ival < -mol->natoms || ival >= mol->natoms)
+		rb_raise(rb_eMolbyError, "atom index (%d) out of range", ival);
+	if (ival < 0)
+		ival += mol->natoms;
+	s_RebuildMDParameterIfNecessary(self);
+	return ValueFromMoleculeWithParameterTypeAndIndex(mol, kVdwParType, mol->arena->vdw_par_i[ival]);
+}
+
+/*
+ *  call-seq:
  *     start_step       -> Integer
  *
  *  Returns the start step (defined by dcd format).
@@ -4910,25 +5023,34 @@ s_Molecule_MinResSeq(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     each_atom {|aref| ...}
+ *     each_atom(atom_group = nil) {|aref| ...}
  *
- *  Execute the block, with the AtomRef object for each atom as the argument.
- *  Equivalent to self.atoms.each, except that the return value is self (a Molecule object).
+ *  Execute the block, with the AtomRef object for each atom as the argument. If an atom
+ *  group is given, only these atoms are processed.
+ *  If atom_group is nil, this is equivalent to self.atoms.each, except that the return value 
+ *  is self (a Molecule object).
  */
 static VALUE
-s_Molecule_EachAtom(VALUE self)
+s_Molecule_EachAtom(int argc, VALUE *argv, VALUE self)
 {
 	int i;
     Molecule *mol;
 	AtomRef *aref;
 	VALUE arval;
+	VALUE gval;
+	IntGroup *ig;
     Data_Get_Struct(self, Molecule, mol);
+	rb_scan_args(argc, argv, "01", &gval);
+	ig = (gval == Qnil ? NULL : s_Molecule_AtomGroupFromValue(self, gval));
 	arval = ValueFromMoleculeAndIndex(mol, 0);
 	Data_Get_Struct(arval, AtomRef, aref);
 	for (i = 0; i < mol->natoms; i++) {
 		aref->idx = i;
-		rb_yield(arval);
+		if (ig == NULL || IntGroupLookup(ig, i, NULL))
+			rb_yield(arval);
 	}
+	if (ig != NULL)
+		IntGroupRelease(ig);
     return self;
 }
 
@@ -7141,7 +7263,6 @@ static VALUE
 s_Molecule_ShowPeriodicImageFlag(VALUE self)
 {
     Molecule *mol;
-	VALUE val;
     Data_Get_Struct(self, Molecule, mol);
 	if (mol->mview == NULL)
 		return Qnil;
@@ -7203,8 +7324,6 @@ s_Molecule_MDArena(VALUE self)
 	if (mol->arena == NULL)
 		md_arena_new(mol);
 	retval = ValueFromMDArena(mol->arena);
-/*	if (!mol->arena->is_initialized || mol->needsMDRebuild)
-		rb_funcall(retval, rb_intern("prepare"), 0); */
 	return retval;
 }
 
@@ -7631,6 +7750,12 @@ Init_Molby(void)
 	rb_define_method(rb_cMolecule, "ndihedrals", s_Molecule_Ndihedrals, 0);
 	rb_define_method(rb_cMolecule, "nimpropers", s_Molecule_Nimpropers, 0);
 
+	rb_define_method(rb_cMolecule, "bond_par", s_Molecule_BondPar, 1);
+	rb_define_method(rb_cMolecule, "angle_par", s_Molecule_AnglePar, 1);
+	rb_define_method(rb_cMolecule, "dihedral_par", s_Molecule_DihedralPar, 1);
+	rb_define_method(rb_cMolecule, "improper_par", s_Molecule_ImproperPar, 1);
+	rb_define_method(rb_cMolecule, "vdw_par", s_Molecule_VdwPar, 1);
+
 	rb_define_method(rb_cMolecule, "start_step", s_Molecule_StartStep, 0);
 	rb_define_method(rb_cMolecule, "start_step=", s_Molecule_SetStartStep, 1);
 	rb_define_method(rb_cMolecule, "steps_per_frame", s_Molecule_StepsPerFrame, 0);
@@ -7642,7 +7767,7 @@ Init_Molby(void)
 	rb_define_method(rb_cMolecule, "nresidues=", s_Molecule_ChangeNresidues, 1);
 	rb_define_method(rb_cMolecule, "max_residue_number", s_Molecule_MaxResSeq, -1);
 	rb_define_method(rb_cMolecule, "min_residue_number", s_Molecule_MinResSeq, -1);
-	rb_define_method(rb_cMolecule, "each_atom", s_Molecule_EachAtom, 0);
+	rb_define_method(rb_cMolecule, "each_atom", s_Molecule_EachAtom, -1);
 	rb_define_method(rb_cMolecule, "cell", s_Molecule_Cell, 0);
 	rb_define_method(rb_cMolecule, "cell=", s_Molecule_SetCell, -1);
 	rb_define_alias(rb_cMolecule, "set_cell", "cell=");

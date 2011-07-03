@@ -593,6 +593,13 @@ class Molecule
 	  assign_residue(g, atoms[g[0]].res_name + ".#{rseq}")
 	end
 
+	#  Set the segment number and name (SOLV)
+	seg = (0..solute_natoms - 1).map { |n| self.atoms[n].seg_seq }.max + 1
+	each_atom(solute_natoms..self.natoms - 1) { |ap|
+	  ap.seg_seq = seg if ap.seg_seq < seg
+	  ap.seg_name = "SOLV"
+	}
+
     #  Set the unit cell information
 	set_box(bsize[0], bsize[1], bsize[2])
 	

@@ -269,7 +269,7 @@ typedef struct MDArena {
 	/*  Runtime fields  */
 	
 	/*  Initialize flag  */
-	Byte   is_initialized;
+	Byte   is_initialized;  /*  0: not initialized, 1: only the static fields (structure-related) are initialized, 2: the runtime fields are initialized (i.e. MD is ready to go)  */
 	Byte   is_running;
 	
 	Byte   request_abort;	/*  If early return is necesarry, assert this flag.  */

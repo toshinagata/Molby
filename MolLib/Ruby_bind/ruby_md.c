@@ -69,7 +69,7 @@ s_MDArena_Run_or_minimize(VALUE self, VALUE arg, int minimize)
 		rb_raise(rb_eMolbyError, "the simulation is already running. You cannot do simulation recursively.");
 	if (nsteps < 0)
 		rb_raise(rb_eMolbyError, "the number of steps should be non-negative integer");
-	if (!arena->is_initialized || arena->xmol->needsMDRebuild) {
+	if (arena->is_initialized < 2 || arena->xmol->needsMDRebuild) {
 		const char *msg = md_prepare(arena, 0);
 		if (msg != NULL)
 			rb_raise(rb_eMolbyError, "cannot initialize for MD: %s", msg);

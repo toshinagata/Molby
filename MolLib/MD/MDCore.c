@@ -1540,12 +1540,6 @@ md_prepare(MDArena *arena, int check_only)
 		return "some parameters are missing";
 	}
 	
-	/*  Parameter checking only  */
-	if (check_only) {
-		arena->is_initialized = 0;
-		return NULL;
-	}
-		
 	/*  Build the exclusion table  */
 	s_make_exclusion_list(arena);
 	if (arena->debug_result != NULL && arena->debug_output_level > 0) {
@@ -1573,6 +1567,12 @@ md_prepare(MDArena *arena, int check_only)
 		}
 	}
 
+	/*  Parameter checking only  */
+	if (check_only) {
+		arena->is_initialized = 1;  /*  Only static fields are ready  */
+		return NULL;
+	}
+	
 	/*  Allocate storage for Verlet list  */
 	arena->max_nverlets = mol->natoms;
 	if (arena->verlets != NULL)
@@ -1691,7 +1691,7 @@ md_prepare(MDArena *arena, int check_only)
 		pressure_prepare(arena);
 	}
 
-	arena->is_initialized = 1;
+	arena->is_initialized = 2;   /*  Runtime fields are ready  */
 	arena->mol->needsMDRebuild = 0;
 	arena->request_abort = 0;
 
@@ -2686,7 +2686,7 @@ md_main(MDArena *arena, int minimize)
 	int retval = 0;
 	int (*md_step_func)(MDArena *);
 
-	if (!arena->is_initialized || arena->xmol->needsMDRebuild) {
+	if (arena->is_initialized < 2 || arena->xmol->needsMDRebuild) {
 		/*  Prepare MD parameters and runtime fields  */
 		msg = md_prepare(arena, 0);
 		if (msg != NULL) {
@@ -2738,7 +2738,7 @@ md_main(MDArena *arena, int minimize)
 		for (arena->step = arena->start_step + 1; arena->step <= arena->end_step; arena->step++) {
 
 			/*  Molecules may be modified from the callback procedure  */
-			if (!arena->is_initialized || arena->xmol->needsMDRebuild) {
+			if (arena->is_initialized < 2 || arena->xmol->needsMDRebuild) {
 				msg = md_prepare(arena, 0);
 				if (msg != NULL) {
 					snprintf(arena->errmsg, sizeof(arena->errmsg), "%s", msg);
