@@ -3311,7 +3311,10 @@ static VALUE s_AtomRef_GetExclusion(VALUE self) {
 	Int *exlist;
 	VALUE retval, aval;
 	idx = s_AtomIndexFromValue(self, &ap, &mol);
-	s_RebuildMDParameterIfNecessary(self);
+	if (mol->par == NULL || mol->arena == NULL || mol->arena->is_initialized == 0 || mol->needsMDRebuild) {
+		VALUE mval = ValueFromMolecule(mol);
+		s_RebuildMDParameterIfNecessary(mval);
+	}
 	exinfo = mol->arena->exinfo + idx;
 	exlist = mol->arena->exlist;
 	retval = rb_ary_new();
