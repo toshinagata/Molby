@@ -114,7 +114,8 @@ public:
 
 	void	OnInvokeResp(wxCommandEvent &event);
 	void    OnInvokeAntechamber(wxCommandEvent &event);
-	
+	void	OnCreateSanderInput(wxCommandEvent &event);
+
 	void	OnCreateGamessInput(wxCommandEvent &event);
 	void	OnCreateMOCube(wxCommandEvent &event);
 	

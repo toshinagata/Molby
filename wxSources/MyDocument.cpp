@@ -99,6 +99,7 @@ BEGIN_EVENT_TABLE(MyDocument, wxDocument)
 	EVT_MENU(myMenuID_ExpandBySymmetry, MyDocument::OnExpandBySymmetry)
 	EVT_MENU(myMenuID_RunAntechamber, MyDocument::OnInvokeAntechamber)
 	EVT_MENU(myMenuID_RunResp, MyDocument::OnInvokeResp)
+	EVT_MENU(myMenuID_CreateSanderInput, MyDocument::OnCreateSanderInput)
 	EVT_MENU(myMenuID_CreateGamessInput, MyDocument::OnCreateGamessInput)
 	EVT_MENU(myMenuID_CreateMOCube, MyDocument::OnCreateMOCube)
 	EVT_MENU(myMenuID_ShowAllAtoms, MyDocument::OnShowAllAtoms)
@@ -869,6 +870,49 @@ MyDocument::OnExpandBySymmetry(wxCommandEvent &event)
 {
 }
 
+static wxString
+sCreateTemporaryLogDirectoryForAC(const wxString& filename)
+{
+//	char *ante_dir;
+	char *log_dir;
+	int i, status;
+
+	/*  Extract the name  */
+	wxFileName fname(filename);
+	wxString name = fname.GetName();
+
+	status = MyAppCallback_getGlobalSettingsWithType("antechamber.log_dir", 's', &log_dir);
+	if (status) {
+		char *hdir = MyAppCallback_getDocumentHomeDir();
+		asprintf(&log_dir, "%s/antechamber", (hdir ? hdir : ""));
+		if (hdir != NULL)
+			free(hdir);
+	}
+	fix_dosish_path(log_dir);
+	
+	wxString tdir;
+
+	/*  Prepare the log directory  */
+	wxString dirname(log_dir, wxConvFile);
+	if (!wxFileName::Mkdir(dirname, 0777, wxPATH_MKDIR_FULL)) {
+		MyAppCallback_errorMessageBox("Cannot create log directory '%s'", log_dir);
+		free(log_dir);
+		return tdir;  /*  empty  */
+	}
+	free(log_dir);
+
+	for (i = 0; i < 1000; i++) {
+		tdir = dirname + wxFileName::GetPathSeparator() + name + wxString::Format(_T("_%04d"), i);
+		if (!wxFileName::DirExists(tdir))
+			break;
+	}
+	if (i >= 1000 || !wxFileName::Mkdir(tdir)) {
+		MyAppCallback_errorMessageBox("Cannot create temporary files. Please make sure the log directory has enough space for writing.");
+		tdir.Empty();
+	}
+	return tdir;
+}
+
 static bool
 sRemoveDirectoryRecursively(const wxString &dir)
 {
@@ -900,53 +944,111 @@ sRemoveDirectoryRecursively(const wxString &dir)
 	return ::wxRmdir(dir);
 }
 
+static int
+sEraseLogFiles(const wxString& tdir, int status)
+{
+	bool success = true;
+	Int log_keep_number, n, i, j;
+	char *log_level;
+	wxString dir2;
+
+	if (MyAppCallback_getGlobalSettingsWithType("antechamber.log_level", 's', &log_level) != 0)
+		log_level = NULL;
+	if (MyAppCallback_getGlobalSettingsWithType("antechamber.log_keep_number", 'i', &log_keep_number) != 0)
+		log_keep_number = 5;
+	if (log_level == NULL || strcmp(log_level, "none") == 0 || (strcmp(log_level, "error_only") == 0 && status == 0)) {
+		//  Erase the present log
+		if (!sRemoveDirectoryRecursively(tdir)) {
+			success = false;
+			dir2 = tdir;
+		}
+	} else if (strcmp(log_level, "latest") == 0) {
+		wxString dirname = tdir.BeforeLast(wxFileName::GetPathSeparator());
+		wxDir wdir(dirname);
+		wxString name;
+		wxArrayString files;
+		n = 0;
+		if (wdir.GetFirst(&name)) {
+			do {
+				wxString fullname = dirname + wxFileName::GetPathSeparator() + name;
+				if (wxDir::Exists(fullname)) {
+					files.Add(fullname);
+					n++;
+				}
+			} while (wdir.GetNext(&name));
+		}
+		if (n > log_keep_number) {
+			//  Sort directories by creation date
+			struct temp_struct { time_t tm; int idx; } *tp;
+			tp = (struct temp_struct *)malloc(sizeof(struct temp_struct) * n);
+			for (i = 0; i < n; i++) {
+				wxFileName fn(files[i], wxEmptyString);
+				wxDateTime dt;
+				j = fn.GetTimes(NULL, NULL, &dt);
+				tp[i].tm = dt.GetTicks();
+				tp[i].idx = i;
+			}
+			for (i = 0; i < n; i++) {
+				struct temp_struct temp;
+				int k = i;
+				for (j = i + 1; j < n; j++) {
+					if (tp[j].tm < tp[k].tm)
+						k = j;
+				}
+				if (k != i) {
+					temp = tp[k];
+					tp[k] = tp[i];
+					tp[i] = temp;
+				}
+			}
+			//  Keep last log_keep_number and delete the rest
+			for (i = 0; i < n - log_keep_number; i++) {
+				if (!sRemoveDirectoryRecursively(files[tp[i].idx])) {
+					success = false;
+					dir2 = files[tp[i].idx];
+					break;
+				}
+			}
+		}
+	}
+	
+	if (success) {
+		return 0;
+	} else {
+		MyAppCallback_errorMessageBox("Error during deleting log file '%s'", (const char *)dir2.mb_str(wxConvUTF8));
+		return -1;
+	}
+}
+
 void
 MyDocument::OnInvokeAntechamber(wxCommandEvent &event)
 {
-	char *ante_dir;
-	char *log_dir, *log_level, buf[256];
-	Int net_charge, i, j, n, log_keep_number, calc_charge, use_residue;
+	char *ante_dir, buf[256];
+	Int net_charge, i, n, calc_charge, use_residue;
 	int status;
 
 	/*  Find the ambertool directory  */
 	wxString ante = MyApp::FindResourcePath() + wxFileName::GetPathSeparator() + _T("amber11") + wxFileName::GetPathSeparator() + _T("bin");
 	ante_dir = strdup(ante.mb_str(wxConvFile));
+	fix_dosish_path(ante_dir);
 
 	/*  Ask for antechamber options and log directory  */
 	MolActionCreateAndPerform(mol, SCRIPT_ACTION(";i"), "cmd_antechamber", &n);
 	if (!n)
 		return;
+
 	if ((status = MyAppCallback_getGlobalSettingsWithType("antechamber.nc", 'i', &net_charge))
-		|| (status = MyAppCallback_getGlobalSettingsWithType("antechamber.log_level", 's', &log_level))
-		|| (status = MyAppCallback_getGlobalSettingsWithType("antechamber.log_keep_number", 'i', &log_keep_number))
 		|| (status = MyAppCallback_getGlobalSettingsWithType("antechamber.calc_charge", 'i', &calc_charge))
-		|| (status = MyAppCallback_getGlobalSettingsWithType("antechamber.use_residue", 'i', &use_residue))
-		|| (status = MyAppCallback_getGlobalSettingsWithType("antechamber.log_dir", 's', &log_dir))) {
+		|| (status = MyAppCallback_getGlobalSettingsWithType("antechamber.use_residue", 'i', &use_residue))) {
 		Molby_showError(status);
 		return;
 	}
-	fix_dosish_path(ante_dir);
-	fix_dosish_path(log_dir);
 
 	/*  Prepare the log directory  */
-	wxString dirname(log_dir, wxConvFile);
-	if (!wxFileName::Mkdir(dirname, 0777, wxPATH_MKDIR_FULL)) {
-		MyAppCallback_errorMessageBox("Cannot create log directory '%s'", log_dir);
+	wxString tdir = sCreateTemporaryLogDirectoryForAC(GetFilename());
+	if (tdir.IsEmpty())
 		return;
-	}
-	wxFileName filename(GetFilename());
-	wxString name = filename.GetName();
-	wxString tdir;
-	for (i = 0; i < 1000; i++) {
-		tdir = dirname + wxFileName::GetPathSeparator() + name + wxString::Format(_T("_%04d"), i);
-		if (!wxFileName::DirExists(tdir))
-			break;
-	}
-	if (i >= 1000 || !wxFileName::Mkdir(tdir)) {
-		MyAppCallback_errorMessageBox("Cannot create temporary files. Please make sure the log directory has enough space for writing.");
-		return;
-	}
-	
+
 	/*  Move to the temporary directory and export the molecule as a pdb  */
 	wxString cwd = wxFileName::GetCwd();
 	if (!wxFileName::SetCwd(tdir)) {
@@ -1048,64 +1150,7 @@ MyDocument::OnInvokeAntechamber(wxCommandEvent &event)
 	wxFileName::SetCwd(cwd);
 
 	/*  Erase log files  */
-	bool success = true;
-	wxString dir2;
-	if (strcmp(log_level, "none") == 0 || (strcmp(log_level, "error_only") == 0 && status == 0)) {
-		/*  Erase the present log  */
-		if (!sRemoveDirectoryRecursively(tdir)) {
-			success = false;
-			dir2 = tdir;
-		}
-	} else if (strcmp(log_level, "latest") == 0) {
-		wxDir wdir(dirname);
-		wxString name;
-		wxArrayString files;
-		n = 0;
-		if (wdir.GetFirst(&name)) {
-			do {
-				wxString fullname = dirname + wxFileName::GetPathSeparator() + name;
-				if (wxDir::Exists(fullname)) {
-					files.Add(fullname);
-					n++;
-				}
-			} while (wdir.GetNext(&name));
-		}
-		if (n > log_keep_number) {
-			/*  Sort directories by creation date  */
-			struct temp_struct { time_t tm; int idx; } *tp;
-			tp = (struct temp_struct *)malloc(sizeof(struct temp_struct) * n);
-			for (i = 0; i < n; i++) {
-				wxFileName fn(files[i], wxEmptyString);
-				wxDateTime dt;
-				j = fn.GetTimes(NULL, NULL, &dt);
-				tp[i].tm = dt.GetTicks();
-				tp[i].idx = i;
-			}
-			for (i = 0; i < n; i++) {
-				struct temp_struct temp;
-				int k = i;
-				for (j = i + 1; j < n; j++) {
-					if (tp[j].tm < tp[k].tm)
-						k = j;
-				}
-				if (k != i) {
-					temp = tp[k];
-					tp[k] = tp[i];
-					tp[i] = temp;
-				}
-			}
-			/*  Keep last log_keep_number and delete the rest  */
-			for (i = 0; i < n - log_keep_number; i++) {
-				if (!sRemoveDirectoryRecursively(files[tp[i].idx])) {
-					success = false;
-					dir2 = files[tp[i].idx];
-					break;
-				}
-			}
-		}
-	}
-	if (!success)
-		MyAppCallback_errorMessageBox("Error during deleting log file '%s'", (const char *)dir2.mb_str(wxConvUTF8));
+	sEraseLogFiles(tdir, status);
 
 	if (status == 0) {
 		((MoleculeView *)GetFirstView())->GetListCtrl()->Update();
@@ -1117,6 +1162,12 @@ void
 MyDocument::OnInvokeResp(wxCommandEvent &event)
 {
 	MolActionCreateAndPerform(mol, SCRIPT_ACTION(""), "cmd_gamess_resp");
+}
+
+void
+MyDocument::OnCreateSanderInput(wxCommandEvent &event)
+{
+	MolActionCreateAndPerform(mol, SCRIPT_ACTION(""), "export_prmtop");
 }
 
 void

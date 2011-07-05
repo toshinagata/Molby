@@ -4694,6 +4694,8 @@ static VALUE
 s_Molecule_BondPar(VALUE self, VALUE val)
 {
     Molecule *mol;
+	BondPar *bp;
+	UInt t1, t2;
 	Int ival;
     Data_Get_Struct(self, Molecule, mol);
 	ival = NUM2INT(rb_Integer(val));
@@ -4702,7 +4704,12 @@ s_Molecule_BondPar(VALUE self, VALUE val)
 	if (ival < 0)
 		ival += mol->nbonds;
 	s_RebuildMDParameterIfNecessary(self);
-	return ValueFromMoleculeWithParameterTypeAndIndex(mol, kBondParType, mol->arena->bond_par_i[ival]);
+	t1 = ATOM_AT_INDEX(mol->atoms, mol->bonds[ival * 2])->type;
+	t2 = ATOM_AT_INDEX(mol->atoms, mol->bonds[ival * 2 + 1])->type;
+	bp = ParameterLookupBondPar(mol->par, t1, t2, 0);
+	if (bp == NULL)
+		return Qnil;
+	return ValueFromMoleculeWithParameterTypeAndIndex(mol, kBondParType, bp - mol->par->bondPars);
 }
 
 /*
@@ -4715,6 +4722,8 @@ static VALUE
 s_Molecule_AnglePar(VALUE self, VALUE val)
 {
     Molecule *mol;
+	AnglePar *ap;
+	UInt t1, t2, t3;
 	Int ival;
     Data_Get_Struct(self, Molecule, mol);
 	ival = NUM2INT(rb_Integer(val));
@@ -4723,7 +4732,13 @@ s_Molecule_AnglePar(VALUE self, VALUE val)
 	if (ival < 0)
 		ival += mol->nangles;
 	s_RebuildMDParameterIfNecessary(self);
-	return ValueFromMoleculeWithParameterTypeAndIndex(mol, kAngleParType, mol->arena->angle_par_i[ival]);
+	t1 = ATOM_AT_INDEX(mol->atoms, mol->angles[ival * 3])->type;
+	t2 = ATOM_AT_INDEX(mol->atoms, mol->angles[ival * 3 + 1])->type;
+	t3 = ATOM_AT_INDEX(mol->atoms, mol->angles[ival * 3 + 2])->type;
+	ap = ParameterLookupAnglePar(mol->par, t1, t2, t3, 0);
+	if (ap == NULL)
+		return Qnil;
+	return ValueFromMoleculeWithParameterTypeAndIndex(mol, kAngleParType, ap - mol->par->anglePars);
 }
 
 /*
@@ -4737,6 +4752,8 @@ s_Molecule_DihedralPar(VALUE self, VALUE val)
 {
     Molecule *mol;
 	Int ival;
+	TorsionPar *tp;
+	UInt t1, t2, t3, t4;
     Data_Get_Struct(self, Molecule, mol);
 	ival = NUM2INT(rb_Integer(val));
 	if (ival < -mol->ndihedrals || ival >= mol->ndihedrals)
@@ -4744,7 +4761,14 @@ s_Molecule_DihedralPar(VALUE self, VALUE val)
 	if (ival < 0)
 		ival += mol->ndihedrals;
 	s_RebuildMDParameterIfNecessary(self);
-	return ValueFromMoleculeWithParameterTypeAndIndex(mol, kDihedralParType, mol->arena->dihedral_par_i[ival]);
+	t1 = ATOM_AT_INDEX(mol->atoms, mol->dihedrals[ival * 4])->type;
+	t2 = ATOM_AT_INDEX(mol->atoms, mol->dihedrals[ival * 4 + 1])->type;
+	t3 = ATOM_AT_INDEX(mol->atoms, mol->dihedrals[ival * 4 + 2])->type;
+	t4 = ATOM_AT_INDEX(mol->atoms, mol->dihedrals[ival * 4 + 3])->type;
+	tp = ParameterLookupDihedralPar(mol->par, t1, t2, t3, t4, 0);
+	if (tp == NULL)
+		return Qnil;
+	return ValueFromMoleculeWithParameterTypeAndIndex(mol, kDihedralParType, tp - mol->par->dihedralPars);
 }
 
 /*
@@ -4758,6 +4782,8 @@ s_Molecule_ImproperPar(VALUE self, VALUE val)
 {
     Molecule *mol;
 	Int ival;
+	TorsionPar *tp;
+	UInt t1, t2, t3, t4;
     Data_Get_Struct(self, Molecule, mol);
 	ival = NUM2INT(rb_Integer(val));
 	if (ival < -mol->nimpropers || ival >= mol->nimpropers)
@@ -4765,7 +4791,14 @@ s_Molecule_ImproperPar(VALUE self, VALUE val)
 	if (ival < 0)
 		ival += mol->nimpropers;
 	s_RebuildMDParameterIfNecessary(self);
-	return ValueFromMoleculeWithParameterTypeAndIndex(mol, kImproperParType, mol->arena->improper_par_i[ival]);
+	t1 = ATOM_AT_INDEX(mol->atoms, mol->impropers[ival * 4])->type;
+	t2 = ATOM_AT_INDEX(mol->atoms, mol->impropers[ival * 4 + 1])->type;
+	t3 = ATOM_AT_INDEX(mol->atoms, mol->impropers[ival * 4 + 2])->type;
+	t4 = ATOM_AT_INDEX(mol->atoms, mol->impropers[ival * 4 + 3])->type;
+	tp = ParameterLookupImproperPar(mol->par, t1, t2, t3, t4, 0);
+	if (tp == NULL)
+		return Qnil;
+	return ValueFromMoleculeWithParameterTypeAndIndex(mol, kImproperParType, tp - mol->par->improperPars);
 }
 
 /*
@@ -4779,6 +4812,8 @@ s_Molecule_VdwPar(VALUE self, VALUE val)
 {
     Molecule *mol;
 	Int ival;
+	VdwPar *vp;
+	UInt t1;
     Data_Get_Struct(self, Molecule, mol);
 	ival = NUM2INT(rb_Integer(val));
 	if (ival < -mol->natoms || ival >= mol->natoms)
@@ -4786,7 +4821,11 @@ s_Molecule_VdwPar(VALUE self, VALUE val)
 	if (ival < 0)
 		ival += mol->natoms;
 	s_RebuildMDParameterIfNecessary(self);
-	return ValueFromMoleculeWithParameterTypeAndIndex(mol, kVdwParType, mol->arena->vdw_par_i[ival]);
+	t1 = ATOM_AT_INDEX(mol->atoms, ival)->type;
+	vp = ParameterLookupVdwPar(mol->par, t1, 0);
+	if (vp == NULL)
+		return Qnil;
+	return ValueFromMoleculeWithParameterTypeAndIndex(mol, kVdwParType, vp - mol->par->vdwPars);
 }
 
 /*

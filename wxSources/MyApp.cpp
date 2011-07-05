@@ -395,6 +395,7 @@ MyApp::CreateMenuBar(int kind, wxMenu **out_file_history_menu, wxMenu **out_edit
 	wxMenu *md_tools_menu = new wxMenu;
 	md_tools_menu->Append(myMenuID_RunAntechamber, _T("Antechamber/parmchk..."));
 	md_tools_menu->Append(myMenuID_RunResp, _T("GAMESS/RESP..."));
+	md_tools_menu->Append(myMenuID_CreateSanderInput, _T("Create SANDER input..."));
 	md_menu->Append(myMenuID_MDTools, _T("Tools"), md_tools_menu);
 
 	wxMenu *qc_menu = new wxMenu;
@@ -1052,10 +1053,13 @@ MyAppCallback_setGlobalSettings(const char *key, const char *value)
 int
 MyAppCallback_getGlobalSettingsWithType(const char *key, int type, void *ptr)
 {
-	const char *s = MyAppCallback_getGlobalSettings(key);
+	int retval;
+	char *s = MyAppCallback_getGlobalSettings(key);
 	char desc[] = SCRIPT_ACTION("s; ");
 	desc[sizeof(desc) - 2] = type;
-	return MolActionCreateAndPerform(NULL, desc, "eval", s, ptr);
+	retval = MolActionCreateAndPerform(NULL, desc, "eval", s, ptr);
+	free(s);
+	return retval;
 }
 
 int

@@ -83,6 +83,7 @@ enum {
 	myMenuID_MDTools = 151,
 	myMenuID_RunAntechamber = 152,
 	myMenuID_RunResp = 153,
+	myMenuID_CreateSanderInput = 154,
 	myMenuID_CreateGamessInput = 160,
 	myMenuID_CreateMOCube = 161,
 	myMenuID_ExecuteScript = 200,

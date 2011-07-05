@@ -13,5 +13,5 @@ amber11 : ../amber11/src/antechamber/*.[ch] ../amber11/src/sqm/*.f ../amber11/sr
 	cp -p ../amber11/dat/leap/parm/{gaff,parm99}.dat amber11/dat/leap/parm
 	cp -rp ../amber11/dat/antechamber amber11/dat
 	mkdir -p amber11/bin
-	cp -r build/amber11-build/bin/{am1bcc,atomtype,parmchk,antechamber,bondtype,resp,respgen,prepgen,sqm}* amber11/bin
+	cp -r build/amber11-build/bin/{am1bcc,atomtype,parmchk,antechamber,bondtype,resp,respgen,espgen,prepgen,sqm}* amber11/bin
 

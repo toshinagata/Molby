@@ -665,6 +665,355 @@ class Molecule
 	}
   end
   
+  # Create sander input files from current molecule  
+  def export_prmtop
+  
+    def error_dialog(msg)
+      Dialog.run("AMBER Export Error") {
+        layout(1, item(:text, :title=>msg))
+        set_attr(1, :hidden=>true)
+      }
+    end
+    
+    def format_print(fp, num, fmt, ary)
+      fmts = "%#{fmt}%s"
+      ary.each_with_index { |x, i|
+        fp.printf(fmts, x, (i % num == num - 1 ? "\n" : ""))
+      }
+      fp.print "\n"
+    end
+  
+    par = self.parameter
+    
+    #  Create residue number table
+    restable = []
+    resno = -1
+    self.each_atom { |ap|
+      if ap.res_seq > resno
+        restable.push(ap.index)
+        resno = ap.res_seq
+      elsif ap.res_seq < resno
+        error_dialog("The residue number is not in ascending order. Please use 'sort by residue' command before creating AMBER input.")
+        return nil
+      end
+    }
+    
+    #  Check if periodic box is used
+    periodic = (self.box && self.box[4].all? { |n| n != 0 })
+    if periodic
+      fragments = []
+      last_solute = nil
+      first_solv_mol = nil
+      self.each_fragment { |gr|
+        if gr.range_at(1) != nil
+          msg = gr.to_s.sub(/IntGroup/, "")
+          error_dialog("The atoms #{msg} are one fragment, but the atom indices are not consecutive.")
+          return nil
+        end
+        fragments.push(gr.length)
+        if last_solute == nil && self.atoms[gr[0]].seq_name == "SOLV"
+          #  Calculate the residue number of the last solute atom (gr[0] - 1)
+          n = gr[0] - 1
+          if n < 0
+            error_dialog("All atoms are labeled as the solvent??")
+            return nil
+          end
+          first_solv_mol = fragments.length
+          restable.each_with_index { |m, i|
+            n -= m
+            if n <= 0
+              last_solute = i + 1
+              break
+            end
+          }
+        end
+      }
+      if last_solute == nil
+        last_solute = restable.length
+        first_solv_mol = fragments.length
+      end
+    end
+    
+    #  Count bonds and angles, including and not-including hydrogens
+    bonds_h = []
+    bonds_a = []
+    self.bonds.each_with_index { |e, i|
+      if e.any? { |n| self.atoms[n].atomic_number == 1 }
+        bonds_h.push(i)
+      else
+        bonds_a.push(i)
+      end
+    }
+    angles_h = []
+    angles_a = []
+    self.angles.each_with_index { |e, i|
+      if e.any? { |n| self.atoms[n].atomic_number == 1 }
+        angles_h.push(i)
+      else
+        angles_a.push(i)
+      end
+    }
+    
+    #  Build exclusion table (before processing dihedral angles)
+    exnumbers = []
+    extable = []
+    exhash = {}
+    self.each_atom { |ap|
+      ex = ap.exclusion
+      exx = []
+      ex.each_with_index { |x, i|
+        x.each { |n|
+          if n > ap.index
+            exhash[ap.index * 1000000 + n] = i + 2  #  2 for 1-2, 3 for 1-3, 4 for 1-4
+            exx.push(n + 1)
+          end
+        }
+      }
+      if exx.length > 0
+        exx.sort!
+      else
+        exx.push(0)
+      end
+      exnumbers.push(exx.length)
+      extable.concat(exx)
+    }
+    
+    #  Count dihedrals and impropers, including and not-including hydrogens
+    dihedrals_h = []
+    dihedrals_a = []
+    self.dihedrals.each_with_index { |e, i|
+      flag = 0
+      k = (e[0] < e[3] ? e[0] * 1000000 + e[3] : e[3] * 1000000 + e[0])
+      if exhash[k] == 4
+        exhash[k] = -4   #  Handle 1,4-exclusion for only one dihedrals
+      elsif exhash[k] == -4
+        flag = 1000000   #  Skip calculation of 1,4-interaction to avoid double counting
+      elsif exhash[k] && exhash[k] > 0
+        flag = 1000000   #  5-member or smaller ring: e[0]...e[3] is 1-2 or 1-3 exclusion pair
+      end
+      if e.any? { |n| self.atoms[n].atomic_number == 1 }
+        dihedrals_h.push(i + flag)
+      else
+        dihedrals_a.push(i + flag)
+      end
+    }
+    self.impropers.each_with_index { |e, i|
+      if e.any? { |n| self.atoms[n].atomic_number == 1 }
+        dihedrals_h.push(i + 2000000)
+      else
+        dihedrals_a.push(i + 2000000)
+      end
+    }
+    
+    #  Create vdw parameter table
+    nvdw_pars = par.nvdws
+    vdw_pair_table = []
+    vdw_access_table = []
+    (0..nvdw_pars - 1).each { |i|
+      p1 = par.vdws[i]
+      (0..i).each { |j|
+        p2 = par.vdws[j]
+        pp = par.lookup("vdw_pair", [p1.atom_type, p2.atom_type])
+        if pp
+          #  Vdw pair parameter is defined
+          eps = pp.eps
+          d = pp.r_eq * 2
+        else
+          eps = Math.sqrt(p1.eps * p2.eps)
+          d = p1.r_eq + p2.r_eq
+        end
+        vdw_access_table[i * nvdw_pars + j] =  vdw_access_table[j * nvdw_pars + i] = vdw_pair_table.length
+        vdw_pair_table.push([(d ** 12) * eps, 2 * (d ** 6) * eps])
+      }
+    }
+        
+    basename = (self.path ? File.basename(self.path, ".*") : self.name)
+    fname = Dialog.save_panel("AMBER prmtop/inpcrd file name", self.dir, basename + ".prmtop", "All files|*.*")
+    return nil if !fname
+    
+    open(fname, "w") { |fp|
+      date = Time.now.localtime.strftime("%m/%d/%y  %H:%M:%S")
+      
+      fp.print "%VERSION  VERSION_STAMP = V0001.000  DATE = #{date}\n"
+    
+      fp.print "%FLAG TITLE\n%FORMAT(20a4)\n"
+      fp.printf "%-80.80s\n", self.name
+    
+      fp.print "%FLAG POINTERS\n%FORMAT(10I8)\n"
+      fp.printf "%8d%8d%8d%8d%8d%8d%8d%8d%8d%8d\n", self.natoms, par.nvdws, bonds_h.length, bonds_a.length, angles_h.length, angles_a.length, dihedrals_h.length, dihedrals_a.length, 0, 0
+      fp.printf "%8d%8d%8d%8d%8d%8d%8d%8d%8d%8d\n", extable.length, restable.length, bonds_a.length, angles_a.length, dihedrals_a.length, par.nbonds, par.nangles, par.ndihedrals + par.nimpropers, par.nvdws, 0
+      fp.printf "%8d%8d%8d%8d%8d%8d%8d%8d%8d%8d\n", 0, 0, 0, 0, 0, 0, 0, (periodic ? 1 : 0), restable.max, 0
+      fp.printf "%8d\n", 0
+      
+      fp.print "%FLAG ATOM_NAME\n%FORMAT(20a4)\n"
+      format_print(fp, 20, "-4.4s", self.atoms.map { |ap| ap.name })
+     
+      fp.print "%FLAG CHARGE\n%FORMAT(5E16.8)\n"
+      format_print(fp, 5, "16.8E", self.atoms.map { |ap| ap.charge * 18.2223 })
+      
+      fp.print "%FLAG MASS\n%FORMAT(5E16.8)\n"
+      format_print(fp, 5, "16.8E", self.atoms.map { |ap| ap.weight })
+      
+      fp.print "%FLAG ATOM_TYPE_INDEX\n%FORMAT(10I8)\n"
+      format_print(fp, 10, "8d", (0...self.natoms).map { |i| self.vdw_par(i).index + 1 })
+      
+      fp.print "%FLAG NUMBER_EXCLUDED_ATOMS\n%FORMAT(10I8)\n"
+      format_print(fp, 10, "8d", exnumbers)
+      
+      fp.print "%FLAG NONBONDED_PARM_INDEX\n%FORMAT(10I8)\n"
+      format_print(fp, 10, "8d", vdw_access_table.map { |n| n + 1 })
+      
+      fp.print "%FLAG RESIDUE_LABEL\n%FORMAT(20a4)\n"
+      format_print(fp, 20, "-4.4s", restable.map { |n| self.atoms[n].res_name })
+      
+      fp.print "%FLAG RESIDUE_POINTER\n%FORMAT(10I8)\n"
+      format_print(fp, 10, "8d", restable.map { |n| n + 1 })
+      
+      fp.print "%FLAG BOND_FORCE_CONSTANT\n%FORMAT(5E16.8)\n"
+      format_print(fp, 5, "16.8E", par.bonds.map { |p| p.k })
+      
+      fp.print "%FLAG BOND_EQUIL_VALUE\n%FORMAT(5E16.8)\n"
+      format_print(fp, 5, "16.8E", par.bonds.map { |p| p.r0 })
+      
+      fp.print "%FLAG ANGLE_FORCE_CONSTANT\n%FORMAT(5E16.8)\n"
+      format_print(fp, 5, "16.8E", par.angles.map { |p| p.k })
+      
+      fp.print "%FLAG ANGLE_EQUIL_VALUE\n%FORMAT(5E16.8)\n"
+      format_print(fp, 5, "16.8E", par.angles.map { |p| p.a0 * Math::PI / 180.0 })
+      
+      fp.print "%FLAG DIHEDRAL_FORCE_CONSTANT\n%FORMAT(5E16.8)\n"
+      format_print(fp, 5, "16.8E", par.dihedrals.map { |p| p.k } + par.impropers.map { |p| p.k })
+      
+      fp.print "%FLAG DIHEDRAL_PERIODICITY\n%FORMAT(5E16.8)\n"
+      format_print(fp, 5, "16.8E", par.dihedrals.map { |p| p.period } + par.impropers.map { |p| p.period })
+      
+      fp.print "%FLAG DIHEDRAL_PHASE\n%FORMAT(5E16.8)\n"
+      format_print(fp, 5, "16.8E", par.dihedrals.map { |p| p.phi0 * Math::PI / 180.0 } + par.impropers.map { |p| p.phi0 * Math::PI / 180.0 })
+      
+      fp.print "%FLAG SCEE_SCALE_FACTOR\n%FORMAT(5E16.8)\n"
+      format_print(fp, 5, "16.8E", par.dihedrals.map { |p| 1.2 } + par.impropers.map { |p| 0.0 })
+      
+      fp.print "%FLAG SCNB_SCALE_FACTOR\n%FORMAT(5E16.8)\n"
+      format_print(fp, 5, "16.8E", par.dihedrals.map { |p| 2.0 } + par.impropers.map { |p| 0.0 })
+      
+      fp.print "%FLAG SOLTY\n%FORMAT(5E16.8)\n"
+      format_print(fp, 5, "16.8E", (0...par.nvdws).map { 0.0 } )
+    
+      fp.print "%FLAG LENNARD_JONES_ACOEF\n%FORMAT(5E16.8)\n"
+      format_print(fp, 5, "16.8E", vdw_pair_table.map { |x| x[0] })
+    
+      fp.print "%FLAG LENNARD_JONES_BCOEF\n%FORMAT(5E16.8)\n"
+      format_print(fp, 5, "16.8E", vdw_pair_table.map { |x| x[1] })
+    
+      fp.print "%FLAG BONDS_INC_HYDROGEN\n%FORMAT(10I8)\n"
+      format_print(fp, 10, "8d", bonds_h.map { |n|
+        x = self.bonds[n]
+        [x[0] * 3, x[1] * 3, self.bond_par(n).index + 1] }.flatten)
+      
+      fp.print "%FLAG BONDS_WITHOUT_HYDROGEN\n%FORMAT(10I8)\n"
+      format_print(fp, 10, "8d", bonds_a.map { |n|
+        x = self.bonds[n]
+        [x[0] * 3, x[1] * 3, self.bond_par(n).index + 1] }.flatten)
+      
+      fp.print "%FLAG ANGLES_INC_HYDROGEN\n%FORMAT(10I8)\n"
+      format_print(fp, 10, "8d", angles_h.map { |n|
+        x = self.angles[n]
+        [x[0] * 3, x[1] * 3, x[2] * 3, self.angle_par(n).index + 1] }.flatten)
+      
+      fp.print "%FLAG ANGLES_WITHOUT_HYDROGEN\n%FORMAT(10I8)\n"
+      format_print(fp, 10, "8d", angles_a.map { |n|
+        x = self.angles[n]
+        [x[0] * 3, x[1] * 3, x[2] * 3, self.angle_par(n).index + 1] }.flatten)
+      
+      [dihedrals_h, dihedrals_a].each { |dihed|
+        if dihed == dihedrals_h
+          fp.print "%FLAG DIHEDRALS_INC_HYDROGEN\n"
+        else
+          fp.print "%FLAG DIHEDRALS_WITHOUT_HYDROGEN\n"
+        end
+        fp.print "%FORMAT(10I8)\n"
+        format_print(fp, 10, "8d", dihed.map { |n|
+          if n < 2000000
+            x = self.dihedrals[n % 1000000]
+            #  Note: if n >= 1000000, then the 1-4 interaction should be ignored to avoid double calculation. This is specified by the negative index for the third atom, but if the third atom is 0 we have a problem. To avoid this situation, the atom array is reversed.
+            if n >= 1000000 && x[2] == 0
+              x = x.reverse
+            end
+            k = self.dihedral_par(n % 1000000).index + 1
+            [x[0] * 3, x[1] * 3, (n >= 1000000 ? -x[2] : x[2]) * 3, x[3] * 3, k]
+          else
+            x = self.impropers[n % 1000000]
+            #  The improper torsion is specified by the negative index for the fourth atom, but if the fourth atom is 0 then we have a problem. To avoid this situation, the first and fourth atoms are exchanged.
+            if x[3] == 0
+              x = [x[3], x[1], x[2], x[0]]
+            end
+            k = self.improper_par(n % 1000000).index + 1 + par.ndihedrals
+            [x[0] * 3, x[1] * 3, -x[2] * 3, -x[3] * 3, k]
+          end
+        }.flatten)
+      }  #  end each [dihedral_h, dihedral_a]
+      
+      fp.print "%FLAG EXCLUDED_ATOMS_LIST\n%FORMAT(10I8)\n"
+      format_print(fp, 10, "8d", extable)
+    
+      fp.print "%FLAG HBOND_ACOEF\n%FORMAT(5E16.8)\n"
+      fp.print "\n"
+    
+      fp.print "%FLAG HBOND_BCOEF\n%FORMAT(5E16.8)\n"
+      fp.print "\n"
+    
+      fp.print "%FLAG HBCUT\n%FORMAT(5E16.8)\n"
+      fp.print "\n"
+    
+      fp.print "%FLAG AMBER_ATOM_TYPE\n%FORMAT(20a4)\n"
+      format_print(fp, 20, "-4.4s", self.atoms.map { |ap| ap.atom_type })
+    
+      fp.print "%FLAG TREE_CHAIN_CLASSIFICATION\n%FORMAT(20a4)\n"
+      format_print(fp, 20, "-4.4s", self.atoms.map { |ap| "M" })
+    
+      fp.print "%FLAG JOIN_ARRAY\n%FORMAT(10I8)\n"
+      format_print(fp, 10, "8d", self.atoms.map { |ap| 0 })
+    
+      fp.print "%FLAG IROTAT\n%FORMAT(10I8)\n"
+      format_print(fp, 10, "8d", self.atoms.map { |ap| 0 })
+    
+      fp.print "%FLAG RADIUS_SET\n%FORMAT(1a80)\n"
+      fp.print "modified Bondi radii (mbondi)\n"
+      
+      fp.print "%FLAG RADII\n%FORMAT(5E16.8)\n"
+      format_print(fp, 5, "16.8E", self.atoms.map { |ap|
+        (ap.atomic_number == 1 ? 1.30 : 1.70) })
+      
+      fp.print "%FLAG SCREEN\n%FORMAT(5E16.8)\n"
+      format_print(fp, 5, "16.8E", self.atoms.map { |ap|
+        (ap.atomic_number == 1 ? 0.85 : 0.72) })
+      
+      if periodic
+        fp.print "%FLAG SOLVENT_POINTERS\n%FORMAT(3I8)\n"
+        fp.printf "%8d%8d%8d\n", last_solute, fragments.length, first_solv_mol
+        
+        fp.print "%FLAG ATOMS_PER_MOLECULE\n%FORMAT(10I8)\n"
+        format_print(fp, 10, "8d", fragments)
+        
+        fp.print "%FLAG BOX_DIMENSIONS\n%FORMAT(5E16.8)\n"
+        box = self.box
+        fp.printf "%16.8E%16.8E%16.8E%16.8E\n", 0, box[0].length, box[1].length, box[2].length
+      end
+    }
+    
+    fname2 = fname.sub(/\.prmtop$/, '.inpcrd')
+    fname2 += '.inpcrd' if fname == fname2
+    
+    open(fname2, "w") { |fp|
+      fp.printf "%-80.80s\n", self.name
+      fp.printf "%6d\n", self.natoms
+      format_print(fp, 6, "12.7f", self.atoms.map { |ap| [ap.x, ap.y, ap.z] }.flatten )
+    }
+  
+    return true
+
+  end
+
   def count_elements
     elements = []
 	each_atom { |ap|
