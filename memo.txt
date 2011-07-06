@@ -140,26 +140,20 @@ Importing GaussianW fch(k) files was not working; fixed. The extension ".fch" is
 2011.7.5.
 sander 用入力を作れるようにする。prmtop, inpcrd は一応作れるようになった。あとは sander の入力ファイル。関係ありそうな設定パラメータ：
 
+General flags
 imin = 0 (no minimization), 1 (minimization)
 ntx = 1 (read coords), 5 (read coords and velocities and box [if ntb>0]. velocities are used only if irest > 0.
 irest = 0 (no restart), 1 (restart)
 ntpr : every NTPR steps energy info are printed to mdout/mdinfo (default 50).
 ntwx : every ntwx steps coords are written to mdcrd (default 0: no output)
-ntf: force evaluation 
-ntb: 0 (no periodicity), 1 (constant volume), 2 (constant pressure)
-cut: nonbonded cutoff, default 8.0 (for PME this is good); for igb > 0, larger values should be used
-igb: 0 (no GB), 1 (Hawkins/Cramer/Truhlar GB), 2 (Onufriev/Bashford/Case GB), etc.
-saltcon: salt concentraction (M), GB plus Debye-Huckel model.
-rgbmax: cutoff for estimation of effective Born radii. Default 25 A.
-gbsa: 0 (no surface area calc), 1 (LCPO surface area model), 2 (recursive approximation of spheres; used only in single point calc)
-surften: surface tension. default 0.005 kcal/mol/A^2
-rdt: (only used in LES)
 
+Minimization and dynamics:
 maxcyc: maximum number of cycles of minimization
 nstlim: number of MD-steps to be performed
 dt: time step (psec). Recommended value is 0.002 when SHAKE is used or 0.001 otherwise.
 nrespa: frequency for calculation of slow forces. nrespa * dt > 0.004 causes instablitity.
 
+Temperature control:
 ntt: temperature control 0: constant energy, 1: constant temperature, 2: Andersen temperature, 3: Langevin dynamics
 temp0: target temperature
 tempi: initial temperature
@@ -167,11 +161,28 @@ tautp: time constant for heat bath coupling. Should be 0.5-5.0ps.
 gamma_ln: collision frequency for Langevin dynamics.
 vlimit: limiting velocity, default 20.
 
+Pressure control:
 ntp: constant pressure dynamics 0: no pressure scaling, 1: isotropic position scaling, 2: anisotropic pressure scaling
 pres0: reference pressure (default 1 bar)
 taup: pressure relaxation time (default 1.0 ps)
 
+SHAKE constraint:
 ntc: SHAKE algorithm. generally ntf and ntc should be the same. 1: SHAKE is not perfomred, 2: bonds involving hydrogen are constrained, 3: all bonds are constrained
 
+Potential function parameters:
+ntf: force evaluation 1: complete interaction, 2: omit hydrogen (with ntc=2), 3: omit all bonds (with ntc=3)
+ntb: 0 (no periodicity), 1 (constant volume), 2 (constant pressure)
+cut: nonbonded cutoff, default 8.0 (for PME this is good); for igb > 0, larger values should be used
+
+Generalized Born/Surface Area:
+igb: 0 (no GB), 1 (Hawkins/Cramer/Truhlar GB), 2 (Onufriev/Bashford/Case GB), etc.
+extdiel: external dielectric constant. default 78.5.
+saltcon: salt concentraction (M), GB plus Debye-Huckel model.
+rgbmax: cutoff for estimation of effective Born radii. Default 25 A.
+gbsa: 0 (no surface area calc), 1 (LCPO surface area model), 2 (recursive approximation of spheres; used only in single point calc)
+surften: surface tension. default 0.005 kcal/mol/A^2
+rdt: (only used in LES)
+
+sander -O -i min.in -o NAME.out -p NAME.prmtop -c NAME.inpcrd -x NAME.mdcrd -r NAME.restrt
 
 

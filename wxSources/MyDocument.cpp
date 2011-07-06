@@ -253,18 +253,26 @@ MyDocument::OnImport(wxCommandEvent& event)
 {
 	wxString wildcard;
 	{
-		/*  File filter is built from MyDocManager information  */
 		wxString desc, filter, ext;
 		int i;
+		/*  File filter is built from MyDocManager information  */
 		MyDocManager *docm = wxGetApp().DocManager();
 		for (i = 0; docm->GetDocumentDescriptionAtIndex(i, &desc, &filter, &ext); i++) {
+			if (filter.Contains(_T("*.*"))) {
+				i = -1;
+				break;
+			}
 			if (wildcard != _T("")) {
 				wildcard += (_T("|"));
 			}
 			wildcard += (desc + _T(" (") + filter + _T(")|") + filter);
 		}
+		/*  Insert Import-only file types before "All files"  */
+		wildcard += _T("|AMBER mdcrd file (*.crd;*.mdcrd)|*.crd;*.mdcrd");
+		if (i == -1)
+			wildcard += (_T("|") + desc + _T(" (") + filter + _T(")|") + filter);
 	}
-	
+
 	wxFileDialog *dialog = new wxFileDialog(NULL, _T("Choose Coordinate File"), _T(""), _T(""), wildcard, wxFD_OPEN | wxFD_CHANGE_DIR | wxFD_FILE_MUST_EXIST);
 	if (dialog->ShowModal() == wxID_OK) {
 		char *p = strdup((const char *)(dialog->GetPath().mb_str(wxConvFile)));

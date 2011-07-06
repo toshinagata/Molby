@@ -25,8 +25,9 @@ class Molecule
     count = 0
 	frame = 0
 	coords = (0...natoms).collect { Vector3D[0, 0, 0] }
-	show_progress_panel("Loading a crd file...")
+	show_progress_panel("Loading AMBER crd file...")
 #    puts "sframe = #{sframe}, pos = #{fp.pos}"
+    line = fp.gets   #  Skip first line
     while 1
       line = fp.gets
       if line == nil
@@ -36,7 +37,7 @@ class Molecule
 	    fp.close
 		break
       end
-      next if line.match(/^TITLE/)
+#      next if line.match(/^TITLE/)
       line.chomp
       values = line.split(' ')
       if count + values.size > natoms * 3
@@ -57,7 +58,7 @@ class Molecule
         count = 0
         frame += 1
 		if frame % 5 == 0
-		  set_progress_message("Loading a crd file...\n(#{frame} frames completed)")
+		  set_progress_message("Loading AMBER crd file...\n(#{frame} frames completed)")
 		end
       end
     end
@@ -75,7 +76,7 @@ class Molecule
       raise MolbyError, "cannot save crd; the molecule is empty"
     end
     fp = open(filename, "wb")
-	show_progress_panel("Saving a crd file...")
+	show_progress_panel("Saving AMBER crd file...")
 	fp.printf("TITLE: %d atoms\n", natoms)
 	cframe = self.frame
 	nframes = self.nframes
@@ -92,7 +93,7 @@ class Molecule
 			j += 1
 		  end
 		  if i % 5 == 0
-			set_progress_message("Saving a crd file...\n(#{i} frames completed)")
+			set_progress_message("Saving AMBER crd file...\n(#{i} frames completed)")
 		  end
 		}
 	ensure
@@ -103,6 +104,9 @@ class Molecule
 	hide_progress_panel
 	true
   end
+
+  alias :loadmdcrd :loadcrd
+  alias :savemdcrd :savecrd
 
   def loadlog(filename)
 
