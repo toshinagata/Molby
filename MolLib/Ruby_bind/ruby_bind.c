@@ -120,38 +120,7 @@ Ruby_NewFileStringValue(const char *fstr)
 #endif
 }
 
-#pragma mark ====== Message output ======
-
-/*
- *  call-seq:
- *     stdout.write(str)
- *
- *  Put the message in the main text view in black color.
- */
-static VALUE
-s_StandardOutput(VALUE self, VALUE str)
-{
-	int n;
-	MyAppCallback_setConsoleColor(0);
-	n = MyAppCallback_showScriptMessage("%s", StringValuePtr(str));
-	return INT2NUM(n);
-}
-
-/*
- *  call-seq:
- *     stderr.write(str)
- *
- *  Put the message in the main text view in red color.
- */
-static VALUE
-s_StandardErrorOutput(VALUE self, VALUE str)
-{
-	int n;
-	MyAppCallback_setConsoleColor(1);
-	n = MyAppCallback_showScriptMessage("%s", StringValuePtr(str));
-	MyAppCallback_setConsoleColor(0);
-	return INT2NUM(n);
-}
+#pragma mark ====== Message input/output ======
 
 /*
  *  call-seq:
@@ -208,6 +177,93 @@ s_Kernel_ErrorMessageBox(VALUE self, VALUE sval)
 	char *str = StringValuePtr(sval);
 	MyAppCallback_errorMessageBox("%s", str);
 	return Qnil;
+}
+
+/*
+ *  call-seq:
+ *     ask(prompt, default = nil) -> string
+ *
+ *  Open a modal dialog and get a line of text.
+ */
+static VALUE
+s_Kernel_Ask(int argc, VALUE *argv, VALUE self)
+{
+	volatile VALUE prompt, message;
+	char buf[1024];
+	int retval;
+	rb_scan_args(argc, argv, "11", &prompt, &message);
+	if (message != Qnil) {
+		strncpy(buf, StringValuePtr(message), sizeof buf - 1);
+		buf[sizeof buf - 1] = 0;
+	} else buf[0] = 0;
+	retval = MyAppCallback_getTextWithPrompt(StringValuePtr(prompt), buf, sizeof buf);
+	if (retval)
+		return rb_str_new2(buf);
+	else
+		return Qnil;	
+}
+
+/*
+ *  call-seq:
+ *     stdout.write(str)
+ *
+ *  Put the message in the main text view in black color.
+ */
+static VALUE
+s_StandardOutput(VALUE self, VALUE str)
+{
+	int n;
+	MyAppCallback_setConsoleColor(0);
+	n = MyAppCallback_showScriptMessage("%s", StringValuePtr(str));
+	return INT2NUM(n);
+}
+
+/*
+ *  call-seq:
+ *     stderr.write(str)
+ *
+ *  Put the message in the main text view in red color.
+ */
+static VALUE
+s_StandardErrorOutput(VALUE self, VALUE str)
+{
+	int n;
+	MyAppCallback_setConsoleColor(1);
+	n = MyAppCallback_showScriptMessage("%s", StringValuePtr(str));
+	MyAppCallback_setConsoleColor(0);
+	return INT2NUM(n);
+}
+
+/*
+ *  call-seq:
+ *     stdin.gets(rs = $/)
+ *
+ *  Read one line message via dialog box.
+ */
+static VALUE
+s_StandardInputGets(int argc, VALUE *argv, VALUE self)
+{
+	VALUE pval, rval;
+	pval = rb_str_new2("Enter a line:");
+	rval = s_Kernel_Ask(1, &pval, self);
+	if (rval == Qnil)
+		rb_interrupt();
+	return rval;
+}
+
+/*
+ *  call-seq:
+ *     stdin.method_missing(name, args, ...)
+ *
+ *  Throw an exception, noting only gets and readline are defined.
+ */
+static VALUE
+s_StandardInputMethodMissing(int argc, VALUE *argv, VALUE self)
+{
+	VALUE nval;
+	rb_scan_args(argc, argv, "10", &nval);
+	rb_raise(rb_eMolbyError, "'%s' is undefined. Only 'gets' and 'readline' can be used for stdin within Molby.", rb_id2name(SYM2ID(nval)));
+	return Qnil;  /*  Not reached  */
 }
 
 #pragma mark ====== Track key events ======
@@ -453,30 +509,6 @@ s_Event_Callback(rb_event_t event, NODE *node, VALUE self, ID rid, VALUE klass)
 			}
 		}
 	}
-}
-
-/*
- *  call-seq:
- *     ask(prompt, default = nil) -> string
- *
- *  Open a modal dialog and get a line of text.
- */
-static VALUE
-s_Kernel_Ask(int argc, VALUE *argv, VALUE self)
-{
-	volatile VALUE prompt, message;
-	char buf[1024];
-	int retval;
-	rb_scan_args(argc, argv, "11", &prompt, &message);
-	if (message != Qnil) {
-		strncpy(buf, StringValuePtr(message), sizeof buf - 1);
-		buf[sizeof buf - 1] = 0;
-	} else buf[0] = 0;
-	retval = MyAppCallback_getTextWithPrompt(StringValuePtr(prompt), buf, sizeof buf);
-	if (retval)
-		return rb_str_new2(buf);
-	else
-		return Qnil;	
 }
 
 #pragma mark ====== Menu handling ======
@@ -8118,7 +8150,7 @@ Molby_showError(int status)
 		else msg = "(message not available)";
 	}
 	asprintf(&msg2, "%s\n%s", msg, RSTRING_PTR(backtrace));
-	MyAppCallback_messageBox(msg2, "Molby script error", 0, 3);
+	MyAppCallback_messageBox(msg2, (interrupted == 0 ? "Molby script error" : "Molby script interrupted"), 0, 3);
 	free(msg2);
 	gMolbyRunLevel--;
 }
@@ -8163,6 +8195,13 @@ Molby_startup(const char *script, const char *dir)
 	val = rb_funcall(rb_cObject, rb_intern("new"), 0);
 	rb_define_singleton_method(val, "write", s_StandardErrorOutput, 1);
 	rb_gv_set("$stderr", val);
+
+	/*  Create objects for stdin  */
+	val = rb_funcall(rb_cObject, rb_intern("new"), 0);
+	rb_define_singleton_method(val, "gets", s_StandardInputGets, -1);
+	rb_define_singleton_method(val, "readline", s_StandardInputGets, -1);
+	rb_define_singleton_method(val, "method_missing", s_StandardInputMethodMissing, -1);
+	rb_gv_set("$stdin", val);
 	
 	/*  Global variable to hold backtrace  */
 	rb_define_variable("$backtrace", &gMolbyBacktrace);

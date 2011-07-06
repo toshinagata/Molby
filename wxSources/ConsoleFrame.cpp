@@ -261,10 +261,10 @@ ConsoleFrame::OnEnterPressed(wxKeyEvent& event)
 			} else {
 				textCtrl->AppendText(wxT("-->"));
 				Molby_showRubyValue(val);
-				textCtrl->AppendText(wxT("\n"));
-				MyAppCallback_showRubyPrompt();
 			}
 			MyAppCallback_setConsoleColor(0);
+			textCtrl->AppendText(wxT("\n"));
+			MyAppCallback_showRubyPrompt();
 		}
 	} else {
 		textCtrl->AppendText(wxT("\n"));

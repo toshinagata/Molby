@@ -1164,6 +1164,7 @@ MyDocument::OnInvokeAntechamber(wxCommandEvent &event)
 		((MoleculeView *)GetFirstView())->GetListCtrl()->Update();
 		MyAppCallback_messageBox("Antechamber succeeded.", "Success", 0, 0);
 	}
+	MyAppCallback_showRubyPrompt();
 }
 
 void
