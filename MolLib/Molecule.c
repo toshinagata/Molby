@@ -232,6 +232,9 @@ MoleculeInitWithMolecule(Molecule *mp2, const Molecule *mp)
 			goto error;
 		memmove(mp2->residues, mp->residues, sizeof(mp->residues[0]) * mp->nresidues);
 	}
+	if (mp->par != NULL)
+		mp2->par = ParameterDuplicate(mp->par);
+
 	return mp2;
   error:
 	Panic("Cannot allocate memory for duplicate molecule");
@@ -3935,12 +3938,16 @@ Molecule *
 MoleculeDeserialize(const char *data, Int length, Int *timep)
 {
 	Molecule *mp;
+	Parameter *par;
 /*	int result; */
 
 	mp = MoleculeNew();
 	if (mp == NULL)
 		goto out_of_memory;
-	
+	par = ParameterNew();
+	if (par == NULL)
+		goto out_of_memory;
+
 	while (length >= 12) {
 		const char *ptr = data + 8 + sizeof(Int);
 		int len = *((const Int *)(data + 8));
@@ -4014,11 +4021,48 @@ MoleculeDeserialize(const char *data, Int length, Int *timep)
 		} else if (strcmp(data, "TIME") == 0) {
 			if (timep != NULL)
 				*timep = *((Int *)ptr);
+		} else if (strcmp(data, "BONDPAR") == 0) {
+			mp->par = par;
+			n = len / sizeof(BondPar);
+			NewArray(&par->bondPars, &par->nbondPars, sizeof(BondPar), n);
+			memmove(par->bondPars, ptr, len);
+		} else if (strcmp(data, "ANGPAR") == 0) {
+			mp->par = par;
+			n = len / sizeof(AnglePar);
+			NewArray(&par->anglePars, &par->nanglePars, sizeof(AnglePar), n);
+			memmove(par->anglePars, ptr, len);
+		} else if (strcmp(data, "DIHEPAR") == 0) {
+			mp->par = par;
+			n = len / sizeof(TorsionPar);
+			NewArray(&par->dihedralPars, &par->ndihedralPars, sizeof(TorsionPar), n);
+			memmove(par->dihedralPars, ptr, len);
+		} else if (strcmp(data, "IMPRPAR") == 0) {
+			mp->par = par;
+			n = len / sizeof(TorsionPar);
+			NewArray(&par->improperPars, &par->nimproperPars, sizeof(TorsionPar), n);
+			memmove(par->improperPars, ptr, len);
+		} else if (strcmp(data, "VDWPAR") == 0) {
+			mp->par = par;
+			n = len / sizeof(VdwPar);
+			NewArray(&par->vdwPars, &par->nvdwPars, sizeof(VdwPar), n);
+			memmove(par->vdwPars, ptr, len);
+		} else if (strcmp(data, "VDWPPAR") == 0) {
+			mp->par = par;
+			n = len / sizeof(VdwPairPar);
+			NewArray(&par->vdwpPars, &par->nvdwpPars, sizeof(VdwPairPar), n);
+			memmove(par->vdwpPars, ptr, len);
+		} else if (strcmp(data, "VCUTPAR") == 0) {
+			mp->par = par;
+			n = len / sizeof(VdwCutoffPar);
+			NewArray(&par->vdwCutoffPars, &par->nvdwCutoffPars, sizeof(VdwCutoffPar), n);
+			memmove(par->vdwCutoffPars, ptr, len);
 		}
 		len += 8 + sizeof(Int);
 		data += len;
 		length -= len;
 	}
+	if (mp->par == NULL)
+		ParameterRelease(par);
 /*	result = MoleculeRebuildTablesFromConnects(mp);
 	if (result != 0)
 		goto bad_format; */
@@ -4226,7 +4270,75 @@ MoleculeSerialize(Molecule *mp, Int *outLength, Int *timep)
 		memmove(p, mp->exbonds, sizeof(Int) * 2 * mp->nexbonds);
 		len_all += len;
 	}
-
+	
+	/*  Parameters  */
+	if (mp->par != NULL) {
+		int type;
+		for (type = kFirstParType; type <= kLastParType; type++) {
+			const char *parname;
+			Int parsize, parcount;
+			void *parptr;
+			switch (type) {
+				case kBondParType:
+					parname = "BONDPAR\0";
+					parsize = sizeof(BondPar);
+					parcount = mp->par->nbondPars;
+					parptr = mp->par->bondPars;
+					break;
+				case kAngleParType:
+					parname = "ANGPAR\0\0";
+					parsize = sizeof(AnglePar);
+					parcount = mp->par->nanglePars;
+					parptr = mp->par->anglePars;
+					break;
+				case kDihedralParType:
+					parname = "DIHEPAR\0";
+					parsize = sizeof(TorsionPar);
+					parcount = mp->par->ndihedralPars;
+					parptr = mp->par->dihedralPars;
+					break;
+				case kImproperParType:
+					parname = "IMPRPAR\0";
+					parsize = sizeof(TorsionPar);
+					parcount = mp->par->nimproperPars;
+					parptr = mp->par->improperPars;
+					break;
+				case kVdwParType:
+					parname = "VDWPAR\0\0";
+					parsize = sizeof(VdwPar);
+					parcount = mp->par->nvdwPars;
+					parptr = mp->par->vdwPars;
+					break;
+				case kVdwPairParType:
+					parname = "VDWPPAR\0";
+					parsize = sizeof(VdwPairPar);
+					parcount = mp->par->nvdwpPars;
+					parptr = mp->par->vdwpPars;
+					break;
+				case kVdwCutoffParType:
+					parname = "VCUTPAR\0";
+					parsize = sizeof(VdwCutoffPar);
+					parcount = mp->par->nvdwCutoffPars;
+					parptr = mp->par->vdwCutoffPars;
+					break;
+				default:
+					continue;
+			}
+			if (parcount > 0) {
+				len = 8 + sizeof(Int) + parsize * parcount;
+				ptr = (char *)realloc(ptr, len_all + len);
+				if (ptr == NULL)
+					goto out_of_memory;
+				p = ptr + len_all;
+				memmove(p, parname, 8);
+				*((Int *)(p + 8)) = parsize * parcount;
+				p += 8 + sizeof(Int);
+				memmove(p, parptr, parsize * parcount);
+				len_all += len;
+			}
+		}
+	}
+	
 	/*  Time stamp  */
 	{
 		time_t tm = time(NULL);
@@ -5577,6 +5689,52 @@ MoleculeMerge(Molecule *dst, Molecule *src, IntGroup *where, int resSeqOffset)
 			(*items)[j] = old2new[(*items)[j] + ndst];
 	}
 	
+	/*  Merge parameters  */
+	if (src->par != NULL) {
+		UnionPar *up1, *up2;
+		int type;
+		IntGroup *ig;
+		ig = IntGroupNew();
+		if (dst->par == NULL)
+			dst->par = ParameterNew();
+		for (type = kFirstParType; type <= kLastParType; type++) {
+			n1 = ParameterGetCountForType(src->par, type);
+			n2 = ParameterGetCountForType(dst->par, type);
+			if (n1 == 0)
+				continue;
+			for (i = 0; i < n1; i++) {
+				up1 = ParameterGetUnionParFromTypeAndIndex(src->par, type, i);
+				for (j = 0; j < n2; j++) {
+					up2 = ParameterGetUnionParFromTypeAndIndex(dst->par, type, j);
+					if (ParameterCompare(up1, up2, type))
+						break;
+				}
+				if (j >= n2)
+					/*  This is an unknown parameter; should be copied  */
+					IntGroupAdd(ig, i, 1);
+			}
+			n1 = IntGroupGetCount(ig);
+			if (n1 == 0)
+				continue;
+			up1 = (UnionPar *)calloc(sizeof(UnionPar), n1);
+			if (up1 == NULL)
+				goto panic;
+			/*  Copy parameters and renumber indices if necessary  */
+			for (i = 0; i < n1; i++) {
+				up2 = ParameterGetUnionParFromTypeAndIndex(src->par, type, IntGroupGetNthPoint(ig, i));
+				if (up2 == NULL)
+					continue;
+				up1[i] = *up2;
+				ParameterRenumberAtoms(type, up1 + i, nsrc, old2new + ndst);
+			}
+			/*  Merge parameters  */
+			if (ParameterInsert(dst->par, type, up1, ig) < n1)
+				goto panic;
+			IntGroupClear(ig);
+			free(up1);
+		}
+	}
+	
 	/*  Copy the residues if necessary  */
 	/*  src[1..src->nresidues-1] should become dst[1+resSeqOffset..src->nresidues+resSeqOffset-1];
 	    However, 1+resSeqOffset should not overwrite the existing residue in dst;
@@ -5758,6 +5916,7 @@ sMoleculeUnmergeSub(Molecule *src, Molecule **dstp, IntGroup *where, int resSeqO
 	}
 
 	/*  Separate the bonds, angles, dihedrals, impropers  */
+	/*  TODO: Improper torsions should also be copied!  */
 	move_g = IntGroupNew();
 	del_g = IntGroupNew();
 	if (move_g == NULL || del_g == NULL)
@@ -5861,10 +6020,11 @@ sMoleculeUnmergeSub(Molecule *src, Molecule **dstp, IntGroup *where, int resSeqO
 		}
 	}
 
-#if 0
 	/*  Copy the parameters  */
 	if (dst != NULL && src->par != NULL) {
-		UnionPar *up;
+		UnionPar *up, *upary;
+		if (dst->par == NULL)
+			dst->par = ParameterNew();
 		for (i = 0; i < nsrc; i++) {
 			old2new[i] -= nsrcnew;  /*  new indices for atoms in dst; otherwise negative numbers  */
 		}
@@ -5886,20 +6046,28 @@ sMoleculeUnmergeSub(Molecule *src, Molecule **dstp, IntGroup *where, int resSeqO
 			n2 = IntGroupGetCount(move_g);
 			if (n2 == 0)
 				continue;
-			up = (UnionPar *)calloc(sizeof(UnionPar), n2);
-			if (up == NULL)
+			upary = (UnionPar *)calloc(sizeof(UnionPar), n2);
+			if (upary == NULL)
 				goto panic;
-			/*  Renumber indices if necessary  */
-			for (i = 0; i < n2; i++)
-				ParameterRenumberAtoms(n1, up + i, nsrc, old2new);
+			/*  Copy parameters and renumber indices if necessary  */
+			for (i = 0; i < n2; i++) {
+				up = ParameterGetUnionParFromTypeAndIndex(src->par, n1, IntGroupGetNthPoint(move_g, i));
+				upary[i] = *up;
+				ParameterRenumberAtoms(n1, upary + i, nsrc, old2new);
+			}
 			IntGroupClear(move_g);
+			IntGroupAdd(move_g, ParameterGetCountForType(dst->par, n1), n2);
+			/*  Insert new parameters  */
+			if (ParameterInsert(dst->par, n1, upary, move_g) < n2)
+				goto panic;
+			IntGroupClear(move_g);
+			free(upary);
 		}
 		for (i = 0; i < nsrc; i++) {
 			old2new[i] += nsrcnew;  /*  Restore indices  */
 		}
 		IntGroupRelease(move_g);
 	}
-#endif
 	
 	/*  Clean up  */
 	MoleculeCleanUpResidueTable(src);

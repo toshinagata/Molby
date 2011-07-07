@@ -5524,14 +5524,6 @@ s_Molecule_Add(VALUE self, VALUE val)
 	return self; 
 }
 
-static VALUE
-s_Molecule_Duplicate(VALUE self)
-{
-	VALUE val = s_Molecule_Alloc(rb_cMolecule);
-/*	s_Molecule_Init(val); */
-	return s_Molecule_Add(val, self);
-}
-
 /*
  *  call-seq:
  *     remove(group)       -> Molecule
