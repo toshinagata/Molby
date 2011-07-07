@@ -248,6 +248,7 @@ s_StandardInputGets(int argc, VALUE *argv, VALUE self)
 	rval = s_Kernel_Ask(1, &pval, self);
 	if (rval == Qnil)
 		rb_interrupt();
+	rb_str_cat2(rval, "\n");
 	return rval;
 }
 

@@ -293,6 +293,7 @@ void memory(int flag, int maxatom, int maxbond, int maxring)
 		int i;
 		for (i = 0; i < maxbond; ++i) {
 			bond[i].jflag = -1; /* bond type has not been assigned */
+			bond[i].type = 0; /* 20110707 Toshi Nagata */
 		}
 	}
 /*flag = 1  <->atom
@@ -321,6 +322,7 @@ void memory(int flag, int maxatom, int maxbond, int maxring)
 		int i;
 		for (i = 0; i < maxbond; ++i) {
 			bond[i].jflag = -1; /* bond type has not been assigned */
+			bond[i].type = 0; /* 20110707 Toshi Nagata */
 		}
 	}
 	if (flag == 3 || flag == 5 || flag == 6 || flag == 7) {
