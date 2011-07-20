@@ -680,7 +680,7 @@ class Molecule
       ary.each_with_index { |x, i|
         fp.printf(fmts, x, (i % num == num - 1 ? "\n" : ""))
       }
-      fp.print "\n"
+      fp.print "\n" if ary.count % num != 0
     end
   
     par = self.parameter
@@ -711,7 +711,7 @@ class Molecule
           return nil
         end
         fragments.push(gr.length)
-        if last_solute == nil && self.atoms[gr[0]].seq_name == "SOLV"
+        if last_solute == nil && self.atoms[gr[0]].seg_name == "SOLV"
           #  Calculate the residue number of the last solute atom (gr[0] - 1)
           n = gr[0] - 1
           if n < 0
@@ -1008,6 +1008,9 @@ class Molecule
       fp.printf "%-80.80s\n", self.name
       fp.printf "%6d\n", self.natoms
       format_print(fp, 6, "12.7f", self.atoms.map { |ap| [ap.x, ap.y, ap.z] }.flatten )
+	  if periodic
+	    fp.printf "%12.7f%12.7f%12.7f%12.7f%12.7f%12.7f\n", box[0].length, box[1].length, box[2].length, 90, 90, 90
+	  end
     }
   
     return true

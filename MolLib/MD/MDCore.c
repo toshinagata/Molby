@@ -1570,6 +1570,7 @@ md_prepare(MDArena *arena, int check_only)
 	/*  Parameter checking only  */
 	if (check_only) {
 		arena->is_initialized = 1;  /*  Only static fields are ready  */
+		arena->mol->needsMDRebuild = 0;
 		return NULL;
 	}
 	

@@ -261,6 +261,7 @@ s_MDArena_Prepare(int argc, VALUE *argv, VALUE self)
 			IntGroupRelease(ig1);
 			free(upbuf);
 		}
+		mol->needsMDRebuild = 0;  /*  We know the "modified" parameters are consistent with the MDArena  */
 	}
 
 	if (missing)
