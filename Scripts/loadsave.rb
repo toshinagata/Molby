@@ -25,6 +25,7 @@ class Molecule
     count = 0
 	frame = 0
 	coords = (0...natoms).collect { Vector3D[0, 0, 0] }
+    periodic = (self.box && self.box[4].all? { |n| n != 0 })
 	show_progress_panel("Loading AMBER crd file...")
 #    puts "sframe = #{sframe}, pos = #{fp.pos}"
     line = fp.gets   #  Skip first line
@@ -38,7 +39,7 @@ class Molecule
 		break
       end
 #      next if line.match(/^TITLE/)
-      line.chomp
+      line.chomp!
       values = line.split(' ')
       if count + values.size > natoms * 3
         raise MolbyError, sprintf("crd format error - too many values at line %d in file %s; number of atoms = %d, current frame = %d", fp.lineno, fp.path, natoms, frame)
@@ -54,6 +55,14 @@ class Molecule
 			atoms.each_with_index { |ap, i| ap.r = coords[i] }
 		else
 			create_frame([coords])
+		end
+		if periodic
+		  #  Should have box information
+		  line = fp.gets
+		  if line == nil || (values = line.chomp.split(' ')).length != 3
+		    raise "The molecule has a periodic cell but the crd file does not contain cell information"
+	      end
+		  self.cell = [Float(values[0]), Float(values[1]), Float(values[2]), 90, 90, 90]
 		end
         count = 0
         frame += 1
