@@ -700,7 +700,7 @@ class Molecule
   
   def Molecule.cmd_import_amberlib
     file = Dialog.open_panel("Select AMBER lib file", nil, "AMBER lib file (*.lib)|*.lib|All Files (*.*)|*.*")
-	import_amberlib(file)
+	import_amberlib(file) if file
   end
   
   def export_ac(acfile)
