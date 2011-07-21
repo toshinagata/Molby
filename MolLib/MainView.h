@@ -190,6 +190,8 @@ void MainView_tableTitleForIndex(MainView *mview, int idx, char *buf, int bufsiz
 void MainView_createColumnsForTableAtIndex(MainView *mview, int idx);
 void MainView_refreshTable(MainView *mview);
 int MainView_numberOfRowsInTable(MainView *mview);
+int MainView_indexToTableRow(MainView *mview, int idx);
+int MainView_tableRowToIndex(MainView *mview, int row);
 void MainView_valueForTable(MainView *mview, int column, int row, char *buf, int bufsize);
 void MainView_setValueForTable(MainView *mview, int column, int row, const char *buf);
 int MainView_setColorForTable(MainView *mview, int column, int row, float *fg, float *bg);
@@ -238,6 +240,7 @@ STUB void MainViewCallback_setTableSelection(MainView *mview, IntGroup *selectio
 STUB IntGroup *MainViewCallback_getTableSelection(MainView *mview);
 STUB void MainViewCallback_showTable(MainView *mview);
 STUB void MainViewCallback_hideTable(MainView *mview);
+STUB void MainViewCallback_ensureVisible(MainView *mview, int row);
 
 /*  Register the type definition  */
 //extern void MainView_register(PyObject *module);

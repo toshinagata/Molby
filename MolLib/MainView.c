@@ -2987,6 +2987,26 @@ MainView_numberOfRowsInTable(MainView *mview)
 	return IntGroupGetCount(mview->tableCache);
 }
 
+int
+MainView_indexToTableRow(MainView *mview, int idx)
+{
+	if (mview == NULL)
+		return -1;
+	if (mview->tableIndex == kMainViewParameterTableIndex)
+		return -1;  /*  Not supported yet  */
+	return IntGroupLookupPoint(mview->tableCache, idx);
+}
+
+int
+MainView_tableRowToIndex(MainView *mview, int row)
+{
+	if (mview == NULL)
+		return -1;
+	if (mview->tableIndex == kMainViewParameterTableIndex)
+		return -1;  /*  Not supported yet  */
+	return IntGroupGetNthPoint(mview->tableCache, row);
+}
+
 static char *
 sAtomDescription(Atom *ap, char *buf, int bufsize)
 {

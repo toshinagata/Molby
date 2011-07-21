@@ -185,4 +185,5 @@ rdt: (only used in LES)
 
 sander -O -i min.in -o NAME.out -p NAME.prmtop -c NAME.inpcrd -x NAME.mdcrd -r NAME.restrt
 
-
+2011.7.8.
+　MoleculeMerge(), MoleculeUnmerge() の仕様を見直した方がいい。undo サポート用に、bond/angle/dihedral/improper を指定した位置に入れる機能が欲しい。パラメータも、すべての種類のパラメータを指定した位置に入れる機能が必要。IntGroup の配列でパラメータを与えるか？

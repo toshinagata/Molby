@@ -346,6 +346,17 @@ MyApp::CreateMenuBar(int kind, wxMenu **out_file_history_menu, wxMenu **out_edit
 	edit_menu->Append(myMenuID_SelectFragment, _T("Select Fragment\tCtrl-F"));
 	edit_menu->Append(myMenuID_SelectReverse, _T("Select Reverse"));
 	edit_menu->AppendSeparator();
+	wxMenu *create_parameter_menu = new wxMenu;
+	create_parameter_menu->Append(myMenuID_CreateNewVdwParameter, _T("Vdw"));
+	create_parameter_menu->Append(myMenuID_CreateNewBondParameter, _T("Bond"));
+	create_parameter_menu->Append(myMenuID_CreateNewAngleParameter, _T("Angle"));
+	create_parameter_menu->Append(myMenuID_CreateNewDihedralParameter, _T("Dihedral"));
+	create_parameter_menu->Append(myMenuID_CreateNewImproperParameter, _T("Improper"));
+	create_parameter_menu->Append(myMenuID_CreateNewVdwPairParameter, _T("Vdw Pair"));
+	create_parameter_menu->Append(myMenuID_CreateNewVdwOffsetParameter, _T("Vdw Offset"));
+	edit_menu->Append(myMenuID_CreateNewAtom, _T("Create New Atom\tCtrl-I"));
+	edit_menu->Append(myMenuID_CreateNewParameter, _T("Create New Parameter"), create_parameter_menu);
+	edit_menu->AppendSeparator();
 	wxMenu *add_hydrogen_menu = new wxMenu;
 	add_hydrogen_menu->Append(myMenuID_AddHydrogenSp3, _T("Tetrahedral sp3"));
 	add_hydrogen_menu->Append(myMenuID_AddHydrogenSp2, _T("Trigonal sp2"));

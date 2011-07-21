@@ -1224,3 +1224,11 @@ MainViewCallback_hideTable(MainView *mview)
   //		[doc hideTable: doc];
   //	}
 }
+
+void
+MainViewCallback_ensureVisible(MainView *mview, int row)
+{
+	MyListCtrl *listctrl = s_MyListCtrlFromMainView(mview);
+	if (listctrl != NULL)
+		listctrl->EnsureVisible(row);
+}

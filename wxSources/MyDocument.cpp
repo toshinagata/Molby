@@ -73,6 +73,8 @@ BEGIN_EVENT_TABLE(MyDocument, wxDocument)
 	EVT_MENU(wxID_PASTE, MyDocument::OnPaste)
 	EVT_MENU(wxID_CUT, MyDocument::OnCut)
 	EVT_MENU(wxID_DELETE, MyDocument::OnDelete)
+	EVT_MENU(myMenuID_CreateNewAtom, MyDocument::OnCreateNewAtom)
+	EVT_MENU_RANGE(myMenuID_CreateNewVdwParameter, myMenuID_CreateNewVdwOffsetParameter, MyDocument::OnCreateNewParameter)
 	EVT_MENU(wxID_SELECTALL, MyDocument::OnSelectAll)
 	EVT_MENU(myMenuID_SelectFragment, MyDocument::OnSelectFragment)
 	EVT_MENU(myMenuID_SelectReverse, MyDocument::OnSelectReverse)
@@ -496,6 +498,46 @@ MyDocument::OnDelete(wxCommandEvent& event)
 		MainView_delete(GetMainView());
 		MoleculeUnlock(mol);
 	}
+}
+
+void
+MyDocument::OnCreateNewAtom(wxCommandEvent &event)
+{
+	int idx;
+	IntGroup *ig = MoleculeGetSelection(mol);
+	MainView *mview = GetMainView();
+	if (mview == NULL)
+		return;
+	MainViewCallback_selectTable(mview, kMainViewAtomTableIndex);
+	if (ig != NULL && IntGroupGetCount(ig) > 0) {
+		idx = IntGroupGetEndPoint(ig, IntGroupGetIntervalCount(ig) - 1);
+	} else {
+		idx = mol->natoms;
+	}
+	MolActionCreateAndPerform(mol, SCRIPT_ACTION("si"), "create_atom", "", idx);
+	ig = IntGroupNewWithPoints(idx, 1, -1);
+	MoleculeSetSelection(mol, ig);
+	IntGroupRelease(ig);
+	MainViewCallback_setNeedsDisplay(mview, 1);
+	MainViewCallback_reloadTableData(mview);
+	MainViewCallback_ensureVisible(mview, MainView_indexToTableRow(mview, idx));
+}
+
+void
+MyDocument::OnCreateNewParameter(wxCommandEvent &event)
+{
+/*	int uid = event.GetId();
+	const char *type;
+	IntGroup *ig;
+	switch (uid) {
+		case myMenuID_CreateNewVdwParameter: type = "td"; break;
+		case myMenuID_AddHydrogenSp2: type = "tr"; break;
+		case myMenuID_AddHydrogenLinear: type = "li"; break;
+		case myMenuID_AddHydrogenPyramidal: type = "py"; break;
+		case myMenuID_AddHydrogenBent: type = "be"; break;
+		default: return;
+	}
+ */
 }
 
 void

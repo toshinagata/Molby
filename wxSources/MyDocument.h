@@ -85,6 +85,9 @@ public:
 	void	OnPaste(wxCommandEvent& event);
 	void	OnDelete(wxCommandEvent& event);
 
+	void	OnCreateNewAtom(wxCommandEvent &event);
+	void	OnCreateNewParameter(wxCommandEvent &event);
+	
 	void	OnSelectAll(wxCommandEvent& event);
 	void	OnSelectFragment(wxCommandEvent& event);
 	void	OnSelectReverse(wxCommandEvent& event);

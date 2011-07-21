@@ -5622,14 +5622,22 @@ s_Molecule_CreateAnAtom(int argc, VALUE *argv, VALUE self)
 	char *p, resName[6], atomName[6];
 	int resSeq;
     Data_Get_Struct(self, Molecule, mol);
-	rb_scan_args(argc, argv, "11", &name, &ival);
+	rb_scan_args(argc, argv, "02", &name, &ival);
 	if (ival != Qnil)
 		pos = NUM2INT(rb_Integer(ival));
 	else pos = -1;
-    p = StringValuePtr(name);
-    i = MoleculeAnalyzeAtomName(p, resName, &resSeq, atomName);
-    if (atomName[0] == 0)
-      rb_raise(rb_eMolbyError, "bad atom name specification: %s", p);
+	if (name != Qnil) {
+		p = StringValuePtr(name);
+		if (p[0] != 0) {
+			i = MoleculeAnalyzeAtomName(p, resName, &resSeq, atomName);
+			if (atomName[0] == 0)
+			  rb_raise(rb_eMolbyError, "bad atom name specification: %s", p);
+		}
+	} else p = NULL;
+	if (p == NULL || p[0] == 0) {
+		memset(atomName, 0, 4);
+		resSeq = -1;
+	}
     memset(&arec, 0, sizeof(arec));
     strncpy(arec.aname, atomName, 4);
     if (resSeq >= 0) {
