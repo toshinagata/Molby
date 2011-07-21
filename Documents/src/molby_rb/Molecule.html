@@ -191,13 +191,13 @@ document is open, returns an empry array.
 <div id="method-M000190" class="method-detail">
 <a name="M000190"></a>
 <div class="method-heading">
+<span class="method-name">new  &rarr; (new) <a href="Molecule.html">Molecule</a><br />
 <span class="method-name">new(file, *args)  &rarr; (new) <a href="Molecule.html">Molecule</a><br />
 </span>
 </div>
 <div class="method-description">
 <p>
-Create a new molecule and call
-<a href="Molecule.html#M000200">molload</a> method with the same arguments.
+Create a new molecule. If any arguments are given, call <a href="Molecule.html#M000200">molload</a> method with the same arguments. The created molecule has no associated document window.
 </p>
 <p>
 <i>See Also:</i> <a href="#M000324">Molecule#open</a>, which opens the molecule as a document (i.e. with associated window).
@@ -208,12 +208,13 @@ Create a new molecule and call
 <div id="method-M000324" class="method-detail">
 <a name="M000324"></a>
 <div class="method-heading">
+<span class="method-name">open  &rarr; (new) <a href="Molecule.html">Molecule</a><br />
 <span class="method-name">open(file)  &rarr; (new) <a href="Molecule.html">Molecule</a><br />
 </span>
 </div>
 <div class="method-description">
 <p>
-Open a molecule from file as a document.
+Open a molecule from file as a document. If file is not given, an untitled document is created.
 </p>
 <p>
 <i>See Also:</i> <a href="#M000190">Molecule#new</a>, which creates a new Molecule object but does not open as a document (i.e. no associated window is opened).
@@ -2131,6 +2132,19 @@ representing the array of residue names.
 </p>
 <p>
 <i>See Also:</i> <a href="Molecule.html#M000230">Molecule#nresidues</a>
+</p>
+</div>
+</div>
+
+<div id="method-M000216" class="method-detail">
+<a name="resize_to_fit"></a>
+<div class="method-heading">
+<span class="method-name">resize_to_fit       &rarr; self<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Resize the model drawing to fit in the window.
 </p>
 </div>
 </div>

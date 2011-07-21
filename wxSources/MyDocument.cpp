@@ -1283,6 +1283,13 @@ MyDocument::OnUpdateUI(wxUpdateUIEvent& event)
 		case myMenuID_ShowPeriodicImage:
 			event.Enable(true);
 			return;
+		case myMenuID_RunAntechamber:
+		case myMenuID_RunResp:
+		case myMenuID_CreateSanderInput:
+			if (mol != NULL && mol->natoms > 0)
+				event.Enable(true);
+			else event.Enable(false);
+			return;			
 		case myMenuID_CreateGamessInput:
 			if (mol != NULL && mol->natoms > 0)
 				event.Enable(true);

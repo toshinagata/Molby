@@ -84,6 +84,7 @@ enum {
 	myMenuID_RunAntechamber = 152,
 	myMenuID_RunResp = 153,
 	myMenuID_CreateSanderInput = 154,
+	myMenuID_ImportAmberLib = 155,
 	myMenuID_CreateGamessInput = 160,
 	myMenuID_CreateMOCube = 161,
 	myMenuID_ExecuteScript = 200,
@@ -145,6 +146,8 @@ class MyApp: public wxApp
 	void OnOpenConsoleWindow(wxCommandEvent &event);
 	void OnViewGlobalParameters(wxCommandEvent &event);
 	void OnViewParameterFilesList(wxCommandEvent &event);
+
+	void OnImportAmberLib(wxCommandEvent &event);
 
 	void OnEndProcess(wxProcessEvent &event);
 	int CallSubProcess(const char *cmdline, const char *procname);

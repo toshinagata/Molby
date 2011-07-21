@@ -120,6 +120,19 @@ Ruby_NewFileStringValue(const char *fstr)
 #endif
 }
 
+VALUE
+Ruby_ObjToStringObj(VALUE val)
+{
+	switch (TYPE(val)) {
+		case T_STRING:
+			return val;
+		case T_SYMBOL:
+			return rb_str_new2(rb_id2name(SYM2ID(val)));
+		default:
+			return rb_str_to_str(val);
+	}
+}
+
 #pragma mark ====== Message input/output ======
 
 /*
@@ -140,7 +153,7 @@ s_Kernel_MessageBox(int argc, VALUE *argv, VALUE self)
 	str = StringValuePtr(sval);
 	title = StringValuePtr(tval);
 	if (bval != Qnil) {
-		bval = rb_str_to_str(bval);
+		bval = Ruby_ObjToStringObj(bval);
 		s = RSTRING_PTR(bval);
 		if (strncmp(s, "ok", 2) == 0)
 			buttons = 1;
@@ -150,7 +163,7 @@ s_Kernel_MessageBox(int argc, VALUE *argv, VALUE self)
 			rb_raise(rb_eMolbyError, "the button specification should be either nil, :ok or :cancel");
 	} else buttons = 3;
 	if (ival != Qnil) {
-		ival = rb_str_to_str(ival);
+		ival = Ruby_ObjToStringObj(ival);
 		s = RSTRING_PTR(ival);
 		if (strncmp(s, "info", 4) == 0)
 			icon = 1;
@@ -1845,8 +1858,8 @@ static VALUE s_ParameterRef_SetWeight(VALUE self, VALUE val) {
 	VALUE oldval;
 	val = rb_Float(val);
 	oldval = s_ParameterRef_GetWeight(self);
-	oldsrc = up->bond.src;
 	up = s_UnionParFromValue(self, &tp, 1);
+	oldsrc = up->bond.src;
 	if (tp == kElementParType)
 		up->atom.weight = NUM2DBL(val);
 	else if (tp == kVdwParType)
@@ -4515,26 +4528,38 @@ s_Molecule_Inspect(VALUE self)
 
 /*
  *  call-seq:
+ *     open        -> Molecule
  *     open(file)  -> Molecule
  *
- *  Create a new molecule from file.
+ *  Create a new molecule from file as a document. If file is not given, an untitled document is created.
  */
 static VALUE
-s_Molecule_Open(VALUE self, VALUE fname)
+s_Molecule_Open(int argc, VALUE *argv, VALUE self)
 {
-	const char *p = FileStringValuePtr(fname);
+	VALUE fname;
+	const char *p;
 	Molecule *mp;
 	VALUE iflag;
+	rb_scan_args(argc, argv, "01", &fname);
+	if (NIL_P(fname))
+		p = NULL;
+	else
+		p = FileStringValuePtr(fname);
 	iflag = Ruby_SetInterruptFlag(Qfalse);
 	mp = MoleculeCallback_openNewMolecule(p);
 	Ruby_SetInterruptFlag(iflag);
-	if (mp == NULL)
-		rb_raise(rb_eMolbyError, "Cannot open the file %s", p);
+	if (mp == NULL) {
+		if (p == NULL)
+			rb_raise(rb_eMolbyError, "Cannot create untitled document");
+		else
+			rb_raise(rb_eMolbyError, "Cannot open the file %s", p);
+	}
 	return ValueFromMolecule(mp);
 }
 
 /*
  *  call-seq:
+ *     new  -> Molecule
  *     new(file, *args)  -> Molecule
  *
  *  Create a new molecule and call "load" method with the same arguments.
@@ -4544,7 +4569,7 @@ s_Molecule_Initialize(int argc, VALUE *argv, VALUE self)
 {
 	if (argc > 0)
 		return s_Molecule_Load(argc, argv, self);
-	else return Qnil;
+	else return Qnil;  /*  An empty molecule (which is prepared in s_Molecule_Alloc()) is returned  */
 }
 
 static VALUE
@@ -7361,6 +7386,22 @@ s_Molecule_LineMode(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
+ *     resize_to_fit
+ *
+ *  Resize the model drawing to fit in the window.
+ */
+static VALUE
+s_Molecule_ResizeToFit(VALUE self)
+{
+    Molecule *mol;
+    Data_Get_Struct(self, Molecule, mol);
+	if (mol->mview != NULL)
+		MainView_resizeToFit(mol->mview);
+	return self;	
+}
+
+/*
+ *  call-seq:
  *     show_text(string)
  *
  *  Show the string in the info text box.
@@ -7934,6 +7975,7 @@ Init_Molby(void)
 	rb_define_alias(rb_cMolecule, "show_periodic_image=", "show_periodic_image");
 	rb_define_method(rb_cMolecule, "line_mode", s_Molecule_LineMode, -1);
 	rb_define_alias(rb_cMolecule, "line_mode=", "line_mode");
+	rb_define_method(rb_cMolecule, "resize_to_fit", s_Molecule_ResizeToFit, 0);
 	rb_define_method(rb_cMolecule, "show_text", s_Molecule_ShowText, 1);
 	rb_define_method(rb_cMolecule, "md_arena", s_Molecule_MDArena, 0);
 	rb_define_method(rb_cMolecule, "set_parameter_attr", s_Molecule_SetParameterAttr, 5);
@@ -7947,7 +7989,7 @@ Init_Molby(void)
 	
 	rb_define_singleton_method(rb_cMolecule, "current", s_Molecule_Current, 0);
 	rb_define_singleton_method(rb_cMolecule, "[]", s_Molecule_MoleculeAtIndex, -1);
-	rb_define_singleton_method(rb_cMolecule, "open", s_Molecule_Open, 1);
+	rb_define_singleton_method(rb_cMolecule, "open", s_Molecule_Open, -1);
 	rb_define_singleton_method(rb_cMolecule, "list", s_Molecule_List, 0);
 	rb_define_singleton_method(rb_cMolecule, "ordered_list", s_Molecule_OrderedList, 0);
 	

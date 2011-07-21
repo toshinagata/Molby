@@ -513,7 +513,7 @@ class Molecule
 		when /^BOND/
 		  state = 2
 		  next
-		when /^ANGLE/
+		when /^ANGL/
 		  state = 3
 		  next
 		when /^DIHE/
@@ -534,21 +534,21 @@ class Molecule
 			name, weight = s.split
 			wtable[name] = Float(weight)
 		  when 2
-		    types, k, r0, com = s.split(/  +/, 4)
+		    types, k, r0, com = s.split(" ", 4)
 		    pp = par.bonds.lookup(types, :local, :missing) || par.bonds.insert
 			pp.atom_types = types
 			pp.k = k
 			pp.r0 = r0
 			pp.comment = com
 		  when 3
-		    types, k, a0, com = s.split(/  +/, 4)
+		    types, k, a0, com = s.split(" ", 4)
 			pp = par.angles.lookup(types, :local, :missing) || par.angles.insert
 			pp.atom_types = types
 			pp.k = k
 			pp.a0 = a0
 			pp.comment = com
 		  when 4
-		    types, n, k, phi0, period, com = s.split(/  +/, 6)
+		    types, n, k, phi0, period, com = s.split(" ", 6)
 			pp = par.dihedrals.lookup(types, :local, :missing) || par.dihedrals.insert
 			pp.atom_types = types
 			pp.mult = 1
@@ -557,7 +557,7 @@ class Molecule
 			pp.period = Float(period).round
 			pp.comment = com
 		  when 5
-		    types, k, phi0, period, com = s.split(/  +/, 5)
+		    types, k, phi0, period, com = s.split(" ", 5)
 			pp = par.impropers.lookup(types, :local, :missing) || par.impropers.insert
 			pp.atom_types = types
 			pp.mult = 1
@@ -566,7 +566,7 @@ class Molecule
 			pp.period = Float(period).round
 			pp.comment = com
 		  when 6
-		    name, r_eq, eps, com = s.split(/  +/, 4)
+		    name, r_eq, eps, com = s.split(" ", 4)
 			pp = par.vdws.lookup(name, :local, :missing) || par.vdws.insert
 			pp.atom_type = name
 			pp.r_eq = r_eq
@@ -581,6 +581,126 @@ class Molecule
 		end
 	  end
     }
+  end
+  
+  def Molecule.import_amberlib(file)
+    fp = File.open(file, "r")
+	raise MolbyError, "Cannot open file #{file}" if fp == nil
+	mols = Hash.new
+	while line = fp.gets
+	  if line =~ /^!!index/
+	    while line = fp.gets
+		  break if line =~ /^!/
+		  units = line.scan(/"([^\"]*)"/).flatten
+		end
+	  elsif line =~ /^!entry\.(\w+)\.unit\.(\w+)\s/
+	    unit = $1
+		cmd = $2
+		mol = (mols[unit] ||= Molecule.new)
+		if cmd == "atoms"
+		  while line = fp.gets
+		    break if line =~ /^!/
+		    line.chomp!
+			en = line.split
+			en[0].delete!("\"")
+			en[1].delete!("\"")
+			ap = mol.add_atom(en[0], en[1])
+			elem = Integer(en[6])
+		    if elem > 0
+			  ap.atomic_number = elem
+			else
+			  ap.element = en[1][0, 1].upcase
+			end
+			ap.charge = Float(en[7])
+		  end
+		elsif cmd == "boundbox"
+		  values = []
+		  5.times { values.push(Float(fp.gets)) }
+		  mol.set_cell([values[2], values[3], values[4], 90, 90, 90])
+		  line = fp.gets
+		elsif cmd == "connectivity"
+		  while line = fp.gets
+		    break if line =~ /^!/
+			line.chomp!
+			con = line.split
+			begin
+			mol.create_bond(Integer(con[0]) - 1, Integer(con[1]) - 1)
+			rescue
+			puts "#{$!}: con[0] = #{con[0]}, con[1] = #{con[1]}"
+			p "natoms = #{mol.natoms}"
+			raise
+			end
+		  end
+		elsif cmd == "positions"
+		  index = 0
+		  while line = fp.gets
+		    break if line =~ /^!/
+			line.chomp!
+			pos = line.split
+			mol.atoms[index].r = [Float(pos[0]), Float(pos[1]), Float(pos[2])]
+			index += 1
+		  end
+		elsif cmd == "residues"
+		  resseq = 0
+		  name = nil
+		  n1 = 0
+		  while line = fp.gets
+		    if line =~ /^!/
+			  values[0] = nil
+			  values[3] = mol.natoms + 1
+			else
+			  values = line.split
+			  values[0].delete!("\"")
+			  values[3] = Integer(values[3])
+			end
+			if name
+			  mol.assign_residue(IntGroup[n1..values[3] - 2], sprintf("%s.%d", name, resseq))
+			end
+			name = values[0]
+			n1 = values[3] - 1
+			resseq += 1
+			break if name == nil
+		  end
+		else
+		  while line = fp.gets
+			break if line =~ /^!/
+		  end
+		end
+	  end
+	  redo if line
+	end
+	fp.close
+	msg = "Imported unit(s):"
+	mols.each { |key, val|
+	  mol = Molecule.open
+	  mol.add(val)
+	  if val.cell != nil
+		mol.set_cell(val.cell)
+	  end
+	  if mol.natoms > 1000
+	    mol.line_mode(true)
+	  end
+	  mol.resize_to_fit
+	  msg += "\n  #{key} (#{mol.name})"
+	  if mol.md_arena.prepare(true) == nil
+	    h = Dialog.run("Missing parameters") {
+		  layout(1, item(:text, :title=>"Some parameters are missing for unit \"#{key}\". Do you want to import an frcmod file?"))
+		}
+		if (h[:status] == 0)
+		  file = Dialog.open_panel("Select frcmod file", nil, "AMBER frcmod (*.frcmod)|*.frcmod|All Files (*.*)|*.*")
+		  if file
+		    mol.instance_eval { import_frcmod(file) }
+		  end
+		end
+	  end
+	}
+	message_box(msg, "AMBER Lib Import Complete", :ok)
+	puts msg
+  end
+  
+  def Molecule.cmd_import_amberlib
+    file = Dialog.open_panel("Select AMBER lib file", nil, "AMBER lib file (*.lib)|*.lib|All Files (*.*)|*.*")
+	import_amberlib(file)
   end
   
   def export_ac(acfile)

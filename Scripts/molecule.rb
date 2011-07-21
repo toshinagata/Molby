@@ -514,6 +514,8 @@ class Molecule
 	  raise MolbyError, "the solvent box does not have three-dimensional periodicity"
 	end
 
+	show_progress_panel("Adding a solvent box...")
+
 	#  Calculate the box size
 	b = self.bounds
 	bsize = b[1] - b[0]
@@ -536,6 +538,7 @@ class Molecule
 	solute_natoms = self.natoms
 
 	#  Add solvents so that the target box is fully covered
+	set_progress_message("Duplicating the solvent box...")
 	rtr = sbox.cell_transform.inverse
 	min = Vector3D[1e30, 1e30, 1e30]
 	max = Vector3D[-1e30, -1e30, -1e30]
@@ -559,25 +562,32 @@ class Molecule
 	xv, yv, zv, ov, flags = sbox.box
 #	puts "xmin = #{xmin}, ymin = #{ymin}, zmin = #{zmin}"
 #	puts "xmax = #{xmax}, ymax = #{ymax}, zmax = #{zmax}"
+    newbox = Molecule.new
 	(xmin..xmax).each do |x|
 	  (ymin..ymax).each do |y|
 	    (zmin..zmax).each do |z|
-		  add(sbox)
-		  translate(xv * x + yv * y + zv * z, IntGroup[self.natoms - sbox_natoms..self.natoms - 1])
+		  newbox.add(sbox)
+		  newbox.translate(xv * x + yv * y + zv * z, IntGroup[newbox.natoms - sbox_natoms..newbox.natoms - 1])
 		end
 	  end
 	end
 	
 	#  Remove out-of-bounds molecules
-	g = atom_group do |ap|
+	set_progress_message("Removing out-of-bounds molecules...")
+	g = newbox.atom_group do |ap|
 	  r = ap.r
 	  r.x < -bsize[0] * 0.5 || r.y < -bsize[1] * 0.5 || r.z < -bsize[2] * 0.5 || r.x > bsize[0] * 0.5 || r.y > bsize[1] * 0.5 || r.z > bsize[2] * 0.5
 	end
-	g = fragment(g)  #  expand by fragment
-	remove(g)
+	g = newbox.fragment(g)  #  expand by fragment
+	newbox.remove(g)
+	
+	#  Add solvent molecules
+	self.line_mode(true)
+	self.add(newbox)
 #	puts "Removed atoms by bounds: #{g}"
 	
 	#  Find conflicts
+	set_progress_message("Removing conflicting molecules...")
 	conf = find_conflicts(limit, IntGroup[0..solute_natoms - 1], IntGroup[solute_natoms..self.natoms - 1])
 	g = atom_group(conf.map { |c| c[1] } )    #  atom group containing conflicting atoms
 	g = fragment(g)                           #  expand by fragment
@@ -602,6 +612,9 @@ class Molecule
 
     #  Set the unit cell information
 	set_box(bsize[0], bsize[1], bsize[2])
+	
+	hide_progress_panel
+	resize_to_fit
 	
 	return IntGroup[solute_natoms..self.natoms - 1]
 

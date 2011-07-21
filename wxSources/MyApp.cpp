@@ -81,6 +81,7 @@ BEGIN_EVENT_TABLE(MyApp, wxApp)
 //	EVT_MENU(myMenuID_ReadParameters, MyApp::OnReadParameters)
 	EVT_MENU(myMenuID_ViewGlobalParameters, MyApp::OnViewGlobalParameters)
 	EVT_MENU(myMenuID_ViewParameterFilesList, MyApp::OnViewParameterFilesList)
+	EVT_MENU(myMenuID_ImportAmberLib, MyApp::OnImportAmberLib)
 #if defined(__WXMAC__)
 	EVT_ACTIVATE(MyApp::OnActivate)
 #endif
@@ -396,6 +397,7 @@ MyApp::CreateMenuBar(int kind, wxMenu **out_file_history_menu, wxMenu **out_edit
 	md_tools_menu->Append(myMenuID_RunAntechamber, _T("Antechamber/parmchk..."));
 	md_tools_menu->Append(myMenuID_RunResp, _T("GAMESS/RESP..."));
 	md_tools_menu->Append(myMenuID_CreateSanderInput, _T("Create SANDER input..."));
+	md_tools_menu->Append(myMenuID_ImportAmberLib, _T("Import AMBER Lib..."));
 	md_menu->Append(myMenuID_MDTools, _T("Tools"), md_tools_menu);
 
 	wxMenu *qc_menu = new wxMenu;
@@ -594,6 +596,12 @@ MyApp::OnViewParameterFilesList(wxCommandEvent &event)
 }
 
 void
+MyApp::OnImportAmberLib(wxCommandEvent &event)
+{
+	MolActionCreateAndPerform(NULL, SCRIPT_ACTION(""), "cmd_import_amberlib");
+}
+
+void
 MyApp::RegisterScriptMenu(const char *cmd, const char *title)
 {
 	int i;
@@ -722,13 +730,21 @@ MyApp::OnUpdateUI(wxUpdateUIEvent& event)
 			else if (methodType == 2)  /*  Class method (with molecule as an only argument)  */
 				event.Enable(true);
 		}
-	} else if (uid == myMenuID_ExecuteScript || uid == myMenuID_OpenConsoleWindow || uid == myMenuID_ViewParameterFilesList || uid == myMenuID_ViewGlobalParameters) {
-		event.Enable(true);
 	} else {
-		if (mview == NULL)
-			event.Enable(false);
-		else
-			event.Skip();
+		switch (uid) {
+			case myMenuID_ExecuteScript:
+			case myMenuID_OpenConsoleWindow:
+			case myMenuID_ViewParameterFilesList:
+			case myMenuID_ViewGlobalParameters:
+			case myMenuID_MDTools:
+			case myMenuID_ImportAmberLib:
+				event.Enable(true);
+				return;
+			default:
+				if (mview == NULL)
+					event.Enable(false);
+				else event.Skip();
+		}
 	}
 }
 
