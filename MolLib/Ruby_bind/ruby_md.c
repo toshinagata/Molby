@@ -161,6 +161,26 @@ static VALUE
 s_MDArena_Prepare(int argc, VALUE *argv, VALUE self)
 {
 	MDArena *arena;
+	Int check_only = 0, status;
+	char *msg;
+	VALUE fval;
+	Data_Get_Struct(self, MDArena, arena);
+	rb_scan_args(argc, argv, "01", &fval);
+	if (RTEST(fval))
+		check_only = 1;
+	status = MoleculePrepareMDArena(arena->xmol, check_only, &msg);
+	if (status < 0) {
+		/*  Exception object is created first to have a chance to do free(msg)  */
+		VALUE exval = rb_exc_new2(rb_eMolbyError, msg);
+		free(msg);
+		rb_exc_raise(exval);
+	} else if (status > 0) {
+		free(msg);
+		return Qnil;
+	} else return self;
+	
+#if 0
+	MDArena *arena;
 	Molecule *mol;
 	const char *msg;
 	Int nangles, *angles, ndihedrals, *dihedrals, nimpropers, *impropers;
@@ -267,6 +287,7 @@ s_MDArena_Prepare(int argc, VALUE *argv, VALUE self)
 	if (missing)
 		return Qnil;
 	else return self;
+#endif
 }
 
 /*

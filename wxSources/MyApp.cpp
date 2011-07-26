@@ -353,7 +353,7 @@ MyApp::CreateMenuBar(int kind, wxMenu **out_file_history_menu, wxMenu **out_edit
 	create_parameter_menu->Append(myMenuID_CreateNewDihedralParameter, _T("Dihedral"));
 	create_parameter_menu->Append(myMenuID_CreateNewImproperParameter, _T("Improper"));
 	create_parameter_menu->Append(myMenuID_CreateNewVdwPairParameter, _T("Vdw Pair"));
-	create_parameter_menu->Append(myMenuID_CreateNewVdwOffsetParameter, _T("Vdw Offset"));
+	create_parameter_menu->Append(myMenuID_CreateNewVdwCutoffParameter, _T("Vdw Cutoff"));
 	edit_menu->Append(myMenuID_CreateNewAtom, _T("Create New Atom\tCtrl-I"));
 	edit_menu->Append(myMenuID_CreateNewParameter, _T("Create New Parameter"), create_parameter_menu);
 	edit_menu->AppendSeparator();

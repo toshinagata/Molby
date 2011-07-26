@@ -56,7 +56,7 @@ enum {
 	myMenuID_CreateNewDihedralParameter = 110,
 	myMenuID_CreateNewImproperParameter = 111,
 	myMenuID_CreateNewVdwPairParameter = 112,
-	myMenuID_CreateNewVdwOffsetParameter = 113,
+	myMenuID_CreateNewVdwCutoffParameter = 113,
 	myMenuID_AddHydrogen = 114,
 	myMenuID_AddHydrogenSp3 = 115,
 	myMenuID_AddHydrogenSp2 = 116,

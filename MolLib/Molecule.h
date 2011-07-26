@@ -350,6 +350,8 @@ int MoleculeWriteToDcdFile(Molecule *mp, const char *fname, char *errbuf, int er
 int MoleculeWriteToTepFile(Molecule *mp, const char *fname, char *errbuf, int errbufsize);
 void MoleculeDump(Molecule *mol);
 
+int MoleculePrepareMDArena(Molecule *mol, int check_only, char **retmsg);
+
 char *MoleculeSerialize(Molecule *mp, Int *outLength, Int *timep);
 Molecule *MoleculeDeserialize(const char *data, Int length, Int *timep);
 

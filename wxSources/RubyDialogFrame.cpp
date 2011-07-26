@@ -610,20 +610,22 @@ RubyDialogCallback_sizeOfString(RDItem *item, const char *s)
 	RDSize size;
 	wxCoord w, h, descent, leading;
 	wxPaintDC dc((wxWindow *)item);
-	int len = strlen(s);
-	const char *s1, *s2;
+	int len;
+	const char *s1, *s2, *sfin;
 	size.width = size.height = 0;
 	s1 = (s == NULL || s[0] == 0 ? " " : s);
+	len = strlen(s1);
+	sfin = s1 + len;
 	while (1) {
 		s2 = strchr(s1, '\n');
 		if (s2 == NULL)
-			s2 = s + len;
+			s2 = sfin;
 		wxString str(s1, wxConvUTF8, s2 - s1);
 		dc.GetTextExtent(str, &w, &h, &descent, &leading);
 		if (size.width < w)
 			size.width = w;
 		size.height += h + descent + leading;
-		if (s2 == s + len)
+		if (s2 >= sfin)
 			break;
 		s1 = s2 + 1;
 	}

@@ -74,7 +74,7 @@ BEGIN_EVENT_TABLE(MyDocument, wxDocument)
 	EVT_MENU(wxID_CUT, MyDocument::OnCut)
 	EVT_MENU(wxID_DELETE, MyDocument::OnDelete)
 	EVT_MENU(myMenuID_CreateNewAtom, MyDocument::OnCreateNewAtom)
-	EVT_MENU_RANGE(myMenuID_CreateNewVdwParameter, myMenuID_CreateNewVdwOffsetParameter, MyDocument::OnCreateNewParameter)
+	EVT_MENU_RANGE(myMenuID_CreateNewVdwParameter, myMenuID_CreateNewVdwCutoffParameter, MyDocument::OnCreateNewParameter)
 	EVT_MENU(wxID_SELECTALL, MyDocument::OnSelectAll)
 	EVT_MENU(myMenuID_SelectFragment, MyDocument::OnSelectFragment)
 	EVT_MENU(myMenuID_SelectReverse, MyDocument::OnSelectReverse)
@@ -503,41 +503,118 @@ MyDocument::OnDelete(wxCommandEvent& event)
 void
 MyDocument::OnCreateNewAtom(wxCommandEvent &event)
 {
-	int idx;
+	Int idx, i, j, row;
+	char name[6];
 	IntGroup *ig = MoleculeGetSelection(mol);
 	MainView *mview = GetMainView();
+	Atom *ap, arec;
+
 	if (mview == NULL)
 		return;
-	MainViewCallback_selectTable(mview, kMainViewAtomTableIndex);
+
+	/*  Make an atom name "Cxxx"  */
+	for (i = 0; i < 1000; i++) {
+		sprintf(name, "C%03d", i);
+		for (j = 0, ap = mol->atoms; j < mol->natoms; j++, ap = ATOM_NEXT(ap)) {
+			if (strncmp(ap->aname, name, 4) == 0)
+				break;
+		}
+		if (j >= mol->natoms)
+			break;
+	}
+    memset(&arec, 0, sizeof(arec));
+    strncpy(arec.aname, name, 4);
+	arec.type = AtomTypeEncodeToUInt("c3");
+	arec.element[0] = 'C';
+	arec.atomicNumber = 6;
+	arec.weight = WeightForAtomicNumber(6);
+	arec.occupancy = 1.0;
+	
 	if (ig != NULL && IntGroupGetCount(ig) > 0) {
 		idx = IntGroupGetEndPoint(ig, IntGroupGetIntervalCount(ig) - 1);
 	} else {
 		idx = mol->natoms;
 	}
-	MolActionCreateAndPerform(mol, SCRIPT_ACTION("si"), "create_atom", "", idx);
+	
+	if (MolActionCreateAndPerform(mol, gMolActionAddAnAtom, &arec, idx, &idx) != 0)
+		return;
+
+	/*  Show the atom table and select the newly created atom  */
+	MainViewCallback_selectTable(mview, kMainViewAtomTableIndex);
 	ig = IntGroupNewWithPoints(idx, 1, -1);
 	MoleculeSetSelection(mol, ig);
 	IntGroupRelease(ig);
-	MainViewCallback_setNeedsDisplay(mview, 1);
-	MainViewCallback_reloadTableData(mview);
-	MainViewCallback_ensureVisible(mview, MainView_indexToTableRow(mview, idx));
+	MainView_refreshTable(mview);
+	row = MainView_indexToTableRow(mview, idx);
+/*	MainViewCallback_ensureVisible(mview, row); */ /* Invoked from startEditText */
+	MainViewCallback_startEditText(mview, row, 1);
 }
 
 void
 MyDocument::OnCreateNewParameter(wxCommandEvent &event)
 {
-/*	int uid = event.GetId();
-	const char *type;
+	int uid = event.GetId();
+	Int parType, n;
+	UnionPar ubuf;
 	IntGroup *ig;
+	UInt ctype = AtomTypeEncodeToUInt("C");
+	Double cweight = WeightForAtomicNumber(6);
+	memset(&ubuf, 0, sizeof(ubuf));
+	ubuf.bond.src = -1;  /*  Undefined  */
 	switch (uid) {
-		case myMenuID_CreateNewVdwParameter: type = "td"; break;
-		case myMenuID_AddHydrogenSp2: type = "tr"; break;
-		case myMenuID_AddHydrogenLinear: type = "li"; break;
-		case myMenuID_AddHydrogenPyramidal: type = "py"; break;
-		case myMenuID_AddHydrogenBent: type = "be"; break;
-		default: return;
+		case myMenuID_CreateNewVdwParameter:
+			parType = kVdwParType;
+			ubuf.vdw.type1 = ctype;
+			ubuf.vdw.atomicNumber = 6;
+			ubuf.vdw.weight = cweight;
+			break;
+		case myMenuID_CreateNewBondParameter:
+			parType = kBondParType;
+			ubuf.bond.type1 = ubuf.bond.type2 = ctype;
+			break;
+		case myMenuID_CreateNewAngleParameter:
+			parType = kAngleParType;
+			ubuf.angle.type1 = ubuf.angle.type2 = ubuf.angle.type3 = ctype;
+			break;
+		case myMenuID_CreateNewDihedralParameter:
+			parType = kDihedralParType;
+			ubuf.torsion.type1 = ubuf.torsion.type2 = ubuf.torsion.type3 = ubuf.torsion.type4 = ctype;
+			break;
+		case myMenuID_CreateNewImproperParameter:
+			parType = kImproperParType;
+			ubuf.torsion.type1 = ubuf.torsion.type2 = ubuf.torsion.type3 = ubuf.torsion.type4 = ctype;
+			break;
+		case myMenuID_CreateNewVdwPairParameter:
+			parType = kVdwPairParType;
+			ubuf.vdwp.type1 = ubuf.vdwp.type2 = ctype;
+			break;
+		case myMenuID_CreateNewVdwCutoffParameter:
+			parType = kVdwCutoffParType;
+			ubuf.vdwcutoff.n1 = ubuf.vdwcutoff.n2 = ctype;
+			break;			
+		default:
+			return;
 	}
- */
+	if (mol->par == NULL) {
+		char *errmsg;
+		if (MoleculePrepareMDArena(mol, 1, &errmsg) < 0) {
+			MyAppCallback_messageBox(errmsg, "MM/MD Setup Error", 1, 3);
+			free(errmsg);
+			return;
+		}
+	}
+	n = ParameterGetCountForType(mol->par, parType);
+	ig = IntGroupNewWithPoints(n, 1, -1);
+	MolActionCreateAndPerform(mol, gMolActionAddParameters, parType, ig, 1, &ubuf);
+	if (ParameterGetCountForType(mol->par, parType) == n + 1) {
+		/*  Successful creation of the parameter  */
+		MainView *mview = GetMainView();
+		Int row;
+		MainViewCallback_selectTable(mview, kMainViewParameterTableIndex);
+		MainView_refreshTable(mview);
+		row = ParameterTableGetRowFromTypeAndIndex(mol->par, parType, n);
+		MainViewCallback_startEditText(mview, row, 1);		
+	}
 }
 
 void

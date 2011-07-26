@@ -1232,3 +1232,12 @@ MainViewCallback_ensureVisible(MainView *mview, int row)
 	if (listctrl != NULL)
 		listctrl->EnsureVisible(row);
 }
+
+void
+MainViewCallback_startEditText(MainView *mview, int row, int column)
+{
+	MyListCtrl *listctrl = s_MyListCtrlFromMainView(mview);
+	if (listctrl != NULL)
+		listctrl->StartEditText(row, column);
+}
+

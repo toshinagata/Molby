@@ -241,6 +241,7 @@ STUB IntGroup *MainViewCallback_getTableSelection(MainView *mview);
 STUB void MainViewCallback_showTable(MainView *mview);
 STUB void MainViewCallback_hideTable(MainView *mview);
 STUB void MainViewCallback_ensureVisible(MainView *mview, int row);
+STUB void MainViewCallback_startEditText(MainView *mview, int row, int column);
 
 /*  Register the type definition  */
 //extern void MainView_register(PyObject *module);
