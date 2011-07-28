@@ -522,7 +522,7 @@ MyListCtrl::OnLeftDClick(wxMouseEvent &event)
 void
 MyListCtrl::OnMouseDown(wxMouseEvent &event)
 {
-	if (editText != NULL) {
+	if (editText != NULL && editText->IsShown()) {
 		//  During the text edit, mouse down outside the textctrl will terminate the editing
 		EndEditText();
 	}

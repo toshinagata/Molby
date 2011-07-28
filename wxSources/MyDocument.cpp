@@ -455,7 +455,13 @@ MyDocument::OnDocumentModified(wxCommandEvent& event)
 void
 MyDocument::OnCopy(wxCommandEvent& event)
 {
-	if (wxWindow::FindFocus() == ((MoleculeView *)GetFirstView())->GetListCtrl() && GetMainView()->tableIndex == kMainViewParameterTableIndex) {
+	wxWindow *focusWindow = wxWindow::FindFocus();
+/*	printf("focus window class = %ls\n", focusWindow->GetClassInfo()->GetClassName());  */
+	if (focusWindow->IsKindOf(CLASSINFO(wxTextCtrl))) {
+		event.Skip();
+		return;
+	}
+	if (focusWindow == ((MoleculeView *)GetFirstView())->GetListCtrl() && GetMainView()->tableIndex == kMainViewParameterTableIndex) {
 		MainView_copyOrCutParameters(GetMainView(), 2);
 	} else {
 		MoleculeLock(mol);
@@ -467,7 +473,12 @@ MyDocument::OnCopy(wxCommandEvent& event)
 void
 MyDocument::OnCut(wxCommandEvent& event)
 {
-	if (wxWindow::FindFocus() == ((MoleculeView *)GetFirstView())->GetListCtrl() && GetMainView()->tableIndex == kMainViewParameterTableIndex) {
+	wxWindow *focusWindow = wxWindow::FindFocus();
+	if (focusWindow->IsKindOf(CLASSINFO(wxTextCtrl))) {
+		event.Skip();
+		return;
+	}
+	if (focusWindow == ((MoleculeView *)GetFirstView())->GetListCtrl() && GetMainView()->tableIndex == kMainViewParameterTableIndex) {
 		MainView_copyOrCutParameters(GetMainView(), 3);
 	} else {
 		MoleculeLock(mol);
@@ -479,7 +490,12 @@ MyDocument::OnCut(wxCommandEvent& event)
 void
 MyDocument::OnPaste(wxCommandEvent& event)
 {
-	if (wxWindow::FindFocus() == ((MoleculeView *)GetFirstView())->GetListCtrl() && GetMainView()->tableIndex == kMainViewParameterTableIndex) {
+	wxWindow *focusWindow = wxWindow::FindFocus();
+	if (focusWindow->IsKindOf(CLASSINFO(wxTextCtrl))) {
+		event.Skip();
+		return;
+	}
+	if (focusWindow == ((MoleculeView *)GetFirstView())->GetListCtrl() && GetMainView()->tableIndex == kMainViewParameterTableIndex) {
 		MainView_pasteParameters(GetMainView());
 	} else {
 		MoleculeLock(mol);

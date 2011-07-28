@@ -916,12 +916,42 @@ Molby の分子力学計算は、基本的な分子力場（結合の伸縮、�
 A molecule has many properties. It has a set of atoms and bonds. An atom has a name, an atom type, an element, a weight (which can be derived from the element), a charge, coordinates, and so on. According to the custom in the biomolecular modeling, atoms are grouped in "residues." It also has a set of parameters used in molecular mechanics. Molby also has a limited support for quantum chemical calculations. In relation to that, a molecule in Molby can retain extra information such as MO coefficients.
 </p>
 <p>
-Most of these information are accessible via the <span class="italic">property table</span>. The table is on the left side of the model window.
+Many of these information are accessible via the <span class="italic">property table</span>. The table is on the left side of the model window.
 </p>
 <p><img src="../etc/tutorial_5_01.png" /></p>
 <p>
-Suppose we want to modify some properties of this molecule. This is ethyl benzoate, which has been built by (1) first creating benzene, and (2) then replacing one of the hydrogen with "COOCH2CH3". Of course there is nothing wrong with this molecule. However, when we look at the property table, we can point out several points that can be improved. First, the names of the atoms are so simple that we cannot guess which atom is what unless we carefully look at the table. Second, some of the atoms have the same name (like "C1" of atoms 0 and 11). Third, the "residue" name is only "RES" that is not informative. Fourth, the residue number (shown in the number after the residue name "RES") changes between the benzene ring and the carbonyl atom, however it should be more logical to assign the "benzoyl" (i.e. "C6H5CO") group as one residue and the ethoxy group as another. We will learn how to edit these points on the property table.
+The table now shows the properties of each atom, namely its name, type, element, "residue" name and index, coordinates and partial charge. The property can be edited by double-clicking on the text.
 </p>
+<p><img src="../etc/tutorial_5_02.png" /></p>
+<p>
+When return (enter) or tab key is pressed, the edited value is finalized, and editing will continue on another cell. Pressing return, shift-return, tab, or shift-tab should cause editing of the bottom, above, right, or left cell, respectively. If you want to finish editing, use option- (or alt-) return key combination.
+</p>
+<p>
+Several points are worth mentioning here.
+</p>
+<p>
+(1) The atom index (the leftmost column) cannot be edited. If you want to change the order of the atoms, try using a "drag-and-drop" feature, as shown in the figure below.
+</p>
+<p><img src="../etc/tutorial_5_03.png" /></p>
+<p>
+(2) The residue column shows the residue name and index separated by a period. Manual editing of this cell may lead to a surprising result. For example, if you change the residue name of atom 0 from "RES" to "XXX", all atoms having residue index "1" will also have the new residue name "XXX".
+</p>
+<p><img src="../etc/tutorial_5_04.png" /></p>
+<p>
+This behavior is based on the principle that all residue names and indices should be consistent, <span class="italic">i.e.</span> the atoms having the same residue index should have the same residue name. This is sometimes convenient, but in many cases it causes confusion.
+</p>
+<p>
+A more recommended way to change the residue name and index is to use the menu command "Assign Residue...", in the "Script" menu, after selecting atoms you want to assign one residue name and index.
+</p>
+<p>
+<img src="../etc/tutorial_5_05.png" />
+&nbsp;&nbsp;&nbsp;&nbsp;
+<img src="../etc/tutorial_5_06.png" />
+</p>
+<p>
+<img src="../etc/tutorial_5_07.png" />
+</p>
+
 <h2>2. Editing the atom property</h2>
 <p>
 
