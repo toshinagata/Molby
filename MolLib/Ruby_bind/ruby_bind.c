@@ -58,8 +58,8 @@ static VALUE
 	s_RSym, s_XSym, s_YSym, s_ZSym,
 	s_FractRSym, s_FractXSym, s_FractYSym, s_FractZSym,
 	s_VSym, s_FSym, s_OccupancySym, s_TempFactorSym,
-	s_AnisoSym, s_IntChargeSym, s_FixForceSym, s_FixPosSym,
-	s_ExclusionSym;
+	s_AnisoSym, s_SymopSym, s_IntChargeSym, s_FixForceSym,
+    s_FixPosSym, s_ExclusionSym;
 
 /*  Symbols for parameter attributes  */
 static VALUE
@@ -3337,6 +3337,20 @@ static VALUE s_AtomRef_GetAniso(VALUE self) {
 	return retval;
 }
 
+static VALUE s_AtomRef_GetSymop(VALUE self) {
+	VALUE retval;
+	Atom *ap = s_AtomFromValue(self);
+	if (!ap->symop.alive)
+		return Qnil;
+	retval = rb_ary_new();
+	rb_ary_push(retval, INT2NUM(ap->symop.sym));
+	rb_ary_push(retval, INT2NUM(ap->symop.dx));
+	rb_ary_push(retval, INT2NUM(ap->symop.dy));
+	rb_ary_push(retval, INT2NUM(ap->symop.dz));
+	rb_ary_push(retval, INT2NUM(ap->symbase));
+	return retval;
+}
+
 static VALUE s_AtomRef_GetIntCharge(VALUE self) {
 	return INT2NUM(s_AtomFromValue(self)->intCharge);
 }
@@ -3646,7 +3660,7 @@ static VALUE s_AtomRef_SetTempFactor(VALUE self, VALUE val) {
 
 static VALUE s_AtomRef_SetAniso(VALUE self, VALUE val) {
 	AtomRef *aref;
-	int i, n;
+	int i, n, type;
 	VALUE *valp;
 	Double f[6];
 	VALUE oval = s_AtomRef_GetAniso(self);
@@ -3659,10 +3673,18 @@ static VALUE s_AtomRef_SetAniso(VALUE self, VALUE val) {
 			f[i] = NUM2DBL(rb_Float(valp[i]));
 		else f[i] = 0.0;
 	}
+	if (n >= 7)
+		type = NUM2INT(rb_Integer(valp[6]));
+	else type = 0;
 	i = s_AtomIndexFromValue(self, NULL, NULL);
-	MoleculeSetAniso(aref->mol, i, 0, f[0], f[1], f[2], f[3], f[4], f[5]);
+	MoleculeSetAniso(aref->mol, i, type, f[0], f[1], f[2], f[3], f[4], f[5]);
 	s_RegisterUndoForAtomAttrChange(self, s_AnisoSym, val, oval);
 	return val;
+}
+
+static VALUE s_AtomRef_SetSymop(VALUE self, VALUE val) {
+	rb_raise(rb_eMolbyError, "symmetry operation cannot be directly set. Use Molecule#expand_by_symmetry instead.");
+	return val; /* Not reached */
 }
 
 static VALUE s_AtomRef_SetIntCharge(VALUE self, VALUE val) {
@@ -3731,6 +3753,7 @@ static struct s_AtomAttrDef {
 	{"occupancy",    &s_OccupancySym,    0, s_AtomRef_GetOccupancy,    s_AtomRef_SetOccupancy},
 	{"temp_factor",  &s_TempFactorSym,   0, s_AtomRef_GetTempFactor,   s_AtomRef_SetTempFactor},
 	{"aniso",        &s_AnisoSym,        0, s_AtomRef_GetAniso,        s_AtomRef_SetAniso},
+	{"symop",        &s_SymopSym,        0, s_AtomRef_GetSymop,        s_AtomRef_SetSymop},
 	{"int_charge",   &s_IntChargeSym,    0, s_AtomRef_GetIntCharge,    s_AtomRef_SetIntCharge},
 	{"fix_force",    &s_FixForceSym,     0, s_AtomRef_GetFixForce,     s_AtomRef_SetFixForce},
 	{"fix_pos",      &s_FixPosSym,       0, s_AtomRef_GetFixPos,       s_AtomRef_SetFixPos},
@@ -5726,6 +5749,8 @@ s_Molecule_CreateBond(int argc, VALUE *argv, VALUE self)
 		rb_raise(rb_eMolbyError, "too many bonds");
 	else if (i == -3)
 		rb_raise(rb_eMolbyError, "duplicate bonds");
+	else if (i == -5)
+		rb_raise(rb_eMolbyError, "cannot create bond to itself");
 	else if (i != 0)
 		rb_raise(rb_eMolbyError, "error in creating bonds");
 	return INT2NUM(mol->nbonds - old_nbonds);

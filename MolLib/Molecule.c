@@ -5305,12 +5305,12 @@ MoleculeAddExpandedAtoms(Molecule *mp, Symop symop, IntGroup *group)
 	int i, n, n0, n1, count, *table;
 	Atom *ap;
 	IntGroupIterator iter;
-	int debug = 0;
+/*	int debug = 0; */
 	if (mp == NULL || mp->natoms == 0 || group == NULL || (count = IntGroupGetCount(group)) == 0)
 		return -1;
 	if (symop.sym >= mp->nsyms)
 		return -2;
-	fprintf(stderr, "symop = {%d %d %d %d}\n", symop.sym, symop.dx, symop.dy, symop.dz);
+/*	fprintf(stderr, "symop = {%d %d %d %d}\n", symop.sym, symop.dx, symop.dy, symop.dz); */
 
 	/*  Create atoms, with avoiding duplicates  */
 	n0 = n1 = mp->natoms;
@@ -6309,8 +6309,10 @@ MoleculeAddBonds(Molecule *mp, Int nbonds, const Int *bonds)
 	for (i = 0; i < nbonds; i++) {
 		n1 = bonds[i * 2];
 		n2 = bonds[i * 2 + 1];
-		if (n1 == n2 || n1 < 0 || n1 >= mp->natoms || n2 < 0 || n2 >= mp->natoms)
+		if (n1 < 0 || n1 >= mp->natoms || n2 < 0 || n2 >= mp->natoms)
 			return -1;  /*  Bad bond specification  */
+		if (n1 == n2)
+			return -5;
 		ap = ATOM_AT_INDEX(mp->atoms, n1);
 		if (ap->nconnects >= ATOMS_MAX_CONNECTS - 1 || ATOM_AT_INDEX(mp->atoms, n2)->nconnects >= ATOMS_MAX_CONNECTS - 1)
 			return -2;  /*  Too many bonds  */
