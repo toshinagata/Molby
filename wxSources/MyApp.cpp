@@ -410,6 +410,7 @@ MyApp::CreateMenuBar(int kind, wxMenu **out_file_history_menu, wxMenu **out_edit
 	md_tools_menu->Append(myMenuID_RunResp, _T("GAMESS/RESP..."));
 	md_tools_menu->Append(myMenuID_CreateSanderInput, _T("Create SANDER input..."));
 	md_tools_menu->Append(myMenuID_ImportAmberLib, _T("Import AMBER Lib..."));
+	md_tools_menu->Append(myMenuID_ImportAmberFrcmod, _T("Import AMBER Frcmod..."));
 	md_menu->Append(myMenuID_MDTools, _T("Tools"), md_tools_menu);
 
 	wxMenu *qc_menu = new wxMenu;

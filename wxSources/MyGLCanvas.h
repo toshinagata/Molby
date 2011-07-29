@@ -35,7 +35,7 @@ public:
     void OnSize(wxSizeEvent &event);
 	void OnChar(wxKeyEvent &event);
 	void OnCaptureLost(wxMouseCaptureLostEvent &event);
-
+	
 private:
     DECLARE_EVENT_TABLE()
 };

@@ -19,6 +19,7 @@
 
 #include "wx/dcclient.h"
 #include "wx/scrolwin.h"
+#include "wx/glcanvas.h"
 
 const wxEventType MyListCtrlEvent = wxNewEventType();
 
@@ -98,7 +99,7 @@ MyListCtrl::OnPaintCallback(wxDC *dc)
 			GetItemRect(dragTargetRow, r);
 			y = r.y - dy - r.height;
 		}
-		printf("dragTargetRow = %d, r.y = %d, y = %d\n", dragTargetRow, r.y, y);
+	/*	printf("dragTargetRow = %d, r.y = %d, y = %d\n", dragTargetRow, r.y, y); */
 		dc->DrawLine(r.x - dx, y, r.x - dx + r.width, y);
 		
 	/*	r.Inflate(-1);
@@ -377,8 +378,9 @@ MyListCtrl::EndEditText(bool setValueFlag)
 			wxString sval = editText->GetValue();
 			dataSource->SetItemText(this, editRow, editColumn, sval);
 		}
-		if (wxWindow::FindFocus() == editText)
+		if (wxWindow::FindFocus() == editText) {
 			SetFocus();
+		}
 #if defined(__WXMAC__)
 		{
 			/*  Erase the focus ring  */

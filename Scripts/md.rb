@@ -582,6 +582,11 @@ class Molecule
 	  end
     }
   end
+
+  def cmd_import_frcmod
+    file = Dialog.open_panel("Select AMBER frcmod file", nil, "AMBER frcmod file (*.frcmod)|*.frcmod|All Files (*.*)|*.*")
+	import_frcmod(file) if file
+  end
   
   def Molecule.import_amberlib(file)
     fp = File.open(file, "r")

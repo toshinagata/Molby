@@ -94,6 +94,7 @@ enum {
 	myMenuID_RunResp = 213,
 	myMenuID_CreateSanderInput = 214,
 	myMenuID_ImportAmberLib = 215,
+	myMenuID_ImportAmberFrcmod = 216,
 	myMenuID_CreateGamessInput = 250,
 	myMenuID_CreateMOCube = 251,
 	myMenuID_ExecuteScript = 300,

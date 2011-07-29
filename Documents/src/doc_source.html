@@ -13,13 +13,13 @@
 <div class="centered" lang="en">
 <h1>Molby</h1>
 <h2>An Interactive Molecular Modeling Software<br />with Integrated Ruby Interpreter</h2>
-<h3>Version 0.5.5 build 20110721</h3> <!-- version -->
+<h3>Version 0.5.5 build 20110729</h3> <!-- version -->
 <h3>Toshi Nagata</h3>
 </div>
 <div class="centered" lang="ja">
 <h1>Molby</h1>
 <h2>対話型分子モデリングソフトウェア<br />（Ruby インタプリタ内蔵）</h2>
-<h3>Version 0.5.5 build 20110721</h3> <!-- version -->
+<h3>Version 0.5.5 build 20110729</h3> <!-- version -->
 <h3>永田　央</h3>
 </div>
 <hr />
@@ -952,9 +952,49 @@ A more recommended way to change the residue name and index is to use the menu c
 <img src="../etc/tutorial_5_07.png" />
 </p>
 
-<h2>2. Editing the atom property</h2>
+<h2>2. The Bond/Angle/Dihedral/Improper Table</h2>
 <p>
+The property table can also show other information. The type of information can be selected at the popup menu.
+</p>
+<p><img src="../etc/tutorial_5_08.png" /></p>
+<p>
+The bond, angle, dihedral, and improper tables show the numbers, names, and types of the constituent atoms. In addition, the quantities (bond lengths, angles, etc.) and the molecular mechanics parameters (if MM calculation gets ready by invoking the "Molecular Dynamics..." or "Minimize..." menu commands).
+</p>
+<p><img src="../etc/tutorial_5_09.png" /></p>
+<p>
+The bonds, angles, etc. are not editable in the property table. At present, the only way to create/delete bonds from GUI is to use the mouse operation "Bond" or "Erase".
+</p>
 
+<h2>3. The Parameter Table</h2>
+<p>
+The parameter table shows the molecular mechanics parameters in one table.
+</p>
+<p><img src="../etc/tutorial_5_10.png" /></p>
+<p>
+When you build a molecule from scratch, and open the parameter table before doing any MM/MD operations, this table is likely to be empty. This is because the MM parameters are looked up only when "Molecular Dynamics..." or "Minimize..." menu command is invoked, or you use MM/MD tools like Antechamber (see Step 4 for details). After doing some of these operations, you will see a set of parameters shown in this table.
+</p>
+<p>
+The parameters are grouped in several classes, namely "VDWs", "Bonds", "Angles", "Dihedrals", "Impropers", and "VDW Pairs".
+</p>
+<p>
+The "VDWs" parameters are for the van der Waals nonbonding interaction, described by "eps" (the minimum energy in kcal/mol), "r" (the van der Waals radius in &Aring;, which is half of the interatomic distance at the equilibrium state), "eps14", "r14" (eps and r for the pair of atoms separated by exactly three bonds. In many applications, the same parameters with the ordinary pair are used with a specific factor multiplied), "atomNo" (the atomic number), "weight" (the atomic weight). The last two are usually overridden by the atom parameters.
+</p>
+<p>
+The "Bonds" parameters consist of "k" (the force constant in kcal/mol/&Aring;<sup>2</sup>) and "r0" (the equilibrium bond length). The "Angles" parameters consist of "k" (the force constant in kcal/mol/radian<sup>2</sup>) and "a0" (the equilibrium bond angle). The "Dihedrals" and "Impropers" parameters consist of "k" (the force constant in kcal/mol/radian<sup>2</sup>), "period" (the periodicity), and "phi0" (the equilibrium torsion angle in degree). The "VDW Pairs" parameters are (rarely) used to describe pair-specific van der Waals interactions, and consist of "eps", "r", "eps14", and "r14".
+</p>
+<p>
+There is another important property for each parameter, that is, whether the parameter is taken from the "global" source (i.e. not specific to this molecule), or it is "local" (specific to this molecule), or "undefined". This property is shown by the color of the row. The global parameters are shown in white cells, the local ones in pale yellow, and the undefined ones in red.
+</p>
+<p><img src="../etc/tutorial_5_11.png" /></p>
+<p>
+You can edit the parameters (although you need to be familiar with MM parameters and to know what you are doing!), but only if they are "local" or "undefined" parameters. The "global" parameters cannot be edited because it may be also used in other molecules, where the edited parameters may not be appropriate. If you want to modify some parameters but they are "global", then you can make them "local" by copying the parameters and the pasting.
+</p>
+<p><img src="../etc/tutorial_5_12.png" /></p>
+<p>
+You can also "cut" the parameters from the table, so that they are no longer used for calculation. This feature is useful when you have many duplicated parameters having different force constants. (In actual calculation, the parameter appearing later in the table will be used.)
+</p>
+<p>
+(I must admit that the copy/cut/paste features of the parameter table are not well sorted out yet, so it is somewhat confusing. I hope it will be fixed at some time in the future.)
 </p>
 
 </div>

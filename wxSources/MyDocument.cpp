@@ -102,6 +102,7 @@ BEGIN_EVENT_TABLE(MyDocument, wxDocument)
 	EVT_MENU(myMenuID_RunAntechamber, MyDocument::OnInvokeAntechamber)
 	EVT_MENU(myMenuID_RunResp, MyDocument::OnInvokeResp)
 	EVT_MENU(myMenuID_CreateSanderInput, MyDocument::OnCreateSanderInput)
+	EVT_MENU(myMenuID_ImportAmberFrcmod, MyDocument::OnImportAmberFrcmod)
 	EVT_MENU(myMenuID_CreateGamessInput, MyDocument::OnCreateGamessInput)
 	EVT_MENU(myMenuID_CreateMOCube, MyDocument::OnCreateMOCube)
 	EVT_MENU(myMenuID_ShowAllAtoms, MyDocument::OnShowAllAtoms)
@@ -1312,6 +1313,12 @@ void
 MyDocument::OnCreateSanderInput(wxCommandEvent &event)
 {
 	MolActionCreateAndPerform(mol, SCRIPT_ACTION(""), "export_prmtop");
+}
+
+void
+MyDocument::OnImportAmberFrcmod(wxCommandEvent &event)
+{
+	MolActionCreateAndPerform(mol, SCRIPT_ACTION(""), "cmd_import_frcmod");
 }
 
 void
