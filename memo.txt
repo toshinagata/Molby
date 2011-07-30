@@ -190,3 +190,23 @@ sander -O -i min.in -o NAME.out -p NAME.prmtop -c NAME.inpcrd -x NAME.mdcrd -r N
 
 2011.7.29.
 　テーブルをクリックしてもフォーカスされないことがあっておかしいと思っていたのだが、発生条件をどうやら特定できた。セル編集中に MyGLCanvas をクリックしてそちらにフォーカスが移ると、テーブルをクリックしても MyGLCanvas からフォーカスが動かない。もう一度セルをダブルクリックして編集状態にすると正常に戻る。この症状は Windows では起こらない。修正する方法がなかなか見つからない。wxMac のソースを読んでも、Carbon だからよくわからんし。→ 編集状態でなくなった時に wxTextCtrl を Destroy するといいみたい。ただし、Windows ではこれでクラッシュすることがある（しないこともある）。よくわからんが、#ifdef で分けてしのぐことにした。
+
+2011.7.30.
+　バージョン 0.5.6 をリリース。
+
+Gaff, parm99 パラメータ: 結合長を小数点以下３桁まで有効にした。
+Antechamber/parmchk ダイアログ（および Ruby で書かれたその他のダイアログ）のクラッシュを修正。
+Ruby: 新しいメソッド: AtomRef#exclusion, Molecule#resize_to_fit, Molecule#bond_par/angle_par/dihedral_par/improper_par/vdw_par, $stdin.gets, $stdin.readline. 改良したメソッド: Molecule#each_atom, Molecule#duplicate, Molecule#open, Kernel#message_box, Dialog#item.
+分子力学: 構造最適化計算の安定性が向上。"Solvate" コマンドで溶媒分子に "SOLV" セグメント名が付与されるようになった。
+新しいメニューコマンド："Create New Atom", "Create New Parameter", "Create SANDER Input", "Import AMBER Lib", "Import AMBER Frcmod".
+新しいファイルフォーマット: cif（読み込み）, AMBER mdcrd（読み込み）。
+属性テーブルでのカット／コピー／ペーストの安定性が向上。
+Mac: 属性テーブルがときどきフォーカスされない問題を解決。
+
+Gaff and parm99 parameters: the equilibrium bond lengths have now three significant digits after the decimal point.
+Crash on antechamber/parmchk dialog (and other Ruby-based dialogs as well) is fixed.
+Ruby: New methods: AtomRef#exclusion, Molecule#resize_to_fit, Molecule#bond_par/angle_par/dihedral_par/improper_par/vdw_par, $stdin.gets, $stdin.readline. Improved: Molecule#each_atom, Molecule#duplicate, Molecule#open, Kernel#message_box, Dialog#item.
+MM/MD: minimization gets improved stability; the "solvate" command now sets the segment name 'SOLV' for the solvent atoms.
+New menu commands: "Create New Atom", "Create New Parameter", "Create SANDER Input", "Import AMBER Lib", "Import AMBER Frcmod".
+New file formats: cif (import), AMBER mdcrd (import).
+Tables: cut/copy/paste in parameter table is improved. Mac: table did not get focus under certain conditions; fixed. 
