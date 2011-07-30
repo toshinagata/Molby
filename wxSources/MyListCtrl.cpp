@@ -371,7 +371,7 @@ MyListCtrl::StartEditText(int row, int column)
 }
 
 void
-MyListCtrl::EndEditText(bool setValueFlag)
+MyListCtrl::EndEditTextAndRestart(bool setValueFlag, int newRow, int newColumn)
 {
 	if (editText != NULL && editText->IsShown()) {
 		if (setValueFlag && dataSource) {
@@ -390,10 +390,33 @@ MyListCtrl::EndEditText(bool setValueFlag)
 			Refresh();
 		}
 #endif
-		editRow = editColumn = -1;
-		editText->Move(-1000, -1000);
-		editText->Hide();
+
 	}
+	
+	if (newRow >= 0 && newColumn >= 0) {
+		editText->Hide();  /*  Temporarily hide until new editing starts  */
+		StartEditText(newRow, newColumn);
+	} else {
+		editRow = editColumn = -1;
+#if defined(__WXMAC__)
+		if (editText != NULL) {
+			editText->Disconnect(wxID_ANY);
+			editText->Destroy();
+			editText = NULL;
+		}
+#else
+		if (editText != NULL) {
+			editText->Move(-1000, -1000);
+			editText->Hide();
+		}
+#endif
+	}
+}
+
+void
+MyListCtrl::EndEditText(bool setValueFlag)
+{
+	EndEditTextAndRestart(setValueFlag, -1, -1);
 }
 
 void
@@ -455,12 +478,13 @@ MyListCtrl::OnKeyDownOnEditText(wxKeyEvent &event)
 				if (dataSource == NULL || dataSource->IsItemEditable(this, erow, ecol))
 					break;
 			}
-			EndEditText(true);
-			StartEditText(erow, ecol);
+			EndEditTextAndRestart(true, erow, ecol);
 			break;
 		case WXK_RETURN:
 			if (event.GetModifiers() == wxMOD_ALT) {
+				printf("alt-return pressed\n"); fflush(stdout);
 				EndEditText(true);
+				printf("EndEditText completed\n"); fflush(stdout);
 				return;
 			}
 			ecol = editColumn;
@@ -478,8 +502,7 @@ MyListCtrl::OnKeyDownOnEditText(wxKeyEvent &event)
 				if (dataSource == NULL || dataSource->IsItemEditable(this, erow, ecol))
 					break;
 			}
-			EndEditText(true);
-			StartEditText(erow, ecol);
+			EndEditTextAndRestart(true, erow, ecol);
 			break;
 		case WXK_ESCAPE:
 			EndEditText(false);
@@ -516,9 +539,10 @@ MyListCtrl::OnLeftDClick(wxMouseEvent &event)
 			event.Skip();
 			return;
 		}
-		EndEditText();
+		EndEditTextAndRestart(true, row, col);
+	} else {
+		StartEditText(row, col);
 	}
-	StartEditText(row, col);
 }
 
 void

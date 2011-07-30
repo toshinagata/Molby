@@ -2817,7 +2817,9 @@ MainView_copyOrCutParameters(MainView *mview, int flags)
 	Parameter *par = mview->mol->par;
 	void *pb_ptr = NULL;
 	Int pb_len = 0;
-	i = 0;
+	if (ig == NULL || (i = IntGroupGetCount(ig)) == 0)
+		return 0;
+	i--;
 	ig2 = NULL;
 	while (1) {
 		n = IntGroupGetNthPoint(ig, i);
@@ -2859,7 +2861,7 @@ MainView_copyOrCutParameters(MainView *mview, int flags)
 				ig2 = IntGroupNew();
 			IntGroupAdd(ig2, idx, 1);
 		}
-		i++;
+		i--;
 	}
 	if (ig2 != NULL)
 		IntGroupRelease(ig2);

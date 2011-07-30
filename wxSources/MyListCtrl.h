@@ -80,6 +80,7 @@ public:
 	void SetItemTextForColumn(long item, long column, const wxString &text);
 
 	void StartEditText(int row, int column);
+	void EndEditTextAndRestart(bool setValueFlag, int newRow, int newColumn);
 	void EndEditText(bool setValueFlag = true);
 	void OnKeyDownOnEditText(wxKeyEvent &event);
 	void OnKillFocusOnEditText(wxFocusEvent &event);

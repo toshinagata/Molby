@@ -154,6 +154,14 @@ def special_node(e, ef, lang)
       ep = @file_hash[href]
       c.unshift(make_a_element(href, (lang == "ja" ? ep.title_ja : ep.title_en)))
     end
+    if (href = prev_link(ef)) != nil
+      c.push(REXML::Text.new(" &nbsp;&nbsp; ", false, nil, true))
+      c.push(make_a_element(href, (lang == "ja" ? "[前]" : "[Prev]")))
+    end
+    if (href = next_link(ef)) != nil
+      c.push(REXML::Text.new(" &nbsp;&nbsp; ", false, nil, true))
+      c.push(make_a_element(href, (lang == "ja" ? "[次]" : "[Next]")))
+    end
     c.each { |n|
       if n.is_a?(String)
         en.add_text(n)
@@ -230,7 +238,7 @@ body.each_element_with_attribute('file') { |ef|
       e = e.deep_clone
       if e.name == "title"
         e = REXML::Element.new("title")
-        e.add_text(lang == "ja" ? ef.title_ja : ef.title_ja)
+        e.add_text(lang == "ja" ? ef.title_ja : ef.title_en)
       elsif e.name == "meta"
         if e.attributes["http-equiv"] == "Content-Type"
           e.attributes["lang"] = lang
