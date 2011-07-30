@@ -187,3 +187,6 @@ sander -O -i min.in -o NAME.out -p NAME.prmtop -c NAME.inpcrd -x NAME.mdcrd -r N
 
 2011.7.8.
 　MoleculeMerge(), MoleculeUnmerge() の仕様を見直した方がいい。undo サポート用に、bond/angle/dihedral/improper を指定した位置に入れる機能が欲しい。パラメータも、すべての種類のパラメータを指定した位置に入れる機能が必要。IntGroup の配列でパラメータを与えるか？
+
+2011.7.29.
+　テーブルをクリックしてもフォーカスされないことがあっておかしいと思っていたのだが、発生条件をどうやら特定できた。セル編集中に MyGLCanvas をクリックしてそちらにフォーカスが移ると、テーブルをクリックしても MyGLCanvas からフォーカスが動かない。もう一度セルをダブルクリックして編集状態にすると正常に戻る。この症状は Windows では起こらない。修正する方法がなかなか見つからない。wxMac のソースを読んでも、Carbon だからよくわからんし。

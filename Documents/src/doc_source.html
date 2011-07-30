@@ -13,13 +13,13 @@
 <div class="centered" lang="en">
 <h1>Molby</h1>
 <h2>An Interactive Molecular Modeling Software<br />with Integrated Ruby Interpreter</h2>
-<h3>Version 0.5.5 build 20110729</h3> <!-- version -->
+<h3>Version 0.5.6 build 20110730</h3> <!-- version -->
 <h3>Toshi Nagata</h3>
 </div>
 <div class="centered" lang="ja">
 <h1>Molby</h1>
 <h2>対話型分子モデリングソフトウェア<br />（Ruby インタプリタ内蔵）</h2>
-<h3>Version 0.5.5 build 20110729</h3> <!-- version -->
+<h3>Version 0.5.6 build 20110730</h3> <!-- version -->
 <h3>永田　央</h3>
 </div>
 <hr />
@@ -958,7 +958,7 @@ The property table can also show other information. The type of information can 
 </p>
 <p><img src="../etc/tutorial_5_08.png" /></p>
 <p>
-The bond, angle, dihedral, and improper tables show the numbers, names, and types of the constituent atoms. In addition, the quantities (bond lengths, angles, etc.) and the molecular mechanics parameters (if MM calculation gets ready by invoking the "Molecular Dynamics..." or "Minimize..." menu commands).
+The bond, angle, dihedral, and improper tables show the indices, names, and types of the constituent atoms. In addition, the quantities (bond lengths, angles, etc.) and the molecular mechanics parameters (only after MM/MD calculation is performed) are also shown.
 </p>
 <p><img src="../etc/tutorial_5_09.png" /></p>
 <p>
@@ -977,7 +977,7 @@ When you build a molecule from scratch, and open the parameter table before doin
 The parameters are grouped in several classes, namely "VDWs", "Bonds", "Angles", "Dihedrals", "Impropers", and "VDW Pairs".
 </p>
 <p>
-The "VDWs" parameters are for the van der Waals nonbonding interaction, described by "eps" (the minimum energy in kcal/mol), "r" (the van der Waals radius in &Aring;, which is half of the interatomic distance at the equilibrium state), "eps14", "r14" (eps and r for the pair of atoms separated by exactly three bonds. In many applications, the same parameters with the ordinary pair are used with a specific factor multiplied), "atomNo" (the atomic number), "weight" (the atomic weight). The last two are usually overridden by the atom parameters.
+The "VDWs" parameters are for the van der Waals nonbonding interaction, described by "eps" (the  energy at the potential minimum in kcal/mol), "r" (the van der Waals radius in &Aring;, which is half of the interatomic distance at the equilibrium state), "eps14", "r14" (eps and r for the pair of atoms separated by exactly three bonds. In many applications, the same parameters with the ordinary pair are used with a specific factor multiplied), "atomNo" (the atomic number), "weight" (the atomic weight). The last two are usually overridden by the atom parameters.
 </p>
 <p>
 The "Bonds" parameters consist of "k" (the force constant in kcal/mol/&Aring;<sup>2</sup>) and "r0" (the equilibrium bond length). The "Angles" parameters consist of "k" (the force constant in kcal/mol/radian<sup>2</sup>) and "a0" (the equilibrium bond angle). The "Dihedrals" and "Impropers" parameters consist of "k" (the force constant in kcal/mol/radian<sup>2</sup>), "period" (the periodicity), and "phi0" (the equilibrium torsion angle in degree). The "VDW Pairs" parameters are (rarely) used to describe pair-specific van der Waals interactions, and consist of "eps", "r", "eps14", and "r14".
@@ -991,15 +991,108 @@ You can edit the parameters (although you need to be familiar with MM parameters
 </p>
 <p><img src="../etc/tutorial_5_12.png" /></p>
 <p>
-You can also "cut" the parameters from the table, so that they are no longer used for calculation. This feature is useful when you have many duplicated parameters having different force constants. (In actual calculation, the parameter appearing later in the table will be used.)
+Another way to create a "local" parameter is to use the "Create New Parameter" menu command in the Edit menu. You can choose the parameter type in the submenu.
+</p>
+<p><img src="../etc/tutorial_5_13.png" /></p>
+<p>
+If some parameters are not to be used for calculation, you can "cut" the parameters from the table. This feature is useful when you have many duplicated parameters having different force constants. (In actual calculation, the parameter appearing later in the table will be used.)
 </p>
 <p>
-(I must admit that the copy/cut/paste features of the parameter table are not well sorted out yet, so it is somewhat confusing. I hope it will be fixed at some time in the future.)
+(Mac users: usually, the table selection should look blue, yet sometimes it remains gray in spite that you click on the table, and copy/cut/paste does not work as expected. If this happens, please try "Create New Parameter" command above, and this wrong situation will disappear. I will continue to look for a way to fix this bug.)
 </p>
 
 </div>
 <div class="contents" lang="ja">
 <h1>第五段階：分子を編集する：属性テーブルを使う</h1>
+<h2>1. 分子の属性テーブル</h2>
+<p>
+分子はいろいろな属性を持っています。まず原子と結合があります。原子は名前、原子タイプ、元素、原子量（元素が決まれば決まる）、電荷、座標、など。また、生化学の習慣に従い、原子は「残基」でグループ化されています。分子はまた、分子力学のパラメータを持っています。Molby はまた量子化学計算も部分的にサポートします。それと関連して、分子に分子軌道係数などの情報を持たせることができます。
+</p>
+<p>
+これらの情報の多くは「属性テーブル」で見ることができます。属性テーブルは、分子モデルのウィンドウの左半分にあります。
+</p>
+<p><img src="../etc/tutorial_5_01.png" /></p>
+<p>
+図では、テーブルは原子の属性を表示しています。名前、原子タイプ、元素、残基名と残基番号、座標、部分電荷です。これらの属性はダブルクリックして編集することができます。
+</p>
+<p><img src="../etc/tutorial_5_02.png" /></p>
+<p>
+リターン（エンター）またはタブキーを押すと、編集した値は確定され、別のセルが編集状態になります。リターン、シフト＋リターン、タブ、シフト＋タブでそれぞれ下・上・右・左のセルに移動します。編集を終了したい時は、オプション（Windows では Alt）＋リターンを使ってください。
+</p>
+<p>
+いくつか注意点があります。
+</p>
+<p>
+(1) 原子のインデックス（一番左の列）は編集できません。原子の順序を変えたい時は、下の図にあるように「ドラッグ・アンド・ドロップ」操作を使ってください。
+</p>
+<p><img src="../etc/tutorial_5_03.png" /></p>
+<p>
+(2) 残基の列には、残基の名前と残基番号がピリオドでつないで表示されています。このセルを編集すると、妙なことが起きて驚くかもしれません。たとえば、原子０の残基名を "RES" から "XXX" に変えると、残基番号が "1" であるすべての原子の残基名が "XXX" に変わります。
+</p>
+<p><img src="../etc/tutorial_5_04.png" /></p>
+<p>
+この挙動は、すべての残基名と残基番号は統一されていなければならない、という原理によります。つまり、同じ残基番号を持つ原子の残基名は同じでなければなりません。時にはこの挙動が便利に使えますが、混乱を招くことも多くあります。
+</p>
+<p>
+残基名と残基番号を変更するお勧めの方法は、変更したい原子を選択して "Script" メニューの "Assign Residue..." コマンドを使うことです。
+</p>
+<p>
+<img src="../etc/tutorial_5_05.png" />
+&nbsp;&nbsp;&nbsp;&nbsp;
+<img src="../etc/tutorial_5_06.png" />
+</p>
+<p>
+<img src="../etc/tutorial_5_07.png" />
+</p>
+
+<h2>2. Bond/Angle/Dihedral/Improper テーブル</h2>
+<p>
+属性テーブルは他の情報も表示することができます。テーブルの種類はポップアップメニューで選択できます。
+</p>
+<p><img src="../etc/tutorial_5_08.png" /></p>
+<p>
+Bond, angle, dihedral, improper テーブルは、それぞれ結合・結合角・二面角・improper 二面角の構成原子のインデックス、名前、原子タイプを表示します。また、現在の値（結合長、角度、など）と、分子力学パラメータ（MM/MD 計算を行った直後に限られますが）も表示されます。
+</p>
+<p><img src="../etc/tutorial_5_09.png" /></p>
+<p>
+このテーブルで、結合、結合角などを編集することはできません。現在、画面上のインターフェイスを使って結合を作ったり削除したりする唯一の方法は、"Bond", "Erase" のマウス操作を使うことです。
+</p>
+
+<h2>3. パラメータテーブル</h2>
+<p>
+パラメータテーブルは、分子力学パラメータを表示します。
+</p>
+<p><img src="../etc/tutorial_5_10.png" /></p>
+<p>
+分子を新しく作成して、MM/MD に関連する操作を何もせずにパラメータテーブルを開くと、テーブルはおそらく空のままでしょう。分子力学パラメータは、"Molecular Dynamics..." または "Minimize..." メニューコマンドを実行したときか、Antechamber のような分子力学用ツール（第四段階参照）を使った時に初めて作成されます。これらの操作をした後には、パラメータがこのテーブルに表示されます。
+</p>
+<p>
+パラメータはいくつかの種類にグループ分けされています。"VDWs", "Bonds", "Angles", "Dihedrals", "Impropers", そして "VDW Pairs" です。
+</p>
+<p>
+"VDWs" パラメータは、van der Waals 相互作用のためのもので、必要な値は "eps"（ポテンシャル極小値、kcal/mol）、"r"（van der Waals 半径、&Aring;。ポテンシャル極小状態での原子間距離の 1/2）、"eps14", "r14"（結合３つで隔てられた２つの原子間の eps と r。多くの分子力学パッケージでは、通常の原子間と同じパラメータに一定の係数をかけて用いることが多い）、"atomNo"（原子番号）、"weight"（原子量）。最後の２つは、ふつうは各原子のパラメータで上書きされます。
+</p>
+<p>
+"Bonds" パラメータは、"k"（結合の力の定数、kcal/mol/&Aring;<sup>2</sup>）、"r0"（平衡結合長さ、&Aring;）から成ります。"Angles" パラメータは、"k"（結合角の力の定数、kcal/mol/radian<sup>2</sup>）、"a0"（平衡結合角、degree）から成ります。'Dihedrals", "Impropers" パラメータは、"k"（力の定数、kcal/mol/radian<sup>2</sup>）、"period"（周期）、"phi0"（平衡二面角、degree）から成ります。"VDW Pairs" パラメータは滅多に使われませんが、ある原子の組み合わせに特有の van der Waals 相互作用を記述するもので、"eps", "r", "eps14", "r14" から成ります。
+</p>
+<p>
+それぞれのパラメータにはもう一つ重要な特性があります。それは、そのパラメータが「グローバル」なのか（つまり、他の分子にも使われる共通の値なのか）、または「ローカル」なのか（この分子に特有）、または「未定義」なのか、です。この特性は、テーブルの行の色で区別できます。「グローバル」なパラメータは白、「ローカル」はうすい黄色、「未定義」は赤色のセルです。
+</p>
+<p><img src="../etc/tutorial_5_11.png" /></p>
+<p>
+パラメータは編集することができます（あなたが分子力学パラメータに詳しくて、何をしているかわかっていればの話だけど！）。ただし、パラメータが「ローカル」「未定義」の場合だけです。「グローバル」パラメータは、他の分子でも使われている可能性があるため、編集できません。「グローバル」なパラメータを編集したい時は、そのパラメータをコピー・ペーストすることで「ローカル」パラメータにすることができます。
+</p>
+<p><img src="../etc/tutorial_5_12.png" /></p>
+<p>
+「ローカル」なパラメータを作るもう１つの方法は、"Edit" メニューの "Create New Parameter" コマンドを使うことです。パラメータの種類をサブメニューから選ぶことができます。
+</p>
+<p><img src="../etc/tutorial_5_13.png" /></p>
+<p>
+もしあるパラメータは計算に使わないという場合には、そのパラメータをテーブルから削除することができます。この機能は、同じパラメータで異なる値を持つものが複数ある場合に有用です。（実際の計算では、テーブルの後ろの方にあるパラメータが優先されます。）
+</p>
+<p>
+（Mac のユーザーへ：通常、テーブルの選択部分は青く表示されますが、ときどきテーブルをクリックしても灰色のままになることがあります。このとき、コピー／カット／ペーストはうまく働きません。こうなってしまったら、上記の "Create New Parameter" コマンドを一度使ってください。そうすれば、正常に動くようになります。このバグを修正する方法は調査中です。）
+</p>
 </div>
 <link id="#navigation" />
 </div>

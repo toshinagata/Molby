@@ -76,8 +76,9 @@ An <a href="AtomRef.html">AtomRef</a> object contains the parent <a href="Molecu
 <a name="aniso"></a>
 <div class="method-heading">
 <span class="method-name">
-aniso       &rarr; [f1, f2, f3, f4, f5, f6]<br />
-self.aniso = [f1, f2, f3, f4, f5, f6]
+aniso       &rarr; [f11, f22, f33, f12, f13, f23]<br />
+self.aniso = [f11, f22, f33, f12, f13, f23]<br />
+self.aniso = [f11, f22, f33, f12, f13, f23, type]
 </span>
 </div>
 <div class="method-description">
@@ -88,10 +89,35 @@ Get/set the anisotropic thermal factors. If no anisotropic thermal factors are d
 The anisotropic thermal parameters are defined as in ORTEP type 0, with the following formula:
 </p>
 <p>
-exp(-(f1*h<sup>2</sup> + f2*k<sup>2</sup> + f3*l<sup>2</sup> + 2*f4*h*k + 2*f5*h*l + 2*f6*k*l))
+&nbsp;&nbsp;&nbsp;exp(-(f11*h<sup>2</sup> + f22*k<sup>2</sup> + f33*l<sup>2</sup> + 2*f12*h*k + 2*f13*h*l + 2*f23*k*l))
 </p>
 <p>
-The thermal parameters are described in crystallographic coordinates, so that it is only meaningful when a crystallographic unit cell is defined (see also: <a href="Molecule.html#M000235">Molecule#cell</a>, <a href="Molecule.html#M000236">Molecule#cell=</a>). Nevertheless, setting anisotropic parameters without defining a unit cell does not cause exception, in which case a trivial unit cell ([1, 0, 0], [0, 1, 0], [0, 0, 1]) is implicitly assumed.
+If the extra "type" value is given as in the third form, other types of thermal parameters can be specified. The type value corresponds to that of the ORTEP specification.
+</p>
+<p>
+For type = 0, 1, 2, 3, and 10:<br />
+&nbsp;&nbsp;&nbsp;pow(B, -D*(f11*h<sup>2</sup> + f22*k<sup>2</sup> + f33*l<sup>2</sup> + C*f12*h*k + C*f13*h*l + C*f23*k*l))
+</p>
+<ul>
+<li>type = 0: B = e, C = 2, D = 1 (default)</li>
+<li>type = 1: B = e, C = 1, D = 1</li>
+<li>type = 2: B = 2, C = 2, D = 1</li>
+<li>type = 3: B = 2, C = 1, D = 1</li>
+<li>type = 10: B = e, C = 2, D = 2*pi<sup>2</sup></li>
+</ul>
+<p>
+For type = 4, 5, 8, and 9:<br />
+&nbsp;&nbsp;&nbsp;exp[-D*(<span class="bold">a</span><sub>1</sub><sup>2</sup>*f11*h<sup>2</sup> + <span class="bold">a</span><sub>2</sub><sup>2</sup>*f22*k<sup>2</sup> + <span class="bold">a</span><sub>3</sub><sup>2</sup>*f33*l<sup>2</sup> + C*<span class="bold">a</span><sub>1</sub>*<span class="bold">a</span><sub>2</sub>*f12*h*k + C*<span class="bold">a</span><sub>2</sub>*<span class="bold">a</span><sub>3</sub>*f23*k*l + C*<span class="bold">a</span><sub>1</sub>*<span class="bold">a</span><sub>3</sub>*f13*h*l)]
+</p>
+<ul>
+<li>type = 4: C = 2, D = 1/4</li>
+<li>type = 5: C = 1, D = 1/4</li>
+<li>type = 8: C = 2, D = 2*pi<sup>2</sup></li>
+<li>type = 9: C = 1, D = 2*pi<sup>2</sup></li>
+</ul>
+
+<p>
+The thermal parameters are described in crystallographic coordinates, so that they are only meaningful when a crystallographic unit cell is defined (see also: <a href="Molecule.html#M000235">Molecule#cell</a>, <a href="Molecule.html#M000236">Molecule#cell=</a>). Nevertheless, setting anisotropic parameters without defining a unit cell does not cause exception, in which case a trivial unit cell ([1, 0, 0], [0, 1, 0], [0, 0, 1]) is implicitly assumed.
 </p>
 </div>
 </div>
@@ -444,6 +470,20 @@ self.seg_seq = Integer<br />
 <div class="method-description">
 <p>
 Get/set the segment number.
+</p>
+</div>
+</div>
+
+<div id="method-atom_type" class="method-detail">
+<a name="symop"></a>
+<div class="method-heading">
+<span class="method-name">
+symop       &rarr; nil or [sym, dx, dy, dz, base]<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get the symmetry operation. If this atom is not symmetry expanded, then nil is returned. Otherwise, an array of symmetry operation index, cell translation (x, y, z), and the original atom index. This is a read-only attribute; to make symmetry-expanded atoms use <a href="Molecule.html#M000292">Molecule#expand_by_symmetry</a>.
 </p>
 </div>
 </div>
