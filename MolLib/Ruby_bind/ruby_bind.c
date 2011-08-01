@@ -7697,6 +7697,131 @@ s_Molecule_Elpot(VALUE self, VALUE ival)
 
 /*
  *  call-seq:
+ *     add_gaussian_orbital_shell(sym, nprims, atom_index)
+ *
+ *  To be used internally. Add a gaussian orbital shell with symmetry code, number of primitives,
+ *  and the corresponding atom index. Symmetry code: 0, S-type; 1, P-type; -1, SP-type; 2, D-type;
+ *  -2, D5-type.
+ */
+static VALUE
+s_Molecule_AddGaussianOrbitalShell(VALUE self, VALUE symval, VALUE npval, VALUE aval)
+{
+	Molecule *mol;
+	int sym, nprims, a_idx, n;
+    Data_Get_Struct(self, Molecule, mol);
+	sym = NUM2INT(rb_Integer(symval));
+	nprims = NUM2INT(rb_Integer(npval));
+	a_idx = NUM2INT(rb_Integer(aval));
+	n = MoleculeAddGaussianOrbitalShell(mol, sym, nprims, a_idx);
+	if (n == -1)
+		rb_raise(rb_eMolbyError, "Molecule is emptry");
+	else if (n == -2)
+		rb_raise(rb_eMolbyError, "Low memory");
+	else if (n == -3)
+		rb_raise(rb_eMolbyError, "Unknown orbital type");
+	else if (n != 0)
+		rb_raise(rb_eMolbyError, "Unknown error");
+	return self;
+}
+
+/*
+ *  call-seq:
+ *     add_gaussian_primitive_coefficients(exponent, contraction, contraction_sp)
+ *
+ *  To be used internally. Add a gaussian primitive coefficients.
+ */
+static VALUE
+s_Molecule_AddGaussianPrimitiveCoefficients(VALUE self, VALUE expval, VALUE cval, VALUE cspval)
+{
+	Molecule *mol;
+	Int n;
+	Double exponent, contraction, contraction_sp;
+    Data_Get_Struct(self, Molecule, mol);
+	exponent = NUM2DBL(rb_Float(expval));
+	contraction = NUM2DBL(rb_Float(cval));
+	contraction_sp = NUM2DBL(rb_Float(cspval));
+	n = MoleculeAddGaussianPrimitiveCoefficients(mol, exponent, contraction, contraction_sp);
+	if (n == -1)
+		rb_raise(rb_eMolbyError, "Molecule is emptry");
+	else if (n == -2)
+		rb_raise(rb_eMolbyError, "Low memory");
+	else if (n != 0)
+		rb_raise(rb_eMolbyError, "Unknown error");
+	return self;
+}
+
+/*
+ *  call-seq:
+ *     set_mo_coefficients(idx, energy, coefficients)
+ *
+ *  To be used internally. Add a MO coefficients. Idx is the MO index (for open shell system, 
+ *  beta MOs comes after all alpha MOs), energy is the MO energy, coefficients is an array
+ *  of MO coefficients.
+ */
+static VALUE
+s_Molecule_SetMOCoefficients(VALUE self, VALUE ival, VALUE eval, VALUE aval)
+{
+	Molecule *mol;
+	Int idx, ncomps, i;
+	Double energy;
+	Double *coeffs;
+    Data_Get_Struct(self, Molecule, mol);
+	idx = NUM2INT(rb_Integer(ival));
+	energy = NUM2DBL(rb_Float(eval));
+	aval = rb_ary_to_ary(aval);
+	ncomps = RARRAY_LEN(aval);
+	coeffs = (Double *)calloc(sizeof(Double), ncomps);
+	if (coeffs == NULL) {
+		i = -2;
+		goto end;
+	}
+	for (i = 0; i < ncomps; i++)
+		coeffs[i] = NUM2DBL(rb_Float(RARRAY_PTR(aval)[i]));
+	i = MoleculeSetMOCoefficients(mol, idx, energy, ncomps, coeffs);
+end:
+	if (i == -1)
+		rb_raise(rb_eMolbyError, "Molecule is emptry");
+	else if (i == -2)
+		rb_raise(rb_eMolbyError, "Low memory");
+	else if (i == -3)
+		rb_raise(rb_eMolbyError, "Bad or inconsistent number of MOs");
+	else if (i == -4)
+		rb_raise(rb_eMolbyError, "Bad MO index");
+	else if (i == -5)
+		rb_raise(rb_eMolbyError, "Insufficient number of coefficients are given");
+	else if (i != 0)
+		rb_raise(rb_eMolbyError, "Unknown error");
+	return self;
+}
+
+/*
+ *  call-seq:
+ *     allocate_basis_set_record(rflag, ne_alpha, ne_beta)
+ *
+ *  To be used internally. Allocate a basis set record. rflag: 0, unrestricted; 1, restricted.
+ *  ne_alpha, ne_beta: number of alpha/beta electrons.
+ */
+static VALUE
+s_Molecule_AllocateBasisSetRecord(VALUE self, VALUE rval, VALUE naval, VALUE nbval)
+{
+	Molecule *mol;
+	Int rflag, na, nb, n;
+    Data_Get_Struct(self, Molecule, mol);
+	rflag = NUM2INT(rb_Integer(rval));
+	na = NUM2INT(rb_Integer(naval));
+	nb = NUM2INT(rb_Integer(nbval));
+	n = MoleculeAllocateBasisSetRecord(mol, rflag, na, nb);
+	if (n == -1)
+		rb_raise(rb_eMolbyError, "Molecule is emptry");
+	else if (n == -2)
+		rb_raise(rb_eMolbyError, "Low memory");
+	else if (n != 0)
+		rb_raise(rb_eMolbyError, "Unknown error");
+	return self;
+}
+
+/*
+ *  call-seq:
  *     search_equivalent_atoms(ig = nil)
  *
  *  Search equivalent atoms (within the atom group if given). Returns an array of integers.
@@ -8018,6 +8143,10 @@ Init_Molby(void)
 	rb_define_method(rb_cMolecule, "cubegen", s_Molecule_Cubegen, -1);
 	rb_define_method(rb_cMolecule, "nelpots", s_Molecule_NElpots, 0);
 	rb_define_method(rb_cMolecule, "elpot", s_Molecule_Elpot, 1);
+	rb_define_method(rb_cMolecule, "add_gaussian_orbital_shell", s_Molecule_AddGaussianOrbitalShell, 3);
+	rb_define_method(rb_cMolecule, "add_gaussian_primitive_coefficients", s_Molecule_AddGaussianPrimitiveCoefficients, 3);
+	rb_define_method(rb_cMolecule, "set_mo_coefficients", s_Molecule_SetMOCoefficients, 3);
+	rb_define_method(rb_cMolecule, "allocate_basis_set_record", s_Molecule_AllocateBasisSetRecord, 3);
 	rb_define_method(rb_cMolecule, "search_equivalent_atoms", s_Molecule_SearchEquivalentAtoms, -1);
 	
 	rb_define_singleton_method(rb_cMolecule, "current", s_Molecule_Current, 0);

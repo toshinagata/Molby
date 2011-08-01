@@ -3170,28 +3170,95 @@ MainView_valueForTable(MainView *mview, int column, int row, char *buf, int bufs
 		idx = row;
 		buf[0] = 0;
 		if (bset != NULL && idx >= 0 && idx < bset->nmos) {
-			char *s = "";
-			if (idx * 2 + 2 == bset->nelectrons)
-				s = " (HOMO)";
-			else if (idx * 2 + 1 == bset->nelectrons)
-				s = " (SOMO)";
-			else if ((bset->nelectrons + 1) / 2 == idx)
-				s = " (LUMO)";
+			char *s1 = "", *s2 = "";
+			int moidx = idx % bset->ncomps;
+			if (bset->rflag == 0) {
+				if (idx < bset->ncomps) {
+					/*  Alpha orbitals  */
+					s1 = "A";
+					if (idx == bset->ne_alpha - 1)
+						s2 = "(HSOMO)";
+					else if (idx == bset->ne_alpha)
+						s2 = "(LUMO)";
+				} else {
+					/*  Beta orbitals  */
+					s1 = "B";
+					if (moidx == bset->ne_beta - 1)
+						s2 = "(HSOMO)";
+					else if (moidx == bset->ne_beta)
+						s2 = "(LUMO)";
+				}
+			} else {
+				if (idx == bset->ne_beta - 1)
+					s2 = "(HOMO)";
+				else if (idx >= bset->ne_beta && idx < bset->ne_alpha)
+					s2 = "(SOMO)";
+				else if (idx == bset->ne_alpha)
+					s2 = "(HOMO)";
+			}
 			switch (column) {
-				case 0: snprintf(buf, bufsize, "%d%s", idx + 1, s); break;
+				case 0: snprintf(buf, bufsize, "%d%s%s", moidx + 1, s1, s2); break;
 				case 1: snprintf(buf, bufsize, "%.8f", bset->moenergies[idx]); break;
 			}
 		}
 	}
 }
 
-/*  Set color for the locally defined or undefined MM parameters  */
+/*  Set color for the table  */
 int
 MainView_setColorForTable(MainView *mview, int column, int row, float *fg, float *bg)
 {
 	int parType = -1;
 	int idx;
 	UnionPar *up;
+
+	if (mview->tableIndex == kMainViewParameterTableIndex && column == -1) {
+		int src = ParameterTableGetItemSource(mview->mol->par, row);
+		if (src == -2) {  /* separator line */
+			bg[0] = bg[1] = bg[2] = 0.6;
+			return 2;
+		} else if (src == -1) { /*  undefined parameters  */
+			bg[0] = 1.0;
+			bg[1] = bg[2] = 0.2;
+			return 2;
+		} else if (src == 0) {  /*  local parameter  */
+			bg[0] = bg[1] = 1.0;
+			bg[2] = 0.6;
+			return 2;
+		}
+	} else if (mview->tableIndex == kMainViewMOTableIndex && column == -1) {
+		BasisSet *bset = mview->mol->bset;
+		int n = 0;
+		if (bset == NULL)
+			return 0;
+		if (row < 0 || row >= bset->nmos)
+			return 0;
+		if (bset->rflag == 0) {
+			if (row < bset->ncomps) {
+				/*  Alpha orbitals  */
+				if (row >= bset->ne_alpha)
+					n = 2;  /*  Unoccupied  */
+			} else {
+				/*  Beta orbitals  */
+				if ((row - bset->ncomps) >= bset->ne_beta)
+					n = 2;  /*  Unoccupied  */
+			}
+		} else {
+			if (row >= bset->ne_beta && row < bset->ne_alpha)
+				n = 1;  /*  singly occupied  */
+			else if (row >= bset->ne_alpha)
+				n = 2;  /*  unoccupied  */
+		}
+		switch (n) {
+			case 1: bg[0] = bg[1] = 0.7; bg[2] = 1.0; break;
+			case 2: bg[0] = bg[1] = bg[2] = 0.8; break;
+			default: bg[0] = bg[1] = bg[2] = 1.0; break;
+		}
+		return 2;
+	} else if (mview->tableIndex <= 0 || mview->tableIndex >= 5)
+		return 0;
+	
+	/*  Bond etc. table  */
 	switch (mview->tableIndex) {
 		case kMainViewBondTableIndex:
 			parType = kBondParType;

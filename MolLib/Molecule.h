@@ -210,8 +210,10 @@ typedef struct BasisSet {
 	Int natoms;          /*  Number of atoms; separately cached here because MO info should be invariant during editing */
 	Vector *pos;         /*  Positions of atoms; the unit is bohr, not angstrom  */
 	Double *nuccharges;  /*  Nuclear charges (for ECP atoms)  */
-	Int nelectrons;      /*  Number of electrons  */
-	Int nmos;            /*  Number of MOs */
+	Int ne_alpha, ne_beta;  /*  Number of alpha/beta electrons  */
+	Int rflag;           /*  0: UHF, 1: RHF, 2:ROHF  */
+	Int ncomps;          /*  Number of AO components; equal to sum of shells[i].ncomp  */
+	Int nmos;            /*  Number of MOs; equal to ncomps if close shell, ncomps*2 if open shell */
 	Double *mo;          /*  MO matrix (mo[i][j] represents the j-th AO coefficient for the i-th MO)  */
 	Double *moenergies;  /*  MO energies  */
 	Double *scfdensities; /*  SCF densities; lower triangle of a symmetric matrix (size nmos*(nmos+1)/2)  */
@@ -323,6 +325,11 @@ Molecule *MoleculeWithName(const char *name);
 Molecule *MoleculeRetain(Molecule *mp);
 void MoleculeRelease(Molecule *mp);
 void MoleculeExchange(Molecule *mp1, Molecule *mp2);
+
+int MoleculeAddGaussianOrbitalShell(Molecule *mol, Int sym, Int nprims, Int a_idx);
+int MoleculeAddGaussianPrimitiveCoefficients(Molecule *mol, Double exponent, Double contraction, Double contraction_sp);
+int MoleculeSetMOCoefficients(Molecule *mol, Int idx, Double energy, Int ncomps, Double *coeffs);
+int MoleculeAllocateBasisSetRecord(Molecule *mol, Int rflag, Int ne_alpha, Int ne_beta);
 
 void MoleculeIncrementModifyCount(Molecule *mp);
 void MoleculeClearModifyCount(Molecule *mp);

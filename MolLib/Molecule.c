@@ -267,7 +267,7 @@ MoleculeSetPath(Molecule *mol, const char *fname)
 	if (mol == NULL || fname == NULL)
 		return;
 	if (mol->path != NULL)
-		free(mol->path);
+		free((void *)(mol->path));
 	if (fname[0] == '/' || (isalpha(fname[0]) && fname[1] == ':')) {
 		/*  Full path  */
 		mol->path = strdup(fname);
@@ -1827,6 +1827,163 @@ MoleculeLoadShelxFile(Molecule *mp, const char *fname, char *errbuf, int errbufs
 	return -1; /* not reached */
 }
 
+/*  Add one gaussian orbital shell information (not undoable)  */
+int
+MoleculeAddGaussianOrbitalShell(Molecule *mol, Int sym, Int nprims, Int a_idx)
+{
+	BasisSet *bset;
+	ShellInfo *shellp;
+	if (mol == NULL)
+		return -1;  /*  Molecule is empty  */
+	bset = mol->bset;
+	if (bset == NULL) {
+		bset = mol->bset = (BasisSet *)calloc(sizeof(BasisSet), 1);
+		if (bset == NULL)
+			return -2;  /*  Low memory  */
+	}
+	shellp = AssignArray(&bset->shells, &bset->nshells, sizeof(ShellInfo), bset->nshells, NULL);
+	if (shellp == NULL)
+		return -2;  /*  Low memory  */
+	switch (sym) {
+		case 0:  shellp->sym = kGTOType_S;  shellp->ncomp = 1; break;
+		case 1:  shellp->sym = kGTOType_P;  shellp->ncomp = 3; break;
+		case -1: shellp->sym = kGTOType_SP; shellp->ncomp = 4; break;
+		case 2:  shellp->sym = kGTOType_D;  shellp->ncomp = 6; break;
+		case -2: shellp->sym = kGTOType_D5; shellp->ncomp = 5; break;
+			/*  TODO: Support F/F7 type orbitals  */
+			/*	case 3: sp->sym = kGTOtype_F;  sp->ncomp = 10; break;
+			 case -3: sp->sym = kGTOType_F7; sp->ncomp = 7; break; */
+		default:
+			return -3;  /* Unsupported shell type  */
+	}
+	shellp->nprim = nprims;
+	shellp->a_idx = a_idx;
+	if (bset->shells < shellp) {
+		shellp->m_idx = shellp[-1].m_idx + shellp->ncomp;
+		shellp->p_idx = shellp[-1].p_idx + shellp->nprim;
+	} else {
+		shellp->m_idx = 0;
+		shellp->p_idx = 0;
+	}
+	return 0;
+}
+
+/*  Add a set of gaussian primitive coefficients (not undoable)  */
+int
+MoleculeAddGaussianPrimitiveCoefficients(Molecule *mol, Double exponent, Double contraction, Double contraction_sp)
+{
+	BasisSet *bset;
+	PrimInfo *primp;
+	if (mol == NULL)
+		return -1;  /*  Molecule is empty  */
+	bset = mol->bset;
+	if (bset == NULL) {
+		bset = mol->bset = (BasisSet *)calloc(sizeof(BasisSet), 1);
+		if (bset == NULL)
+			return -2;  /*  Low memory  */
+	}
+	primp = AssignArray(&bset->priminfos, &bset->npriminfos, sizeof(PrimInfo), bset->npriminfos, NULL);
+	if (primp == NULL)
+		return -2;  /*  Low memory  */
+	primp->A = exponent;
+	primp->C = contraction;
+	primp->Csp = contraction_sp;
+	return 0;
+}
+
+/*  Set MO coefficients for idx-th MO  */
+int
+MoleculeSetMOCoefficients(Molecule *mol, Int idx, Double energy, Int ncomps, Double *coeffs)
+{
+	BasisSet *bset;
+	int i, n;
+	if (mol == NULL)
+		return -1;  /*  Molecule is empty  */
+	bset = mol->bset;
+	if (bset == NULL) {
+		bset = mol->bset = (BasisSet *)calloc(sizeof(BasisSet), 1);
+		if (bset == NULL)
+			return -2;  /*  Low memory  */
+	}
+	if (bset->nmos == 0) {
+		if (bset->nshells > 0) {
+			/*  Shell info is already set: calculate the number of MOs from there  */
+			for (i = n = 0; i < bset->nshells; i++)
+				n += bset->shells[i].ncomp;
+			bset->ncomps = n;
+		} else if (ncomps > 0) {
+			bset->ncomps = ncomps;
+		}
+		if (bset->rflag == 0)
+			bset->nmos = bset->ncomps * 2;
+		else
+			bset->nmos = bset->ncomps;
+		if (bset->nmos <= 0)
+			return -3;  /*  Bad or inconsistent number of MOs  */
+		bset->mo = (Double *)calloc(sizeof(Double), bset->nmos * bset->ncomps);
+		bset->moenergies = (Double *)calloc(sizeof(Double), bset->nmos);
+		if (bset->mo == NULL || bset->moenergies == NULL) {
+			if (bset->mo != NULL)
+				free(bset->mo);
+			if (bset->moenergies != NULL)
+				free(bset->moenergies);
+			bset->mo = NULL;
+			bset->moenergies = NULL;
+			bset->nmos = 0;
+			return -2;  /*  Low memory  */
+		}
+	}
+	if (idx < 0 || idx >= bset->nmos)
+		return -4;  /*  Bad MO index  */
+	bset->moenergies[idx] = energy;
+	if (ncomps < bset->ncomps)
+		return -5;  /*  Insufficient number of data provided  */
+	memmove(bset->mo + (idx * bset->ncomps), coeffs, sizeof(Double) * bset->ncomps);
+	if (bset->cns != NULL) {
+		/*  Clear the cached values  */
+		free(bset->cns);
+		bset->cns = NULL;
+		bset->ncns = 0;
+	}
+	return 0;
+}
+
+/*  Allocate BasisSet record. rflag: UHF, 0; RHF, 1; ROHF, 2
+    ne_alpha: number of alpha electrons, ne_beta: number of beta electrons
+    The natoms and pos are copied from mol.  */
+int
+MoleculeAllocateBasisSetRecord(Molecule *mol, Int rflag, Int ne_alpha, Int ne_beta)
+{
+	BasisSet *bset;
+	int i;
+	Atom *ap;
+	if (mol == NULL || mol->natoms == 0)
+		return -1;  /*  Molecule is empty  */
+	bset = mol->bset;
+	if (bset == NULL) {
+		bset = mol->bset = (BasisSet *)calloc(sizeof(BasisSet), 1);
+		if (bset == NULL)
+			return -2;  /*  Low memory  */
+	}
+	if (bset->pos != NULL) {
+		free(bset->pos);
+		bset->pos = NULL;
+	}
+	bset->natoms = mol->natoms;
+	bset->pos = (Vector *)calloc(sizeof(Vector), bset->natoms);
+	if (bset->pos == NULL)
+		return -2;  /*  Low memory  */
+	for (i = 0, ap = mol->atoms; i < mol->natoms; i++, ap = ATOM_NEXT(ap)) {
+		bset->pos[i].x = ap->r.x * kAngstrom2Bohr;
+		bset->pos[i].y = ap->r.y * kAngstrom2Bohr;
+		bset->pos[i].z = ap->r.z * kAngstrom2Bohr;
+	}
+	bset->ne_alpha = ne_alpha;
+	bset->ne_beta = ne_beta;
+	bset->rflag = rflag;
+	return 0;
+}
+
 static void
 sSeparateTokens(char *inString, char **outPtr, int size)
 {
@@ -1946,7 +2103,7 @@ MoleculeLoadGaussianFchkFile(Molecule *mp, const char *fname, char *errbuf, int 
 	FILE *fp;
 	char buf[1024];
 	int lineNumber;
-	int natoms, nbasis, i, j, k, n, mxbond, retval, nmos, nprims;
+	int natoms, nbasis, i, j, k, n, mxbond, retval, ncomps, nprims;
 	BasisSet *bset;
 	ShellInfo *sp;
 	PrimInfo *pp;
@@ -1976,7 +2133,7 @@ MoleculeLoadGaussianFchkFile(Molecule *mp, const char *fname, char *errbuf, int 
 	lineNumber = 0;
 	natoms = nbasis = -1;
 	mxbond = 0;
-	nmos = 0;
+	ncomps = 0;
 	nprims = 0;
 	nary = 0;
 	iary = NULL;
@@ -2001,11 +2158,13 @@ MoleculeLoadGaussianFchkFile(Molecule *mp, const char *fname, char *errbuf, int 
 			/*  Also allocate nuclear charge array  */
 			bset->nuccharges = (Double *)calloc(sizeof(Double), natoms);
 		} else if (strcmp(buf, "Number of electrons") == 0) {
-			if (tokens[1] == NULL || (bset->nelectrons = atoi(tokens[1])) <= 0) {
+			if (tokens[1] == NULL || (i = atoi(tokens[1])) <= 0) {
 				snprintf(errbuf, errbufsize, "Line %d: strange number of electrons: %s", lineNumber, tokens[1]);
 				retval = 2;
 				goto cleanup;
 			}
+			bset->ne_beta = i / 2;
+			bset->ne_alpha = i - bset->ne_beta;
 		} else if (strcmp(buf, "Number of basis functions") == 0) {
 			if (tokens[1] == NULL || (nbasis = atoi(tokens[1])) <= 0) {
 				snprintf(errbuf, errbufsize, "Line %d: strange number of electrons: %s", lineNumber, tokens[1]);
@@ -2136,7 +2295,7 @@ MoleculeLoadGaussianFchkFile(Molecule *mp, const char *fname, char *errbuf, int 
 				sp->m_idx = n;
 				n += sp->ncomp;
 			}
-			nmos = n;
+			ncomps = n;
 			free(iary);
 			iary = NULL;
 		} else if (strcmp(buf, "Number of primitives per shell") == 0) {
@@ -2225,7 +2384,7 @@ MoleculeLoadGaussianFchkFile(Molecule *mp, const char *fname, char *errbuf, int 
 			free(dary);
 			dary = NULL;
 		} else if (strcmp(buf, "Alpha Orbital Energies") == 0) {
-			if (tokens[2] == NULL || (i = atoi(tokens[2])) <= 0 || i != nmos) {
+			if (tokens[2] == NULL || (i = atoi(tokens[2])) <= 0 || i != ncomps) {
 				snprintf(errbuf, errbufsize, "Line %d: wrong or inconsistent number of alpha orbitals: %s", lineNumber, tokens[2]);
 				retval = 2;
 				goto cleanup;
@@ -2236,7 +2395,7 @@ MoleculeLoadGaussianFchkFile(Molecule *mp, const char *fname, char *errbuf, int 
 				goto cleanup;
 			}
 		} else if (strcmp(buf, "Alpha MO coefficients") == 0) {
-			if (tokens[2] == NULL || (i = atoi(tokens[2])) <= 0 || i != bset->nmos * bset->nmos) {
+			if (tokens[2] == NULL || (i = atoi(tokens[2])) <= 0 || i != ncomps * ncomps) {
 				snprintf(errbuf, errbufsize, "Line %d: wrong or inconsistent number of MO coefficients: %s", lineNumber, tokens[2]);
 				retval = 2;
 				goto cleanup;
@@ -2313,6 +2472,8 @@ MoleculeLoadGamessDatFile(Molecule *mol, const char *fname, char *errbuf, int er
 	char sval[16];
 	Vector *vbuf = NULL;
 	IntGroup *ig;
+	int optimizing = 0;
+
 	if (errbuf == NULL) {
 		errbuf = buf;
 		errbufsize = 1024;
@@ -2434,9 +2595,58 @@ MoleculeLoadGamessDatFile(Molecule *mol, const char *fname, char *errbuf, int er
 			MolActionCreateAndPerform(mol, gMolActionInsertFrames, ig, natoms, vbuf, 0, NULL);
 			IntGroupRelease(ig);
 			nframes++;
-			if (n1) {
-				/*  TODO: read the VEC group  */
+			if (n1 == 0)
+				optimizing = 1;  /*  Flag to skip reading the VEC group  */
+			else
+				optimizing = 0;
+			continue;
+		} else if (strstr(buf, "E(UHF)") != NULL || (strstr(buf, "E(RHF)") != NULL && (n1 = 1)) || (strstr(buf, "E(ROHF)") != NULL && (n1 = 2))) {
+			if (mol->bset == NULL) {
+				i = MoleculeAllocateBasisSetRecord(mol, n1, 0, 0);
+				if (i != 0) {
+					snprintf(errbuf, errbufsize, "Line %d: cannot allocate basis set internal buffer", lineNumber);
+					return 8;
+				}
 			}
+		} else if (strncmp(buf, " $VEC", 5) == 0) {
+			Double *coeffs;
+			/*  Read the vec group  */
+			if (mol->bset == NULL)
+				continue;  /*  Just ignore  */
+			if (optimizing)
+				continue;  /*  Ignore VEC group during optimization  */
+			coeffs = (Double *)calloc(sizeof(Double), mol->bset->ncomps);
+			if (coeffs == NULL) {
+				snprintf(errbuf, errbufsize, "Line %d: low memory during $VEC", lineNumber);
+				return 9;
+			}
+			i = 0;
+			while ((n1 = ReadLine(buf, sizeof buf, fp, &lineNumber)) > 0) {
+				int len, j, k;
+				len = strlen(buf);
+				for (j = k = 0; j < 5; j++, k++) {
+					if (5 + j * 15 <= len)
+						break;
+					strncpy(sval, buf + 5 + j * 15, 15);
+					sval[15] = 0;
+					if (sval[0] == ' ')
+						break;
+					coeffs[k] = strtod(sval, NULL);
+				}
+				j = MoleculeSetMOCoefficients(mol, i, -100000, k, coeffs);
+				if (j != 0) {
+					snprintf(errbuf, errbufsize, "Line %d: cannot set coefficients for MO %d", i + 1);
+					free(coeffs);
+					return 10;
+				}
+				i++;
+			}
+			if (strncmp(buf, " $END", 5) != 0) {
+				if ((n1 = ReadLine(buf, sizeof buf, fp, &lineNumber)) < 0)
+					break;
+			}
+			if (n1 < 0)
+				break;
 			continue;
 		} else if ((strstr(buf, "ELECTRIC POTENTIAL") != NULL || strstr(buf, "ELECTROSTATIC POTENTIAL") != NULL) && strstr(buf, "ELPOTT") != NULL) {
 			i = 0;
@@ -8245,7 +8455,7 @@ MoleculeGetNumberOfFrames(Molecule *mp)
 int
 MoleculeInsertFrames(Molecule *mp, IntGroup *group, const Vector *inFrame, const Vector *inFrameCell)
 {
-	int i, j, count, n_new, n_old, natoms, exframes, last_inserted, old_count;
+	int i, j, count, n_new, n_old, natoms, exframes, last_inserted;
 	Vector *tempv, *vp;
 	Atom *ap;
 	if (mp == NULL || (natoms = mp->natoms) == 0 || (count = IntGroupGetCount(group)) <= 0)
@@ -8618,7 +8828,7 @@ sCalcMOPoint(const BasisSet *bset, Int index, const Vector *vp, Double *tmp)
 	}
 	/*  Iterate over all shells  */
 	val = 0.0;
-	mobasep = bset->mo + (index - 1) * bset->nmos;
+	mobasep = bset->mo + (index - 1) * bset->ncomps;
 	for (i = 0, sp = bset->shells; i < bset->nshells; i++, sp++) {
 		pp = bset->priminfos + sp->p_idx;
 		cnp = bset->cns + sp->cn_idx;
@@ -8725,6 +8935,10 @@ MoleculeCalcMO(Molecule *mp, Int mono, const Vector *op, const Vector *dxp, cons
 	Double *tmp;
 	if (mp == NULL || mp->bset == NULL)
 		return -1;
+	if (mp->bset->cns == NULL) {
+		if (sSetupGaussianCoefficients(mp->bset) != 0)
+			return -1;
+	}
 	cp = (Cube *)calloc(sizeof(Cube), 1);
 	if (cp == NULL) {
 		return -1;

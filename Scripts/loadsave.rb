@@ -127,7 +127,13 @@ class Molecule
 #	save_undo_enabled = self.undo_enabled?
 #	self.undo_enabled = false
 	self.update_enabled = false
-	show_progress_panel("Loading GAMESS log file...")
+	mes = "Loading GAMESS log file"
+	show_progress_panel(mes)
+	ne_alpha = ne_beta = 0   #  number of electrons
+	rflag = nil  #  0, UHF; 1, RHF; 2, ROHF
+	mo_count = 0
+	ncomps = 0   #  Number of AO terms per one MO (sum of the number of components over all shells)
+	alpha_beta = nil   #  Flag to read alpha/beta MO appropriately
 	begin
 		fp = open(filename, "rb")
 		if nframes > 0
@@ -141,8 +147,9 @@ class Molecule
 				fp.close
 				break
 			end
-			line.chomp
+			line.chomp!
 			if line =~ /ATOM\s+ATOMIC\s+COORDINATES/ || line =~ /COORDINATES OF ALL ATOMS ARE/
+				set_progress_message(mes + "\nReading atomic coordinates...")
 				first_line = (line =~ /ATOMIC/)
 				line = fp.gets    #  Skip one line
 				n = 0
@@ -180,6 +187,7 @@ class Molecule
 					create_frame([coords])  #  Should not be (coords)
 				end
 			elsif line =~ /EQUILIBRIUM GEOMETRY LOCATED/i
+				set_progress_message(mes + "\nReading optimized coordinates...")
 				fp.gets; fp.gets; fp.gets
 				n = 0
 				while (line = fp.gets) != nil
@@ -191,16 +199,132 @@ class Molecule
 					n += 1
 					break if n >= natoms
 				end
+				if ne_alpha > 0 && ne_beta > 0
+					#  Allocate basis set record again, to update the atomic coordinates
+					allocate_basis_set_record(rflag, ne_alpha, ne_beta)
+				end
+			elsif line =~ /ATOMIC BASIS SET/
+				while (line = fp.gets)
+					break if line =~ /SHELL\s+TYPE\s+PRIMITIVE/
+				end
+				line = fp.gets
+				i = -1
+				nprims = 0
+				sym = -10  #  undefined
+				ncomps = 0
+				while (line = fp.gets)
+					break if line =~ /TOTAL NUMBER OF BASIS SET/
+					line.chomp!
+					if line =~ /^\s*$/
+					  #  End of one shell
+					  add_gaussian_orbital_shell(sym, nprims, i)
+					  # puts "add_gaussian_orbital_shell #{sym}, #{nprims}, #{i}"
+					  nprims = 0
+					  sym = -10
+					  next
+					end
+					a = line.split
+					if a.length == 1
+					  i += 1
+					  line = fp.gets  #  Skip the blank line
+					  next
+					elsif a.length == 5 || a.length == 6
+					  if sym == -10
+						case a[1]
+						when "S"
+						  sym = 0; n = 1
+						when "P"
+						  sym = 1; n = 3
+						when "L"
+						  sym = -1; n = 4
+						when "D"
+						  sym = 2; n = 6
+						else
+						  raise MolbyError, "Unknown gaussian shell type at line #{fp.lineno}"
+						end
+						ncomps += n
+					  end
+					  if (a.length == 5 && sym == -1) || (a.length == 6 && sym != -1)
+					    raise MolbyError, "Wrong format in gaussian shell information at line #{fp.lineno}"
+					  end
+					  exp = Float(a[3])
+					  c = Float(a[4])
+					  csp = Float(a[5] || 0.0)
+					  add_gaussian_primitive_coefficients(exp, c, csp)
+					  nprims += 1
+					  # puts "add_gaussian_primitive_coefficients #{exp}, #{c}, #{csp}"
+					else
+					  raise MolbyError, "Error in reading basis set information at line #{fp.lineno}"
+					end
+				end
+			elsif line =~ /NUMBER OF OCCUPIED ORBITALS/
+				line =~ /=\s*(\d+)/
+				n = Integer($1)
+				if line =~ /ALPHA/
+					ne_alpha = n
+				else
+					ne_beta = n
+				end
+			elsif line =~ /SCFTYP=(\w+)/
+				scftyp = $1
+				if ne_alpha > 0 && ne_beta > 0
+					rflag = 0
+					case scftyp
+					when "RHF"
+						rflag = 1
+					when "ROHF"
+						rflag = 2
+					end
+				end
+			elsif line =~ /(ALPHA|BETA)\s*SET/
+				alpha_beta = $1
+			elsif line =~ /^\s*(EIGENVECTORS|MOLECULAR ORBITALS)\s*$/
+				if mo_count == 0
+					allocate_basis_set_record(rflag, ne_alpha, ne_beta)
+					# puts "allocate_basis_set_record  #{rflag}, #{ne_alpha}, #{ne_beta}"
+				end
+				mo_count += 1
+				idx = 0
+				line = fp.gets; line = fp.gets;
+				set_progress_message(mes + "\nReading MO coefficients...")
+				while (line = fp.gets) != nil
+					break unless line =~ /^\s*\d/
+					mo_labels = line.split       #  MO numbers (1-based)
+					mo_energies = fp.gets.split
+					mo_symmetries = fp.gets.split
+					mo = mo_labels.map { [] }    #  array of *independent* empty arrays
+					while (line = fp.gets) != nil
+						break unless line =~ /^\s*\d/
+						line[14..-1].split.each_with_index { |s, i|
+							mo[i].push(Float(s))
+						}
+					end
+					mo.each_with_index { |m, i|
+						idx = Integer(mo_labels[i]) - 1
+						set_mo_coefficients(idx + (alpha_beta == "BETA" ? ncomps : 0), Float(mo_energies[i]), m)
+					#	if mo_labels[i] % 8 == 1
+					#		puts "set_mo_coefficients #{idx}, #{mo_energies[i]}, [#{m[0]}, ..., #{m[-1]}]"
+					#	end
+					}
+					if line =~ /^\s*$/ && idx < ncomps - 1
+						next
+					else
+						break
+					end
+				end
+				set_progress_message(mes)
 			end
 		end
-	ensure
+#	ensure
 #		self.undo_enabled = save_undo_enabled
-        hide_progress_panel
-		self.update_enabled = true
+#        hide_progress_panel
+#		self.update_enabled = true
 	end
 	if nframes > 0
 	  select_frame(nframes - 1)
 	end
+	hide_progress_panel
+	self.update_enabled = true
 	(n > 0 ? true : false)
   end
   

@@ -736,16 +736,18 @@ int
 MoleculeView::SetItemColor(MyListCtrl *ctrl, long row, long col, float *fg, float *bg)
 {
 	if (mview != NULL && mview->mol != NULL) {
+		return MainView_setColorForTable(mview, col, row, fg, bg);
+	/*
 		if (mview->tableIndex == kMainViewParameterTableIndex && col == -1) {
 			int src = ParameterTableGetItemSource(mview->mol->par, row);
-			if (src == -2) {  /* separator line */
+			if (src == -2) {  // separator line 
 				bg[0] = bg[1] = bg[2] = 0.6;
 				return 2;
-			} else if (src == -1) { /*  undefined parameters  */
+			} else if (src == -1) { //  undefined parameters
 				bg[0] = 1.0;
 				bg[1] = bg[2] = 0.2;
 				return 2;
-			} else if (src == 0) {  /*  local parameter  */
+			} else if (src == 0) {  //  local parameter
 				bg[0] = bg[1] = 1.0;
 				bg[2] = 0.6;
 				return 2;
@@ -753,6 +755,7 @@ MoleculeView::SetItemColor(MyListCtrl *ctrl, long row, long col, float *fg, floa
 		} else if (mview->tableIndex > 0 && mview->tableIndex < 5) {
 			return MainView_setColorForTable(mview, col, row, fg, bg);
 		}
+	*/
 	}
 	return 0;
 }
