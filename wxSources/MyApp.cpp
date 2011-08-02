@@ -901,7 +901,7 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname)
 	ShowProgressPanel(buf);
 	
 	//  Create log file in the current directory
-	snprintf(buf, sizeof buf, "%s.log");
+	snprintf(buf, sizeof buf, "%s.log", procname);
 	fplog = fopen(buf, "w");
 	if (fplog == NULL)
 		return -1;

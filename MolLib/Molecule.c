@@ -1935,7 +1935,8 @@ MoleculeSetMOCoefficients(Molecule *mol, Int idx, Double energy, Int ncomps, Dou
 	}
 	if (idx < 0 || idx >= bset->nmos)
 		return -4;  /*  Bad MO index  */
-	bset->moenergies[idx] = energy;
+	if (energy != -1000000)
+		bset->moenergies[idx] = energy;
 	if (ncomps < bset->ncomps)
 		return -5;  /*  Insufficient number of data provided  */
 	memmove(bset->mo + (idx * bset->ncomps), coeffs, sizeof(Double) * bset->ncomps);
@@ -2464,7 +2465,7 @@ MoleculeLoadGamessDatFile(Molecule *mol, const char *fname, char *errbuf, int er
 	FILE *fp;
 	int newmol = 0;
 	char buf[1024];
-	int lineNumber, i, natoms = 0;
+	int lineNumber, i, j, k, len, natoms = 0;
 	int nframes = 0;
 	int n1;
 	int ival[8];
@@ -2545,7 +2546,6 @@ MoleculeLoadGamessDatFile(Molecule *mol, const char *fname, char *errbuf, int er
 				}
 				/*  Skip until a blank line is found  */
 				while (ReadLine(buf, sizeof buf, fp, &lineNumber) > 0) {
-					int j;
 					for (j = 0; buf[j] == ' '; j++);
 					if (buf[j] == '\n')
 						break;
@@ -2620,30 +2620,29 @@ MoleculeLoadGamessDatFile(Molecule *mol, const char *fname, char *errbuf, int er
 				snprintf(errbuf, errbufsize, "Line %d: low memory during $VEC", lineNumber);
 				return 9;
 			}
-			i = 0;
+			i = k = 0;
 			while ((n1 = ReadLine(buf, sizeof buf, fp, &lineNumber)) > 0) {
-				int len, j, k;
 				len = strlen(buf);
-				for (j = k = 0; j < 5; j++, k++) {
-					if (5 + j * 15 <= len)
-						break;
-					strncpy(sval, buf + 5 + j * 15, 15);
+				if (strncmp(buf, " $END", 5) == 0)
+					break;
+				while ((j = 5 + (k % 5) * 15) <= len && buf[j] != 0 && buf[j] != '\n') {
+					strncpy(sval, buf + j, 15);
 					sval[15] = 0;
-					if (sval[0] == ' ')
-						break;
 					coeffs[k] = strtod(sval, NULL);
+					k++;
+					if ((k % 5) == 0)
+						break;
 				}
-				j = MoleculeSetMOCoefficients(mol, i, -100000, k, coeffs);
+				if (k < mol->bset->ncomps)
+					continue;
+				j = MoleculeSetMOCoefficients(mol, i, -1000000, k, coeffs);
 				if (j != 0) {
-					snprintf(errbuf, errbufsize, "Line %d: cannot set coefficients for MO %d", i + 1);
+					snprintf(errbuf, errbufsize, "Line %d: cannot set coefficients for MO %d", lineNumber, i + 1);
 					free(coeffs);
 					return 10;
 				}
 				i++;
-			}
-			if (strncmp(buf, " $END", 5) != 0) {
-				if ((n1 = ReadLine(buf, sizeof buf, fp, &lineNumber)) < 0)
-					break;
+				k = 0;
 			}
 			if (n1 < 0)
 				break;
