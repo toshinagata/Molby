@@ -171,7 +171,8 @@ RubyDialogFrame::OnDialogItemAction(wxCommandEvent &event)
 RubyDialog *
 RubyDialogCallback_new(void)
 {
-	RubyDialogFrame *dref = new RubyDialogFrame(GetMainFrame(), -1, _T("Ruby Dialog"));
+	/*  RubyDialogFrame should not have a close box  */
+	RubyDialogFrame *dref = new RubyDialogFrame(GetMainFrame(), -1, _T("Ruby Dialog"), wxDefaultPosition, wxDefaultSize, wxCAPTION | wxSYSTEM_MENU);
 	return (RubyDialog *)dref;
 }
 
