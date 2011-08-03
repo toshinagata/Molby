@@ -502,6 +502,9 @@ STUB void MoleculeCallback_lockMutex(void *mutex);
 STUB void MoleculeCallback_unlockMutex(void *mutex);
 STUB void MoleculeCallback_cannotModifyMoleculeDuringMDError(Molecule *mol);
 
+/*  This is also defined in Molby_extern.h, but it may be called from functions in Molecule.c  */
+STUB int MyAppCallback_checkInterrupt(void);
+	
 void MoleculeLock(Molecule *mol);
 void MoleculeUnlock(Molecule *mol);
 

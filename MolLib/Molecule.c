@@ -481,6 +481,22 @@ guessElement(Atom *ap)
 	return atomicNumber;
 }
 
+static int
+sReadLineWithInterrupt(char *buf, int size, FILE *stream, int *lineNumber)
+{
+	static int lastLineNumber = 0;
+	if (lineNumber != NULL) {
+		if (*lineNumber == 0)
+			lastLineNumber = 0;
+		else if (*lineNumber >= lastLineNumber + 1000) {
+			if (MyAppCallback_checkInterrupt() != 0)
+				return -1;  /*  User interrupt  */
+			lastLineNumber = *lineNumber;
+		}
+	}
+	return ReadLine(buf, size, stream, lineNumber);
+}
+
 int
 MoleculeLoadFile(Molecule *mp, const char *fname, const char *ftype, char *errbuf, int errbufsize)
 {
@@ -2473,7 +2489,7 @@ MoleculeLoadGamessDatFile(Molecule *mol, const char *fname, char *errbuf, int er
 	char sval[16];
 	Vector *vbuf = NULL;
 	IntGroup *ig;
-	int optimizing = 0;
+	int optimizing = 0, status = 0;
 
 	if (errbuf == NULL) {
 		errbuf = buf;
@@ -2500,7 +2516,7 @@ MoleculeLoadGamessDatFile(Molecule *mol, const char *fname, char *errbuf, int er
 	}
 	
 	lineNumber = 0;
-	while (ReadLine(buf, sizeof buf, fp, &lineNumber) > 0) {
+	while ((status = sReadLineWithInterrupt(buf, sizeof buf, fp, &lineNumber)) > 0) {
 	redo:
 		n1 = 0;
 		if (strncmp(buf, " $DATA", 6) == 0) {
@@ -2511,7 +2527,7 @@ MoleculeLoadGamessDatFile(Molecule *mol, const char *fname, char *errbuf, int er
 			i = 0;
 			ReadLine(buf, sizeof buf, fp, &lineNumber);  /*  Title  */
 			ReadLine(buf, sizeof buf, fp, &lineNumber);  /*  Symmetry  */
-			while (ReadLine(buf, sizeof buf, fp, &lineNumber) > 0) {
+			while ((status = sReadLineWithInterrupt(buf, sizeof buf, fp, &lineNumber)) > 0) {
 				if (strncmp(buf, " $END", 5) == 0)
 					break;
 				if (sscanf(buf, "%12s %lf %lf %lf %lf", sval, &dval[0], &dval[1], &dval[2], &dval[3]) < 5) {
@@ -2545,7 +2561,7 @@ MoleculeLoadGamessDatFile(Molecule *mol, const char *fname, char *errbuf, int er
 					vbuf[i].z = dval[3];
 				}
 				/*  Skip until a blank line is found  */
-				while (ReadLine(buf, sizeof buf, fp, &lineNumber) > 0) {
+				while ((status = sReadLineWithInterrupt(buf, sizeof buf, fp, &lineNumber)) > 0) {
 					for (j = 0; buf[j] == ' '; j++);
 					if (buf[j] == '\n')
 						break;
@@ -2567,6 +2583,8 @@ MoleculeLoadGamessDatFile(Molecule *mol, const char *fname, char *errbuf, int er
 			if (vbuf == NULL)
 				vbuf = (Vector *)calloc(sizeof(Vector), natoms);
 			nframes = MoleculeGetNumberOfFrames(mol);
+			if (status < 0)
+				break;
 			continue;
 		} else if (strstr(buf, "DATA FROM NSERCH") != NULL || (strstr(buf, "RESULTS FROM SUCCESSFUL") != NULL && (n1 = 1))) {
 			/*  Skip until the separator line is read (three or four lines)  */
@@ -2621,7 +2639,7 @@ MoleculeLoadGamessDatFile(Molecule *mol, const char *fname, char *errbuf, int er
 				return 9;
 			}
 			i = k = 0;
-			while ((n1 = ReadLine(buf, sizeof buf, fp, &lineNumber)) > 0) {
+			while ((status = sReadLineWithInterrupt(buf, sizeof buf, fp, &lineNumber)) > 0) {
 				len = strlen(buf);
 				if (strncmp(buf, " $END", 5) == 0)
 					break;
@@ -2644,12 +2662,12 @@ MoleculeLoadGamessDatFile(Molecule *mol, const char *fname, char *errbuf, int er
 				i++;
 				k = 0;
 			}
-			if (n1 < 0)
+			if (status < 0)
 				break;
 			continue;
 		} else if ((strstr(buf, "ELECTRIC POTENTIAL") != NULL || strstr(buf, "ELECTROSTATIC POTENTIAL") != NULL) && strstr(buf, "ELPOTT") != NULL) {
 			i = 0;
-			while ((n1 = ReadLine(buf, sizeof buf, fp, &lineNumber)) > 0) {
+			while ((status = sReadLineWithInterrupt(buf, sizeof buf, fp, &lineNumber)) > 0) {
 				Elpot *ep;
 				if (strstr(buf, "TOTAL NUMBER OF GRID POINTS") != NULL)
 					continue;
@@ -2662,10 +2680,14 @@ MoleculeLoadGamessDatFile(Molecule *mol, const char *fname, char *errbuf, int er
 				ep->esp = dval[3];
 				i++;
 			}
-			if (n1 > 0)
+			if (status > 0)
 				goto redo;  /*  This section has no end line, so the last line should be processed again  */
-			else break;    /*  End of file encountered  */
+			else break;    /*  End of file encountered or interrupted */
 		}  /*  TODO: read MOLPLT info if present  */
+	}
+	if (status < 0) {
+		snprintf(errbuf, errbufsize, "User interrupt at line %d", lineNumber);
+		return 11;
 	}
 	if (vbuf != NULL)
 		free(vbuf);
