@@ -5,7 +5,7 @@
     An Interactive Molecular Modeling Software
         with Integrated Ruby Interpreter
   
-          Version 0.5.6 build 20110730
+          Version 0.5.6.1 build 20110803
 
                   Toshi Nagata
 
@@ -56,7 +56,16 @@ Building Molby is somewhat complicated because you need static libraries of wxWi
 
 Install Xcode, if you have not done so yet. The Xcode project included in the source distribution is for Xcode 3.0 and later, thus you need Mac OS 10.5. It may work with Xcode 2.5 on Mac OS 10.4, but this have not been tested.
 
-To build AmberTools, you need to have gfortran installed. The author uses a binary build available at the "R for Mac OS X" website (http://r.research.att.com/tools/).
+To build AmberTools, you need to have gfortran installed. The author uses a binary build available at the "R for Mac OS X" website (http://r.research.att.com/tools/, gfortran-4.2.3.dmg).
+
+We need static linking of libgfortran.a. For that purpose, the following modification should be done after installation of gfortran.
+
+% cd /usr/local/lib
+% sudo cp libgfortran.a libgfortran-static.a  #  Copy as a different name
+% sudo strip -S libgfortran-static.a  #  Remove the symbols
+% sudo ranlib libgfortran-static.a
+
+The last two lines are necessary to avoid linker warnings saying "Can't find atom for N_GSYM stabs."
 
 (ii) wxWidgets
 
@@ -188,5 +197,6 @@ $ make setup  #  To make the installer
 2010.1.21.
 2010.1.31. Added notice on AmberTools1.3
 2010.4.29. Update description for MinGW/MSYS
+2011.8.3.  Added notice on static linking of libgfortran for Mac
 
 Toshi Nagata

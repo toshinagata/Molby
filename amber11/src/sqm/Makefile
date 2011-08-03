@@ -83,7 +83,7 @@ install: sqm$(SFX)
 	mv sqm$(SFX) $(BINDIR)
 
 sqm$(SFX): qmmm_module.o $(SQMOBJ) netlib sys
-	$(FC) -o sqm$(SFX)  $(SQMOBJ) qmmm_module.o $(FLIBSF) ../lib/sys.a $(LDFLAGS)
+	$(FC) -o sqm$(SFX)  $(SQMOBJ) qmmm_module.o $(FLIBSF) ../lib/sys.a $(LDFLAGS) $(FLDFLAGS)
 
 #-----------LIBS
 

@@ -51,7 +51,7 @@ all:
 		@echo "(lib: make specific .o files, driven by other Makefiles)"
 
 new2oldparm$(SFX):  new2oldparm.o nxtsec.o
-		$(FC) -o new2oldparm$(SFX) new2oldparm.o nxtsec.o
+		$(FC) -o new2oldparm$(SFX) new2oldparm.o nxtsec.o $(LDFLAGS) $(FLDFLAGS)
 
 
 sys.a:   sys.o wallclock.o random.o veclib.o

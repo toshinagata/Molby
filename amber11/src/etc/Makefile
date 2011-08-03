@@ -32,13 +32,13 @@ PERLPROGS= calcpka.pl cpinutil.pl CPin.pm lmodprmtop
 all:		$(PROGS) 
 
 nukit$(SFX):	nukit.o
-	$(FC) -o nukit nukit.o $(LDFLAGS)
+	$(FC) -o nukit nukit.o $(LDFLAGS) $(FLDFLAGS)
 
 nucgen$(SFX):	$(NOBJ) syslib
-	$(FC) -o nucgen$(SFX) $(NOBJ) ../lib/sys2.a $(LDFLAGS)
+	$(FC) -o nucgen$(SFX) $(NOBJ) ../lib/sys2.a $(LDFLAGS) $(FLDFLAGS)
 
 ambpdb$(SFX): 	$(AOBJ) syslib 
-	$(FC) -o ambpdb$(SFX) $(AOBJ) ../lib/sys2.a $(LDFLAGS)
+	$(FC) -o ambpdb$(SFX) $(AOBJ) ../lib/sys2.a $(LDFLAGS) $(FLDFLAGS)
 
 elsize$(SFX): elsize.o
 	$(CC) $(CFLAGS) -o elsize$(SFX) elsize.o $(LM)
@@ -48,7 +48,7 @@ molsurf$(SFX):  molsurf.o
 molsurf.o:  molsurf.h
 
 resp$(SFX):	lapack.o resp.o
-	$(FC) $(LDFLAGS)  lapack.o resp.o -o resp$(SFX)
+	$(FC) $(LDFLAGS)  lapack.o resp.o -o resp$(SFX) $(FLDFLAGS)
 
 syslib::
 	cd ../lib && $(MAKE) sys2.a
