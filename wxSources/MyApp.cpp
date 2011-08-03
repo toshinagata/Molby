@@ -61,6 +61,7 @@
 #include <CoreFoundation/CoreFoundation.h>
 #undef T_DATA
 #include <Carbon/Carbon.h>
+#include <sys/wait.h>  /* for waitpid()  */
 #endif
 
 #pragma mark ====== MyApp ======
@@ -160,7 +161,6 @@ MyApp::MyApp(void)
 
 bool MyApp::OnInit(void)
 {
-
 	//  Set defaults
 #ifdef __WXMAC__
 	wxSystemOptions::SetOption(wxT("mac.listctrl.always_use_generic"), 1);
@@ -554,7 +554,9 @@ MyApp::SetProgressMessage(const char *mes)
 int
 MyApp::IsInterrupted()
 {
-	return m_progressFrame->CheckInterrupt();
+	if (m_progressFrame != NULL)
+		return m_progressFrame->CheckInterrupt();
+	else return 0;
 }
 
 /*
@@ -875,11 +877,20 @@ MyApp::GetGlobalParameterListCtrl()
 	else return NULL;
 }
 
+#define LOG_SUBPROCESS 0
+#if LOG_SUBPROCESS
+static FILE *fplog;
+#endif
+
 void
 MyApp::OnEndProcess(wxProcessEvent &event)
 {
 	m_processTerminated = true;
 	m_processExitCode = event.GetExitCode();
+#if LOG_SUBPROCESS
+	if (fplog != NULL)
+		fprintf(fplog, "OnEndProcess called\n");
+#endif
 }
 
 int
@@ -888,7 +899,6 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname)
 	const int sEndProcessMessageID = 2;
 	int status = 0;
 	char buf[256];
-	FILE *fplog;
 	size_t len, len_total;
 	wxString cmdstr(cmdline, wxConvUTF8);
 #if defined(__WXMSW__)
@@ -900,11 +910,18 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname)
 	snprintf(buf, sizeof buf, "Running %s...", procname);
 	ShowProgressPanel(buf);
 	
-	//  Create log file in the current directory
-	snprintf(buf, sizeof buf, "%s.log", procname);
-	fplog = fopen(buf, "w");
-	if (fplog == NULL)
-		return -1;
+	//  Create log file in the document home directory
+#if LOG_SUBPROCESS
+	int nn = 0;
+	{
+		char *dochome = MyAppCallback_getDocumentHomeDir();
+		snprintf(buf, sizeof buf, "%s/%s.log", dochome, procname);
+		free(dochome);
+		fplog = fopen(buf, "w");
+		if (fplog == NULL)
+			return -1;
+	}
+#endif
 
 	//  Create proc object and call subprocess
 	wxProcess *proc = new wxProcess(wxGetApp().GetProgressFrame(), sEndProcessMessageID);
@@ -920,16 +937,21 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname)
 		MyAppCallback_errorMessageBox("Cannot start %s", procname);
 		proc->Detach();
 		HideProgressPanel();
+#if LOG_SUBPROCESS
 		fclose(fplog);
+#endif
 		return -1;
 	}
+#if LOG_SUBPROCESS
+	fprintf(fplog, "[DEBUG]pid = %ld\n", pid);
+#endif
 	
 	//  Wait until process ends or user interrupts
 	wxInputStream *in = proc->GetInputStream();
 	wxInputStream *err = proc->GetErrorStream();
 	len_total = 0;
 	while (1) {
-		if (m_processTerminated) {
+		if (m_processTerminated || !wxProcess::Exists(pid)) {
 			if (m_processExitCode != 0) {
 				/*  Error from subprocess  */
 				MyAppCallback_errorMessageBox("%s failed with exit code %d.", procname, m_processExitCode);
@@ -937,6 +959,21 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname)
 			} else status = 0;
 			break;
 		}
+#if defined(__WXMAC__)
+		if (waitpid(pid, &status, WNOHANG) != 0) {
+			/*  Already finished, although not detected by wxProcess  */
+			/*  This sometimes happens on ppc Mac  */
+			proc->Detach();
+			status = WEXITSTATUS(status);
+			break;
+		}
+#endif
+#if LOG_SUBPROCESS
+		if (++nn >= 100) {
+			fprintf(fplog, "[DEBUG]pid %ld exists\n", pid);
+			nn = 0;
+		}
+#endif
 		if (wxGetApp().IsInterrupted()) {
 			/*  User interrupt  */
 			int kflag = wxKILL_CHILDREN;
@@ -966,7 +1003,9 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname)
 			if ((len = in->LastRead()) > 0) {
 				buf[len] = 0;
 				len_total += len;
+#if LOG_SUBPROCESS
 				fprintf(fplog, "%s", buf);
+#endif
 				MyAppCallback_setConsoleColor(0);
 				MyAppCallback_showScriptMessage("%s", buf);
 			}
@@ -976,14 +1015,19 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname)
 			if ((len = err->LastRead()) > 0) {
 				buf[len] = 0;
 				len_total += len;
+#if LOG_SUBPROCESS
 				fprintf(fplog, "%s", buf);
+#endif
 				MyAppCallback_setConsoleColor(1);
 				MyAppCallback_showScriptMessage("\n%s", buf);
 				MyAppCallback_setConsoleColor(0); 
 			}
 		}
 	}
+#if LOG_SUBPROCESS
 	fclose(fplog);
+#endif
+
 	HideProgressPanel();
 /*	if (len_total > 0)
 		MyAppCallback_showRubyPrompt(); */
