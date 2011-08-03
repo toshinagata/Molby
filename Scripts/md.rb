@@ -534,21 +534,24 @@ class Molecule
 			name, weight = s.split
 			wtable[name] = Float(weight)
 		  when 2
-		    types, k, r0, com = s.split(" ", 4)
+		    types = s[0..4]
+			k, r0, com = s[5..-1].split(" ", 3)
 		    pp = par.bonds.lookup(types, :local, :missing) || par.bonds.insert
 			pp.atom_types = types
 			pp.k = k
 			pp.r0 = r0
 			pp.comment = com
 		  when 3
-		    types, k, a0, com = s.split(" ", 4)
+		    types = s[0..7]
+			k, a0, com = s[8..-1].split(" ", 3)
 			pp = par.angles.lookup(types, :local, :missing) || par.angles.insert
 			pp.atom_types = types
 			pp.k = k
 			pp.a0 = a0
 			pp.comment = com
 		  when 4
-		    types, n, k, phi0, period, com = s.split(" ", 6)
+		    types = s[0..10]
+			n, k, phi0, period, com = s[11..-1].split(" ", 5)
 			pp = par.dihedrals.lookup(types, :local, :missing) || par.dihedrals.insert
 			pp.atom_types = types
 			pp.mult = 1
@@ -557,7 +560,8 @@ class Molecule
 			pp.period = Float(period).round
 			pp.comment = com
 		  when 5
-		    types, k, phi0, period, com = s.split(" ", 5)
+		    types = s[0..10]
+		    k, phi0, period, com = s[11..-1].split(" ", 4)
 			pp = par.impropers.lookup(types, :local, :missing) || par.impropers.insert
 			pp.atom_types = types
 			pp.mult = 1
