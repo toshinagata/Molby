@@ -227,3 +227,23 @@ FLDFLAGS= -nodefaultlibs -lgfortran-static -lgcc -lc -lm -lSystem -lSystemStubs 
 % sudo strip -S libgfortran-static.a
 % sudo ranlib libgfortran-static.a
 
+2011.8.3.
+0.5.6.1 を公開。
+
+Crash on running antechamber/parmchk on PPC Mac is (hopefully) fixed.
+Mac: resp and sqm (semiempirial QM calculation invoked by antechamber) caused crash unless gfortran is installed. To fix this, config.h/Makefiles for AmberTools is modified so that gfortran library is statically linked
+Occasionally, termination of the subprocess (like antechamber) was not detected properly, and the subprocess was left as a zombie. Improved, but may not be completely fixed.
+Loading GAMESS dat file now can be interrupted by ESC.
+Disable close box of RubyDialogFrame.
+On importing frcmod, atom type with a single character (like "c") was not recognized properly. Fixed.
+MO import from GAMESS log/dat files are implemented.
+ruby-1.8.7-p160.tar.gz is added (required for building)
+
+PPC Mac での antechamber/parmchk のクラッシュを修正。
+Mac: resp, sqm（半経験的量子化学計算）のクラッシュを修正。AmberTools の config.h/Makefile を修正して gfortran のライブラリを静的リンクするようにした。
+Antechamber などのサブプロセスの終了が検出できず、ゾンビになっていることがあった。一応修正したが、まだ問題があるかも。
+GAMESS dat ファイルの読み込みが ESC で中断できるようになった。
+RubyDialogFrame のクローズボタンをなくした。
+Frcmod インポート（antechamber/parmchk 後の読み込みを含む）で、原子タイプが一文字のものを正しく読めるように修正。
+GAMESS dat, log ファイルから MO を読み込むように修正。
+
