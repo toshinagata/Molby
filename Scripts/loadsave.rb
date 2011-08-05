@@ -39,8 +39,10 @@ class Molecule
 		break
       end
 #      next if line.match(/^TITLE/)
-      line.chomp!
-      values = line.split(' ')
+#      line.chomp!
+#      values = line.split(' ')
+	  line.strip!
+	  values = line.scan(/......../)
       if count + values.size > natoms * 3
         raise MolbyError, sprintf("crd format error - too many values at line %d in file %s; number of atoms = %d, current frame = %d", fp.lineno, fp.path, natoms, frame)
       end
