@@ -2443,7 +2443,7 @@ md_minimize_step(MDArena *arena)
 		if (lambda < low_limit) {
 			/*  Cannot find point with lower energy than the starting point  */
 			/*  Restore the original position  */
-			for (j = 0, ap = atoms, vp = arena->old_pos; j < natoms; j++, ap++, vp++) {
+			for (j = 0, ap = atoms, vp = arena->old_pos, vdr = arena->verlets_dr; j < natoms; j++, ap++, vp++, vdr++) {
 				if (ap->fix_force < 0)
 					continue;
 				r = ap->r;
