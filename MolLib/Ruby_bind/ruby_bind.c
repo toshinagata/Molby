@@ -8402,7 +8402,7 @@ Molby_startup(const char *script, const char *dir)
 	
 	/*  Global variable to hold backtrace  */
 	rb_define_variable("$backtrace", &gMolbyBacktrace);
-	
+
 	/*  Register interrupt check code  */
 	rb_add_event_hook(s_Event_Callback, RUBY_EVENT_ALL);
 	

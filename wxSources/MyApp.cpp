@@ -66,6 +66,8 @@
 
 #pragma mark ====== MyApp ======
 
+static char *sLastBuildString = "";
+
 MyFrame *frame = (MyFrame *) NULL;
 
 IMPLEMENT_APP(MyApp)
@@ -242,6 +244,7 @@ bool MyApp::OnInit(void)
 	consoleFrame->Show(true);
 
 	/*  Initialize Ruby interpreter with the startup script  */
+	/*  (Also read startup information)  */
 	{
 		static const char fname[] = "startup.rb";
 		wxString dirname = FindResourcePath();
@@ -252,6 +255,24 @@ bool MyApp::OnInit(void)
 		wxString cwd = wxGetCwd();
 		wxSetWorkingDirectory(dirname);
 
+		/*  Read build information (for About dialog)  */
+		{
+			FILE *fp = fopen("../buildInfo.txt", "r");
+			if (fp != NULL) {
+				char buf[200];
+				if (fgets(buf, sizeof(buf), fp) != NULL) {
+					char *p1 = strchr(buf, '\"');
+					char *p2 = strrchr(buf, '\"');
+					if (p1 != NULL && p2 != NULL && p2 - p1 > 1) {
+						memmove(buf, p1 + 1, p2 - p1 - 1);
+						buf[p2 - p1 - 1] = 0;
+						asprintf(&sLastBuildString, "Last compile: %s\n", buf);
+					}
+				}
+				fclose(fp);
+			}
+		}
+		
 		/*  Read atom display parameters  */
 		if (ElementParameterInitialize("element.par", &wbuf) != 0) {
 			SetConsoleColor(1);
@@ -1065,7 +1086,7 @@ void MyFrame::OnAbout(wxCommandEvent& WXUNUSED(event) )
 	extern const char *gVersionString, *gCopyrightString;
 	char *s;
 	asprintf(&s, 
-			 "%s\n%s\n\n"
+			 "%s\n%s\n%s\n"
 			 "Including:\n"
 			 "AmberTools 1.3, http://ambermd.org/\n"
 			 "  Copyright (c) Junmei Wang, Ross C. Walker, \n"
@@ -1075,7 +1096,7 @@ void MyFrame::OnAbout(wxCommandEvent& WXUNUSED(event) )
 			 "  wxWidgets team\n"
 			 "  Portions (c) 1996 Artificial Intelligence Applications Institute\n"
 			 "ruby %s\n%s",
-			 gVersionString, gCopyrightString,
+			 gVersionString, gCopyrightString, sLastBuildString,
 			 wxMAJOR_VERSION, wxMINOR_VERSION, wxRELEASE_NUMBER,
 			 gRubyVersion, gRubyCopyright);
 	wxString str(s, wxConvUTF8);
