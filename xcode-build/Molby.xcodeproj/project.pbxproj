@@ -114,7 +114,7 @@
 		E433CE810EC709BD00675985 /* Missing.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Missing.h; path = ../MolLib/Missing.h; sourceTree = SOURCE_ROOT; };
 		E433CE820EC709BD00675985 /* MolAction.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = MolAction.c; path = ../MolLib/MolAction.c; sourceTree = SOURCE_ROOT; wrapsLines = 1; };
 		E433CE830EC709BD00675985 /* MolAction.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MolAction.h; path = ../MolLib/MolAction.h; sourceTree = SOURCE_ROOT; };
-		E433CE840EC709BD00675985 /* Molecule.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = Molecule.c; path = ../MolLib/Molecule.c; sourceTree = SOURCE_ROOT; };
+		E433CE840EC709BD00675985 /* Molecule.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = Molecule.c; path = ../MolLib/Molecule.c; sourceTree = SOURCE_ROOT; wrapsLines = 1; };
 		E433CE850EC709BD00675985 /* Molecule.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Molecule.h; path = ../MolLib/Molecule.h; sourceTree = SOURCE_ROOT; };
 		E433CE860EC709BD00675985 /* MolLib.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MolLib.h; path = ../MolLib/MolLib.h; sourceTree = SOURCE_ROOT; };
 		E433CE870EC709BD00675985 /* Object.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = Object.c; path = ../MolLib/Object.c; sourceTree = SOURCE_ROOT; };

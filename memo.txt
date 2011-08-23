@@ -247,3 +247,16 @@ RubyDialogFrame のクローズボタンをなくした。
 Frcmod インポート（antechamber/parmchk 後の読み込みを含む）で、原子タイプが一文字のものを正しく読めるように修正。
 GAMESS dat, log ファイルから MO を読み込むように修正。
 
+2011.8.23.
+0.5.6.2.
+
+Gaussian fchk のインポートができなくなっていた (0.5.6.1 で発生)。修正。
+最後にコンパイルした日時を 'About' ダイアログで表示するようにした。
+Amber mdcrd のインポートで、座標が８桁になる時にエラーが発生していたので修正。
+構造最適化で時々クラッシュしていたのを修正。
+
+Fchk import was broken (enbug in 0.5.6.1); fixed.
+Final compile date/time is now shown in the 'About' window.
+Fix mdcrd import to allow coordinates using full 8 digits (like -123.456 or 1234.567).
+Occasional crash during minimization is fixed.
+
