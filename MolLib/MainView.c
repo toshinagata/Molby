@@ -3194,7 +3194,7 @@ MainView_valueForTable(MainView *mview, int column, int row, char *buf, int bufs
 				else if (idx >= bset->ne_beta && idx < bset->ne_alpha)
 					s2 = "(SOMO)";
 				else if (idx == bset->ne_alpha)
-					s2 = "(HOMO)";
+					s2 = "(LUMO)";
 			}
 			switch (column) {
 				case 0: snprintf(buf, bufsize, "%d%s%s", moidx + 1, s1, s2); break;

@@ -2120,7 +2120,7 @@ MoleculeLoadGaussianFchkFile(Molecule *mp, const char *fname, char *errbuf, int 
 	FILE *fp;
 	char buf[1024];
 	int lineNumber;
-	int natoms, nbasis, i, j, k, n, mxbond, retval, ncomps, nprims;
+	int natoms, nbasis, i, j, k, n, mxbond, retval, ncomps, nprims, nelec;
 	BasisSet *bset;
 	ShellInfo *sp;
 	PrimInfo *pp;
@@ -2151,6 +2151,7 @@ MoleculeLoadGaussianFchkFile(Molecule *mp, const char *fname, char *errbuf, int 
 	natoms = nbasis = -1;
 	mxbond = 0;
 	ncomps = 0;
+	nelec = 0;
 	nprims = 0;
 	nary = 0;
 	iary = NULL;
@@ -2158,6 +2159,15 @@ MoleculeLoadGaussianFchkFile(Molecule *mp, const char *fname, char *errbuf, int 
 	while (ReadLine(buf, sizeof buf, fp, &lineNumber) > 0) {
 		char *tokens[16];
 		char *p = buf + 41;
+		if (lineNumber == 2) {
+			/*  job info line  */
+			if (buf[10] == 'U')
+				bset->rflag = 0;  /*  UHF  */
+			else if (buf[11] == 'O')
+				bset->rflag = 2;  /*  ROHF  */
+			else bset->rflag = 1; /*  RHF  */
+			continue;
+		}
 		while (p > buf && *p == ' ')
 			p--;
 		p[1] = 0;
@@ -2180,11 +2190,29 @@ MoleculeLoadGaussianFchkFile(Molecule *mp, const char *fname, char *errbuf, int 
 				retval = 2;
 				goto cleanup;
 			}
-			bset->ne_beta = i / 2;
-			bset->ne_alpha = i - bset->ne_beta;
+			nelec = i;
+		} else if (strcmp(buf, "Number of alpha electrons") == 0) {
+			if (tokens[1] == NULL || (i = atoi(tokens[1])) <= 0) {
+				snprintf(errbuf, errbufsize, "Line %d: strange number of alpha electrons: %s", lineNumber, tokens[1]);
+				retval = 2;
+				goto cleanup;
+			}
+			bset->ne_alpha = i;
+		} else if (strcmp(buf, "Number of beta electrons") == 0) {
+			if (tokens[1] == NULL || (i = atoi(tokens[1])) <= 0) {
+				snprintf(errbuf, errbufsize, "Line %d: strange number of beta electrons: %s", lineNumber, tokens[1]);
+				retval = 2;
+				goto cleanup;
+			}
+			bset->ne_beta = i;
+			if (bset->ne_alpha + bset->ne_beta != nelec) {
+				snprintf(errbuf, errbufsize, "Line %d: sum of alpha (%d) and beta (%d) electrons does not match the number of electrons (%d)", lineNumber, (int)bset->ne_alpha, (int)bset->ne_beta, (int)nelec);
+				retval = 2;
+				goto cleanup;
+			}
 		} else if (strcmp(buf, "Number of basis functions") == 0) {
 			if (tokens[1] == NULL || (nbasis = atoi(tokens[1])) <= 0) {
-				snprintf(errbuf, errbufsize, "Line %d: strange number of electrons: %s", lineNumber, tokens[1]);
+				snprintf(errbuf, errbufsize, "Line %d: strange number of basis functions: %s", lineNumber, tokens[1]);
 				retval = 2;
 				goto cleanup;
 			}
@@ -2312,7 +2340,7 @@ MoleculeLoadGaussianFchkFile(Molecule *mp, const char *fname, char *errbuf, int 
 				sp->m_idx = n;
 				n += sp->ncomp;
 			}
-			ncomps = n;
+			bset->ncomps = ncomps = n;
 			free(iary);
 			iary = NULL;
 		} else if (strcmp(buf, "Number of primitives per shell") == 0) {
@@ -2413,7 +2441,7 @@ MoleculeLoadGaussianFchkFile(Molecule *mp, const char *fname, char *errbuf, int 
 			}
 		} else if (strcmp(buf, "Alpha MO coefficients") == 0) {
 			if (tokens[2] == NULL || (i = atoi(tokens[2])) <= 0 || i != ncomps * ncomps) {
-				snprintf(errbuf, errbufsize, "Line %d: wrong or inconsistent number of MO coefficients: %s", lineNumber, tokens[2]);
+				snprintf(errbuf, errbufsize, "Line %d: wrong or inconsistent number of alpha MO coefficients: %s", lineNumber, tokens[2]);
 				retval = 2;
 				goto cleanup;
 			}
@@ -2422,8 +2450,41 @@ MoleculeLoadGaussianFchkFile(Molecule *mp, const char *fname, char *errbuf, int 
 				retval = 2;
 				goto cleanup;
 			}
+		} else if (strcmp(buf, "Beta Orbital Energies") == 0) {
+			if (tokens[2] == NULL || (i = atoi(tokens[2])) <= 0 || i != ncomps) {
+				snprintf(errbuf, errbufsize, "Line %d: wrong or inconsistent number of beta orbitals: %s", lineNumber, tokens[2]);
+				retval = 2;
+				goto cleanup;
+			}
+			if (sReadNumberArray(&dary, &nary, sizeof(Double), i, fp, &lineNumber) != 0) {
+				snprintf(errbuf, errbufsize, "Line %d: cannot read beta orbital energies", lineNumber);
+				retval = 2;
+				goto cleanup;
+			}
+			bset->moenergies = (Double *)realloc(bset->moenergies, sizeof(Double) * 2 * ncomps);
+			bset->nmos = ncomps * 2;
+			bset->mo = (Double *)realloc(bset->mo, sizeof(Double) * 2 * ncomps * ncomps);
+			memmove(bset->moenergies + ncomps, dary, sizeof(Double) * ncomps);
+			memset(bset->mo + ncomps * ncomps, 0, sizeof(Double) * ncomps * ncomps);
+			free(dary);
+			dary = NULL;
+		} else if (strcmp(buf, "Beta MO coefficients") == 0) {
+			if (tokens[2] == NULL || (i = atoi(tokens[2])) <= 0 || i != ncomps * ncomps) {
+				snprintf(errbuf, errbufsize, "Line %d: wrong or inconsistent number of beta MO coefficients: %s", lineNumber, tokens[2]);
+				retval = 2;
+				goto cleanup;
+			}
+			if (sReadNumberArray(&dary, &nary, sizeof(Double), i, fp, &lineNumber) != 0) {
+				snprintf(errbuf, errbufsize, "Line %d: cannot read alpha MO coefficients", lineNumber);
+				retval = 2;
+				goto cleanup;
+			}
+			bset->mo = (Double *)realloc(bset->mo, sizeof(Double) * 2 * ncomps * ncomps);  /*  Should be unnecessary, just in case  */
+			memmove(bset->mo + ncomps * ncomps, dary, sizeof(Double) * ncomps * ncomps);
+			free(dary);
+			dary = NULL;
 		} else if (strcmp(buf, "Total SCF Density") == 0) {
-			if (tokens[2] == NULL || (i = atoi(tokens[2])) <= 0 || i != bset->nmos * (bset->nmos + 1) / 2) {
+			if (tokens[2] == NULL || (i = atoi(tokens[2])) <= 0 || i != ncomps * (ncomps + 1) / 2) {
 				snprintf(errbuf, errbufsize, "Line %d: wrong or inconsistent number of SCF densities: %s", lineNumber, tokens[2]);
 				retval = 2;
 				goto cleanup;
