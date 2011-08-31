@@ -1875,8 +1875,8 @@ MoleculeAddGaussianOrbitalShell(Molecule *mol, Int sym, Int nprims, Int a_idx)
 	shellp->nprim = nprims;
 	shellp->a_idx = a_idx;
 	if (bset->shells < shellp) {
-		shellp->m_idx = shellp[-1].m_idx + shellp->ncomp;
-		shellp->p_idx = shellp[-1].p_idx + shellp->nprim;
+		shellp->m_idx = shellp[-1].m_idx + shellp[-1].ncomp;
+		shellp->p_idx = shellp[-1].p_idx + shellp[-1].nprim;
 	} else {
 		shellp->m_idx = 0;
 		shellp->p_idx = 0;
