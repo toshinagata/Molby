@@ -2185,21 +2185,21 @@ MoleculeLoadGaussianFchkFile(Molecule *mp, const char *fname, char *errbuf, int 
 			/*  Also allocate nuclear charge array  */
 			bset->nuccharges = (Double *)calloc(sizeof(Double), natoms);
 		} else if (strcmp(buf, "Number of electrons") == 0) {
-			if (tokens[1] == NULL || (i = atoi(tokens[1])) <= 0) {
+			if (tokens[1] == NULL || (i = atoi(tokens[1])) < 0) {
 				snprintf(errbuf, errbufsize, "Line %d: strange number of electrons: %s", lineNumber, tokens[1]);
 				retval = 2;
 				goto cleanup;
 			}
 			nelec = i;
 		} else if (strcmp(buf, "Number of alpha electrons") == 0) {
-			if (tokens[1] == NULL || (i = atoi(tokens[1])) <= 0) {
+			if (tokens[1] == NULL || (i = atoi(tokens[1])) < 0) {
 				snprintf(errbuf, errbufsize, "Line %d: strange number of alpha electrons: %s", lineNumber, tokens[1]);
 				retval = 2;
 				goto cleanup;
 			}
 			bset->ne_alpha = i;
 		} else if (strcmp(buf, "Number of beta electrons") == 0) {
-			if (tokens[1] == NULL || (i = atoi(tokens[1])) <= 0) {
+			if (tokens[1] == NULL || (i = atoi(tokens[1])) < 0) {
 				snprintf(errbuf, errbufsize, "Line %d: strange number of beta electrons: %s", lineNumber, tokens[1]);
 				retval = 2;
 				goto cleanup;
