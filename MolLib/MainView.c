@@ -253,8 +253,8 @@ MainView_refreshCachedInfo(MainView *mview)
 		/*  Do nothing (tableCache will not be used)  */
 	} else if (mview->tableIndex == kMainViewMOTableIndex) {  /* MO infos  */
 		/*  Really no need to cache info, but create it anyway to simplify code  */
-		if (mol->bset != NULL && mol->bset->nmos > 0)
-			IntGroupAdd(mview->tableCache, 0, mol->bset->nmos);
+		if (mol->bset != NULL && mol->bset->ncomps > 0)
+			IntGroupAdd(mview->tableCache, 0, mol->bset->ncomps);
 	}
 	
 	/*  Clear internal selection flag  */
@@ -2911,14 +2911,14 @@ static ColumnInfoRecord sImproperColumns[] = {
 static ColumnInfoRecord sParameterColumns[] = {
 {"class", 5, 0}, {"type", 9, 0}, {"", 6, 0}, {"", 6, 0}, {"", 6, 0}, {"", 6, 0}, {"", 6, 0}, {"", 6, 0}, {"src", 8, 0}, {"comment", 25, 0}, {NULL}
 };
-static ColumnInfoRecord sMOInfoColumns[] = {
-{"MO", 10, 0}, {"energy", 20, 0}, {NULL}
+static ColumnInfoRecord sMOEnergyColumns[] = {
+{"MO", 5, 0}, {"alpha energy", 12, 0}, {"beta energy", 12, 0}, {NULL}
 };
 static ColumnInfoRecord *sColumnInfo[] = {
-sAtomColumns, sBondColumns, sAngleColumns, sDihedralColumns, sImproperColumns, sParameterColumns, sMOInfoColumns
+sAtomColumns, sBondColumns, sAngleColumns, sDihedralColumns, sImproperColumns, sParameterColumns, sMOEnergyColumns
 };
 static char *sTableTitles[] = {
-	"atom", "bond", "angle", "dihedral", "improper", "parameter", "MO info"
+	"atom", "bond", "angle", "dihedral", "improper", "parameter", "MO energy"
 };
 
 void
@@ -3165,40 +3165,35 @@ MainView_valueForTable(MainView *mview, int column, int row, char *buf, int bufs
 			}
 			default: buf[0] = 0; break;
 		}		
-	} else if (mview->tableIndex == kMainViewMOTableIndex) { /* MO info */
+	} else if (mview->tableIndex == kMainViewMOTableIndex) { /* MO energy */
 		BasisSet *bset = mview->mol->bset;
 		idx = row;
 		buf[0] = 0;
-		if (bset != NULL && idx >= 0 && idx < bset->nmos) {
-			char *s1 = "", *s2 = "";
-			int moidx = idx % bset->ncomps;
-			if (bset->rflag == 0) {
-				if (idx < bset->ncomps) {
-					/*  Alpha orbitals  */
-					s1 = "A";
-					if (idx == bset->ne_alpha - 1)
-						s2 = "(HSOMO)";
-					else if (idx == bset->ne_alpha)
-						s2 = "(LUMO)";
-				} else {
-					/*  Beta orbitals  */
-					s1 = "B";
-					if (moidx == bset->ne_beta - 1)
-						s2 = "(HSOMO)";
-					else if (moidx == bset->ne_beta)
-						s2 = "(LUMO)";
-				}
+		if (bset != NULL && idx >= 0 && idx < bset->ncomps) {
+			if (column == 0) {
+				snprintf(buf, bufsize, "%d", idx + 1);
+			} else if (column >= 3) {
+				return;  /*  Cannot happen  */
 			} else {
-				if (idx == bset->ne_beta - 1)
-					s2 = "(HOMO)";
-				else if (idx >= bset->ne_beta && idx < bset->ne_alpha)
-					s2 = "(SOMO)";
-				else if (idx == bset->ne_alpha)
-					s2 = "(LUMO)";
-			}
-			switch (column) {
-				case 0: snprintf(buf, bufsize, "%d%s%s", moidx + 1, s1, s2); break;
-				case 1: snprintf(buf, bufsize, "%.8f", bset->moenergies[idx]); break;
+				/*  column == 1, alpha; column == 2, beta  */
+				char eflag = ' ';
+				if (column == 1) {
+					/*  Alpha  */
+					if (idx >= bset->ne_alpha)
+						eflag = '*';  /*  Unoccupied  */
+					else {
+						if (bset->rflag == 2 && idx >= bset->ne_beta)
+							eflag = 'S';  /*  Singly occupied  */
+					}
+				} else {
+					/*  Beta  */
+					if (bset->rflag != 0)
+						return;  /*  No beta orbitals  */
+					if (idx >= bset->ne_beta)
+						eflag = '*';  /*  Unoccupied  */
+					idx += bset->ncomps;
+				}
+				snprintf(buf, bufsize, "%c %.8f", eflag, bset->moenergies[idx]);
 			}
 		}
 	}
@@ -3231,26 +3226,15 @@ MainView_setColorForTable(MainView *mview, int column, int row, float *fg, float
 		int n = 0;
 		if (bset == NULL)
 			return 0;
-		if (row < 0 || row >= bset->nmos)
+		if (row < 0 || row >= bset->ncomps)
 			return 0;
-		if (bset->rflag == 0) {
-			if (row < bset->ncomps) {
-				/*  Alpha orbitals  */
-				if (row >= bset->ne_alpha)
-					n = 2;  /*  Unoccupied  */
-			} else {
-				/*  Beta orbitals  */
-				if ((row - bset->ncomps) >= bset->ne_beta)
-					n = 2;  /*  Unoccupied  */
-			}
-		} else {
-			if (row >= bset->ne_beta && row < bset->ne_alpha)
-				n = 1;  /*  singly occupied  */
-			else if (row >= bset->ne_alpha)
-				n = 2;  /*  unoccupied  */
-		}
+		if (row < bset->ne_beta)
+			n = 0;  /*  Occupied  */
+		else if (row < bset->ne_alpha)
+			n = 1;  /*  Half-occupied  */
+		else n = 2;  /*  Unoccupied  */
 		switch (n) {
-			case 1: bg[0] = bg[1] = 0.7; bg[2] = 1.0; break;
+			case 1: bg[0] = bg[1] = bg[2] = 0.9; break;
 			case 2: bg[0] = bg[1] = bg[2] = 0.8; break;
 			default: bg[0] = bg[1] = bg[2] = 1.0; break;
 		}

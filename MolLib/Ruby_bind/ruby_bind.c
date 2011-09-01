@@ -7574,20 +7574,21 @@ s_Cubegen_callback(double progress, void *ref)
 
 /*
  *  call-seq:
- *     cubegen(fname, mo, npoints=1000000 [, iflag])
- *     cubegen(fname, mo, origin, dx, dy, dz, nx, ny, nz [, iflag])
+ *     cubegen(fname, mo, npoints=1000000 [, iflag [, beta]])
+ *     cubegen(fname, mo, origin, dx, dy, dz, nx, ny, nz [, iflag [, beta]])
  *
  *  Calculate the molecular orbital with number mo and create a 'cube' file.
  *  In the first form, the cube size is estimated from the atomic coordinates. In the
  *  second form, the cube dimension is explicitly given.
  *  Returns fname when successful, nil otherwise.
  *  If iflag is non-false, then MyAppCallback_checkInterrupt() is periodically called during calculation.
+ *  If beta is non-false, then the beta MO is calculated (valid only for UHF MO)
  *  (The interrupt monitoring thread is disabled, so as not to enter Ruby interpreter during calculation)
  */
 static VALUE
 s_Molecule_Cubegen(int argc, VALUE *argv, VALUE self)
 {
-	VALUE fval, mval, oval, dxval, dyval, dzval, nxval, nyval, nzval, ival;
+	VALUE fval, mval, oval, dxval, dyval, dzval, nxval, nyval, nzval, ival, bval;
     Molecule *mol;
 	Int mono, nx, ny, nz, npoints;
 	Vector o, dx, dy, dz;
@@ -7596,13 +7597,19 @@ s_Molecule_Cubegen(int argc, VALUE *argv, VALUE self)
     Data_Get_Struct(self, Molecule, mol);
 	if (mol->bset == NULL)
 		rb_raise(rb_eMolbyError, "The molecule does not contain MO information");
-	rb_scan_args(argc, argv, "28", &fval, &mval, &oval, &dxval, &dyval, &dzval, &nxval, &nyval, &nzval, &ival);
+	rb_scan_args(argc, argv, "29", &fval, &mval, &oval, &dxval, &dyval, &dzval, &nxval, &nyval, &nzval, &ival, &bval);
 	
 	/*  Set up parameters  */
 	mono = NUM2INT(rb_Integer(mval));
-	if (mono <= 0 || mono > mol->bset->nmos)
-		rb_raise(rb_eMolbyError, "The MO number (%d) is out of range (should be 1..%d)", mono, mol->bset->nmos);
-	if (oval == Qnil || dxval == Qnil) {
+	if (mono <= 0 || mono > mol->bset->ncomps)
+		rb_raise(rb_eMolbyError, "The MO number (%d) is out of range (should be 1..%d)", mono, mol->bset->ncomps);
+	if (RTEST(bval)) {
+		if (mol->bset->rflag != 0)
+			rb_raise(rb_eMolbyError, "Beta MO is requested but not present");
+		mono += mol->bset->ncomps;
+	}
+		
+	if (oval == Qnil || dxval == Qnil || dyval == Qnil) {
 		/*  Automatic grid formation  */
 		if (oval != Qnil)
 			npoints = NUM2INT(rb_Integer(oval));
@@ -7614,6 +7621,7 @@ s_Molecule_Cubegen(int argc, VALUE *argv, VALUE self)
 		if (MoleculeGetDefaultMOGrid(mol, npoints, &o, &dx, &dy, &dz, &nx, &ny, &nz) != 0)
 			rb_raise(rb_eMolbyError, "Cannot determine cube grids");
 		ival = dxval;
+		bval = dyval;
 	} else {
 		VectorFromValue(oval, &o);
 		if (TYPE(dxval) == T_ARRAY || rb_obj_is_kind_of(dxval, rb_cVector3D))
@@ -7748,6 +7756,29 @@ s_Molecule_AddGaussianPrimitiveCoefficients(VALUE self, VALUE expval, VALUE cval
 	else if (n != 0)
 		rb_raise(rb_eMolbyError, "Unknown error");
 	return self;
+}
+
+/*
+ *  call-seq:
+ *     mo_type
+ *
+ *  Returns either "RHF", "UHF", or "ROHF". If no MO info is present, returns nil.
+ */
+static VALUE
+s_Molecule_MOType(VALUE self)
+{
+	Molecule *mol;
+    Data_Get_Struct(self, Molecule, mol);
+	if (mol != NULL && mol->bset != NULL) {
+		const char *s;
+		int rflag = mol->bset->rflag;
+		if (rflag == 0)
+			s = "UHF";
+		else if (rflag == 2)
+			s = "ROHF";
+		else s = "RHF";
+		return rb_str_new2(s);
+	} else return Qnil;
 }
 
 /*
@@ -8145,6 +8176,7 @@ Init_Molby(void)
 	rb_define_method(rb_cMolecule, "elpot", s_Molecule_Elpot, 1);
 	rb_define_method(rb_cMolecule, "add_gaussian_orbital_shell", s_Molecule_AddGaussianOrbitalShell, 3);
 	rb_define_method(rb_cMolecule, "add_gaussian_primitive_coefficients", s_Molecule_AddGaussianPrimitiveCoefficients, 3);
+	rb_define_method(rb_cMolecule, "mo_type", s_Molecule_MOType, 0);
 	rb_define_method(rb_cMolecule, "set_mo_coefficients", s_Molecule_SetMOCoefficients, 3);
 	rb_define_method(rb_cMolecule, "allocate_basis_set_record", s_Molecule_AllocateBasisSetRecord, 3);
 	rb_define_method(rb_cMolecule, "search_equivalent_atoms", s_Molecule_SearchEquivalentAtoms, -1);

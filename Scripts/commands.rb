@@ -200,18 +200,28 @@ end_of_header
 	  nz = hash["stepz"]
 	  basename = File.basename(self.path, ".*")
 	  filenames = []
+	  mo_type = self.mo_type
 	  mos.each { |n|
-	    fname = Dialog.save_panel("Cube file name for MO #{n}", self.dir, basename + "_#{n}.cube", "Gaussian cube file (*.cube)|*.cube")
-		if !fname
-		  filenames.clear
-		  break
+	    fname1 = fname2 = nil
+	    alpha = (mo_type != "UHF" ? "" : "alpha ")
+		a = (mo_type != "UHF" ? "" : "a")
+	    fname1 = Dialog.save_panel("Cube file name for #{alpha}MO #{n}", self.dir, basename + "_#{n}#{a}.cube", "Gaussian cube file (*.cube)|*.cube")
+		if (mo_type == "UHF")
+		  fname2 = Dialog.save_panel("Cube file name for beta MO #{n}", self.dir, basename + "_#{n}b.cube", "Gaussian cube file (*.cube)|*.cube")
 		end
-		filenames.push([n, fname])
+		filenames.push([n, fname1, fname2])
 	  }
 	  filenames.each { |pair|
 	    n = pair[0]
-	    show_progress_panel("Creating cube file for MO #{n}...")
-		cubegen(pair[1], n, origin, dx, dy, dz, nx, ny, nz, true)
+		alpha = (mo_type != "UHF" ? "" : "alpha ")
+	    show_progress_panel("Creating cube file for #{alpha}MO #{n}...")
+		if pair[1]
+		  cubegen(pair[1], n, origin, dx, dy, dz, nx, ny, nz, true)
+		end
+		if pair[2] && mo_type == "UHF"
+		  set_progress_message("Creating cube file for beta MO #{n}...")
+		  cubegen(pair[2], n, origin, dx, dy, dz, nx, ny, nz, true, true)
+		end
 	    hide_progress_panel
  	  }
 	end
