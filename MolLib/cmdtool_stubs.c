@@ -236,6 +236,11 @@ MainView_selectedMO(MainView *mview)
 }
 
 void
+MainView_resizeToFit(MainView *mview)
+{
+}
+
+void
 MolActionCallback_registerUndo(Molecule *mol, MolAction *action)
 {
 }
