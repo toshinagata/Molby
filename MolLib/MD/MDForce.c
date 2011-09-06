@@ -65,6 +65,8 @@ s_calc_bond_force(MDArena *arena)
 			continue;  /*  Ignore this entry  */
 	/*	if (bond_uniq != NULL && bond_uniq[i] >= 0)
 			continue;  *//*  Non-unique bond  */
+		if (ap[bonds[0]].occupancy == 0.0 || ap[bonds[1]].occupancy == 0.0)
+			continue;  /*  Skip non-occupied atoms  */
 		VecSub(r12, ap[bonds[1]].r, ap[bonds[0]].r);
 		w1 = VecLength(r12);
 		if (custom_bond_par_i != NULL && (idx = custom_bond_par_i[i]) > 0 && idx <= arena->ncustom_bond_pars) {
@@ -115,6 +117,8 @@ s_calc_angle_force(MDArena *arena)
 			continue;  /*  Ignore this entry  */
 	/*	if (angle_uniq != NULL && angle_uniq[i] >= 0)
 			continue; */ /*  Non-unique angle  */
+		if (ap[angles[0]].occupancy == 0.0 || ap[angles[1]].occupancy == 0.0 || ap[angles[2]].occupancy == 0.0)
+			continue;  /*  Skip non-occupied atoms  */
 		anp = angle_pars + *angle_par_i;
 		VecSub(r21, ap[angles[0]].r, ap[angles[1]].r);
 		VecSub(r23, ap[angles[2]].r, ap[angles[1]].r);
@@ -193,6 +197,8 @@ s_calc_dihedral_force_sub(MDArena *arena, Atom *ap, Int ndihedrals, Int *dihedra
 			continue;  /*  Ignore this entry  */
 	/*	if (dihedral_uniq != NULL && dihedral_uniq[i] >= 0)
 			continue;  *//*  Non-unique dihedral  */
+		if (ap[dihedrals[0]].occupancy == 0.0 || ap[dihedrals[1]].occupancy == 0.0 || ap[dihedrals[2]].occupancy == 0.0 || ap[dihedrals[3]].occupancy == 0.0)
+			continue;  /*  Skip non-occupied atoms  */
 		else tp = dihedral_pars + *dihedral_par_i;
 		VecSub(r21, ap[dihedrals[0]].r, ap[dihedrals[1]].r);
 		VecSub(r32, ap[dihedrals[1]].r, ap[dihedrals[2]].r);
@@ -484,6 +490,10 @@ s_make_verlet_list(MDArena *arena)
 
 			/*  Fixed atoms  */
 			if (api->fix_force < 0 && apj->fix_force < 0)
+				continue;
+
+			/*  Non-occupied atoms  */
+			if (api->occupancy == 0.0 || apj->occupancy == 0.0)
 				continue;
 
 			VecSub(rij, apj->r, api->r);
