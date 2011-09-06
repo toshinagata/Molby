@@ -3644,9 +3644,11 @@ static VALUE s_AtomRef_SetF(VALUE self, VALUE val) {
 
 static VALUE s_AtomRef_SetOccupancy(VALUE self, VALUE val) {
 	VALUE oval = s_AtomRef_GetOccupancy(self);
+	Molecule *mp;
 	val = rb_Float(val);
-	s_AtomFromValue(self)->occupancy = NUM2DBL(val);
+	s_AtomAndMoleculeFromValue(self, &mp)->occupancy = NUM2DBL(val);
 	s_RegisterUndoForAtomAttrChange(self, s_OccupancySym, val, oval);
+	mp->needsMDCopyCoordinates = 1;  /*  Occupancy can be used to exclude particular atoms from MM/MD  */
 	return val;
 }
 

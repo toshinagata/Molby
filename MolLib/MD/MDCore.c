@@ -2663,6 +2663,7 @@ md_copy_coordinates_to_internal(MDArena *arena)
 		return -2;  /*  Number of atoms does not match  */
 	for (i = 0, ap1 = arena->mol->atoms, ap2 = arena->xmol->atoms; i < arena->mol->natoms; i++, ap1 = ATOM_NEXT(ap1), ap2 = ATOM_NEXT(ap2)) {
 		ap1->r = ap2->r;
+		ap1->occupancy = ap2->occupancy;  /*  Occupancy can be used to exclude particular atoms  */
 	}
 	if (arena->mol->cell != NULL && arena->xmol->cell != NULL)
 		memmove(arena->mol->cell, arena->xmol->cell, sizeof(XtalCell));
