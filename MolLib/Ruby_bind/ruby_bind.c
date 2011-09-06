@@ -6480,6 +6480,66 @@ s_Molecule_GetAtomAttr(VALUE self, VALUE idx, VALUE key)
 
 /*
  *  call-seq:
+ *     get_coord_from_frame(index, group = nil, cflag = nil)
+ *
+ *  Copy the coordinates from the indicated frame. If group is specified, only the specified atoms
+ *  are modified. If cflag is true, the cell parameter is also copied (if present).
+ */
+static VALUE
+s_Molecule_GetCoordFromFrame(int argc, VALUE *argv, VALUE self)
+{
+	Molecule *mol;
+	VALUE ival, gval, cval;
+	Int index, i, j, n, nn;
+	IntGroup *ig;
+	IntGroupIterator iter;
+	Atom *ap;
+	Vector *vp;
+    Data_Get_Struct(self, Molecule, mol);
+	rb_scan_args(argc, argv, "12", &ival, &gval, &cval);
+	index = NUM2INT(rb_Integer(ival));
+	if (index < 0 || index >= (n = MoleculeGetNumberOfFrames(mol))) {
+		if (n == 0)
+			rb_raise(rb_eMolbyError, "No frame is present");
+		else
+			rb_raise(rb_eMolbyError, "Frame index (%d) out of range (should be 0..%d)", index, n - 1);
+	}
+	if (gval == Qnil) {
+		ig = IntGroupNewWithPoints(0, mol->natoms, -1);
+	} else {
+		ig = s_Molecule_AtomGroupFromValue(self, gval);
+	}
+	n = IntGroupGetCount(ig);
+	if (n > 0) {
+		vp = (Vector *)calloc(sizeof(Vector), n);
+		IntGroupIteratorInit(ig, &iter);
+		j = 0;
+		nn = 0;
+		while ((i = IntGroupIteratorNext(&iter)) >= 0) {
+			ap = ATOM_AT_INDEX(mol->atoms, i);
+			if (index < ap->nframes) {
+				vp[j] = ap->frames[index];
+				nn++;
+			} else {
+				vp[j] = ap->r;
+			}
+			j++;
+		}
+		if (nn > 0)
+			MolActionCreateAndPerform(mol, gMolActionSetAtomPositions, ig, n, vp);
+		free(vp);
+		if (RTEST(cval) && mol->cell != NULL && mol->frame_cells != NULL) {
+			vp = mol->frame_cells + index * 4;
+			MolActionCreateAndPerform(mol, gMolActionSetBox, vp, vp + 1, vp + 2, vp + 3, mol->cell->flags);
+		}
+		IntGroupIteratorRelease(&iter);
+	}
+	IntGroupRelease(ig);
+	return self;
+}
+
+/*
+ *  call-seq:
  *     fragment(n1, *exatoms)  -> IntGroup
  *     fragment(group, *exatoms)  -> IntGroup
  *
@@ -8116,6 +8176,7 @@ Init_Molby(void)
 	rb_define_alias(rb_cMolecule, "insert_frames", "insert_frame");
 	rb_define_alias(rb_cMolecule, "remove_frames", "remove_frame");
 	rb_define_method(rb_cMolecule, "each_frame", s_Molecule_EachFrame, 0);
+	rb_define_method(rb_cMolecule, "get_coord_from_frame", s_Molecule_GetCoordFromFrame, -1);
 	rb_define_method(rb_cMolecule, "register_undo", s_Molecule_RegisterUndo, -1);
 	rb_define_method(rb_cMolecule, "undo_enabled?", s_Molecule_UndoEnabled, 0);
 	rb_define_method(rb_cMolecule, "undo_enabled=", s_Molecule_SetUndoEnabled, 1);

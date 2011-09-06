@@ -43,6 +43,8 @@ extern const char *gMolActionTranslateAtoms;
 extern const char *gMolActionRotateAtoms;
 extern const char *gMolActionTransformAtoms;
 extern const char *gMolActionSetAtomPositions;
+extern const char *gMolActionSetAtomVelocities;
+extern const char *gMolActionSetAtomForces;
 extern const char *gMolActionInsertFrames;
 extern const char *gMolActionRemoveFrames;
 extern const char *gMolActionSetSelection;

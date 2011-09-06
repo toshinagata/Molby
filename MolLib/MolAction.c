@@ -42,6 +42,8 @@ const char *gMolActionTranslateAtoms  = "translateAtoms:vG";
 const char *gMolActionRotateAtoms     = "rotate:vdvG";
 const char *gMolActionTransformAtoms  = "transform:tG";
 const char *gMolActionSetAtomPositions = "atomPosition:GV";
+const char *gMolActionSetAtomVelocities = "atomVelocity:GV";
+const char *gMolActionSetAtomForces   = "atomForce:GV";
 const char *gMolActionInsertFrames    = "insertFrames:GVV";
 const char *gMolActionRemoveFrames    = "removeFrames:G";
 const char *gMolActionSetSelection    = "selection:G";
@@ -947,26 +949,34 @@ MolActionPerform(Molecule *mol, MolAction *action)
 		MoleculeTransform(mol, *trp, ig);
 		act2->frame = mol->cframe;
 		needsSymmetryAmendment = 1;
-	} else if (strcmp(action->name, gMolActionSetAtomPositions) == 0) {
+	} else if (strcmp(action->name, gMolActionSetAtomPositions) == 0 || (strcmp(action->name, gMolActionSetAtomVelocities) == 0 && (n1 = 1)) || (strcmp(action->name, gMolActionSetAtomForces) == 0 && (n1 = 2))) {
 		IntGroupIterator iter;
-		int j, k;
+		int j, k, n2;
+		Atom *ap;
 		ig = action->args[0].u.igval;
-		n1 = IntGroupGetCount(ig);
-		vp = (Vector *)malloc(sizeof(Vector) * n1);
+		n2 = IntGroupGetCount(ig);
+		vp = (Vector *)malloc(sizeof(Vector) * n2);
 		if (vp == NULL)
 			return -1;
 		IntGroupIteratorInit(ig, &iter);
 		k = 0;
 		while ((j = IntGroupIteratorNext(&iter)) >= 0) {
-			vp[k++] = (ATOM_AT_INDEX(mol->atoms, j))->r;
+			ap = ATOM_AT_INDEX(mol->atoms, j);
+			vp[k++] = (n1 == 0 ? ap->r : (n1 == 1 ? ap->v : ap->f));
 		}
-		act2 = MolActionNew(gMolActionSetAtomPositions, ig, n1, vp);
+		act2 = MolActionNew(gMolActionSetAtomPositions, ig, n2, vp);
 		free(vp);
 		vp = (Vector *)action->args[1].u.arval.ptr;
 		IntGroupIteratorReset(&iter);
 		k = 0;
 		while ((j = IntGroupIteratorNext(&iter)) >= 0) {
-			(ATOM_AT_INDEX(mol->atoms, j))->r = vp[k++];
+			Vector w = vp[k++];
+			ap = ATOM_AT_INDEX(mol->atoms, j);
+			if (n1 == 0)
+				ap->r = w;
+			else if (n1 == 1)
+				ap->v = w;
+			else ap->f = w;
 		}
 		IntGroupIteratorRelease(&iter);
 		act2->frame = mol->cframe;
