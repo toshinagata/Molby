@@ -8480,6 +8480,8 @@ Molby_startup(const char *script, const char *dir)
 	Init_Molby();
 	RubyDialogInitClass();
 	
+#if !__CMDMAC__
+	
 	/*  Create objects for stdout and stderr  */
 	val = rb_funcall(rb_cObject, rb_intern("new"), 0);
 	rb_define_singleton_method(val, "write", s_StandardOutput, 1);
@@ -8495,11 +8497,15 @@ Molby_startup(const char *script, const char *dir)
 	rb_define_singleton_method(val, "method_missing", s_StandardInputMethodMissing, -1);
 	rb_gv_set("$stdin", val);
 	
+#endif
+	
 	/*  Global variable to hold backtrace  */
 	rb_define_variable("$backtrace", &gMolbyBacktrace);
 
+#if !__CMDMAC__
 	/*  Register interrupt check code  */
 	rb_add_event_hook(s_Event_Callback, RUBY_EVENT_ALL);
+#endif
 	
 	/*  Get version/copyright string from Ruby interpreter  */
 	{
@@ -8508,9 +8514,11 @@ Molby_startup(const char *script, const char *dir)
 				 RUBY_BIRTH_YEAR, RUBY_RELEASE_YEAR, RUBY_AUTHOR);
 	}
 	
+#if !__CMDMAC__
 	/*  Start interval timer (for periodic polling of interrupt); firing every 50 msec  */
 	s_SetIntervalTimer(0, 50);
-
+#endif
+	
 	/*  Read the startup script  */
 	if (script != NULL && script[0] != 0) {
 		MyAppCallback_showScriptMessage("Evaluating %s...\n", script);
