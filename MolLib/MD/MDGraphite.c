@@ -539,6 +539,8 @@ graphite_force(MDGraphiteArena *graphite, MDArena *arena, Double *energy, Vector
 		Vector v = mol->atoms[i].r;
 		if (mol->atoms[i].fix_force < 0)
 			continue;
+		if (mol->atoms[i].occupancy == 0.0)
+			continue;
 		en = f.x = f.y = f.z = 0.0;
 		for (ix = 0; ix < px; ix++) {
 			for (iy = 0; iy < py; iy++) {
