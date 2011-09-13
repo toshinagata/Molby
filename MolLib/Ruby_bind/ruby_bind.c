@@ -4407,11 +4407,23 @@ s_Molecule_LoadSave(int argc, VALUE *argv, VALUE self, int loadFlag)
 	rb_raise(rb_eMolbyError, "the file %s cannot be %s", argstr, (loadFlag ? "loaded" : "saved"));
 	
 success:
-	/*  Register the path  */
 	{
+		/*  Register the path  */
 		Molecule *mol;
+		Atom *ap;
 		Data_Get_Struct(self, Molecule, mol);
 		MoleculeSetPath(mol, StringValuePtr(argv[0]));
+		
+		/*  Check if all occupancy factors are zero; if that is the case, then all set to 1.0  */
+		for (i = 0, ap = mol->atoms; i < mol->natoms; i++, ap = ATOM_NEXT(ap)) {
+			if (ap->occupancy != 0.0)
+				break;
+		}
+		if (i == mol->natoms) {
+			for (i = 0, ap = mol->atoms; i < mol->natoms; i++, ap = ATOM_NEXT(ap)) {
+				ap->occupancy = 1.0;
+			}
+		}
 	}
 	return rval;
 }
