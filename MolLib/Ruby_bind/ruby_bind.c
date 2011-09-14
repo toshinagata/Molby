@@ -2074,8 +2074,9 @@ s_ParameterRef_ToString(VALUE self)
  *  is NULL, then the global parameters are looked for.  */
 
 /*  Rebuild the MD parameter record if necessary: may throw an exception  */
+/*  The second parameter is passed to md_arena.prepare; if true, then check only  */
 static void
-s_RebuildMDParameterIfNecessary(VALUE val)
+s_RebuildMDParameterIfNecessary(VALUE val, VALUE cval)
 {
 	Molecule *mol;
 	Data_Get_Struct(val, Molecule, mol);
@@ -2085,7 +2086,7 @@ s_RebuildMDParameterIfNecessary(VALUE val)
 		/*  Do self.md_arena.prepare  */
 		VALUE val2 = rb_funcall(val, rb_intern("md_arena"), 0);
 		if (val2 != Qnil)
-			val2 = rb_funcall(val2, rb_intern("prepare"), 1, Qtrue);
+			val2 = rb_funcall(val2, rb_intern("prepare"), 1, cval);
 	}
 }
 
@@ -2095,7 +2096,7 @@ s_NewParameterValueFromValue(VALUE val)
 	Molecule *mol;
 	if (rb_obj_is_kind_of(val, rb_cMolecule)) {
 		Data_Get_Struct(val, Molecule, mol);
-		s_RebuildMDParameterIfNecessary(val);
+		s_RebuildMDParameterIfNecessary(val, Qtrue);
 		MoleculeRetain(mol);
 		return Data_Wrap_Struct(rb_cParameter, 0, (void (*)(void *))MoleculeRelease, mol);
 	} else {
@@ -3373,8 +3374,10 @@ static VALUE s_AtomRef_GetExclusion(VALUE self) {
 	idx = s_AtomIndexFromValue(self, &ap, &mol);
 	if (mol->par == NULL || mol->arena == NULL || mol->arena->is_initialized == 0 || mol->needsMDRebuild) {
 		VALUE mval = ValueFromMolecule(mol);
-		s_RebuildMDParameterIfNecessary(mval);
+		s_RebuildMDParameterIfNecessary(mval, Qnil);
 	}
+	if (mol->arena->exinfo == NULL)
+		return Qnil;
 	exinfo = mol->arena->exinfo + idx;
 	exlist = mol->arena->exlist;
 	retval = rb_ary_new();
@@ -4798,7 +4801,7 @@ s_Molecule_BondPar(VALUE self, VALUE val)
 		rb_raise(rb_eMolbyError, "bond index (%d) out of range", ival);
 	if (ival < 0)
 		ival += mol->nbonds;
-	s_RebuildMDParameterIfNecessary(self);
+	s_RebuildMDParameterIfNecessary(self, Qtrue);
 	t1 = ATOM_AT_INDEX(mol->atoms, mol->bonds[ival * 2])->type;
 	t2 = ATOM_AT_INDEX(mol->atoms, mol->bonds[ival * 2 + 1])->type;
 	bp = ParameterLookupBondPar(mol->par, t1, t2, 0);
@@ -4826,7 +4829,7 @@ s_Molecule_AnglePar(VALUE self, VALUE val)
 		rb_raise(rb_eMolbyError, "angle index (%d) out of range", ival);
 	if (ival < 0)
 		ival += mol->nangles;
-	s_RebuildMDParameterIfNecessary(self);
+	s_RebuildMDParameterIfNecessary(self, Qtrue);
 	t1 = ATOM_AT_INDEX(mol->atoms, mol->angles[ival * 3])->type;
 	t2 = ATOM_AT_INDEX(mol->atoms, mol->angles[ival * 3 + 1])->type;
 	t3 = ATOM_AT_INDEX(mol->atoms, mol->angles[ival * 3 + 2])->type;
@@ -4855,7 +4858,7 @@ s_Molecule_DihedralPar(VALUE self, VALUE val)
 		rb_raise(rb_eMolbyError, "dihedral index (%d) out of range", ival);
 	if (ival < 0)
 		ival += mol->ndihedrals;
-	s_RebuildMDParameterIfNecessary(self);
+	s_RebuildMDParameterIfNecessary(self, Qtrue);
 	t1 = ATOM_AT_INDEX(mol->atoms, mol->dihedrals[ival * 4])->type;
 	t2 = ATOM_AT_INDEX(mol->atoms, mol->dihedrals[ival * 4 + 1])->type;
 	t3 = ATOM_AT_INDEX(mol->atoms, mol->dihedrals[ival * 4 + 2])->type;
@@ -4885,7 +4888,7 @@ s_Molecule_ImproperPar(VALUE self, VALUE val)
 		rb_raise(rb_eMolbyError, "improper index (%d) out of range", ival);
 	if (ival < 0)
 		ival += mol->nimpropers;
-	s_RebuildMDParameterIfNecessary(self);
+	s_RebuildMDParameterIfNecessary(self, Qtrue);
 	t1 = ATOM_AT_INDEX(mol->atoms, mol->impropers[ival * 4])->type;
 	t2 = ATOM_AT_INDEX(mol->atoms, mol->impropers[ival * 4 + 1])->type;
 	t3 = ATOM_AT_INDEX(mol->atoms, mol->impropers[ival * 4 + 2])->type;
@@ -4915,7 +4918,7 @@ s_Molecule_VdwPar(VALUE self, VALUE val)
 		rb_raise(rb_eMolbyError, "atom index (%d) out of range", ival);
 	if (ival < 0)
 		ival += mol->natoms;
-	s_RebuildMDParameterIfNecessary(self);
+	s_RebuildMDParameterIfNecessary(self, Qtrue);
 	t1 = ATOM_AT_INDEX(mol->atoms, ival)->type;
 	vp = ParameterLookupVdwPar(mol->par, t1, 0);
 	if (vp == NULL)
