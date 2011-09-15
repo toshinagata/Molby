@@ -1086,7 +1086,7 @@ void MyFrame::OnAbout(wxCommandEvent& WXUNUSED(event) )
 	extern const char *gVersionString, *gCopyrightString;
 	char *s;
 	asprintf(&s, 
-			 "%s\n%s\n%s\n"
+			 "Molby %s\n%s\n%s\n"
 			 "Including:\n"
 			 "AmberTools 1.3, http://ambermd.org/\n"
 			 "  Copyright (c) Junmei Wang, Ross C. Walker, \n"

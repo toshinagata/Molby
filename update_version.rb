@@ -20,7 +20,8 @@ File.open("Version", "w") { |fp|
   fp.print "date = \"#{d}\"\n"
 }
 build = "build " + d
-verstr = "v#{ver} #{build}"
+# verstr = "v#{ver} #{build}"
+verstr = "v#{ver}"
 yrange = (year > 2008 ? "2008-#{year}" : "2008")
 
 def modify_file(name, &block)
@@ -86,7 +87,7 @@ modify_file("wxSources/MyVersion.c") { |s|
 
 #  Modify doc_source.html
 modify_file("Documents/src/doc_source.html") { |s|
-  if s =~ /Version/ && s.sub!(/[Vv][-.0-9 A-Za-z_]*/, "Version #{ver} #{build}")
+  if s =~ /Version/ && s.sub!(/[Vv][-.0-9 A-Za-z_]*/, "Version #{ver}")
     s
   else
     nil
@@ -95,7 +96,7 @@ modify_file("Documents/src/doc_source.html") { |s|
 
 #  Modify README
 modify_file("README") { |s|
-  if s =~ /        Version/ && s.sub!(/[Vv][-.0-9 A-Za-z_]*/, "Version #{ver} #{build}")
+  if s =~ /        Version/ && s.sub!(/[Vv][-.0-9 A-Za-z_]*/, "Version #{ver}")
     s
   else
     nil
