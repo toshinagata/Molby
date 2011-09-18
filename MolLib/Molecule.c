@@ -232,9 +232,22 @@ MoleculeInitWithMolecule(Molecule *mp2, const Molecule *mp)
 			goto error;
 		memmove(mp2->residues, mp->residues, sizeof(mp->residues[0]) * mp->nresidues);
 	}
+	if (mp->cell != NULL) {
+		mp2->cell = (XtalCell *)calloc(sizeof(XtalCell), 1);
+		memmove(mp2->cell, mp->cell, sizeof(XtalCell));
+	}
+	if (mp->nsyms > 0) {
+		mp2->nsyms = mp->nsyms;
+		mp2->syms = (Transform *)calloc(sizeof(Transform), mp2->nsyms);
+		memmove(mp2->syms, mp->syms, sizeof(Transform) * mp2->nsyms);
+	}
 	if (mp->par != NULL)
 		mp2->par = ParameterDuplicate(mp->par);
-
+	if (mp->arena != NULL) {
+		md_arena_new(mp2);
+		md_arena_init_from_arena(mp2->arena, mp->arena);
+	}
+	
 	return mp2;
   error:
 	Panic("Cannot allocate memory for duplicate molecule");

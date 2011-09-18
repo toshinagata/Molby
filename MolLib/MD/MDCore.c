@@ -3086,6 +3086,42 @@ md_arena_release(MDArena *arena)
 	free(arena);
 }
 
+void
+md_arena_init_from_arena(MDArena *arena, MDArena *another_arena)
+{
+	if (arena == NULL || another_arena == NULL)
+		return;
+
+	arena->timestep = another_arena->timestep;
+	
+	arena->coord_output_freq = another_arena->coord_output_freq;
+	arena->energy_output_freq = another_arena->energy_output_freq;
+	arena->cutoff = another_arena->cutoff;
+	arena->electro_cutoff = another_arena->electro_cutoff;
+	arena->pairlist_distance = another_arena->pairlist_distance;
+	arena->use_xplor_shift = another_arena->use_xplor_shift;
+	arena->scale14_vdw = another_arena->scale14_vdw;
+	arena->scale14_elect = another_arena->scale14_elect;
+	arena->temperature = another_arena->temperature;
+	arena->rescale_temp_freq = another_arena->rescale_temp_freq;
+	arena->reinit_temp_freq = another_arena->reinit_temp_freq;
+	arena->velocities_read = another_arena->velocities_read;
+	arena->dielectric = another_arena->dielectric;
+	arena->probe_radius = another_arena->probe_radius;
+	arena->surface_tension = another_arena->surface_tension;
+	arena->surface_potential_freq = another_arena->surface_potential_freq;
+	arena->anbond_thres = another_arena->anbond_thres;
+	arena->anbond_anneal_rate = another_arena->anbond_anneal_rate;
+	arena->velocity_limit = another_arena->velocity_limit;
+	arena->sym_tolerance = another_arena->sym_tolerance;
+	arena->gradient_convergence = another_arena->gradient_convergence;
+	arena->coordinate_convergence = another_arena->coordinate_convergence;
+	arena->relocate_center = another_arena->relocate_center;
+	arena->andersen_thermo_freq = another_arena->andersen_thermo_freq;
+	arena->andersen_thermo_coupling = another_arena->andersen_thermo_coupling;
+	arena->pressure_freq = another_arena->pressure_freq;
+}
+
 /*
 PROGRAM
 {
