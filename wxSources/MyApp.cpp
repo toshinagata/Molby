@@ -577,7 +577,11 @@ MyApp::IsInterrupted()
 {
 	if (m_progressFrame != NULL)
 		return m_progressFrame->CheckInterrupt();
-	else return 0;
+	else {
+		if (::wxGetKeyState(WXK_ESCAPE))
+			return 1;
+		else return 0;		
+	}
 }
 
 /*

@@ -28,7 +28,16 @@
 #include <node.h>     /*  for rb_add_event_hook()  */
 
 #if defined(__WXMAC__) || defined(__CMDMAC__)
+#define USE_PTHREAD_FOR_TIMER 1
+#endif
+
+#if !__WXMSW__
+#if USE_PTHREAD_FOR_TIMER
+#include <unistd.h>   /*  for usleep()  */
+#include <pthread.h>  /*  for pthread  */
+#else
 #include <signal.h>   /*  for sigaction()  */
+#endif
 #endif
 
 #include "../Missing.h"
@@ -443,6 +452,28 @@ s_ITimerThreadFunc(void *p)
 	return 0;
 }
 
+#elif USE_PTHREAD_FOR_TIMER
+
+/*  Timer thread  */
+static pthread_t sTimerThread;
+
+/*  -1: uninitiated; 0: active, 1: inactive, -2: request to terminate  */
+static volatile signed char sTimerFlag = -1;
+static volatile int sTimerIntervalMicrosec = 0;
+
+static void *
+s_TimerThreadEntry(void *param)
+{
+	while (1) {
+		usleep(sTimerIntervalMicrosec);
+		if (sTimerFlag == 0)
+			sITimerCount++;
+		else if (sTimerFlag == -2)
+			break;
+	}
+	return NULL;	
+}
+
 #endif
 
 static void
@@ -475,6 +506,18 @@ s_SetIntervalTimer(int n, int msec)
 		sITimerEvent = NULL;
 		sITimerThread = NULL;
 	}
+#elif USE_PTHREAD_FOR_TIMER
+	if (n == 0) {
+		if (sTimerFlag == -1) {
+			int status = pthread_create(&sTimerThread, NULL, s_TimerThreadEntry, NULL);
+			if (status != 0) {
+				fprintf(stderr, "pthread_create failed while setting Ruby interval timer: status = %d\n", status);
+			}
+		}
+		sTimerFlag = 0;  /*  Active  */
+		sTimerIntervalMicrosec = msec * 1000;
+	} else if (sTimerFlag != -1)
+		sTimerFlag = 1;  /*  Inactive  */	
 #else
 	static struct itimerval sOldValue;
 	static struct sigaction sOldAction;

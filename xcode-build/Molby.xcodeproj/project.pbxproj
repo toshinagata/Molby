@@ -695,6 +695,87 @@
 			};
 			name = Release;
 		};
+		E4971BD014284BA900558C03 /* Debug PPC */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = ppc;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				PREBINDING = NO;
+				SDKROOT = /Developer/SDKs/MacOSX10.4u.sdk;
+			};
+			name = "Debug PPC";
+		};
+		E4971BD114284BA900558C03 /* Debug PPC */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = ppc;
+				COPY_PHASE_STRIP = NO;
+				GCC_DEBUGGING_SYMBOLS = full;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_VERSION = 4.0;
+				HEADER_SEARCH_PATHS = (
+					"$(HOME)/Development/wxMac/include",
+					"$(HOME)/Development/wxMac/osx-build/lib/wx/include/mac-unicode-release-static-2.8",
+					"$(HOME)/Development/ruby-1.8.7-static",
+				);
+				INFOPLIST_FILE = Info.plist;
+				INSTALL_PATH = "$(HOME)/Applications";
+				LIBRARY_SEARCH_PATHS = (
+					"$(HOME)/Development/wxMac/osx-build/lib",
+					"$(HOME)/Development/ruby-1.8.7-static",
+				);
+				OTHER_CFLAGS = (
+					"-D_FILE_OFFSET_BITS=64",
+					"-D_LARGE_FILES",
+					"-D__WXMAC__",
+				);
+				OTHER_LDFLAGS = (
+					"-lwx_macu_html-2.8",
+					"-lwx_macu_richtext-2.8",
+					"-lwx_macu_core-2.8",
+					"-lwx_base_carbonu-2.8",
+					"-lwx_macu_gl-2.8",
+					"-lwx_macu_adv-2.8",
+					"-lwxregexu-2.8",
+					"-lwxexpat-2.8",
+					"-lwxtiff-2.8",
+					"-lwxjpeg-2.8",
+					"-lwxpng-2.8",
+					"-lz",
+					"-lpthread",
+					"-liconv",
+					"-lruby-static",
+				);
+				PRODUCT_NAME = Molby;
+				SDKROOT = /Developer/SDKs/MacOSX10.4u.sdk;
+				WRAPPER_EXTENSION = app;
+				ZERO_LINK = NO;
+			};
+			name = "Debug PPC";
+		};
+		E4971BD214284BA900558C03 /* Debug PPC */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COPY_PHASE_STRIP = NO;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				HEADER_SEARCH_PATHS = "$(HOME)/Development/ruby-1.8.7-static";
+				INSTALL_PATH = /usr/local/bin;
+				LIBRARY_SEARCH_PATHS = "$(HOME)/Development/ruby-1.8.7-static";
+				OTHER_CFLAGS = "-D__CMDMAC__=1";
+				OTHER_LDFLAGS = "-lruby-static";
+				PREBINDING = NO;
+				PRODUCT_NAME = Molby_command;
+			};
+			name = "Debug PPC";
+		};
 		E4D5AD671180852F00B1D8A4 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -742,6 +823,7 @@
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				C01FCF4B08A954540054247B /* Debug */,
+				E4971BD114284BA900558C03 /* Debug PPC */,
 				C01FCF4C08A954540054247B /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
@@ -751,6 +833,7 @@
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				C01FCF4F08A954540054247B /* Debug */,
+				E4971BD014284BA900558C03 /* Debug PPC */,
 				C01FCF5008A954540054247B /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
@@ -760,6 +843,7 @@
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				E4D5AD671180852F00B1D8A4 /* Debug */,
+				E4971BD214284BA900558C03 /* Debug PPC */,
 				E4D5AD681180852F00B1D8A4 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
