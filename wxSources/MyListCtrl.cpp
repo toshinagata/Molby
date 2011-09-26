@@ -373,10 +373,10 @@ MyListCtrl::StartEditText(int row, int column)
 void
 MyListCtrl::EndEditTextAndRestart(bool setValueFlag, int newRow, int newColumn)
 {
+	wxString sval;
 	if (editText != NULL && editText->IsShown()) {
 		if (setValueFlag && dataSource) {
-			wxString sval = editText->GetValue();
-			dataSource->SetItemText(this, editRow, editColumn, sval);
+			sval = editText->GetValue();
 		}
 		if (wxWindow::FindFocus() == editText) {
 			SetFocus();
@@ -390,11 +390,14 @@ MyListCtrl::EndEditTextAndRestart(bool setValueFlag, int newRow, int newColumn)
 			Refresh();
 		}
 #endif
+		editText->Hide();  /*  Temporarily hide until new editing starts  */
+
+		if (setValueFlag && dataSource)
+			dataSource->SetItemText(this, editRow, editColumn, sval);
 
 	}
 	
 	if (newRow >= 0 && newColumn >= 0) {
-		editText->Hide();  /*  Temporarily hide until new editing starts  */
 		StartEditText(newRow, newColumn);
 	} else {
 		editRow = editColumn = -1;
@@ -411,6 +414,7 @@ MyListCtrl::EndEditTextAndRestart(bool setValueFlag, int newRow, int newColumn)
 		}
 #endif
 	}
+
 }
 
 void
