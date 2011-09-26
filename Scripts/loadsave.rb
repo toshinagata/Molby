@@ -25,22 +25,24 @@ class Molecule
     count = 0
 	frame = 0
 	coords = (0...natoms).collect { Vector3D[0, 0, 0] }
-    periodic = (self.box && self.box[4].all? { |n| n != 0 })
+    periodic = (self.box && self.box[4].any? { |n| n != 0 })
 	show_progress_panel("Loading AMBER crd file...")
 #    puts "sframe = #{sframe}, pos = #{fp.pos}"
-    line = fp.gets   #  Skip first line
-    while 1
-      line = fp.gets
-      if line == nil
-	    if (count > 0)
-		  raise MolbyError, sprintf("crd format error - file ended in the middle of frame %d", frame)
-		end
-	    fp.close
-		break
-      end
+    while line = fp.gets
       line.chomp!
-#      values = line.split(' ')
 	  values = line.scan(/......../)
+	  if fp.lineno == 1
+	    #  The first line should be skipped. However, if this line seems to contain
+		#  coordinates, then try reading them
+		if values.size != 10 && (values.size > 10 || values.size != natoms * 3)
+		  next  #  Wrong number of coordinates
+		end
+		if values.each { |v| Float(v) rescue break } == nil
+		  #  The line contains non-number 
+		  next
+	    end
+		puts "Loadcrd: The title line seems to be missing"
+	  end
       if count + values.size > natoms * 3
         raise MolbyError, sprintf("crd format error - too many values at line %d in file %s; number of atoms = %d, current frame = %d", fp.lineno, fp.path, natoms, frame)
       end
@@ -59,8 +61,11 @@ class Molecule
 		if periodic
 		  #  Should have box information
 		  line = fp.gets
-		  if line == nil || (values = line.chomp.split(' ')).length != 3
-		    raise "The molecule has a periodic cell but the crd file does not contain cell information"
+		  if line == nil || (values = line.chomp.scan(/......../)).length != 3
+		    #  Periodic but no cell information
+			puts "Loadcrd: the molecule has a periodic cell but the crd file does not contain cell info"
+			periodic = false
+			redo
 	      end
 		  self.cell = [Float(values[0]), Float(values[1]), Float(values[2]), 90, 90, 90]
 		end
@@ -71,6 +76,10 @@ class Molecule
 		end
       end
     end
+	fp.close
+	if (count > 0)
+	  raise MolbyError, sprintf("crd format error - file ended in the middle of frame %d", frame)
+	end
 	hide_progress_panel
 	if frame > 0
 	  self.frame = self.nframes - 1

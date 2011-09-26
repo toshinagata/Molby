@@ -1406,9 +1406,16 @@ md_prepare(MDArena *arena, int check_only)
 				err = "cannot create log file";
 		}
 		if (err == NULL && arena->coord_result_name != NULL && arena->coord_result == NULL) {
+			char molname[64];
 			arena->coord_result = fopen(arena->coord_result_name, "wb");
 			if (arena->coord_result == NULL)
 				err = "cannot create coord file";
+			else {
+				int natoms = (arena->output_expanded_atoms ? arena->mol->natoms : arena->natoms_uniq);
+				MoleculeCallback_displayName(mol, molname, sizeof molname);
+				fprintf(arena->coord_result, "TITLE: %s, %d atoms\n", molname, natoms);
+				fflush(arena->coord_result);
+			}
 		}
 		if (err == NULL && arena->vel_result_name != NULL && arena->vel_result == NULL) {
 			arena->vel_result = fopen(arena->vel_result_name, "wb");
@@ -1914,13 +1921,16 @@ md_output_results(MDArena *arena)
 				VecScaleInc(r, *bv, ap[i].wrap_dy);
 				VecScaleInc(r, *cv, ap[i].wrap_dz);
 			}
-			fprintf(arena->coord_result, " %7.3f%s %7.3f%s %7.3f%s",
+			fprintf(arena->coord_result, "%8.3f%s%8.3f%s%8.3f%s",
 				r.x, (j == 9 ? "\n" : ""),
 				r.y, (j == 8 ? "\n" : ""),
 				r.z, (j == 7 ? "\n" : ""));
 		}
 		if (j != 0)
 			fprintf(arena->coord_result, "\n");
+		if (arena->periodic_a || arena->periodic_b || arena->periodic_c) {
+			fprintf(arena->coord_result, "%8.3f%8.3f%8.3f\n", arena->mol->cell->cell[0], arena->mol->cell->cell[1], arena->mol->cell->cell[2]);
+		}
 		fflush(arena->coord_result);
 	}
 	if (arena->vel_result != NULL) {
