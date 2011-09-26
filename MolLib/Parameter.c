@@ -1862,7 +1862,7 @@ ParameterTableIsItemEditable(Parameter *par, int column, int row)
 		case kAngleParType: return (f && column > 0 && column < 4);
 		case kDihedralParType: return (f && column > 0 && column < 5);
 		case kImproperParType: return (f && column > 0 && column < 5);
-		case kVdwPairParType: return (f && column > 0 && column < 5);
+		case kVdwPairParType: return (f && column > 0 && column < 6);
 	/*	case kElementParType: return (f && column > 0 && column < 7); */
 		default: return 0;
 	}

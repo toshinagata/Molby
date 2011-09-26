@@ -667,22 +667,22 @@ s_find_vdw_parameters(MDArena *arena)
 		fprintf(arena->debug_result, " idx1  idx2  type1 type2  sigma    eps    sigma14  eps14\n");
 	}
 	for (i = 0; i < par->nvdwPars; i++) {
-		t1 = arena->vdw_par_i[i];
-		type1 = par->vdwPars[t1].type1;
+	/*	t1 = arena->vdw_par_i[i];
+		type1 = par->vdwPars[t1].type1; */
+		type1 = par->vdwPars[i].type1;
 		for (j = i; j < par->nvdwPars; j++) {
 			VdwPairPar newpar, *vpp;
 			Double sigma1, sigma2, eps1, eps2;
 			vpp = NULL;
-			t2 = arena->vdw_par_i[j];
-			type2 = par->vdwPars[t2].type1;  /*  Not type2  */
-			if (i != j) {
-				/*  Look up the pair-specific van der Waals parameters  */
-				if (mol->par != NULL) {
-					vpp = ParameterLookupVdwPairPar(mol->par, type1, type2, 0);
-				}
-				if (vpp == NULL)
-					vpp = ParameterLookupVdwPairPar(gBuiltinParameters, type1, type2, 0);
+		/*	t2 = arena->vdw_par_i[j];
+			type2 = par->vdwPars[t2].type1; */
+			type2 = par->vdwPars[j].type1;  /*  Not type2  */
+			/*  Look up the pair-specific van der Waals parameters  */
+			if (mol->par != NULL) {
+				vpp = ParameterLookupVdwPairPar(mol->par, type1, type2, 0);
 			}
+			if (vpp == NULL)
+				vpp = ParameterLookupVdwPairPar(gBuiltinParameters, type1, type2, 0);
 			if (vpp != NULL) {
 				newpar = *vpp;
 			} else {
