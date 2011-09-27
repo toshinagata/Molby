@@ -318,7 +318,8 @@ s_ElectroCutoffSym, s_PairlistDistanceSym, s_TemperatureSym, s_TransientTempSym,
 s_AverageTempSym, s_AndersenFreqSym, s_AndersenCouplingSym, s_RandomSeedSym, 
 s_DielectricSym, s_GradientConvergenceSym, s_CoordinateConvergenceSym, s_UseXplorShiftSym, 
 s_Scale14VdwSym, s_Scale14ElectSym, s_RelocateCenterSym, s_SurfaceProbeRadiusSym, 
-s_SurfaceTensionSym, s_SurfacePotentialFreqSym, s_UseGraphiteSym;
+s_SurfaceTensionSym, s_SurfacePotentialFreqSym, s_UseGraphiteSym,
+s_AlchemicalLambdaSym, s_AlchemicalDeltaLambdaSym;
 
 struct s_MDArenaAttrDef {
 	char *name;
@@ -360,6 +361,8 @@ static struct s_MDArenaAttrDef s_MDArenaAttrDefTable[] = {
 	{"surface_tension",   &s_SurfaceTensionSym,   0, 0, 'f', offsetof(MDArena, surface_tension)},
 	{"surface_potential_freq", &s_SurfacePotentialFreqSym, 0, 0, 'i', offsetof(MDArena, surface_potential_freq)},
 	{"use_graphite",      &s_UseGraphiteSym,      0, 0, 'i', offsetof(MDArena, use_graphite)},
+	{"alchemical_lambda", &s_AlchemicalLambdaSym, 0, 0, 'f', offsetof(MDArena, alchem_lambda)},
+	{"alchemical_delta_lambda", &s_AlchemicalDeltaLambdaSym, 0, 0, 'f', offsetof(MDArena, alchem_dlambda)},
 	{NULL} /* Sentinel */
 };
 
@@ -594,6 +597,83 @@ s_MDArena_ToHash(VALUE self)
 
 /*
  *  call-seq:
+ *     set_alchemical_perturbation(group1, group2) -> [group1, group2]
+ *
+ *  Set vanishing and appearing atom groups for alchemical perturbation.
+ */
+static VALUE
+s_MDArena_SetAlchemicalPerturbation(VALUE self, VALUE gval1, VALUE gval2)
+{
+	IntGroup *ig1, *ig2;
+	MDArena *arena;
+	char *flags;
+	int i, n;
+	Data_Get_Struct(self, MDArena, arena);
+	if (gval1 == Qnil && gval2 == Qnil) {
+		md_set_alchemical_flags(arena, 0, NULL);
+		return self;
+	}
+	if (arena->mol == NULL)
+		rb_raise(rb_eMolbyError, "Molecule is not set");
+	n = arena->mol->natoms;
+	flags = (char *)calloc(1, n);
+	ig1 = IntGroupFromValue(gval1);  /*  nil argument is taken as an empty IntGroup  */
+	ig2 = IntGroupFromValue(gval2);
+	for (i = 0; i < n; i++) {
+		if (IntGroupLookupPoint(ig1, i) >= 0)
+			flags[i] = 1;
+		if (IntGroupLookupPoint(ig2, i) >= 0) {
+			if (flags[i] == 1)
+				rb_raise(rb_eMolbyError, "duplicate atom (%d) in vanishing and appearing groups", i);
+			flags[i] = 2;
+		}
+	}
+	if (md_set_alchemical_flags(arena, n, flags) != 0)
+		rb_raise(rb_eMolbyError, "cannot set alchemical flags");
+	free(flags);
+	gval1 = ValueFromIntGroup(ig1);
+	gval2 = ValueFromIntGroup(ig2);
+	IntGroupRelease(ig1);
+	IntGroupRelease(ig2);
+	return rb_ary_new3(2, gval1, gval2);
+}
+
+/*
+ *  call-seq:
+ *     get_alchemical_perturbation -> [group1, group2] or nil
+ *
+ *  If alchemical perturbation is enabled, get the current vanishing and appearing atom groups.
+ *  Otherwise, return nil.
+ */
+static VALUE
+s_MDArena_GetAlchemicalPerturbation(VALUE self)
+{
+	IntGroup *ig1, *ig2;
+	VALUE gval1, gval2;
+	MDArena *arena;
+	int i;
+	Data_Get_Struct(self, MDArena, arena);
+	if (arena->nalchem_flags == 0)
+		return Qnil;
+	if (arena->mol == NULL)
+		rb_raise(rb_eMolbyError, "Molecule is not set");	
+	ig1 = IntGroupNew();
+	ig2 = IntGroupNew();
+	for (i = 0; i < arena->nalchem_flags; i++) {
+		if (arena->alchem_flags[i] == 1)
+			IntGroupAdd(ig1, i, 1);
+		else if (arena->alchem_flags[i] == 2)
+			IntGroupAdd(ig2, i, 1);
+	}
+	gval1 = ValueFromIntGroup(ig1);
+	gval2 = ValueFromIntGroup(ig2);
+	IntGroupRelease(ig1);
+	IntGroupRelease(ig2);
+	return rb_ary_new3(2, gval1, gval2);	
+}
+
+/*
+ *  call-seq:
  *     keys -> Array
  *
  *  Returns an array of valid attributes.
@@ -664,6 +744,8 @@ Init_MolbyMDTypes(void)
 	rb_define_method(rb_cMDArena, "[]=", s_MDArena_Set, 2);
 	rb_define_method(rb_cMDArena, "to_hash", s_MDArena_ToHash, 0);
 	rb_define_method(rb_cMDArena, "keys", s_MDArena_Keys, 0);
+	rb_define_method(rb_cMDArena, "set_alchemical_perturbation", s_MDArena_SetAlchemicalPerturbation, 2);
+	rb_define_method(rb_cMDArena, "get_alchemical_perturbation", s_MDArena_GetAlchemicalPerturbation, 0);
 	rb_define_method(rb_cMDArena, "print_surface_area", s_MDArena_PrintSurfaceArea, 0);
 
 	/*  All setter and getter are handled with the same C function (attribute name is taken

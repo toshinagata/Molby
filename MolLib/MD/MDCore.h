@@ -229,6 +229,13 @@ typedef struct MDArena {
 	Int    ncustom_pars;
 	MDCustomPar *custom_pars;
 	
+	/*  Alchemical perturbation  */
+	Int    nalchem_flags;
+	char   *alchem_flags;  /*  0: normal, 1: vanishing, 2: appearing  */
+	Double alchem_lambda;
+	Double alchem_dlambda;
+	Double alchem_energy;
+	
 	/*  Fix atoms  */
 	/*	Int nfix_atoms;
 	 fix_atom_record *fix_atoms; */
@@ -432,6 +439,8 @@ int md_check_abnormal_bond(MDArena *arena, Molecule *mol, int idx);
 int md_check_abnormal_angle(MDArena *arena, Molecule *mol, int idx);
 int md_check_abnormal_dihedral(MDArena *arena, Molecule *mol, int idx);
 int md_check_abnormal_improper(MDArena *arena, Molecule *mol, int idx);
+
+int md_set_alchemical_flags(MDArena *arena, int nflags, const char *flags);
 
 void md_amend_by_symmetry(MDArena *arena);
 void md_cell_recalculate(MDArena *arena);

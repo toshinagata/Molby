@@ -1355,6 +1355,33 @@ md_init_for_positions(MDArena *arena)
 	md_center_of_mass(arena, &(arena->initial_center));
 }
 
+/*  Set the alchemical flags  */
+/*  Independent with arena->xmol, mol  */
+int
+md_set_alchemical_flags(MDArena *arena, int nflags, const char *flags)
+{
+	if (arena == NULL)
+		return 0;
+
+	if (nflags == 0 || flags == NULL) {
+		if (arena->alchem_flags != NULL)
+			free(arena->alchem_flags);
+		arena->alchem_flags = NULL;
+		arena->nalchem_flags = 0;
+		return 0;
+	}
+
+	if (arena->alchem_flags == NULL)
+		arena->alchem_flags = (char *)malloc(nflags);
+	else arena->alchem_flags = (char *)realloc(arena->alchem_flags, nflags);
+	if (arena->alchem_flags == NULL) {
+		arena->nalchem_flags = 0;
+		return -1;
+	}
+	memmove(arena->alchem_flags, flags, nflags);
+	return 0;
+}
+
 const char *
 md_prepare(MDArena *arena, int check_only)
 {
@@ -1499,7 +1526,6 @@ md_prepare(MDArena *arena, int check_only)
 		md_log(arena, "Number of constrained atoms = %d\n", t1);
 	if (t2 > 0)
 		md_log(arena, "Number of fixed atoms = %d\n", t2);
-
 
 	if (arena->natoms_uniq < mol->natoms) {
 		md_log(arena, "Number of symmetry-unique atoms = %d\n", arena->natoms_uniq);
@@ -1976,6 +2002,8 @@ md_output_energies(MDArena *arena)
 		md_log(arena, " %11s %11s %11s %11s %11s %11s %11s %11s", "VDW", "ELECT", "AUX", "SURFACE", "KINETIC", "NET", "TEMP", "TEMP_AVG");
 		if (periodic)
 			md_log(arena, " %11s", "VOLUME");
+		if (arena->nalchem_flags > 0)
+			md_log(arena, " %11s %11s", "LAMBDA", "DEDL");
 		md_log(arena, "\n");
 	}
 	md_log(arena, "ENERGY:  %11d %11.5f", arena->step, arena->total_energy * INTERNAL2KCAL);
@@ -1991,6 +2019,9 @@ md_output_energies(MDArena *arena)
 		cv = &(arena->mol->cell->axes[2]);
 		VecCross(v, *av, *bv);
 		md_log(arena, " %11.5f", VecDot(v, *cv));
+	}
+	if (arena->nalchem_flags > 0) {
+		md_log(arena, " %11.5f %11.5f", arena->alchem_lambda, arena->alchem_energy / arena->alchem_dlambda);
 	}
 	md_log(arena, "\n");
 	md_log(arena, NULL);
@@ -3037,6 +3068,8 @@ md_arena_release(MDArena *arena)
 		free(arena->custom_bond_pars);
 	if (arena->custom_pars != NULL)
 		free(arena->custom_pars);
+	if (arena->alchem_flags != NULL)
+		free(arena->alchem_flags);
 	if (arena->bond_par_i != NULL)
 		free(arena->bond_par_i);
 	if (arena->angle_par_i != NULL)

@@ -637,6 +637,8 @@ s_calc_nonbonded_force_sub(MDArena *arena, Double *energies, Double *eenergies, 
 	int i;
 	Vector *vdr;
 	Double limit, elimit, dielec_r;
+	Double lambda, dlambda;
+
 	MDVerlet *vl;
 /*	MDVdwCache *vdw_cache = arena->vdw_cache; */
 	Atom *atoms = arena->mol->atoms;
@@ -674,6 +676,32 @@ s_calc_nonbonded_force_sub(MDArena *arena, Double *energies, Double *eenergies, 
 			&& !(get_group_flag(group_flags_1, vl->n2) && get_group_flag(group_flags_2, vl->n1)))
 				continue;
 		}
+
+		if (arena->nalchem_flags > 0) {
+			char c1, c2;
+			if (vl->n1 < arena->nalchem_flags)
+				c1 = arena->alchem_flags[vl->n1];
+			else c1 = 0;
+			if (vl->n2 < arena->nalchem_flags)
+				c2 = arena->alchem_flags[vl->n2];
+			else c2 = 0;
+			if ((c1 == 1 && c2 == 2) || (c1 == 2 && c2 == 1))
+				continue;
+			if (c1 == 1 || c2 == 1) {
+				lambda = (1.0 - arena->alchem_lambda);
+				dlambda = -arena->alchem_dlambda;
+			} else if (c1 == 2 || c2 == 2) {
+				lambda = arena->alchem_lambda;
+				dlambda = arena->alchem_dlambda;
+			} else {
+				lambda = 1.0;
+				dlambda = 0.0;
+			}
+		} else {
+			lambda = 1.0;
+			dlambda = 0.0;
+		}
+		
 		if (vl->vdw_type == 1) {
 			A = vp->par.A14;
 			B = vp->par.B14;
@@ -749,12 +777,17 @@ s_calc_nonbonded_force_sub(MDArena *arena, Double *energies, Double *eenergies, 
 			k0 *= arena->scale14_vdw;
 			k1 *= arena->scale14_vdw;
 		}
+		k0 /= vl->mult;
+		k1 *= lambda;
 		VecScale(fij, rij, k1);
-		*energies += k0 / vl->mult;
+		*energies += k0 * lambda;
 		if (forces != NULL) {
 			VecDec(forces[vl->n1], fij);
 			VecInc(forces[vl->n2], fij);
 		}
+		if (dlambda != 0.0)
+			arena->alchem_energy += k0 * dlambda;
+
 		if (arena->debug_result && arena->debug_output_level > 1) {
 			fprintf(arena->debug_result, "nonbonded(vdw) force %d-%d: r=%f, k0=%f, k1=%f, {%f %f %f}\n", vl->n1+1, vl->n2+1, sqrt(r2), k0/KCAL2INTERNAL, k1*sqrt(r2)/KCAL2INTERNAL, fij.x/KCAL2INTERNAL, fij.y/KCAL2INTERNAL, fij.z/KCAL2INTERNAL);
 		}
@@ -932,7 +965,8 @@ calc_force(MDArena *arena)
 	memset(arena->energies, 0, sizeof(Double) * kSlowIndex);
 	memset(arena->forces, 0, sizeof(Vector) * kSlowIndex * natoms);
 	arena->total_energy = 0.0;
-	
+	arena->alchem_energy = 0.0;
+
 	if (arena->step == arena->start_step || arena->step % arena->surface_potential_freq == 0) {
 		doSurface = 1;
 		arena->energies[kSurfaceIndex] = 0.0;
