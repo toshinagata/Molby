@@ -536,11 +536,28 @@ graphite_force(MDGraphiteArena *graphite, MDArena *arena, Double *energy, Vector
 	for (i = 0; i < arena->natoms_uniq; i++) {
 		Vector f;
 		Double en;
+		Double lambda, dlambda;
 		Vector v = mol->atoms[i].r;
 		if (mol->atoms[i].fix_force < 0)
 			continue;
 		if (mol->atoms[i].occupancy == 0.0)
 			continue;
+		if (arena->nalchem_flags > 0) {
+			char c1 = arena->alchem_flags[i];
+			if (c1 == 1) {
+				lambda = (1.0 - arena->alchem_lambda);
+				dlambda = -arena->alchem_dlambda;
+			} else if (c1 == 2) {
+				lambda = arena->alchem_lambda;
+				dlambda = arena->alchem_dlambda;
+			} else {
+				lambda = 1.0;
+				dlambda = 0.0;
+			}
+		} else {
+			lambda = 1.0;
+			dlambda = 0.0;
+		}
 		en = f.x = f.y = f.z = 0.0;
 		for (ix = 0; ix < px; ix++) {
 			for (iy = 0; iy < py; iy++) {
@@ -560,11 +577,13 @@ graphite_force(MDGraphiteArena *graphite, MDArena *arena, Double *energy, Vector
 				}
 			}
 		}
-		en *= pxpypz_1;
+		en *= pxpypz_1 * lambda;
 		VecScaleSelf(f, pxpypz_1);
-		graphite->energies[i] = en;
-		graphite->last_energy += en;
+		graphite->energies[i] = en * lambda;
+		graphite->last_energy += en * lambda;
 		graphite->last_forces[i] = f;
+		if (dlambda != 0.0)
+			arena->alchem_energy += en * dlambda;
 	}
 	for (i = arena->natoms_uniq; i < mol->natoms; i++) {
 		Symop symop = mol->atoms[i].symop;

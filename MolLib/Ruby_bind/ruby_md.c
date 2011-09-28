@@ -319,14 +319,15 @@ s_AverageTempSym, s_AndersenFreqSym, s_AndersenCouplingSym, s_RandomSeedSym,
 s_DielectricSym, s_GradientConvergenceSym, s_CoordinateConvergenceSym, s_UseXplorShiftSym, 
 s_Scale14VdwSym, s_Scale14ElectSym, s_RelocateCenterSym, s_SurfaceProbeRadiusSym, 
 s_SurfaceTensionSym, s_SurfacePotentialFreqSym, s_UseGraphiteSym,
-s_AlchemicalLambdaSym, s_AlchemicalDeltaLambdaSym;
+s_AlchemicalLambdaSym, s_AlchemicalDeltaLambdaSym, s_AlchemicalEnergySym;
 
 struct s_MDArenaAttrDef {
 	char *name;
 	VALUE *symref;  /*  Address of s_LogFileSym etc. */
 	ID id;			/*  Ruby ID of the symbol; will be set within Init_MolbyMDTypes()  */
 	ID sid;         /*  Ruby ID of the symbol plus '='; will be set within Init_MolbyMDTypes()  */
-	char type;      /*  s: string (const char *), i: Int, f: Double. Uppercase: read-only.  */
+	char type;      /*  s: string (const char *), i: Int, f: Double, e: Double in energy dimension (unit conversion is necessary). */
+					/*  Uppercase: read-only.  */
 	int  offset;    /*  Offset in the MDArena structure.  */
 };
 static struct s_MDArenaAttrDef s_MDArenaAttrDefTable[] = {
@@ -363,6 +364,7 @@ static struct s_MDArenaAttrDef s_MDArenaAttrDefTable[] = {
 	{"use_graphite",      &s_UseGraphiteSym,      0, 0, 'i', offsetof(MDArena, use_graphite)},
 	{"alchemical_lambda", &s_AlchemicalLambdaSym, 0, 0, 'f', offsetof(MDArena, alchem_lambda)},
 	{"alchemical_delta_lambda", &s_AlchemicalDeltaLambdaSym, 0, 0, 'f', offsetof(MDArena, alchem_dlambda)},
+	{"alchemical_energy", &s_AlchemicalEnergySym, 0, 0, 'E', offsetof(MDArena, alchem_energy)},
 	{NULL} /* Sentinel */
 };
 
@@ -409,6 +411,9 @@ s_MDArena_Get(VALUE self, VALUE attr)
 				case 'f':
 				case 'F':
 					return rb_float_new(*((Double *)p));
+				case 'e':
+				case 'E':
+					return rb_float_new(*((Double *)p) * INTERNAL2KCAL);
 				default:
 					rb_raise(rb_eMolbyError, "Internal inconsistency: unknown type field");
 			}
@@ -428,6 +433,9 @@ s_MDArena_Get(VALUE self, VALUE attr)
 				case 'f':
 				case 'F':
 					return rb_float_new(*((Double *)pp));
+				case 'e':
+				case 'E':
+					return rb_float_new(*((Double *)pp) * INTERNAL2KCAL);
 				case 'X':
 					/*  Isotropic pressure only  */
 					return rb_ary_new3(3, rb_float_new(pres->apply[0]), rb_float_new(pres->apply[4]), rb_float_new(pres->apply[8]));
@@ -509,7 +517,10 @@ s_MDArena_Set(VALUE self, VALUE attr, VALUE val)
 				case 'f':
 					*((Double *)p) = NUM2DBL(rb_Float(val));
 					return val;
-				case 'S': case 'I': case 'F':
+				case 'e':
+					*((Double *)p) = NUM2DBL(rb_Float(val) * KCAL2INTERNAL);
+					return val;
+				case 'S': case 'I': case 'F': case 'E':
 					rb_raise(rb_eMolbyError, "The attribute '%s' is read-only", rb_id2name(aid));
 				default:
 					rb_raise(rb_eMolbyError, "Internal inconsistency: unknown type field");
@@ -530,6 +541,9 @@ s_MDArena_Set(VALUE self, VALUE attr, VALUE val)
 				case 'f':
 					*((Double *)pp) = NUM2DBL(rb_Float(val));
 					return val;
+				case 'e':
+					*((Double *)pp) = NUM2DBL(rb_Float(val) * KCAL2INTERNAL);
+					return val;
 				case 'X':
 					/*  Isotropic pressure only  */
 					val = rb_ary_to_ary(val);
@@ -545,7 +559,7 @@ s_MDArena_Set(VALUE self, VALUE attr, VALUE val)
 						else pres->cell_flexibility[j] = 0.0;
 					}
 					return val;
-				case 'S': case 'I': case 'F':
+				case 'S': case 'I': case 'F': case 'E':
 					rb_raise(rb_eMolbyError, "The attribute '%s' is read-only", rb_id2name(aid));
 				default:
 					rb_raise(rb_eMolbyError, "Internal inconsistency: unknown type field");
@@ -611,18 +625,18 @@ s_MDArena_SetAlchemicalPerturbation(VALUE self, VALUE gval1, VALUE gval2)
 	Data_Get_Struct(self, MDArena, arena);
 	if (gval1 == Qnil && gval2 == Qnil) {
 		md_set_alchemical_flags(arena, 0, NULL);
-		return self;
+		return Qnil;
 	}
 	if (arena->mol == NULL)
 		rb_raise(rb_eMolbyError, "Molecule is not set");
-	n = arena->mol->natoms;
+	n = arena->xmol->natoms;
 	flags = (char *)calloc(1, n);
-	ig1 = IntGroupFromValue(gval1);  /*  nil argument is taken as an empty IntGroup  */
-	ig2 = IntGroupFromValue(gval2);
+	ig1 = (gval1 == Qnil ? NULL : IntGroupFromValue(gval1));
+	ig2 = (gval2 == Qnil ? NULL : IntGroupFromValue(gval2));
 	for (i = 0; i < n; i++) {
-		if (IntGroupLookupPoint(ig1, i) >= 0)
+		if (ig1 != NULL && IntGroupLookupPoint(ig1, i) >= 0)
 			flags[i] = 1;
-		if (IntGroupLookupPoint(ig2, i) >= 0) {
+		if (ig2 != NULL && IntGroupLookupPoint(ig2, i) >= 0) {
 			if (flags[i] == 1)
 				rb_raise(rb_eMolbyError, "duplicate atom (%d) in vanishing and appearing groups", i);
 			flags[i] = 2;
@@ -631,10 +645,14 @@ s_MDArena_SetAlchemicalPerturbation(VALUE self, VALUE gval1, VALUE gval2)
 	if (md_set_alchemical_flags(arena, n, flags) != 0)
 		rb_raise(rb_eMolbyError, "cannot set alchemical flags");
 	free(flags);
-	gval1 = ValueFromIntGroup(ig1);
-	gval2 = ValueFromIntGroup(ig2);
-	IntGroupRelease(ig1);
-	IntGroupRelease(ig2);
+	if (ig1 != NULL) {
+		gval1 = ValueFromIntGroup(ig1);
+		IntGroupRelease(ig1);
+	}
+	if (ig2 != NULL) {
+		gval2 = ValueFromIntGroup(ig2);
+		IntGroupRelease(ig2);
+	}
 	return rb_ary_new3(2, gval1, gval2);
 }
 

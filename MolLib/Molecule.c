@@ -591,7 +591,11 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 	fn = 0;
 	nframes = 0;
 	while (ReadLine(buf, sizeof buf, fp, &lineNumber) > 0) {
-		if (strstr(buf, "!:atoms") == buf) {
+		if (strncmp(buf, "!:", 2) != 0)
+			continue;   /*  Skip until section header is found  */
+		bufp = buf;
+		strsep(&bufp, " \t\n");
+		if (strcmp(buf, "!:atoms") == 0) {
 			while (ReadLine(buf, sizeof buf, fp, &lineNumber) > 0) {
 				if (buf[0] == '!')
 					continue;
@@ -617,7 +621,7 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 				ap->intCharge = ibuf[3];
 			}
 			continue;
-		} else if (strstr(buf, "!:atoms_symop") == buf) {
+		} else if (strcmp(buf, "!:atoms_symop") == 0) {
 			i = 0;
 			while (ReadLine(buf, sizeof buf, fp, &lineNumber) > 0) {
 				if (buf[0] == '!')
@@ -642,7 +646,7 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 				i++;
 			}
 			continue;
-		} else if (strstr(buf, "!:atoms_fix") == buf) {
+		} else if (strcmp(buf, "!:atoms_fix") == 0) {
 			i = 0;
 			while (ReadLine(buf, sizeof buf, fp, &lineNumber) > 0) {
 				if (buf[0] == '!')
@@ -666,7 +670,7 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 				i++;
 			}
 			continue;
-		} else if (strstr(buf, "!:positions") == buf) {
+		} else if (strcmp(buf, "!:positions") == 0) {
 			i = 0;
 			while (ReadLine(buf, sizeof buf, fp, &lineNumber) > 0) {
 				if (buf[0] == '!')
@@ -702,7 +706,7 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 				mp->nframes = mp->cframe = 0;
 			}
 			continue;
-		} else if (strstr(buf, "!:bonds") == buf) {
+		} else if (strcmp(buf, "!:bonds") == 0) {
 			while (ReadLine(buf, sizeof buf, fp, &lineNumber) > 0) {
 				if (buf[0] == '!')
 					continue;
@@ -739,7 +743,7 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 				}
 			}
 			continue;
-		} else if (strstr(buf, "!:angles") == buf) {
+		} else if (strcmp(buf, "!:angles") == 0) {
 			while (ReadLine(buf, sizeof buf, fp, &lineNumber) > 0) {
 				if (buf[0] == '!')
 					continue;
@@ -763,7 +767,7 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 				}
 			}
 			continue;
-		} else if (strstr(buf, "!:dihedrals") == buf) {
+		} else if (strcmp(buf, "!:dihedrals") == 0) {
 			while (ReadLine(buf, sizeof buf, fp, &lineNumber) > 0) {
 				if (buf[0] == '!')
 					continue;
@@ -788,7 +792,7 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 				}
 			}
 			continue;
-		} else if (strstr(buf, "!:impropers") == buf) {
+		} else if (strcmp(buf, "!:impropers") == 0) {
 			while (ReadLine(buf, sizeof buf, fp, &lineNumber) > 0) {
 				if (buf[0] == '!')
 					continue;
@@ -813,7 +817,7 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 				}
 			}
 			continue;
-		} else if (strstr(buf, "!:xtalcell") == buf && mp->cell == NULL) {
+		} else if (strcmp(buf, "!:xtalcell") == 0 && mp->cell == NULL) {
 			while (ReadLine(buf, sizeof buf, fp, &lineNumber) > 0) {
 				if (buf[0] == '!')
 					continue;
@@ -827,7 +831,7 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 				MoleculeSetCell(mp, dbuf[0], dbuf[1], dbuf[2], dbuf[3], dbuf[4], dbuf[5], 0);
 			}
 			continue;
-		} else if (strstr(buf, "!:symmetry_operations") == buf) {
+		} else if (strcmp(buf, "!:symmetry_operations") == 0) {
 			i = 0;
 			while (ReadLine(buf, sizeof buf, fp, &lineNumber) > 0) {
 				Transform tr;
@@ -850,7 +854,7 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 				}
 			}
 			continue;
-		} else if (strstr(buf, "!:periodic_box") == buf) {
+		} else if (strcmp(buf, "!:periodic_box") == 0) {
 			Vector vs[5];
 			i = 0;
 			while (ReadLine(buf, sizeof buf, fp, &lineNumber) > 0) {
@@ -878,7 +882,7 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 				}
 			}
 			continue;
-		} else if (strstr(buf, "!:md_parameters") == buf) {
+		} else if (strcmp(buf, "!:md_parameters") == 0) {
 			MDArena *arena;
 			if (mp->arena == NULL)
 				mp->arena = md_arena_new(NULL);
@@ -895,6 +899,43 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 						bufp++;
 					valp = strsep(&bufp, "\n");
 				} else valp = NULL;
+				if (strcmp(comp, "alchem_flags") == 0) {
+					j = (valp == NULL ? 0 : atoi(valp));
+					if (j > 0) {
+						valp = (char *)malloc(j);
+						i = 0;
+						while ((k = fgetc(fp)) >= 0) {
+							ungetc(k, fp);
+							if (k < '0' || k > '9') {
+								snprintf(errbuf, errbufsize, "line %d: too few flags in alchem_flags block", lineNumber + 1);
+								free(valp);
+								goto exit;
+							}
+							ReadLine(buf, sizeof buf, fp, &lineNumber);
+							bufp = buf;
+							while (*bufp != 0) {
+								if (*bufp >= '0' && *bufp <= '2') {
+									if (i >= j) {
+										snprintf(errbuf, errbufsize, "line %d: too many flags in alchem_flags block", lineNumber);
+										free(valp);
+										goto exit;
+									}
+									valp[i++] = *bufp - '0';
+								} else if (*bufp != ' ' && *bufp != '\t' && *bufp != '\n') {
+									snprintf(errbuf, errbufsize, "line %d: strange character (0x%02x) in alchem_flags block", lineNumber, (int)*bufp);
+									free(valp);
+									goto exit;
+								}
+								bufp++;
+							}
+							if (i == j)
+								break;
+						}
+						md_set_alchemical_flags(arena, j, valp);
+						free(valp);
+					}
+					continue;
+				}
 				/*  In the following, the redundant "!= NULL" is to suppress suprious warning  */
 				if ((strcmp(comp, "log_file") == 0 && (pp = &arena->log_result_name) != NULL)
 					|| (strcmp(comp, "coord_file") == 0 && (pp = &arena->coord_result_name) != NULL)
@@ -935,12 +976,14 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 						   || (strcmp(comp, "scale14_vdw") == 0 && (dp = &arena->scale14_vdw) != NULL)
 						   || (strcmp(comp, "scale14_elect") == 0 && (dp = &arena->scale14_elect) != NULL)
 						   || (strcmp(comp, "surface_probe_radius") == 0 && (dp = &arena->probe_radius) != NULL)
-						   || (strcmp(comp, "surface_tension") == 0 && (dp = &arena->surface_tension) != NULL)) {
+						   || (strcmp(comp, "surface_tension") == 0 && (dp = &arena->surface_tension) != NULL)
+						   || (strcmp(comp, "alchemical_lambda") == 0 && (dp = &arena->alchem_lambda) != NULL)
+						   || (strcmp(comp, "alchemical_delta_lambda") == 0 && (dp = &arena->alchem_dlambda) != NULL)) {
 					*dp = (valp == NULL ? 0.0 : strtod(valp, NULL));
 				}
 			}
 			continue;
-		} else if (strstr(buf, "!:pressure_control_parameters") == buf) {
+		} else if (strcmp(buf, "!:pressure_control_parameters") == 0) {
 			MDPressureArena *pressure;
 			if (mp->arena == NULL)
 				mp->arena = md_arena_new(mp);
@@ -982,7 +1025,7 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 				}
 			}
 			continue;
-		} else if (strstr(buf, "!:velocity") == buf) {
+		} else if (strcmp(buf, "!:velocity") == 0) {
 			i = 0;
 			while (ReadLine(buf, sizeof buf, fp, &lineNumber) > 0) {
 				if (buf[0] == '!')
@@ -1005,7 +1048,7 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 				i++;
 			}
 			continue;
-		} else if (strstr(buf, "!:force") == buf) {
+		} else if (strcmp(buf, "!:force") == 0) {
 			i = 0;
 			while (ReadLine(buf, sizeof buf, fp, &lineNumber) > 0) {
 				if (buf[0] == '!')
@@ -1028,7 +1071,7 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 				i++;
 			}
 			continue;
-		} else if (strstr(buf, "!:parameter") == buf) {
+		} else if (strcmp(buf, "!:parameter") == 0 || strcmp(buf, "!:parameters") == 0) {
 			Parameter *par = mp->par;
 			if (par == NULL) {
 				mp->par = ParameterNew();
@@ -1055,7 +1098,7 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 				free(bufp);
 			}
 			continue;
-		} else if (strstr(buf, "!:trackball") == buf) {
+		} else if (strcmp(buf, "!:trackball") == 0) {
 			i = 0;
 			while (ReadLine(buf, sizeof buf, fp, &lineNumber) > 0) {
 				if (buf[0] == '!')
@@ -1074,7 +1117,7 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 				i++;
 			}
 			continue;
-		} else if (strstr(buf, "!:view") == buf) {
+		} else if (strcmp(buf, "!:view") == 0) {
 			while (ReadLine(buf, sizeof buf, fp, &lineNumber) > 0) {
 				if (buf[0] == '!')
 					continue;
@@ -3398,6 +3441,19 @@ MoleculeWriteToMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbu
 		fprintf(fp, "surface_tension %g\n", arena->surface_tension);
 		fprintf(fp, "surface_potential_freq %d\n", arena->surface_potential_freq);
 		fprintf(fp, "use_graphite %d\n", arena->use_graphite);
+		fprintf(fp, "alchemical_lambda %g\n", arena->alchem_lambda);
+		fprintf(fp, "alchemical_delta_lambda %g\n", arena->alchem_dlambda);
+		if (arena->nalchem_flags > 0) {
+			fprintf(fp, "alchem_flags %d", arena->nalchem_flags);
+			for (i = 0; i < arena->nalchem_flags; i++) {
+				if (i % 60 == 0)
+					fputc('\n', fp);
+				else if (i % 10 == 0)
+					fputc(' ', fp);
+				fputc('0' + arena->alchem_flags[i], fp);
+			}
+			fputc('\n', fp);
+		}
 		if (arena->pressure != NULL) {
 			Double *dp;
 			fprintf(fp, "pressure_freq %d\n", arena->pressure->freq);
@@ -8657,7 +8713,7 @@ MoleculeInsertFrames(Molecule *mp, IntGroup *group, const Vector *inFrame, const
 	}
 	free(tempv);
 	mp->nframes = n_new;
-	MoleculeSelectFrame(mp, last_inserted, 0);
+	MoleculeSelectFrame(mp, last_inserted, 1);
 	MoleculeIncrementModifyCount(mp);
 	__MoleculeUnlock(mp);
 	return count;

@@ -1379,6 +1379,7 @@ md_set_alchemical_flags(MDArena *arena, int nflags, const char *flags)
 		return -1;
 	}
 	memmove(arena->alchem_flags, flags, nflags);
+	arena->nalchem_flags = nflags;
 	return 0;
 }
 
@@ -2021,7 +2022,7 @@ md_output_energies(MDArena *arena)
 		md_log(arena, " %11.5f", VecDot(v, *cv));
 	}
 	if (arena->nalchem_flags > 0) {
-		md_log(arena, " %11.5f %11.5f", arena->alchem_lambda, arena->alchem_energy / arena->alchem_dlambda);
+		md_log(arena, " %11.5f %11.5f", arena->alchem_lambda, arena->alchem_energy * INTERNAL2KCAL / arena->alchem_dlambda);
 	}
 	md_log(arena, "\n");
 	md_log(arena, NULL);
@@ -2894,6 +2895,9 @@ md_set_default(MDArena *arena)
 	arena->andersen_thermo_freq = 50;
 	arena->andersen_thermo_coupling = 0.1;
 	arena->pressure_freq = 0;
+
+	arena->alchem_dlambda = 0.1;
+	
 /*	arena->pressure_coupling = 0.4;
 	arena->pressure_trial_width = 0.01;
 	arena->pressure_control_algorithm = 0;

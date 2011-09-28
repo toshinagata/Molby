@@ -119,6 +119,12 @@ s_calc_angle_force(MDArena *arena)
 			continue; */ /*  Non-unique angle  */
 		if (ap[angles[0]].occupancy == 0.0 || ap[angles[1]].occupancy == 0.0 || ap[angles[2]].occupancy == 0.0)
 			continue;  /*  Skip non-occupied atoms  */
+		if (arena->nalchem_flags > 0) {
+			if (angles[0] < arena->nalchem_flags && angles[1] < arena->nalchem_flags
+				&& angles[2] < arena->nalchem_flags
+				&& (arena->alchem_flags[angles[0]] | arena->alchem_flags[angles[1]] | arena->alchem_flags[angles[2]]) == 3)
+				continue;  /*  Interaction between vanishing and appearing groups is ignored  */
+		}
 		anp = angle_pars + *angle_par_i;
 		VecSub(r21, ap[angles[0]].r, ap[angles[1]].r);
 		VecSub(r23, ap[angles[2]].r, ap[angles[1]].r);
@@ -199,7 +205,14 @@ s_calc_dihedral_force_sub(MDArena *arena, Atom *ap, Int ndihedrals, Int *dihedra
 			continue;  *//*  Non-unique dihedral  */
 		if (ap[dihedrals[0]].occupancy == 0.0 || ap[dihedrals[1]].occupancy == 0.0 || ap[dihedrals[2]].occupancy == 0.0 || ap[dihedrals[3]].occupancy == 0.0)
 			continue;  /*  Skip non-occupied atoms  */
-		else tp = dihedral_pars + *dihedral_par_i;
+		if (arena->nalchem_flags > 0) {
+			if (dihedrals[0] < arena->nalchem_flags && dihedrals[1] < arena->nalchem_flags
+				&& dihedrals[2] < arena->nalchem_flags && dihedrals[3] < arena->nalchem_flags
+				&& (arena->alchem_flags[dihedrals[0]] | arena->alchem_flags[dihedrals[1]]
+					| arena->alchem_flags[dihedrals[2]] | arena->alchem_flags[dihedrals[3]]) == 3)
+				continue;  /*  Interaction between vanishing and appearing groups is ignored  */
+		}
+		tp = dihedral_pars + *dihedral_par_i;
 		VecSub(r21, ap[dihedrals[0]].r, ap[dihedrals[1]].r);
 		VecSub(r32, ap[dihedrals[1]].r, ap[dihedrals[2]].r);
 		VecSub(r43, ap[dihedrals[2]].r, ap[dihedrals[3]].r);

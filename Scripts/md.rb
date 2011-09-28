@@ -19,7 +19,7 @@ class Molecule
     arena = self.md_arena
     keys = arena.to_hash.keys
 	#  The read-only keys
-	read_only = [:step, :coord_frame, :transient_temperature, :average_temperature]
+	read_only = [:step, :coord_frame, :transient_temperature, :average_temperature, :alchemical_energy]
 	#  Sort the keys so that they are (a little more) readable
 	[:timestep, :temperature, :cutoff, :electro_cutoff, :pairlist_distance,
 	 :scale14_vdw, :scale14_elect, :use_xplor_shift, :dielectric,
