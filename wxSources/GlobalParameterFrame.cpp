@@ -24,6 +24,7 @@
 #include "MyApp.h"
 #include "MyListCtrl.h"
 #include "../MolLib/Ruby_bind/Molby_extern.h"
+#include "MyMBConv.h"
 
 BEGIN_EVENT_TABLE(GlobalParameterFrame, wxMDIChildFrame)
 	EVT_CLOSE(GlobalParameterFrame::OnCloseWindow)
@@ -108,14 +109,14 @@ GlobalParameterFrame::GetItemText(MyListCtrl *ctrl, long row, long column) const
 {
 	char buf[128];
 	MainView_valueForTable(NULL, column, row, buf, sizeof buf);
-	wxString *str = new wxString(buf, wxConvUTF8);
+	wxString *str = new wxString(buf, WX_DEFAULT_CONV);
 	return *str;
 }
 
 int
 GlobalParameterFrame::SetItemText(MyListCtrl *ctrl, long row, long column, const wxString &value)
 {
-//	MainView_setValueForTable(NULL, column, row, value.mb_str(wxConvUTF8));
+//	MainView_setValueForTable(NULL, column, row, value.mb_str(WX_DEFAULT_CONV));
 	return 0;
 }
 

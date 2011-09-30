@@ -28,6 +28,7 @@
 #include "MyListCtrl.h"
 #include "../MolLib/MolLib.h"
 #include "../MolLib/Missing.h"
+#include "MyMBConv.h"
 
 // #include "../MolLib/Ruby_bind/Molby_extern.h"
 
@@ -134,7 +135,7 @@ GlobalParameterFilesFrame::OnAddGlobalParameterFile(wxCommandEvent& event)
 		if (i >= 0) {
 			char *s;
 			asprintf(&s, "File '%s' has already been read. Do you want to replace the parameters?", ParameterGetComment(src_idx));
-			wxString mes(s, wxConvUTF8);
+			wxString mes(s, WX_DEFAULT_CONV);
 			if (::wxMessageBox(mes, _T("Reload global parameter file"), wxOK | wxCANCEL | wxICON_EXCLAMATION) != wxOK)
 				return;
 		}
@@ -181,15 +182,15 @@ GlobalParameterFilesFrame::OnRemoveGlobalParameterFile(wxCommandEvent& event)
 			cp = ParameterGetComment(ip->src);
 			if (cn > 0)
 				files << _T(", ");
-			files << wxString(cp, wxConvUTF8);
+			files << wxString(cp, WX_DEFAULT_CONV);
 			cn++;
 		}
 	}
 	if (cn == 0)
 		return;
 	
-	asprintf(&s, "Do you really want to unload the parameter%s %s?", (cn > 1 ? "s" : ""), (const char *)files.mb_str(wxConvUTF8));
-	wxString mes(s, wxConvUTF8);
+	asprintf(&s, "Do you really want to unload the parameter%s %s?", (cn > 1 ? "s" : ""), (const char *)files.mb_str(WX_DEFAULT_CONV));
+	wxString mes(s, WX_DEFAULT_CONV);
 	if (::wxMessageBox(mes, _T("Unload global parameter file"), wxOK | wxCANCEL | wxICON_EXCLAMATION) != wxOK)
 		return;
 	for (i = gGlobalParInfo.count - 1; i >= gGlobalParInfo.builtinCount; i--) {
@@ -240,7 +241,7 @@ GlobalParameterFilesFrame::GetItemText(MyListCtrl *ctrl, long row, long column) 
 		else
 			p = ip->dir;
 	}
-	wxString str((p ? p : ""), wxConvUTF8);
+	wxString str((p ? p : ""), WX_DEFAULT_CONV);
 	return str;
 }
 

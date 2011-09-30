@@ -52,6 +52,7 @@
 #include "MyCommand.h"
 #include "MyClipboardData.h"
 #include "MyThread.h"
+#include "MyMBConv.h"
 
 #include "../MolLib/Ruby_bind/Molby_extern.h"
 #include "../MolLib/MD/MDCore.h"
@@ -1159,7 +1160,7 @@ sEraseLogFiles(const wxString& tdir, int status)
 	if (success) {
 		return 0;
 	} else {
-		MyAppCallback_errorMessageBox("Error during deleting log file '%s'", (const char *)dir2.mb_str(wxConvUTF8));
+		MyAppCallback_errorMessageBox("Error during deleting log file '%s'", (const char *)dir2.mb_str(wxConvFile));
 		return -1;
 	}
 }
@@ -1196,7 +1197,7 @@ MyDocument::OnInvokeAntechamber(wxCommandEvent &event)
 	/*  Move to the temporary directory and export the molecule as a pdb  */
 	wxString cwd = wxFileName::GetCwd();
 	if (!wxFileName::SetCwd(tdir)) {
-		MyAppCallback_errorMessageBox("Cannot move to the temporary directory '%s'", (const char *)tdir.mb_str(wxConvUTF8));
+		MyAppCallback_errorMessageBox("Cannot move to the temporary directory '%s'", (const char *)tdir.mb_str(WX_DEFAULT_CONV));
 		return;
 	}
 	{
@@ -1267,7 +1268,7 @@ MyDocument::OnInvokeAntechamber(wxCommandEvent &event)
 
 	if (status == 0) {
 		wxString acfile = tdir + wxFileName::GetPathSeparator() + _T("mol.ac");
-		status = MolActionCreateAndPerform(mol, SCRIPT_ACTION("s"), "import_ac", (const char *)acfile.mb_str(wxConvUTF8));
+		status = MolActionCreateAndPerform(mol, SCRIPT_ACTION("s"), "import_ac", (const char *)acfile.mb_str(wxConvFile));
 		if (status != 0) {
 			MyAppCallback_errorMessageBox("Cannot import antechamber output.");
 		}
@@ -1276,7 +1277,7 @@ MyDocument::OnInvokeAntechamber(wxCommandEvent &event)
 	if (calc_charge && status == 0) {
 		wxString sqmfile = tdir + wxFileName::GetPathSeparator() + _T("sqm.out");
 		if (wxFileName::FileExists(sqmfile)) {
-			status = MolActionCreateAndPerform(mol, SCRIPT_ACTION("s"), "import_sqmout", (const char *)sqmfile.mb_str(wxConvUTF8));
+			status = MolActionCreateAndPerform(mol, SCRIPT_ACTION("s"), "import_sqmout", (const char *)sqmfile.mb_str(wxConvFile));
 			if (status != 0) {
 				MyAppCallback_errorMessageBox("Cannot import sqm output.");
 			}
@@ -1285,7 +1286,7 @@ MyDocument::OnInvokeAntechamber(wxCommandEvent &event)
 
 	if (status == 0) {
 		wxString frcmodfile = tdir + wxFileName::GetPathSeparator() + _T("frcmod");
-		status = MolActionCreateAndPerform(mol, SCRIPT_ACTION("s"), "import_frcmod", (const char *)frcmodfile.mb_str(wxConvUTF8));
+		status = MolActionCreateAndPerform(mol, SCRIPT_ACTION("s"), "import_frcmod", (const char *)frcmodfile.mb_str(wxConvFile));
 		if (status != 0) {
 			MyAppCallback_errorMessageBox("Cannot import parmchk output.");
 		}
@@ -1507,7 +1508,7 @@ sMoleculePasteboardObjectOfType(const char *type, const void *data, int length)
 	if (strcmp(type, "TEXT") == 0) {
 		wxTextDataObject *tp = new wxTextDataObject();
 		if (data != NULL) {
-			wxString str((const char *)data, wxConvUTF8, length);
+			wxString str((const char *)data, WX_DEFAULT_CONV, length);
 			tp->SetText(str);
 		}
 		return tp;
@@ -1557,7 +1558,7 @@ MoleculeCallback_readFromPasteboard(const char *type, void **dptr, int *length)
 			if (strcmp(type, "TEXT") == 0) {
 				wxTextDataObject *tp = (wxTextDataObject *)dp;
 				wxString str = tp->GetText();
-				const char *cp = str.mb_str(wxConvUTF8);
+				const char *cp = str.mb_str(WX_DEFAULT_CONV);
 				len = strlen(cp);
 				p = malloc(len + 1);
 				if (p != NULL) {
@@ -1627,7 +1628,7 @@ MoleculeCallback_displayName(Molecule *mol, char *buf, int bufsize)
   if (doc != NULL) {
     wxString fname;
     doc->GetPrintableName(fname);
-    strncpy(buf, (const char*)fname.mb_str(wxConvUTF8), bufsize - 1);  /*  wxString -> UTF8  */
+    strncpy(buf, (const char*)fname.mb_str(wxConvFile), bufsize - 1);
     buf[bufsize - 1] = 0;
   } else {
     buf[0] = 0;

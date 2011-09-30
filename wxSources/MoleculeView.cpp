@@ -39,6 +39,7 @@
 #include "MySlider.h"
 #include "MyListCtrl.h"
 #include "../MolLib/Missing.h"
+#include "MyMBConv.h"
 
 #include "wx/tglbtn.h"
 #include "wx/listctrl.h"
@@ -140,7 +141,7 @@ MoleculeView::OnCreate(wxDocument *doc, long WXUNUSED(flags) )
 			MainView_tableTitleForIndex(mview, i, buf, sizeof buf);
 			if (buf[0] == 0)
 				break;
-			wxString itemTitle(buf, wxConvUTF8);
+			wxString itemTitle(buf, WX_DEFAULT_CONV);
 			choiceItems.Add(itemTitle);
 		}
 	/*	static wxString choiceItems[] = {
@@ -543,7 +544,7 @@ MoleculeView::OnFrameTextAction(wxCommandEvent &event)
 	nframes = MoleculeGetNumberOfFrames(mview->mol);
 	if (nframes != 0) {
 		str = frameText->GetValue();
-		ival = atoi((const char *)str.mb_str(wxConvUTF8));
+		ival = atoi((const char *)str.mb_str(WX_DEFAULT_CONV));
 		if (ival >= 0 && ival < nframes) {
 			MoleculeSelectFrame(mview->mol, ival, 1);
 			MoleculeUnlock(mview->mol);
@@ -696,14 +697,14 @@ MoleculeView::GetItemText(MyListCtrl *ctrl, long row, long column) const
 {
 	char buf[128];
 	MainView_valueForTable(mview, column, row, buf, sizeof buf);
-	wxString *str = new wxString(buf, wxConvUTF8);
+	wxString *str = new wxString(buf, WX_DEFAULT_CONV);
 	return *str;
 }
 
 int
 MoleculeView::SetItemText(MyListCtrl *ctrl, long row, long column, const wxString &value)
 {
-	MainView_setValueForTable(mview, column, row, value.mb_str(wxConvUTF8));
+	MainView_setValueForTable(mview, column, row, value.mb_str(WX_DEFAULT_CONV));
 	return 0;
 }
 
@@ -885,7 +886,7 @@ void
 MainViewCallback_drawInfoText(MainView *mview, const char *label)
 {
 	if (mview != NULL && mview->ref != NULL) {
-		wxString labelstr(label, wxConvUTF8);
+		wxString labelstr(label, WX_DEFAULT_CONV);
 		((MoleculeView *)(mview->ref))->infotext->SetLabel(labelstr);
 	}
 }
@@ -959,7 +960,7 @@ MainViewCallback_newFromFile(const char *fname)
   if (fname == NULL || *fname == 0) {
     doc = manager->CreateDocument(wxT(""), wxDOC_NEW);
   } else {
-    wxString fnamestr(fname, wxConvUTF8);  /*  UTF8 -> wxString  */
+    wxString fnamestr(fname, wxConvFile);
     doc = manager->CreateDocument(fnamestr, wxDOC_SILENT);
   }
   return MainViewCallback_activeView();
@@ -970,7 +971,7 @@ MainViewCallback_importFromFile(MainView *mview, const char *fname)
 {
   MyDocument *doc;
   if (mview != NULL && mview->ref != NULL && (doc = (((MoleculeView *)(mview->ref))->MolDocument())) != NULL) {
-    wxString fnamestr(fname, wxConvUTF8);  /*  UTF8 -> wxString  */
+    wxString fnamestr(fname, wxConvFile);
     // doc->importFromFile(fnamestr);
     MainViewCallback_setNeedsDisplay(mview, 1);
     return 1;
@@ -985,7 +986,7 @@ MainViewCallback_getFilename(MainView *mview, char *buf, int bufsize)
   if (mview != NULL && mview->ref != NULL && (doc = (((MoleculeView *)(mview->ref))->MolDocument())) != NULL) {
     wxString fname;
     fname = doc->GetFilename();
-    strncpy(buf, (const char*)fname.mb_str(wxConvUTF8), bufsize - 1);  /*  wxString -> UTF8  */
+    strncpy(buf, (const char*)fname.mb_str(wxConvFile), bufsize - 1);
     buf[bufsize - 1] = 0;
   } else {
     buf[0] = 0;
@@ -1116,7 +1117,7 @@ int
 MainViewCallback_addTableColumn(MainView *mview, const char *name, int width, int editable)
 {
 	int idx;
-	wxString nstr(name, wxConvUTF8);
+	wxString nstr(name, WX_DEFAULT_CONV);
 	MyListCtrl *listctrl = s_MyListCtrlFromMainView(mview);
 	if (listctrl == NULL)
 		return 0;

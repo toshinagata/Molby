@@ -29,6 +29,7 @@
 
 #include "RubyDialogFrame.h"
 #include "MyApp.h"
+#include "MyMBConv.h"
 
 BEGIN_EVENT_TABLE(RubyDialogFrame, wxDialog)
 //    EVT_TEXT_ENTER(-1, ConsoleFrame::OnEnterPressed)
@@ -144,7 +145,7 @@ RubyDialogFrame::CreateStandardButtons(const char *oktitle, const char *cancelti
 		((wxWindow *)ditems[0])->Show(false);
 	} else {
 		if (oktitle[0] != 0) {
-			wxString label1(oktitle, wxConvUTF8);
+			wxString label1(oktitle, WX_DEFAULT_CONV);
 			((wxButton *)ditems[0])->SetLabel(label1);
 		}
 		((wxWindow *)ditems[0])->Connect(-1, wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(RubyDialogFrame::OnDialogItemAction), NULL, this);
@@ -153,7 +154,7 @@ RubyDialogFrame::CreateStandardButtons(const char *oktitle, const char *cancelti
 		((wxWindow *)ditems[1])->Show(false);
 	} else {
 		if (canceltitle[0] != 0) {
-			wxString label2(canceltitle, wxConvUTF8);
+			wxString label2(canceltitle, WX_DEFAULT_CONV);
 			((wxButton *)ditems[1])->SetLabel(label2);
 		}
 		((wxWindow *)ditems[1])->Connect(-1, wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(RubyDialogFrame::OnDialogItemAction), NULL, this);
@@ -191,7 +192,7 @@ RubyDialogCallback_setRubyObject(RubyDialog *dref, RubyValue val)
 void
 RubyDialogCallback_setWindowTitle(RubyDialog *dref, const char *title)
 {
-	wxString str(title, wxConvUTF8);
+	wxString str(title, WX_DEFAULT_CONV);
 	((RubyDialogFrame *)dref)->SetLabel(str);
 }
 
@@ -279,7 +280,7 @@ RubyDialogCallback_createItem(RubyDialog *dref, const char *type, const char *ti
 	wxWindow *control = NULL;
 	wxRect rect, offset;
 	RubyDialogFrame *parent = ((RubyDialogFrame *)dref);
-	wxString tstr((title ? title : ""), wxConvUTF8);
+	wxString tstr((title ? title : ""), WX_DEFAULT_CONV);
 	bool no_action = false;
 	
 	rect = wxRectFromRDRect(frame);
@@ -421,7 +422,7 @@ RubyDialogCallback_setFrameOfItem(RDItem *item, RDRect rect)
 void
 RubyDialogCallback_setStringToItem(RDItem *item, const char *s)
 {
-	wxString str(s, wxConvUTF8);
+	wxString str(s, WX_DEFAULT_CONV);
 	if (wxDynamicCast((wxWindow *)item, wxTextCtrl) != NULL) {
 		((wxTextCtrl *)item)->SetValue(str);
 	}
@@ -437,7 +438,7 @@ RubyDialogCallback_getStringFromItem(RDItem *item, char *buf, int bufsize)
 		buf[0] = 0;
 		return;
 	}
-	strncpy(buf, str.mb_str(wxConvUTF8), bufsize - 1);
+	strncpy(buf, str.mb_str(WX_DEFAULT_CONV), bufsize - 1);
 	buf[bufsize - 1] = 0;
 }
 
@@ -450,7 +451,7 @@ RubyDialogCallback_getStringPtrFromItem(RDItem *item)
 	} else {
 		return NULL;
 	}
-	return strdup(str.mb_str(wxConvUTF8));
+	return strdup(str.mb_str(WX_DEFAULT_CONV));
 }
 
 char *
@@ -462,13 +463,13 @@ RubyDialogCallback_titleOfItem(RDItem *item)
 	} else {
 		str = ((wxWindow *)item)->GetLabel();
 	}
-	return strdup(str.mb_str(wxConvUTF8));
+	return strdup(str.mb_str(WX_DEFAULT_CONV));
 }
 
 void
 RubyDialogCallback_setTitleToItem(RDItem *item, const char *s)
 {
-	wxString str(s, wxConvUTF8);
+	wxString str(s, WX_DEFAULT_CONV);
 	if (wxDynamicCast((wxWindow *)item, wxTextCtrl) != NULL) {
 		((wxTextCtrl *)item)->SetValue(str);
 	} else {
@@ -556,7 +557,7 @@ RubyDialogCallback_countSubItems(RDItem *item)
 int
 RubyDialogCallback_appendSubItem(RDItem *item, const char *s)
 {
-	wxString str(s, wxConvUTF8);
+	wxString str(s, WX_DEFAULT_CONV);
 	if (wxDynamicCast((wxWindow *)item, wxChoice) != NULL) {
 		return ((wxChoice *)item)->Append(str);
 	} else return -1;
@@ -565,7 +566,7 @@ RubyDialogCallback_appendSubItem(RDItem *item, const char *s)
 int
 RubyDialogCallback_insertSubItem(RDItem *item, const char *s, int pos)
 {
-	wxString str(s, wxConvUTF8);
+	wxString str(s, WX_DEFAULT_CONV);
 	if (wxDynamicCast((wxWindow *)item, wxChoice) != NULL && pos >= 0 && pos < ((wxChoice *)item)->GetCount()) {
 		return ((wxChoice *)item)->Insert(str, pos);
 	} else return -1;
@@ -585,7 +586,7 @@ RubyDialogCallback_titleOfSubItem(RDItem *item, int pos)
 {
 	if (wxDynamicCast((wxWindow *)item, wxChoice) != NULL && pos >= 0 && pos < ((wxChoice *)item)->GetCount()) {
 		wxString str = ((wxChoice *)item)->GetString(pos);
-		return strdup(str.mb_str(wxConvUTF8));
+		return strdup(str.mb_str(WX_DEFAULT_CONV));
 	} else return NULL;
 }
 
@@ -621,7 +622,7 @@ RubyDialogCallback_sizeOfString(RDItem *item, const char *s)
 		s2 = strchr(s1, '\n');
 		if (s2 == NULL)
 			s2 = sfin;
-		wxString str(s1, wxConvUTF8, s2 - s1);
+		wxString str(s1, WX_DEFAULT_CONV, s2 - s1);
 		dc.GetTextExtent(str, &w, &h, &descent, &leading);
 		if (size.width < w)
 			size.width = w;
@@ -649,10 +650,10 @@ int
 RubyDialogCallback_savePanel(const char *title, const char *dirname, const char *wildcard, char *buf, int bufsize)
 {
 	int result;
-	wxString pstr((dirname ? dirname : ""), wxConvUTF8);
-	wxString tstr((title ? title : "Choose a file"), wxConvUTF8);
-	wxString fstr(buf, wxConvUTF8);
-	wxString wstr((wildcard ? wildcard : "All files (*.*)|*.*"), wxConvUTF8);
+	wxString pstr((dirname ? dirname : ""), WX_DEFAULT_CONV);
+	wxString tstr((title ? title : "Choose a file"), WX_DEFAULT_CONV);
+	wxString fstr(buf, WX_DEFAULT_CONV);
+	wxString wstr((wildcard ? wildcard : "All files (*.*)|*.*"), WX_DEFAULT_CONV);
 	wxFileDialog *dialog = new wxFileDialog(NULL, tstr, pstr, fstr, wstr, wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
 	if (dialog->ShowModal() == wxID_OK) {
 		strncpy(buf, dialog->GetPath().mb_str(wxConvFile), bufsize - 1);
@@ -670,11 +671,11 @@ int
 RubyDialogCallback_openPanel(const char *title, const char *dirname, const char *wildcard, char ***array, int for_directories, int multiple_selection)
 {
 	int result = 0;
-	wxString pstr((dirname ? dirname : ""), wxConvUTF8);
-	wxString wstr((wildcard ? wildcard : "All files (*.*)|*.*"), wxConvUTF8);
+	wxString pstr((dirname ? dirname : ""), WX_DEFAULT_CONV);
+	wxString wstr((wildcard ? wildcard : "All files (*.*)|*.*"), WX_DEFAULT_CONV);
 	int style = wxFD_OPEN | (multiple_selection ? wxFD_MULTIPLE : 0);
 	if (for_directories) {
-		wxString tstr((title ? title : "Choose a directory"), wxConvUTF8);
+		wxString tstr((title ? title : "Choose a directory"), WX_DEFAULT_CONV);
 		wxDirDialog *dialog = new wxDirDialog(NULL, tstr, pstr);
 		if (dialog->ShowModal() == wxID_OK) {
 			*array = (char **)malloc(sizeof(char *));
@@ -683,7 +684,7 @@ RubyDialogCallback_openPanel(const char *title, const char *dirname, const char 
 		}
 		dialog->Destroy();
 	} else {
-		wxString tstr((title ? title : "Choose a file"), wxConvUTF8);
+		wxString tstr((title ? title : "Choose a file"), WX_DEFAULT_CONV);
 		wxFileDialog *dialog = new wxFileDialog(NULL, tstr, pstr, _T(""), wstr, style);
 		if (dialog->ShowModal() == wxID_OK) {
 			*array = (char **)malloc(sizeof(char *));

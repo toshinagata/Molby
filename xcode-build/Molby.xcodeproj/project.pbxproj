@@ -88,6 +88,7 @@
 		29B97325FDCFA39411CA2CEA /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = /System/Library/Frameworks/Foundation.framework; sourceTree = "<absolute>"; };
 		8D1107320486CEB800E47090 /* Molby.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Molby.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9E12580E119EC42E00E95DC3 /* docview.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = docview.cpp; path = ../wxSources/docview.cpp; sourceTree = SOURCE_ROOT; };
+		E40DDC6C1435C03E000F0E81 /* MyMBConv.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MyMBConv.h; path = ../wxSources/MyMBConv.h; sourceTree = SOURCE_ROOT; };
 		E4299DA60F2A191600780B44 /* ruby_types.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ruby_types.c; sourceTree = "<group>"; };
 		E42D8AEF1030193F00C20247 /* MDGraphite.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = MDGraphite.c; sourceTree = "<group>"; };
 		E42D8AF01030193F00C20247 /* MDGraphite.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MDGraphite.h; sourceTree = "<group>"; };
@@ -343,6 +344,7 @@
 				E4A4667410C15B4300E40A9D /* listctrl.cpp */,
 				9E12580E119EC42E00E95DC3 /* docview.cpp */,
 				E4513F530EED72C0009DF1F7 /* MyListCtrl.h */,
+				E40DDC6C1435C03E000F0E81 /* MyMBConv.h */,
 				E4513F540EED72C0009DF1F7 /* MyListCtrl.cpp */,
 				E4C8CBDD10B83060006C4692 /* MyDocManager.h */,
 				E4C8CBDE10B83060006C4692 /* MyDocManager.cpp */,

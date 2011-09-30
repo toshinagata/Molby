@@ -16,6 +16,7 @@
  */
 
 #include "MyDocManager.h"
+#include "MyMBConv.h"
 
 BEGIN_EVENT_TABLE(MyDocManager, wxDocManager)
 EVT_MENU(wxID_SAVE, MyDocManager::OnFileSave)
@@ -34,7 +35,7 @@ MyDocManager::SetDocumentTypesEnabled(const char **extensions, bool flag)
 	for (iter = tlist.begin(); iter != tlist.end(); ++iter) {
 		int i;
 		wxDocTemplate *dt = (wxDocTemplate *)(*iter);
-		const char *p = (const char *)(dt->GetDefaultExtension().mb_str(wxConvUTF8));
+		const char *p = (const char *)(dt->GetDefaultExtension().mb_str(WX_DEFAULT_CONV));
 		for (i = 0; extensions[i] != NULL; i++) {
 			if (strcmp(extensions[i], p) == 0) {
 				dt->SetFlags(flag ? wxTEMPLATE_VISIBLE : wxTEMPLATE_INVISIBLE);

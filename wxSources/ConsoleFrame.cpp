@@ -23,6 +23,7 @@
 
 #include "MyApp.h"
 #include "../MolLib/Ruby_bind/Molby_extern.h"
+#include "MyMBConv.h"
 
 BEGIN_EVENT_TABLE(ConsoleFrame, wxMDIChildFrame)
 	EVT_UPDATE_UI(wxID_CLOSE, ConsoleFrame::OnUpdateUI)
@@ -252,7 +253,7 @@ ConsoleFrame::OnEnterPressed(wxKeyEvent& event)
 		RubyValue val;
 		Molecule *mol = MoleculeCallback_currentMolecule();
 		MoleculeLock(mol);
-		val = Molby_evalRubyScriptOnMolecule(string.mb_str(wxConvUTF8), MoleculeCallback_currentMolecule(), &status);
+		val = Molby_evalRubyScriptOnMolecule(string.mb_str(WX_DEFAULT_CONV), MoleculeCallback_currentMolecule(), &status);
 		MoleculeUnlock(mol);
 		if (status != -1) {  /*  Status -1 is already handled  */
 			MyAppCallback_setConsoleColor(1);

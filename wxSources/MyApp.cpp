@@ -49,6 +49,7 @@
 #include "ProgressFrame.h"
 #include "GlobalParameterFrame.h"
 #include "GlobalParameterFilesFrame.h"
+#include "MyMBConv.h"
 
 #include "../MolLib/MolLib.h"
 #include "../MolLib/Ruby_bind/Molby.h"
@@ -104,7 +105,7 @@ MyApp::FindResourcePath()
 	if (ref != NULL) {
 		UInt8 buffer[256];
 		if (CFURLGetFileSystemRepresentation(ref, true, buffer, sizeof buffer)) {
-			wxString dirname((const char *)buffer, wxConvUTF8);
+			wxString dirname((const char *)buffer, WX_DEFAULT_CONV);
 			CFRelease(ref);
 			return dirname;
 		}
@@ -172,8 +173,8 @@ bool MyApp::OnInit(void)
 	{
 		//  Check if the same application is already running
 		char *buf;
-		asprintf(&buf, "Molby-%s", (const char *)wxGetUserId().mb_str(wxConvUTF8));
-		wxString name(buf, wxConvUTF8);
+		asprintf(&buf, "Molby-%s", (const char *)wxGetUserId().mb_str(WX_DEFAULT_CONV));
+		wxString name(buf, WX_DEFAULT_CONV);
 		malloc(16);
 		free(buf);
 		m_checker = new wxSingleInstanceChecker(name);
@@ -290,8 +291,8 @@ bool MyApp::OnInit(void)
 			free(wbuf);
 		}
 
-		wxString fnamestr(fname, wxConvUTF8);
-		Molby_startup(wxFileExists(fnamestr) ? fname : NULL, (const char *)dirname.mb_str(wxConvUTF8));
+		wxString fnamestr(fname, wxConvFile);
+		Molby_startup(wxFileExists(fnamestr) ? fname : NULL, (const char *)dirname.mb_str(wxConvFile));
 		
 		wxSetWorkingDirectory(cwd);
 		MyAppCallback_showScriptMessage("%% ");
@@ -488,7 +489,7 @@ MyApp::AppendConsoleMessage(const char *mes)
 {
 	wxTextCtrl *textCtrl;
 	if (consoleFrame != NULL && (textCtrl = consoleFrame->textCtrl) != NULL) {
-		wxString string(mes, wxConvUTF8);
+		wxString string(mes, WX_DEFAULT_CONV);
 		textCtrl->AppendText(string);
 		return string.Len();
 	} else return 0;
@@ -519,7 +520,7 @@ MyApp::SetConsoleColor(int color)
 void
 MyApp::ShowProgressPanel(const char *mes)
 {
-	wxString string((mes ? mes : ""), wxConvUTF8);
+	wxString string((mes ? mes : ""), WX_DEFAULT_CONV);
 	if (m_progressFrame == NULL) {
 #if __WXMAC__
 		{
@@ -567,7 +568,7 @@ void
 MyApp::SetProgressMessage(const char *mes)
 {
 	if (m_progressFrame != NULL) {
-		wxString string((mes ? mes : ""), wxConvUTF8);
+		wxString string((mes ? mes : ""), WX_DEFAULT_CONV);
 		m_progressFrame->SetProgressMessage(string);
 	}
 }
@@ -706,7 +707,7 @@ MyApp::UpdateScriptMenu(wxMenuBar *mbar)
 		if (title == NULL || title[0] == 0) {
 			smenu->AppendSeparator();
 		} else {
-			wxString stitle(scriptMenuTitles[i], wxConvUTF8);
+			wxString stitle(scriptMenuTitles[i], WX_DEFAULT_CONV);
 			wxMenuItem *item = new wxMenuItem(smenu, myMenuID_CustomScript + i, stitle);
 			smenu->Append(item);
 		}
@@ -925,7 +926,7 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname)
 	int status = 0;
 	char buf[256];
 	size_t len, len_total;
-	wxString cmdstr(cmdline, wxConvUTF8);
+	wxString cmdstr(cmdline, WX_DEFAULT_CONV);
 #if defined(__WXMSW__)
 	extern int myKillAllChildren(long pid, wxSignal sig, wxKillError *krc);
 #endif
@@ -1103,7 +1104,7 @@ void MyFrame::OnAbout(wxCommandEvent& WXUNUSED(event) )
 			 gVersionString, gCopyrightString, sLastBuildString,
 			 wxMAJOR_VERSION, wxMINOR_VERSION, wxRELEASE_NUMBER,
 			 gRubyVersion, gRubyCopyright);
-	wxString str(s, wxConvUTF8);
+	wxString str(s, WX_DEFAULT_CONV);
     (void)wxMessageBox(str, _T("Molby"));
 }
 
@@ -1136,16 +1137,16 @@ MyAppCallback_saveGlobalSettings(void)
 char *
 MyAppCallback_getGlobalSettings(const char *key)
 {
-	wxString wxkey(key, wxConvUTF8);
+	wxString wxkey(key, WX_DEFAULT_CONV);
 	wxString wxvalue = wxGetApp().GetDefaultSetting(wxkey);
-	return strdup(wxvalue.mb_str(wxConvUTF8));
+	return strdup(wxvalue.mb_str(WX_DEFAULT_CONV));
 }
 
 void
 MyAppCallback_setGlobalSettings(const char *key, const char *value)
 {
-	wxString wxkey(key, wxConvUTF8);
-	wxString wxvalue(value, wxConvUTF8);
+	wxString wxkey(key, WX_DEFAULT_CONV);
+	wxString wxvalue(value, WX_DEFAULT_CONV);
 	wxGetApp().SetDefaultSetting(wxkey, wxvalue);
 }
 
@@ -1201,7 +1202,7 @@ MyAppCallback_showScriptMessage(const char *fmt, ...)
 		{
 			wxString str;
 			str.PrintfV(wxString::FromUTF8(fmt).GetData(), ap);
-			p = strdup((const char *)str.mb_str(wxConvUTF8));
+			p = strdup((const char *)str.mb_str(WX_DEFAULT_CONV));
 		}
 #endif
 		if (p != NULL) {
@@ -1266,7 +1267,7 @@ MyAppCallback_getTextWithPrompt(const char *prompt, char *buf, int bufsize)
 	wxStaticText *stext;
 	wxTextCtrl *tctrl;
 	int retval;
-	wxString pstr(prompt, wxConvUTF8);
+	wxString pstr(prompt, WX_DEFAULT_CONV);
 	{	//  Vertical sizer containing [prompt, textbox, buttons]
 		wxBoxSizer *sizer1;
 		sizer1 = new wxBoxSizer(wxVERTICAL);
@@ -1282,7 +1283,7 @@ MyAppCallback_getTextWithPrompt(const char *prompt, char *buf, int bufsize)
 		tctrl->SetFocus();
 	}
 	if (dialog->ShowModal() == wxID_OK) {
-		strncpy(buf, (const char *)(tctrl->GetValue().mb_str(wxConvUTF8)), bufsize - 1);
+		strncpy(buf, (const char *)(tctrl->GetValue().mb_str(WX_DEFAULT_CONV)), bufsize - 1);
 		buf[bufsize - 1] = 0;
 		retval = 1;
 	} else {
@@ -1306,8 +1307,8 @@ MyAppCallback_messageBox(const char *message, const char *title, int flags, int 
 		case 2: wxicon = wxICON_EXCLAMATION; break;
 		default: wxicon = wxICON_INFORMATION; break;
 	}
-	wxString wxmessage(message, wxConvUTF8);
-	wxString wxtitle(title, wxConvUTF8);
+	wxString wxmessage(message, WX_DEFAULT_CONV);
+	wxString wxtitle(title, WX_DEFAULT_CONV);
 	retval = ::wxMessageBox(wxmessage, wxtitle, wxflags | wxicon);
 	return (retval == wxOK ? 1 : 0);
 }

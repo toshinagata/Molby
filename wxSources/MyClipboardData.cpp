@@ -16,11 +16,12 @@
  */
 
 #include "MyClipboardData.h"
+#include "MyMBConv.h"
 
 MyClipboardData::MyClipboardData(const char *type):
 	wxDataObjectSimple()
 {
-	wxString ftype(type, wxConvUTF8);
+	wxString ftype(type, WX_DEFAULT_CONV);
 	wxDataFormat customFormat((const wxChar *)ftype);
 	buffer = NULL;
 	length = 0;

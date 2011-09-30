@@ -260,3 +260,7 @@ Final compile date/time is now shown in the 'About' window.
 Fix mdcrd import to allow coordinates using full 8 digits (like -123.456 or 1234.567).
 Occasional crash during minimization is fixed.
 
+2011.9.30.
+　Windows の文字コードで厄介なバグを発見。内部コードを UTF-8 にしているのだが、Dir.pwd などは Windows の内部コードそのもの（Shift-JIS?）で動作するので、Molecule#path などと矛盾が生じる。さらに、Ruby_FileStringValuePtr などは Shift-JIS を前提としているので、Molecule#path などもおかしな文字列を生成してしまう。このため、パスに日本語が入っていると open(mol.path + "/test.txt", "w") などがうまくいかない。さてどうしたものか？
+→ wxConvUTF8 の代わりに Windows では *wxConvCurrent を使うようにした。
+
