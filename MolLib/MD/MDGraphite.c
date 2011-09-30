@@ -577,8 +577,8 @@ graphite_force(MDGraphiteArena *graphite, MDArena *arena, Double *energy, Vector
 				}
 			}
 		}
-		en *= pxpypz_1 * lambda;
-		VecScaleSelf(f, pxpypz_1);
+		en *= pxpypz_1;
+		VecScaleSelf(f, pxpypz_1 * lambda);
 		graphite->energies[i] = en * lambda;
 		graphite->last_energy += en * lambda;
 		graphite->last_forces[i] = f;
