@@ -86,18 +86,9 @@ s_MDArena_Run_or_minimize(VALUE self, VALUE arg, int minimize)
 	} */
 
 	/*  Run simulation  */
-/*	arena->md_panic_func = s_MDArena_panic_func; */
 	retval = md_main(arena, minimize);
-	if (retval != 0)
-		rb_raise(rb_eMolbyError, "MD Error: %s", arena->errmsg);
 
-/*	arena->md_panic_func = NULL; */
-	
 	if (arena->step > start_step) {
-		/*  Create a new frame  */
-	/*	ig = IntGroupNewWithPoints(MoleculeGetNumberOfFrames(arena->xmol), 1, -1);
-		MolActionCreateAndPerform(arena->xmol, gMolActionInsertFrames, ig, 0, NULL, 0, NULL);
-		IntGroupRelease(ig); */
 		/*  Copy new coordinates  */
 		int i, natoms = arena->xmol->natoms;
 		Atom *ap;
@@ -112,10 +103,10 @@ s_MDArena_Run_or_minimize(VALUE self, VALUE arg, int minimize)
 		/*  TODO: support undo for velocities and forces  */
 		md_copy_coordinates_from_internal(arena);
 	}
-	
-/*	if (retval != 0)
-		rb_raise(rb_eMolbyError, "Calculation aborted with status %d", retval); */
-	
+
+	if (retval != 0)
+		rb_raise(rb_eMolbyError, "MD Error: %s", arena->errmsg);
+
 	if (minimize && arena->minimize_complete && rb_block_given_p())
 		rb_yield(self);
 
@@ -692,6 +683,46 @@ s_MDArena_GetAlchemicalPerturbation(VALUE self)
 
 /*
  *  call-seq:
+ *     init_velocities([temperature]) -> self
+ *
+ *  Give random (Boltzmann-weighted) velocities to all atoms. If temperature is given,
+ *  it is set before giving velocities.
+ */
+static VALUE
+s_MDArena_InitVelocities(int argc, VALUE *argv, VALUE self)
+{
+	MDArena *arena;
+	VALUE tval;
+	Data_Get_Struct(self, MDArena, arena);
+	rb_scan_args(argc, argv, "01", &tval);
+	if (tval != Qnil)
+		s_MDArena_Set(self, s_TemperatureSym, tval);
+	md_init_velocities(arena);
+	return self;
+}
+
+/*
+ *  call-seq:
+ *     scale_velocities([temperature]) -> self
+ *
+ *  Scale atom velocities to match the current temperature. If temperature is given,
+ *  it is set before giving velocities.
+ */
+static VALUE
+s_MDArena_ScaleVelocities(int argc, VALUE *argv, VALUE self)
+{
+	MDArena *arena;
+	VALUE tval;
+	Data_Get_Struct(self, MDArena, arena);
+	rb_scan_args(argc, argv, "01", &tval);
+	if (tval != Qnil)
+		s_MDArena_Set(self, s_TemperatureSym, tval);
+	md_scale_velocities(arena);
+	return self;
+}
+
+/*
+ *  call-seq:
  *     keys -> Array
  *
  *  Returns an array of valid attributes.
@@ -764,6 +795,8 @@ Init_MolbyMDTypes(void)
 	rb_define_method(rb_cMDArena, "keys", s_MDArena_Keys, 0);
 	rb_define_method(rb_cMDArena, "set_alchemical_perturbation", s_MDArena_SetAlchemicalPerturbation, 2);
 	rb_define_method(rb_cMDArena, "get_alchemical_perturbation", s_MDArena_GetAlchemicalPerturbation, 0);
+	rb_define_method(rb_cMDArena, "init_velocities", s_MDArena_InitVelocities, -1);
+	rb_define_method(rb_cMDArena, "scale_velocities", s_MDArena_ScaleVelocities, -1);
 	rb_define_method(rb_cMDArena, "print_surface_area", s_MDArena_PrintSurfaceArea, 0);
 
 	/*  All setter and getter are handled with the same C function (attribute name is taken
