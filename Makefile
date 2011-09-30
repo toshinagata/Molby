@@ -21,7 +21,8 @@ ifeq ($(TARGET_PLATFORM),MSW)
 endif
 
 WXLIB_LIST = core,base,gl,adv
-OBJECTS = ConsoleFrame.o GlobalParameterFrame.o GlobalParameterFilesFrame.o MoleculeView.o MyApp.o MyCommand.o MyDocument.o MyGLCanvas.o MySlider.o MyClipboardData.o ProgressFrame.o MyListCtrl.o MyDocManager.o wxKillAddition.o docview.o RubyDialogFrame.o MyVersion.o MyThread.o MolLib.a Ruby_bind.a
+OBJECTS = ConsoleFrame.o GlobalParameterFrame.o GlobalParameterFilesFrame.o MoleculeView.o MyApp.o MyCommand.o MyDocument.o MyGLCanvas.o MySlider.o MyClipboardData.o ProgressFrame.o MyListCtrl.o MyDocManager.o wxKillAddition.o docview.o RubyDialogFrame.o MyVersion.o MyThread.o
+LIBS = MolLib.a Ruby_bind.a
 RUBY_EXTLIB = scanf.rb
 
 ifeq ($(TARGET_PLATFORM),MAC)
@@ -64,6 +65,20 @@ $(DESTPREFIX)/$(RESOURCE) : molby.rc
 	rm -rf $(HOMETEMP)
 endif
 
+depend: cleandep $(DESTPREFIX) $(OBJECTS:%.o=$(DESTPREFIX)/%.d) $(EXTRA_OBJECTS:%.o=$(DESTPREFIX)/%.d)
+	cat $(DESTPREFIX)/*.d > $(DESTPREFIX)/Makefile.depend
+
+cleandep:
+	rm -f $(DESTPREFIX)/Makefile.depend
+
+-include $(DESTPREFIX)/Makefile.depend
+
+$(DESTPREFIX)/%.d : ../wxSources/%.cpp
+	$(CC) -MM $< >$@ $(subst -arch ppc,,$(CFLAGS))
+
+$(DESTPREFIX)/%.d : ../wxSources/%.c
+	$(CC) -MM $< >$@ $(subst -arch ppc,,$(CFLAGS))
+
 $(DESTPREFIX)/%.o : ../wxSources/%.cpp
 	$(CC) -c $< -o $@ $(CFLAGS)
 
@@ -76,7 +91,7 @@ $(DESTPREFIX)/MolLib.a : ../MolLib/*.[ch] ../MolLib/MD/*.[ch]
 $(DESTPREFIX)/Ruby_bind.a : ../MolLib/Ruby_bind/*.[ch]
 	mkdir -p $(DESTPREFIX)/MolLib/Ruby_bind; cd ../MolLib/Ruby_bind; $(MAKE)
 
-ALL_OBJECTS = $(OBJECTS) $(EXTRA_OBJECTS) $(RESOURCE)
+ALL_OBJECTS = $(OBJECTS) $(EXTRA_OBJECTS) $(LIBS) $(RESOURCE)
 DESTOBJECTS = $(addprefix $(DESTPREFIX)/,$(ALL_OBJECTS))
 $(DESTPREFIX)/$(EXECUTABLE) : $(DESTOBJECTS)
 	$(CC) -o $@ $(DESTOBJECTS) $(CFLAGS) $(LDFLAGS)
@@ -114,9 +129,9 @@ setup: $(DESTPREFIX)/$(PRODUCT_DIR)/$(FINAL_EXECUTABLE)
 endif
 
 clean:
-
 	rm -rf $(DESTPREFIX)
 #	rm -f $(EXECUTABLE) $(OBJECTS)
 #	rm -rf $(PRODUCT)
 #	cd ../MolLib; $(MAKE) clean
 #	cd ../MolLib/Ruby_bind; $(MAKE) clean
+
