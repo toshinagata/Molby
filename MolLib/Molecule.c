@@ -670,6 +670,28 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 				i++;
 			}
 			continue;
+		} else if (strcmp(buf, "!:mm_exclude") == 0) {
+			i = 0;
+			while (ReadLine(buf, sizeof buf, fp, &lineNumber) > 0) {
+				if (buf[0] == '!')
+					continue;
+				if (buf[0] == '\n')
+					break;
+				/* idx mm_exclude periodic_exclude */
+				if (sscanf(buf, "%d %d %d", &ibuf[0], &ibuf[1], &ibuf[2]) < 3) {
+					snprintf(errbuf, errbufsize, "line %d: mm_exclude flags cannot be read for atom %d", lineNumber, i + 1);
+					goto exit;
+				}
+				if (i >= mp->natoms) {
+					snprintf(errbuf, errbufsize, "line %d: too many mm_exclude flags\n", lineNumber);
+					goto exit;
+				}
+				ap = ATOM_AT_INDEX(mp->atoms, i);
+				ap->mm_exclude = (ibuf[1] != 0);
+				ap->periodic_exclude = (ibuf[2] != 0);
+				i++;
+			}
+			continue;
 		} else if (strcmp(buf, "!:positions") == 0) {
 			i = 0;
 			while (ReadLine(buf, sizeof buf, fp, &lineNumber) > 0) {
@@ -3270,7 +3292,7 @@ int
 MoleculeWriteToMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsize)
 {
 	FILE *fp;
-	int i, j, k, n1, n2;
+	int i, j, k, n1, n2, n3;
 	Atom *ap;
 	char bufs[6][8];
 
@@ -3283,7 +3305,7 @@ MoleculeWriteToMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbu
 
 	fprintf(fp, "!:atoms\n");
 	fprintf(fp, "! idx seg_name res_seq res_name name type charge weight element atomic_number occupancy temp_factor int_charge\n");
-	n1 = n2 = 0;
+	n1 = n2 = n3 = 0;
 	for (i = 0, ap = mp->atoms; i < mp->natoms; i++, ap = ATOM_NEXT(ap)) {
 		strncpy(bufs[0], ap->segName, 4);
 		strncpy(bufs[1], ap->resName, 4);
@@ -3305,6 +3327,8 @@ MoleculeWriteToMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbu
 			n1++;
 		if (ap->fix_force != 0)
 			n2++;
+		if (ap->mm_exclude || ap->periodic_exclude)
+			n3++;
 		fprintf(fp, "%d %s %d %s %s %s %.5f %.5f %s %d %f %f %d\n", i, bufs[0], ap->resSeq, bufs[1], bufs[2], bufs[3], ap->charge, ap->weight, bufs[4], ap->atomicNumber, ap->occupancy, ap->tempFactor, ap->intCharge);
 	}
 	fprintf(fp, "\n");
@@ -3325,6 +3349,15 @@ MoleculeWriteToMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbu
 		fprintf(fp, "! idx fix_force fix_pos\n");
 		for (i = 0, ap = mp->atoms; i < mp->natoms; i++, ap = ATOM_NEXT(ap)) {
 			fprintf(fp, "%d %f %f %f %f\n", i, ap->fix_force, ap->fix_pos.x, ap->fix_pos.y, ap->fix_pos.z);
+		}
+		fprintf(fp, "\n");
+	}
+	
+	if (n3 > 0) {
+		fprintf(fp, "!:mm_exclude\n");
+		fprintf(fp, "! idx mm_exclude periodic_exclude\n");
+		for (i = 0, ap = mp->atoms; i < mp->natoms; i++, ap = ATOM_NEXT(ap)) {
+			fprintf(fp, "%d %d %d\n", i, ap->mm_exclude, ap->periodic_exclude);
 		}
 		fprintf(fp, "\n");
 	}

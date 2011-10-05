@@ -68,7 +68,7 @@ static VALUE
 	s_FractRSym, s_FractXSym, s_FractYSym, s_FractZSym,
 	s_VSym, s_FSym, s_OccupancySym, s_TempFactorSym,
 	s_AnisoSym, s_SymopSym, s_IntChargeSym, s_FixForceSym,
-    s_FixPosSym, s_ExclusionSym;
+	s_FixPosSym, s_ExclusionSym, s_MMExcludeSym, s_PeriodicExcludeSym;
 
 /*  Symbols for parameter attributes  */
 static VALUE
@@ -3439,6 +3439,14 @@ static VALUE s_AtomRef_GetExclusion(VALUE self) {
 	return retval;
 }
 
+static VALUE s_AtomRef_GetMMExclude(VALUE self) {
+	return INT2NUM(s_AtomFromValue(self)->mm_exclude);
+}
+
+static VALUE s_AtomRef_GetPeriodicExclude(VALUE self) {
+	return INT2NUM(s_AtomFromValue(self)->periodic_exclude);
+}
+
 static VALUE s_AtomRef_SetIndex(VALUE self, VALUE val) {
 	rb_raise(rb_eMolbyError, "index cannot be directly set");
 	return Qnil;
@@ -3769,6 +3777,22 @@ static VALUE s_AtomRef_SetExclusion(VALUE self, VALUE val) {
 	return val; /* Not reached */
 }
 
+static VALUE s_AtomRef_SetMMExclude(VALUE self, VALUE val) {
+	VALUE oval = s_AtomRef_GetIntCharge(self);
+	val = rb_Integer(val);
+	s_AtomFromValue(self)->mm_exclude = NUM2INT(val);
+	s_RegisterUndoForAtomAttrChange(self, s_MMExcludeSym, val, oval);
+	return val;
+}
+
+static VALUE s_AtomRef_SetPeriodicExclude(VALUE self, VALUE val) {
+	VALUE oval = s_AtomRef_GetIntCharge(self);
+	val = rb_Integer(val);
+	s_AtomFromValue(self)->periodic_exclude = NUM2INT(val);
+	s_RegisterUndoForAtomAttrChange(self, s_PeriodicExcludeSym, val, oval);
+	return val;
+}
+
 static struct s_AtomAttrDef {
 	char *name;
 	VALUE *symref;  /*  Address of s_IndexSymbol etc. */
@@ -3806,6 +3830,8 @@ static struct s_AtomAttrDef {
 	{"fix_force",    &s_FixForceSym,     0, s_AtomRef_GetFixForce,     s_AtomRef_SetFixForce},
 	{"fix_pos",      &s_FixPosSym,       0, s_AtomRef_GetFixPos,       s_AtomRef_SetFixPos},
 	{"exclusion",    &s_ExclusionSym,    0, s_AtomRef_GetExclusion,    s_AtomRef_SetExclusion},
+	{"mm_exclude",   &s_MMExcludeSym,    0, s_AtomRef_GetMMExclude,    s_AtomRef_SetMMExclude},
+	{"periodic_exclude", &s_PeriodicExcludeSym, 0, s_AtomRef_GetPeriodicExclude, s_AtomRef_SetPeriodicExclude},
 	{NULL} /* Sentinel */
 };
 
@@ -4456,12 +4482,12 @@ success:
 	{
 		/*  Register the path  */
 		Molecule *mol;
-		Atom *ap;
+	/*	Atom *ap; */
 		Data_Get_Struct(self, Molecule, mol);
 		MoleculeSetPath(mol, StringValuePtr(argv[0]));
 		
 		/*  Check if all occupancy factors are zero; if that is the case, then all set to 1.0  */
-		for (i = 0, ap = mol->atoms; i < mol->natoms; i++, ap = ATOM_NEXT(ap)) {
+	/*	for (i = 0, ap = mol->atoms; i < mol->natoms; i++, ap = ATOM_NEXT(ap)) {
 			if (ap->occupancy != 0.0)
 				break;
 		}
@@ -4469,7 +4495,7 @@ success:
 			for (i = 0, ap = mol->atoms; i < mol->natoms; i++, ap = ATOM_NEXT(ap)) {
 				ap->occupancy = 1.0;
 			}
-		}
+		} */
 	}
 	return rval;
 }

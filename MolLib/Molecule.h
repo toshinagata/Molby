@@ -90,6 +90,7 @@ typedef struct Atom {
 	short  wrap_dx, wrap_dy, wrap_dz; /*  Calculated by md_wrap_coordinates; used only in wrapped output.  */
 	Double fix_force; /*  0: no fix, >0: fix at fix_pos with harmonic potential, <0: fix at fix_pos without force  */
 	Vector fix_pos;
+	Byte   mm_exclude;        /*  If nonzero, then this atom is excluded from MM/MD calculations  */
 	Byte   periodic_exclude;  /*  If nonzero, then this atom is excluded from periodic calculations  */
 } Atom;
 

@@ -65,7 +65,7 @@ s_calc_bond_force(MDArena *arena)
 			continue;  /*  Ignore this entry  */
 	/*	if (bond_uniq != NULL && bond_uniq[i] >= 0)
 			continue;  *//*  Non-unique bond  */
-		if (ap[bonds[0]].occupancy == 0.0 || ap[bonds[1]].occupancy == 0.0)
+		if (ap[bonds[0]].mm_exclude || ap[bonds[1]].mm_exclude)
 			continue;  /*  Skip non-occupied atoms  */
 		VecSub(r12, ap[bonds[1]].r, ap[bonds[0]].r);
 		w1 = VecLength(r12);
@@ -117,7 +117,7 @@ s_calc_angle_force(MDArena *arena)
 			continue;  /*  Ignore this entry  */
 	/*	if (angle_uniq != NULL && angle_uniq[i] >= 0)
 			continue; */ /*  Non-unique angle  */
-		if (ap[angles[0]].occupancy == 0.0 || ap[angles[1]].occupancy == 0.0 || ap[angles[2]].occupancy == 0.0)
+		if (ap[angles[0]].mm_exclude || ap[angles[1]].mm_exclude || ap[angles[2]].mm_exclude)
 			continue;  /*  Skip non-occupied atoms  */
 		if (arena->nalchem_flags > 0) {
 			if (angles[0] < arena->nalchem_flags && angles[1] < arena->nalchem_flags
@@ -203,7 +203,7 @@ s_calc_dihedral_force_sub(MDArena *arena, Atom *ap, Int ndihedrals, Int *dihedra
 			continue;  /*  Ignore this entry  */
 	/*	if (dihedral_uniq != NULL && dihedral_uniq[i] >= 0)
 			continue;  *//*  Non-unique dihedral  */
-		if (ap[dihedrals[0]].occupancy == 0.0 || ap[dihedrals[1]].occupancy == 0.0 || ap[dihedrals[2]].occupancy == 0.0 || ap[dihedrals[3]].occupancy == 0.0)
+		if (ap[dihedrals[0]].mm_exclude || ap[dihedrals[1]].mm_exclude || ap[dihedrals[2]].mm_exclude || ap[dihedrals[3]].mm_exclude)
 			continue;  /*  Skip non-occupied atoms  */
 		if (arena->nalchem_flags > 0) {
 			if (dihedrals[0] < arena->nalchem_flags && dihedrals[1] < arena->nalchem_flags
@@ -506,7 +506,7 @@ s_make_verlet_list(MDArena *arena)
 				continue;
 
 			/*  Non-occupied atoms  */
-			if (api->occupancy == 0.0 || apj->occupancy == 0.0)
+			if (api->mm_exclude || apj->mm_exclude)
 				continue;
 
 			VecSub(rij, apj->r, api->r);
@@ -1007,6 +1007,8 @@ calc_force(MDArena *arena)
 		arena->total_energy += arena->energies[i];
 
 	for (i = 0; i < natoms; i++) {
+		if (mol->atoms[i].mm_exclude)
+			continue;
 		fa = &mol->atoms[i].f;
 		ff = &arena->forces[i];
 		for (j = 0; j < kKineticIndex; j++) {

@@ -1387,7 +1387,7 @@ const char *
 md_prepare(MDArena *arena, int check_only)
 {
 	Int i, idx;
-	Int t1, t2;
+	Int t1, t2, t3;
 	Molecule *mol;
 
 	if (arena->xmol->needsMDRebuild) {
@@ -1518,17 +1518,21 @@ md_prepare(MDArena *arena, int check_only)
 		   "Number of dihedrals = %d\n"
 		   "Number of impropers = %d\n", mol->nbonds, mol->nangles, mol->ndihedrals, mol->nimpropers);
 	
-	t1 = t2 = 0;
+	t1 = t2 = t3 = 0;
 	for (i = 0; i < mol->natoms; i++) {
 		if (mol->atoms[i].fix_force > 0)
 			t1++;
 		if (mol->atoms[i].fix_force < 0)
 			t2++;
+		if (mol->atoms[i].mm_exclude)
+			t3++;
 	}
 	if (t1 > 0)
 		md_log(arena, "Number of constrained atoms = %d\n", t1);
 	if (t2 > 0)
 		md_log(arena, "Number of fixed atoms = %d\n", t2);
+	if (t3 > 0)
+		md_log(arena, "Number of excluded atoms = %d\n", t3);
 
 	if (arena->natoms_uniq < mol->natoms) {
 		md_log(arena, "Number of symmetry-unique atoms = %d\n", arena->natoms_uniq);
@@ -1539,7 +1543,7 @@ md_prepare(MDArena *arena, int check_only)
 		}
 	}
 		
-	arena->degree_of_freedom = 3 * (arena->natoms_uniq - t2);
+	arena->degree_of_freedom = 3 * (arena->natoms_uniq - t2 - t3);
 	md_log(arena, "Degree of freedom = %d\n", arena->degree_of_freedom);
 
 	/*  Build local cache of the used parameters  */
@@ -1790,7 +1794,7 @@ md_scale_velocities(MDArena *arena)
 	if (arena->nsum_temperature == 0) {
 		Double kinetic = 0.0;
 		for (i = 0, ap = arena->mol->atoms; i < arena->natoms_uniq; i++, ap++) {
-			if (ap->fix_force < 0)
+			if (ap->fix_force < 0 || ap->mm_exclude)
 				continue;
 			kinetic += ap->weight * VecLength2(ap->v);
 		}
@@ -1819,7 +1823,7 @@ md_init_velocities(MDArena *arena)
 	Atom *ap = arena->mol->atoms;
 	n = arena->mol->natoms;
 	for (i = 0; i < n; i++, ap++) {
-		if (ap->fix_force < 0 || fabs(ap->weight) < 1e-6) {
+		if (ap->fix_force < 0 || fabs(ap->weight) < 1e-6 || ap->mm_exclude) {
 			ap->v.x = ap->v.y = ap->v.z = 0;
 		} else {
 			w = sqrt(arena->temperature * BOLTZMANN / ap->weight);
@@ -2053,6 +2057,8 @@ md_update_velocities(MDArena *arena)
 			continue;
 		if (ap->fix_force < 0)
 			continue;
+		if (ap->mm_exclude)
+			continue;
 		wt = ap->weight;
 		if (fabs(wt) < 1e-6)
 			continue;
@@ -2109,6 +2115,8 @@ md_update_positions(MDArena *arena)
 		if (use_sym && ap->symop.alive)
 			continue;
 		if (ap->fix_force < 0)
+			continue;
+		if (ap->mm_exclude)
 			continue;
 		VecScale(dr, ap->v, timestep);
 		VecInc(ap->r, dr);
@@ -2707,7 +2715,8 @@ md_copy_coordinates_to_internal(MDArena *arena)
 		return -2;  /*  Number of atoms does not match  */
 	for (i = 0, ap1 = arena->mol->atoms, ap2 = arena->xmol->atoms; i < arena->mol->natoms; i++, ap1 = ATOM_NEXT(ap1), ap2 = ATOM_NEXT(ap2)) {
 		ap1->r = ap2->r;
-		ap1->occupancy = ap2->occupancy;  /*  Occupancy can be used to exclude particular atoms  */
+	/*	ap1->occupancy = ap2->occupancy;  *//*  Occupancy can be used to exclude particular atoms  */
+		ap1->mm_exclude = ap2->mm_exclude;
 	}
 	if (arena->mol->cell != NULL && arena->xmol->cell != NULL)
 		memmove(arena->mol->cell, arena->xmol->cell, sizeof(XtalCell));

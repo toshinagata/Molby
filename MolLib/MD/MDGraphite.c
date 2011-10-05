@@ -540,7 +540,7 @@ graphite_force(MDGraphiteArena *graphite, MDArena *arena, Double *energy, Vector
 		Vector v = mol->atoms[i].r;
 		if (mol->atoms[i].fix_force < 0)
 			continue;
-		if (mol->atoms[i].occupancy == 0.0)
+		if (mol->atoms[i].mm_exclude)
 			continue;
 		if (arena->nalchem_flags > 0) {
 			char c1 = arena->alchem_flags[i];
