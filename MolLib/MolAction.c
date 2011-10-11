@@ -982,11 +982,12 @@ MolActionPerform(Molecule *mol, MolAction *action)
 		act2->frame = mol->cframe;
 		needsSymmetryAmendment = 1;
 	} else if (strcmp(action->name, gMolActionInsertFrames) == 0) {
-		int old_nframes, new_nframes;
+		int old_nframes, new_nframes, old_cframe;
 		Vector *vp2;
 		ig = action->args[0].u.igval;
 		vp = (Vector *)action->args[1].u.arval.ptr;
 		vp2 = (Vector *)action->args[2].u.arval.ptr;
+		old_cframe = mol->cframe;
 		n1 = IntGroupGetCount(ig);
 		if (n1 == 0)
 			return 0;  /*  Do nothing  */
@@ -997,6 +998,13 @@ MolActionPerform(Molecule *mol, MolAction *action)
 		old_nframes = MoleculeGetNumberOfFrames(mol);
 		if (MoleculeInsertFrames(mol, ig, vp, vp2) < 0)
 			return -1;  /*  Error  */
+
+		/*  Undo action for restoring old cframe  */
+		act2 = MolActionNew(gMolActionNone);
+		act2->frame = old_cframe;
+		MolActionCallback_registerUndo(mol, act2);
+		MolActionRelease(act2);
+
 		new_nframes = MoleculeGetNumberOfFrames(mol);
 		if (old_nframes + n1 < new_nframes) {
 			/*  "Extra" frames were automatically inserted because large frame indices were specified  */
@@ -1012,21 +1020,54 @@ MolActionPerform(Molecule *mol, MolAction *action)
 		needsSymmetryAmendment = 1;
 	} else if (strcmp(action->name, gMolActionRemoveFrames) == 0) {
 		Vector *vp2;
-		ig = action->args[0].u.igval;
+		IntGroup *ig2;
+		int n2, nframes, old_cframe;
+		ig = ig2 = action->args[0].u.igval;
+		old_cframe = mol->cframe;
 		n1 = IntGroupGetCount(ig);
 		if (n1 == 0)
 			return 0;  /*  Do nothing  */
+		nframes = MoleculeGetNumberOfFrames(mol);
+		n2 = IntGroupGetEndPoint(ig, IntGroupGetIntervalCount(ig) - 1);  /*  Max point + 1  */
+		if (n2 > nframes) {
+			/*  Remove extra points  */
+			ig2 = IntGroupNewFromIntGroup(ig);
+			IntGroupRemove(ig2, nframes, n2 - nframes);
+			n1 = IntGroupGetCount(ig2);
+		}
+		if (nframes == n1 && nframes >= 2) {
+			/*  Remove all frames: keep the current frame  */
+			if (ig2 == ig)
+				ig2 = IntGroupNewFromIntGroup(ig);
+			IntGroupRemove(ig2, mol->cframe, 1);
+			n1--;
+		}
+		if (n1 == 0) {
+			if (ig2 != ig)
+				IntGroupRelease(ig2);
+			return 0;  /*  Do nothing  */
+		}
 		vp = (Vector *)calloc(sizeof(Vector), n1 * mol->natoms);
 		if (mol->cell != NULL && mol->frame_cells != NULL)
 			vp2 = (Vector *)calloc(sizeof(Vector) * 4, n1);
 		else vp2 = NULL;
-		if (MoleculeRemoveFrames(mol, ig, vp, vp2) < 0)
+		if (MoleculeRemoveFrames(mol, ig2, vp, vp2) < 0) {
+			if (ig2 != ig)
+				IntGroupRelease(ig2);
 			return -1;  /*  Error  */
-		act2 = MolActionNew(gMolActionInsertFrames, ig, n1 * mol->natoms, vp, (vp2 != NULL ? n1 * 4 : 0), vp2);
+		}
+		/*  Undo action for restoring old cframe  */
+		act2 = MolActionNew(gMolActionNone);
+		act2->frame = old_cframe;
+		MolActionCallback_registerUndo(mol, act2);
+		MolActionRelease(act2);
+		act2 = MolActionNew(gMolActionInsertFrames, ig2, n1 * mol->natoms, vp, (vp2 != NULL ? n1 * 4 : 0), vp2);
 		act2->frame = mol->cframe;
 		free(vp);
 		if (vp2 != NULL)
 			free(vp2);
+		if (ig2 != ig)
+			IntGroupRelease(ig2);
 		needsSymmetryAmendment = 1;
 	} else if (strcmp(action->name, gMolActionSetSelection) == 0) {
 		IntGroup *ig2;
@@ -1258,6 +1299,8 @@ MolActionPerform(Molecule *mol, MolAction *action)
 			mol->is_xtal_coord = 0;
 			act2 = MolActionNew(gMolActionCartesianToXtal);
 		} */
+	} else if (strcmp(action->name, gMolActionNone) == 0) {
+		/*  Do nothing  */
 	} else {
 		fprintf(stderr, "Internal error: unknown action name %s\n", action->name);
 		return -1;

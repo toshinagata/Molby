@@ -431,7 +431,7 @@ MoleculeView::UpdateFrameControls()
 		MoleculeLock(mview->mol);
 		nframes = MoleculeGetNumberOfFrames(mview->mol);
 		MoleculeUnlock(mview->mol);
-		if (nframes > 0)
+		if (nframes > 1)
 			enabled = true;
 	}
 	

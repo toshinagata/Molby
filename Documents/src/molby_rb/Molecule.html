@@ -1811,7 +1811,7 @@ Shift the partial charges of atoms, so that the sum of the charges becomes the s
 </div>
 <div class="method-description">
 <p>
-Get the number of frames.
+Get the number of frames. Note that the minimum number of frames is 1, not 0.
 </p>
 <p>
 <i>See Also:</i> <a href="Molecule.html#M000265">Molecule#frame</a>, <a href="Molecule.html#M000266">Molecule#frame=</a>
@@ -1965,8 +1965,7 @@ format).
 </div>
 <div class="method-description">
 <p>
-Set the time increment (in picoseconds) for one step (defined by dcd
-format).
+Set the time increment (in picoseconds) for one step (defined by dcd format).
 </p>
 <p>
 <i>See Also:</i> <a href="Molecule.html#M000195">Molecule#loaddcd</a>, <a href="Molecule.html#M000226">Molecule#ps_per_step</a>
@@ -2079,6 +2078,9 @@ remove_frames(intGroup, want_coordinates = false)<br />
 Remove the frames at group. If want_coordinates is false (default), returns
 true if successful and nil otherwise. If want_coordinates is true, an array
 of arrays of the coordinates in the removed frames is returned.
+</p>
+<p>
+If the given group corrensponds to all frames, then the current frame is retained. Otherwise, if the current frame is included in the given group, the frame immediately before the group is selected (if no frame is present before the group, the frame with the lowest index is selected).
 </p>
 </div>
 </div>

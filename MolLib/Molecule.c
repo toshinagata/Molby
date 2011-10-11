@@ -8623,7 +8623,7 @@ MoleculeGetNumberOfFrames(Molecule *mp)
 {
 	if (mp == NULL)
 		return 0;
-	if (mp->nframes < 0) {
+	if (mp->nframes <= 0) {
 		/*  Recalculate  */
 		int i, n;
 		Atom *ap;
@@ -8631,6 +8631,8 @@ MoleculeGetNumberOfFrames(Molecule *mp)
 			if (ap->nframes > n)
 				n = ap->nframes;
 		}
+		if (n == 0)
+			n = 1;
 		mp->nframes = n;
 	}
 	return mp->nframes;
@@ -8658,6 +8660,11 @@ MoleculeInsertFrames(Molecule *mp, IntGroup *group, const Vector *inFrame, const
 		return -1;
 
 	__MoleculeLock(mp);
+
+	/*  Copy back the current coordinates  */
+	/*  No change in the current coordinates, but the frame buffer is updated  */
+	MoleculeSelectFrame(mp, mp->cframe, 1); 
+	
 	/*  Expand ap->frames for all atoms  */
 	for (i = 0, ap = mp->atoms; i < mp->natoms; i++, ap = ATOM_NEXT(ap)) {
 		if (ap->frames == NULL)
@@ -8673,9 +8680,13 @@ MoleculeInsertFrames(Molecule *mp, IntGroup *group, const Vector *inFrame, const
 		ap->frames = vp;
 	}
 	if (mp->cell != NULL && (mp->frame_cells != NULL || inFrameCell != NULL)) {
-		if (mp->frame_cells == NULL)
+		if (mp->frame_cells == NULL) {
 			vp = (Vector *)calloc(sizeof(Vector), n_new * 4);
-		else
+			vp[0] = mp->cell->axes[0];
+			vp[1] = mp->cell->axes[1];
+			vp[2] = mp->cell->axes[2];
+			vp[3] = mp->cell->origin;
+		} else
 			vp = (Vector *)realloc(mp->frame_cells, sizeof(Vector) * 4 * n_new);
 		if (vp == NULL) {
 			__MoleculeUnlock(mp);
@@ -8746,19 +8757,21 @@ MoleculeInsertFrames(Molecule *mp, IntGroup *group, const Vector *inFrame, const
 	}
 	free(tempv);
 	mp->nframes = n_new;
-	MoleculeSelectFrame(mp, last_inserted, 1);
+	MoleculeSelectFrame(mp, last_inserted, 0);
 	MoleculeIncrementModifyCount(mp);
 	__MoleculeUnlock(mp);
 	return count;
 }
 
 int
-MoleculeRemoveFrames(Molecule *mp, IntGroup *group, Vector *outFrame, Vector *outFrameCell)
+MoleculeRemoveFrames(Molecule *mp, IntGroup *inGroup, Vector *outFrame, Vector *outFrameCell)
 {
-	int i, count, n_new, n_old, natoms, nframes, old_count;
+	int i, count, n_new, n_old, natoms, nframes, old_count, new_cframe;
 	Vector *tempv, *vp;
 	Atom *ap;
-	if (mp == NULL || (natoms = mp->natoms) == 0 || (count = IntGroupGetCount(group)) <= 0)
+	IntGroup *group, *group2;
+
+	if (mp == NULL || (natoms = mp->natoms) == 0 || (count = IntGroupGetCount(inGroup)) <= 0)
 		return -1;
 
 	/*  outFrame[] should have enough size for Vector * natoms * group.count  */
@@ -8767,12 +8780,49 @@ MoleculeRemoveFrames(Molecule *mp, IntGroup *group, Vector *outFrame, Vector *ou
 		memset(outFrameCell, 0, sizeof(Vector) * 4 * count);
 
 	n_old = MoleculeGetNumberOfFrames(mp);
+	if (n_old == 1)
+		return -2;  /*  Cannot delete last frame  */
+
+	group = IntGroupNew();
+	group2 = IntGroupNewWithPoints(0, n_old, -1);
+	IntGroupIntersect(inGroup, group2, group);
+	IntGroupRelease(group2);
+	count = IntGroupGetCount(group);
 	n_new = n_old - count;
-	if (n_new < 0)
-		n_new = 0;
+	if (n_new < 1) {
+		IntGroupRelease(group);
+		return -2;  /*  Trying to delete too many frames  */
+	}
 	tempv = (Vector *)malloc(sizeof(Vector) * n_old * 4);  /*  "*4" for handling cells  */
-	if (tempv == NULL)
+	if (tempv == NULL) {
+		IntGroupRelease(group);
 		return -1;
+	}
+
+	__MoleculeLock(mp);
+
+	/*  Copy back the current coordinates  */
+	/*  No change in the current coordinates, but the frame buffer is updated  */
+	MoleculeSelectFrame(mp, mp->cframe, 1); 
+
+	/*  Determine which frame should be selected after removal is completed  */
+	{
+		int n1;
+		if (IntGroupLookup(group, mp->cframe, &i)) {
+			/*  cframe will be removed  */
+			n1 = IntGroupGetStartPoint(group, i) - 1;
+			if (n1 < 0)
+				n1 = IntGroupGetEndPoint(group, i);
+		} else n1 = mp->cframe;
+		/*  Change to that frame  */
+		MoleculeSelectFrame(mp, n1, 0);
+		group2 = IntGroupNewFromIntGroup(group);
+		IntGroupReverse(group2, 0, n_old);
+		new_cframe = IntGroupLookupPoint(group2, n1);
+		if (new_cframe < 0)
+			return -3;  /*  This cannot happen  */
+		IntGroupRelease(group2);
+	}
 
 	/*  group = [n0..n1-1, n2..n3-1, ...]  */
 	/*  s = t = 0, */
@@ -8783,7 +8833,6 @@ MoleculeRemoveFrames(Molecule *mp, IntGroup *group, Vector *outFrame, Vector *ou
 		...
 		tempv[nl..n_old-1] -> ap[s..s+(n_old-nl-1)], s += n_old-nl
 		At last, s will become n_new and t will become count.  */
-	__MoleculeLock(mp);
 	nframes = 0;
 	for (i = 0, ap = mp->atoms; i <= mp->natoms; i++, ap = ATOM_NEXT(ap)) {
 		int s, t, j, ns, ne;
@@ -8843,10 +8892,11 @@ MoleculeRemoveFrames(Molecule *mp, IntGroup *group, Vector *outFrame, Vector *ou
 			ap->nframes = s;
 		if (nframes < s)
 			nframes = s;
-		if (s == 0) {
+		if (s <= 1) {
 			if (i < mp->natoms) {
 				free(ap->frames);
 				ap->frames = NULL;
+				ap->nframes = 0;
 			} else {
 				free(mp->frame_cells);
 				mp->frame_cells = NULL;
@@ -8862,98 +8912,15 @@ MoleculeRemoveFrames(Molecule *mp, IntGroup *group, Vector *outFrame, Vector *ou
 	mp->nframes = nframes;
 	
 	/*  Select the "last" frame; do not "copy back" the coordinates to the frame table  */
-	i = (mp->cframe >= nframes ? nframes - 1 : mp->cframe);
-	MoleculeSelectFrame(mp, i, 0);
-	
+/* 	i = (mp->cframe >= nframes ? nframes - 1 : mp->cframe); */
+	MoleculeSelectFrame(mp, new_cframe, 0);
+
+	IntGroupRelease(group);
+
 	MoleculeIncrementModifyCount(mp);
 	__MoleculeUnlock(mp);
 	return count;
 }
-
-#if 0
-int
-MoleculeInsertFrame(Molecule *mp, int index, const Vector *inFrame)
-{
-	int i;
-	Atom *ap;
-	if (mp == NULL || mp->natoms == 0)
-		return -1;
-	i = MoleculeGetNumberOfFrames(mp);
-	if (index < 0 || index > i)
-		index = i;
-
-	/*  Insert a new frame at index for each atom  */
-	__MoleculeLock(mp);
-	for (i = 0, ap = mp->atoms; i < mp->natoms; i++, ap = ATOM_NEXT(ap)) {
-		Vector *vp;
-		int nframes;
-		if (ap->nframes > index)
-			nframes = ap->nframes + 1;
-		else
-			nframes = index + 1;
-		if (ap->frames == NULL)
-			vp = (Vector *)malloc(sizeof(Vector) * nframes);
-		else
-			vp = (Vector *)realloc(ap->frames, sizeof(Vector) * nframes);
-		if (vp == NULL) {
-			__MoleculeUnlock(mp);
-			return -1;
-		}
-		ap->frames = vp;
-		/*  Clear newly allocated memory  */
-		memset(ap->frames + ap->nframes, 0, sizeof(Vector) * (nframes - ap->nframes));
-		/*  Move backward frames[index..nframes-1] by one  */
-		memmove(ap->frames + index + 1, ap->frames + index, sizeof(Vector) * (nframes - index - 1));
-		ap->nframes = nframes;
-		ap->frames[index] = (inFrame != NULL ? inFrame[i] : ap->r);
-	}
-	mp->nframes = -1;
-	MoleculeIncrementModifyCount(mp);
-	__MoleculeUnlock(mp);
-	return index;
-}
-
-int
-MoleculeRemoveFrame(Molecule *mp, int frame, Vector *outFrame)
-{
-	int i, ok, n;
-	Atom *ap;
-	static Vector zero = {0, 0, 0};
-	if (mp == NULL || mp->natoms == 0 || frame < 0)
-		return -1;
-	ok = 0;
-	n = 0;
-	__MoleculeLock(mp);
-	for (i = 0, ap = mp->atoms; i < mp->natoms; i++, ap = ATOM_NEXT(ap)) {
-		if (frame < ap->nframes) {
-			/*  If outFrame != NULL, then copy the coordinates to outFrame[i]  */
-			if (outFrame != NULL)
-				outFrame[i] = ap->frames[frame];
-			/*  Remove this frame  */
-			memmove(ap->frames + frame, ap->frames + frame + 1, sizeof(Vector) * (ap->nframes - frame - 1));
-			ap->nframes--;
-			if (ap->nframes == 0) {
-				free(ap->frames);
-				ap->frames = NULL;
-			}
-			ok = 1;
-		} else {
-			if (outFrame != NULL)
-				outFrame[i] = zero;
-		}
-		if (n < ap->nframes)
-			n = ap->nframes;
-	}
-	mp->nframes = n;
-	if (mp->cframe >= n)
-		mp->cframe = (n > 0 ? n - 1 : 0);
-	else if (mp->cframe > frame)
-		mp->cframe--;
-	MoleculeIncrementModifyCount(mp);
-	__MoleculeUnlock(mp);
-	return frame;
-}
-#endif
 
 int
 MoleculeSelectFrame(Molecule *mp, int frame, int copyback)
@@ -8968,7 +8935,6 @@ MoleculeSelectFrame(Molecule *mp, int frame, int copyback)
 	for (i = 0, ap = mp->atoms; i < mp->natoms; i++, ap = ATOM_NEXT(ap)) {
 		if (copyback && cframe >= 0 && cframe < ap->nframes) {
 			/*  Write the current coordinate back to the frame array  */
-			/*  TODO: This behavior may interfere with undo. How to work around this?  */
 			ap->frames[cframe] = ap->r;
 		}
 		if (frame >= 0 && frame < ap->nframes) {
