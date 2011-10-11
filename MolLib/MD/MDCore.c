@@ -787,7 +787,9 @@ s_find_bond_parameters(MDArena *arena)
 			type2 = ap2->type;
 			bp = NULL;
 			if (mol->par != NULL) {
-				bp = ParameterLookupBondPar(mol->par, type1, type2, 0);
+				bp = ParameterLookupBondPar(mol->par, i1, i2, kParameterLookupLocal | kParameterLookupNoWildcard);
+				if (bp == NULL)
+					bp = ParameterLookupBondPar(mol->par, type1, type2, kParameterLookupLocal | kParameterLookupGlobal);
 				if (bp != NULL) {
 					arena->bond_par_i[i] = (bp - mol->par->bondPars) + ATOMS_MAX_NUMBER * 2;
 					continue;
@@ -872,10 +874,9 @@ s_find_angle_parameters(MDArena *arena)
 			type2 = ATOM_AT_INDEX(mol->atoms, i2)->type;
 			type3 = ATOM_AT_INDEX(mol->atoms, i3)->type;
 			if (mol->par != NULL) {
-			/*	ap = ParameterLookupAnglePar(mol->par, i1, i2, i3, kParameterLookupLocal | kParameterLookupNoWildcard);
+				ap = ParameterLookupAnglePar(mol->par, i1, i2, i3, kParameterLookupLocal | kParameterLookupNoWildcard);
 				if (ap == NULL)
-					ap = ParameterLookupAnglePar(mol->par, type1, type2, type3, kParameterLookupLocal | kParameterLookupGlobal); */
-				ap = ParameterLookupAnglePar(mol->par, type1, type2, type3, 0);
+					ap = ParameterLookupAnglePar(mol->par, type1, type2, type3, kParameterLookupLocal | kParameterLookupGlobal);
 				if (ap != NULL) {
 					arena->angle_par_i[i] = (ap - mol->par->anglePars) + ATOMS_MAX_NUMBER * 2;
 					continue;
@@ -964,10 +965,9 @@ s_find_dihedral_parameters(MDArena *arena)
 			type3 = ATOM_AT_INDEX(mol->atoms, i3)->type;
 			type4 = ATOM_AT_INDEX(mol->atoms, i4)->type;
 			if (mol->par != NULL) {
-			/*	tp = ParameterLookupDihedralPar(mol->par, i1, i2, i3, i4, kParameterLookupLocal | kParameterLookupNoWildcard);
+			 	tp = ParameterLookupDihedralPar(mol->par, i1, i2, i3, i4, kParameterLookupLocal | kParameterLookupNoWildcard);
 				if (tp == NULL)
-					tp = ParameterLookupDihedralPar(mol->par, type1, type2, type3, type4, kParameterLookupLocal | kParameterLookupGlobal); */
-				tp = ParameterLookupDihedralPar(mol->par, type1, type2, type3, type4, 0);
+					tp = ParameterLookupDihedralPar(mol->par, type1, type2, type3, type4, kParameterLookupLocal | kParameterLookupGlobal);
 				if (tp != NULL) {
 					arena->dihedral_par_i[i] = (tp - mol->par->dihedralPars) + ATOMS_MAX_NUMBER * 2;
 					continue;
@@ -1062,10 +1062,9 @@ s_find_improper_parameters(MDArena *arena)
 			type3 = ATOM_AT_INDEX(mol->atoms, i3)->type;
 			type4 = ATOM_AT_INDEX(mol->atoms, i4)->type;
 			if (mol->par != NULL) {
-			/*	tp = ParameterLookupImproperPar(mol->par, i1, i2, i3, i4, kParameterLookupLocal | kParameterLookupNoWildcard);
+				tp = ParameterLookupImproperPar(mol->par, i1, i2, i3, i4, kParameterLookupLocal | kParameterLookupNoWildcard);
 				if (tp == NULL)
-					tp = ParameterLookupImproperPar(mol->par, type1, type2, type3, type4, kParameterLookupLocal | kParameterLookupGlobal); */
-				tp = ParameterLookupImproperPar(mol->par, type1, type2, type3, type4, 0);
+					tp = ParameterLookupImproperPar(mol->par, type1, type2, type3, type4, kParameterLookupLocal | kParameterLookupGlobal);
 				if (tp != NULL) {
 					arena->improper_par_i[i] = (tp - mol->par->improperPars) + ATOMS_MAX_NUMBER * 2;
 					continue;
