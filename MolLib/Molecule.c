@@ -6242,6 +6242,8 @@ MoleculeMerge(Molecule *dst, Molecule *src, IntGroup *where, int resSeqOffset)
 				ParameterRenumberAtoms(type, up1 + i, nsrc, old2new + ndst);
 			}
 			/*  Merge parameters  */
+			IntGroupClear(ig);
+			IntGroupAdd(ig, n2, n1);
 			if (ParameterInsert(dst->par, type, up1, ig) < n1)
 				goto panic;
 			IntGroupClear(ig);
