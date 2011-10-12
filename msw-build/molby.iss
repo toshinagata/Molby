@@ -13,6 +13,7 @@ Source: "build\Molby\amber11\bin\*"; DestDir: {app}\amber11\bin
 Source: "build\Molby\amber11\dat\antechamber\*"; DestDir: {app}\amber11\dat\antechamber
 Source: "build\Molby\amber11\dat\leap\parm\*"; DestDir: {app}\amber11\dat\leap\parm
 Source: "build\Molby\Scripts\*"; DestDir: {app}\Scripts
+Source: "build\Molby\Scripts\mbsf\*"; DestDir: {app}\Scripts\mbsf
 Source: "build\Molby\Scripts\lib\*"; DestDir: {app}\Scripts\lib
 
 [Icons]
