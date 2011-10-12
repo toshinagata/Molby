@@ -52,61 +52,54 @@ ParameterDuplicate(const Parameter *par)
 {
 	Parameter *npar = ParameterNew();
 	if (par->bondPars != NULL) {
-		npar->bondPars = (BondPar *)malloc(sizeof(BondPar) * par->nbondPars);
+		NewArray(&npar->bondPars, &npar->nbondPars, sizeof(BondPar), par->nbondPars);
 		if (npar->bondPars == NULL)
 			goto release;
 		memmove(npar->bondPars, par->bondPars, sizeof(BondPar) * par->nbondPars);
 		npar->nbondPars = par->nbondPars;
 	}
 	if (par->anglePars != NULL) {
-		npar->anglePars = (AnglePar *)malloc(sizeof(AnglePar) * par->nanglePars);
+		NewArray(&npar->anglePars, &npar->nanglePars, sizeof(AnglePar), par->nanglePars);
 		if (npar->anglePars == NULL)
 			goto release;
 		memmove(npar->anglePars, par->anglePars, sizeof(AnglePar) * par->nanglePars);
 		npar->nanglePars = par->nanglePars;
 	}
 	if (par->dihedralPars != NULL) {
-		npar->dihedralPars = (TorsionPar *)malloc(sizeof(TorsionPar) * par->ndihedralPars);
+		NewArray(&npar->dihedralPars, &npar->ndihedralPars, sizeof(TorsionPar), par->ndihedralPars);
 		if (npar->dihedralPars == NULL)
 			goto release;
 		memmove(npar->dihedralPars, par->dihedralPars, sizeof(TorsionPar) * par->ndihedralPars);
 		npar->ndihedralPars = par->ndihedralPars;
 	}
 	if (par->improperPars != NULL) {
-		npar->improperPars = (TorsionPar *)malloc(sizeof(TorsionPar) * par->nimproperPars);
+		NewArray(&npar->improperPars, &npar->nimproperPars, sizeof(TorsionPar), par->nimproperPars);
 		if (npar->improperPars == NULL)
 			goto release;
 		memmove(npar->improperPars, par->improperPars, sizeof(TorsionPar) * par->nimproperPars);
 		npar->nimproperPars = par->nimproperPars;
 	}
 	if (par->vdwPars != NULL) {
-		npar->vdwPars = (VdwPar *)malloc(sizeof(VdwPar) * par->nvdwPars);
+		NewArray(&npar->vdwPars, &npar->nvdwPars, sizeof(VdwPar), par->nvdwPars);
 		if (npar->vdwPars == NULL)
 			goto release;
 		memmove(npar->vdwPars, par->vdwPars, sizeof(VdwPar) * par->nvdwPars);
 		npar->nvdwPars = par->nvdwPars;
 	}
 	if (par->vdwpPars != NULL) {
-		npar->vdwpPars = (VdwPairPar *)malloc(sizeof(VdwPairPar) * par->nvdwpPars);
+		NewArray(&npar->vdwpPars, &npar->nvdwpPars, sizeof(VdwPairPar), par->nvdwpPars);
 		if (npar->vdwpPars == NULL)
 			goto release;
 		memmove(npar->vdwpPars, par->vdwpPars, sizeof(VdwPairPar) * par->nvdwpPars);
 		npar->nvdwpPars = par->nvdwpPars;
 	}
 	if (par->vdwCutoffPars != NULL) {
-		npar->vdwCutoffPars = (VdwCutoffPar *)malloc(sizeof(VdwCutoffPar) * par->nvdwCutoffPars);
+		NewArray(&npar->vdwCutoffPars, &npar->nvdwCutoffPars, sizeof(VdwCutoffPar), par->nvdwCutoffPars);
 		if (npar->vdwCutoffPars == NULL)
 			goto release;
 		memmove(npar->vdwCutoffPars, par->vdwCutoffPars, sizeof(VdwCutoffPar) * par->nvdwCutoffPars);
 		npar->nvdwCutoffPars = par->nvdwCutoffPars;
 	}
-/*	if (par->atomPars != NULL) {
-		npar->atomPars = (ElementPar *)malloc(sizeof(ElementPar) * par->natomPars);
-		if (npar->atomPars == NULL)
-			goto release;
-		memmove(npar->atomPars, par->atomPars, sizeof(ElementPar) * par->natomPars);
-		npar->natomPars = par->natomPars;
-	} */
 	return npar;
 release:
 	ParameterRelease(npar);
