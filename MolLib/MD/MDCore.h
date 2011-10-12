@@ -264,6 +264,10 @@ typedef struct MDArena {
 	
 	/*  Graphite potential  */
 	Int use_graphite;
+	
+	/*  External forces for atoms  */
+	Int nexforces;
+	Vector *exforces;
 
 	/*  Velocity limit  */
 	Double  velocity_limit;  /*  Default = 100  */

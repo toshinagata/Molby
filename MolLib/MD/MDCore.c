@@ -1382,6 +1382,34 @@ md_set_alchemical_flags(MDArena *arena, int nflags, const char *flags)
 	return 0;
 }
 
+/*  Set the external forces  */
+/*  Independent with arena->xmol, mol  */
+int
+md_set_external_forces(MDArena *arena, int nexforces, const Vector *exforces)
+{
+	if (arena == NULL)
+		return 0;
+	
+	if (nexforces == 0 || exforces == NULL) {
+		if (arena->exforces != NULL)
+			free(arena->exforces);
+		arena->exforces = NULL;
+		arena->nexforces = 0;
+		return 0;
+	}
+	
+	if (arena->exforces == NULL)
+		arena->exforces = (Vector *)malloc(nexforces * sizeof(Vector));
+	else arena->exforces = (Vector *)realloc(arena->exforces, nexforces * sizeof(Vector));
+	if (arena->exforces == NULL) {
+		arena->nexforces = 0;
+		return -1;
+	}
+	memmove(arena->exforces, exforces, nexforces * sizeof(Vector));
+	arena->nexforces = nexforces;
+	return 0;
+}
+
 const char *
 md_prepare(MDArena *arena, int check_only)
 {
@@ -3084,6 +3112,8 @@ md_arena_release(MDArena *arena)
 		free(arena->custom_pars);
 	if (arena->alchem_flags != NULL)
 		free(arena->alchem_flags);
+	if (arena->nexforces != NULL)
+		free(arena->nexforces);
 	if (arena->bond_par_i != NULL)
 		free(arena->bond_par_i);
 	if (arena->angle_par_i != NULL)

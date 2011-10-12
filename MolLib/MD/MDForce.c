@@ -941,6 +941,13 @@ s_calc_auxiliary_force(MDArena *arena)
 		}
 	}
 	
+	/*  External forces (used for artificial deformation of the structure)  */
+	if (arena->nexforces > 0) {
+		for (i = 0; i < arena->nexforces; i++) {
+			VecInc(forces[i], arena->exforces[i]);
+		}
+	}
+	
 	/*  Graphite  */
 	if (arena->graphite != NULL && arena->use_graphite) {
 		graphite_force(arena->graphite, arena, energies, forces);

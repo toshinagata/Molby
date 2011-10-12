@@ -683,6 +683,61 @@ s_MDArena_GetAlchemicalPerturbation(VALUE self)
 
 /*
  *  call-seq:
+ *    set_external_forces(ary) -> self
+ *
+ *  Set external forces. Ary should be an array of objects that can be converted to Vector3D.
+ */
+static VALUE
+s_MDArena_SetExternalForces(VALUE self, VALUE aval)
+{
+	Vector *vp;
+	MDArena *arena;
+	int i, n;
+	Data_Get_Struct(self, MDArena, arena);
+	if (arena->mol == NULL)
+		rb_raise(rb_eMolbyError, "Molecule is not set");
+	if (aval == Qnil) {
+		md_set_external_forces(arena, 0, NULL);
+		return self;
+	}
+	aval = rb_ary_to_ary(aval);
+	n = RARRAY_LEN(aval);
+	if (n == 0) {
+		md_set_external_forces(arena, 0, NULL);
+		return self;
+	}
+	vp = (Vector *)calloc(sizeof(Vector), n);
+	for (i = 0; i < n; i++)
+		VectorFromValue(RARRAY_PTR(aval)[i], vp + i);
+	md_set_external_forces(arena, n, vp);
+	free(vp);
+	return self;
+}
+
+/*
+ *  call-seq:
+ *    get_external_force(index) -> Vector3D or nil
+ *
+ *  Get the current external force for the atom. If the external force is not set, nil is returned.
+ */
+static VALUE
+s_MDArena_GetExternalForce(VALUE self, VALUE ival)
+{
+	int i;
+	VALUE vval;
+	MDArena *arena;
+	Data_Get_Struct(self, MDArena, arena);
+	if (arena->mol == NULL)
+		rb_raise(rb_eMolbyError, "Molecule is not set");
+	i = NUM2INT(rb_Integer(ival));
+	if (i < 0 || i >= arena->nexforces)
+		return Qnil;
+	vval = ValueFromVector(arena->exforces + i);
+	return vval;
+}
+
+/*
+ *  call-seq:
  *     init_velocities([temperature]) -> self
  *
  *  Give random (Boltzmann-weighted) velocities to all atoms. If temperature is given,
@@ -795,6 +850,8 @@ Init_MolbyMDTypes(void)
 	rb_define_method(rb_cMDArena, "keys", s_MDArena_Keys, 0);
 	rb_define_method(rb_cMDArena, "set_alchemical_perturbation", s_MDArena_SetAlchemicalPerturbation, 2);
 	rb_define_method(rb_cMDArena, "get_alchemical_perturbation", s_MDArena_GetAlchemicalPerturbation, 0);
+	rb_define_method(rb_cMDArena, "set_external_forces", s_MDArena_SetExternalForces, 1);
+	rb_define_method(rb_cMDArena, "get_external_force", s_MDArena_GetExternalForce, 1);
 	rb_define_method(rb_cMDArena, "init_velocities", s_MDArena_InitVelocities, -1);
 	rb_define_method(rb_cMDArena, "scale_velocities", s_MDArena_ScaleVelocities, -1);
 	rb_define_method(rb_cMDArena, "print_surface_area", s_MDArena_PrintSurfaceArea, 0);
