@@ -57,6 +57,15 @@ class Molecule
   
   def rotate_with_axis(xv, yv, cv = nil, group = nil)
     cv = Vector3D[0, 0, 0] if !cv
+	if xv.kind_of?(String) || xv.kind_of?(Numeric)
+	  xv = atoms[xv].r
+    end
+	if yv.kind_of?(String) || yv.kind_of?(Numeric)
+	  yv = atoms[yv].r
+    end
+	if cv.kind_of?(String) || cv.kind_of?(Numeric)
+	  cv = atoms[cv].r
+    end
     v1 = (xv - cv).normalize
     v3 = v1.cross(yv - cv).normalize
     v2 = v3.cross(v1).normalize
