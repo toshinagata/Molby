@@ -795,7 +795,7 @@ class Molecule
   end
   
   # Create sander input files from current molecule  
-  def export_prmtop
+  def export_prmtop(filename = nil)
   
     def error_dialog(msg)
       Dialog.run("AMBER Export Error") {
@@ -956,10 +956,14 @@ class Molecule
       }
     }
         
-    basename = (self.path ? File.basename(self.path, ".*") : self.name)
-    fname = Dialog.save_panel("AMBER prmtop/inpcrd file name", self.dir, basename + ".prmtop", "All files|*.*")
-    return nil if !fname
-    
+	if filename
+	  fname = filename
+    else
+      basename = (self.path ? File.basename(self.path, ".*") : self.name)
+      fname = Dialog.save_panel("AMBER prmtop/inpcrd file name", self.dir, basename + ".prmtop", "AMBER prmtop (*.prmtop)|*.prmtop|All files|*.*")
+      return nil if !fname
+    end
+
     open(fname, "w") { |fp|
       date = Time.now.localtime.strftime("%m/%d/%y  %H:%M:%S")
       
