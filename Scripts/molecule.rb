@@ -585,7 +585,8 @@ class Molecule
 	set_progress_message("Removing out-of-bounds molecules...")
 	g = newbox.atom_group do |ap|
 	  r = ap.r
-	  r.x < -bsize[0] * 0.5 || r.y < -bsize[1] * 0.5 || r.z < -bsize[2] * 0.5 || r.x > bsize[0] * 0.5 || r.y > bsize[1] * 0.5 || r.z > bsize[2] * 0.5
+	  r.x < -(bsize[0] - limit) * 0.5 || r.y < -(bsize[1] - limit) * 0.5 || r.z < -(bsize[2] - limit) * 0.5 ||
+	  r.x > (bsize[0] - limit) * 0.5 || r.y > (bsize[1] - limit) * 0.5 || r.z > (bsize[2] - limit) * 0.5
 	end
 	g = newbox.fragment(g)  #  expand by fragment
 	newbox.remove(g)
