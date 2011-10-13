@@ -7194,16 +7194,17 @@ s_Molecule_WrapUnitCell(VALUE self, VALUE gval)
 
 /*
  *  call-seq:
- *     find_conflicts(limit[, group1[, group2]]) -> [[n1, n2], [n3, n4], ...]
+ *     find_conflicts(limit[, group1[, group2 [, ignore_exclusion]]]) -> [[n1, n2], [n3, n4], ...]
  *
  *  Find pairs of atoms that are within the limit distance. If group1 and group2 are given, the
  *  first and second atom in the pair should belong to group1 and group2, respectively.
+ *  If ignore_exclusion is true, then 1-2 (bonded), 1-3, 1-4 pairs are also considered.
  */
 static VALUE
 s_Molecule_FindConflicts(int argc, VALUE *argv, VALUE self)
 {
     Molecule *mol;
-	VALUE limval, gval1, gval2, rval;
+	VALUE limval, gval1, gval2, rval, igval;
 	IntGroup *ig1, *ig2;
 	IntGroupIterator iter1, iter2;
 	Int npairs, *pairs;
@@ -7211,8 +7212,11 @@ s_Molecule_FindConflicts(int argc, VALUE *argv, VALUE self)
 	Double lim;
 	Vector r1;
 	Atom *ap1, *ap2;
+	MDExclusion *exinfo;
+	Int *exlist;
+
     Data_Get_Struct(self, Molecule, mol);
-	rb_scan_args(argc, argv, "12", &limval, &gval1, &gval2);
+	rb_scan_args(argc, argv, "13", &limval, &gval1, &gval2, &igval);
 	lim = NUM2DBL(rb_Float(limval));
 	if (lim <= 0.0)
 		rb_raise(rb_eMolbyError, "the limit (%g) should be positive", lim);
@@ -7224,16 +7228,45 @@ s_Molecule_FindConflicts(int argc, VALUE *argv, VALUE self)
 		ig2 = s_Molecule_AtomGroupFromValue(self, gval2);
 	else
 		ig2 = IntGroupNewWithPoints(0, mol->natoms, -1);
+	
+	if (!RTEST(igval)) {
+		/*  Use the exclusion table in MDArena  */
+		if (mol->par == NULL || mol->arena == NULL || mol->arena->is_initialized == 0 || mol->needsMDRebuild) {
+			VALUE mval = ValueFromMolecule(mol);
+			s_RebuildMDParameterIfNecessary(mval, Qnil);
+		}
+		exinfo = mol->arena->exinfo;  /*  May be NULL  */
+		exlist = mol->arena->exlist;	
+	} else {
+		exinfo = NULL;
+		exlist = NULL;
+	}
 	IntGroupIteratorInit(ig1, &iter1);
 	IntGroupIteratorInit(ig2, &iter2);
 	npairs = 0;
 	pairs = NULL;
 	while ((n[0] = IntGroupIteratorNext(&iter1)) >= 0) {
+		Int exn1, exn2;
 		ap1 = ATOM_AT_INDEX(mol->atoms, n[0]);
 		r1 = ap1->r;
+		if (exinfo != NULL) {
+			exn1 = exinfo[n[0]].index1;
+			exn2 = exinfo[n[0] + 1].index1;
+		} else exn1 = exn2 = -1;
 		IntGroupIteratorReset(&iter2);
 		while ((n[1] = IntGroupIteratorNext(&iter2)) >= 0) {
 			ap2 = ATOM_AT_INDEX(mol->atoms, n[1]);
+			if (n[0] == n[1])
+				continue;  /*  Same atom  */
+			if (exinfo != NULL) {
+				/*  Look up exclusion table to exclude 1-2, 1-3, and 1-4 pairs  */
+				for (i = exn1; i < exn2; i++) {
+					if (exlist[i] == n[1])
+						break;
+				}
+				if (i < exn2)
+					continue;  /*  Should be excluded  */
+			}
 			if (MoleculeMeasureBond(mol, &r1, &(ap2->r)) < lim) {
 				/*  Is this pair already registered?  */
 				Int *ip;
