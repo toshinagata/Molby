@@ -96,7 +96,7 @@ div#classHeader td, div#fileHeader td {
     color: white;
 }
 
-div#section, div#methods {
+div#section, div#methods, div#constants {
     margin-right: 20px;
 }
 

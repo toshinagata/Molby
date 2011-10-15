@@ -75,6 +75,11 @@ p {
     margin-right: 1.5em;
 }
 
+table {
+    margin-left: 1.5em;
+    margin-right: 1.5em;
+}
+
 p.note {
 	margin-left: 2.0em;
 	margin-right: 2.0em;

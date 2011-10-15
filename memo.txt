@@ -264,3 +264,38 @@ Occasional crash during minimization is fixed.
 　Windows の文字コードで厄介なバグを発見。内部コードを UTF-8 にしているのだが、Dir.pwd などは Windows の内部コードそのもの（Shift-JIS?）で動作するので、Molecule#path などと矛盾が生じる。さらに、Ruby_FileStringValuePtr などは Shift-JIS を前提としているので、Molecule#path などもおかしな文字列を生成してしまう。このため、パスに日本語が入っていると open(mol.path + "/test.txt", "w") などがうまくいかない。さてどうしたものか？
 → wxConvUTF8 の代わりに Windows では *wxConvCurrent を使うようにした。
 
+2011.10.06.
+　フレームの扱い。「何もフレームがない状態」でも、「現在の状態」は存在する訳だから、nframes = 1 であるべきなのではないか？
+・フレームがない時は nframes = 1 とする。
+・nframes が 2 -> 1 になるとき、すべてのフレーム関係のメモリを解放する。
+
+2011.10.15.
+Version 0.6
+Mac: a command line version is included in the binary distribution.
+On Windows, Molby::{Mbsf,Resource,Script}Path return slash-separated strings instead of backslash-separated strings.
+The solvate command does not correctly remove conflicting solvent molecules. Fixed.
+Ruby: find_conflicts now exclude atom pairs separated by 0-3 bonds.
+export_prmtop can now be used from script
+Merging molecule was resulting in strange order of merged parameters. Fixed.
+Occasional crash on merging molecules is fixed. (Duplicating parameters was causing problems.)
+Some solvent box are included in Scripts/mbsf folder. MolbyResourcePath is now called Molby::ResourcePath (old name is still usable for backward compatibility). Molby::ScriptPath, Molby::MbsfPath are also implemented.
+rotate_with_axis now can accept atom indices or names as the first three arguments.
+Setting external forces during MM/MD is implemented.
+Special parameters with atom indices were not working. Fixed.
+Inserting/removing frames now work more consistently. The minimum number of frames is 1 instead of 0.
+Atoms to be excluded from MM/MD calculations can be specified by the atom property "mm_exclude."
+MM/MD calculation crashed when periodic cell is removed after calculation with non-nil cell. Fixed.
+On windows, Molecule#path, Molecule#dir does not work correctly when the path includes double-byte characters. Fixed.
+After MD run, coordinates are copied back to the molecule even when MD stopped abnormally.
+MDArena#init_velocities and MDArena#scale_velocities are implemented.
+Improved crd/mdcrd import.
+The 'r_eq14' parameter was not editable in the property table. Fixed.
+Crash occurs when a Ruby exception is raised while editing property table. Fixed.
+Ruby: Molecule#dup now duplicates the unit cell, symmetry operations, and MD settings.
+Remove 'build xxxxxxxx' string from the version description.
+AtomRef.exclusion causes bus error when the MDArena is not yet built. Fixed.
+After loading the molecule, occupancy factors are checked, and if all atoms have zero occupancy then all are set to 1.0.
+Ruby command get_coord_from_frame(index, group=nil, cflag=nil) is implemented.
+The MO info table is renamed to MO energy, and the alpha and beta orbitals of same indices are shown in the same row.
+MO import from GAMESS log file was broken
+Fchk import: zero is accepted as the number of alpha/beta electrons

@@ -1141,14 +1141,12 @@ are not selected but are connected to any selected atoms are also included as du
 <div id="method-M000294" class="method-detail">
 <a name="M000294"></a>
 <div class="method-heading">
-<span class="method-name">find_conflicts(limit[, group1[, group2]]) &rarr; [[n1, n2], [n3, n4], ...]<br />
+<span class="method-name">find_conflicts(limit[, group1[, group2[, ignore_exclusion]]]) &rarr; [[n1, n2], [n3, n4], ...]<br />
 </span>
 </div>
 <div class="method-description">
 <p>
-Find pairs of atoms that are within the
-limit distance. If group1 and group2 are given, the first and second atom
-in the pair should belong to group1 and group2, respectively.
+Find pairs of atoms that are within the limit distance. If group1 and group2 are given, the first and second atom in the pair should belong to group1 and group2, respectively. By default, the atom pairs separated by one to three bonds are excluded. However, if ignore_exclusion is given as non-false, then those pairs are also included.
 </p>
 </div>
 </div>
@@ -2197,11 +2195,11 @@ Note the order of the arguments; the fragment including n2 is rotated. This oper
 <div id="method-M000173" class="method-detail">
 <a name="M000173"></a>
 <div class="method-heading">
-<span class="method-name">rotate_with_axis(xv, yv, cv = nil, group = nil)</span>
+<span class="method-name">rotate_with_axis(x, y, c = nil, group = nil)</span>
 </div>
 <div class="method-description">
 <p>
-Move the molecule (or the group if specified) so that cv becomes the origin, xv points to the x-axis, and yv lies in the xy-plane (with the y-coordinate to be positive). If cv is nil, it is equivalent to [0, 0, 0]. This operation is undoable.
+Move the molecule (or the group if specified) so that c becomes the origin, x points to the x-axis, and y lies in the xy-plane (with the y-coordinate to be positive). X, y, and c can be either a Vector3D, an atom index, or an atom description like "1:CA1". If c is nil, it is equivalent to [0, 0, 0]. This operation is undoable.
 </p>
 </div>
 </div>

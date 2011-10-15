@@ -111,6 +111,31 @@ Get the <a href="MDArena.html#M000047">energies</a> at the last step of the MM/M
 </div>
 </div>
 
+<div id="method-M000047" class="method-detail">
+<a name="get_external_force"></a>
+<div class="method-heading">
+<span class="method-name">get_external_force(index) &rarr; <a href="Vector3D.html">Vector3D</a> or nil</span>
+</div>
+<div class="method-description">
+<p>
+Get the current external force for the atom. If the external force is not set, nil is returned.
+</p>
+</div>
+</div>
+
+<div id="method-init_velocities" class="method-detail">
+<a name="init_velocities"></a>
+<div class="method-heading">
+<span class="method-name">init_velocities(temperature = nil) &rarr; self<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Give random velocities to the atoms according to the Boltzmann distribution. If temperature is given, it is also set as the 'temperature' attribute.
+</p>
+</div>
+</div>
+
 <div id="method-M000050" class="method-detail">
 <a name="keys"></a>
 <div class="method-heading">
@@ -119,7 +144,7 @@ Get the <a href="MDArena.html#M000047">energies</a> at the last step of the MM/M
 </div>
 <div class="method-description">
 <p>
-Returns an array of attributes.
+Returns an array of attribute keys.
 </p>
 </div>
 </div>
@@ -164,6 +189,31 @@ After the above rebuild is done, the MM parameters are looked for. If any necess
 <div class="method-description">
 <p>
 Run the MD simulation for n steps.
+</p>
+</div>
+</div>
+
+<div id="method-scale_velocities" class="method-detail">
+<a name="scale_velocities"></a>
+<div class="method-heading">
+<span class="method-name">scale_velocities(temperature = nil) &rarr; self<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Scale the current velocities of the atoms according to the Boltzmann distribution. If temperature is given, it is also set as the 'temperature' attribute.
+</p>
+</div>
+</div>
+
+<div id="method-M000047" class="method-detail">
+<a name="set_external_forces"></a>
+<div class="method-heading">
+<span class="method-name">set_external_forces(array) &rarr; self</span>
+</div>
+<div class="method-description">
+<p>
+Set external forces. Array should be an array of objects that can be converted to <a href="Vector3D.html">Vector3D</a>, or nil to remove all external forces.
 </p>
 </div>
 </div>
