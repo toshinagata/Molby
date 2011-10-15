@@ -8591,7 +8591,7 @@ Molby_startup(const char *script, const char *dir)
 		p = strrchr(respath, PATH_SEPARATOR);
 	if (p != NULL)
 		*p = 0;
-	val = rb_str_new2(respath);
+	val = Ruby_NewFileStringValue(respath);
 	rb_define_global_const("MolbyResourcePath", val);
 	free(respath);
 
@@ -8600,10 +8600,10 @@ Molby_startup(const char *script, const char *dir)
 	RubyDialogInitClass();
 
 	rb_define_const(rb_mMolby, "ResourcePath", val);
-	val = rb_str_new2(dir);
+	val = Ruby_NewFileStringValue(dir);
 	rb_define_const(rb_mMolby, "ScriptPath", val);
 	asprintf(&p, "%s%c%s", dir, PATH_SEPARATOR, "mbsf");
-	val = rb_str_new2(p);
+	val = Ruby_NewFileStringValue(p);
 	rb_define_const(rb_mMolby, "MbsfPath", val);	
 	free(p);
 	

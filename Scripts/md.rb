@@ -1172,7 +1172,7 @@ class Molecule
 	end
 	return unless ambertools_dialog("resp")
 	nc = get_global_settings("antechamber.nc")
-	ante_dir = MolbyResourcePath + "/amber11/bin"
+	ante_dir = Molby::ResourcePath + "/amber11/bin"
 
 	#  Create the temporary directory
 	dname = create_ante_log_dir((self.path ? File.basename(self.path, ".*") : self.name), "rs")
