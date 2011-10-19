@@ -25,6 +25,14 @@ s_Swap4(char *cp)
 	cp[0] = w[3]; cp[1] = w[2]; cp[2] = w[1]; cp[3] = w[0];
 }
 
+static void
+s_Swap8(char *cp)
+{
+	char w[8];
+	w[0] = cp[0]; w[1] = cp[1]; w[2] = cp[2]; w[3] = cp[3]; w[4] = cp[4]; w[5] = cp[5]; w[6] = cp[6]; w[7] = cp[7];
+	cp[0] = w[7]; cp[1] = w[6]; cp[2] = w[5]; cp[3] = w[4]; cp[4] = w[3]; cp[5] = w[2]; cp[6] = w[1]; cp[7] = w[0];
+}
+
 #define s_SwapInt32(ip)  s_Swap4((char *)(ip))
 #define s_SwapSFloat32(fp) s_Swap4((char *)(fp))
 
@@ -48,6 +56,16 @@ s_Write4(int fd, const char *cp, int swap)
 }
 
 static int
+s_Write8(int fd, const char *cp, int swap)
+{
+	if (swap) {
+		char w[8];
+		w[7] = cp[0]; w[6] = cp[1]; w[5] = cp[2]; w[4] = cp[3]; w[3] = cp[4]; w[2] = cp[5]; w[1] = cp[6]; w[0] = cp[7];
+		return write(fd, w, 8);
+	} else return write(fd, cp, 8);
+}
+
+static int
 s_WriteInt32(DcdRecord *dcd, Int32 i)
 {
 	return (s_Write4(dcd->fd, (const char *)(&i), dcd->reverse_endian) == 4);
@@ -57,6 +75,12 @@ static int
 s_WriteSFloat32(DcdRecord *dcd, SFloat32 f)
 {
 	return (s_Write4(dcd->fd, (const char *)(&f), dcd->reverse_endian) == 4);
+}
+
+static int
+s_WriteSFloat64(DcdRecord *dcd, SFloat64 d)
+{
+	return (s_Write8(dcd->fd, (const char *)(&d), dcd->reverse_endian) == 8);
 }
 
 static int
@@ -78,7 +102,8 @@ DcdOpen(const char *name, DcdRecord *dr)
 {
     Int32 nn, nnn;
     char buf[5];
-	
+	char delta_buf[8];
+
 	if (dr == NULL)
 		return -1;  /*  Internal error  */
 	memset(dr, 0, sizeof(DcdRecord));
@@ -86,8 +111,9 @@ DcdOpen(const char *name, DcdRecord *dr)
 	if (dr->fd < 0)
 		return -2;  /*  Cannot open file  */
 	
-    /*  Section 1: 'CORD', NFILE, NPRIV, NSAVC, NSTEP, 5*ZERO, DELTA,  */
-    /* WITH_UNITCELL, 4*ZERO, 24  */
+	/*  Section 1: 'CORD', NFILE, NPRIV, NSAVC, NSTEP, 4*ZERO, NFIX,  */
+	/* DELTA (4 bytes for charmm format, 8 bytes for x-plor format),  */
+	/* NEXTRA (charmm only), N4DIM, 6*ZERO, NCHARM, 24 */
 	if (!s_ReadInt32(dr, &nn))
 		return 1;   /*  Bad format: premature EOF  */
 	if (nn != 84) {
@@ -102,16 +128,28 @@ DcdOpen(const char *name, DcdRecord *dr)
 	s_ReadInt32(dr, &(dr->nstart));
 	s_ReadInt32(dr, &(dr->ninterval));
 	s_ReadInt32(dr, &(dr->nend));
-    lseek(dr->fd, 20, SEEK_CUR);  /*  Skip 5 zeros  */
-    s_ReadSFloat32(dr, &(dr->delta));
-	s_ReadInt32(dr, &(dr->with_unitcell));
-	lseek(dr->fd, 32, SEEK_CUR);  /*  Skip 8 zeros  */
-	s_ReadInt32(dr, &nn);  /*  This should be 24  */
-	if (nn != 24)
-		return 4;   /*  Bad format: bad end of first section  */
+    lseek(dr->fd, 16, SEEK_CUR);  /*  Skip 4 zeros  */
+	s_ReadInt32(dr, &(dr->nfix));
+	read(dr->fd, delta_buf, 8);   /*  If charmm format, then this is { float; int32; } otherwise this is a double */
+	s_ReadInt32(dr, &(dr->n4dim));
+	lseek(dr->fd, 28, SEEK_CUR);  /*  Skip 7 zeros  */
+	s_ReadInt32(dr, &(dr->ncharmver));
 	s_ReadInt32(dr, &nn);  /*  This should be 84  */
 	if (nn != 84)
 		return 4;
+	if (dr->ncharmver == 0) {
+		if (dr->reverse_endian)
+			s_Swap8(delta_buf);
+		dr->delta = *((SFloat64 *)delta_buf);
+		dr->nextra = 0;
+	} else {
+		if (dr->reverse_endian) {
+			s_Swap4(delta_buf);
+			s_Swap4(delta_buf + 4);
+		}
+		dr->delta = *((SFloat32 *)delta_buf);
+		dr->nextra = *((Int32 *)(delta_buf + 4));
+	}
 	
     /*  Section 2: Title lines  */
     if (!s_ReadInt32(dr, &nn) || lseek(dr->fd, nn, SEEK_CUR) < 0 || !s_ReadInt32(dr, &nnn) || nn != nnn)
@@ -140,19 +178,21 @@ DcdCreate(const char *name, DcdRecord *dr)
 		return -2;  /*  Cannot create file  */
 	memset(buf, ' ', 80);
 	
-    /*  Section 1: 'CORD', NFILE, NPRIV, NSAVC, NSTEP, 5*ZERO, DELTA,  */
-    /* WITH_UNITCELL, 8*ZERO, 24 (92 bytes) */
+	/*  Section 1: 'CORD', NFILE, NPRIV, NSAVC, NSTEP, 4*ZERO, NFIX,  */
+	/* DELTA (4 bytes for charmm format, 8 bytes for x-plor format),  */
+	/* NEXTRA (charmm only), N4DIM, 6*ZERO, NCHARM, 24 */
 	if (!s_WriteInt32(dr, 84) ||
 		write(dr->fd, "CORD", 4) != 4 ||
 		!s_WriteInt32(dr, dr->nframes) ||
 		!s_WriteInt32(dr, dr->nstart) ||
 		!s_WriteInt32(dr, dr->ninterval) || 
 		!s_WriteInt32(dr, dr->nend) ||
-		!s_WriteZeros(dr->fd, 20) ||
+		!s_WriteZeros(dr->fd, 16) ||
+		!s_WriteInt32(dr, dr->nfix) ||
 		!s_WriteSFloat32(dr, dr->delta) ||
-		!s_WriteInt32(dr, dr->with_unitcell) ||
+		!s_WriteInt32(dr, dr->nextra) ||
 		!s_WriteZeros(dr->fd, 32) ||
-		!s_WriteInt32(dr, 24) ||
+		!s_WriteInt32(dr, dr->ncharmver) ||
 		!s_WriteInt32(dr, 84))
 		return 1;   /*  Cannot write  */
 	
@@ -189,20 +229,34 @@ int
 DcdReadFrame(DcdRecord *dr, int index, SFloat32 *xp, SFloat32 *yp, SFloat32 *zp, SFloat32 *cellp)
 {
     Int32 nn, nnn, i;
-    off_t block_size = 24 + (off_t)(dr->natoms * 12) + (dr->with_unitcell ? 56 : 0);
+    off_t block_size = (index > 0 ? dr->block_size : 24 + (off_t)(dr->natoms * 12) + (dr->nextra ? 56 : 0));
     lseek(dr->fd, dr->header_size + block_size * index, SEEK_SET);
-    if (dr->with_unitcell) {
-        if (!s_ReadInt32(dr, &nn) || nn != 48)
-            goto error;
-        if (cellp != NULL) {
-			read(dr->fd, cellp, 48);
-			for (i = 0; i < 6; i++)
-				s_SwapSFloat32(cellp + i);
+	block_size = 0;
+	if (!s_ReadInt32(dr, &nn))
+		goto error;
+	if (nn == 48) {
+		if (dr->nextra) {
+			SFloat64 mycell[6];
+			if (nn != 48)
+				goto error;
+			read(dr->fd, mycell, 48);
+			if (cellp != NULL) {
+				for (i = 0; i < 6; i++) {
+					if (dr->reverse_endian)
+						s_Swap8((char *)(mycell + i));
+					cellp[i] = mycell[i];  /*  double -> float  */
+				}
+			}
+			if (!s_ReadInt32(dr, &nn) || nn != 48)
+				goto error;
+		} else {
+			lseek(dr->fd, 52, SEEK_CUR);
 		}
-        if (!s_ReadInt32(dr, &nn) || nn != 48)
-            goto error;
-    }
-    if (!s_ReadInt32(dr, &nn) || nn != dr->natoms * 4 ||
+		if (!s_ReadInt32(dr, &nn))
+			goto error;
+		block_size = 56;
+	}
+    if (nn != dr->natoms * 4 ||
 		read(dr->fd, xp, nn) < nn ||
 		!s_ReadInt32(dr, &nnn) || nn != nnn)
         goto error;
@@ -226,6 +280,9 @@ DcdReadFrame(DcdRecord *dr, int index, SFloat32 *xp, SFloat32 *yp, SFloat32 *zp,
 		for (i = 0; i < dr->natoms; i++)
 			s_SwapSFloat32(zp + i);
 	}
+	block_size += 24 + (off_t)(dr->natoms * 12);
+	if (index == 0)
+		dr->block_size = block_size;
     return 0;
 error:
     return 1;
@@ -238,11 +295,11 @@ int
 DcdWriteFrame(DcdRecord *dr, int index, const SFloat32 *xp, const SFloat32 *yp, const SFloat32 *zp, const SFloat32 *cellp)
 {
 	Int32 i;
-    if (dr->with_unitcell) {
+    if (dr->nextra) {
         if (!s_WriteInt32(dr, 48))
             goto error;
 		for (i = 0; i < 6; i++)
-			s_WriteSFloat32(dr, (cellp != NULL ? cellp[i] : 0.0));
+			s_WriteSFloat64(dr, (cellp != NULL ? cellp[i] : 0.0));
 		if (!s_WriteInt32(dr, 48))
             goto error;
     }

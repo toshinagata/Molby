@@ -3082,7 +3082,7 @@ MoleculeReadCoordinatesFromDcdFile(Molecule *mp, const char *fname, char *errbuf
 {
 	DcdRecord dcd;
 	SFloat32 *xp, *yp, *zp;
-	Vector *vp;
+	Vector *vp, *cp;
 	IntGroup *ig;
 	int n;
 	errbuf[0] = 0;
@@ -3115,6 +3115,9 @@ MoleculeReadCoordinatesFromDcdFile(Molecule *mp, const char *fname, char *errbuf
 	}
 
 	vp = (Vector *)calloc(sizeof(Vector), mp->natoms * dcd.nframes);
+	if (dcd.nextra)
+		cp = (Vector *)calloc(sizeof(Vector), dcd.nframes * 4);
+	else cp = NULL;
 	xp = (SFloat32 *)malloc(sizeof(SFloat32) * dcd.natoms);
 	yp = (SFloat32 *)malloc(sizeof(SFloat32) * dcd.natoms);
 	zp = (SFloat32 *)malloc(sizeof(SFloat32) * dcd.natoms);
@@ -3122,6 +3125,7 @@ MoleculeReadCoordinatesFromDcdFile(Molecule *mp, const char *fname, char *errbuf
 	if (vp == NULL || xp == NULL || yp == NULL || zp == NULL || ig == NULL) {
 		snprintf(errbuf, errbufsize, "Cannot allocate memory");
 		if (vp) free(vp);
+		if (cp) free(cp);
 		if (xp) free(xp);
 		if (yp) free(yp);
 		if (zp) free(zp);
@@ -3131,7 +3135,8 @@ MoleculeReadCoordinatesFromDcdFile(Molecule *mp, const char *fname, char *errbuf
 	for (n = 0; n < dcd.nframes; n++) {
 		int i;
 		Vector *vpp;
-		if (DcdReadFrame(&dcd, n, xp, yp, zp, dcd.globalcell)) {
+		SFloat32 dcdcell[6];
+		if (DcdReadFrame(&dcd, n, xp, yp, zp, dcdcell)) {
 			snprintf(errbuf, errbufsize, "Read error in dcd file");
 			goto exit;
 		}
@@ -3140,29 +3145,44 @@ MoleculeReadCoordinatesFromDcdFile(Molecule *mp, const char *fname, char *errbuf
 			vpp->y = yp[i];
 			vpp->z = zp[i];
 		}
-	}
-	/*  TODO: implement frame-specific cells  */
-	if (MoleculeInsertFrames(mp, ig, vp, NULL) < 0)
-		snprintf(errbuf, errbufsize, "Cannot insert frames");
-	if (dcd.with_unitcell) {
-		Vector ax, ay, az, orig;
-		char flags[3] = {1, 1, 1};
-		ax.x = dcd.globalcell[0]; ax.y = ax.z = 0;
-		ay.y = dcd.globalcell[1]; ay.x = ay.z = 0;
-		az.z = dcd.globalcell[2]; az.x = az.y = 0;
-		orig.x = dcd.globalcell[3];
-		orig.y = dcd.globalcell[4];
-		orig.z = dcd.globalcell[5];
-		if (MoleculeSetPeriodicBox(mp, &ax, &ay, &az, &orig, flags) != 0) {
-			snprintf(errbuf, errbufsize, "Cannot set unit cell");
-			goto exit;
+		if (cp != NULL) {
+			Double sing;
+			vpp = &cp[n * 4];
+			/*  dcdcell = {a, gamma, b, beta, alpha, c} */
+			/*  angles are described either in cosines (Charmm and NAMD > 2.5) or degrees (NAMD 2.5)  */
+			if (dcdcell[1] < -1.0 || dcdcell[1] > 1.0 || dcdcell[3] < -1.0 || dcdcell[3] > 1.0 || dcdcell[4] < -1.0 || dcdcell[4] > 1.0) {
+				dcdcell[4] = cos(dcdcell[4] * kDeg2Rad);  /*  cos(alpha)  */
+				dcdcell[3] = cos(dcdcell[3] * kDeg2Rad);  /*  cos(beta)  */
+				dcdcell[1] = cos(dcdcell[1] * kDeg2Rad);  /*  cos(gamma)  */
+			}
+			/*  a axis lies along the cartesian x axis  */
+			sing = sqrt(1 - dcdcell[1] * dcdcell[1]);
+			vpp[0].x = dcdcell[0];
+			vpp[0].y = 0;
+			vpp[0].z = 0;
+			vpp[1].x = dcdcell[2] * dcdcell[1];
+			vpp[1].y = dcdcell[2] * sing;
+			vpp[1].z = 0;
+			vpp[2].x = dcdcell[5] * dcdcell[3];
+			vpp[2].y = dcdcell[5] * (dcdcell[4] - dcdcell[3] * dcdcell[1]) / sing;
+			vpp[2].z = sqrt(dcdcell[5] * dcdcell[5] - vpp[2].x * vpp[2].x - vpp[2].y * vpp[2].y);
+			vpp[3].x = vpp[3].y = vpp[3].z = 0.0;
+			if (mp->cell == NULL) {
+				/*  Create periodicity if not present  */
+				static const char pflags[] = {1, 1, 1};
+				MoleculeSetPeriodicBox(mp, &vpp[0], &vpp[1], &vpp[2], &vpp[3], pflags);
+			}
 		}
 	}
+	if (MoleculeInsertFrames(mp, ig, vp, cp) < 0)
+		snprintf(errbuf, errbufsize, "Cannot insert frames");
 	mp->startStep = dcd.nstart;
 	mp->stepsPerFrame = dcd.ninterval;
 	mp->psPerStep = dcd.delta;
 exit:
 	DcdClose(&dcd);
+	if (cp != NULL)
+		free(cp);
 	free(vp);
 	free(xp);
 	free(yp);
@@ -3753,18 +3773,12 @@ MoleculeWriteToDcdFile(Molecule *mp, const char *fname, char *errbuf, int errbuf
 	if (dcd.ninterval == 0)
 		dcd.ninterval = 1;
 	dcd.nend = dcd.nstart + (dcd.nframes - 1) * dcd.ninterval;
-	if (mp->cell != NULL) {
-		dcd.with_unitcell = 1;
-		dcd.globalcell[0] = VecLength(mp->cell->axes[0]);
-		dcd.globalcell[1] = VecLength(mp->cell->axes[1]);
-		dcd.globalcell[2] = VecLength(mp->cell->axes[2]);
-		dcd.globalcell[3] = mp->cell->origin.x;
-		dcd.globalcell[4] = mp->cell->origin.y;
-		dcd.globalcell[5] = mp->cell->origin.z;
-	}
+	if (mp->cell != NULL)
+		dcd.nextra = 1;
 	dcd.delta = mp->psPerStep;
 	if (dcd.delta == 0.0)
 		dcd.delta = 1.0;
+	dcd.ncharmver = 24;
 	n = DcdCreate(fname, &dcd);
 	if (n != 0) {
 		if (n < 0)
@@ -3805,6 +3819,15 @@ MoleculeWriteToDcdFile(Molecule *mp, const char *fname, char *errbuf, int errbuf
 			memset(yp + i, 0, sz);
 			memset(zp + i, 0, sz);
 		}
+		if (n < mp->nframes && mp->frame_cells != NULL) {
+			Vector *cp = &(mp->frame_cells[n * 4]);
+			dcd.globalcell[0] = VecLength(cp[0]);
+			dcd.globalcell[2] = VecLength(cp[1]);
+			dcd.globalcell[5] = VecLength(cp[2]);
+			dcd.globalcell[1] = VecDot(cp[0], cp[1]) / (dcd.globalcell[0] * dcd.globalcell[2]);
+			dcd.globalcell[3] = VecDot(cp[0], cp[2]) / (dcd.globalcell[0] * dcd.globalcell[5]);
+			dcd.globalcell[4] = VecDot(cp[1], cp[2]) / (dcd.globalcell[2] * dcd.globalcell[5]);			
+		}			
 		if (DcdWriteFrame(&dcd, n, xp, yp, zp, dcd.globalcell)) {
 			snprintf(errbuf, errbufsize, "Write error in dcd file");
 			goto exit;

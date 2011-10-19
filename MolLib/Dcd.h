@@ -32,6 +32,7 @@ extern "C" {
 		
 typedef int Int32;
 typedef float SFloat32;
+typedef double SFloat64;
 
 typedef struct DcdRecord {
     int fd;                 /*  File descripter  */	
@@ -41,10 +42,14 @@ typedef struct DcdRecord {
 	Int32 nstart;           /*  Start timestep  */
 	Int32 ninterval;        /*  Number of timesteps between frames  */
 	Int32 nend;             /*  Last timestep  */
-	Int32 with_unitcell;    /*  Has a unit cell information?  */
+	Int32 nfix;             /*  Number of fixed atoms  */
+	Int32 n4dim;            /*  Charmm 4th dimension  */
+	Int32 ncharmver;        /*  Charmm version  */
+	Int32 nextra;           /*  Has Charmm extra block  */
     SFloat32 delta;         /*  Step time  */
     SFloat32 globalcell[6]; /*  cell size and origin; used when with_unitcell == 0 */
     off_t header_size;      /*  Header size  */
+	off_t block_size;       /*  Block size (set after reading/writing the first frame)  */
 } DcdRecord;
 
 int DcdOpen(const char *name, DcdRecord *dr);

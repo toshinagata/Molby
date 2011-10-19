@@ -273,6 +273,7 @@ MyDocument::OnImport(wxCommandEvent& event)
 		}
 		/*  Insert Import-only file types before "All files"  */
 		wildcard += _T("|AMBER mdcrd file (*.crd;*.mdcrd)|*.crd;*.mdcrd");
+		wildcard += _T("|DCD file (*.dcd)|*.dcd");
 		if (i == -1)
 			wildcard += (_T("|") + desc + _T(" (") + filter + _T(")|") + filter);
 	}
@@ -294,22 +295,35 @@ void
 MyDocument::OnExport(wxCommandEvent& event)
 {
 	wxString wildcard;
+	wxFileName fname(GetFilename());
+	wxString fnstr;
+	GetPrintableName(fnstr);
 	{
 		/*  File filter is built from MyDocManager information  */
 		wxString desc, filter, ext;
 		int i;
 		MyDocManager *docm = wxGetApp().DocManager();
+		if ((i = fnstr.Find('.', true)) != wxNOT_FOUND) {
+			fnstr = fnstr.Mid(0, i);
+		}
 		for (i = 0; docm->GetDocumentDescriptionAtIndex(i, &desc, &filter, &ext); i++) {
-			if (ext == _T("out") || ext == _T("log") || ext == _T("fchk"))
+			if (ext == _T("mbsf") || ext == _T("out") || ext == _T("log") || ext == _T("fchk"))
 				continue;
+			if (filter.Contains(_T("*.*"))) {
+				i = -1;
+				break;
+			}
 			if (wildcard != _T("")) {
 				wildcard += (_T("|"));
 			}
 			wildcard += (desc + _T(" (") + filter + _T(")|") + filter);
 		}
+		wildcard += _T("|AMBER mdcrd file (*.crd;*.mdcrd)|*.crd;*.mdcrd");
+		wildcard += _T("|DCD file (*.dcd)|*.dcd");
+		if (i == -1)
+			wildcard += (_T("|") + desc + _T(" (") + filter + _T(")|") + filter);
 	}
-	
-	wxFileDialog *dialog = new wxFileDialog(NULL, _T(""), _T(""), _T(""), wildcard, wxFD_SAVE | wxFD_OVERWRITE_PROMPT |   wxFD_CHANGE_DIR);
+	wxFileDialog *dialog = new wxFileDialog(NULL, _T("Export coordinates"), fname.GetPath(), fnstr + _T(".psf"), wildcard, wxFD_SAVE | wxFD_OVERWRITE_PROMPT | wxFD_CHANGE_DIR);
 	if (dialog->ShowModal() == wxID_OK) {
 		char *p = strdup((const char *)(dialog->GetPath().mb_str(wxConvFile)));
 		MoleculeLock(mol);
