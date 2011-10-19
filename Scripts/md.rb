@@ -962,6 +962,22 @@ class Molecule
       basename = (self.path ? File.basename(self.path, ".*") : self.name)
       fname = Dialog.save_panel("AMBER prmtop/inpcrd file name", self.dir, basename + ".prmtop", "AMBER prmtop (*.prmtop)|*.prmtop|All files|*.*")
       return nil if !fname
+	  hash = Dialog.run("Select prmtop format") {
+	    layout(2,
+		  item(:text, :title=>"Select prmtop format:", :tag=>"prmtopname"),
+		  item(:popup, :subitems=>["AMBER 8/NAMD", "AMBER 11"], :tag=>"ambertype"))
+	    set_attr("ambertype", :value=>1)
+	  }
+	  if hash[:status] == 0
+	    case hash["ambertype"]
+		when 0
+		  ambertype = 8
+		when 1
+		  ambertype = 11
+	    end
+	  else
+	    return nil
+      end
     end
 
     open(fname, "w") { |fp|
@@ -1023,12 +1039,14 @@ class Molecule
       fp.print "%FLAG DIHEDRAL_PHASE\n%FORMAT(5E16.8)\n"
       format_print(fp, 5, "16.8E", par.dihedrals.map { |p| p.phi0 * Math::PI / 180.0 } + par.impropers.map { |p| p.phi0 * Math::PI / 180.0 })
       
-      fp.print "%FLAG SCEE_SCALE_FACTOR\n%FORMAT(5E16.8)\n"
-      format_print(fp, 5, "16.8E", par.dihedrals.map { |p| 1.2 } + par.impropers.map { |p| 0.0 })
+	  if ambertype > 8
+        fp.print "%FLAG SCEE_SCALE_FACTOR\n%FORMAT(5E16.8)\n"
+        format_print(fp, 5, "16.8E", par.dihedrals.map { |p| 1.2 } + par.impropers.map { |p| 0.0 })
       
-      fp.print "%FLAG SCNB_SCALE_FACTOR\n%FORMAT(5E16.8)\n"
-      format_print(fp, 5, "16.8E", par.dihedrals.map { |p| 2.0 } + par.impropers.map { |p| 0.0 })
-      
+        fp.print "%FLAG SCNB_SCALE_FACTOR\n%FORMAT(5E16.8)\n"
+        format_print(fp, 5, "16.8E", par.dihedrals.map { |p| 2.0 } + par.impropers.map { |p| 0.0 })
+      end
+	  
       fp.print "%FLAG SOLTY\n%FORMAT(5E16.8)\n"
       format_print(fp, 5, "16.8E", (0...par.nvdws).map { 0.0 } )
     
@@ -1109,18 +1127,20 @@ class Molecule
     
       fp.print "%FLAG IROTAT\n%FORMAT(10I8)\n"
       format_print(fp, 10, "8d", self.atoms.map { |ap| 0 })
-    
-      fp.print "%FLAG RADIUS_SET\n%FORMAT(1a80)\n"
-      fp.print "modified Bondi radii (mbondi)\n"
       
-      fp.print "%FLAG RADII\n%FORMAT(5E16.8)\n"
-      format_print(fp, 5, "16.8E", self.atoms.map { |ap|
-        (ap.atomic_number == 1 ? 1.30 : 1.70) })
+	  if ambertype > 8
+        fp.print "%FLAG RADIUS_SET\n%FORMAT(1a80)\n"
+        fp.print "modified Bondi radii (mbondi)\n"
       
-      fp.print "%FLAG SCREEN\n%FORMAT(5E16.8)\n"
-      format_print(fp, 5, "16.8E", self.atoms.map { |ap|
-        (ap.atomic_number == 1 ? 0.85 : 0.72) })
-      
+        fp.print "%FLAG RADII\n%FORMAT(5E16.8)\n"
+        format_print(fp, 5, "16.8E", self.atoms.map { |ap|
+          (ap.atomic_number == 1 ? 1.30 : 1.70) })
+
+        fp.print "%FLAG SCREEN\n%FORMAT(5E16.8)\n"
+        format_print(fp, 5, "16.8E", self.atoms.map { |ap|
+          (ap.atomic_number == 1 ? 0.85 : 0.72) })
+      end
+	  
       if periodic
         fp.print "%FLAG SOLVENT_POINTERS\n%FORMAT(3I8)\n"
         fp.printf "%8d%8d%8d\n", last_solute, fragments.length, first_solv_mol
