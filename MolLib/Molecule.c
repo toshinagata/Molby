@@ -2876,6 +2876,8 @@ MoleculeReadCoordinatesFromPdbFile(Molecule *mp, const char *fname, char *errbuf
 	int lineNumber;
 	int i, j, new_unit, retval;
 	Atom *ap;
+	IntGroup *ig;
+	Vector *vp = NULL;
 	Int ibuf[12];
 	Int entries = 0;
 	retval = 0;
@@ -2892,7 +2894,15 @@ MoleculeReadCoordinatesFromPdbFile(Molecule *mp, const char *fname, char *errbuf
 /*	flockfile(fp); */
 	if (mp->natoms == 0)
 		new_unit = 1;
-	else new_unit = 0;
+	else {
+		/*  Allocate buffer for undo-capable modification  */
+		vp = (Vector *)calloc(sizeof(Vector), mp->natoms);
+		for (i = 0, ap = mp->atoms; i < mp->natoms; i++, ap = ATOM_NEXT(ap)) {
+			/*  Retain current position if the atom info is missing in the input file  */
+			vp[i] = ap->r;
+		}
+		new_unit = 0;
+	}
 	lineNumber = 0;
 	while (ReadLine(buf, sizeof buf, fp, &lineNumber) > 0) {
 		if (strncmp(buf, "END", 3) == 0)
@@ -2944,6 +2954,7 @@ MoleculeReadCoordinatesFromPdbFile(Molecule *mp, const char *fname, char *errbuf
 			w.serial--;  /*  The internal atom number is 0-based  */
 			if (w.serial >= mp->natoms) {
 				if (new_unit) {
+					/*  Create a new atom entry  */
 					ap = AssignArray(&mp->atoms, &mp->natoms, gSizeOfAtomRecord, w.serial, NULL);
 				} else {
 					snprintf(errbuf, errbufsize, "line %d: the atom number %d does not exist in the structure file", lineNumber, w.serial+1);
@@ -2951,11 +2962,11 @@ MoleculeReadCoordinatesFromPdbFile(Molecule *mp, const char *fname, char *errbuf
 					goto abort;
 				}
 			}
-			ap = ATOM_AT_INDEX(mp->atoms, w.serial);
-			ap->r = w.r;
-			ap->occupancy = w.occ;
-			ap->tempFactor = w.temp;
 			if (new_unit) {
+				ap = ATOM_AT_INDEX(mp->atoms, w.serial);
+				ap->r = w.r;
+				ap->occupancy = w.occ;
+				ap->tempFactor = w.temp;
 				if (w.segName[0] == 0)
 					strncpy(w.segName, "MAIN", 4);
 				strncpy(ap->segName, w.segName, 4);
@@ -2981,6 +2992,9 @@ MoleculeReadCoordinatesFromPdbFile(Molecule *mp, const char *fname, char *errbuf
 				i = ElementToInt(ap->element);
 				if (i >= 0)
 					ap->weight = gElementParameters[i].weight;
+			} else {
+				/*  Not a new unit: only the atom position is updated  */
+				vp[w.serial] = w.r;
 			}
 			entries++;
 		} else if (strncmp(buf, "CONECT", 6) == 0 && new_unit) {
@@ -3061,7 +3075,23 @@ MoleculeReadCoordinatesFromPdbFile(Molecule *mp, const char *fname, char *errbuf
 			retval = 1;
 			goto abort;
 		}
-
+		/*  Undo action: delete all atoms  */
+		{
+			MolAction *act;
+			ig = IntGroupNewWithPoints(0, mp->natoms, -1);
+			act = MolActionNew(gMolActionUnmergeMolecule, ig);
+			act->frame = mp->cframe;
+			MolActionCallback_registerUndo(mp, act);
+			MolActionRelease(act);
+			IntGroupRelease(ig);
+		}
+	} else {
+		/*  Set the new atom positions  */
+		ig = IntGroupNewWithPoints(0, mp->natoms, -1);
+		MolActionCreateAndPerform(mp, gMolActionSetAtomPositions, ig, mp->natoms, vp);
+		IntGroupRelease(ig);
+		free(vp);
+		vp = NULL;
 	}
 	mp->nframes = -1;  /*  Should be recalculated later  */
 	if (entries == 0)
@@ -3072,6 +3102,8 @@ MoleculeReadCoordinatesFromPdbFile(Molecule *mp, const char *fname, char *errbuf
 	/*	funlockfile(fp); */
 		fclose(fp);
 	}
+	if (vp != NULL)
+		free(vp);
 	if (entries == 0)
 		return 1;  /*  Maybe different format?  */
 	return retval;
@@ -3169,12 +3201,11 @@ MoleculeReadCoordinatesFromDcdFile(Molecule *mp, const char *fname, char *errbuf
 			vpp[3].x = vpp[3].y = vpp[3].z = 0.0;
 			if (mp->cell == NULL) {
 				/*  Create periodicity if not present  */
-				static const char pflags[] = {1, 1, 1};
-				MoleculeSetPeriodicBox(mp, &vpp[0], &vpp[1], &vpp[2], &vpp[3], pflags);
+				MolActionCreateAndPerform(mp, gMolActionSetBox, &vpp[0], &vpp[1], &vpp[2], &vpp[3], 7);
 			}
 		}
 	}
-	if (MoleculeInsertFrames(mp, ig, vp, cp) < 0)
+	if (MolActionCreateAndPerform(mp, gMolActionInsertFrames, ig, mp->natoms * dcd.nframes, vp, (cp == NULL ? 0 : dcd.nframes * 4), cp) != 0)
 		snprintf(errbuf, errbufsize, "Cannot insert frames");
 	mp->startStep = dcd.nstart;
 	mp->stepsPerFrame = dcd.ninterval;
@@ -8900,10 +8931,10 @@ MoleculeRemoveFrames(Molecule *mp, IntGroup *inGroup, Vector *outFrame, Vector *
 				if (i < mp->natoms)
 					outFrame[natoms * t + i] = tempv[ns];
 				else if (outFrameCell != NULL) {
-					outFrameCell[i * 4] = tempv[ns * 4];
-					outFrameCell[i * 4 + 1] = tempv[ns * 4 + 1];
-					outFrameCell[i * 4 + 2] = tempv[ns * 4 + 2];
-					outFrameCell[i * 4 + 3] = tempv[ns * 4 + 3];
+					outFrameCell[t * 4] = tempv[ns * 4];
+					outFrameCell[t * 4 + 1] = tempv[ns * 4 + 1];
+					outFrameCell[t * 4 + 2] = tempv[ns * 4 + 2];
+					outFrameCell[t * 4 + 3] = tempv[ns * 4 + 3];
 				}
 				t++;
 				ns++;
