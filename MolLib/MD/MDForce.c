@@ -355,7 +355,7 @@ void
 md_check_verlet_list(MDArena *arena)
 {
 	int i, j, k;
-	int dx, dy, dz, nn;
+	int dx, dy, nn;
 	int ndx, ndy, ndz;
 	Atom *api, *apj;
 	Vector cell_offsets[27];

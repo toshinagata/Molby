@@ -547,7 +547,7 @@ s_search_improper(MDArena *arena, int n1, int n2, int n3, int n4)
 static int
 s_find_vdw_parameters(MDArena *arena)
 {
-	Int idx, i, j, type1, type2, t1, t2, nmissing;
+	Int idx, i, j, type1, type2, t1, nmissing;
 	Double cutoff6, cutoff12;
 	Parameter *par = arena->par;
 	Molecule *mol = arena->mol;
@@ -3112,8 +3112,8 @@ md_arena_release(MDArena *arena)
 		free(arena->custom_pars);
 	if (arena->alchem_flags != NULL)
 		free(arena->alchem_flags);
-	if (arena->nexforces != NULL)
-		free(arena->nexforces);
+	if (arena->exforces != NULL)
+		free(arena->exforces);
 	if (arena->bond_par_i != NULL)
 		free(arena->bond_par_i);
 	if (arena->angle_par_i != NULL)
