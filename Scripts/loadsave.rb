@@ -648,6 +648,7 @@ end_of_header
 	cell = []
 	token = getciftoken(fp)
 	pardigits_re = /\(\d+\)/
+	calculated_atoms = []
 	while token != nil
 	  if token =~ /^_cell/
 		val = getciftoken(fp)
@@ -740,6 +741,7 @@ end_of_header
 			  uiso = d[hlabel["_atom_site_U_iso_or_equiv"]]
 			  biso = d[hlabel["_atom_site_B_iso_or_equiv"]]
 			  occ = d[hlabel["_atom_site_occupancy"]]
+			  calc = d[hlabel["_atom_site_calc_flag"]]
 			  ap = self.add_atom(name, elem, elem)
 			  ap.fract_x = float_strip_rms(fx)
 			  ap.fract_y = float_strip_rms(fy)
@@ -750,6 +752,9 @@ end_of_header
 			    ap.temp_factor = float_strip_rms(uiso) * 78.9568352087149 #  8*pi*pi
 			  end
 			  ap.occupancy = float_strip_rms(occ)
+			  if calc == "c" || calc == "calc"
+			    calculated_atoms.push(ap.index)
+		      end
 			}
 			puts "#{self.natoms} atoms are created."
 		  elsif labels[0] =~ /^_atom_site_aniso_label/
@@ -786,6 +791,21 @@ end_of_header
 			    self.create_bond(n1, n2)
 			  end
 		    }
+			puts "#{self.nbonds} bonds are created."
+			if calculated_atoms.length > 0
+			  #  Guess bonds for calculated hydrogen atoms
+			  n1 = 0
+			  calculated_atoms.each { |ai|
+			    if atoms[ai].connects.length == 0
+				  as = find_close_atoms(ai)
+				  as.each { |aj|
+				    self.create_bond(ai, aj)
+					n1 += 1
+				  }
+				end
+			  }
+			  puts "#{n1} bonds are guessed."
+			end
 			if exbonds.length > 0
 			  h = Dialog.run {
 			    layout(1,
