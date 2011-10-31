@@ -1138,6 +1138,19 @@ are not selected but are connected to any selected atoms are also included as du
 </div>
 </div>
 
+<div id="method-M000261" class="method-detail">
+<a name="find_close_atoms"></a>
+<div class="method-heading">
+<span class="method-name">find_close_atoms(atom, limit = 1.2)       &rarr; Array of Integers<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Find atoms that are within the threshold distance from the given atom. If limit is a positive number, the threshold distance is the sum of the vdw radii times limit. If limit is a negative number, its absolute value is used for the threshold distance in angstrom. If limit is not given, a default value of 1.2 is used. The number of the newly created bonds is returned. An array of atom indices is returned. If no atoms are found, an empty array is returned.
+</p>
+</div>
+</div>
+
 <div id="method-M000294" class="method-detail">
 <a name="M000294"></a>
 <div class="method-heading">
@@ -1259,10 +1272,7 @@ Copy the coordinates from the specified frame. If group is specified, then only 
 </div>
 <div class="method-description">
 <p>
-Create bonds between atoms that are close enough,
-i.e. the interatomic distance is smaller than the sum of the vdw radii
-times the argument limit. Returns the number of the newly created bonds.
-This operation is undoable.
+Create bonds between atoms that are within the threshold distance. If limit is a positive number, the threshold distance is the sum of the vdw radii times limit. If limit is a negative number, its absolute value is used for the threshold distance in angstrom. If limit is not given, a default value of 1.2 is used. The number of the newly created bonds is returned. This operation is undoable.
 </p>
 </div>
 </div>

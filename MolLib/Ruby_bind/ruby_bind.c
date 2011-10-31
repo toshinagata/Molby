@@ -6157,11 +6157,48 @@ s_Molecule_RenumberAtoms(VALUE self, VALUE array)
 
 /*
  *  call-seq:
+ *     find_close_atoms(atom, limit = 1.2)       -> array of Integers (atom indices)
+ *
+ *  Find atoms that are within the threshold distance from the given atom.
+ *  If limit is a positive number, the threshold distance is the sum of the vdw radii times limit.
+ *  If limit is a negative number, its absolute value is used for the threshold distance in angstrom.
+ *  If limit is not given, a default value of 1.2 is used.
+ *  An array of atom indices is returned. If no atoms are found, an empty array is returned.
+ */
+static VALUE
+s_Molecule_FindCloseAtoms(int argc, VALUE *argv, VALUE self)
+{
+    Molecule *mol;
+	VALUE aval, limval;
+	double limit;
+	Int n1, nbonds, *bonds;
+    Data_Get_Struct(self, Molecule, mol);
+	rb_scan_args(argc, argv, "11", &aval, &limval);
+	n1 = s_Molecule_AtomIndexFromValue(mol, aval);
+	if (limval == Qnil)
+		limit = 1.2;
+	else
+		limit = NUM2DBL(rb_Float(limval));
+	nbonds = 0;  /*  This initialization is necessary: see comments in MoleculeFindCloseAtoms()  */
+	bonds = NULL;
+	MoleculeFindCloseAtoms(mol, n1, limit, &nbonds, &bonds, 0);
+	aval = rb_ary_new();
+	if (nbonds > 0) {
+		for (n1 = 0; n1 < nbonds; n1++)
+			rb_ary_push(aval, INT2NUM(bonds[n1 * 2 + 1]));
+		free(bonds);
+	}
+	return aval;
+}
+
+/*
+ *  call-seq:
  *     guess_bonds(limit = 1.2)       -> Integer
  *
- *  Create bonds between atoms that are 'close enough', i.e. the interatomic distance is
- *  smaller than the sum of the vdw radii times the argument 'limit'. If limit is not
- *  given, a default value of 1.2 is used.
+ *  Create bonds between atoms that are within the threshold distance.
+ *  If limit is a positive number, the threshold distance is the sum of the vdw radii times limit.
+ *  If limit is a negative number, its absolute value is used for the threshold distance in angstrom.
+ *  If limit is not given, a default value of 1.2 is used.
  *  The number of the newly created bonds is returned.
  *  This operation is undoable.
  */
@@ -8278,6 +8315,7 @@ Init_Molby(void)
 	rb_define_method(rb_cMolecule, "assign_residue", s_Molecule_AssignResidue, 2);
 	rb_define_method(rb_cMolecule, "offset_residue", s_Molecule_OffsetResidue, 2);
 	rb_define_method(rb_cMolecule, "renumber_atoms", s_Molecule_RenumberAtoms, 1);
+	rb_define_method(rb_cMolecule, "find_close_atoms", s_Molecule_FindCloseAtoms, -1);
 	rb_define_method(rb_cMolecule, "guess_bonds", s_Molecule_GuessBonds, -1);
 	rb_define_method(rb_cMolecule, "selection", s_Molecule_Selection, 0);
 	rb_define_method(rb_cMolecule, "selection=", s_Molecule_SetSelection, 1);

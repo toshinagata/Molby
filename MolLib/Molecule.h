@@ -417,6 +417,7 @@ int MoleculeLookupAtomInResidue(Molecule *mp, int n1, int resno);
 int MoleculeAnalyzeAtomName(const char *s, char *resName, int *resSeq, char *atomName);
 int MoleculeAtomIndexFromString(Molecule *mp, const char *s);
 
+int MoleculeFindCloseAtoms(Molecule *mp, Int index, Double limit, Int *outNbonds, Int **outBonds, Int triangle);
 int MoleculeGuessBonds(Molecule *mp, Double limit, Int *outNbonds, Int **outBonds);
 int MoleculeAreAtomsConnected(Molecule *mp, int n1, int n2);
 int MoleculeRebuildTablesFromConnects(Molecule *mp);

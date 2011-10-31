@@ -5049,28 +5049,73 @@ MoleculeSearchImpropersAcrossAtomGroup(Molecule *mp, IntGroup *atomgroup)
 	return sMoleculeSearchAcrossAtomGroup(mp->nimpropers, mp->impropers, 4, atomgroup, "impropers");
 }
 
+/*  Subroutine for MoleculeGuessBonds. It can be also used independently, but make sure that *outNbonds/*outBonds 
+    _correctly_ represents an array of two integers (as in mp->nbonds/mp->bonds).  */
+/*  Find atoms within the given "distance" from the given atom.  */
+/*  If limit is negative, its absolute value denotes the threshold distance in angstrom; otherwise,
+ the threshold distance is given by the sum of van der Waals radii times limit.  */
+/*  If triangle is non-zero, then only atoms with lower indexes than index are looked for.  */
+int
+MoleculeFindCloseAtoms(Molecule *mp, Int index, Double limit, Int *outNbonds, Int **outBonds, Int triangle)
+{
+	Int n1, n2, j, nlim, newbond[2];
+	Double a1, a2, alim;
+	Vector dr, r1, r2;
+	Atom *ap = ATOM_AT_INDEX(mp->atoms, index);
+	n1 = ap->atomicNumber;
+	if (n1 >= 0 && n1 < gCountElementParameters)
+		a1 = gElementParameters[n1].radius;
+	else a1 = gElementParameters[6].radius;
+	r1 = ap->r;
+	nlim = (triangle ? index : mp->natoms);
+	for (j = 0; j < nlim; j++) {
+		Atom *bp = ATOM_AT_INDEX(mp->atoms, j);
+		if (index == j)
+			continue;
+		n2 = bp->atomicNumber;
+		if (n2 >= 0 && n2 < gCountElementParameters)
+			a2 = gElementParameters[n2].radius;
+		else a2 = gElementParameters[6].radius;
+		r2 = bp->r;
+		VecSub(dr, r1, r2);
+		if (limit < 0)
+			alim = -limit;
+		else
+			alim = limit * (a1 + a2);
+		if (VecLength2(dr) < alim * alim) {
+			newbond[0] = index;
+			newbond[1] = j;
+			/*	MoleculeAddBonds(mp, 1, newbonds); */
+			AssignArray(outBonds, outNbonds, sizeof(Int) * 2, *outNbonds, newbond);
+		}
+	}
+	return 0;
+}
+
 /*  Guess the bonds from the coordinates  */
+/*  If limit is negative, its absolute value denotes the threshold distance in angstrom; otherwise,
+    the threshold distance is given by the sum of van der Waals radii times limit.  */
 int
 MoleculeGuessBonds(Molecule *mp, Double limit, Int *outNbonds, Int **outBonds)
 {
-	int i, j, n1, n2;
-	Int nbonds, *bonds;
+	Int nbonds, *bonds, i, newbond[2];
+/*	int i, j, n1, n2;
 	Atom *ap, *bp;
 	Vector r1, r2, dr;
 	Double a1, a2, alim;
 	Int newbond[2];
-	ElementPar *p = gElementParameters;
+	ElementPar *p = gElementParameters; */
 	nbonds = 0;
 	bonds = NULL;
 	for (i = 0; i < mp->natoms; i++) {
+		MoleculeFindCloseAtoms(mp, i, limit, &nbonds, &bonds, 1);
+		/*
 		ap = ATOM_AT_INDEX(mp->atoms, i);
 		n1 = ap->atomicNumber;
 		if (n1 >= 0 && n1 < gCountElementParameters)
 			a1 = p[n1].radius;
 		else a1 = p[6].radius;
 		r1 = ap->r;
-	/*	if (mp->is_xtal_coord)
-			TransformVec(&r1, mp->cell->tr, &r1); */
 		for (j = 0; j < i; j++) {
 			bp = ATOM_AT_INDEX(mp->atoms, j);
 			n2 = bp->atomicNumber;
@@ -5078,17 +5123,18 @@ MoleculeGuessBonds(Molecule *mp, Double limit, Int *outNbonds, Int **outBonds)
 				a2 = p[n2].radius;
 			else a2 = p[6].radius;
 			r2 = bp->r;
-		/*	if (mp->is_xtal_coord)
-				TransformVec(&r2, mp->cell->tr, &r2); */
 			VecSub(dr, r1, r2);
-			alim = limit * (a1 + a2);
+			if (limit < 0)
+				alim = -limit;
+			else
+				alim = limit * (a1 + a2);
 			if (VecLength2(dr) < alim * alim) {
 				newbond[0] = i;
 				newbond[1] = j;
-			/*	MoleculeAddBonds(mp, 1, newbonds); */
 				AssignArray(&bonds, &nbonds, sizeof(Int) * 2, nbonds, newbond);
 			}
 		}
+		*/
 	}
 	if (nbonds > 0) {
 		newbond[0] = kInvalidIndex;
