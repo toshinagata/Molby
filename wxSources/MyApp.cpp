@@ -1395,7 +1395,7 @@ MyAppCallback_executeScriptFromFile(const char *cpath, int *status)
 	}
 	file.Close();
 	
-	retval = Molby_evalRubyScriptOnMolecule(script, MoleculeCallback_currentMolecule(), status);
+	retval = Molby_evalRubyScriptOnMolecule(script, MoleculeCallback_currentMolecule(), pp, status);
 	free(script);
 	free(p);
 	wxFileName::SetCwd(cwd);

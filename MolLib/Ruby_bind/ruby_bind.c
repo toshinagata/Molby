@@ -8525,23 +8525,35 @@ static VALUE
 s_evalRubyScriptOnMoleculeSub(VALUE val)
 {
 	void **ptr = (void **)val;
-	const char *script = (const char *)ptr[0];
 	Molecule *mol = (Molecule *)ptr[1];
+	VALUE sval = rb_str_new2((char *)ptr[0]);
+	VALUE fnval;
+	if (ptr[2] == NULL) {
+		fnval = Qnil;
+	} else {
+		fnval = Ruby_NewFileStringValue((char *)ptr[2]);
+	}
 	if (mol == NULL) {
-		return rb_eval_string(script);
+		if (fnval == Qnil)
+			return rb_funcall(rb_mKernel, rb_intern("eval"), 1, sval);
+		else
+			return rb_funcall(rb_mKernel, rb_intern("eval"), 4, sval, Qnil, fnval, INT2FIX(1));
 	} else {
 		VALUE mval = ValueFromMolecule(mol);
-		VALUE sval = rb_str_new2(script);
-		return rb_obj_instance_eval(1, &sval, mval);
+		if (fnval == Qnil)
+			return rb_funcall(mval, rb_intern("instance_eval"), 1, sval);
+		else return rb_funcall(mval, rb_intern("instance_eval"), 3, sval, fnval, INT2FIX(1));
 	}
 }
 
 RubyValue
-Molby_evalRubyScriptOnMolecule(const char *script, Molecule *mol, int *status)
+Molby_evalRubyScriptOnMolecule(const char *script, Molecule *mol, const char *fname, int *status)
 {
 	RubyValue retval;
-	void *args[2];
+	void *args[3];
 	VALUE save_interrupt_flag;
+	char *save_ruby_sourcefile;
+	int save_ruby_sourceline;
 	if (gMolbyIsCheckingInterrupt) {
 		MolActionAlertRubyIsRunning();
 		*status = -1;
@@ -8550,9 +8562,14 @@ Molby_evalRubyScriptOnMolecule(const char *script, Molecule *mol, int *status)
 	gMolbyRunLevel++;
 	args[0] = (void *)script;
 	args[1] = (void *)mol;
+	args[2] = (void *)fname;
 	save_interrupt_flag = s_SetInterruptFlag(Qnil, Qtrue);
+	save_ruby_sourcefile = ruby_sourcefile;
+	save_ruby_sourceline = ruby_sourceline;
 	retval = (RubyValue)rb_protect(s_evalRubyScriptOnMoleculeSub, (VALUE)args, status);
 	s_SetInterruptFlag(Qnil, save_interrupt_flag);
+	ruby_sourcefile = save_ruby_sourcefile;
+	ruby_sourceline = save_ruby_sourceline;
 	gMolbyRunLevel--;
 	return retval;
 }

@@ -31,7 +31,7 @@ extern char *gRubyCopyright;
 
 extern void Molby_startup(const char *script_path, const char *dir);
 extern void Molby_showError(int status);
-extern RubyValue Molby_evalRubyScriptOnMolecule(const char *script, Molecule *mol, int *status);
+extern RubyValue Molby_evalRubyScriptOnMolecule(const char *script, Molecule *mol, const char *fname, int *status);
 /* extern RubyValue Molby_evalRubyScript(const char *script, int *status);
 extern RubyValue Molby_evalRubyScriptOnActiveMoleculeWithInterrupt(const char *script, int *status); */
 extern void Molby_showRubyValue(RubyValue value);

@@ -253,7 +253,7 @@ ConsoleFrame::OnEnterPressed(wxKeyEvent& event)
 		RubyValue val;
 		Molecule *mol = MoleculeCallback_currentMolecule();
 		MoleculeLock(mol);
-		val = Molby_evalRubyScriptOnMolecule(string.mb_str(WX_DEFAULT_CONV), MoleculeCallback_currentMolecule(), &status);
+		val = Molby_evalRubyScriptOnMolecule(string.mb_str(WX_DEFAULT_CONV), MoleculeCallback_currentMolecule(), NULL, &status);
 		MoleculeUnlock(mol);
 		if (status != -1) {  /*  Status -1 is already handled  */
 			MyAppCallback_setConsoleColor(1);
