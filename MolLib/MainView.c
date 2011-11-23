@@ -2316,10 +2316,12 @@ MainView_mouseUp(MainView *mview, const float *mousePos, int flags, int clickCou
 
 	if (clickCount == 2 && mview->isDragging == 0) {
 		/*  Create a new molecular fragment  */
+		int n1, n2, found;
+		found = MainView_findObjectAtPoint(mview, mousePos, &n1, &n2, 0, 0);
 		buf[0] = 0;
 		if (MyAppCallback_getTextWithPrompt("Enter formula (e.g. CH2OCH3)", buf, sizeof buf) == 0)
 			return;
-		MolActionCreateAndPerform(mview->mol, SCRIPT_ACTION("s"), "dock_formula", buf);
+		MolActionCreateAndPerform(mview->mol, SCRIPT_ACTION("si"), "cmd_fuse_or_dock", buf, n1);
 		goto exit;
 	}
 

@@ -660,4 +660,165 @@ class Molecule
     end
   end
 
+  #  Fuse a molecule at the current selection.
+  #  The current selection should contain at least two consecutive non-hydrogen atoms.
+  #  The same number of non-hydrogen atoms are removed from the fusing molecule, and
+  #  the remaining fragment (with two dangling bonds) is connected to the first and
+  #  last non-hydrogen atoms in the selection.
+  #  When new bonds are created, the hydrogen atoms pointing to the newly fused
+  #  fragment is removed.
+  #  If successful, self is returned. Otherwise, a string describing the reason
+  #  for failure is returned.
+  def fuse(mol, clicked_atom = nil, fuse_pos = nil)
+    #  Check if the non-hydrogen selected atoms are consecutive
+    sel = self.selection
+    selc = atom_group(sel) { |ap| ap.element != "H" }
+    connects = Hash.new
+    terminals = []
+    atom_group(selc) { |ap|
+      c = ap.connects.select { |it| selc.include?(it) }
+      case c.length
+      when 0
+        return "Cannot fuse to isolated atom"
+      when 1
+        terminals.push(ap.index)
+        if terminals.length >= 3
+          return "Cannot fuse to non-connecting atoms"
+        end
+      when 2
+        nil
+      else
+        return "Cannot fuse to branched chain"
+      end
+      connects[ap.index] = c
+    }
+#    puts "selc = #{selc.inspect}"
+#    puts "connects = #{connects.inspect}"
+    if connects.length == 0
+      return "No atom to fuse"
+    elsif connects.length == 1
+      return "Cannot fuse to a single atom"
+    end
+    if terminals.length == 0
+      return "Cannot fuse to separated chain"
+    end
+    if !clicked_atom || !terminals.include?(clicked_atom)
+      clicked_atom = terminals[0]
+    end
+    seq = []
+    n = clicked_atom
+    while connects.length > 0 && n != nil
+      c = connects.delete(n)
+      seq.push(n)
+      if connects[c[0]]
+        n = c[0]
+      else
+        n = c[1]
+      end
+    end
+#    puts "seq = #{seq.inspect}"
+	
+	#  Check if the fuse sequence has two non-hydrogen atoms connected at the terminals
+    c1 = atoms[seq[0]].connects.select { |i| atoms[i].element != "H" && !seq.include?(i) }[0]
+    c2 = atoms[seq[-1]].connects.select { |i| atoms[i].element != "H" && !seq.include?(i) }[0]
+	if c1 == nil || c2 == nil
+	  return "The fuse sequence must not be a terminal in a molecule"
+	end
+	
+	#  Check molecule to fuse
+    if mol == nil
+      mol = Molecule.from_formula("C6H6")  #  benzene ring
+	elsif mol.is_a?(String)
+	  mol = Molecule.from_formula(mol)
+    end
+    fuse_seq = mol.atom_group(fuse_pos || mol.all) { |ap| ap.element != "H" }.to_a
+    if fuse_seq.length >= seq.length
+      fuse_seq = fuse_seq[0...seq.length]
+    else
+      return "Insufficient number of atoms to fuse"
+    end
+#    puts "fuse_seq = #{fuse_seq.inspect}"
+
+    #  Determine the connecting atoms of the fusing group
+    fp1 = mol.atoms[fuse_seq[0]]
+    fp2 = mol.atoms[fuse_seq[-1]]
+    c1 = fp1.connects.select { |i| mol.atoms[i].element != "H" && !fuse_seq.include?(i) }[0]
+    c2 = fp2.connects.select { |i| mol.atoms[i].element != "H" && !fuse_seq.include?(i) }[0]
+    if (c1 == nil || c2 == nil)
+      return "No additional atoms after fuse"
+    end
+
+    #  The atoms to be removed after fusion
+    frag = mol.fragment(fuse_seq[0], c1, c2)
+#    puts "c1, c2, frag = #{c1}, #{c2}, #{frag.inspect}"
+
+    #  Determine the internal axes for the fusing group
+    #  Origin: center points of the two terminal atoms
+    #  x-axis: first to last terminal atoms
+    #  y-axis: average of the vectors from the terminal to connecting atoms
+    fuse_origin = (fp1.r + fp2.r) * 0.5
+    fuse_x = (fp2.r - fp1.r).normalize
+    fuse_y = (mol.atoms[c1].r + mol.atoms[c2].r) * 0.5 - fuse_origin
+    fuse_z = fuse_x.cross(fuse_y).normalize
+    fuse_y = fuse_z.cross(fuse_x).normalize
+
+    #  Determine the internal axes for each fragment
+    #  Origin: center points of the two terminal atoms
+    #  x-axis: first to last terminal atoms
+    #  y-axis: average of the X-H bond vectors for the two terminal atoms
+    #    If no H atom is connected to the terminal atom, the negative of the
+    #    average vector of all connected atoms is used instead.
+    #    If multiple H atoms are connected to the terminal atom, the one
+    #    included in the selection takes the highest
+    #    priority, followed by the one with smaller atom index.
+    ap1 = atoms[seq[0]]
+    ap2 = atoms[seq[-1]]
+    base_origin = (ap1.r + ap2.r) * 0.5
+    base_x = (ap2.r - ap1.r).normalize
+    base_h = [nil, nil]
+    base_v = [nil, nil]
+    [ap1, ap2].each_with_index { |p, i|
+      h1 = p.connects.select { |j| atoms[j].element == "H" }
+      if h1.length == 0
+        base_h[i] = nil
+        v1 = Vector3D[0, 0, 0]
+        p.connects.each { |j| v1 -= atoms[j].r }
+        base_v[i] = v1
+      else
+        base_h[i] = (h1.find { |j| sel.include?(j) } || h1[0])
+        base_v[i] = atoms[base_h[i]].r
+      end
+    }
+    base_y = (base_v[0] + base_v[1]) * 0.5
+    base_z = base_x.cross(base_y).normalize
+    base_y = base_z.cross(base_x).normalize
+ #   puts "base_h = #{base_h.inspect}"
+
+    #  Duplicate the fusing group and reorient
+    #  fuse_{xyz} -> base_{xyz}
+    mol2 = mol.dup
+    tr = Transform[base_x, base_y, base_z, base_origin] * (Transform[fuse_x, fuse_y, fuse_z, [0, 0, 0]].inverse) * Transform.translation(fuse_origin * (-1))
+    mol2.transform(tr)
+    
+    #  Add group, create bond, and remove extra atoms
+    n = natoms
+    add(mol2)
+    create_bonds(seq[0], c1 + n, seq[-1], c2 + n)
+    frag = frag.offset(n)
+    frag.add(base_h[0]) if base_h[0]
+    frag.add(base_h[1]) if base_h[1]
+#    puts "frag = #{frag.inspect}"
+    remove(frag)
+    return self
+  end
+
+  #  A wrapper function to be called from Molby body
+  def cmd_fuse_or_dock(formula, clicked_atom = nil, fuse_pos = nil)
+    s = fuse(formula, clicked_atom, fuse_pos)
+	if s != self
+	  #  Call dock_formula instead
+      dock_formula(formula)
+	end
+  end
+  
 end
