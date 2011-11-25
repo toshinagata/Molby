@@ -373,6 +373,8 @@ MoleculeRelease(Molecule *mp)
 {
 	if (mp == NULL)
 		return;
+	if (mp->exmolobj != NULL)
+		MoleculeReleaseExternalHook(mp);
 	if (ObjectDecrRefCount((Object *)mp) == 0) {
 		MoleculeClear(mp);
 		ObjectDealloc((Object *)mp, (Object **)&sMoleculeRoot);

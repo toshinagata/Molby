@@ -303,6 +303,9 @@ typedef struct Molecule {
 
 	/*  Mutex object. If non-NULL, it should be locked before modifying molecule  */
 	void *mutex;
+	
+	/*  Ruby pointer (see ruby_bind.c)  */
+	void *exmolobj;
 
 } Molecule;
 
@@ -324,6 +327,7 @@ const char *MoleculeGetPath(Molecule *mol);
 Molecule *MoleculeWithName(const char *name);
 Molecule *MoleculeRetain(Molecule *mp);
 void MoleculeRelease(Molecule *mp);
+extern void MoleculeReleaseExternalHook(Molecule *mol);
 void MoleculeExchange(Molecule *mp1, Molecule *mp2);
 
 int MoleculeAddGaussianOrbitalShell(Molecule *mol, Int sym, Int nprims, Int a_idx);
