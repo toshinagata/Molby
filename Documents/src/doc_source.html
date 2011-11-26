@@ -722,12 +722,141 @@ Make one more iteration to make the octamer.
 <link id="#navigation" />
 </div>
 
-<div file="mm_minimize.html">
+<div file="ring_fusion.html">
 <link rel="Up" href="tutorials.html" />
 <link rel="Prev" href="cut_copy_paste.html" />
 <link id="#header" />
 <div class="contents" lang="en">
-<h1>Step Four: Energy Minimization by Molecular Mechanics</h1>
+<h1>Step Four: Ring Fusion</h1>
+<p>(Version 0.6.1 and upper)</p>
+<h2>1. Ring fusion by double-click and type-in</h2>
+<p>
+Molby has a capability (from version 0.6.1 and upper) to create a fused ring structure. As an example, here is presented yet another method to make indane. This time, we start from a benzene.
+</p>
+<p><img src="../etc/tutorial_4_01.png" /></p>
+<p>
+Choose "select" mode, and select C1 and C2 by clicking on the C1-C2 bond.
+</p>
+<p><img src="../etc/tutorial_4_02.png" /></p>
+<p>
+Double-click on the selection, and enter "cyclopentane" in the dialog box.
+</p>
+<p><img src="../etc/tutorial_4_03.png" /></p>
+<p>
+After pressing "OK", you will see a five-membered ring fused to the benzene ring.
+</p>
+<p><img src="../etc/tutorial_4_04.png" /></p>
+<p>
+Ring fusion also works when three or more atoms are selected in the original structure. For example, select the consecutive three carbons in indane as follows.
+</p>
+<p><img src="../etc/tutorial_4_05.png" /></p>
+<p>
+Double-click on the selection, and enter "C6H6" (or "benzene").
+</p>
+<p><img src="../etc/tutorial_4_06.png" /></p>
+<p>
+Now we have acenaphthene...almost.
+</p>
+<p><img src="../etc/tutorial_4_07.png" /></p>
+<p>
+As shown in the above figure, there is an extra, leftover hydrogen atom on one bridgehead carbon. After all, Molby is not so smart --- it just removes one hydrogen from each terminal carbon atoms in the selection, and connect a portion of the fusing fragment ("benzene" in this case) so that the newly created ring has the same number of atoms. Consequently, the stereochemistry may become strange when sp3 carbons are present either in the original structure or in the fusing fragment. You may need to remove/append hydrogen atoms and clean up structures (see <a href="mm_minimize.html">"Energy Minimization"</a> for detail).
+</p>
+<h2>2. Ring fusion by copy-and-paste</h2>
+<p>
+There is another way to make a ring fused structure, which includes copy and paste. Starting again from a benzene.
+</p>
+<p><img src="../etc/tutorial_4_01.png" /></p>
+<p>
+Open the "File" menu, and select "Open Predefined" &gt; "Alicyclic" &gt; "cyclopentane".
+</p>
+<p class="note">(This is a new funcionality from Version 0.6.1. Various common molecular fragments are easily accessible from this menu.)</p>
+<p><img src="../etc/tutorial_4_08.png" /></p>
+<p>
+A new window named "*cyclopentane*" opens with one cyclopentane molecule. Select a portion containing three CH2 groups, and copy it by command-C or ctrl-C.
+</p>
+<p><img src="../etc/tutorial_4_09.png" /></p>
+<p>
+Return to the benzene molecule again, and this time select H1 and H2 (not C1 and C2).
+</p>
+<p><img src="../etc/tutorial_4_10.png" /></p>
+<p>
+Do paste by command-V or ctrl-V. You now get a indane molecule.
+</p>
+<p><img src="../etc/tutorial_4_11.png" /></p>
+<p>
+This "copy-and-paste" actually works in a similar way to previously described example (see <a href="cut-copy-paste.html">"Cut/Copy/Paste"</a>). When both the current selection and the fragment in the pasteboard have two terminals, they are connected and ring fusion takes place. This method of ring fusion is slightly more complicated than the "double-click and type-in" method, but it may be easier to understand.
+</p>
+</div>
+<div class="contents" lang="ja">
+<h1>第四段階：縮環構造の作成</h1>
+<p>(バージョン 0.6.1 以上）</p>
+<h2>1. ダブルクリック／キー入力による縮環</h2>
+<p>
+Molby は縮環構造を作るための機能を持っています（バージョン 0.6.1 以降）。例として、インダンを作るもう一つの方法を紹介します。今回は、ベンゼンから始めます。
+</p>
+<p><img src="../etc/tutorial_4_01.png" /></p>
+<p>
+"Select" モードにして、C1-C2 結合をクリックして C1 と C2 を選択します。
+</p>
+<p><img src="../etc/tutorial_4_02.png" /></p>
+<p>
+選択部分をダブルクリックして、ダイアログボックスに "cyclopentane" と入力します。
+</p>
+<p><img src="../etc/tutorial_4_03.png" /></p>
+<p>
+"OK" を押すと、５員環がベンゼン環に縮環します。
+</p>
+<p><img src="../etc/tutorial_4_04.png" /></p>
+<p>
+選択部分が３個以上の原子を含んでいても、縮環は可能です。例えば、インダンで図のように３つの連続した炭素原子を選択してみます。
+</p>
+<p><img src="../etc/tutorial_4_05.png" /></p>
+<p>
+選択部分をダブルクリックして、"C6H6"（または "benzene"）と入力します。
+</p>
+<p><img src="../etc/tutorial_4_06.png" /></p>
+<p>
+そうすると、アセナフテンができます...だいたい。
+</p>
+<p><img src="../etc/tutorial_4_07.png" /></p>
+<p>
+上の図に示したように、橋頭位の炭素に１つ余分な水素原子が残ってしまいます。実のところ、Molby はあんまり賢くありません。選択部分の両端の原子から水素原子を１つずつ取り除いて、縮環する分子（この場合はベンゼン）の一部をかわりに結合して、生成する環の原子数が一致するようにしているだけです。このため、元の選択部分または縮環する分子が sp3 炭素を含んでいると、立体化学が変になることがあります。水素原子を除いたり付け加えたりして、さらに構造を最適化する必要があるでしょう（詳しくは「<a href="mm_minimize.html">エネルギー最小化</a>」を見てください）。
+</p>
+<h2>2. コピー／ペーストによる縮環</h2>
+<p>
+縮環構造を作るには、コピー／ペーストを使ったもう一つの方法があります。またベンゼンから始めましょう。
+</p>
+<p><img src="../etc/tutorial_4_01.png" /></p>
+<p>
+"File" メニューを開き、"Open Predefined" &gt; "Alicyclic" &gt; "cyclopentane" を選んでください。
+</p>
+<p class="note">(これはバージョン 0.6.1 以降の機能です。よく使われる分子構造がこのメニューから選択できます。)</p>
+<p><img src="../etc/tutorial_4_08.png" /></p>
+<p>
+"*cyclopentane*"という名前の新しいウィンドウが開き、シクロペンタン分子が入っています。３つのメチレン基を選択して、コマンド-C またはコントロール-C でコピーしてください。
+</p>
+<p><img src="../etc/tutorial_4_09.png" /></p>
+<p>
+ベンゼン分子に戻って、今度は H1 と H2（C1 と C2 ではなく）を選択してください。
+</p>
+<p><img src="../etc/tutorial_4_10.png" /></p>
+<p>
+コマンド-V またはコントロール-V でペーストしてください。インダンができます。
+</p>
+<p><img src="../etc/tutorial_4_11.png" /></p>
+<p>
+この「コピー／ペースト」は、実は前に説明したのと (<a href="cut-copy-paste.html">カット／コピー／ペースト</a>) 同じように機能しています。現在の選択部分とクリップボードの内容がともに「２つの末端」を持っているとき、末端同士がつなぎあわされ、縮環したように見えるのです。この方法による縮環は「ダブルクリック／入力」の方法よりも少し複雑ですが、何が起きているかはこちらの方が理解しやすいかもしれません。
+</p>
+</div>
+<link id="#navigation" />
+</div>
+
+<div file="mm_minimize.html">
+<link rel="Up" href="tutorials.html" />
+<link rel="Prev" href="ring_fusion.html" />
+<link id="#header" />
+<div class="contents" lang="en">
+<h1>Step Five: Energy Minimization by Molecular Mechanics</h1>
 <h2>1. About Molecular Mechanics Implementation in Molby</h2>
 <p>
 The molecular models built by hand generally include unnatural bond lengths, bond angles, van der Waals contacts, and so on. Molecular mechanics is a useful technique to remove such unnatural structures.
@@ -851,7 +980,7 @@ J. Phys. Chem. 1995, 99, 6208.
 </div>
 
 <div class="contents" lang="ja">
-<h1>第四段階：分子力学計算によるエネルギー最小化</h1>
+<h1>第五段階：分子力学計算によるエネルギー最小化</h1>
 <h2>1. Molby の分子力学計算について</h2>
 <p>
 手作業で作成した分子モデルは、不自然な結合長、結合角、van der Waals 接触などを含んでいます。このような不自然な構造を修正するには、分子力学のテクニックが便利です。
@@ -982,7 +1111,7 @@ J. Phys. Chem. 1995, 99, 6208.
 <link rel="Prev" href="mm_minimize.html" />
 <link id="#header" />
 <div class="contents" lang="en">
-<h1>Step Five: Edit a Molecule: Using a Property Table</h1>
+<h1>Step Six: Edit a Molecule: Using a Property Table</h1>
 <h2>1. The Property Table of a Molecule</h2>
 <p>
 A molecule has many properties. It has a set of atoms and bonds. An atom has a name, an atom type, an element, a weight (which can be derived from the element), a charge, coordinates, and so on. According to the custom in the biomolecular modeling, atoms are grouped in "residues." It also has a set of parameters used in molecular mechanics. Molby also has a limited support for quantum chemical calculations. In relation to that, a molecule in Molby can retain extra information such as MO coefficients.
@@ -1072,7 +1201,7 @@ If some parameters are not to be used for calculation, you can "cut" the paramet
 
 </div>
 <div class="contents" lang="ja">
-<h1>第五段階：分子を編集する：属性テーブルを使う</h1>
+<h1>第六段階：分子を編集する：属性テーブルを使う</h1>
 <h2>1. 分子の属性テーブル</h2>
 <p>
 分子はいろいろな属性を持っています。まず原子と結合があります。原子は名前、原子タイプ、元素、原子量（元素が決まれば決まる）、電荷、座標、など。また、生化学の習慣に従い、原子は「残基」でグループ化されています。分子はまた、分子力学のパラメータを持っています。Molby はまた量子化学計算も部分的にサポートします。それと関連して、分子に分子軌道係数などの情報を持たせることができます。
@@ -1168,10 +1297,10 @@ Bond, angle, dihedral, improper テーブルは、それぞれ結合・結合角
 <link rel="Prev" href="proptable.html" />
 <link id="#header" />
 <div class="contents" lang="en">
-<h1>Step Six: Collaboration with Other Quantum Chemistry Softwares</h1>
+<h1>Step Seven: Collaboration with Other Quantum Chemistry Softwares</h1>
 </div>
 <div class="contents" lang="ja">
-<h1>第六段階：他の量子化学ソフトウェアとの連携</h1>
+<h1>第七段階：他の量子化学ソフトウェアとの連携</h1>
 </div>
 <link id="#navigation" />
 </div>
@@ -1181,10 +1310,10 @@ Bond, angle, dihedral, improper テーブルは、それぞれ結合・結合角
 <link rel="Prev" href="qchem.html" />
 <link id="#header" />
 <div class="contents" lang="en">
-<h1>Step Seven: Using Embedded Ruby Interpreter</h1>
+<h1>Step Eight: Using Embedded Ruby Interpreter</h1>
 </div>
 <div class="contents" lang="ja">
-<h1>第七段階：組み込み Ruby インタプリタを使う</h1>
+<h1>第八段階：組み込み Ruby インタプリタを使う</h1>
 </div>
 <link id="#navigation" />
 </div>
