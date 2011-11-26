@@ -803,12 +803,16 @@ class Molecule
     #  Add group, create bond, and remove extra atoms
     n = natoms
     add(mol2)
+	newsel = sel + IntGroup[n..n + mol2.natoms - 1]
     create_bonds(seq[0], c1 + n, seq[-1], c2 + n)
     frag = frag.offset(n)
     frag.add(base_h[0]) if base_h[0]
     frag.add(base_h[1]) if base_h[1]
 #    puts "frag = #{frag.inspect}"
+	newsel -= frag
+	newsel = newsel.deconvolute(atom_group - frag)  #  Renumber by skipping the atoms in removed fragment
     remove(frag)
+	self.selection = newsel
     return self
   end
 
