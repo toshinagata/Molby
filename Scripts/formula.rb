@@ -431,24 +431,49 @@ class Molecule
 		old2 = bonds_old[0][0]  #  The first "dummy" atom in the molecule
 		new1 = frag.root_atom(bonds_new[0])  #  The first "root" atom in the fragment
 		new2 = bonds_new[0]                  #  The first "dummy" atom in the fragment
-		oldv = atoms[old2].r - atoms[old1].r
-		newv = frag.atoms[new2].r - frag.atoms[new1].r
-#		puts "old1 = #{old1}, old2 = #{old2}, new1 = #{new1}, new2 = #{new2}, oldv = #{oldv.inspect}, newv = #{newv.inspect}"
-		
-		#  Find the most substituted atoms (which will be arranged in trans conformation)
-		if (atoms[old1].connects.length >= 2)
-		  olddi1 = atoms[old1].connects.sort_by { |n| (n == old2 ? 0 : atoms[n].connects.length) } [0]
+		if bonds_old.length > 1 && bonds_new.length > 1
+		  old3 = bonds_old[1][1]
+		  old4 = bonds_old[1][0]
+		  new3 = frag.root_atom(bonds_new[1])
+		  new4 = bonds_new[1]
+		  oldv1 = (atoms[old1].r - atoms[old2].r).normalize * 1.5
+		  oldv2 = (atoms[old3].r - atoms[old4].r).normalize * 1.5
+		  oldp1 = atoms[old1].r - oldv1
+		  oldp2 = atoms[old3].r - oldv2
+		  newp1 = frag.atoms[new1].r
+		  newp2 = frag.atoms[new3].r
+		  newv1 = frag.atoms[new2].r - newp1
+		  newv2 = frag.atoms[new4].r - newp2
+		  oldo = (oldp1 + oldp2) * 0.5
+		  oldx = (oldp1 - oldp2).normalize
+		  oldy = oldv1 + oldv2
+		  oldz = oldx.cross(oldy).normalize
+		  oldy = oldz.cross(oldx).normalize
+		  newo = (newp1 + newp2) * 0.5
+		  newx = (newp1 - newp2).normalize
+		  newy = newv1 + newv2
+		  newz = newx.cross(newy).normalize
+		  newy = newz.cross(newx).normalize
+          tr = Transform[oldx, oldy, oldz, oldo] * (Transform[newx, newy, newz, [0, 0, 0]].inverse) * Transform.translation(newo * (-1))
+          frag.transform(tr)
+		  add(frag)
+		  create_bond(old1, new1 + n0)
 		else
-		  olddi1 = nil
+		  oldv = atoms[old2].r - atoms[old1].r
+		  newv = frag.atoms[new2].r - frag.atoms[new1].r
+		  #  Find the most substituted atoms (which will be arranged in trans conformation)
+		  if (atoms[old1].connects.length >= 2)
+		    olddi1 = atoms[old1].connects.sort_by { |n| (n == old2 ? 0 : atoms[n].connects.length) } [0]
+		  else
+		    olddi1 = nil
+		  end
+		  if (frag.atoms[new1].connects.length >= 2)
+		    newdi1 = frag.atoms[new1].connects.sort_by { |n| (n == new2 ? 0 : frag.atoms[n].connects.length) } [0]
+		  else
+		    newdi1 = nil
+		  end
+		  dock(frag, old1, new1, oldv, newv, 1.5, 180.0, olddi1, newdi1)  #  Add (without removing atoms)
 		end
-		if (frag.atoms[new1].connects.length >= 2)
-		  newdi1 = frag.atoms[new1].connects.sort_by { |n| (n == new2 ? 0 : frag.atoms[n].connects.length) } [0]
-		else
-		  newdi1 = nil
-		end
-	#	dump([old1, old2, olddi1])
-	#	frag.dump([new1, new2, newdi1])
-		sel = dock(frag, old1, new1, oldv, newv, 1.5, 180.0, olddi1, newdi1)  #  Add (without removing atoms)
 		(1..bonds_old.length - 1).each { |i|
 		  break if i >= bonds_new.length
 		  #  Create bonds between other "root" atoms
@@ -501,61 +526,6 @@ class Molecule
   }
   register_fragment("Me", known_fragment("CH3"))
   load(MbsfPath + "/fragment_def.rb")
-  if 0
-  register_fragment("Ph", fragment_from_dump(%q(
-   0 BEN.1   C1   ca   C   -0.653   0.585  -1.068 -0.128 [1,2,10]
-   1 BEN.1   _1   ""   Du  -1.158   1.039  -1.898  0.128 [0]
-   2 BEN.1   C2   ca   C    0.729   0.607  -1.003 -0.128 [0,3,4]
-   3 BEN.1   H2   ha   H    1.295   1.076  -1.783  0.128 [2]
-   4 BEN.1   C3   ca   C    1.382   0.021   0.069 -0.128 [2,5,6]
-   5 BEN.1   H3   ha   H    2.452   0.038   0.119  0.128 [4]
-   6 BEN.1   C4   ca   C    0.651  -0.586   1.076 -0.128 [4,7,8]
-   7 BEN.1   H4   ha   H    1.156  -1.039   1.906  0.128 [6]
-   8 BEN.1   C5   ca   C   -0.732  -0.607   1.012 -0.128 [6,9,10]
-   9 BEN.1   H5   ha   H   -1.298  -1.077   1.792  0.128 [8]
-  10 BEN.1   C6   ca   C   -1.384  -0.021  -0.060 -0.128 [0,8,11]
-  11 BEN.1   H6   ha   H   -2.455  -0.038  -0.110  0.128 [10])))
-  register_fragment("C6H6", fragment_from_dump(%q(
-   0 BEN.1   C1   ca   C   -0.653   0.585  -1.068 -0.128 [1,2,10]
-   1 BEN.1   H1   ha   H   -1.158   1.039  -1.898  0.128 [0]
-   2 BEN.1   C2   ca   C    0.729   0.607  -1.003 -0.128 [0,3,4]
-   3 BEN.1   H2   ha   H    1.295   1.076  -1.783  0.128 [2]
-   4 BEN.1   C3   ca   C    1.382   0.021   0.069 -0.128 [2,5,6]
-   5 BEN.1   H3   ha   H    2.452   0.038   0.119  0.128 [4]
-   6 BEN.1   C4   ca   C    0.651  -0.586   1.076 -0.128 [4,7,8]
-   7 BEN.1   H4   ha   H    1.156  -1.039   1.906  0.128 [6]
-   8 BEN.1   C5   ca   C   -0.732  -0.607   1.012 -0.128 [6,9,10]
-   9 BEN.1   H5   ha   H   -1.298  -1.077   1.792  0.128 [8]
-  10 BEN.1   C6   ca   C   -1.384  -0.021  -0.060 -0.128 [0,8,11]
-  11 BEN.1   H6   ha   H   -2.455  -0.038  -0.110  0.128 [10])))
-  register_fragment("C6H5", known_fragment("Ph"))
-  register_fragment("C6H4", fragment_from_dump(%q(
-   0 BEN.1   C1   ca   C   -0.653   0.585  -1.068 -0.128 [1,2,10]
-   1 BEN.1   _1   ""   Du  -1.158   1.039  -1.898  0.128 [0]
-   2 BEN.1   C2   ca   C    0.729   0.607  -1.003 -0.128 [0,3,4]
-   3 BEN.1   H2   ha   H    1.295   1.076  -1.783  0.128 [2]
-   4 BEN.1   C3   ca   C    1.382   0.021   0.069 -0.128 [2,5,6]
-   5 BEN.1   H3   ha   H    2.452   0.038   0.119  0.128 [4]
-   6 BEN.1   C4   ca   C    0.651  -0.586   1.076 -0.128 [4,7,8]
-   7 BEN.1   _2   ""   Du   1.156  -1.039   1.906  0.128 [6]
-   8 BEN.1   C5   ca   C   -0.732  -0.607   1.012 -0.128 [6,9,10]
-   9 BEN.1   H5   ha   H   -1.298  -1.077   1.792  0.128 [8]
-  10 BEN.1   C6   ca   C   -1.384  -0.021  -0.060 -0.128 [0,8,11]
-  11 BEN.1   H6   ha   H   -2.455  -0.038  -0.110  0.128 [10])))
-  register_fragment("C6H3", fragment_from_dump(%q(
-   0 BEN.1   C1   ca   C   -0.653   0.585  -1.068 -0.128 [1,2,10]
-   1 BEN.1   _1   ""   Du  -1.158   1.039  -1.898  0.128 [0]
-   2 BEN.1   C2   ca   C    0.729   0.607  -1.003 -0.128 [0,3,4]
-   3 BEN.1   H2   ha   H    1.295   1.076  -1.783  0.128 [2]
-   4 BEN.1   C3   ca   C    1.382   0.021   0.069 -0.128 [2,5,6]
-   5 BEN.1   _2   ""   Du   2.452   0.038   0.119  0.128 [4]
-   6 BEN.1   C4   ca   C    0.651  -0.586   1.076 -0.128 [4,7,8]
-   7 BEN.1   H4   ha   H    1.156  -1.039   1.906  0.128 [6]
-   8 BEN.1   C5   ca   C   -0.732  -0.607   1.012 -0.128 [6,9,10]
-   9 BEN.1   _3   ""   Du  -1.298  -1.077   1.792  0.128 [8]
-  10 BEN.1   C6   ca   C   -1.384  -0.021  -0.060 -0.128 [0,8,11]
-  11 BEN.1   H6   ha   H   -2.455  -0.038  -0.110  0.128 [10])))
-  end
   
   #  Returns an arbitrary unit vector that is orthogonal to v
   def orthogonal_vector(v)
