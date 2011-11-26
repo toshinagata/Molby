@@ -100,6 +100,7 @@ enum {
 	myMenuID_ExecuteScript = 300,
 	myMenuID_OpenConsoleWindow = 301,
 	myMenuID_CustomScript = 302,
+	myMenuID_PredefinedFragment = 350,
 	myMenuID_MyLastMenuItem = 499
 };
 
@@ -151,6 +152,9 @@ class MyApp: public wxApp
 	void UpdateScriptMenu(wxMenuBar *mbar);
 	void OnScriptMenuModified(wxCommandEvent& event);
 	void OnScriptMenuSelected(wxCommandEvent& event);
+	void UpdatePredefinedFragmentMenu(wxMenuBar *mbar);
+	void OnFragmentMenuSelected(wxCommandEvent& event);
+	
 	void OnUpdateUI(wxUpdateUIEvent &event);
 	void OnExecuteScript(wxCommandEvent &event);
 	void OnOpenConsoleWindow(wxCommandEvent &event);
@@ -188,6 +192,9 @@ protected:
 	char **scriptMenuCommands;
 	char **scriptMenuTitles;
 	bool scriptMenuModifiedEventPosted;
+
+	int m_CountNamedFragments;
+	char **m_NamedFragments;
 	
 #if __WXMSW__
 	wxSingleInstanceChecker *m_checker;

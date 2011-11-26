@@ -1,0 +1,166 @@
+!:atoms
+! idx seg_name res_seq res_name name type charge weight element atomic_number occupancy temp_factor int_charge
+0 MAIN 1 CBT C1 c3 -0.00353 12.01070 C 6 1.000000 0.000000 0
+1 MAIN 1 CBT H11 hc 0.00177 1.00790 H 1 1.000000 0.000000 0
+2 MAIN 1 CBT H12 hc 0.00177 1.00790 H 1 1.000000 0.000000 0
+3 MAIN 1 CBT C2 c3 -0.00353 12.01070 C 6 1.000000 0.000000 0
+4 MAIN 1 CBT H21 hc 0.00177 1.00790 H 1 1.000000 0.000000 0
+5 MAIN 1 CBT H22 hc 0.00177 1.00790 H 1 1.000000 0.000000 0
+6 MAIN 1 CBT C3 c3 -0.00353 12.01070 C 6 1.000000 0.000000 0
+7 MAIN 1 CBT H31 hc 0.00177 1.00790 H 1 1.000000 0.000000 0
+8 MAIN 1 CBT H32 hc 0.00177 1.00790 H 1 1.000000 0.000000 0
+9 MAIN 1 CBT C4 c3 -0.00353 12.01070 C 6 1.000000 0.000000 0
+10 MAIN 1 CBT H41 hc 0.00177 1.00790 H 1 1.000000 0.000000 0
+11 MAIN 1 CBT H42 hc 0.00177 1.00790 H 1 1.000000 0.000000 0
+
+!:positions ; frame 0
+! idx x y z
+0 0.09510873 0.42296547 0.67454986
+1 -0.29829705 1.02543431 -0.13627522
+2 -0.73590500 -0.09659789 1.13784696
+3 1.28583734 -0.48684553 0.28229631
+4 1.58569435 -0.41414050 -0.75692159
+5 1.14813096 -1.53613494 0.51724917
+6 2.19806792 0.28061820 1.27138096
+7 3.02903956 0.80021029 0.80804053
+8 2.59153544 -0.32182896 2.08219215
+9 1.00732651 1.19039636 1.66367180
+10 1.14501616 2.23970199 1.42878169
+11 0.70746654 1.11762469 2.70288420
+
+!:bonds
+! from1 to1 from2 to2 from3 to3 from4 to4
+0 1 0 2 3 5 3 4
+6 8 6 7 3 6 9 11
+9 10 6 9 0 3 0 9
+
+!:angles
+! a1 b1 c1 a2 b2 c2 a3 b3 c3
+1 0 2 5 3 4 8 6 7
+5 3 6 4 3 6 3 6 8
+3 6 7 11 9 10 8 6 9
+7 6 9 3 6 9 6 9 11
+6 9 10 1 0 3 2 0 3
+0 3 5 0 3 4 0 3 6
+1 0 9 2 0 9 3 0 9
+0 9 11 0 9 10 0 9 6
+
+!:dihedrals
+! a1 b1 c1 d1 a2 b2 c2 d2
+5 3 6 8 5 3 6 7
+4 3 6 8 4 3 6 7
+8 6 9 11 8 6 9 10
+7 6 9 11 7 6 9 10
+3 6 9 11 3 6 9 10
+1 0 3 5 1 0 3 4
+1 0 3 6 2 0 3 5
+2 0 3 4 2 0 3 6
+5 3 6 9 4 3 6 9
+0 3 6 8 0 3 6 7
+0 3 6 9 1 0 9 11
+1 0 9 10 1 0 9 6
+2 0 9 11 2 0 9 10
+2 0 9 6 3 0 9 11
+3 0 9 10 3 0 9 6
+9 0 3 5 9 0 3 4
+9 0 3 6 8 6 9 0
+7 6 9 0 3 6 9 0
+
+!:md_parameters
+log_file cyclopentane.log
+coord_file (null)
+vel_file (null)
+force_file (null)
+debug_file (null)
+debug_output_level 0
+step 0
+coord_output_freq 10
+energy_output_freq 10
+coord_frame 135
+timestep 1
+cutoff 9
+electro_cutoff 9
+pairlist_distance 10
+temperature 300
+andersen_freq 50
+andersen_coupling 0.1
+random_seed 0
+dielectric 4.8
+gradient_convergence 1e-06
+coordinate_convergence 1e-08
+use_xplor_shift 1
+scale14_vdw 0.5
+scale14_elect 0.83
+relocate_center 1
+surface_probe_radius 0
+surface_tension -0.005
+surface_potential_freq 5
+use_graphite 0
+alchemical_lambda 0
+alchemical_delta_lambda 0.1
+
+!:parameters
+! type1 type2 k r0
+bond c3 hc 337.299999 1.092000 ![gaff] SOURCE3  2815    0.0040    0.0059
+bond c3 c3 303.100018 1.535000 ![gaff] SOURCE1 14664    0.0043    0.0048
+! type1 type2 type3 k a0
+angle hc c3 hc 39.400002 108.349996 ![gaff] SOURCE3 2380   0.7199   0.9006
+angle c3 c3 hc 46.400000 110.050002 ![gaff] SOURCE3 2092   0.5379   0.6991
+angle c3 c3 c3 63.200000 110.629995 ![gaff] SOURCE3  507   1.7605   2.7845
+! type1 type2 type3 type4 k periodicity phi0
+dihe hc c3 c3 hc 0.150000 3 0.000000 ![gaff] Junmei et al, 1999
+dihe c3 c3 c3 hc 0.160000 3 0.000000 ![gaff] Junmei et al, 1999
+dihe c3 c3 c3 c3 0.200000 1 180.000005 ![gaff] Junmei et al, 1999
+! type eps r_eq eps14 r_eq14 atomic_number weight
+vdw c3 0.109400 1.908000 0.109400 1.908000 6 12.010000 ![gaff] Sp3 C
+vdw hc 0.015700 1.487000 0.015700 1.487000 1 1.008000 ![gaff] H bonded to aliphatic carbon without electrwd. group
+
+!:velocity
+! idx vx vy vz
+0 0.00000000 0.00000000 0.00000000
+1 0.00000000 0.00000000 0.00000000
+2 0.00000000 0.00000000 0.00000000
+3 0.00000000 0.00000000 0.00000000
+4 0.00000000 0.00000000 0.00000000
+5 0.00000000 0.00000000 0.00000000
+6 0.00000000 0.00000000 0.00000000
+7 0.00000000 0.00000000 0.00000000
+8 0.00000000 0.00000000 0.00000000
+9 0.00000000 0.00000000 0.00000000
+10 0.00000000 0.00000000 0.00000000
+11 0.00000000 0.00000000 0.00000000
+
+!:force
+! idx fx fy fz
+0 0.00000000 0.00000000 0.00000000
+1 0.00000000 0.00000000 0.00000000
+2 0.00000000 0.00000000 0.00000000
+3 0.00000000 0.00000000 0.00000000
+4 0.00000000 0.00000000 0.00000000
+5 0.00000000 0.00000000 0.00000000
+6 0.00000000 0.00000000 0.00000000
+7 0.00000000 0.00000000 0.00000000
+8 0.00000000 0.00000000 0.00000000
+9 0.00000000 0.00000000 0.00000000
+10 0.00000000 0.00000000 0.00000000
+11 0.00000000 0.00000000 0.00000000
+
+!:trackball
+! scale; trx try trz; theta_deg x y z
+0.000000
+0.000000 0.000000 0.000000
+103.570824 -0.936221 0.190556 -0.295260
+
+!:view
+show_unit_cell 0
+show_periodic_box 1
+show_expanded_atoms 1
+show_ellipsoids 0
+show_hydrogens 1
+show_dummy_atoms 1
+show_rotation_center 0
+show_graphite_flag 0
+show_graphite 5
+show_periodic_image_flag 0
+show_periodic_image 0 0 0 0 0 0
+

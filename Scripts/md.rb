@@ -1253,9 +1253,12 @@ class Molecule
 	  }
 	
 	  #  Create resp input by respgen
-	  if !call_subprocess("\"#{ante_dir}/respgen\" -i respgen_in.ac -o resp.input1 -f resp1", "respgen (stage 1)") \
-	  || !call_subprocess("\"#{ante_dir}/respgen\" -i respgen_in.ac -o resp.input2 -f resp2", "respgen (stage 2)")
-	    error_message_box("Cannot run respgen.")
+	  status = call_subprocess("\"#{ante_dir}/respgen\" -i respgen_in.ac -o resp.input1 -f resp1", "respgen (stage 1)")
+	  if status == 0
+		status = call_subprocess("\"#{ante_dir}/respgen\" -i respgen_in.ac -o resp.input2 -f resp2", "respgen (stage 2)")
+	  end
+	  if status != 0
+	    error_message_box("Cannot run respgen: status = #{status}")
 	    Dir.chdir(cwd)
 	    return
 	  end
@@ -1277,9 +1280,15 @@ class Molecule
 	}
 
     #  Run resp
-	if !call_subprocess("\"#{ante_dir}/resp\" -O -i resp.input1 -o resp.output1 -e resp.esp -t qout_stage1", "resp (stage 1)") \
-	|| !call_subprocess("\"#{ante_dir}/resp\" -O -i resp.input2 -o resp.output2 -e resp.esp -q qout_stage1 -t qout_stage2", "resp (stage 2)")
-	  error_message_box("Cannot run resp.")
+	status = call_subprocess("\"#{ante_dir}/resp\" -O -i resp.input1 -o resp.output1 -e resp.esp -t qout_stage1", "resp (stage 1)")
+	if status == 0
+	  status = call_subprocess("\"#{ante_dir}/resp\" -O -i resp.input2 -o resp.output2 -e resp.esp -q qout_stage1 -t qout_stage2", "resp (stage 2)")
+	  if status == 255 && File.exist?("punch")
+		status = 0   #  Ignore error at the second stage
+	  end
+	end
+	if status != 0
+	  error_message_box("Cannot run resp: status = #{status}")
 	  Dir.chdir(cwd)
 	  return 
 	end

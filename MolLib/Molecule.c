@@ -2770,7 +2770,7 @@ MoleculeLoadGamessDatFile(Molecule *mol, const char *fname, char *errbuf, int er
 		} else if (strncmp(buf, " $VEC", 5) == 0) {
 			Double *coeffs;
 			/*  Read the vec group  */
-			if (mol->bset == NULL)
+			if (mol->bset == NULL || mol->bset->ncomps == 0)
 				continue;  /*  Just ignore  */
 			if (optimizing)
 				continue;  /*  Ignore VEC group during optimization  */

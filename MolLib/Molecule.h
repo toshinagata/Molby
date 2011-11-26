@@ -317,6 +317,7 @@ int MoleculeLoadPsfFile(Molecule *mp, const char *fname, char *errbuf, int errbu
 int MoleculeLoadTepFile(Molecule *mp, const char *fname, char *errbuf, int errbufsize);
 int MoleculeLoadShelxFile(Molecule *mp, const char *fname, char *errbuf, int errbufsize);
 int MoleculeLoadGaussianFchkFile(Molecule *mp, const char *fname, char *errbuf, int errbufsize);
+int MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsize);
 Molecule *MoleculeNewWithName(const char *name);
 Molecule *MoleculeInitWithAtoms(Molecule *mp, const Atom *atoms, int natoms);
 Molecule *MoleculeInitWithMolecule(Molecule *mp2, const Molecule *mp);

@@ -1274,9 +1274,13 @@ MyDocument::OnInvokeAntechamber(wxCommandEvent &event)
 		asprintf(&p, "\"%s/antechamber\" -i mol.pdb -fi pdb -o mol.ac -fo ac %s", ante_dir, buf);
 
 		status = MyAppCallback_callSubProcess(p, "antechamber");
-		if (status == 0) {
+		if (status != 0) {
+			MyAppCallback_errorMessageBox("Antechamber failed: status = %d.", status);
+		} else {
 			asprintf(&p, "\"%s/parmchk\" -i mol.ac -f ac -o frcmod", ante_dir);
 			status = MyAppCallback_callSubProcess(p, "parmchk");
+			if (status != 0)
+				MyAppCallback_errorMessageBox("Parmchk failed: status = %d.", status);
 		}
 	}
 

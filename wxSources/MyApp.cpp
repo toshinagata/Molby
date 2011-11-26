@@ -160,6 +160,8 @@ MyApp::MyApp(void)
 	parameterFrame = NULL;
 	parameterFilesFrame = NULL;
 	consoleFrame = NULL;
+	m_CountNamedFragments = 0;
+	m_NamedFragments = (char **)(-1);  /*  Will be set to NULL after Ruby interpreter is initialized  */
 }
 
 bool MyApp::OnInit(void)
@@ -296,6 +298,12 @@ bool MyApp::OnInit(void)
 		
 		wxSetWorkingDirectory(cwd);
 		MyAppCallback_showScriptMessage("%% ");
+		
+		/*  Build the predefined fragments menu  */
+		m_NamedFragments = NULL;
+		UpdatePredefinedFragmentMenu(GetMainFrame()->GetMenuBar());
+		UpdatePredefinedFragmentMenu(consoleFrame->GetMenuBar());
+
 	}
 	
 	/*  Open given files as MyDocument  */
@@ -334,7 +342,10 @@ MyApp::CreateMenuBar(int kind, wxMenu **out_file_history_menu, wxMenu **out_edit
 		m_docManager->FileHistoryAddFilesToMenu(*out_file_history_menu);
 		m_docManager->FileHistoryUseMenu(*out_file_history_menu);  //  Should be removed when menu is discarded
 	}
-
+	/*  Build "Open Predefined"  */
+	wxMenu *predefined_menu = new wxMenu;
+	file_menu->Append(myMenuID_PredefinedFragment, _T("Open Predefined"), predefined_menu);
+	
 	file_menu->AppendSeparator();
 	file_menu->Append(wxID_CLOSE, _T("&Close\tCtrl-W"));
 	file_menu->Append(wxID_SAVE, _T("&Save\tCtrl-S"));
@@ -459,6 +470,8 @@ MyApp::CreateMenuBar(int kind, wxMenu **out_file_history_menu, wxMenu **out_edit
 	menu_bar->Append(help_menu, _T("&Help"));
 	
 	UpdateScriptMenu(menu_bar);
+	if (m_NamedFragments != (char **)(-1))
+		UpdatePredefinedFragmentMenu(menu_bar);
 	
 	return menu_bar;
 }
@@ -750,6 +763,106 @@ MyApp::OnScriptMenuSelected(wxCommandEvent& event)
 }
 
 void
+MyApp::UpdatePredefinedFragmentMenu(wxMenuBar *mbar)
+{
+	int i, n;
+	wxMenuItem *fmenuItem = mbar->FindItem(myMenuID_PredefinedFragment);
+	wxMenu *fmenu = (fmenuItem != NULL ? fmenuItem->GetSubMenu() : NULL);
+	if (fmenu == NULL)
+		return;
+	if (m_NamedFragments == (char **)(-1))
+		return;
+	
+	/*  Rebuild sNamedFragments array  */
+	if (m_NamedFragments != NULL) {
+		for (i = 0; i < m_CountNamedFragments; i++) {
+			free(m_NamedFragments[i * 2]);
+			free(m_NamedFragments[i * 2 + 1]);
+		}
+		free(m_NamedFragments);
+	}
+	m_NamedFragments = NULL;
+	m_CountNamedFragments = 0;
+	if (MolActionCreateAndPerform(NULL, SCRIPT_ACTION(";i"), "proc { $named_fragments.length }", &n) != 0 || n <= 0)
+		return;
+	m_CountNamedFragments = n;
+	m_NamedFragments = (char **)calloc(sizeof(char *), n * 2);
+	for (i = 0; i < n; i++) {
+		if (MolActionCreateAndPerform(NULL, SCRIPT_ACTION("i;s"), "proc { |i| $named_fragments[i][0] }", i, &m_NamedFragments[i * 2]) != 0 ||
+			MolActionCreateAndPerform(NULL, SCRIPT_ACTION("i;s"), "proc { |i| $named_fragments[i][1] }", i, &m_NamedFragments[i * 2 + 1]) != 0)
+			break;
+	}
+	if (i < n) {
+		for (i = 0; i < m_CountNamedFragments; i++) {
+			if (m_NamedFragments[i * 2] != NULL)
+				free(m_NamedFragments[i * 2]);
+			if (m_NamedFragments[i * 2 + 1] != NULL)
+				free(m_NamedFragments[i * 2 + 1]);
+		}
+		free(m_NamedFragments);
+		m_CountNamedFragments = 0;
+		m_NamedFragments = NULL;
+		return;
+	}
+	
+	wxMenu *predefined_submenu = NULL;
+	wxString stitle;
+	int sn;
+	for (i = sn = 0; i < m_CountNamedFragments; i++) {
+		if (strcmp(m_NamedFragments[i * 2 + 1], "-") == 0) {
+			if (predefined_submenu != NULL) {
+				fmenu->Append(myMenuID_PredefinedFragment + 1 + sn, stitle, predefined_submenu);
+			}
+			predefined_submenu = new wxMenu;
+			stitle = wxString(m_NamedFragments[i * 2], WX_DEFAULT_CONV);
+			sn = i;
+		} else {
+			wxString mtitle(m_NamedFragments[i * 2], WX_DEFAULT_CONV);
+			(predefined_submenu != NULL ? predefined_submenu : fmenu)->Append(myMenuID_PredefinedFragment + 1 + i, mtitle);
+		}
+	}
+	if (predefined_submenu != NULL)
+		fmenu->Append(myMenuID_PredefinedFragment + 1 + sn, stitle, predefined_submenu);
+	Connect(myMenuID_PredefinedFragment + 1, myMenuID_PredefinedFragment + m_CountNamedFragments, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler(MyApp::OnFragmentMenuSelected), NULL, this);
+}
+
+void
+MyApp::OnFragmentMenuSelected(wxCommandEvent& event)
+{
+	int index = event.GetId() - myMenuID_PredefinedFragment - 1;
+	if (index < 0 || index >= m_CountNamedFragments)
+		return;
+	//  Open a predefined fragment as a new file
+	char errbuf[1024];
+	Molecule *mol = MoleculeNew();
+	char *fullname;
+	asprintf(&fullname, "%s/Scripts/mbsf/%s", (const char *)(FindResourcePath().mb_str(wxConvFile)), m_NamedFragments[index * 2 + 1]);
+	if (MoleculeLoadMbsfFile(mol, fullname, errbuf, sizeof(errbuf)) != 0) {
+		MyAppCallback_errorMessageBox("Cannot open named fragment %s: %s", m_NamedFragments[index * 2], errbuf);
+		free(fullname);
+		return;
+	}
+	free(fullname);
+	MyDocument *doc = (MyDocument *)(DocManager()->CreateDocument(wxT(""), wxDOC_NEW));
+	wxString title(m_NamedFragments[index * 2], WX_DEFAULT_CONV);
+	title = _T("*") + title + _T("*");
+	doc->SetMolecule(mol);
+	if (mol->natoms > 1000)
+		mol->mview->lineMode = 1;
+	MainView_resizeToFit(mol->mview);
+	
+	//  Change the window title
+	doc->SetTitle(title);
+	//  Propagate the change of the window title
+    wxList::compatibility_iterator node = doc->GetViews().GetFirst();
+    while (node) {
+        wxView *view = (wxView *)node->GetData();
+        view->OnChangeFilename();
+        node = node->GetNext();
+    }
+}
+
+void
 MyApp::OnUpdateUI(wxUpdateUIEvent& event)
 {
 	int uid = event.GetId();
@@ -772,6 +885,8 @@ MyApp::OnUpdateUI(wxUpdateUIEvent& event)
 			else if (methodType == 2)  /*  Class method (with molecule as an only argument)  */
 				event.Enable(true);
 		}
+	} else if (uid >= myMenuID_PredefinedFragment && uid <= myMenuID_PredefinedFragment + m_CountNamedFragments) {
+		event.Enable(true);
 	} else {
 		switch (uid) {
 			case myMenuID_ExecuteScript:
@@ -785,7 +900,8 @@ MyApp::OnUpdateUI(wxUpdateUIEvent& event)
 			default:
 				if (mview == NULL)
 					event.Enable(false);
-				else event.Skip();
+				else
+					event.Skip();
 		}
 	}
 }
@@ -960,7 +1076,7 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname)
 	m_processExitCode = 0;
 	long pid = ::wxExecute(cmdstr, flag, proc);
 	if (pid == 0) {
-		MyAppCallback_errorMessageBox("Cannot start %s", procname);
+	//	MyAppCallback_errorMessageBox("Cannot start %s", procname);
 		proc->Detach();
 		HideProgressPanel();
 #if LOG_SUBPROCESS
@@ -980,8 +1096,8 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname)
 		if (m_processTerminated || !wxProcess::Exists(pid)) {
 			if (m_processExitCode != 0) {
 				/*  Error from subprocess  */
-				MyAppCallback_errorMessageBox("%s failed with exit code %d.", procname, m_processExitCode);
-				status = m_processExitCode;
+			//	MyAppCallback_errorMessageBox("%s failed with exit code %d.", procname, m_processExitCode);
+				status = (m_processExitCode & 255);
 			} else status = 0;
 			break;
 		}
@@ -1011,17 +1127,14 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname)
 				::wxKill(pid, wxSIGTERM, &rc, kflag) != 0
 #endif
 				) {
-				const char *emsg;
 				switch (rc) {
-					case wxKILL_BAD_SIGNAL: emsg = "no such signal"; break;
-					case wxKILL_ACCESS_DENIED: emsg = "permission denied"; break;
-					case wxKILL_NO_PROCESS: emsg = "no such process"; break;
-					default: emsg = "unknown error"; break;
+					case wxKILL_BAD_SIGNAL: status = -3; break; /* No such signal */
+					case wxKILL_ACCESS_DENIED: status = -4; break; /*  Permission denied  */
+					case wxKILL_NO_PROCESS: status = -5; break; /*  No such process  */
+					default: status = -6; break;  /*  unknown error  */
 				}
-				MyAppCallback_errorMessageBox("Cannot kill subprocess: %s", emsg);
-			}
+			} else status = -2;  /*  User interrupt  */
 			proc->Detach();
-			status = -2;
 			break;
 		}
 		while (in->CanRead()) {

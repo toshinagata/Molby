@@ -500,6 +500,8 @@ class Molecule
 	register_fragment(formula_name[i], f)
   }
   register_fragment("Me", known_fragment("CH3"))
+  load(MbsfPath + "/fragment_def.rb")
+  if 0
   register_fragment("Ph", fragment_from_dump(%q(
    0 BEN.1   C1   ca   C   -0.653   0.585  -1.068 -0.128 [1,2,10]
    1 BEN.1   _1   ""   Du  -1.158   1.039  -1.898  0.128 [0]
@@ -553,7 +555,8 @@ class Molecule
    9 BEN.1   _3   ""   Du  -1.298  -1.077   1.792  0.128 [8]
   10 BEN.1   C6   ca   C   -1.384  -0.021  -0.060 -0.128 [0,8,11]
   11 BEN.1   H6   ha   H   -2.455  -0.038  -0.110  0.128 [10])))
-
+  end
+  
   #  Returns an arbitrary unit vector that is orthogonal to v
   def orthogonal_vector(v)
     vx = v.cross(Vector3D[1, 0, 0])
