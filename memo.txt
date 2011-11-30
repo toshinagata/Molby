@@ -299,3 +299,38 @@ Ruby command get_coord_from_frame(index, group=nil, cflag=nil) is implemented.
 The MO info table is renamed to MO energy, and the alpha and beta orbitals of same indices are shown in the same row.
 MO import from GAMESS log file was broken
 Fchk import: zero is accepted as the number of alpha/beta electrons
+
+2011.11.30.
+Version 0.6.1
+Release Note
+縮環構造をコピー・ペースト、および「ダブルクリック＋構造入力」で作れるようにした。
+さまざまな環構造（シクロアルカン、芳香族）と溶媒ボックスが「Open Predefined」メニューから開けるようにした。
+CIFインポートを修正。計算で置いた水素原子を含む結合が表示されないことがあった。
+分子動力学の dcd トラジェクトリファイルのインポートを実装。
+AMBER の prmtop を作成する際に、AMBER8 コンパチブルなフォーマット（NAMD 等で使える）を指定可能。
+
+Ring fusion can be performed by copy-paste or "double-click and type-in".
+Various ring structures (cycloalkanes, aromatics) and solvent boxes are accessible from "Open Predefined" menu.
+CIF import is improved, so that bonds including the calculated hydrogen atoms are created by guess.
+Import/export of dcd trajectory files is implemented.
+Creating AMBER input now allows to select between AMBER8 (also for NAMD) and AMBER11 formats.
+
+ChangeLog
+Document on ring fusion capability is written.
+Selection after ring fusion by 'double-click and type-in' now includes all atoms in the newly formed ring.
+Behavior of paste is improved when two dangling bonds are present in the fragment and the target molecule (i.e. ring fusion does work)
+Some typical cyclic structures as well as solvent boxes are now accessible from 'Open Predefined' menu.
+Ruby: Molecule object is now unique to each open molecule, i.e. the same Molecule object is returned when requested for the same molecule.
+Ring fusion (e.g. expanding benzene to naphthalene) is implemented; still experimental, but seems to be working.
+__FILE__ is now set to the script file during execute_script.
+Some cleanup to suppress warnings
+CIF import is improved, so that bonds including the calculated hydrogen atoms are created by guess.
+Ruby: Molecule#find_close_atoms is implemented.
+Enable undo for importing pdb and dcd.
+Import/export of dcd format is implemented.
+Creating AMBER input now allows to select between AMBER8 (also for NAMD) and AMBER11 formats.
+
+2011.11.30.
+  molby_doc.zip の作り方。OS X のコマンドラインで、Documents フォルダに cd したあと、
+$ zip -r molby_doc.zip doc -x \*.DS_Store
+  コマンドライン版の zip はリソースフォークなどを付加しないらしい。.DS_Store は残ってしまうので、それは明示的に除く。
