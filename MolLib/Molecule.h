@@ -41,6 +41,8 @@ extern "C" {
 /*  Anisotropic thermal parameter  */
 typedef struct Aniso {
 	Double  bij[6];    /*  b11, b22, b33, b12, b23, b31 (ORTEP type 0) */
+	char has_bsig;     /*  Has sigma values?  */
+	Double  bsig[6];   /*  sigma values  */
 	Mat33  pmat;      /*  A 3x3 matrix whose three row vectors are the principal axes of the ellipsoid. Note: If the B matrix is not positive definite, the axis length corresponding to the negative eigenvalue is replaced with 0.001.  */
 } Aniso;
 
@@ -77,6 +79,8 @@ typedef struct Atom {
 	Vector r;  /*  position  */
 	Vector v;  /*  velocity  */
 	Vector f;  /*  force  */
+	Vector sigma;   /*  For crystallographic data only; sigma for each crystallographic coordinates  */
+					/*  (Unlike r, these are not converted to the cartesian system)  */
 	Double  occupancy;
 	Double  tempFactor;
 	Aniso  *aniso;
@@ -137,8 +141,10 @@ typedef struct XtalCell {
 	Vector  axes[3];     /*  Cartesian unit vectors along the three axis  */
 	Vector  origin;      /*  Cartesian origin of the periodic box  */
 	char    flags[3];    /*  1 for periodic, 0 for non-periodic  */
+	char    has_sigma;   /*  Has sigma?  */
 	Transform tr;        /*  Crystal coord -> cartesian  */
 	Transform rtr;       /*  Cartesian -> crystal coord  */
+	Double  cellsigma[6];  /*  For crystallographic data; sigma for the cell parameters  */
 } XtalCell;
 
 /*  Periodic box parameter  */
@@ -345,7 +351,7 @@ AtomRef *AtomRefNew(Molecule *mol, int idx);
 void AtomRefRelease(AtomRef *aref);
 
 void MoleculeSetCell(Molecule *mp, Double a, Double b, Double c, Double alpha, Double beta, Double gamma, int convertCoordinates);
-void MoleculeSetAniso(Molecule *mp, int n1, int type, Double x11, Double x22, Double x33, Double x12, Double x23, Double x31);
+void MoleculeSetAniso(Molecule *mp, int n1, int type, Double x11, Double x22, Double x33, Double x12, Double x23, Double x31, const Double *sigmap);
 int MoleculeSetPeriodicBox(Molecule *mp, const Vector *ax, const Vector *ay, const Vector *az, const Vector *ao, const char *periodic);
 
 int MoleculeReadCoordinatesFromFile(Molecule *mp, const char *fname, const char *ftype, char *errbuf, int errbufsize);

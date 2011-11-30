@@ -66,6 +66,7 @@ static VALUE
 	s_WeightSym, s_ElementSym, s_AtomicNumberSym, s_ConnectsSym,
 	s_RSym, s_XSym, s_YSym, s_ZSym,
 	s_FractRSym, s_FractXSym, s_FractYSym, s_FractZSym,
+	s_SigmaSym, s_SigmaXSym, s_SigmaYSym, s_SigmaZSym,
 	s_VSym, s_FSym, s_OccupancySym, s_TempFactorSym,
 	s_AnisoSym, s_SymopSym, s_IntChargeSym, s_FixForceSym,
 	s_FixPosSym, s_ExclusionSym, s_MMExcludeSym, s_PeriodicExcludeSym;
@@ -3353,6 +3354,22 @@ static VALUE s_AtomRef_GetFractionalZ(VALUE self) {
 	return rb_float_new(s_AtomRef_GetFractionalRAsVector(self).z);
 }
 
+static VALUE s_AtomRef_GetSigma(VALUE self) {
+	return ValueFromVector(&(s_AtomFromValue(self)->sigma));
+}
+
+static VALUE s_AtomRef_GetSigmaX(VALUE self) {
+	return rb_float_new(s_AtomFromValue(self)->sigma.x);
+}
+
+static VALUE s_AtomRef_GetSigmaY(VALUE self) {
+	return rb_float_new(s_AtomFromValue(self)->sigma.y);
+}
+
+static VALUE s_AtomRef_GetSigmaZ(VALUE self) {
+	return rb_float_new(s_AtomFromValue(self)->sigma.z);
+}
+
 static VALUE s_AtomRef_GetV(VALUE self) {
 	return ValueFromVector(&(s_AtomFromValue(self)->v));
 }
@@ -3378,6 +3395,11 @@ static VALUE s_AtomRef_GetAniso(VALUE self) {
 	retval = rb_ary_new();
 	for (i = 0; i < 6; i++)
 		rb_ary_push(retval, rb_float_new(ap->aniso->bij[i]));
+	if (ap->aniso->has_bsig) {
+		rb_ary_push(retval, INT2NUM(0));
+		for (i = 0; i < 6; i++)
+			rb_ary_push(retval, rb_float_new(ap->aniso->bsig[i]));
+	}
 	return retval;
 }
 
@@ -3671,6 +3693,52 @@ static VALUE s_AtomRef_SetFractionalZ(VALUE self, VALUE val) {
 	return val;
 }
 
+static VALUE s_AtomRef_SetSigma(VALUE self, VALUE val) {
+	Vector v;
+	Molecule *mp;
+	VALUE oval = s_AtomRef_GetSigma(self);
+	VectorFromValue(val, &v);
+	s_AtomAndMoleculeFromValue(self, &mp)->sigma = v;
+	s_RegisterUndoForAtomAttrChange(self, s_SigmaSym, val, oval);
+	mp->needsMDCopyCoordinates = 1;
+	return val;
+}
+
+static VALUE s_AtomRef_SetSigmaX(VALUE self, VALUE val) {
+	Double f;
+	Molecule *mp;
+	VALUE oval = s_AtomRef_GetSigmaX(self);
+	val = rb_Float(val);
+	f = NUM2DBL(val);
+ 	s_AtomAndMoleculeFromValue(self, &mp)->sigma.x = f;
+	s_RegisterUndoForAtomAttrChange(self, s_SigmaXSym, val, oval);
+	mp->needsMDCopyCoordinates = 1;
+	return val;
+}
+
+static VALUE s_AtomRef_SetSigmaY(VALUE self, VALUE val) {
+	Double f;
+	Molecule *mp;
+	VALUE oval = s_AtomRef_GetSigmaY(self);
+	val = rb_Float(val);
+	f = NUM2DBL(val);
+	s_AtomAndMoleculeFromValue(self, &mp)->sigma.y = f;
+	s_RegisterUndoForAtomAttrChange(self, s_SigmaYSym, val, oval);
+	mp->needsMDCopyCoordinates = 1;
+	return val;
+}
+
+static VALUE s_AtomRef_SetSigmaZ(VALUE self, VALUE val) {
+	Double f;
+	Molecule *mp;
+	VALUE oval = s_AtomRef_GetSigmaZ(self);
+	val = rb_Float(val);
+	f = NUM2DBL(val);
+	s_AtomAndMoleculeFromValue(self, &mp)->sigma.z = f;
+	s_RegisterUndoForAtomAttrChange(self, s_SigmaZSym, val, oval);
+	mp->needsMDCopyCoordinates = 1;
+	return val;
+}
 
 static VALUE s_AtomRef_SetV(VALUE self, VALUE val) {
 	Vector v;
@@ -3718,7 +3786,7 @@ static VALUE s_AtomRef_SetAniso(VALUE self, VALUE val) {
 	AtomRef *aref;
 	int i, n, type;
 	VALUE *valp;
-	Double f[6];
+	Double f[12];
 	VALUE oval = s_AtomRef_GetAniso(self);
 	Data_Get_Struct(self, AtomRef, aref);
 	val = rb_funcall(val, rb_intern("to_a"), 0);
@@ -3732,8 +3800,15 @@ static VALUE s_AtomRef_SetAniso(VALUE self, VALUE val) {
 	if (n >= 7)
 		type = NUM2INT(rb_Integer(valp[6]));
 	else type = 0;
+	if (n >= 13) {
+		for (i = 0; i < 6; i++)
+			f[i + 6] = NUM2DBL(rb_Float(valp[i + 7]));
+	} else {
+		for (i = 0; i < 6; i++)
+			f[i + 6] = 0.0;
+	}
 	i = s_AtomIndexFromValue(self, NULL, NULL);
-	MoleculeSetAniso(aref->mol, i, type, f[0], f[1], f[2], f[3], f[4], f[5]);
+	MoleculeSetAniso(aref->mol, i, type, f[0], f[1], f[2], f[3], f[4], f[5], (n >= 13 ? f + 6 : NULL));
 	s_RegisterUndoForAtomAttrChange(self, s_AnisoSym, val, oval);
 	return val;
 }
@@ -3820,6 +3895,10 @@ static struct s_AtomAttrDef {
 	{"fract_x",      &s_FractXSym,       0, s_AtomRef_GetFractionalX,  s_AtomRef_SetFractionalX},
 	{"fract_y",      &s_FractYSym,       0, s_AtomRef_GetFractionalY,  s_AtomRef_SetFractionalY},
 	{"fract_z",      &s_FractZSym,       0, s_AtomRef_GetFractionalZ,  s_AtomRef_SetFractionalZ},
+	{"sigma",        &s_SigmaSym,        0, s_AtomRef_GetSigma,        s_AtomRef_SetSigma},
+	{"sigma_x",      &s_SigmaXSym,       0, s_AtomRef_GetSigmaX,       s_AtomRef_SetSigmaX},
+	{"sigma_y",      &s_SigmaYSym,       0, s_AtomRef_GetSigmaY,       s_AtomRef_SetSigmaY},
+	{"sigma_z",      &s_SigmaZSym,       0, s_AtomRef_GetSigmaZ,       s_AtomRef_SetSigmaZ},
 	{"v",            &s_VSym,            0, s_AtomRef_GetV,            s_AtomRef_SetV},
 	{"f",            &s_FSym,            0, s_AtomRef_GetF,            s_AtomRef_SetF},
 	{"occupancy",    &s_OccupancySym,    0, s_AtomRef_GetOccupancy,    s_AtomRef_SetOccupancy},
@@ -5315,21 +5394,22 @@ s_Molecule_Cell(VALUE self)
 /*
  *  call-seq:
  *     cell = [a, b, c, alpha, beta, gamma]
- *     set_cell([a, b, c, alpha, beta, gamma], flag = nil)
+ *     set_cell([a, b, c, alpha, beta, gamma], flag = nil, sigma = nil)
  *
  *  Set the unit cell parameters. If the cell value is nil, then clear the current cell. 
     This operation is undoable. If the second argument is given as non-nil, then 
 	the coordinates are transformed so that the cartesian coordinates remain the same.
+    If the third argument is given, then standard deviations of the cell is also set.
  */
 static VALUE
 s_Molecule_SetCell(int argc, VALUE *argv, VALUE self)
 {
     Molecule *mol;
-	VALUE val, fval;
+	VALUE val, fval, sval;
 	int i, flag;
-	double d[6];
+	double d[12];
     Data_Get_Struct(self, Molecule, mol);
-	rb_scan_args(argc, argv, "11", &val, &fval);
+	rb_scan_args(argc, argv, "12", &val, &fval, &sval);
 	flag = RTEST(fval);
 	if (val == Qnil) {
 		MolActionCreateAndPerform(mol, gMolActionSetCell, 0, d, flag);
@@ -5338,7 +5418,11 @@ s_Molecule_SetCell(int argc, VALUE *argv, VALUE self)
 	}
 	for (i = 0; i < 6; i++)
 		d[i] = NUM2DBL(rb_Float(Ruby_ObjectAtIndex(val, i)));
-	MolActionCreateAndPerform(mol, gMolActionSetCell, 6, d, flag);
+	if (sval != Qnil) {
+		for (i = 6; i < 11; i++)
+			d[i] = NUM2DBL(rb_Float(Ruby_ObjectAtIndex(sval, i - 6)));
+	}
+	MolActionCreateAndPerform(mol, gMolActionSetCell, i, d, flag);
 //	MoleculeSetCell(mol, d[0], d[1], d[2], d[3], d[4], d[5]);
 	return val;
 }

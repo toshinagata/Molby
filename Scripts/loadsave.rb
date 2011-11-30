@@ -640,7 +640,24 @@ end_of_header
 	  return @tokens.shift
 	end
 	def float_strip_rms(str)
-	  return Float(str.sub(/\(\d+\)/, ""))
+	  str =~ /^(-?)(\d*)(\.(\d*))?(\((\d+)\))?$/
+	  sgn, i, frac, rms = $1, $2, $4, $6
+	  i = i.to_f
+	  if frac
+		base = 0.1 ** frac.length
+		i = i + frac.to_f * base
+	  else
+	    base = 1.0
+	  end
+	  if rms
+	    rms = rms.to_f * base
+	  else
+	    rms = 0.0
+	  end
+	  if sgn == "-"
+	    i = -i
+	  end
+	  return i, rms
 	end
 	@tokens = []
 	self.remove(All)
@@ -653,19 +670,19 @@ end_of_header
 	  if token =~ /^_cell/
 		val = getciftoken(fp)
 		if token == "_cell_length_a"
-		  cell[0] = float_strip_rms(val)
+		  cell[0], cell[6] = float_strip_rms(val)
 		elsif token == "_cell_length_b"
-		  cell[1] = float_strip_rms(val)
+		  cell[1], cell[7] = float_strip_rms(val)
 		elsif token == "_cell_length_c"
-		  cell[2] = float_strip_rms(val)
+		  cell[2], cell[8] = float_strip_rms(val)
 		elsif token == "_cell_angle_alpha"
-		  cell[3] = float_strip_rms(val)
+		  cell[3], cell[9] = float_strip_rms(val)
 		elsif token == "_cell_angle_beta"
-		  cell[4] = float_strip_rms(val)
+		  cell[4], cell[10] = float_strip_rms(val)
 		elsif token == "_cell_angle_gamma"
-		  cell[5] = float_strip_rms(val)
+		  cell[5], cell[11] = float_strip_rms(val)
 		end
-		if cell.length == 6 && cell.all?
+		if cell.length == 12 && cell.all?
 		  self.cell = cell
 		  puts "Unit cell is set to #{cell.inspect}."
 		  cell = []
@@ -743,15 +760,15 @@ end_of_header
 			  occ = d[hlabel["_atom_site_occupancy"]]
 			  calc = d[hlabel["_atom_site_calc_flag"]]
 			  ap = self.add_atom(name, elem, elem)
-			  ap.fract_x = float_strip_rms(fx)
-			  ap.fract_y = float_strip_rms(fy)
-			  ap.fract_z = float_strip_rms(fz)
+			  ap.fract_x, ap.sigma_x = float_strip_rms(fx)
+			  ap.fract_y, ap.sigma_y = float_strip_rms(fy)
+			  ap.fract_z, ap.sigma_z = float_strip_rms(fz)
 			  if biso
-			    ap.temp_factor = float_strip_rms(biso)
+			    ap.temp_factor, sig = float_strip_rms(biso)
 			  elsif uiso
-			    ap.temp_factor = float_strip_rms(uiso) * 78.9568352087149 #  8*pi*pi
+			    ap.temp_factor, sig = float_strip_rms(uiso) * 78.9568352087149 #  8*pi*pi
 			  end
-			  ap.occupancy = float_strip_rms(occ)
+			  ap.occupancy, sig = float_strip_rms(occ)
 			  if calc == "c" || calc == "calc"
 			    calculated_atoms.push(ap.index)
 		      end
@@ -766,13 +783,14 @@ end_of_header
 			  next if !ap
 			  u11 = d[hlabel["_atom_site_aniso_U_11"]]
 			  if u11
-			    u11 = float_strip_rms(u11)
-			    u22 = float_strip_rms(d[hlabel["_atom_site_aniso_U_22"]])
-			    u33 = float_strip_rms(d[hlabel["_atom_site_aniso_U_33"]])
-			    u12 = float_strip_rms(d[hlabel["_atom_site_aniso_U_12"]])
-			    u13 = float_strip_rms(d[hlabel["_atom_site_aniso_U_13"]])
-			    u23 = float_strip_rms(d[hlabel["_atom_site_aniso_U_23"]])
-			    ap.aniso = [u11, u22, u33, u12, u13, u23, 8]
+			    usig = []
+			    u11, usig[0] = float_strip_rms(u11)
+			    u22, usig[1] = float_strip_rms(d[hlabel["_atom_site_aniso_U_22"]])
+			    u33, usig[2] = float_strip_rms(d[hlabel["_atom_site_aniso_U_33"]])
+			    u12, usig[3] = float_strip_rms(d[hlabel["_atom_site_aniso_U_12"]])
+			    u13, usig[4] = float_strip_rms(d[hlabel["_atom_site_aniso_U_13"]])
+			    u23, usig[5] = float_strip_rms(d[hlabel["_atom_site_aniso_U_23"]])
+			    ap.aniso = [u11, u22, u33, u12, u13, u23, 8] + usig
 				c += 1
 			  end
 			}

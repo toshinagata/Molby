@@ -1211,20 +1211,33 @@ MolActionPerform(Molecule *mol, MolAction *action)
 			mol->syms = NULL;
 		}
 	} else if (strcmp(action->name, gMolActionSetCell) == 0) {
-		double *dp, d[6];
-		if (mol->cell == NULL)
+		double *dp, d[12];
+		int convertCoord, n2;
+		if (mol->cell == NULL) {
 			d[0] = 0.0;
-		else {
+			n1 = 0;
+		} else {
 			for (n1 = 0; n1 < 6; n1++)
 				d[n1] = mol->cell->cell[n1];
+			if (mol->cell->has_sigma) {
+				for (n1 = 6; n1 < 12; n1++)
+					d[n1] = mol->cell->cellsigma[n1 - 6];
+			}
 		}
-		n1 = action->args[1].u.ival;
+		convertCoord = action->args[1].u.ival;
 		dp = action->args[0].u.arval.ptr;
-		if (action->args[0].u.arval.nitems == 0)
-			MoleculeSetCell(mol, 0, 0, 0, 0, 0, 0, n1);
-		else
-			MoleculeSetCell(mol, dp[0], dp[1], dp[2], dp[3], dp[4], dp[5], n1);
-		act2 = MolActionNew(gMolActionSetCell, (d[0] == 0.0 ? 0 : 6), d, n1);
+		n2 = action->args[0].u.arval.nitems;
+		if (n2 == 0)
+			MoleculeSetCell(mol, 0, 0, 0, 0, 0, 0, convertCoord);
+		else {
+			MoleculeSetCell(mol, dp[0], dp[1], dp[2], dp[3], dp[4], dp[5], convertCoord);
+			if (n2 == 12) {
+				mol->cell->has_sigma = 1;
+				for (n2 = 6; n2 < 12; n2++)
+					mol->cell->cellsigma[n2 - 6] = dp[n2];
+			} else mol->cell->has_sigma = 0;
+		}
+		act2 = MolActionNew(gMolActionSetCell, n1, (n1 == 0 ? NULL : d), convertCoord);
 		needsRebuildMDArena = 1;
 	} else if (strcmp(action->name, gMolActionSetBox) == 0) {
 		Vector v[4];

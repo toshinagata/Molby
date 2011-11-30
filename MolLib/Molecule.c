@@ -1717,7 +1717,7 @@ MoleculeLoadTepFile(Molecule *mp, const char *fname, char *errbuf, int errbufsiz
 			atomType = fbuf[6];
 			if ((atomType >= 0 && atomType <= 5) || (atomType >= 8 && atomType <= 10)) { 
 				/*  Anisotropic thermal parameters  */
-				MoleculeSetAniso(mp, atomIndex, atomType, fbuf[0], fbuf[1], fbuf[2], fbuf[3], fbuf[5], fbuf[4]);
+				MoleculeSetAniso(mp, atomIndex, atomType, fbuf[0], fbuf[1], fbuf[2], fbuf[3], fbuf[5], fbuf[4], NULL);
 			}
 			if (ibuf[0] != 0)
 				section = 3;
@@ -1751,6 +1751,7 @@ MoleculeLoadShelxFile(Molecule *mp, const char *fname, char *errbuf, int errbufs
 	Transform tr;
 	int ibuf[12];
 	float fbuf[12];
+	Double dbuf[12];
 	Int nsfacs = 0;
 	Int nbonds, *bonds;
 	char (*sfacs)[4] = NULL;
@@ -1859,10 +1860,25 @@ MoleculeLoadShelxFile(Molecule *mp, const char *fname, char *errbuf, int errbufs
 					ElementToString(ap->atomicNumber, ap->element); */
 				}
 				guessElement(ap);
+				if (n == 10 || fbuf[4] >= 0.0) {
+					int i, c, j;
+					/*  Read in the standard deviations  */
+					ReadLine(buf, sizeof buf, fp, &lineNumber);
+					for (i = 0; i < 9; i++) {
+						j = 3 + i * 8;
+						c = buf[j + 8];
+						buf[j + 8] = 0;
+						dbuf[i] = strtod(buf + j, NULL);
+						buf[j + 8] = c;
+					}
+					ap->sigma.x = dbuf[0];
+					ap->sigma.y = dbuf[1];
+					ap->sigma.z = dbuf[2];
+				}
 				if (n == 5)
 					ap->tempFactor = fbuf[4] * 78.9568352087147; /* 8*pi*pi */
 				else
-					MoleculeSetAniso(mp, atomIndex, 8, fbuf[4], fbuf[5], fbuf[6], fbuf[9], fbuf[7], fbuf[8]);
+					MoleculeSetAniso(mp, atomIndex, 8, fbuf[4], fbuf[5], fbuf[6], fbuf[9], fbuf[7], fbuf[8], dbuf);
 				ap->resSeq = currentResSeq;
 				strncpy(ap->resName, currentResName, 4);
 			}
@@ -8377,7 +8393,7 @@ MoleculeSetCell(Molecule *mp, Double a, Double b, Double c, Double alpha, Double
 	} else {
 		cp = mp->cell;
 		if (cp == NULL) {
-			cp = (XtalCell *)malloc(sizeof(XtalCell));
+			cp = (XtalCell *)calloc(sizeof(XtalCell), 1);
 			if (cp == NULL)
 				Panic("Low memory during setting cell parameters");
 			mp->cell = cp;
@@ -8444,7 +8460,7 @@ MoleculeSetCell(Molecule *mp, Double a, Double b, Double c, Double alpha, Double
 	for (i = 0, ap = mp->atoms; i < mp->natoms; i++, ap = ATOM_NEXT(ap)) {
 		Aniso *anp = ap->aniso;
 		if (anp != NULL) {
-			MoleculeSetAniso(mp, i, 0, anp->bij[0], anp->bij[1], anp->bij[2], anp->bij[3], anp->bij[4], anp->bij[5]);
+			MoleculeSetAniso(mp, i, 0, anp->bij[0], anp->bij[1], anp->bij[2], anp->bij[3], anp->bij[4], anp->bij[5], anp->bsig);
 		}
 	}
 	__MoleculeUnlock(mp);
@@ -8452,7 +8468,7 @@ MoleculeSetCell(Molecule *mp, Double a, Double b, Double c, Double alpha, Double
 }
 
 void
-MoleculeSetAniso(Molecule *mp, int n1, int type, Double x11, Double x22, Double x33, Double x12, Double x23, Double x31)
+MoleculeSetAniso(Molecule *mp, int n1, int type, Double x11, Double x22, Double x33, Double x12, Double x23, Double x31, const Double *sigmaptr)
 {
 	Double d, dx;
 	int u = 0;
@@ -8468,7 +8484,7 @@ MoleculeSetAniso(Molecule *mp, int n1, int type, Double x11, Double x22, Double 
 	anp = mp->atoms[n1].aniso;
 	__MoleculeLock(mp);
 	if (anp == NULL) {
-		anp = (Aniso *)malloc(sizeof(Aniso));
+		anp = (Aniso *)calloc(sizeof(Aniso), 1);
 		if (anp == NULL) {
 			__MoleculeUnlock(mp);
 			Panic("Low memory during setting anisotropic atom parameters");
@@ -8492,6 +8508,18 @@ MoleculeSetAniso(Molecule *mp, int n1, int type, Double x11, Double x22, Double 
 	anp->bij[3] = x12 * dx;
 	anp->bij[4] = x23 * dx;
 	anp->bij[5] = x31 * dx;
+	if (sigmaptr != NULL) {
+		anp->has_bsig = 1;
+		anp->bsig[0] = sigmaptr[0] * d;
+		anp->bsig[1] = sigmaptr[1] * d;
+		anp->bsig[2] = sigmaptr[2] * d;
+		anp->bsig[3] = sigmaptr[3] * dx;
+		anp->bsig[4] = sigmaptr[4] * dx;
+		anp->bsig[5] = sigmaptr[5] * dx;
+	} else {
+		anp->has_bsig = 0;
+		anp->bsig[0] = anp->bsig[1] = anp->bsig[2] = anp->bsig[3] = anp->bsig[4] = anp->bsig[5] = 0.0;
+	}
 	cp = mp->cell;
 	if (cp != NULL && u == 1) {
 		anp->bij[0] *= cp->rcell[0] * cp->rcell[0];
@@ -8500,6 +8528,14 @@ MoleculeSetAniso(Molecule *mp, int n1, int type, Double x11, Double x22, Double 
 		anp->bij[3] *= cp->rcell[0] * cp->rcell[1]; /* * cos(cp->rcell[5] * kDeg2Rad); */
 		anp->bij[4] *= cp->rcell[1] * cp->rcell[2]; /* * cos(cp->rcell[3] * kDeg2Rad); */
 		anp->bij[5] *= cp->rcell[2] * cp->rcell[0]; /* * cos(cp->rcell[4] * kDeg2Rad); */
+		if (sigmaptr != NULL) {
+			anp->bsig[0] *= cp->rcell[0] * cp->rcell[0];
+			anp->bsig[1] *= cp->rcell[1] * cp->rcell[1];
+			anp->bsig[2] *= cp->rcell[2] * cp->rcell[2];
+			anp->bsig[3] *= cp->rcell[0] * cp->rcell[1];
+			anp->bsig[4] *= cp->rcell[1] * cp->rcell[2];
+			anp->bsig[5] *= cp->rcell[2] * cp->rcell[0];
+		}
 	}
 	
 	/*  Calculate the principal axes (in Cartesian coordinates)  */
@@ -8550,6 +8586,7 @@ MoleculeSetPeriodicBox(Molecule *mp, const Vector *ax, const Vector *ay, const V
 	/*	mp->is_xtal_coord = 0; */
 		return 0;
 	}
+	memset(&b, 0, sizeof(b));
 	b.axes[0] = (ax != NULL ? *ax : zeroVec);
 	b.axes[1] = (ay != NULL ? *ay : zeroVec);
 	b.axes[2] = (az != NULL ? *az : zeroVec);
@@ -8560,7 +8597,7 @@ MoleculeSetPeriodicBox(Molecule *mp, const Vector *ax, const Vector *ay, const V
 	__MoleculeLock(mp);
 	if (mp->cell != NULL)
 		free(mp->cell);
-	mp->cell = (XtalCell *)malloc(sizeof(XtalCell));
+	mp->cell = (XtalCell *)calloc(sizeof(XtalCell), 1);
 	if (mp->cell != NULL) {
 		memmove(mp->cell, &b, sizeof(XtalCell));
 		n = 0;
