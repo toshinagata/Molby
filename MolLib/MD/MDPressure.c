@@ -147,7 +147,7 @@ pressure_control(MDArena *arena)
 		memmove(tf0, tf, sizeof(tf));
 		w0 = (md_rand() - 0.5) * pressure->trial_width;
 		for (i = 0; i < 3; i++) {
-			static char idx[] = {4, 8, 5, 7, 0, 8, 2, 6, 0, 4, 1, 3};
+			static char idx[] = {4, 8, 7, 5, 0, 8, 6, 2, 0, 4, 3, 1};
 			flex = pressure->cell_flexibility[i + 3];
 			if (flex > 0) {
 				w = w0 = (md_rand() + md_rand() - 1.0) * pressure->trial_width * 0.5;
@@ -172,7 +172,7 @@ pressure_control(MDArena *arena)
 				w = w0;
 			} else w = 0;
 			for (j = 0; j < 3; j++) {
-				tf[j * 3 + i] *= 1 + w * fabs(flex);
+				tf[i * 3 + j] *= 1 + w * fabs(flex);
 			}
 		}
 		

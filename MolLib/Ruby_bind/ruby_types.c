@@ -521,8 +521,6 @@ s_Vector3D_Inspect(VALUE self)
 
 #pragma mark ====== Transform Class ======
 
-static int s_index_order[16] = {0, 3, 6, 1, 4, 7, 2, 5, 8, 9, 10, 11};
-
 void
 TransformFromValue(VALUE val, Transform *tp)
 {
@@ -539,7 +537,7 @@ TransformFromValue(VALUE val, Transform *tp)
 		VALUE *valp = RARRAY_PTR(val);
 		if (len == 12) {
 			for (i = 0; i < 12; i++)
-				(*tp)[s_index_order[i]] = NUM2DBL(rb_Float(valp[i]));
+				(*tp)[i] = NUM2DBL(rb_Float(valp[i]));
 			return;
 		} else if (len == 4) {
 			VALUE val2, *valp2;
@@ -551,7 +549,7 @@ TransformFromValue(VALUE val, Transform *tp)
 					goto array_format_error;
 				valp2 = RARRAY_PTR(val2);
 				for (j = 0; j < 3; j++)
-					(*tp)[s_index_order[3 * i + j]] = NUM2DBL(rb_Float(valp2[j]));
+					(*tp)[3 * i + j] = NUM2DBL(rb_Float(valp2[j]));
 			}
 			return;
 		}
@@ -568,12 +566,12 @@ TransformFromValue(VALUE val, Transform *tp)
 			/*  Matrix-type object  */
 			for (i = 0; i < 4; i++) {
 				for (j = 0; j < 3; j++)
-					(*tp)[s_index_order[i * 3 + j]] = NUM2DBL(rb_Float(rb_funcall(val, index_mid, 2, INT2FIX(i), INT2FIX(j))));
+					(*tp)[i * 3 + j] = NUM2DBL(rb_Float(rb_funcall(val, index_mid, 2, INT2FIX(i), INT2FIX(j))));
 			}
 		} else {
 			/*  Other "array-like" object  */
 			for (i = 0; i < 12; i++)
-				(*tp)[s_index_order[i]] = NUM2DBL(rb_Float(rb_funcall(val, index_mid, 1, INT2FIX(i))));
+				(*tp)[i] = NUM2DBL(rb_Float(rb_funcall(val, index_mid, 1, INT2FIX(i))));
 		}
 	}
 }
@@ -677,7 +675,7 @@ s_Transform_NewFromColumns(VALUE klass, VALUE val)
 				w[j] = NUM2DBL(rb_Float(valpp[j]));
 		}
 		for (j = 0; j < 3; j++)
-			tr[s_index_order[i * 3 + j]] = w[j];
+			tr[i * 3 + j] = w[j];
 	}
 	return s_Transform_NewFromTransform(&tr);
 }
@@ -718,7 +716,7 @@ s_Transform_NewFromRows(VALUE klass, VALUE val)
 				w[j] = NUM2DBL(rb_Float(valpp[j]));
 		}
 		for (j = 0; j < 4; j++)
-			tr[s_index_order[j * 3 + i]] = w[j];
+			tr[j * 3 + i] = w[j];
 	}
 	return s_Transform_NewFromTransform(&tr);
 }
@@ -741,7 +739,7 @@ s_Transform_ElementAtIndex(VALUE self, VALUE val1, VALUE val2)
 	Data_Get_Struct(self, Transform, tp);
 	if (n1 < 0 || n1 >= 4 || n2 < 0 || n2 >= 3)
 		rb_raise(rb_eMolbyError, "index to Transform out of range");
-	w = (*tp)[s_index_order[n1 * 3 + n2]];
+	w = (*tp)[n1 * 3 + n2];
 	return rb_float_new(w);
 }
 
@@ -764,7 +762,7 @@ s_Transform_SetElementAtIndex(VALUE self, VALUE idx1, VALUE idx2, VALUE val)
 	if (n1 < 0 || n1 >= 4 || n2 < 0 || n2 >= 3)
 		rb_raise(rb_eMolbyError, "index to Transform out of range");
 	w = NUM2DBL(rb_Float(val));
-	(*tp)[s_index_order[n1 * 3 + n2]] = w;
+	(*tp)[n1 * 3 + n2] = w;
 	return rb_float_new(w);
 }
 
@@ -1029,9 +1027,9 @@ s_Transform_Column(VALUE self, VALUE val)
 	Data_Get_Struct(self, Transform, tp1);
 	if (n < 0 || n >= 4)
 		rb_raise(rb_eMolbyError, "row index out of range");
-	v.x = (*tp1)[n];
-	v.y = (*tp1)[n + 3];
-	v.z = (*tp1)[n + 6];
+	v.x = (*tp1)[n * 3];
+	v.y = (*tp1)[n * 3 + 1];
+	v.z = (*tp1)[n * 3 + 2];
 	return ValueFromVector(&v);
 }
 
@@ -1082,7 +1080,7 @@ s_Transform_ToArray(VALUE self)
 	int i;
 	Data_Get_Struct(self, Transform, tp1);
 	for (i = 0; i < 12; i++)
-		val[i] = rb_float_new((*tp1)[s_index_order[i]]);
+		val[i] = rb_float_new((*tp1)[i]);
 	return rb_ary_new4(12, val);
 }
 
@@ -1109,7 +1107,7 @@ s_Transform_Inspect(VALUE self)
 		rb_str_cat(val, "[", 1);
 		for (j = 0; j < 3; j++) {
 			double f;
-			f = (*tp)[s_index_order[i * 3 + j]];
+			f = (*tp)[i * 3 + j];
 			rb_funcall(val, mid, 1, rb_funcall(rb_float_new(f), mid2, 0));
 			if (j < 2)
 				rb_str_cat(val, ",", 1);

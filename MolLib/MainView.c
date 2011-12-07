@@ -1184,12 +1184,12 @@ drawAtom(MainView *mview, int i1, int selected, const Vector *dragOffset, const 
 				MatrixMul(pmat2, mview->mol->cell->rtr, ap->aniso->pmat);
 				MatrixMul(pmat2, *((Mat33 *)trp), pmat2);
 				MatrixMul(pmat2, mview->mol->cell->tr, pmat2);
-				MatrixTranspose(pmat2, pmat2);
+				for (i = 0; i < 9; i++)
+					elip[i] = pmat2[i] * mview->probabilityScale;
 			} else {
-				MatrixTranspose(pmat2, ap->aniso->pmat);
+				for (i = 0; i < 9; i++)
+					elip[i] = ap->aniso->pmat[i] * mview->probabilityScale;
 			}
-			for (i = 0; i < 9; i++)
-				elip[i] = pmat2[i] * mview->probabilityScale;
 		/*	for (i = 0; i < 3; i++) {
 				Double w = ap->aniso->val[i];
 				Vector vv = ap->aniso->axis[i];
@@ -1845,14 +1845,14 @@ MainView_drawModel(MainView *mview)
     glGetDoublev(GL_MODELVIEW_MATRIX, mview->modelview_matrix);
     glGetDoublev(GL_PROJECTION_MATRIX, mview->projection_matrix);
 	pp = mview->modelview_matrix;
-	mtr[0] = pp[0]; mtr[1] = pp[4]; mtr[2] = pp[8];
-	mtr[3] = pp[1]; mtr[4] = pp[5]; mtr[5] = pp[9];
-	mtr[6] = pp[2]; mtr[7] = pp[6]; mtr[8] = pp[10];
+	mtr[0] = pp[0]; mtr[1] = pp[1]; mtr[2] = pp[2];
+	mtr[3] = pp[4]; mtr[4] = pp[5]; mtr[5] = pp[6];
+	mtr[6] = pp[8]; mtr[7] = pp[9]; mtr[8] = pp[10];
 	mtr[9] = pp[12]; mtr[10] = pp[13]; mtr[11] = pp[14];
 	TransformInvert(mtr, mtr);
 	mview->camera.x = mtr[9]; mview->camera.y = mtr[10]; mview->camera.z = mtr[11];
-	mview->lookto.x = mtr[2]; mview->lookto.y = mtr[5]; mview->lookto.z = mtr[8];
-	mview->up.x = mtr[1]; mview->up.y = mtr[4]; mview->up.z = mtr[7];
+	mview->lookto.x = mtr[6]; mview->lookto.y = mtr[7]; mview->lookto.z = mtr[8];
+	mview->up.x = mtr[3]; mview->up.y = mtr[4]; mview->up.z = mtr[5];
 
 	/*  Draw labels  */
 	glDisable(GL_LIGHTING);

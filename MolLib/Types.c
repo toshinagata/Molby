@@ -90,13 +90,13 @@ MatrixRotation(Mat33 dst, const Vector *axis, Double angle)
 	double rcos = cos((double)angle);
 	double rsin = sin((double)angle);
 	dst[0] =            rcos + axis->x*axis->x*(1-rcos);
-	dst[1] =  axis->z * rsin + axis->y*axis->x*(1-rcos);
-	dst[2] = -axis->y * rsin + axis->z*axis->x*(1-rcos);
-	dst[3] = -axis->z * rsin + axis->x*axis->y*(1-rcos);
+	dst[1] = -axis->z * rsin + axis->x*axis->y*(1-rcos);
+	dst[2] =  axis->y * rsin + axis->x*axis->z*(1-rcos);
+	dst[3] =  axis->z * rsin + axis->y*axis->x*(1-rcos);
 	dst[4] =            rcos + axis->y*axis->y*(1-rcos);
-	dst[5] =  axis->x * rsin + axis->z*axis->y*(1-rcos);
-	dst[6] =  axis->y * rsin + axis->x*axis->z*(1-rcos);
-	dst[7] = -axis->x * rsin + axis->y*axis->z*(1-rcos);
+	dst[5] = -axis->x * rsin + axis->y*axis->z*(1-rcos);
+	dst[6] = -axis->y * rsin + axis->z*axis->x*(1-rcos);
+	dst[7] =  axis->x * rsin + axis->z*axis->y*(1-rcos);
 	dst[8] =            rcos + axis->z*axis->z*(1-rcos);
 }
 
@@ -104,9 +104,9 @@ void
 MatrixVec(Vector *dst, const Mat33 mat, const Vector *src)
 {
 	Vector temp;
-	temp.x = mat[0] * src->x + mat[1] * src->y + mat[2] * src->z;
-	temp.y = mat[3] * src->x + mat[4] * src->y + mat[5] * src->z;
-	temp.z = mat[6] * src->x + mat[7] * src->y + mat[8] * src->z;
+	temp.x = mat[0] * src->x + mat[3] * src->y + mat[6] * src->z;
+	temp.y = mat[1] * src->x + mat[4] * src->y + mat[7] * src->z;
+	temp.z = mat[2] * src->x + mat[5] * src->y + mat[8] * src->z;
 	*dst = temp;
 }
 
@@ -114,15 +114,15 @@ void
 MatrixMul(Mat33 dst, const Mat33 src1, const Mat33 src2)
 {
 	Mat33 temp;
-	temp[0] = src1[0] * src2[0] + src1[1] * src2[3] + src1[2] * src2[6];
-	temp[1] = src1[0] * src2[1] + src1[1] * src2[4] + src1[2] * src2[7];
-	temp[2] = src1[0] * src2[2] + src1[1] * src2[5] + src1[2] * src2[8];
-	temp[3] = src1[3] * src2[0] + src1[4] * src2[3] + src1[5] * src2[6];
-	temp[4] = src1[3] * src2[1] + src1[4] * src2[4] + src1[5] * src2[7];
-	temp[5] = src1[3] * src2[2] + src1[4] * src2[5] + src1[5] * src2[8];
-	temp[6] = src1[6] * src2[0] + src1[7] * src2[3] + src1[8] * src2[6];
-	temp[7] = src1[6] * src2[1] + src1[7] * src2[4] + src1[8] * src2[7];
-	temp[8] = src1[6] * src2[2] + src1[7] * src2[5] + src1[8] * src2[8];
+	temp[0] = src1[0] * src2[0] + src1[3] * src2[1] + src1[6] * src2[2];
+	temp[1] = src1[1] * src2[0] + src1[4] * src2[1] + src1[7] * src2[2];
+	temp[2] = src1[2] * src2[0] + src1[5] * src2[1] + src1[8] * src2[2];
+	temp[3] = src1[0] * src2[3] + src1[3] * src2[4] + src1[6] * src2[5];
+	temp[4] = src1[1] * src2[3] + src1[4] * src2[4] + src1[7] * src2[5];
+	temp[5] = src1[2] * src2[3] + src1[5] * src2[4] + src1[8] * src2[5];
+	temp[6] = src1[0] * src2[6] + src1[3] * src2[7] + src1[6] * src2[8];
+	temp[7] = src1[1] * src2[6] + src1[4] * src2[7] + src1[7] * src2[8];
+	temp[8] = src1[2] * src2[6] + src1[5] * src2[7] + src1[8] * src2[8];
 	memmove(dst, temp, sizeof(Mat33));
 }
 
@@ -184,9 +184,9 @@ MatrixScale(Mat33 dst, const Mat33 src, Double factor)
 void
 MatrixGeneralRotation(Mat33 dst, const Vector *v1, const Vector *v2, const Vector *v3)
 {
-	dst[0] = v1->x; dst[1] = v2->x; dst[2] = v3->x;
-	dst[3] = v1->y; dst[4] = v2->y; dst[5] = v3->y;
-	dst[6] = v1->z; dst[7] = v2->z; dst[8] = v3->z;
+	dst[0] = v1->x; dst[3] = v2->x; dst[6] = v3->x;
+	dst[1] = v1->y; dst[4] = v2->y; dst[7] = v3->y;
+	dst[2] = v1->z; dst[5] = v2->z; dst[8] = v3->z;
 }
 
 
@@ -202,18 +202,18 @@ int
 MatrixSymDiagonalize(Mat33 mat, Double *out_values, Vector *out_vectors)
 {
 	__CLPK_integer n, lda, lwork, info;
-	__CLPK_real a[9], w[3], work[9];
+	__CLPK_doublereal a[9], w[3], work[9];
 	int i, j;
 	for (i = 0; i < 3; i++) {
 		for (j = 0; j < 3; j++) {
-			a[j * 3 + i] = mat[i * 3 + j];
+			a[i * 3 + j] = mat[i * 3 + j];
 		}
 	}
 	n = lda = 3;
 	lwork = 9;
 	/*  For the meanings of the arguments, consult the LAPACK source; 
-		http://www.netlib.org/lapack/single/ssyev.f */
-	ssyev_("V", "U", &n, a, &lda, w, work, &lwork, &info);
+		http://www.netlib.org/lapack/double/dsyev.f */
+	dsyev_("V", "U", &n, a, &lda, w, work, &lwork, &info);
 	if (info == 0) {
 		for (i = 0; i < 3; i++) {
 			out_values[i] = w[i];
@@ -229,9 +229,9 @@ void
 TransformVec(Vector *dst, const Transform tf, const Vector *src)
 {
 	Vector temp;
-	temp.x = tf[0] * src->x + tf[1] * src->y + tf[2] * src->z + tf[9];
-	temp.y = tf[3] * src->x + tf[4] * src->y + tf[5] * src->z + tf[10];
-	temp.z = tf[6] * src->x + tf[7] * src->y + tf[8] * src->z + tf[11];
+	temp.x = tf[0] * src->x + tf[3] * src->y + tf[6] * src->z + tf[9];
+	temp.y = tf[1] * src->x + tf[4] * src->y + tf[7] * src->z + tf[10];
+	temp.z = tf[2] * src->x + tf[5] * src->y + tf[8] * src->z + tf[11];
 	*dst = temp;
 }
 
@@ -239,18 +239,18 @@ void
 TransformMul(Transform dst, const Transform src1, const Transform src2)
 {
 	Transform temp;
-	temp[0] = src1[0] * src2[0] + src1[1] * src2[3] + src1[2] * src2[6];
-	temp[1] = src1[0] * src2[1] + src1[1] * src2[4] + src1[2] * src2[7];
-	temp[2] = src1[0] * src2[2] + src1[1] * src2[5] + src1[2] * src2[8];
-	temp[3] = src1[3] * src2[0] + src1[4] * src2[3] + src1[5] * src2[6];
-	temp[4] = src1[3] * src2[1] + src1[4] * src2[4] + src1[5] * src2[7];
-	temp[5] = src1[3] * src2[2] + src1[4] * src2[5] + src1[5] * src2[8];
-	temp[6] = src1[6] * src2[0] + src1[7] * src2[3] + src1[8] * src2[6];
-	temp[7] = src1[6] * src2[1] + src1[7] * src2[4] + src1[8] * src2[7];
-	temp[8] = src1[6] * src2[2] + src1[7] * src2[5] + src1[8] * src2[8];
-	temp[9] = src1[0] * src2[9] + src1[1] * src2[10] + src1[2] * src2[11] + src1[9];
-	temp[10] = src1[3] * src2[9] + src1[4] * src2[10] + src1[5] * src2[11] + src1[10];
-	temp[11] = src1[6] * src2[9] + src1[7] * src2[10] + src1[8] * src2[11] + src1[11];
+	temp[0] = src1[0] * src2[0] + src1[3] * src2[1] + src1[6] * src2[2];
+	temp[1] = src1[1] * src2[0] + src1[4] * src2[1] + src1[7] * src2[2];
+	temp[2] = src1[2] * src2[0] + src1[5] * src2[1] + src1[8] * src2[2];
+	temp[3] = src1[0] * src2[3] + src1[3] * src2[4] + src1[6] * src2[5];
+	temp[4] = src1[1] * src2[3] + src1[4] * src2[4] + src1[7] * src2[5];
+	temp[5] = src1[2] * src2[3] + src1[5] * src2[4] + src1[8] * src2[5];
+	temp[6] = src1[0] * src2[6] + src1[3] * src2[7] + src1[6] * src2[8];
+	temp[7] = src1[1] * src2[6] + src1[4] * src2[7] + src1[7] * src2[8];
+	temp[8] = src1[2] * src2[6] + src1[5] * src2[7] + src1[8] * src2[8];
+	temp[9] = src1[0] * src2[9] + src1[3] * src2[10] + src1[6] * src2[11] + src1[9];
+	temp[10] = src1[1] * src2[9] + src1[4] * src2[10] + src1[7] * src2[11] + src1[10];
+	temp[11] = src1[2] * src2[9] + src1[5] * src2[10] + src1[8] * src2[11] + src1[11];
 	memmove(dst, temp, sizeof(Transform));
 }
 
@@ -281,9 +281,9 @@ TransformInvert(Transform dst, const Transform src)
 	Transform temp;
 	int n = MatrixInvert(temp, src);
 	if (n == 0) {
-		temp[9] = -temp[0] * src[9] - temp[1] * src[10] - temp[2] * src[11];
-		temp[10] = -temp[3] * src[9] - temp[4] * src[10] - temp[5] * src[11];
-		temp[11] = -temp[6] * src[9] - temp[7] * src[10] - temp[8] * src[11];
+		temp[9] = -temp[0] * src[9] - temp[3] * src[10] - temp[6] * src[11];
+		temp[10] = -temp[1] * src[9] - temp[4] * src[10] - temp[7] * src[11];
+		temp[11] = -temp[2] * src[9] - temp[5] * src[10] - temp[8] * src[11];
 		memmove(dst, temp, sizeof(Transform));
 		return 0;
 	} else return n;
@@ -432,6 +432,7 @@ DeleteArray(void *base, Int *count, int item_size, int idx, int nitems, void *ou
 		free(*bp);
 		*bp = NULL;
 	}
+	return NULL;
 }
 
 int

@@ -64,13 +64,13 @@ typedef unsigned int UInt;
 
 typedef struct Vector { Double x, y, z; } Vector;
 typedef struct Quat { Double x, y, z, w; } Quat;   /*  A quaternion  */
-typedef Double Mat33[9];
+typedef Double Mat33[9];  /*  Columns first!  */
 
-/*  Mat33 (rot) and Vector (translation)  */
-/*  Transform[0..8] are row-first, and Transform[9..11] are the fourth column. So that, the
+/*  Mat33 (rot) and Vector (translation) */
+/*  Transform[0..8] are the same as Mat33, and Transform[9..11] are the fourth column. So that, the
     matrix elements are in the following order;
-    {a11, a12, a13, a21, a22, a23, a31, a32, a33, a14, a24, a34}
-   Sorry for confusion!  */
+    {a11, a21, a31, a12, a22, a32, a13, a23, a33, a14, a24, a34}  */
+/*  (Changed from row-first Mat33 on 2011.12.7.)  */
 typedef Double Transform[12];
 typedef Double *TransformPtr;
 /*typedef Double Matrix[4][4]; */

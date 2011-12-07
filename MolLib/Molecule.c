@@ -868,9 +868,15 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 					snprintf(errbuf, errbufsize, "line %d: bad symmetry_operation format", lineNumber);
 					goto exit;
 				}
-				tr[i * 3] = dbuf[0];
-				tr[i * 3 + 1] = dbuf[1];
-				tr[i * 3 + 2] = dbuf[2];
+				if (i < 3) {
+					tr[i] = dbuf[0];
+					tr[i + 3] = dbuf[1];
+					tr[i + 6] = dbuf[2];
+				} else {
+					tr[9] = dbuf[0];
+					tr[10] = dbuf[1];
+					tr[11] = dbuf[2];
+				}
 				i++;
 				if (i == 4) {
 					AssignArray(&mp->syms, &mp->nsyms, sizeof(Transform), mp->nsyms, tr);
@@ -886,7 +892,7 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 					continue;
 				if (buf[0] == '\n')
 					break;
-				/* a11 a12 a13; a21 a22 a23; a31 a32 a33; t1 t2 t3 */
+				/* ax ay az; bx by bz; cx cy cz; ox oy oz; fx fy fz */
 				if (sscanf(buf, "%lf %lf %lf", &dbuf[0], &dbuf[1], &dbuf[2]) < 3) {
 					snprintf(errbuf, errbufsize, "line %d: bad symmetry_operation format", lineNumber);
 					goto exit;
@@ -1570,13 +1576,13 @@ sMoleculeSymopStringsToTransform(char **symops, Transform tr)
 				}
 				tr[9 + i] = d * sn;
 			} else if (*symop == 'x' || *symop == 'X') {
-				tr[i * 3] = sn;
+				tr[i] = sn;
 				symop++;
 			} else if (*symop == 'y' || *symop == 'Y') {
-				tr[i * 3 + 1] = sn;
+				tr[i + 3] = sn;
 				symop++;
 			} else if (*symop == 'z' || *symop == 'Z') {
-				tr[i * 3 + 2] = sn;
+				tr[i + 6] = sn;
 				symop++;
 			} else return 1;  /*  Bad format  */
 		} /* end while (*symop != 0) */
@@ -1661,13 +1667,13 @@ MoleculeLoadTepFile(Molecule *mp, const char *fname, char *errbuf, int errbufsiz
 			if (cellType == 0) {
 				ReadFormat(buf, "I1F14F3F3F3F15F3F3F3F15F3F3F3", ibuf, fbuf, fbuf+1, fbuf+2, fbuf+3, fbuf+4, fbuf+5, fbuf+6, fbuf+7, fbuf+8, fbuf+9, fbuf+10, fbuf+11);
 				tr[0] = fbuf[1];
-				tr[1] = fbuf[2];
-				tr[2] = fbuf[3];
-				tr[3] = fbuf[5];
+				tr[3] = fbuf[2];
+				tr[6] = fbuf[3];
+				tr[1] = fbuf[5];
 				tr[4] = fbuf[6];
-				tr[5] = fbuf[7];
-				tr[6] = fbuf[9];
-				tr[7] = fbuf[10];
+				tr[7] = fbuf[7];
+				tr[2] = fbuf[9];
+				tr[5] = fbuf[10];
 				tr[8] = fbuf[11];
 				tr[9] = fbuf[0];
 				tr[10] = fbuf[4];
@@ -1893,8 +1899,8 @@ MoleculeLoadShelxFile(Molecule *mp, const char *fname, char *errbuf, int errbufs
 		static Transform tr_c = {1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0.5, 0};
 		static Transform tr_a = {1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0.5};
 		static Transform tr_b = {1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0, 0.5};
-		static Transform tr_r1 = {0, -1, 0, 1, -1, 0, 0, 0, 1, 0, 0, 0};
-		static Transform tr_r2 = {-1, 1, 0, -1, 0, 0, 0, 0, 1, 0, 0, 0};
+		static Transform tr_r1 = {0, 1, 0, -1, -1, 0, 0, 0, 1, 0, 0, 0};
+		static Transform tr_r2 = {-1, -1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0};
 		case 1:  /* P */
 			break;
 		case 2:  /* I */
@@ -3505,8 +3511,9 @@ MoleculeWriteToMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbu
 		fprintf(fp, "! a11 a12 a13; a21 a22 a23; a31 a32 a33; t1 t2 t3\n");
 		for (i = 0; i < mp->nsyms; i++) {
 			Transform *tp = mp->syms + i;
+			const unsigned char s_index_order[12] = {0, 3, 6, 1, 4, 7, 2, 5, 8, 9, 10, 11};
 			for (j = 0; j < 12; j++)
-				fprintf(fp, "%11.6f%c", (*tp)[j], (j % 3 == 2 ? '\n' : ' '));
+				fprintf(fp, "%11.6f%c", (*tp)[s_index_order[j]], (j % 3 == 2 ? '\n' : ' '));
 		}
 		fprintf(fp, "\n");
 	}
@@ -8297,9 +8304,9 @@ MoleculeCalculateCellFromAxes(XtalCell *cp, int calc_abc)
 		vp1 = &(cp->axes[n1]);
 		vp2 = &(cp->axes[n2]);
 		vp3 = &(cp->axes[n3]);
-		cp->tr[n1] = vp1->x;
-		cp->tr[n1 + 3] = vp1->y;
-		cp->tr[n1 + 6] = vp1->z;
+		cp->tr[n1*3] = vp1->x;
+		cp->tr[n1*3+1] = vp1->y;
+		cp->tr[n1*3+2] = vp1->z;
 		cp->tr[9] = cp->origin.x;
 		cp->tr[10] = cp->origin.y;
 		cp->tr[11] = cp->origin.z;
@@ -8328,34 +8335,34 @@ MoleculeCalculateCellFromAxes(XtalCell *cp, int calc_abc)
 				if (NormalizeVec(&v2, &v2))
 					return -1;  /*  Non-regular transform  */
 			}
-			cp->tr[n2] = v1.x;
-			cp->tr[n2 + 3] = v1.y;
-			cp->tr[n2 + 6] = v1.z;
-			cp->tr[n3] = v2.x;
-			cp->tr[n3 + 3] = v2.y;
-			cp->tr[n3 + 6] = v2.z;
+			cp->tr[n2*3] = v1.x;
+			cp->tr[n2*3+1] = v1.y;
+			cp->tr[n2*3+2] = v1.z;
+			cp->tr[n3*3] = v2.x;
+			cp->tr[n3*3+1] = v2.y;
+			cp->tr[n3*3+2] = v2.z;
 		} else {
 			VecCross(v1, *vp1, *vp2);
 			if (fabs(VecDot(v1, *vp3)) < 1e-7)
 				return -1;  /*  Non-regular transform  */
-			cp->tr[n2] = vp2->x;
-			cp->tr[n2 + 3] = vp2->y;
-			cp->tr[n2 + 6] = vp2->z;
-			cp->tr[n3] = vp3->x;
-			cp->tr[n3 + 3] = vp3->y;
-			cp->tr[n3 + 6] = vp3->z;
+			cp->tr[n2*3] = vp2->x;
+			cp->tr[n2*3+1] = vp2->y;
+			cp->tr[n2*3+2] = vp2->z;
+			cp->tr[n3*3] = vp3->x;
+			cp->tr[n3*3+1] = vp3->y;
+			cp->tr[n3*3+2] = vp3->z;
 		}
 	}
 	if (TransformInvert(cp->rtr, cp->tr))
 		return -1;  /*  Non-regular transform  */
 
 	/*  Calculate the reciprocal cell parameters  */
-	cp->rcell[0] = sqrt(cp->rtr[0] * cp->rtr[0] + cp->rtr[3] * cp->rtr[3] + cp->rtr[6] * cp->rtr[6]);
-	cp->rcell[1] = sqrt(cp->rtr[1] * cp->rtr[1] + cp->rtr[4] * cp->rtr[4] + cp->rtr[7] * cp->rtr[7]);
-	cp->rcell[2] = sqrt(cp->rtr[2] * cp->rtr[2] + cp->rtr[5] * cp->rtr[5] + cp->rtr[8] * cp->rtr[8]);
-	cp->rcell[3] = acos((cp->rtr[1] * cp->rtr[2] + cp->rtr[4] * cp->rtr[5] + cp->rtr[7] * cp->rtr[8]) / (cp->rcell[1] * cp->rcell[2])) * kRad2Deg;
-	cp->rcell[4] = acos((cp->rtr[2] * cp->rtr[0] + cp->rtr[5] * cp->rtr[3] + cp->rtr[8] * cp->rtr[6]) / (cp->rcell[2] * cp->rcell[0])) * kRad2Deg;
-	cp->rcell[5] = acos((cp->rtr[0] * cp->rtr[1] + cp->rtr[3] * cp->rtr[4] + cp->rtr[6] * cp->rtr[7]) / (cp->rcell[0] * cp->rcell[1])) * kRad2Deg;
+	cp->rcell[0] = sqrt(cp->rtr[0] * cp->rtr[0] + cp->rtr[1] * cp->rtr[1] + cp->rtr[2] * cp->rtr[2]);
+	cp->rcell[1] = sqrt(cp->rtr[3] * cp->rtr[3] + cp->rtr[4] * cp->rtr[4] + cp->rtr[5] * cp->rtr[5]);
+	cp->rcell[2] = sqrt(cp->rtr[6] * cp->rtr[6] + cp->rtr[7] * cp->rtr[7] + cp->rtr[8] * cp->rtr[8]);
+	cp->rcell[3] = acos((cp->rtr[3] * cp->rtr[6] + cp->rtr[4] * cp->rtr[7] + cp->rtr[5] * cp->rtr[8]) / (cp->rcell[1] * cp->rcell[2])) * kRad2Deg;
+	cp->rcell[4] = acos((cp->rtr[6] * cp->rtr[0] + cp->rtr[7] * cp->rtr[1] + cp->rtr[8] * cp->rtr[2]) / (cp->rcell[2] * cp->rcell[0])) * kRad2Deg;
+	cp->rcell[5] = acos((cp->rtr[0] * cp->rtr[3] + cp->rtr[1] * cp->rtr[4] + cp->rtr[2] * cp->rtr[5]) / (cp->rcell[0] * cp->rcell[1])) * kRad2Deg;
 	
 	if (calc_abc) {
 		/*  Calculate a, b, c, alpha, beta, gamma  */
@@ -8563,9 +8570,9 @@ MoleculeSetAniso(Molecule *mp, int n1, int type, Double x11, Double x22, Double 
 		} else {
 			val[u] = 1 / sqrt(val[u]);
 		}
-		anp->pmat[u] = axis[u].x * val[u];
-		anp->pmat[u+3] = axis[u].y * val[u];
-		anp->pmat[u+6] = axis[u].z * val[u];
+		anp->pmat[u*3] = axis[u].x * val[u];
+		anp->pmat[u*3+1] = axis[u].y * val[u];
+		anp->pmat[u*3+2] = axis[u].z * val[u];
 	}
 	__MoleculeUnlock(mp);
 }

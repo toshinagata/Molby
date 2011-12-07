@@ -788,30 +788,30 @@ s_calc_gradient_vectors(gradient_record *gp, const MDArena *arena, const crossin
 		w4 = 1.0 / (w2 * w2sq);
 		w5 = w3 * w4;
 		gp->mx[0] = csr1->vij.z * w5 * (-wxx * w2 + wyy * wdd);
-		gp->mx[3] = -csr1->vij.x * csr1->vij.y * csr1->vij.z * w5 * (w2 + wdd);
+		gp->mx[1] = -csr1->vij.x * csr1->vij.y * csr1->vij.z * w5 * (w2 + wdd);
 		w6 = csr1->vij.z * csr1->vij.z * w2 * w5;
-		gp->mx[6] = -csr1->vij.x * w6;
-		gp->my[0] = gp->mx[3];
-		gp->my[3] = csr1->vij.z * w5 * (-wyy * w2 + wxx * wdd);
-		gp->my[6] = -csr1->vij.y * w6;
+		gp->mx[2] = -csr1->vij.x * w6;
+		gp->my[0] = gp->mx[1];
+		gp->my[1] = csr1->vij.z * w5 * (-wyy * w2 + wxx * wdd);
+		gp->my[2] = -csr1->vij.y * w6;
 		w6 = w2sq * w3;
 		gp->mz[0] = csr1->vij.x * w6;
-		gp->mz[3] = csr1->vij.y * w6;
-		gp->mz[6] = csr1->vij.z * w6;
-		gp->mx[1] = csr1->vij.x * csr1->vij.y * w4;
+		gp->mz[1] = csr1->vij.y * w6;
+		gp->mz[2] = csr1->vij.z * w6;
+		gp->mx[3] = csr1->vij.x * csr1->vij.y * w4;
 		gp->mx[4] = wyy * w4;
-		gp->my[1] = -wxx * w4;
-		gp->my[4] = -gp->mx[1];
-		gp->mx[7] = gp->my[7] = 0.0;
-		gp->mz[1] = gp->mz[4] = gp->mz[7] = 0.0;
-		gp->mx[2] = (wyy + wzz) * w3;
-		gp->mx[5] = -csr1->vij.x * csr1->vij.y * w3;
+		gp->my[3] = -wxx * w4;
+		gp->my[4] = -gp->mx[3];
+		gp->mx[5] = gp->my[5] = 0.0;
+		gp->mz[3] = gp->mz[4] = gp->mz[5] = 0.0;
+		gp->mx[6] = (wyy + wzz) * w3;
+		gp->mx[7] = -csr1->vij.x * csr1->vij.y * w3;
 		gp->mx[8] = -csr1->vij.x * csr1->vij.z * w3;
-		gp->my[2] = gp->mx[5];
-		gp->my[5] = (wxx + wzz) * w3;
+		gp->my[6] = gp->mx[7];
+		gp->my[7] = (wxx + wzz) * w3;
 		gp->my[8] = -csr1->vij.y * csr1->vij.z * w3;
-		gp->mz[2] = gp->mx[8];
-		gp->mz[5] = gp->my[8];
+		gp->mz[6] = gp->mx[8];
+		gp->mz[7] = gp->my[8];
 		gp->mz[8] = (wxx + wyy) * w3;
 	}
 	
@@ -821,15 +821,15 @@ s_calc_gradient_vectors(gradient_record *gp, const MDArena *arena, const crossin
 	 *  Also for gvky_xj, gvkz_xj  */
 	va1 = csr2->vij;
 	w1 = csr2->gj / csr2->dij;
-	gvkx_xj.x = w1 * (gp->mx[0] * va1.x + gp->mx[3] * va1.y + gp->mx[6] * va1.z);
-	gvkx_xj.y = w1 * (gp->my[0] * va1.x + gp->my[3] * va1.y + gp->my[6] * va1.z);
-	gvkx_xj.z = w1 * (gp->mz[0] * va1.x + gp->mz[3] * va1.y + gp->mz[6] * va1.z);
-	gvky_xj.x = w1 * (gp->mx[1] * va1.x + gp->mx[4] * va1.y + gp->mx[7] * va1.z);
-	gvky_xj.y = w1 * (gp->my[1] * va1.x + gp->my[4] * va1.y);
+	gvkx_xj.x = w1 * (gp->mx[0] * va1.x + gp->mx[1] * va1.y + gp->mx[2] * va1.z);
+	gvkx_xj.y = w1 * (gp->my[0] * va1.x + gp->my[1] * va1.y + gp->my[2] * va1.z);
+	gvkx_xj.z = w1 * (gp->mz[0] * va1.x + gp->mz[1] * va1.y + gp->mz[2] * va1.z);
+	gvky_xj.x = w1 * (gp->mx[3] * va1.x + gp->mx[4] * va1.y + gp->mx[5] * va1.z);
+	gvky_xj.y = w1 * (gp->my[3] * va1.x + gp->my[4] * va1.y);
 	gvky_xj.z = 0.0;
-	gvkz_xj.x = w1 * (gp->mx[2] * va1.x + gp->mx[5] * va1.y + gp->mx[8] * va1.z);
-	gvkz_xj.y = w1 * (gp->my[2] * va1.x + gp->my[5] * va1.y + gp->my[8] * va1.z);
-	gvkz_xj.z = w1 * (gp->mz[2] * va1.x + gp->mz[5] * va1.y + gp->mz[8] * va1.z);
+	gvkz_xj.x = w1 * (gp->mx[6] * va1.x + gp->mx[7] * va1.y + gp->mx[8] * va1.z);
+	gvkz_xj.y = w1 * (gp->my[6] * va1.x + gp->my[7] * va1.y + gp->my[8] * va1.z);
+	gvkz_xj.z = w1 * (gp->mz[6] * va1.x + gp->mz[7] * va1.y + gp->mz[8] * va1.z);
 
 #if 0
 	/*  Intermediate vectors: gradients of gvk.x, gvk.y, gvk.y by xj  */
@@ -1318,37 +1318,37 @@ s_calc_surface_area(MDArena *arena)
 				w3 = -sin(ir1->s) * sinomega_inv;
 				w4 = cos(ir1->s) * sinomega_inv;
 				grad.a_xj.x += w2 * grad.s_xj.x
-					- w3 * (grad.mx[0]*p2.x + grad.mx[3]*p2.y + grad.mx[6]*p2.z)
-					- w4 * (grad.mx[1]*p2.x + grad.mx[4]*p2.y + grad.mx[7]*p2.z);
+					- w3 * (grad.mx[0]*p2.x + grad.mx[1]*p2.y + grad.mx[2]*p2.z)
+					- w4 * (grad.mx[3]*p2.x + grad.mx[4]*p2.y + grad.mx[5]*p2.z);
 				grad.a_xj.y += w2 * grad.s_xj.y
-					- w3 * (grad.my[0]*p2.x + grad.my[3]*p2.y + grad.my[6]*p2.z)
-					- w4 * (grad.my[1]*p2.x + grad.my[4]*p2.y + grad.my[7]*p2.z);
+					- w3 * (grad.my[0]*p2.x + grad.my[1]*p2.y + grad.my[2]*p2.z)
+					- w4 * (grad.my[3]*p2.x + grad.my[4]*p2.y + grad.my[5]*p2.z);
 				grad.a_xj.z += w2 * grad.s_xj.z
-					- w3 * (grad.mz[0]*p2.x + grad.mz[3]*p2.y + grad.mz[6]*p2.z)
-					- w4 * (grad.mz[1]*p2.x + grad.mz[4]*p2.y + grad.mz[7]*p2.z);
+					- w3 * (grad.mz[0]*p2.x + grad.mz[1]*p2.y + grad.mz[2]*p2.z)
+					- w4 * (grad.mz[3]*p2.x + grad.mz[4]*p2.y + grad.mz[5]*p2.z);
 				VecScaleInc(grad.a_xk, grad.s_xk, w2);
 			}
 
 		#if 0
 		{
 			s_sp_debug(arena, "[%d,%d,%d] p1.x = %10.6f, d(p1.x)/dxj = {%10.6f,%10.6f,%10.6f} d(p1.x)/dxk = {%10.6f,%10.6f,%10.6f}", ir1->i+1, ir1->j+1, ir1->k+1, p1.x,
-				(grad.mx[0]*w3+grad.mx[1]*w4)*sinomega - pw1.x/csr1->rj*grad.s_xj.x,
-				(grad.my[0]*w3+grad.my[1]*w4)*sinomega - pw1.x/csr1->rj*grad.s_xj.y,
-				(grad.mz[0]*w3+grad.mz[1]*w4)*sinomega - pw1.x/csr1->rj*grad.s_xj.z,
+				(grad.mx[0]*w3+grad.mx[3]*w4)*sinomega - pw1.x/csr1->rj*grad.s_xj.x,
+				(grad.my[0]*w3+grad.my[3]*w4)*sinomega - pw1.x/csr1->rj*grad.s_xj.y,
+				(grad.mz[0]*w3+grad.mz[3]*w4)*sinomega - pw1.x/csr1->rj*grad.s_xj.z,
 				-pw1.x/csr1->rj*grad.s_xk.x,
 				-pw1.x/csr1->rj*grad.s_xk.y,
 				-pw1.x/csr1->rj*grad.s_xk.z);
 			s_sp_debug(arena, "[%d,%d,%d] p1.y = %10.6f, d(p1.y)/dxj = {%10.6f,%10.6f,%10.6f} d(p1.y)/dxk = {%10.6f,%10.6f,%10.6f}", ir1->i+1, ir1->j+1, ir1->k+1, p1.y,
-				(grad.mx[3]*w3+grad.mx[4]*w4)*sinomega - pw1.y/csr1->rj*grad.s_xj.x,
-				(grad.my[3]*w3+grad.my[4]*w4)*sinomega - pw1.y/csr1->rj*grad.s_xj.y,
-				(grad.mz[3]*w3+grad.mz[4]*w4)*sinomega - pw1.y/csr1->rj*grad.s_xj.z,
+				(grad.mx[1]*w3+grad.mx[4]*w4)*sinomega - pw1.y/csr1->rj*grad.s_xj.x,
+				(grad.my[1]*w3+grad.my[4]*w4)*sinomega - pw1.y/csr1->rj*grad.s_xj.y,
+				(grad.mz[1]*w3+grad.mz[4]*w4)*sinomega - pw1.y/csr1->rj*grad.s_xj.z,
 				-pw1.y/csr1->rj*grad.s_xk.x,
 				-pw1.y/csr1->rj*grad.s_xk.y,
 				-pw1.y/csr1->rj*grad.s_xk.z);
 			s_sp_debug(arena, "[%d,%d,%d] p1.z = %10.6f, d(p1.z)/dxj = {%10.6f,%10.6f,%10.6f} d(p1.z)/dxk = {%10.6f,%10.6f,%10.6f}", ir1->i+1, ir1->j+1, ir1->k+1, p1.y,
-				(grad.mx[6]*w3+grad.mx[7]*w4)*sinomega - pw1.z/csr1->rj*grad.s_xj.x,
-				(grad.my[6]*w3+grad.my[7]*w4)*sinomega - pw1.z/csr1->rj*grad.s_xj.y,
-				(grad.mz[6]*w3+grad.mz[7]*w4)*sinomega - pw1.z/csr1->rj*grad.s_xj.z,
+				(grad.mx[2]*w3+grad.mx[5]*w4)*sinomega - pw1.z/csr1->rj*grad.s_xj.x,
+				(grad.my[2]*w3+grad.my[5]*w4)*sinomega - pw1.z/csr1->rj*grad.s_xj.y,
+				(grad.mz[2]*w3+grad.mz[5]*w4)*sinomega - pw1.z/csr1->rj*grad.s_xj.z,
 				-pw1.z/csr1->rj*grad.s_xk.x,
 				-pw1.z/csr1->rj*grad.s_xk.y,
 				-pw1.z/csr1->rj*grad.s_xk.z);
@@ -1368,14 +1368,14 @@ s_calc_surface_area(MDArena *arena)
 				w3 = -sin(ir2->s) * sinomega_inv;
 				w4 = cos(ir2->s) * sinomega_inv;
 				grad.a_xk.x += w2 * grad.s_xj.x
-					- w3 * (grad.mx[0]*p1.x + grad.mx[3]*p1.y + grad.mx[6]*p1.z)
-					- w4 * (grad.mx[1]*p1.x + grad.mx[4]*p1.y + grad.mx[7]*p1.z);
+					- w3 * (grad.mx[0]*p1.x + grad.mx[1]*p1.y + grad.mx[2]*p1.z)
+					- w4 * (grad.mx[3]*p1.x + grad.mx[4]*p1.y + grad.mx[5]*p1.z);
 				grad.a_xk.y += w2 * grad.s_xj.y
-					- w3 * (grad.my[0]*p1.x + grad.my[3]*p1.y + grad.my[6]*p1.z)
-					- w4 * (grad.my[1]*p1.x + grad.my[4]*p1.y + grad.my[7]*p1.z);
+					- w3 * (grad.my[0]*p1.x + grad.my[1]*p1.y + grad.my[2]*p1.z)
+					- w4 * (grad.my[3]*p1.x + grad.my[4]*p1.y + grad.my[5]*p1.z);
 				grad.a_xk.z += w2 * grad.s_xj.z
-					- w3 * (grad.mz[0]*p1.x + grad.mz[3]*p1.y + grad.mz[6]*p1.z)
-					- w4 * (grad.mz[1]*p1.x + grad.mz[4]*p1.y + grad.mz[7]*p1.z);
+					- w3 * (grad.mz[0]*p1.x + grad.mz[1]*p1.y + grad.mz[2]*p1.z)
+					- w4 * (grad.mz[3]*p1.x + grad.mz[4]*p1.y + grad.mz[5]*p1.z);
 				VecScaleInc(grad.a_xj, grad.s_xk, w2);
 				SA_DEBUG("OMEGA", ir1);
 			}
@@ -1386,23 +1386,23 @@ s_calc_surface_area(MDArena *arena)
 				-pw2.x/csr2->rj*grad.s_xk.x,
 				-pw2.x/csr2->rj*grad.s_xk.y,
 				-pw2.x/csr2->rj*grad.s_xk.z,
-				(grad.mx[0]*w3+grad.mx[1]*w4)*sinomega - pw2.x/csr2->rj*grad.s_xj.x,
-				(grad.my[0]*w3+grad.my[1]*w4)*sinomega - pw2.x/csr2->rj*grad.s_xj.y,
-				(grad.mz[0]*w3+grad.mz[1]*w4)*sinomega - pw2.x/csr2->rj*grad.s_xj.z);
+				(grad.mx[0]*w3+grad.mx[3]*w4)*sinomega - pw2.x/csr2->rj*grad.s_xj.x,
+				(grad.my[0]*w3+grad.my[3]*w4)*sinomega - pw2.x/csr2->rj*grad.s_xj.y,
+				(grad.mz[0]*w3+grad.mz[3]*w4)*sinomega - pw2.x/csr2->rj*grad.s_xj.z);
 			s_sp_debug(arena, "[%d,%d,%d] p2.y = %10.6f, d(p2.y)/dxj = {%10.6f,%10.6f,%10.6f} d(p2.y)/dxk = {%10.6f,%10.6f,%10.6f}", ir1->i+1, ir1->j+1, ir1->k+1, p2.y,
 				-pw2.y/csr2->rj*grad.s_xk.x,
 				-pw2.y/csr2->rj*grad.s_xk.y,
 				-pw2.y/csr2->rj*grad.s_xk.z,
-				(grad.mx[3]*w3+grad.mx[4]*w4)*sinomega - pw2.y/csr2->rj*grad.s_xj.x,
-				(grad.my[3]*w3+grad.my[4]*w4)*sinomega - pw2.y/csr2->rj*grad.s_xj.y,
-				(grad.mz[3]*w3+grad.mz[4]*w4)*sinomega - pw2.y/csr2->rj*grad.s_xj.z);
+				(grad.mx[1]*w3+grad.mx[4]*w4)*sinomega - pw2.y/csr2->rj*grad.s_xj.x,
+				(grad.my[1]*w3+grad.my[4]*w4)*sinomega - pw2.y/csr2->rj*grad.s_xj.y,
+				(grad.mz[1]*w3+grad.mz[4]*w4)*sinomega - pw2.y/csr2->rj*grad.s_xj.z);
 			s_sp_debug(arena, "[%d,%d,%d] p2.z = %10.6f, d(p2.z)/dxj = {%10.6f,%10.6f,%10.6f} d(p2.z)/dxk = {%10.6f,%10.6f,%10.6f}", ir1->i+1, ir1->j+1, ir1->k+1, p2.z,
 				-pw2.z/csr2->rj*grad.s_xk.x,
 				-pw2.z/csr2->rj*grad.s_xk.y,
 				-pw2.z/csr2->rj*grad.s_xk.z,
-				(grad.mx[6]*w3+grad.mx[7]*w4)*sinomega - pw2.z/csr2->rj*grad.s_xj.x,
-				(grad.my[6]*w3+grad.my[7]*w4)*sinomega - pw2.z/csr2->rj*grad.s_xj.y,
-				(grad.mz[6]*w3+grad.mz[7]*w4)*sinomega - pw2.z/csr2->rj*grad.s_xj.z);
+				(grad.mx[2]*w3+grad.mx[5]*w4)*sinomega - pw2.z/csr2->rj*grad.s_xj.x,
+				(grad.my[2]*w3+grad.my[5]*w4)*sinomega - pw2.z/csr2->rj*grad.s_xj.y,
+				(grad.mz[2]*w3+grad.mz[5]*w4)*sinomega - pw2.z/csr2->rj*grad.s_xj.z);
 		}
 		#endif
 

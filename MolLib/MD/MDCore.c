@@ -165,13 +165,13 @@ md_fit_coordinates(MDArena *arena, Int refno, Double *weights, Transform trans)
 		VecSub(v1, ap[i].r, org1);
 		VecSub(v2, rvf[3 * i], org2);
 		r[0] += w1 * v2.x * v1.x;
-		r[1] += w1 * v2.x * v1.y;
-		r[2] += w1 * v2.x * v1.z;
-		r[3] += w1 * v2.y * v1.x;
+		r[1] += w1 * v2.y * v1.x;
+		r[2] += w1 * v2.z * v1.x;
+		r[3] += w1 * v2.x * v1.y;
 		r[4] += w1 * v2.y * v1.y;
-		r[5] += w1 * v2.y * v1.z;
-		r[6] += w1 * v2.z * v1.x;
-		r[7] += w1 * v2.z * v1.y;
+		r[5] += w1 * v2.z * v1.y;
+		r[6] += w1 * v2.x * v1.z;
+		r[7] += w1 * v2.y * v1.z;
 		r[8] += w1 * v2.z * v1.z;
 /*		for (j = 0; j < 3; j++) {
 			for (k = 0; k < 3; k++) {
@@ -189,7 +189,7 @@ md_fit_coordinates(MDArena *arena, Int refno, Double *weights, Transform trans)
 	for (i = 0; i < 3; i++) {
 		for (j = 0; j < 3; j++) {
 			for (k = 0; k < 3; k++) {
-				q[i*3+j] += r[i*3+k] * r[j*3+k];
+				q[j*3+i] += r[k*3+i] * r[k*3+j];
 			}
 		}
 	}
@@ -232,13 +232,13 @@ md_fit_coordinates(MDArena *arena, Int refno, Double *weights, Transform trans)
 */
 	for (k = 0; k < 3; k++) {
 		u[0] += s[k].x * eigen_vec[k].x;
-		u[1] += s[k].y * eigen_vec[k].x;
-		u[2] += s[k].z * eigen_vec[k].x;
-		u[3] += s[k].x * eigen_vec[k].y;
+		u[1] += s[k].x * eigen_vec[k].y;
+		u[2] += s[k].x * eigen_vec[k].z;
+		u[3] += s[k].y * eigen_vec[k].x;
 		u[4] += s[k].y * eigen_vec[k].y;
-		u[5] += s[k].z * eigen_vec[k].y;
-		u[6] += s[k].x * eigen_vec[k].z;
-		u[7] += s[k].y * eigen_vec[k].z;
+		u[5] += s[k].y * eigen_vec[k].z;
+		u[6] += s[k].z * eigen_vec[k].x;
+		u[7] += s[k].z * eigen_vec[k].y;
 		u[8] += s[k].z * eigen_vec[k].z;
 	}
 	
