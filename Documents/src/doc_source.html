@@ -767,7 +767,7 @@ There is another way to make a ring fused structure, which includes copy and pas
 </p>
 <p><img src="../etc/tutorial_4_01.png" /></p>
 <p>
-Open the "File" menu, and select "Open Predefined" &gt; "Alicyclic" &gt; "cyclopentane".
+Open the "File" menu, and select "Open Predefined" &rarr; "Alicyclic" &rarr; "cyclopentane".
 </p>
 <p class="note">(This is a new funcionality from Version 0.6.1)</p>
 <p><img src="../etc/tutorial_4_08.png" /></p>
@@ -828,7 +828,7 @@ Molby は縮環構造を作るための機能を持っています（バージ�
 </p>
 <p><img src="../etc/tutorial_4_01.png" /></p>
 <p>
-"File" メニューを開き、"Open Predefined" &gt; "Alicyclic" &gt; "cyclopentane" を選んでください。
+"File" メニューを開き、"Open Predefined" &rarr; "Alicyclic" &rarr; "cyclopentane" を選んでください。
 </p>
 <p class="note">(これはバージョン 0.6.1 以降の機能です。よく使われる分子構造がこのメニューから選択できます。)</p>
 <p><img src="../etc/tutorial_4_08.png" /></p>
@@ -851,12 +851,198 @@ Molby は縮環構造を作るための機能を持っています（バージ�
 <link id="#navigation" />
 </div>
 
-<div file="mm_minimize.html">
+<div file="proptable.html">
 <link rel="Up" href="tutorials.html" />
 <link rel="Prev" href="ring_fusion.html" />
 <link id="#header" />
 <div class="contents" lang="en">
-<h1>Step Five: Energy Minimization by Molecular Mechanics</h1>
+<h1>Step Five: Edit a Molecule: Using a Property Table</h1>
+<h2>1. The Property Table of a Molecule</h2>
+<p>
+A molecule has many properties. It has a set of atoms and bonds. An atom has a name, an atom type, an element, a weight (which can be derived from the element), a charge, coordinates, and so on. According to the custom in the biomolecular modeling, atoms are grouped in "residues." It also has a set of parameters used in molecular mechanics. Molby also has a limited support for quantum chemical calculations. In relation to that, a molecule in Molby can retain extra information such as MO coefficients.
+</p>
+<p>
+Many of these information are accessible via the <span class="italic">property table</span>. The table is on the left side of the model window.
+</p>
+<p><img src="../etc/tutorial_5_01.png" /></p>
+<p>
+The table now shows the properties of each atom, namely its name, type, element, "residue" name and index, coordinates and partial charge. The property can be edited by double-clicking on the text.
+</p>
+<p><img src="../etc/tutorial_5_02.png" /></p>
+<p>
+When return (enter) or tab key is pressed, the edited value is finalized, and editing will continue on another cell. Pressing return, shift-return, tab, or shift-tab should cause editing of the bottom, above, right, or left cell, respectively. If you want to finish editing, use option- (or alt-) return key combination.
+</p>
+<p>
+Several points are worth mentioning here.
+</p>
+<p>
+(1) The atom index (the leftmost column) cannot be edited. If you want to change the order of the atoms, try using a "drag-and-drop" feature, as shown in the figure below.
+</p>
+<p><img src="../etc/tutorial_5_03.png" /></p>
+<p>
+(2) The residue column shows the residue name and index separated by a period. Manual editing of this cell may lead to a surprising result. For example, if you change the residue name of atom 0 from "RES" to "XXX", all atoms having residue index "1" will also have the new residue name "XXX".
+</p>
+<p><img src="../etc/tutorial_5_04.png" /></p>
+<p>
+This behavior is based on the principle that all residue names and indices should be consistent, <span class="italic">i.e.</span> the atoms having the same residue index should have the same residue name. This is sometimes convenient, but in many cases it causes confusion.
+</p>
+<p>
+A more recommended way to change the residue name and index is to use the menu command "Assign Residue...", in the "Script" menu, after selecting atoms you want to assign one residue name and index.
+</p>
+<p>
+<img src="../etc/tutorial_5_05.png" />
+&nbsp;&nbsp;&nbsp;&nbsp;
+<img src="../etc/tutorial_5_06.png" />
+</p>
+<p>
+<img src="../etc/tutorial_5_07.png" />
+</p>
+
+<h2>2. The Bond/Angle/Dihedral/Improper Table</h2>
+<p>
+The property table can also show other information. The type of information can be selected at the popup menu.
+</p>
+<p><img src="../etc/tutorial_5_08.png" /></p>
+<p>
+The bond, angle, dihedral, and improper tables show the indices, names, and types of the constituent atoms. In addition, the quantities (bond lengths, angles, etc.) and the molecular mechanics parameters (only after MM/MD calculation is performed) are also shown.
+</p>
+<p><img src="../etc/tutorial_5_09.png" /></p>
+<p>
+The bonds, angles, etc. are not editable in the property table. At present, the only way to create/delete bonds from GUI is to use the mouse operation "Bond" or "Erase".
+</p>
+
+<h2>3. The Parameter Table</h2>
+<p>
+The parameter table shows the molecular mechanics parameters in one table.
+</p>
+<p><img src="../etc/tutorial_5_10.png" /></p>
+<p>
+When you build a molecule from scratch, and open the parameter table before doing any MM/MD operations, this table is likely to be empty. This is because the MM parameters are looked up only when "Molecular Dynamics..." or "Minimize..." menu command is invoked, or you use MM/MD tools like Antechamber (see Step 4 for details). After doing some of these operations, you will see a set of parameters shown in this table.
+</p>
+<p>
+The parameters are grouped in several classes, namely "VDWs", "Bonds", "Angles", "Dihedrals", "Impropers", and "VDW Pairs".
+</p>
+<p>
+The "VDWs" parameters are for the van der Waals nonbonding interaction, described by "eps" (the  energy at the potential minimum in kcal/mol), "r" (the van der Waals radius in &Aring;, which is half of the interatomic distance at the equilibrium state), "eps14", "r14" (eps and r for the pair of atoms separated by exactly three bonds. In many applications, the same parameters with the ordinary pair are used with a specific factor multiplied), "atomNo" (the atomic number), "weight" (the atomic weight). The last two are usually overridden by the atom parameters.
+</p>
+<p>
+The "Bonds" parameters consist of "k" (the force constant in kcal/mol/&Aring;<sup>2</sup>) and "r0" (the equilibrium bond length). The "Angles" parameters consist of "k" (the force constant in kcal/mol/radian<sup>2</sup>) and "a0" (the equilibrium bond angle). The "Dihedrals" and "Impropers" parameters consist of "k" (the force constant in kcal/mol/radian<sup>2</sup>), "period" (the periodicity), and "phi0" (the equilibrium torsion angle in degree). The "VDW Pairs" parameters are (rarely) used to describe pair-specific van der Waals interactions, and consist of "eps", "r", "eps14", and "r14".
+</p>
+<p>
+There is another important property for each parameter, that is, whether the parameter is taken from the "global" source (i.e. not specific to this molecule), or it is "local" (specific to this molecule), or "undefined". This property is shown by the color of the row. The global parameters are shown in white cells, the local ones in pale yellow, and the undefined ones in red.
+</p>
+<p><img src="../etc/tutorial_5_11.png" /></p>
+<p>
+You can edit the parameters (although you need to be familiar with MM parameters and to know what you are doing!), but only if they are "local" or "undefined" parameters. The "global" parameters cannot be edited because it may be also used in other molecules, where the edited parameters may not be appropriate. If you want to modify some parameters but they are "global", then you can make them "local" by copying the parameters and the pasting.
+</p>
+<p><img src="../etc/tutorial_5_12.png" /></p>
+<p>
+Another way to create a "local" parameter is to use the "Create New Parameter" menu command in the Edit menu. You can choose the parameter type in the submenu.
+</p>
+<p><img src="../etc/tutorial_5_13.png" /></p>
+<p>
+If some parameters are not to be used for calculation, you can "cut" the parameters from the table. This feature is useful when you have many duplicated parameters having different force constants. (In actual calculation, the parameter appearing later in the table will be used.)
+</p>
+
+</div>
+<div class="contents" lang="ja">
+<h1>第五段階：分子を編集する：属性テーブルを使う</h1>
+<h2>1. 分子の属性テーブル</h2>
+<p>
+分子はいろいろな属性を持っています。まず原子と結合があります。原子は名前、原子タイプ、元素、原子量（元素が決まれば決まる）、電荷、座標、など。また、生化学の習慣に従い、原子は「残基」でグループ化されています。分子はまた、分子力学のパラメータを持っています。Molby はまた量子化学計算も部分的にサポートします。それと関連して、分子に分子軌道係数などの情報を持たせることができます。
+</p>
+<p>
+これらの情報の多くは「属性テーブル」で見ることができます。属性テーブルは、分子モデルのウィンドウの左半分にあります。
+</p>
+<p><img src="../etc/tutorial_5_01.png" /></p>
+<p>
+図では、テーブルは原子の属性を表示しています。名前、原子タイプ、元素、残基名と残基番号、座標、部分電荷です。これらの属性はダブルクリックして編集することができます。
+</p>
+<p><img src="../etc/tutorial_5_02.png" /></p>
+<p>
+リターン（エンター）またはタブキーを押すと、編集した値は確定され、別のセルが編集状態になります。リターン、シフト＋リターン、タブ、シフト＋タブでそれぞれ下・上・右・左のセルに移動します。編集を終了したい時は、オプション（Windows では Alt）＋リターンを使ってください。
+</p>
+<p>
+いくつか注意点があります。
+</p>
+<p>
+(1) 原子のインデックス（一番左の列）は編集できません。原子の順序を変えたい時は、下の図にあるように「ドラッグ・アンド・ドロップ」操作を使ってください。
+</p>
+<p><img src="../etc/tutorial_5_03.png" /></p>
+<p>
+(2) 残基の列には、残基の名前と残基番号がピリオドでつないで表示されています。このセルを編集すると、妙なことが起きて驚くかもしれません。たとえば、原子０の残基名を "RES" から "XXX" に変えると、残基番号が "1" であるすべての原子の残基名が "XXX" に変わります。
+</p>
+<p><img src="../etc/tutorial_5_04.png" /></p>
+<p>
+この挙動は、すべての残基名と残基番号は統一されていなければならない、という原理によります。つまり、同じ残基番号を持つ原子の残基名は同じでなければなりません。時にはこの挙動が便利に使えますが、混乱を招くことも多くあります。
+</p>
+<p>
+残基名と残基番号を変更するお勧めの方法は、変更したい原子を選択して "Script" メニューの "Assign Residue..." コマンドを使うことです。
+</p>
+<p>
+<img src="../etc/tutorial_5_05.png" />
+&nbsp;&nbsp;&nbsp;&nbsp;
+<img src="../etc/tutorial_5_06.png" />
+</p>
+<p>
+<img src="../etc/tutorial_5_07.png" />
+</p>
+
+<h2>2. Bond/Angle/Dihedral/Improper テーブル</h2>
+<p>
+属性テーブルは他の情報も表示することができます。テーブルの種類はポップアップメニューで選択できます。
+</p>
+<p><img src="../etc/tutorial_5_08.png" /></p>
+<p>
+Bond, angle, dihedral, improper テーブルは、それぞれ結合・結合角・二面角・improper 二面角の構成原子のインデックス、名前、原子タイプを表示します。また、現在の値（結合長、角度、など）と、分子力学パラメータ（MM/MD 計算を行った直後に限られますが）も表示されます。
+</p>
+<p><img src="../etc/tutorial_5_09.png" /></p>
+<p>
+このテーブルで、結合、結合角などを編集することはできません。現在、画面上のインターフェイスを使って結合を作ったり削除したりする唯一の方法は、"Bond", "Erase" のマウス操作を使うことです。
+</p>
+
+<h2>3. パラメータテーブル</h2>
+<p>
+パラメータテーブルは、分子力学パラメータを表示します。
+</p>
+<p><img src="../etc/tutorial_5_10.png" /></p>
+<p>
+分子を新しく作成して、MM/MD に関連する操作を何もせずにパラメータテーブルを開くと、テーブルはおそらく空のままでしょう。分子力学パラメータは、"Molecular Dynamics..." または "Minimize..." メニューコマンドを実行したときか、Antechamber のような分子力学用ツール（第四段階参照）を使った時に初めて作成されます。これらの操作をした後には、パラメータがこのテーブルに表示されます。
+</p>
+<p>
+パラメータはいくつかの種類にグループ分けされています。"VDWs", "Bonds", "Angles", "Dihedrals", "Impropers", そして "VDW Pairs" です。
+</p>
+<p>
+"VDWs" パラメータは、van der Waals 相互作用のためのもので、必要な値は "eps"（ポテンシャル極小値、kcal/mol）、"r"（van der Waals 半径、&Aring;。ポテンシャル極小状態での原子間距離の 1/2）、"eps14", "r14"（結合３つで隔てられた２つの原子間の eps と r。多くの分子力学パッケージでは、通常の原子間と同じパラメータに一定の係数をかけて用いることが多い）、"atomNo"（原子番号）、"weight"（原子量）。最後の２つは、ふつうは各原子のパラメータで上書きされます。
+</p>
+<p>
+"Bonds" パラメータは、"k"（結合の力の定数、kcal/mol/&Aring;<sup>2</sup>）、"r0"（平衡結合長さ、&Aring;）から成ります。"Angles" パラメータは、"k"（結合角の力の定数、kcal/mol/radian<sup>2</sup>）、"a0"（平衡結合角、degree）から成ります。'Dihedrals", "Impropers" パラメータは、"k"（力の定数、kcal/mol/radian<sup>2</sup>）、"period"（周期）、"phi0"（平衡二面角、degree）から成ります。"VDW Pairs" パラメータは滅多に使われませんが、ある原子の組み合わせに特有の van der Waals 相互作用を記述するもので、"eps", "r", "eps14", "r14" から成ります。
+</p>
+<p>
+それぞれのパラメータにはもう一つ重要な特性があります。それは、そのパラメータが「グローバル」なのか（つまり、他の分子にも使われる共通の値なのか）、または「ローカル」なのか（この分子に特有）、または「未定義」なのか、です。この特性は、テーブルの行の色で区別できます。「グローバル」なパラメータは白、「ローカル」はうすい黄色、「未定義」は赤色のセルです。
+</p>
+<p><img src="../etc/tutorial_5_11.png" /></p>
+<p>
+パラメータは編集することができます（あなたが分子力学パラメータに詳しくて、何をしているかわかっていればの話だけど！）。ただし、パラメータが「ローカル」「未定義」の場合だけです。「グローバル」パラメータは、他の分子でも使われている可能性があるため、編集できません。「グローバル」なパラメータを編集したい時は、そのパラメータをコピー・ペーストすることで「ローカル」パラメータにすることができます。
+</p>
+<p><img src="../etc/tutorial_5_12.png" /></p>
+<p>
+「ローカル」なパラメータを作るもう１つの方法は、"Edit" メニューの "Create New Parameter" コマンドを使うことです。パラメータの種類をサブメニューから選ぶことができます。
+</p>
+<p><img src="../etc/tutorial_5_13.png" /></p>
+<p>
+もしあるパラメータは計算に使わないという場合には、そのパラメータをテーブルから削除することができます。この機能は、同じパラメータで異なる値を持つものが複数ある場合に有用です。（実際の計算では、テーブルの後ろの方にあるパラメータが優先されます。）
+</p>
+</div>
+<link id="#navigation" />
+</div>
+
+<div file="mm_minimize.html">
+<link rel="Up" href="tutorials.html" />
+<link rel="Prev" href="proptable.html" />
+<link id="#header" />
+<div class="contents" lang="en">
+<h1>Step Six: Energy Minimization by Molecular Mechanics</h1>
 <h2>1. About Molecular Mechanics Implementation in Molby</h2>
 <p>
 The molecular models built by hand generally include unnatural bond lengths, bond angles, van der Waals contacts, and so on. Molecular mechanics is a useful technique to remove such unnatural structures.
@@ -980,7 +1166,7 @@ J. Phys. Chem. 1995, 99, 6208.
 </div>
 
 <div class="contents" lang="ja">
-<h1>第五段階：分子力学計算によるエネルギー最小化</h1>
+<h1>第六段階：分子力学計算によるエネルギー最小化</h1>
 <h2>1. Molby の分子力学計算について</h2>
 <p>
 手作業で作成した分子モデルは、不自然な結合長、結合角、van der Waals 接触などを含んでいます。このような不自然な構造を修正するには、分子力学のテクニックが便利です。
@@ -1106,201 +1292,80 @@ J. Phys. Chem. 1995, 99, 6208.
 <link id="#navigation" />
 </div>
 
-<div file="proptable.html">
+<div file="md.html">
 <link rel="Up" href="tutorials.html" />
 <link rel="Prev" href="mm_minimize.html" />
 <link id="#header" />
 <div class="contents" lang="en">
-<h1>Step Six: Edit a Molecule: Using a Property Table</h1>
-<h2>1. The Property Table of a Molecule</h2>
+<h1>Step Seven: Molecular Dynamics (MD) Calculation</h1>
+<h2>1. MD Calculation within Molby</h2>
 <p>
-A molecule has many properties. It has a set of atoms and bonds. An atom has a name, an atom type, an element, a weight (which can be derived from the element), a charge, coordinates, and so on. According to the custom in the biomolecular modeling, atoms are grouped in "residues." It also has a set of parameters used in molecular mechanics. Molby also has a limited support for quantum chemical calculations. In relation to that, a molecule in Molby can retain extra information such as MO coefficients.
+Molby implements molecular dynamics (MD) calculation which uses the same force fields as the energy minimization by molecular mechanics (MM). This implementation is suitable only for preliminary calculations (to check parameters quickly, etc.); for production runs, it is strongly recommended that you use one of the established software packages.
 </p>
 <p>
-Many of these information are accessible via the <span class="italic">property table</span>. The table is on the left side of the model window.
+An example of preliminary MD run is presented here. We use 2,2'-dimethoxybiphenyl again. In a similar way as in the <a href="mm_minimize.html">step six</a>, create a model and assign MM parameters (including the partial charges on the atoms).
 </p>
-<p><img src="../etc/tutorial_5_01.png" /></p>
+<p><img src="../etc/tutorial_7_01.png" /></p>
 <p>
-The table now shows the properties of each atom, namely its name, type, element, "residue" name and index, coordinates and partial charge. The property can be edited by double-clicking on the text.
+Select MM/MD &rarr; Molecular Dynamics. A setting dialog opens. Although this dialog resembles that in MM minimization, it shows different parameters that are relevant to the MD calculation.
 </p>
-<p><img src="../etc/tutorial_5_02.png" /></p>
+<p><img src="../etc/tutorial_7_02.png" /></p>
 <p>
-When return (enter) or tab key is pressed, the edited value is finalized, and editing will continue on another cell. Pressing return, shift-return, tab, or shift-tab should cause editing of the bottom, above, right, or left cell, respectively. If you want to finish editing, use option- (or alt-) return key combination.
-</p>
-<p>
-Several points are worth mentioning here.
+The "timestep" parameter defines the minimum time increment in solving the equation of motions. Before running the MD calculation, all atoms are let to have random velocities with the Boltzmann distribution corresponding to the "target temperature". The "steps per frame" and "number of frames" parameters have the same meaning as in the MM minimization. The screenshot shows 10 as the "steps per frame", although a larger value would be more appropriate (like 100 in this case). 
 </p>
 <p>
-(1) The atom index (the leftmost column) cannot be edited. If you want to change the order of the atoms, try using a "drag-and-drop" feature, as shown in the figure below.
+Pressing the "Advanced..." button opens another dialog with other parameters. The meanings of the parameters are described in the embedded Ruby document, in the <a href="molby_rb/MDArena.html">MDArena</a> page.
 </p>
-<p><img src="../etc/tutorial_5_03.png" /></p>
+<p><img src="../etc/tutorial_7_03.png" /></p>
 <p>
-(2) The residue column shows the residue name and index separated by a period. Manual editing of this cell may lead to a surprising result. For example, if you change the residue name of atom 0 from "RES" to "XXX", all atoms having residue index "1" will also have the new residue name "XXX".
+Return to the original MD dialog (by pressing "Close" in the advanced settings dialog), and press "OK". The MD run starts, and new frames are accumulated. If you find something is wrong, or want to stop before getting the specified number of frames, you can stop the MD run by pressing Command-period (Mac) or Control-period (Windows).
 </p>
-<p><img src="../etc/tutorial_5_04.png" /></p>
+<h2>2. Using Molby with AMBER: Creating Inputs and Importing Outputs</h2>
 <p>
-This behavior is based on the principle that all residue names and indices should be consistent, <span class="italic">i.e.</span> the atoms having the same residue index should have the same residue name. This is sometimes convenient, but in many cases it causes confusion.
+For production runs, you can create AMBER input files from Molby. More specifically, you can create "prmtop" and "inpcrd" files for the SANDER module.
 </p>
-<p>
-A more recommended way to change the residue name and index is to use the menu command "Assign Residue...", in the "Script" menu, after selecting atoms you want to assign one residue name and index.
-</p>
-<p>
-<img src="../etc/tutorial_5_05.png" />
-&nbsp;&nbsp;&nbsp;&nbsp;
-<img src="../etc/tutorial_5_06.png" />
+<p class="note">
+<span class="italic">Note:</span> There is no guarantee that Molby creates the exactly same input as the official AMBER modeling tools, nor the generated files are valid inputs for the SANDER module. You may need to modify them by hand.
 </p>
 <p>
-<img src="../etc/tutorial_5_07.png" />
+To creat SANDER input files, select "Create SANDER input..." command in the "MM/MD" &rarr; "Tools" submenu. You will be asked first for the file name for the "prmtop" file. Please be sure to add ".prmtop" extension. The other file, "inpcrd" file, is created as the same name with the ".prmtop" extension replaced by the ".inpcrd" extension.
 </p>
-
-<h2>2. The Bond/Angle/Dihedral/Improper Table</h2>
+<p><img src="../etc/tutorial_7_04.png" /></p>
 <p>
-The property table can also show other information. The type of information can be selected at the popup menu.
+Subsequently, you will be asked to select one of the two versions of the prmtop files. The older one, "AMBER8/NAMD", allows you to use the output file by NAMD (see below).
 </p>
-<p><img src="../etc/tutorial_5_08.png" /></p>
+<p><img src="../etc/tutorial_7_05.png" /></p>
 <p>
-The bond, angle, dihedral, and improper tables show the indices, names, and types of the constituent atoms. In addition, the quantities (bond lengths, angles, etc.) and the molecular mechanics parameters (only after MM/MD calculation is performed) are also shown.
-</p>
-<p><img src="../etc/tutorial_5_09.png" /></p>
-<p>
-The bonds, angles, etc. are not editable in the property table. At present, the only way to create/delete bonds from GUI is to use the mouse operation "Bond" or "Erase".
-</p>
-
-<h2>3. The Parameter Table</h2>
-<p>
-The parameter table shows the molecular mechanics parameters in one table.
-</p>
-<p><img src="../etc/tutorial_5_10.png" /></p>
-<p>
-When you build a molecule from scratch, and open the parameter table before doing any MM/MD operations, this table is likely to be empty. This is because the MM parameters are looked up only when "Molecular Dynamics..." or "Minimize..." menu command is invoked, or you use MM/MD tools like Antechamber (see Step 4 for details). After doing some of these operations, you will see a set of parameters shown in this table.
+Now you can transfer your files to the workstation running SANDER. To perform the simulation, you still need to create the instruction file for SANDER, which you should already know if you are using AMBER.
 </p>
 <p>
-The parameters are grouped in several classes, namely "VDWs", "Bonds", "Angles", "Dihedrals", "Impropers", and "VDW Pairs".
+After the simulation is over, you can get the trajectory file ("mdcrd" file) back and import to Molby. Use "Import..." command in the "File" menu, select "AMBER mdcrd file (*.crd; *.mdcrd)", and specify the file.
+</p>
+<p><img src="../etc/tutorial_7_06.png" /></p>
+<h2>3. Using Molby with NAMD: Creating Inputs and Importing Outputs</h2>
+<p>
+You can also use the NAMD software package for production run. NAMD is developed by the Theoretical Biophysics Group in the University of Illinois at Urbana-Champaign, and the official information is found at their web site (<a href="http://www.ks.uiuc.edu/Research/namd/">http://www.ks.uiuc.edu/Research/namd/</a>). NAMD can use the AMBER "prmtop" as the input, by use of the instruction <code>amber yes</code>. See NAMD Users' Guide for details.
 </p>
 <p>
-The "VDWs" parameters are for the van der Waals nonbonding interaction, described by "eps" (the  energy at the potential minimum in kcal/mol), "r" (the van der Waals radius in &Aring;, which is half of the interatomic distance at the equilibrium state), "eps14", "r14" (eps and r for the pair of atoms separated by exactly three bonds. In many applications, the same parameters with the ordinary pair are used with a specific factor multiplied), "atomNo" (the atomic number), "weight" (the atomic weight). The last two are usually overridden by the atom parameters.
-</p>
-<p>
-The "Bonds" parameters consist of "k" (the force constant in kcal/mol/&Aring;<sup>2</sup>) and "r0" (the equilibrium bond length). The "Angles" parameters consist of "k" (the force constant in kcal/mol/radian<sup>2</sup>) and "a0" (the equilibrium bond angle). The "Dihedrals" and "Impropers" parameters consist of "k" (the force constant in kcal/mol/radian<sup>2</sup>), "period" (the periodicity), and "phi0" (the equilibrium torsion angle in degree). The "VDW Pairs" parameters are (rarely) used to describe pair-specific van der Waals interactions, and consist of "eps", "r", "eps14", and "r14".
-</p>
-<p>
-There is another important property for each parameter, that is, whether the parameter is taken from the "global" source (i.e. not specific to this molecule), or it is "local" (specific to this molecule), or "undefined". This property is shown by the color of the row. The global parameters are shown in white cells, the local ones in pale yellow, and the undefined ones in red.
-</p>
-<p><img src="../etc/tutorial_5_11.png" /></p>
-<p>
-You can edit the parameters (although you need to be familiar with MM parameters and to know what you are doing!), but only if they are "local" or "undefined" parameters. The "global" parameters cannot be edited because it may be also used in other molecules, where the edited parameters may not be appropriate. If you want to modify some parameters but they are "global", then you can make them "local" by copying the parameters and the pasting.
-</p>
-<p><img src="../etc/tutorial_5_12.png" /></p>
-<p>
-Another way to create a "local" parameter is to use the "Create New Parameter" menu command in the Edit menu. You can choose the parameter type in the submenu.
-</p>
-<p><img src="../etc/tutorial_5_13.png" /></p>
-<p>
-If some parameters are not to be used for calculation, you can "cut" the parameters from the table. This feature is useful when you have many duplicated parameters having different force constants. (In actual calculation, the parameter appearing later in the table will be used.)
+You can also import the NAMD output by importing the dcd file. The file format is also listed in the "Import..." file dialog.
 </p>
 
 </div>
 <div class="contents" lang="ja">
-<h1>第六段階：分子を編集する：属性テーブルを使う</h1>
-<h2>1. 分子の属性テーブル</h2>
-<p>
-分子はいろいろな属性を持っています。まず原子と結合があります。原子は名前、原子タイプ、元素、原子量（元素が決まれば決まる）、電荷、座標、など。また、生化学の習慣に従い、原子は「残基」でグループ化されています。分子はまた、分子力学のパラメータを持っています。Molby はまた量子化学計算も部分的にサポートします。それと関連して、分子に分子軌道係数などの情報を持たせることができます。
-</p>
-<p>
-これらの情報の多くは「属性テーブル」で見ることができます。属性テーブルは、分子モデルのウィンドウの左半分にあります。
-</p>
-<p><img src="../etc/tutorial_5_01.png" /></p>
-<p>
-図では、テーブルは原子の属性を表示しています。名前、原子タイプ、元素、残基名と残基番号、座標、部分電荷です。これらの属性はダブルクリックして編集することができます。
-</p>
-<p><img src="../etc/tutorial_5_02.png" /></p>
-<p>
-リターン（エンター）またはタブキーを押すと、編集した値は確定され、別のセルが編集状態になります。リターン、シフト＋リターン、タブ、シフト＋タブでそれぞれ下・上・右・左のセルに移動します。編集を終了したい時は、オプション（Windows では Alt）＋リターンを使ってください。
-</p>
-<p>
-いくつか注意点があります。
-</p>
-<p>
-(1) 原子のインデックス（一番左の列）は編集できません。原子の順序を変えたい時は、下の図にあるように「ドラッグ・アンド・ドロップ」操作を使ってください。
-</p>
-<p><img src="../etc/tutorial_5_03.png" /></p>
-<p>
-(2) 残基の列には、残基の名前と残基番号がピリオドでつないで表示されています。このセルを編集すると、妙なことが起きて驚くかもしれません。たとえば、原子０の残基名を "RES" から "XXX" に変えると、残基番号が "1" であるすべての原子の残基名が "XXX" に変わります。
-</p>
-<p><img src="../etc/tutorial_5_04.png" /></p>
-<p>
-この挙動は、すべての残基名と残基番号は統一されていなければならない、という原理によります。つまり、同じ残基番号を持つ原子の残基名は同じでなければなりません。時にはこの挙動が便利に使えますが、混乱を招くことも多くあります。
-</p>
-<p>
-残基名と残基番号を変更するお勧めの方法は、変更したい原子を選択して "Script" メニューの "Assign Residue..." コマンドを使うことです。
-</p>
-<p>
-<img src="../etc/tutorial_5_05.png" />
-&nbsp;&nbsp;&nbsp;&nbsp;
-<img src="../etc/tutorial_5_06.png" />
-</p>
-<p>
-<img src="../etc/tutorial_5_07.png" />
-</p>
-
-<h2>2. Bond/Angle/Dihedral/Improper テーブル</h2>
-<p>
-属性テーブルは他の情報も表示することができます。テーブルの種類はポップアップメニューで選択できます。
-</p>
-<p><img src="../etc/tutorial_5_08.png" /></p>
-<p>
-Bond, angle, dihedral, improper テーブルは、それぞれ結合・結合角・二面角・improper 二面角の構成原子のインデックス、名前、原子タイプを表示します。また、現在の値（結合長、角度、など）と、分子力学パラメータ（MM/MD 計算を行った直後に限られますが）も表示されます。
-</p>
-<p><img src="../etc/tutorial_5_09.png" /></p>
-<p>
-このテーブルで、結合、結合角などを編集することはできません。現在、画面上のインターフェイスを使って結合を作ったり削除したりする唯一の方法は、"Bond", "Erase" のマウス操作を使うことです。
-</p>
-
-<h2>3. パラメータテーブル</h2>
-<p>
-パラメータテーブルは、分子力学パラメータを表示します。
-</p>
-<p><img src="../etc/tutorial_5_10.png" /></p>
-<p>
-分子を新しく作成して、MM/MD に関連する操作を何もせずにパラメータテーブルを開くと、テーブルはおそらく空のままでしょう。分子力学パラメータは、"Molecular Dynamics..." または "Minimize..." メニューコマンドを実行したときか、Antechamber のような分子力学用ツール（第四段階参照）を使った時に初めて作成されます。これらの操作をした後には、パラメータがこのテーブルに表示されます。
-</p>
-<p>
-パラメータはいくつかの種類にグループ分けされています。"VDWs", "Bonds", "Angles", "Dihedrals", "Impropers", そして "VDW Pairs" です。
-</p>
-<p>
-"VDWs" パラメータは、van der Waals 相互作用のためのもので、必要な値は "eps"（ポテンシャル極小値、kcal/mol）、"r"（van der Waals 半径、&Aring;。ポテンシャル極小状態での原子間距離の 1/2）、"eps14", "r14"（結合３つで隔てられた２つの原子間の eps と r。多くの分子力学パッケージでは、通常の原子間と同じパラメータに一定の係数をかけて用いることが多い）、"atomNo"（原子番号）、"weight"（原子量）。最後の２つは、ふつうは各原子のパラメータで上書きされます。
-</p>
-<p>
-"Bonds" パラメータは、"k"（結合の力の定数、kcal/mol/&Aring;<sup>2</sup>）、"r0"（平衡結合長さ、&Aring;）から成ります。"Angles" パラメータは、"k"（結合角の力の定数、kcal/mol/radian<sup>2</sup>）、"a0"（平衡結合角、degree）から成ります。'Dihedrals", "Impropers" パラメータは、"k"（力の定数、kcal/mol/radian<sup>2</sup>）、"period"（周期）、"phi0"（平衡二面角、degree）から成ります。"VDW Pairs" パラメータは滅多に使われませんが、ある原子の組み合わせに特有の van der Waals 相互作用を記述するもので、"eps", "r", "eps14", "r14" から成ります。
-</p>
-<p>
-それぞれのパラメータにはもう一つ重要な特性があります。それは、そのパラメータが「グローバル」なのか（つまり、他の分子にも使われる共通の値なのか）、または「ローカル」なのか（この分子に特有）、または「未定義」なのか、です。この特性は、テーブルの行の色で区別できます。「グローバル」なパラメータは白、「ローカル」はうすい黄色、「未定義」は赤色のセルです。
-</p>
-<p><img src="../etc/tutorial_5_11.png" /></p>
-<p>
-パラメータは編集することができます（あなたが分子力学パラメータに詳しくて、何をしているかわかっていればの話だけど！）。ただし、パラメータが「ローカル」「未定義」の場合だけです。「グローバル」パラメータは、他の分子でも使われている可能性があるため、編集できません。「グローバル」なパラメータを編集したい時は、そのパラメータをコピー・ペーストすることで「ローカル」パラメータにすることができます。
-</p>
-<p><img src="../etc/tutorial_5_12.png" /></p>
-<p>
-「ローカル」なパラメータを作るもう１つの方法は、"Edit" メニューの "Create New Parameter" コマンドを使うことです。パラメータの種類をサブメニューから選ぶことができます。
-</p>
-<p><img src="../etc/tutorial_5_13.png" /></p>
-<p>
-もしあるパラメータは計算に使わないという場合には、そのパラメータをテーブルから削除することができます。この機能は、同じパラメータで異なる値を持つものが複数ある場合に有用です。（実際の計算では、テーブルの後ろの方にあるパラメータが優先されます。）
-</p>
+<h1>第七段階：分子動力学計算</h1>
 </div>
 <link id="#navigation" />
 </div>
 
 <div file="qchem.html">
 <link rel="Up" href="tutorials.html" />
-<link rel="Prev" href="proptable.html" />
+<link rel="Prev" href="md.html" />
 <link id="#header" />
 <div class="contents" lang="en">
-<h1>Step Seven: Collaboration with Other Quantum Chemistry Softwares</h1>
+<h1>Step Eight: Collaboration with Other Quantum Chemistry Softwares</h1>
 </div>
 <div class="contents" lang="ja">
-<h1>第七段階：他の量子化学ソフトウェアとの連携</h1>
+<h1>第八段階：他の量子化学ソフトウェアとの連携</h1>
 </div>
 <link id="#navigation" />
 </div>
@@ -1310,10 +1375,10 @@ Bond, angle, dihedral, improper テーブルは、それぞれ結合・結合角
 <link rel="Prev" href="qchem.html" />
 <link id="#header" />
 <div class="contents" lang="en">
-<h1>Step Eight: Using Embedded Ruby Interpreter</h1>
+<h1>Step Nine: Using Embedded Ruby Interpreter</h1>
 </div>
 <div class="contents" lang="ja">
-<h1>第八段階：組み込み Ruby インタプリタを使う</h1>
+<h1>第九段階：組み込み Ruby インタプリタを使う</h1>
 </div>
 <link id="#navigation" />
 </div>
