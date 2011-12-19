@@ -80,9 +80,9 @@ class Molecule
 
     #  Initialize some fields at first invocation
     if !@arena_created
-	  if arena.log_file == nil && self.dir != nil
-	    arena.log_file = self.name.gsub(/\.\w+$/, ".log")
-	  end
+	  # if arena.log_file == nil && self.dir != nil
+	  #  arena.log_file = self.name.gsub(/\.\w+$/, ".log")
+	  # end
 	  @md_spf = 500
 	  @md_nf = 200
 	  @arena_created = true
@@ -148,7 +148,8 @@ class Molecule
 	end
 	arena.coord_output_freq = Integer(hash["steps_per_frame"])
 	arena.energy_output_freq = arena.coord_output_freq
-	arena.log_file = hash["log_file"]
+	f = hash["log_file"].strip
+	arena.log_file = (f == "" ? nil : f)
 	if hash[:status] == 0
 	  return Integer(hash["number_of_frames"])
 	else
