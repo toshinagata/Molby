@@ -1128,41 +1128,6 @@ When calculation is done, the molecular structure may change, because structure 
 <p>
 Note that the atomic charges given in the above method are derived from semi-empirical quantum chemical calculations. On the other hand, it is generally considered that the charges derived from ab initio calculations are better. Molby does not have capability to perform ab initio calculations, but it can help creating necessary input files for external quantum chemical programs. This will be described elsewhere in this User's Manual (not yet written, but coming soon).
 </p>
-<h2>4. Building solvated structure</h2>
-<p>
-Molby can create solvated structures. Open the solute molecule, and the solvent box file included in the Molby package. Then use "Script" → "Solvate..." commands. The detailed description will be given in future.
-</p>
-<p>
-The following solvent boxes are included. The tip3box was taken from the AmberTool package, and other solvent boxes were taken from <a href="http://www.pharmacy.manchester.ac.uk/bryce/amber">Amber parameter database</a>.
-</p>
-<table border="1" cellspacing="0">
-<tr><th>name</th><th>solvent</th><th>reference</th></tr>
-<tr><td>tip3pbox</td>
-<td>water</td>
-<td>Jorgensen, W. L.; Chandrasekhar, J.; Madura, J.; Klein, M. L.<br />
-J. Chem. Phys. 1983, 79, 926–935.
-</td></tr>
-<tr><td>chcl3box</td>
-<td>chloroform</td>
-<td>Cieplak, P.; Caldwell, J. W.; Kollman, P. A.<br />
-J. Comp. Chem. 2001, 22, 1048<br />
-</td></tr>
-<tr><td>dmsobox</td>
-<td>dimethylsulfoxide</td>
-<td>Fox, T.; Kollman, P. A.<br />
-J. Phys. Chem. B 1998, 102, 8070.
-</td></tr>
-<tr><td>meohbox</td>
-<td>methanol</td>
-<td>Caldwell, J. W.; Kollman, P. A.<br />
-J. Phys. Chem. 1995, 99, 6208.
-</td></tr>
-<tr><td>nmabox</td>
-<td>N-methylacetamide</td>
-<td>Caldwell, J. W.; Kollman, P. A.<br />
-J. Phys. Chem. 1995, 99, 6208.
-</td></tr>
-</table>
 </div>
 
 <div class="contents" lang="ja">
@@ -1252,41 +1217,6 @@ Molby の分子力学計算は、基本的な分子力場（結合の伸縮、�
 <p>
 上の方法で計算した電荷は、半経験的分子軌道計算によるものです。一方、一般的には ab initio 計算で求めた電荷の方が良いと考えられています。Molby は ab initio 計算を行う機能を持っていませんが、外部の量子化学計算プログラムへの入力ファイルを作成する機能があります。これは、このマニュアルの別のところで解説します（まだできていませんが、近いうちに）。
 </p>
-<h2>4. 溶媒和構造の作成</h2>
-<p>
-Molby では、溶媒和構造を作成することができます。溶質分子と、Molby パッケージの中に同梱されている溶媒ボックスの mbsf ファイルを両方開いた状態で、"Script" → "Solvate..." コマンドを使います。詳しい説明は後日作成します。
-</p>
-<p>
-同梱されている溶媒ボックスは、以下の通りです。tip3box は AmberTools パッケージから、その他のものは <a href="http://www.pharmacy.manchester.ac.uk/bryce/amber">Amber parameter database</a> から取得し、mbsf フォーマットに変換したものです。
-</p>
-<table border="1" cellspacing="0">
-<tr><th>name</th><th>solvent</th><th>reference</th></tr>
-<tr><td>tip3pbox</td>
-<td>water</td>
-<td>Jorgensen, W. L.; Chandrasekhar, J.; Madura, J.; Klein, M. L.<br />
-J. Chem. Phys. 1983, 79, 926–935.
-</td></tr>
-<tr><td>chcl3box</td>
-<td>chloroform</td>
-<td>Cieplak, P.; Caldwell, J. W.; Kollman, P. A.<br />
-J. Comp. Chem. 2001, 22, 1048<br />
-</td></tr>
-<tr><td>dmsobox</td>
-<td>dimethylsulfoxide</td>
-<td>Fox, T.; Kollman, P. A.<br />
-J. Phys. Chem. B 1998, 102, 8070.
-</td></tr>
-<tr><td>meohbox</td>
-<td>methanol</td>
-<td>Caldwell, J. W.; Kollman, P. A.<br />
-J. Phys. Chem. 1995, 99, 6208.
-</td></tr>
-<tr><td>nmabox</td>
-<td>N-methylacetamide</td>
-<td>Caldwell, J. W.; Kollman, P. A.<br />
-J. Phys. Chem. 1995, 99, 6208.
-</td></tr>
-</table>
 
 </div>
 <link id="#navigation" />
@@ -1311,7 +1241,7 @@ Select MM/MD &rarr; Molecular Dynamics. A setting dialog opens. Although this di
 </p>
 <p><img src="../etc/tutorial_7_02.png" /></p>
 <p>
-The "timestep" parameter defines the minimum time increment in solving the equation of motions. Before running the MD calculation, all atoms are let to have random velocities with the Boltzmann distribution corresponding to the "target temperature". The "steps per frame" and "number of frames" parameters have the same meaning as in the MM minimization. The screenshot shows 10 as the "steps per frame", although a larger value would be more appropriate (like 100 in this case). 
+The "timestep" parameter defines the minimum time increment in solving the equation of motions. The "target temperature" defines the temperature of the system. Before running the MD calculation, all atoms are let to have random velocities with the Boltzmann distribution corresponding to the target temperature. In addition, the velocities are modified so that the temperature is kept constant. The "steps per frame" and "number of frames" parameters have the same meaning as in the MM minimization. The screenshot shows 10 as the "steps per frame"; this is an appropriate value for MM minimization, however for MD calculations a larger value would be more appropriate (like 100). 
 </p>
 <p>
 Pressing the "Advanced..." button opens another dialog with other parameters. The meanings of the parameters are described in the embedded Ruby document, in the <a href="molby_rb/MDArena.html">MDArena</a> page.
@@ -1349,10 +1279,175 @@ You can also use the NAMD software package for production run. NAMD is developed
 <p>
 You can also import the NAMD output by importing the dcd file. The file format is also listed in the "Import..." file dialog.
 </p>
+<h2>4. Building Solvated Structures</h2>
+<p>
+When you want to perform MD simulations in explicit solvent, you need to build a box of solvent molecules around the target molecule. Molby can help creating solvated structures.
+</p>
+<p>
+To build a solvated structure, you need to open the file containing the predefined box of the desired solvent. The following solvent box is included in the Molby package, and can be accessed from "File" &rarr; "Open Predefined" &rarr; "Solvent boxes" submenu. The tip3box was taken from the AmberTool package, and other solvent boxes were taken from <a href="http://www.pharmacy.manchester.ac.uk/bryce/amber">Amber parameter database</a>.
+</p>
+<table border="1" cellspacing="0">
+<tr><th>name</th><th>solvent</th><th>reference</th></tr>
+<tr><td>tip3pbox</td>
+<td>water</td>
+<td>Jorgensen, W. L.; Chandrasekhar, J.; Madura, J.; Klein, M. L.<br />
+J. Chem. Phys. 1983, 79, 926–935.
+</td></tr>
+<tr><td>chcl3box</td>
+<td>chloroform</td>
+<td>Cieplak, P.; Caldwell, J. W.; Kollman, P. A.<br />
+J. Comp. Chem. 2001, 22, 1048<br />
+</td></tr>
+<tr><td>dmsobox</td>
+<td>dimethylsulfoxide</td>
+<td>Fox, T.; Kollman, P. A.<br />
+J. Phys. Chem. B 1998, 102, 8070.
+</td></tr>
+<tr><td>meohbox</td>
+<td>methanol</td>
+<td>Caldwell, J. W.; Kollman, P. A.<br />
+J. Phys. Chem. 1995, 99, 6208.
+</td></tr>
+<tr><td>nmabox</td>
+<td>N-methylacetamide</td>
+<td>Caldwell, J. W.; Kollman, P. A.<br />
+J. Phys. Chem. 1995, 99, 6208.
+</td></tr>
+</table>
+<p>
+While keeping the solvent box open, create or open the target (solute) molecule in a separate window.
+</p>
+<p><img src="../etc/tutorial_7_07.png" /></p>
+<p>
+With the solute molecule in the front window, select "Solvate..." command from the "Script" menu. A dialog box opens.
+</p>
+<p><img src="../etc/tutorial_7_08.png" /></p>
+<p>
+In the popup menu "Choose solvent box:", you will find the solvent box you opened earlier. Note that this popup menu lists <span class="italic">all</span> open molecules that have the associated periodic box (or unit cell). This can lead to a confusing situation that, if you have another solvated structure also open, that structure will also be listed in this popup menu, because a solvated structure always have a periodic box. Therefore, please take care so that you choose the right solvent box.</p>
+<p class="note">
+If you open the solvent box from the "Open Predefined" menu, you can easily recognize it in the popup menu, because the name has asterisks at the beginning and the end, like "*CHCl3*".
+</p>
+<p>
+The "Box offset" parameters define the thickness of the solvent layer surrounding the solute molecule. More specifically, the periodic box of the solvated structure is determined as follows: the minimum cuboid that can surround the solute molecule is defined, and all the faces are offset by the "Box offset" distances to the outside direction. On the other hand, it is possible to define the size of the periodic box explicitly for any of the three (x, y, z) directions. If you wish to do this, give a negative number for that direction. (For example, if you want the periodic box to be 40 &Aring; in the x direction, give -40 as the first "Box offset" parameter.)
+</p>
+<p class="note">
+The size of the periodic box can be checked by selecting "MM/MD" &rarr; "Define Unit Cell" menu command.
+</p>
+<p>
+The "Exclusion limit distance" defines the minimum allowed distance between the solvent and solute molecules. The solvent molecule is removed when it has atoms with smaller distances than this parameter from the solute molecule.
+</p>
 
 </div>
 <div class="contents" lang="ja">
 <h1>第七段階：分子動力学計算</h1>
+<h2>1. Molby 組み込みの分子動力学 (MD) 計算</h2>
+<p>
+Molby は分子動力学 (MD) 計算を実装しています。これは分子力学によるエネルギー最小化と同じ分子力場を使います。この機能は、パラメータのチェックなどの予備的な計算に使うことを想定しています。本格的な計算には、実績のある他のソフトウェアパッケージを使うことを強くおすすめします。
+</p>
+<p>
+予備的な MD 計算の例を示します。また 2,2'-ジメトキシビフェニルを使います。<a href="mm_minimize.html">第六段階</a>と同様に、モデルを作成して分子力場パラメータを決定してください（原子上の部分電荷も）。
+</p>
+<p><img src="../etc/tutorial_7_01.png" /></p>
+<p>
+MM/MD メニューの "Molecular Dynamics" を選ぶと、設定ダイアログが開きます。このダイアログは分子力場によるエネルギー最小化の時と似ていますが、MD 計算に使う他のパラメータを表示しています。
+</p>
+<p><img src="../etc/tutorial_7_02.png" /></p>
+<p>
+"Timestep" パラメータは、運動方程式を解くときの最小時間刻みを表します。"Target temperature" は系の温度を表します。MD 計算が始まる際に、すべての原子はこの温度に対応するボルツマン分布に従ってランダムな速度を与えられます。さらに、MD 計算中は温度が一定に保たれるように速度が調整されます。"Steps per frame" と "number of frames" パラメータは分子力学によるエネルギー最小化の時と同じ意味を持ちます。このスクリーンショットでは "steps per frame" が 10 になっています。これはエネルギー最小化では適切な値ですが、分子動力学の場合はもう少し大きな値（たとえば 100）の方がより適切です。
+</p>
+<p>
+"Advanced..." ボタンを押すと、他のパラメータを持つ別のダイアログが開きます。これらのパラメータの意味は、内蔵 Ruby インタプリタのレファレンスで <a href="molby_rb/MDArena.html">MDArena</a> のページに書かれています。 
+</p>
+<p><img src="../etc/tutorial_7_03.png" /></p>
+<p>
+元の MD 設定ダイアログに戻り（詳細設定ダイアログで "Close" ボタンを押す）、"OK" を押します。MD 計算が始まり、新しいフレームが追加されて行きます。何か問題があったり、指定したフレーム数よりも前に計算を止めたいときは、コマンド-ピリオド (Mac) かコントロール-ピリオド (Windows) を使ってください。
+</p>
+<h2>2. AMBER とともに使う：入力の作成と出力結果のインポート</h2>
+<p>
+本格的な計算を行うために、Molby で AMBER への入力ファイルを作成することができます。具体的には、SANDER モジュールの入力となる "prmtop" と "inpcrd" ファイルを作ることができます。
+</p>
+<p class="note">
+<span class="italic">注：</span> Molby が AMBER 付属のモデリングツールと同じ入力ファイルを作成する保証はありませんし、SANDER モジュールへの正しい入力になっている保証もありません。手作業で修正が必要な場合もあるかもしれません。
+</p>
+<p>
+SANDER の入力ファイルを作るには、"MM/MD" &rarr; "Tools" サブメニューから "Create SANDER input..." コマンドを選んでください。最初に "prmtop" ファイルの名前を聞かれます。必ず ".prmtop" 拡張子をつけるようにしてください。もう一つの "inpcrd" ファイルは、".prmtop" を ".inpcrd" に置き換えた名前で保存されます。
+</p>
+<p><img src="../etc/tutorial_7_04.png" /></p>
+<p>
+次に、prmtop ファイルの２つのバージョンのうち１つを選ぶように促されます。古い方、"AMBER8/NAMD" を使えば、NAMD ソフトウェアパッケージ（下記参照）でも使える入力ファイルができます。
+</p>
+<p><img src="../etc/tutorial_7_05.png" /></p>
+<p>
+これで、SANDER が走るワークステーションにファイルを転送することができます。シミュレーションを実行するためには、SANDER の命令ファイルを作らなければなりませんが、AMBER をお使いの方ならやり方はよくご存知でしょう。
+</p>
+<p>
+計算が終了したら、トラジェクトリファイル ("mdcrd" ファイル) を取得して、Molby にインポートすることができます。"File" メニューの "Import..." コマンドを選び、ファイルタイプとして "AMBER mdcrd file (*.crd; *.mdcrd)" を選んで、ファイルを読み込んでください。
+</p>
+<p><img src="../etc/tutorial_7_06.png" /></p>
+<h2>3. NAMD とともに使う：入力の作成と出力結果のインポート</h2>
+<p>
+本格的な計算を行うために NAMD を使うこともできます。NAMD はイリノイ大学アーバナ・シャンペーン校の理論生物物理グループが開発したソフトウェアパッケージです。公式ウェブサイトは <a href="http://www.ks.uiuc.edu/Research/namd/">http://www.ks.uiuc.edu/Research/namd/</a> です。NAMD は AMBER の "prmtop" を入力として使うことができます（<code>amber yes</code> 命令を使う）。詳しくは NAMD のユーザーズガイドをご覧ください。
+</p>
+<p>
+NAMD の出力の dcd ファイルもインポートが可能です。"Import..." コマンドのファイルタイプで選択することができます。
+</p>
+<h2>4. 溶媒和構造の作成</h2>
+<p>
+明示的な溶媒中での MD シミュレーションを行うためには、目的分子の回りに溶媒分子の箱を作る必要があります。Molby でこのような溶媒和構造を作成することができます。
+</p>
+<p>
+溶媒和構造を作るためには、まず使用する溶媒の箱を読み込む必要があります。以下の溶媒の箱が Molby に同梱されており、"File" &rarr; "Open Predefined" &rarr; "Solvent boxes" サブメニューから選ぶことができます。Tip3box は AmberTool パッケージから得たものであり、他の溶媒箱は <a href="http://www.pharmacy.manchester.ac.uk/bryce/amber">Amber parameter database</a> で公開されているものです。
+</p>
+<table border="1" cellspacing="0">
+<tr><th>name</th><th>solvent</th><th>reference</th></tr>
+<tr><td>tip3pbox</td>
+<td>water</td>
+<td>Jorgensen, W. L.; Chandrasekhar, J.; Madura, J.; Klein, M. L.<br />
+J. Chem. Phys. 1983, 79, 926–935.
+</td></tr>
+<tr><td>chcl3box</td>
+<td>chloroform</td>
+<td>Cieplak, P.; Caldwell, J. W.; Kollman, P. A.<br />
+J. Comp. Chem. 2001, 22, 1048<br />
+</td></tr>
+<tr><td>dmsobox</td>
+<td>dimethylsulfoxide</td>
+<td>Fox, T.; Kollman, P. A.<br />
+J. Phys. Chem. B 1998, 102, 8070.
+</td></tr>
+<tr><td>meohbox</td>
+<td>methanol</td>
+<td>Caldwell, J. W.; Kollman, P. A.<br />
+J. Phys. Chem. 1995, 99, 6208.
+</td></tr>
+<tr><td>nmabox</td>
+<td>N-methylacetamide</td>
+<td>Caldwell, J. W.; Kollman, P. A.<br />
+J. Phys. Chem. 1995, 99, 6208.
+</td></tr>
+</table>
+<p>
+溶媒箱を開いたまま、目的とする分子（溶質）を新しいウィンドウで開くか作成します。
+</p>
+<p><img src="../etc/tutorial_7_07.png" /></p>
+<p>
+溶質分子のウィンドウを最前面にしたまま、"Script" メニューから "Solvate..." コマンドを選びます。ダイアログが開きます。
+</p>
+<p><img src="../etc/tutorial_7_08.png" /></p>
+<p>
+ポップアップメニュー "Choose solvent box:" には、さきほど開いた溶媒箱がリストされているはずです。注意していただきたいのは、このポップアップメニューには周期境界（または単位格子）を持つすべての分子がリストされることです。このため、紛らわしいことに、別の溶媒和構造を同時に開いていると、その構造もこのポップアップメニューに登場してしまいます（溶媒和構造は必ず周期境界を持っていますから）。ですから、正しい溶媒箱を選ぶように十分に注意してください。
+</p>
+<p class="note">
+"Open Predefined" メニューから選んで開いた溶媒箱はすぐに区別できます。名前の前後に * がついているからです ("*CHCl3*" のように）。
+</p>
+<p>
+"Box offset" パラメータは、溶質分子の回りを囲む溶媒層の厚さを指定します。言い換えると、これから作成する溶媒和構造の周期境界は次のように決められます：まず溶質を囲む最小の直方体を算出し、それぞれの面を外側に向かって Box offsect パラメータ分だけ移動させます。一方、x, y, z のそれぞれの方向に対して、周期境界の大きさを決めたい場合もあります。このときは、その方向の Box offset パラメータに負の値を指定してください。（たとえば、x 方向の周期境界を大きさを 40 &Aring; にしたい時は、"Box offset" の最初のパラメータを -40 にしてください。）
+</p>
+<p class="note">
+周期境界の箱の大きさは、"MM/MD" &rarr; "Define Unit Cell" メニューを選ぶと見ることができます。</p>
+<p>
+"Exclusion limit distance" は、溶質分子と溶媒分子の原子間距離の最小値を定めます。溶媒分子のある原子が溶質分子からこの距離以内に近づいているとき、その溶媒分子は取り除かれます。
+</p>
 </div>
 <link id="#navigation" />
 </div>
