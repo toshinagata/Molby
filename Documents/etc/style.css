@@ -121,3 +121,7 @@ span.italic {
 span.bold {
     font-weight: bold;
 }
+
+span.float_right {
+    float: right;
+}

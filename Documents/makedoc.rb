@@ -1,4 +1,5 @@
 #!/usr/bin/ruby
+# -*- coding: utf-8 -*-
 require "rexml/document"
 
 class REXML::Element
@@ -162,6 +163,11 @@ def special_node(e, ef, lang)
       c.push(REXML::Text.new(" &nbsp;&nbsp; ", false, nil, true))
       c.push(make_a_element(href, (lang == "ja" ? "[次]" : "[Next]")))
     end
+    otherlang = (lang == "ja" ? "en" : "ja")
+    n = REXML::Element.new("span")
+    n.add_attribute("class", "float_right")
+    n.add(make_a_element('../' + otherlang + '/' + ef.attributes['file'], (otherlang == "ja" ? "[Japanese]" : "[English]")))
+    c.push(n)
     c.each { |n|
       if n.is_a?(String)
         en.add_text(n)
@@ -193,6 +199,11 @@ def special_node(e, ef, lang)
       en.add(make_a_element(href, (lang == "ja" ? "[次: #{ep.title_ja}]" : "[Next: #{ep.title_en}]")))
       en.add_text(" ")
     end
+    otherlang = (lang == "ja" ? "en" : "ja")
+    n = REXML::Element.new("span")
+    n.add_attribute("class", "float_right")
+    n.add(make_a_element('../' + otherlang + '/' + ef.attributes['file'], (otherlang == "ja" ? "[Japanese]" : "[English]")))
+    en.add(n)
   elsif id == "\#toc"
     en = REXML::Element.new("div")
     en.add_attribute("class", "contents")
