@@ -1261,20 +1261,24 @@ For production runs, you can create AMBER input files from Molby. More specifica
 <span class="italic">Note:</span> There is no guarantee that Molby creates the exactly same input as the official AMBER modeling tools, nor the generated files are valid inputs for the SANDER module. You may need to modify them by hand.
 </p>
 <p>
-To creat SANDER input files, select "Create SANDER input..." command in the "MM/MD" &rarr; "Tools" submenu. You will be asked first for the file name for the "prmtop" file. Please be sure to add ".prmtop" extension. The other file, "inpcrd" file, is created as the same name with the ".prmtop" extension replaced by the ".inpcrd" extension.
+To creat SANDER input files, select "Create SANDER input..." command in the "MM/MD" &rarr; "Tools" submenu.
 </p>
 <p><img src="../etc/tutorial_7_04.png" /></p>
 <p>
-Subsequently, you will be asked to select one of the two versions of the prmtop files. The older one, "AMBER8/NAMD", allows you to use the output file by NAMD (see below).
+You will be asked first for the file name for the "prmtop" file. Please be sure to add ".prmtop" extension. The other file, "inpcrd" file, is created as the same name with the ".prmtop" extension replaced by the ".inpcrd" extension.
 </p>
 <p><img src="../etc/tutorial_7_05.png" /></p>
+<p>
+Subsequently, you will be asked to select one of the two versions of the prmtop files. The older one, "AMBER8/NAMD", allows you to use the output file by NAMD (see below).
+</p>
+<p><img src="../etc/tutorial_7_06.png" /></p>
 <p>
 Now you can transfer your files to the workstation running SANDER. To perform the simulation, you still need to create the instruction file for SANDER, which you should already know if you are using AMBER.
 </p>
 <p>
 After the simulation is over, you can get the trajectory file ("mdcrd" file) back and import to Molby. Use "Import..." command in the "File" menu, select "AMBER mdcrd file (*.crd; *.mdcrd)", and specify the file.
 </p>
-<p><img src="../etc/tutorial_7_06.png" /></p>
+<p><img src="../etc/tutorial_7_07.png" /></p>
 <h2>3. Using Molby with NAMD: Creating Inputs and Importing Outputs</h2>
 <p>
 You can also use the NAMD software package for production run. NAMD is developed by the Theoretical Biophysics Group in the University of Illinois at Urbana-Champaign, and the official information is found at their web site (<a href="http://www.ks.uiuc.edu/Research/namd/">http://www.ks.uiuc.edu/Research/namd/</a>). NAMD can use the AMBER "prmtop" as the input, by use of the instruction <code>amber yes</code>. See NAMD Users' Guide for details.
@@ -1317,14 +1321,11 @@ J. Phys. Chem. 1995, 99, 6208.
 J. Phys. Chem. 1995, 99, 6208.
 </td></tr>
 </table>
+<p><img src="../etc/tutorial_7_08.png" /><img src="../etc/tutorial_7_09.png" /></p>
 <p>
-While keeping the solvent box open, create or open the target (solute) molecule in a separate window.
+While keeping the solvent box open, create or open the target (solute) molecule in a separate window. With this solute molecule in the front window, select "Solvate..." command from the "Script" menu. A dialog box opens.
 </p>
-<p><img src="../etc/tutorial_7_07.png" /></p>
-<p>
-With the solute molecule in the front window, select "Solvate..." command from the "Script" menu. A dialog box opens.
-</p>
-<p><img src="../etc/tutorial_7_08.png" /></p>
+<p><img src="../etc/tutorial_7_10.png" /></p>
 <p>
 In the popup menu "Choose solvent box:", you will find the solvent box you opened earlier. Note that this popup menu lists <span class="italic">all</span> open molecules that have the associated periodic box (or unit cell). This can lead to a confusing situation that, if you have another solvated structure also open, that structure will also be listed in this popup menu, because a solvated structure always have a periodic box. Therefore, please take care so that you choose the right solvent box.</p>
 <p class="note">
@@ -1359,7 +1360,7 @@ MM/MD メニューの "Molecular Dynamics" を選ぶと、設定ダイアログ�
 "Timestep" パラメータは、運動方程式を解くときの最小時間刻みを表します。"Target temperature" は系の温度を表します。MD 計算が始まる際に、すべての原子はこの温度に対応するボルツマン分布に従ってランダムな速度を与えられます。さらに、MD 計算中は温度が一定に保たれるように速度が調整されます。"Steps per frame" と "number of frames" パラメータは分子力学によるエネルギー最小化の時と同じ意味を持ちます。このスクリーンショットでは "steps per frame" が 10 になっています。これはエネルギー最小化では適切な値ですが、分子動力学の場合はもう少し大きな値（たとえば 100）の方がより適切です。
 </p>
 <p>
-"Advanced..." ボタンを押すと、他のパラメータを持つ別のダイアログが開きます。これらのパラメータの意味は、内蔵 Ruby インタプリタのレファレンスで <a href="molby_rb/MDArena.html">MDArena</a> のページに書かれています。 
+"Advanced..." ボタンを押すと、他のパラメータを持つ別のダイアログが開きます。これらのパラメータの意味は、内蔵 Ruby インタプリタのリファレンスで <a href="molby_rb/MDArena.html">MDArena</a> のページに書かれています。 
 </p>
 <p><img src="../etc/tutorial_7_03.png" /></p>
 <p>
@@ -1373,20 +1374,24 @@ MM/MD メニューの "Molecular Dynamics" を選ぶと、設定ダイアログ�
 <span class="italic">注：</span> Molby が AMBER 付属のモデリングツールと同じ入力ファイルを作成する保証はありませんし、SANDER モジュールへの正しい入力になっている保証もありません。手作業で修正が必要な場合もあるかもしれません。
 </p>
 <p>
-SANDER の入力ファイルを作るには、"MM/MD" &rarr; "Tools" サブメニューから "Create SANDER input..." コマンドを選んでください。最初に "prmtop" ファイルの名前を聞かれます。必ず ".prmtop" 拡張子をつけるようにしてください。もう一つの "inpcrd" ファイルは、".prmtop" を ".inpcrd" に置き換えた名前で保存されます。
+SANDER の入力ファイルを作るには、"MM/MD" &rarr; "Tools" サブメニューから "Create SANDER input..." コマンドを選んでください。
 </p>
 <p><img src="../etc/tutorial_7_04.png" /></p>
 <p>
-次に、prmtop ファイルの２つのバージョンのうち１つを選ぶように促されます。古い方、"AMBER8/NAMD" を使えば、NAMD ソフトウェアパッケージ（下記参照）でも使える入力ファイルができます。
+最初に "prmtop" ファイルの名前を聞かれます。必ず ".prmtop" 拡張子をつけるようにしてください。もう一つの "inpcrd" ファイルは、".prmtop" を ".inpcrd" に置き換えた名前で保存されます。
 </p>
 <p><img src="../etc/tutorial_7_05.png" /></p>
+<p>
+次に、prmtop ファイルの２つのバージョンのうち１つを選ぶように促されます。古い方、"AMBER8/NAMD" を使えば、NAMD ソフトウェアパッケージ（下記参照）でも使える入力ファイルができます。
+</p>
+<p><img src="../etc/tutorial_7_06.png" /></p>
 <p>
 これで、SANDER が走るワークステーションにファイルを転送することができます。シミュレーションを実行するためには、SANDER の命令ファイルを作らなければなりませんが、AMBER をお使いの方ならやり方はよくご存知でしょう。
 </p>
 <p>
 計算が終了したら、トラジェクトリファイル ("mdcrd" ファイル) を取得して、Molby にインポートすることができます。"File" メニューの "Import..." コマンドを選び、ファイルタイプとして "AMBER mdcrd file (*.crd; *.mdcrd)" を選んで、ファイルを読み込んでください。
 </p>
-<p><img src="../etc/tutorial_7_06.png" /></p>
+<p><img src="../etc/tutorial_7_07.png" /></p>
 <h2>3. NAMD とともに使う：入力の作成と出力結果のインポート</h2>
 <p>
 本格的な計算を行うために NAMD を使うこともできます。NAMD はイリノイ大学アーバナ・シャンペーン校の理論生物物理グループが開発したソフトウェアパッケージです。公式ウェブサイトは <a href="http://www.ks.uiuc.edu/Research/namd/">http://www.ks.uiuc.edu/Research/namd/</a> です。NAMD は AMBER の "prmtop" を入力として使うことができます（<code>amber yes</code> 命令を使う）。詳しくは NAMD のユーザーズガイドをご覧ください。
@@ -1429,14 +1434,11 @@ J. Phys. Chem. 1995, 99, 6208.
 J. Phys. Chem. 1995, 99, 6208.
 </td></tr>
 </table>
+<p><img src="../etc/tutorial_7_08.png" /><img src="../etc/tutorial_7_09.png" /></p>
 <p>
-溶媒箱を開いたまま、目的とする分子（溶質）を新しいウィンドウで開くか作成します。
+溶媒箱を開いたまま、目的とする分子（溶質）を新しいウィンドウで開くか作成します。溶質分子のウィンドウを最前面にした状態で、"Script" メニューから "Solvate..." コマンドを選びます。ダイアログが開きます。
 </p>
-<p><img src="../etc/tutorial_7_07.png" /></p>
-<p>
-溶質分子のウィンドウを最前面にしたまま、"Script" メニューから "Solvate..." コマンドを選びます。ダイアログが開きます。
-</p>
-<p><img src="../etc/tutorial_7_08.png" /></p>
+<p><img src="../etc/tutorial_7_10.png" /></p>
 <p>
 ポップアップメニュー "Choose solvent box:" には、さきほど開いた溶媒箱がリストされているはずです。注意していただきたいのは、このポップアップメニューには周期境界（または単位格子）を持つすべての分子がリストされることです。このため、紛らわしいことに、別の溶媒和構造を同時に開いていると、その構造もこのポップアップメニューに登場してしまいます（溶媒和構造は必ず周期境界を持っていますから）。ですから、正しい溶媒箱を選ぶように十分に注意してください。
 </p>
