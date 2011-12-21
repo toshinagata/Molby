@@ -59,7 +59,7 @@ extern VALUE Ruby_ObjectAtIndex(VALUE ary, int idx);
 extern VALUE rb_eMolbyError;
 extern VALUE rb_mMolby;
 extern VALUE rb_cMolecule, rb_cMolEnumerable, rb_cAtomRef, rb_cIntGroup;
-extern VALUE rb_cVector3D, rb_cTransform;
+extern VALUE rb_cVector3D, rb_cTransform, rb_cLAMatrix;
 extern VALUE rb_cMDArena;
 	
 extern void Init_MolbyTypes(void);

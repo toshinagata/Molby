@@ -23,11 +23,20 @@
 
 #if defined(__WXMAC__) || defined(__CMDMAC__)
 /*  On Mac OS X, CLAPACK is in Accelerate.framework  */
+#include <vecLib/cblas.h>
 #include <vecLib/clapack.h>
 #else
 #include <f2c.h>
 #include <blaswrap.h>
 #include <clapack.h>
+#endif
+
+/*  Get the eigenvalue/eigenvector for a real symmetric matrix (3x3)  */
+#if !defined(__WXMAC__) && !defined(__CMDMAC__)
+typedef integer        __CLPK_integer;
+typedef logical        __CLPK_logical;
+typedef real           __CLPK_real;
+typedef doublereal     __CLPK_doublereal;
 #endif
 
 #ifdef __cplusplus
@@ -111,6 +120,26 @@ void TransformTranspose(Transform dst, const Transform src);
 void TransformForInversion(Transform dst, const Vector *center);
 int  TransformForReflection(Transform dst, const Vector *axis, const Vector *center);
 int  TransformForRotation(Transform dst, const Vector *axis, Double angle, const Vector *center);
+
+/*  Wrapper struct for CLAPACK routines  */
+typedef struct LAMatrix {
+	__CLPK_integer row, column;
+	__CLPK_doublereal data[1];
+} LAMatrix;
+
+LAMatrix *LAMatrixAllocTempMatrix(int column, int row);
+void LAMatrixReleaseTempMatrix(LAMatrix *mat);
+
+LAMatrix *LAMatrixNew(int row, int column);
+void LAMatrixRelease(LAMatrix *mat);
+LAMatrix *LAMatrixNewFromMatrix(const LAMatrix *mat);
+/*  mat3 = scale1 * mat1 * mat2 + scale2 * mat3  */
+/*  If trans1/trans2 is non-zero, mat1/mat2 is transposed before multiplication  */
+void LAMatrixMul(int trans1, int trans2, double scale1, const LAMatrix *mat1, const LAMatrix *mat2, double scale2, LAMatrix *mat3);
+int LAMatrixInvert(LAMatrix *mat1, const LAMatrix *mat2);
+Double LAMatrixDeterminant(const LAMatrix *mat);
+void LAMatrixTranspose(LAMatrix *mat1, const LAMatrix *mat2);
+int LAMatrixSymDiagonalize(LAMatrix *vec, LAMatrix *mat1, const LAMatrix *mat2);
 
 /*  Utility functions  */
 void SetPanicFunc(void (*func)(const char *, ...));

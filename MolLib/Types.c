@@ -189,15 +189,6 @@ MatrixGeneralRotation(Mat33 dst, const Vector *v1, const Vector *v2, const Vecto
 	dst[2] = v1->z; dst[5] = v2->z; dst[8] = v3->z;
 }
 
-
-/*  Get the eigenvalue/eigenvector for a real symmetric matrix (3x3)  */
-#if !defined(__WXMAC__) && !defined(__CMDMAC__)
-typedef integer        __CLPK_integer;
-typedef logical        __CLPK_logical;
-typedef real           __CLPK_real;
-typedef doublereal     __CLPK_doublereal;
-#endif
-
 int
 MatrixSymDiagonalize(Mat33 mat, Double *out_values, Vector *out_vectors)
 {
@@ -348,6 +339,228 @@ TransformForRotation(Transform dst, const Vector *axis, Double angle, const Vect
 	temp1[11] = center->z;
 	TransformMul(dst, temp1, tf);
 	return 0;
+}
+
+#pragma mark ==== LAMatrix ====
+
+typedef struct LAMatrixTempRecord {
+	int size;
+	LAMatrix *mat;
+} LAMatrixTempRecord;
+
+static Int sNTempRecords;
+static LAMatrixTempRecord *sTempRecords = NULL;
+
+LAMatrix *
+LAMatrixAllocTempMatrix(int column, int row)
+{
+	int i, n;
+	LAMatrixTempRecord *tp;
+	/*  Look for already allocated records  */
+	n = -1;
+	for (i = 0, tp = sTempRecords; i < sNTempRecords; i++, tp++) {
+		if (tp->size >= column * row) {
+			tp->size = -tp->size;
+			tp->mat->column = column;
+			tp->mat->row = row;
+			memset(tp->mat->data, 0, sizeof(__CLPK_doublereal) * column * row);
+			return tp->mat;
+		}
+		if (tp->size > 0)
+			n = i;  /*  Record the unused entry  */
+	}
+	if (n == -1) {
+		tp = (LAMatrixTempRecord *)AssignArray(&sTempRecords, &sNTempRecords, sizeof(LAMatrixTempRecord), sNTempRecords, NULL);
+		tp->mat = NULL;
+	} else tp = &sTempRecords[n];
+	tp->mat = (LAMatrix *)realloc(tp->mat, sizeof(LAMatrix) + sizeof(__CLPK_doublereal) * (column * row - 1));
+	tp->size = -column * row;
+	tp->mat->column = column;
+	tp->mat->row = row;
+	memset(tp->mat->data, 0, sizeof(__CLPK_doublereal) * column * row);
+	return tp->mat;
+}
+
+void
+LAMatrixReleaseTempMatrix(LAMatrix *mat)
+{
+	int i;
+	LAMatrixTempRecord *tp;
+	/*  Is this record found in sTempRecords?  */
+	for (i = 0, tp = sTempRecords; i < sNTempRecords; i++, tp++) {
+		if (tp->mat == mat) {
+			tp->size = -tp->size;
+			return;
+		}
+	}
+	/*  If not, then just free it  */
+	free(mat);
+}
+
+LAMatrix *
+LAMatrixNew(int row, int column)
+{
+	LAMatrix *m = (LAMatrix *)calloc(sizeof(LAMatrix) + sizeof(__CLPK_doublereal) * (column * row - 1), 1);
+	m->column = column;
+	m->row = row;
+	return m;
+}
+
+void
+LAMatrixRelease(LAMatrix *mat)
+{
+	if (mat != NULL)
+		free(mat);
+}
+
+LAMatrix *
+LAMatrixNewFromMatrix(const LAMatrix *mat)
+{
+	LAMatrix *m = LAMatrixNew(mat->row, mat->column);
+	memmove(m->data, mat->data, sizeof(m->data[0]) * mat->row * mat->column);
+	return m;
+}
+
+void
+LAMatrixMul(int trans1, int trans2, double scale1, const LAMatrix *mat1, const LAMatrix *mat2, double scale2, LAMatrix *mat3)
+{
+#if defined(__WXMAC__) || defined(__CMDMAC__)
+	int m, n, k;
+	if (trans1) {
+		trans1 = CblasTrans;
+		m = mat1->column;
+		k = mat1->row;
+	} else {
+		trans1 = CblasNoTrans;
+		m = mat1->row;
+		k = mat1->column;
+	}
+	if (trans2) {
+		trans2 = CblasTrans;
+		n = mat2->row;
+	} else {
+		trans2 = CblasNoTrans;
+		n = mat2->column;
+	}
+	cblas_dgemm(CblasColMajor, trans1, trans2, m, n, k, scale1, mat1->data, mat1->row, mat2->data, mat2->row, scale2, mat3->data, mat3->row);
+#else
+	char ctrans1, ctrans2;
+	int m, n, k;
+	if (trans1) {
+		ctrans1 = 'T';
+		m = mat1->column;
+		k = mat1->row;
+	} else {
+		ctrans1 = 'N';
+		m = mat1->row;
+		k = mat1->column;
+	}
+	if (trans2) {
+		ctrans2 = 'T';
+		n = mat2->row;
+	} else {
+		ctrans2 = 'N';
+		n = mat2->column;
+	}
+	dgemm_(&ctrans1, &ctrans2, &m, &n, &k, &scale1, mat1->data, &mat1->row, mat2->data, &mat2->row, &scale2, mat3->data, &mat3->row);
+#endif
+}
+
+int
+LAMatrixInvert(LAMatrix *mat1, const LAMatrix *mat2)
+{
+	LAMatrix *tmat1, *tmat2;
+	__CLPK_integer m, n, lda, info, lwork;
+	if (mat2->column != mat2->row || mat1->column * mat1->row < mat2->column * mat2->row)
+		return -1;  /*  Wrong dimension  */
+	lwork = m = n = lda = mat1->column;
+	tmat1 = LAMatrixAllocTempMatrix(n, n);  /*  For work  */
+	tmat2 = LAMatrixAllocTempMatrix(n, 1);  /*  For piv   */
+	memmove(mat1->data, mat2->data, sizeof(__CLPK_doublereal) * n * n);
+	dgetrf_(&m, &n, mat1->data, &lda, (__CLPK_integer *)tmat2->data, &info);
+	if (info == 0)
+		dgetri_(&n, mat1->data, &lda, (__CLPK_integer *)tmat2->data, tmat1->data, &lwork, &info);
+	LAMatrixReleaseTempMatrix(tmat1);
+	LAMatrixReleaseTempMatrix(tmat2);
+	mat1->column = mat1->row = m;
+	return info;
+}
+
+Double
+LAMatrixDeterminant(const LAMatrix *mat)
+{
+	LAMatrix *tmat1, *tmat2;
+	Double det = 1.0;
+	__CLPK_integer m, n, mn, i, lda, info;
+	lda = m = mat->row;
+	n = mat->column;
+	if (m < n)
+		mn = m;
+	else mn = n;
+	tmat1 = LAMatrixAllocTempMatrix(m, n);
+	tmat2 = LAMatrixAllocTempMatrix(mn, 1);  /* For piv */
+	memmove(tmat1->data, mat->data, sizeof(__CLPK_doublereal) * m * n);
+	dgetrf_(&m, &n, tmat1->data, &lda, (__CLPK_integer *)tmat2->data, &info);
+	if (info == 0) {
+		for (i = 0; i < mn - 1; i++) {
+			if (((__CLPK_integer *)tmat2->data)[i] != i + 1)
+				det = -det;
+		}
+		for (i = 0; i < mn; i++)
+			det *= tmat1->data[(m + 1) * i];
+	} else det = 0.0;
+	LAMatrixReleaseTempMatrix(tmat1);
+	LAMatrixReleaseTempMatrix(tmat2);
+	return det;
+}
+
+void
+LAMatrixTranspose(LAMatrix *mat1, const LAMatrix *mat2)
+{
+	LAMatrix *mat3;
+	int i, j;
+	if (mat1 == mat2) {
+		mat3 = LAMatrixAllocTempMatrix(mat2->row, mat2->column);
+		memmove(mat3->data, mat2->data, sizeof(__CLPK_doublereal) * mat2->column * mat2->row);
+	} else mat3 = (LAMatrix *)mat2;
+	if (mat1->column * mat1->row >= mat3->column * mat3->row) {
+		mat1->column = mat3->row;
+		mat1->row = mat3->column;
+		for (i = 0; i < mat1->column; i++) {
+			for (j = 0; j < mat1->row; j++) {
+				mat1->data[i * mat1->row + j] = mat3->data[j * mat1->column + i];
+			}
+		}
+	}
+	if (mat1 == mat2)
+		LAMatrixReleaseTempMatrix(mat3);
+}
+
+/*  Diagonalize the symmetric matrix  */
+/*  eigenValues = (m, 1) Matrix, eigenVectors = (m, m) Matrix (column vectors are the eigenvectors),
+    mat2 = (m, m) symmetric Matrix  */
+int
+LAMatrixSymDiagonalize(LAMatrix *eigenValues, LAMatrix *eigenVectors, const LAMatrix *mat)
+{
+	__CLPK_integer n, lda, lwork, info;
+	__CLPK_doublereal dwork;
+	LAMatrix *tmat1;
+	if (mat->column != mat->row || eigenVectors->column * eigenVectors->row < mat->column * mat->row || eigenValues->column * eigenValues->row < mat->column * mat->row)
+		return -1;  /*  Illegal dimension  */
+	n = lda = mat->column;
+	memmove(eigenVectors->data, mat->data, sizeof(__CLPK_doublereal) * n * n);
+	lwork = -1;  /*  workspace query  */
+	dsyev_("V", "U", &n, eigenVectors->data, &lda, eigenValues->data, &dwork, &lwork, &info);
+	if (info == 0) {
+		lwork = dwork;
+		tmat1 = LAMatrixAllocTempMatrix(lwork, 1);
+		dsyev_("V", "U", &n, eigenVectors->data, &lda, eigenValues->data, tmat1->data, &lwork, &info);
+		LAMatrixReleaseTempMatrix(tmat1);
+	}
+	eigenValues->row = n;
+	eigenValues->column = 1;
+	eigenVectors->row = eigenVectors->column = n;
+	return info;
 }
 
 #pragma mark ==== Array ====

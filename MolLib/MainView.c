@@ -3513,5 +3513,3 @@ MainView_selectedMO(MainView *mview)
 		return NULL;
 	return MainViewCallback_getTableSelection(mview);  /*  Note: the indices are 0 based  */
 }
-
-	
