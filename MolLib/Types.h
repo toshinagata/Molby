@@ -127,11 +127,12 @@ typedef struct LAMatrix {
 	__CLPK_doublereal data[1];
 } LAMatrix;
 
-LAMatrix *LAMatrixAllocTempMatrix(int column, int row);
+LAMatrix *LAMatrixAllocTempMatrix(int row, int column);
 void LAMatrixReleaseTempMatrix(LAMatrix *mat);
 
 LAMatrix *LAMatrixNew(int row, int column);
 void LAMatrixRelease(LAMatrix *mat);
+LAMatrix *LAMatrixResize(LAMatrix *mat, int row, int column);
 LAMatrix *LAMatrixNewFromMatrix(const LAMatrix *mat);
 /*  mat3 = scale1 * mat1 * mat2 + scale2 * mat3  */
 /*  If trans1/trans2 is non-zero, mat1/mat2 is transposed before multiplication  */

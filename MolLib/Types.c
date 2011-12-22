@@ -352,7 +352,7 @@ static Int sNTempRecords;
 static LAMatrixTempRecord *sTempRecords = NULL;
 
 LAMatrix *
-LAMatrixAllocTempMatrix(int column, int row)
+LAMatrixAllocTempMatrix(int row, int column)
 {
 	int i, n;
 	LAMatrixTempRecord *tp;
@@ -404,6 +404,16 @@ LAMatrixNew(int row, int column)
 	m->column = column;
 	m->row = row;
 	return m;
+}
+
+LAMatrix *
+LAMatrixResize(LAMatrix *mat, int row, int column)
+{
+	if (mat == NULL || mat->row * mat->column < row * column)
+		mat = (LAMatrix *)realloc(mat, sizeof(LAMatrix) + sizeof(__CLPK_doublereal) * (column * row - 1));
+	mat->column = column;
+	mat->row = row;
+	return mat;
 }
 
 void
@@ -476,7 +486,8 @@ LAMatrixInvert(LAMatrix *mat1, const LAMatrix *mat2)
 	lwork = m = n = lda = mat1->column;
 	tmat1 = LAMatrixAllocTempMatrix(n, n);  /*  For work  */
 	tmat2 = LAMatrixAllocTempMatrix(n, 1);  /*  For piv   */
-	memmove(mat1->data, mat2->data, sizeof(__CLPK_doublereal) * n * n);
+	if (mat1 != mat2)
+		memmove(mat1->data, mat2->data, sizeof(__CLPK_doublereal) * n * n);
 	dgetrf_(&m, &n, mat1->data, &lda, (__CLPK_integer *)tmat2->data, &info);
 	if (info == 0)
 		dgetri_(&n, mat1->data, &lda, (__CLPK_integer *)tmat2->data, tmat1->data, &lwork, &info);
@@ -545,7 +556,7 @@ LAMatrixSymDiagonalize(LAMatrix *eigenValues, LAMatrix *eigenVectors, const LAMa
 	__CLPK_integer n, lda, lwork, info;
 	__CLPK_doublereal dwork;
 	LAMatrix *tmat1;
-	if (mat->column != mat->row || eigenVectors->column * eigenVectors->row < mat->column * mat->row || eigenValues->column * eigenValues->row < mat->column * mat->row)
+	if (mat->column != mat->row || eigenVectors->column * eigenVectors->row < mat->column * mat->row || eigenValues->column * eigenValues->row < mat->column)
 		return -1;  /*  Illegal dimension  */
 	n = lda = mat->column;
 	memmove(eigenVectors->data, mat->data, sizeof(__CLPK_doublereal) * n * n);

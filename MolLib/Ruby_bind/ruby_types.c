@@ -1226,6 +1226,36 @@ LAMatrixFromValue(VALUE val, int *needsRelease)
 		if (needsRelease != NULL)
 			*needsRelease = 0;
 		return (LAMatrix *)DATA_PTR(val);
+	} else if (rb_obj_is_kind_of(val, rb_cTransform)) {
+		/*  Transform is described as a 4x4 matrix
+		    a11 a12 a13 a14
+		    a21 a22 a23 a24
+		    a31 a32 a33 a34
+			0   0   0   1    */
+		Transform *tp;
+		Data_Get_Struct(val, Transform, tp);
+		mp1 = LAMatrixNew(4, 4);
+		for (i = 0; i < 4; i++) {
+			for (j = 0; j < 3; j++) {
+				mp1->data[i * 4 + j] = (*tp)[i * 3 + j];
+			}
+			mp1->data[i * 4 + 3] = (i == 3 ? 1.0 : 0.0);
+		}
+		if (needsRelease != NULL)
+			*needsRelease = 1;
+		return mp1;
+	} else if (rb_obj_is_kind_of(val, rb_cVector3D)) {
+		/*  Vector3D is described as a column vector (vx vy vz 1).transpose  */
+		Vector *vp;
+		Data_Get_Struct(val, Vector, vp);
+		mp1 = LAMatrixNew(4, 1);
+		mp1->data[0] = vp->x;
+		mp1->data[1] = vp->y;
+		mp1->data[2] = vp->z;
+		mp1->data[3] = 1.0;
+		if (needsRelease != NULL)
+			*needsRelease = 1;
+		return mp1;
 	}
 	if (index_mid == 0) {
 		index_mid = rb_intern("[]");
@@ -1328,7 +1358,7 @@ s_LAMatrix_Initialize(int argc, VALUE *argv, VALUE self)
 			DATA_PTR(self) = mp;
 		}
 	} else if (argc == 0 || argc >= 3) {
-		rb_raise(rb_eArgError, "Wrong number of arguments: expecting two integers (row, column) or a single array or matrix");
+		rb_raise(rb_eArgError, "Wrong number of arguments: expecting two integers (row, column) or a single Array, LAMatrix, Vector3D, or Transform");
 	} else {
 		int needsRelease;
 		mp = LAMatrixFromValue(argv[0], &needsRelease);
@@ -1341,6 +1371,43 @@ s_LAMatrix_Initialize(int argc, VALUE *argv, VALUE self)
 		DATA_PTR(self) = mp;
 	}
 	return Qnil;
+}
+
+/*
+ *  call-seq:
+ *     initialize_copy(arg) -> self
+ *
+ *  Duplicate the matrix. Also used for implementation of dup.
+ */
+static VALUE
+s_LAMatrix_InitializeCopy(VALUE self, VALUE val)
+{
+	LAMatrix *mp1;
+	int needsRelease;
+	mp1 = LAMatrixFromValue(val, &needsRelease);
+	if (!needsRelease)
+		mp1 = LAMatrixNewFromMatrix(mp1);
+	if (DATA_PTR(self) != NULL)
+		free(DATA_PTR(self));
+	DATA_PTR(self) = mp1;
+	return self;
+}
+
+/*
+ *  call-seq:
+ *     from_columns(r1,...)
+ *
+ *  Returns a new LAMatrix object built from column vectors.
+ */
+static VALUE
+s_LAMatrix_NewFromColumns(VALUE klass, VALUE val)
+{
+	LAMatrix *mp;
+	int needsRelease;
+	mp = LAMatrixFromValue(val, &needsRelease);
+	if (!needsRelease)
+		mp = LAMatrixNewFromMatrix(mp);
+	return Data_Wrap_Struct(rb_cLAMatrix, 0, -1, mp);
 }
 
 /*
@@ -1364,46 +1431,95 @@ s_LAMatrix_NewFromRows(VALUE klass, VALUE val)
 /*
  *  call-seq:
  *     self[i, j]  -> Float
+ *     self[i] -> Array
  *
  *  Get the element (+i+,+j+) of the matrix, i.e. column +i+, row +j+.
+ *  In the second form, the i-th column vector is returned as an array of floating numbers.
+ *  (If you want to get the column vector as a LAMatrix, use self.column(i) instead.)
  *  Be careful about the order of the arguments. It follows convention of multi-dimensional arrays
  *  rather than mathematical notation.
  */
 static VALUE
-s_LAMatrix_ElementAtIndex(VALUE self, VALUE val1, VALUE val2)
+s_LAMatrix_ElementAtIndex(int argc, VALUE *argv, VALUE self)
 {
 	LAMatrix *mp;
 	double w;
-	int n1 = NUM2INT(val1);
-	int n2 = NUM2INT(val2);
+	VALUE val1, val2;
+	int n1, n2;
+	rb_scan_args(argc, argv, "11", &val1, &val2);
+	n1 = NUM2INT(val1);
+	if (val2 != Qnil)
+		n2 = NUM2INT(val2);
+	else n2 = -1;
 	Data_Get_Struct(self, LAMatrix, mp);
-	if (n1 < 0 || n1 >= mp->column || n2 < 0 || n2 >= mp->row)
+	if (n1 < 0 || n1 >= mp->column || (val2 != Qnil && (n2 < 0 || n2 >= mp->row)))
 		rb_raise(rb_eMolbyError, "index to LAMatrix out of range");
-	w = mp->data[n1 * mp->row + n2];
-	return rb_float_new(w);
+	if (n2 >= 0) {
+		w = mp->data[n1 * mp->row + n2];
+		return rb_float_new(w);
+	} else {
+		val2 = rb_ary_new2(mp->row);
+		for (n2 = 0; n2 < mp->row; n2++)
+			rb_ary_store(val2, n2, rb_float_new(mp->data[n1 * mp->row + n2]));
+		return val2;
+	}
 }
 
 /*
  *  call-seq:
  *     self[i, j] = val
+ *     self[i] = array
  *
  *  Set the element (+i+,+j+) of the matrix, i.e. column +i+, row +j+.
+ *  In the second form, the i-th column vector is replaced with the given array. For convenience,
+ *  if the given array is an array of array, then it is flattened before use.
+ *  This allows use of a column vector or a row vector as the argument.
  *  Be careful about the order of the arguments. It follows convention of multi-dimensional arrays
  *  rather than mathematical notation.
  */
 static VALUE
-s_LAMatrix_SetElementAtIndex(VALUE self, VALUE idx1, VALUE idx2, VALUE val)
+s_LAMatrix_SetElementAtIndex(int argc, VALUE *argv, VALUE self)
 {
 	LAMatrix *mp;
 	double w;
-	int n1 = NUM2INT(rb_Integer(idx1));
-	int n2 = NUM2INT(rb_Integer(idx2));
+	int n1, n2;
+	VALUE idx1, idx2, val;
+	rb_scan_args(argc, argv, "21", &idx1, &idx2, &val);
+	if (argc == 2) {
+		val = idx2;
+		idx2 = Qnil;
+	}
+	n1 = NUM2INT(rb_Integer(idx1));
+	if (idx2 != Qnil)
+		n2 = NUM2INT(rb_Integer(idx2));
+	else n2 = -1;
 	Data_Get_Struct(self, LAMatrix, mp);
-	if (n1 < 0 || n1 >= mp->column || n2 < 0 || n2 >= mp->row)
-		rb_raise(rb_eMolbyError, "index to LAMatrix out of range");
-	w = NUM2DBL(rb_Float(val));
-	mp->data[n1 * mp->row + n2] = w;
-	return rb_float_new(w);
+	if (n1 < 0 || n1 >= mp->column || (idx2 != Qnil && (n2 < 0 || n2 >= mp->row)))
+		rb_raise(rb_eRangeError, "index to LAMatrix out of range");
+	if (idx2 == Qnil) {
+		val = rb_ary_to_ary(val);
+		if (RARRAY_LEN(val) > 0 && rb_obj_is_kind_of(RARRAY_PTR(val)[0], rb_cArray)) {
+			/*  Flatten  */
+			if (RARRAY_LEN(val) == 1)
+				val = RARRAY_PTR(val)[0];
+			else {
+				static ID sFlatten = 0;
+				if (sFlatten == 0)
+					sFlatten = rb_intern("flatten");
+				val = rb_funcall(val, sFlatten, 0);
+			}
+		}
+		if (RARRAY_LEN(val) != mp->row)
+			rb_raise(rb_eArgError, "the row dimension does not match the given array");
+		for (n2 = 0; n2 < mp->row; n2++) {
+			mp->data[n1 * mp->row + n2] = NUM2DBL(rb_Float(RARRAY_PTR(val)[n2]));
+		}
+	} else {
+		val = rb_Float(val);
+		w = NUM2DBL(val);
+		mp->data[n1 * mp->row + n2] = w;
+	}
+	return val;
 }
 
 /*
@@ -1421,7 +1537,7 @@ s_LAMatrix_IsEqual(VALUE self, VALUE val)
 	VALUE retval = Qtrue;
 	Data_Get_Struct(self, LAMatrix, mp1);
 	mp2 = LAMatrixFromValue(val, &needsRelease);
-	if (mp1->column = mp2->column || mp1->row != mp2->row)
+	if (mp1->column != mp2->column || mp1->row != mp2->row)
 		retval = Qfalse;
 	else {
 		n = mp1->column * mp1->row;
@@ -1440,8 +1556,6 @@ s_LAMatrix_IsEqual(VALUE self, VALUE val)
 /*
  *  call-seq:
  *     self + val  -> (new) LAMatrix
- *
- *  Returns a new transform corresponding to the sum of the two transform matrix.
  */
 static VALUE
 s_LAMatrix_Add(VALUE self, VALUE val)
@@ -1464,8 +1578,6 @@ s_LAMatrix_Add(VALUE self, VALUE val)
 /*
  *  call-seq:
  *     self - val  -> (new) LAMatrix
- *
- *  Returns a new transform corresponding to the difference of the two transform matrix.
  */
 static VALUE
 s_LAMatrix_Subtract(VALUE self, VALUE val)
@@ -1520,6 +1632,196 @@ s_LAMatrix_Multiply(VALUE self, VALUE val)
 
 /*
  *  call-seq:
+ *     self.add!(val) -> self
+ *
+ *  Add a matrix to self.
+ */
+static VALUE
+s_LAMatrix_Add_Bang(VALUE self, VALUE val)
+{
+	LAMatrix *mp1, *mp2;
+	int i, n, needsRelease;
+	Data_Get_Struct(self, LAMatrix, mp1);
+	mp2 = LAMatrixFromValue(val, &needsRelease);
+	if (mp1->column != mp2->column && mp1->row != mp2->row)
+		rb_raise(rb_eArgError, "mismatch dimensions of LAMatrix");
+	n = mp1->row * mp1->column;
+	for (i = 0; i < n; i++)
+		mp1->data[i] = mp1->data[i] + mp2->data[i];
+	if (needsRelease)
+		free(mp2);
+	return self;
+}
+
+/*
+ *  call-seq:
+ *     self.sub!(val)  -> self
+ *
+ *  Subtract a matrix from self.
+ */
+static VALUE
+s_LAMatrix_Subtract_Bang(VALUE self, VALUE val)
+{
+	LAMatrix *mp1, *mp2;
+	int i, n, needsRelease;
+	Data_Get_Struct(self, LAMatrix, mp1);
+	mp2 = LAMatrixFromValue(val, &needsRelease);
+	if (mp1->column != mp2->column && mp1->row != mp2->row)
+		rb_raise(rb_eArgError, "mismatch dimensions of LAMatrix");
+	n = mp1->row * mp1->column;
+	for (i = 0; i < n; i++)
+		mp1->data[i] = mp1->data[i] - mp2->data[i];
+	if (needsRelease)
+		free(mp2);
+	return self;
+}
+
+/*
+ *  call-seq:
+ *     self.multiply!(arg1, arg2, ...) -> self
+ *
+ *  Multiply the arguments to self.
+ *  If argN is a string "t", then the subsequent matrix is
+ *  transposed (the object is not modified; it is just transposed during calculation).
+ *  If argN is a string "i", then the subsequent matrix is inverted (the object is not modified).
+ *  The "t" and "i" can be combined as "ti" or "it".
+ *  If argN is a number, then scalar multiplication is performed.
+ *  Otherwise, argN must be a matrix, which has the same row-size as the column-size of the
+ *  last result.
+ */
+static VALUE
+s_LAMatrix_Multiply_Bang(int argc, VALUE *argv, VALUE self)
+{
+	LAMatrix *mp1, *mp2;
+	__CLPK_doublereal mul;
+	int needsRelease, n, inverseFlag, transposeFlag, temp1Flag, temp2Flag;
+	if (self == Qnil) {
+		/*  This is for handling the singleton method LAMatrix.multiply(arg1, arg2, ...)  */
+		mp1 = NULL;
+	} else {
+		Data_Get_Struct(self, LAMatrix, mp1);
+	}
+	inverseFlag = transposeFlag = temp1Flag = 0;
+	mul = 1.0;
+	while (argc > 0) {
+		VALUE val = argv[0];
+		if (rb_obj_is_kind_of(val, rb_cNumeric)) {
+			double w = NUM2DBL(rb_Float(val));
+			mul *= w;
+			if (argc == 1) {
+				/*  This is the last argument: perform scalar multiplication  */
+				if (!temp1Flag) {
+					mp2 = LAMatrixAllocTempMatrix(mp1->row, mp1->column);
+					memmove(mp2->data, mp1->data, sizeof(mp1->data[0]) * mp1->row * mp1->column);
+					mp1 = mp2;
+					temp1Flag = 1;
+				}
+				for (n = mp1->row * mp1->column - 1; n >= 0; n--) {
+					mp1->data[n] *= mul;
+				}
+				mul = 1.0;  /*  Not necessary, but just to be consistent  */
+			}
+		} else if (rb_obj_is_kind_of(val, rb_cString)) {
+			char *p = StringValuePtr(val);
+			while (*p != 0) {
+				if (*p == 'i' || *p == 'I')
+					inverseFlag = !inverseFlag;
+				else if (*p == 't' || *p == 'T')
+					transposeFlag = !transposeFlag;
+				else {
+					if (temp1Flag)
+						LAMatrixReleaseTempMatrix(mp1);
+					rb_raise(rb_eArgError, "wrong character: only i or t is recognized");
+				}
+				p++;
+			}
+		} else {
+			LAMatrix *mptemp;
+			temp2Flag = 0;
+			mp2 = LAMatrixFromValue(val, &needsRelease);
+			if (inverseFlag) {
+				if (mp2->column != mp2->row)
+					rb_raise(rb_eStandardError, "cannot invert non-square matrix");
+				if (needsRelease)
+					n = LAMatrixInvert(mp2, mp2);  /*  Invert in place  */
+				else {
+					mptemp = LAMatrixAllocTempMatrix(mp2->row, mp2->column);
+					n = LAMatrixInvert(mptemp, mp2);
+					mp2 = mptemp;   /*  Original mp2 is no longer needed  */
+					temp2Flag = 1;  /*  mp2 should be later deallocated by LAMatrixReleaseTempMatrix  */
+				}
+				if (n != 0) {
+					if (temp2Flag)
+						LAMatrixReleaseTempMatrix(mp2);
+					else if (needsRelease)
+						LAMatrixRelease(mp2);
+					if (temp1Flag)
+						LAMatrixReleaseTempMatrix(mp1);
+					rb_raise(rb_eStandardError, "cannot invert matrix");
+				}
+			}
+			if (mp1 != NULL) {
+				/*  Perform multiply  */
+				if ((transposeFlag && (mp1->column != mp2->column)) || (!transposeFlag && (mp1->column != mp2->row)))
+					rb_raise(rb_eArgError, "mismatch dimensions in LAMatrix multiplication");
+				mptemp = LAMatrixAllocTempMatrix(mp1->row, (transposeFlag ? mp2->row : mp2->column));
+				LAMatrixMul(0, transposeFlag, mul, mp1, mp2, 0.0, mptemp);
+				if (temp1Flag)
+					LAMatrixReleaseTempMatrix(mp1);
+			} else {
+				/*  mp1 = mp2  */
+				mptemp = LAMatrixAllocTempMatrix(mp2->row, mp2->column);
+				if (transposeFlag) 
+					LAMatrixTranspose(mptemp, mp2);
+				else
+					memmove(mptemp->data, mp2->data, sizeof(mp2->data[0]) * mp2->row * mp2->column);
+			}
+			mp1 = mptemp;
+			temp1Flag = 1;
+			if (temp2Flag)
+				LAMatrixReleaseTempMatrix(mp2);
+			else if (needsRelease)
+				LAMatrixRelease(mp2);
+			inverseFlag = transposeFlag = 0;
+			mul = 1.0;
+		}
+		argc--;
+		argv++;
+	}
+	if (self != Qnil) {
+		/*  Copy the result back to self  */
+		Data_Get_Struct(self, LAMatrix, mp2);
+		if (mp1 != mp2)
+			mp2 = LAMatrixResize(mp2, mp1->row, mp1->column);
+		memmove(mp2->data, mp1->data, sizeof(mp1->data[0]) * mp1->row * mp1->column);
+		DATA_PTR(self) = mp2;
+		if (temp1Flag)
+			LAMatrixReleaseTempMatrix(mp1);
+		return self;
+	} else {
+		/*  Create a new LAMatrix from mp1  */
+		mp2 = LAMatrixNewFromMatrix(mp1);
+		if (temp1Flag)
+			LAMatrixReleaseTempMatrix(mp1);
+		return Data_Wrap_Struct(rb_cLAMatrix, 0, -1, mp2);
+	}
+}
+
+/*
+ *  call-seq:
+ *     LAMatrix.multiply(arg1, arg2, ...) -> (new) LAMatrix
+ *
+ *  Returns a new LAMatrix that is the product of the arguments.
+ *  The arguments are treated in the same way as LAMatrix.multiply!.
+ */
+static VALUE
+s_LAMatrix_Multiply_Singleton(int argc, VALUE *argv, VALUE self)
+{
+	return s_LAMatrix_Multiply_Bang(argc, argv, Qnil);
+}
+
+/*
+ *  call-seq:
  *     identity(size)  -> LAMatrix
  *
  *  Returns an identity matrix of size x size.
@@ -1535,6 +1837,27 @@ s_LAMatrix_Identity(VALUE klass, VALUE val)
 	mp = LAMatrixNew(n, n);
 	for (i = 0; i < n; i++)
 		mp->data[i * n + i] = 1.0;
+	return Data_Wrap_Struct(rb_cLAMatrix, 0, -1, mp);
+}
+
+/*
+ *  call-seq:
+ *     zero(row [, column])  -> LAMatrix
+ *
+ *  Returns a zero matrix of the specified size.
+ */
+static VALUE
+s_LAMatrix_Zero(int argc, VALUE *argv, VALUE klass)
+{
+	LAMatrix *mp;
+	VALUE val1, val2;
+	int n1, n2;
+	rb_scan_args(argc, argv, "11", &val1, &val2);
+	n1 = NUM2INT(rb_Integer(val1));
+	n2 = (val2 == Qnil ? n1 : NUM2INT(rb_Integer(val2)));
+	if (n1 <= 0 || n2 <= 0)
+		rb_raise(rb_eArgError, "invalid matrix dimension");
+	mp = LAMatrixNew(n1, n2);
 	return Data_Wrap_Struct(rb_cLAMatrix, 0, -1, mp);
 }
 
@@ -1580,7 +1903,7 @@ s_LAMatrix_Diagonal(int argc, VALUE *argv, VALUE klass)
  *  call-seq:
  *     inverse  -> (new) LAMatrix
  *
- *  Returns the inverse transform. If the matrix is not regular, an exception is raised.
+ *  Returns the inverse matrix. If the matrix is not regular, an exception is raised.
  */
 static VALUE
 s_LAMatrix_Inverse(VALUE self)
@@ -1597,9 +1920,28 @@ s_LAMatrix_Inverse(VALUE self)
 
 /*
  *  call-seq:
+ *     inverse!  -> self
+ *
+ *  Replace self with the inverse matrix and returns self. 
+ *  If the matrix is not regular, an exception is raised.
+ */
+static VALUE
+s_LAMatrix_Inverse_Bang(VALUE self)
+{
+	LAMatrix *mp1;
+	Data_Get_Struct(self, LAMatrix, mp1);
+	if (mp1->column != mp1->row)
+		rb_raise(rb_eArgError, "the matrix is not square");
+	if (LAMatrixInvert(mp1, mp1))
+		rb_raise(rb_eMolbyError, "singular matrix");
+	return self;
+}
+
+/*
+ *  call-seq:
  *     self / val -> (new) LAMatrix
  *
- *  Returns self * val.invert. If val is not a regular transform,
+ *  Returns self * val.invert. If val is not a regular matrix,
  *  an exception is raised.
  */
 static VALUE
@@ -1636,7 +1978,7 @@ s_LAMatrix_Divide(VALUE self, VALUE val)
  *  call-seq:
  *     transpose -> (new) LAMatrix
  *
- *  Returns a new transform in which the rotation component is transposed from the original.
+ *  Returns a new transposed matrix.
  */
 static VALUE
 s_LAMatrix_Transpose(VALUE self)
@@ -1650,9 +1992,24 @@ s_LAMatrix_Transpose(VALUE self)
 
 /*
  *  call-seq:
+ *     transpose! -> self
+ *
+ *  Replace self with the transposed matrix and return self.
+ */
+static VALUE
+s_LAMatrix_Transpose_Bang(VALUE self)
+{
+	LAMatrix *mp1;
+	Data_Get_Struct(self, LAMatrix, mp1);
+	LAMatrixTranspose(mp1, mp1);
+	return self;
+}
+
+/*
+ *  call-seq:
  *     determinant -> Float
  *
- *  Returns the determinant of the transform.
+ *  Returns the determinant of the matrix.
  */
 static VALUE
 s_LAMatrix_Determinant(VALUE self)
@@ -1666,7 +2023,7 @@ s_LAMatrix_Determinant(VALUE self)
  *  call-seq:
  *     trace -> Float
  *
- *  Returns the trace (sum of the diagonal elements) of the transform.
+ *  Returns the trace (sum of the diagonal elements) of the matrix.
  */
 static VALUE
 s_LAMatrix_Trace(VALUE self)
@@ -1682,6 +2039,47 @@ s_LAMatrix_Trace(VALUE self)
 	for (i = 0; i < n; i++)
 		tr += mp1->data[i * mp1->row + i];
 	return rb_float_new(tr);
+}
+
+/*
+ *  call-seq:
+ *     fnorm -> Float
+ *
+ *  Returns the Frobenius norm of the matrix.
+ */
+static VALUE
+s_LAMatrix_Fnorm(VALUE self)
+{
+	LAMatrix *mp1;
+	Double norm;
+	int i, n;
+	Data_Get_Struct(self, LAMatrix, mp1);
+	norm = 0.0;
+	n = mp1->row * mp1->column;
+	for (i = 0; i < n; i++)
+		norm += mp1->data[i] * mp1->data[i];
+	norm = sqrt(norm);
+	return rb_float_new(norm);
+}
+
+/*
+ *  call-seq:
+ *     fnorm2 -> Float
+ *
+ *  Returns the square of the Frobenius norm of the matrix.
+ */
+static VALUE
+s_LAMatrix_Fnorm2(VALUE self)
+{
+	LAMatrix *mp1;
+	Double norm;
+	int i, n;
+	Data_Get_Struct(self, LAMatrix, mp1);
+	norm = 0.0;
+	n = mp1->row * mp1->column;
+	for (i = 0; i < n; i++)
+		norm += mp1->data[i] * mp1->data[i];
+	return rb_float_new(norm);
 }
 
 static VALUE
@@ -1771,54 +2169,69 @@ s_LAMatrix_Eigenvalues(VALUE self)
 
 /*
  *  call-seq:
- *     LAMatrix[*args] -> (new) LAMatrix
+ *     LAMatrix[f1, f2, ..., fn] -> (new) LAMatrix
+ *     LAMatrix[a1, a2, ..., an] -> (new) LAMatrix
+ *     LAMatrix[obj] -> (new) LAMatrix
  *
- *  Create a new transform. Equivalent to LAMatrix.new(args).
+ *  Create a new matrix.
+ *  In the first form, f1...fn must be numbers, and a (n, 1) matrix (a column vector) is created.
+ *  In the second form, a1...an must be array-like objects, and a (m, n) matrix (m is the maximum 
+ *  dimension of a1...an) is created.
+ *  In the third form, obj must be either an array, a Vector3D, a Transform, or an LAMatrix.
  */
 static VALUE
 s_LAMatrix_Create(VALUE klass, VALUE args)
 {
 	VALUE val = s_LAMatrix_Alloc(klass);
-	s_LAMatrix_Initialize(1, &args, val);
+	int argc = RARRAY_LEN(args);
+	VALUE *argv = RARRAY_PTR(args);
+	if (argc == 0)
+		rb_raise(rb_eArgError, "the argument should not be empty");
+	if (rb_obj_is_kind_of(argv[0], rb_cNumeric) || rb_obj_is_kind_of(argv[0], rb_cArray)) {
+		/*  First form and second form  */
+		s_LAMatrix_Initialize(1, &args, val);
+	} else {
+		/*  Third form: type check is done within initialize  */
+		s_LAMatrix_Initialize(argc, argv, val);
+	}
 	return val;
 }
 
-#if 0
 /*
  *  call-seq:
  *     to_a  -> Array
  *
  *  Convert a matrix to a nested array (array of column vectors).
- *  Exception: if the matrix is a column vector, an array of floats is returned.
- *  (but not when the matrix is a row vector)
  */
 static VALUE
 s_LAMatrix_ToArray(VALUE self)
 {
 	LAMatrix *mp1;
 	VALUE val;
-	****
+	int i, j;
 	Data_Get_Struct(self, LAMatrix, mp1);
 	val = rb_ary_new2(mp1->column);
 	for (i = 0; i < mp1->column; i++) {
 		VALUE val2 = rb_ary_new2(mp1->row);
-		
-	for (i = 0; i < 12; i++)
-		val[i] = rb_float_new((*tp1)[i]);
-	return rb_ary_new4(12, val);
+		for (j = 0; j < mp1->row; j++) {
+			rb_ary_store(val2, j, rb_float_new(mp1->data[i * mp1->row + j]));
+		}
+		rb_ary_store(val, i, val2);
+	}
+	return val;
 }
 
 /*
  *  call-seq:
  *     inspect  -> String
  *
- *  Convert a transform to a string like 
+ *  Convert a matrix to a string like 
  *  "LAMatrix[[a11,a21,a31],[a12,a22,a32],[a13,a23,a33],[a14,a24,a34]]".
  */
 static VALUE
 s_LAMatrix_Inspect(VALUE self)
 {
-	LAMatrix *tp;
+	LAMatrix *mp;
 	int i, j;
 	/*	VALUE klass = CLASS_OF(self); */
 	/*	VALUE val = rb_funcall(klass, rb_intern("name"), 0); */
@@ -1826,116 +2239,23 @@ s_LAMatrix_Inspect(VALUE self)
 	ID mid = rb_intern("<<");
 	ID mid2 = rb_intern("inspect");
 	rb_str_cat(val, "[", 1);
-	Data_Get_Struct(self, LAMatrix, tp);
-	for (i = 0; i < 4; i++) {
+	Data_Get_Struct(self, LAMatrix, mp);
+	for (i = 0; i < mp->column; i++) {
 		rb_str_cat(val, "[", 1);
-		for (j = 0; j < 3; j++) {
+		for (j = 0; j < mp->row; j++) {
 			double f;
-			f = (*tp)[i * 3 + j];
+			f = mp->data[i * mp->row + j];
 			rb_funcall(val, mid, 1, rb_funcall(rb_float_new(f), mid2, 0));
-			if (j < 2)
+			if (j < mp->row - 1)
 				rb_str_cat(val, ",", 1);
 		}
 		rb_str_cat(val, "]", 1);
-		if (i < 3)
+		if (i < mp->column - 1)
 			rb_str_cat(val, ",", 1);
 	}
 	rb_str_cat(val, "]", 1);
 	return val;
 }
-
-/*
- *  call-seq:
- *     translation(vec) -> (new) LAMatrix
- *
- *  Returns a transform corresponding to translation along the given vector. Equivalent
- *  to <code>LAMatrix[[1,0,0],[0,1,0],[0,0,1],vec]</code>.
- */
-static VALUE
-s_LAMatrix_Translation(VALUE klass, VALUE vec)
-{
-	LAMatrix *tp;
-	Vector v;
-	VALUE val = s_LAMatrix_Alloc(klass);
-	Data_Get_Struct(val, LAMatrix, tp);
-	VectorFromValue(vec, &v);
-	(*tp)[9] = v.x;
-	(*tp)[10] = v.y;
-	(*tp)[11] = v.z;
-	return val;
-}
-
-/*
- *  call-seq:
- *     rotation(axis, angle, center = [0,0,0]) -> (new) LAMatrix
- *
- *  Returns a transform corresponding to the rotation along the given axis and angle.
- *  Angle is given in degree. If center is also given, that point will be the center of rotation.
- */
-static VALUE
-s_LAMatrix_Rotation(int argc, VALUE *argv, VALUE klass)
-{
-	LAMatrix tr;
-	VALUE axis, angle, center;
-	Vector av, cv;
-	double ang;
-	rb_scan_args(argc, argv, "21", &axis, &angle, &center);
-	VectorFromValue(axis, &av);
-	if (NIL_P(center))
-		cv.x = cv.y = cv.z = 0.0;
-	else
-		VectorFromValue(center, &cv);
-	ang = NUM2DBL(rb_Float(angle)) * kDeg2Rad;
-	if (LAMatrixForRotation(tr, &av, ang, &cv))
-		rb_raise(rb_eMolbyError, "rotation axis cannot be a zero vector");
-	return ValueFromLAMatrix(&tr);
-}
-
-/*
- *  call-seq:
- *     reflection(axis, center = [0,0,0]) -> (new)LAMatrix
- *
- *  Returns a transform corresponding to the reflection along the given axis. If 
- *  center is also given, that point will be fixed.
- */
-static VALUE
-s_LAMatrix_Reflection(int argc, VALUE *argv, VALUE klass)
-{
-	VALUE axis, center;
-	Vector av, cv;
-	LAMatrix tr;
-	rb_scan_args(argc, argv, "11", &axis, &center);
-	VectorFromValue(axis, &av);
-	if (NIL_P(center))
-		cv.x = cv.y = cv.z = 0.0;
-	else
-		VectorFromValue(center, &cv);
-	if (LAMatrixForReflection(tr, &av, &cv))
-		rb_raise(rb_eMolbyError, "reflection axis cannot be a zero vector");
-	return ValueFromLAMatrix(&tr);
-}
-
-/*
- *  call-seq:
- *     inversion(center = [0,0,0]) -> (new) LAMatrix
- *
- *  Returns a transform corresponding to the inversion along the given point.
- */
-static VALUE
-s_LAMatrix_Inversion(int argc, VALUE *argv, VALUE klass)
-{
-	VALUE center;
-	Vector cv;
-	LAMatrix tr;
-	rb_scan_args(argc, argv, "01", &center);
-	if (NIL_P(center))
-		cv.x = cv.y = cv.z = 0.0;
-	else
-		VectorFromValue(center, &cv);
-	LAMatrixForInversion(tr, &cv);
-	return ValueFromLAMatrix(&tr);
-}
-#endif
 	
 #pragma mark ====== IntGroup Class ======
 
@@ -2476,6 +2796,44 @@ Init_MolbyTypes(void)
 	rb_define_singleton_method(rb_cTransform, "rotation", s_Transform_Rotation, -1);
 	rb_define_singleton_method(rb_cTransform, "reflection", s_Transform_Reflection, -1);
 	rb_define_singleton_method(rb_cTransform, "inversion", s_Transform_Inversion, -1);
+
+	/*  class LAMatrix  */
+	rb_cLAMatrix = rb_define_class_under(rb_mMolby, "LAMatrix", rb_cObject);
+	rb_define_alloc_func(rb_cLAMatrix, s_LAMatrix_Alloc);
+	rb_define_method(rb_cLAMatrix, "initialize", s_LAMatrix_Initialize, -1);
+	rb_define_private_method(rb_cLAMatrix, "initialize_copy", s_LAMatrix_InitializeCopy, 1);
+	rb_define_method(rb_cLAMatrix, "[]", s_LAMatrix_ElementAtIndex, -1);
+	rb_define_method(rb_cLAMatrix, "[]=", s_LAMatrix_SetElementAtIndex, -1);
+	rb_define_method(rb_cLAMatrix, "==", s_LAMatrix_IsEqual, 1);
+	rb_define_method(rb_cLAMatrix, "+", s_LAMatrix_Add, 1);
+	rb_define_method(rb_cLAMatrix, "-", s_LAMatrix_Subtract, 1);
+	rb_define_method(rb_cLAMatrix, "*", s_LAMatrix_Multiply, 1);
+	rb_define_method(rb_cLAMatrix, "/", s_LAMatrix_Divide, 1);
+	rb_define_method(rb_cLAMatrix, "add!", s_LAMatrix_Add_Bang, 1);
+	rb_define_method(rb_cLAMatrix, "sub!", s_LAMatrix_Subtract_Bang, 1);
+	rb_define_method(rb_cLAMatrix, "multiply!", s_LAMatrix_Multiply_Bang, -1);
+	rb_define_method(rb_cLAMatrix, "inverse", s_LAMatrix_Inverse, 0);
+	rb_define_method(rb_cLAMatrix, "inverse!", s_LAMatrix_Inverse_Bang, 0);
+	rb_define_method(rb_cLAMatrix, "transpose", s_LAMatrix_Transpose, 0);
+	rb_define_method(rb_cLAMatrix, "transpose!", s_LAMatrix_Transpose_Bang, 0);
+	rb_define_method(rb_cLAMatrix, "determinant", s_LAMatrix_Determinant, 0);
+	rb_define_method(rb_cLAMatrix, "trace", s_LAMatrix_Trace, 0);
+	rb_define_method(rb_cLAMatrix, "fnorm", s_LAMatrix_Fnorm, 0);
+	rb_define_method(rb_cLAMatrix, "fnorm2", s_LAMatrix_Fnorm2, 0);
+	rb_define_method(rb_cLAMatrix, "submatrix", s_LAMatrix_Submatrix, 4);
+	rb_define_method(rb_cLAMatrix, "column", s_LAMatrix_Column, 1);
+	rb_define_method(rb_cLAMatrix, "row", s_LAMatrix_Row, 1);
+	rb_define_method(rb_cLAMatrix, "eigenvalues", s_LAMatrix_Eigenvalues, 0);
+	rb_define_method(rb_cLAMatrix, "to_a", s_LAMatrix_ToArray, 0);
+	rb_define_method(rb_cLAMatrix, "inspect", s_LAMatrix_Inspect, 0);
+	rb_define_alias(rb_cLAMatrix, "to_s", "inspect");
+	rb_define_singleton_method(rb_cLAMatrix, "diagonal", s_LAMatrix_Diagonal, -1);
+	rb_define_singleton_method(rb_cLAMatrix, "[]", s_LAMatrix_Create, -2);
+	rb_define_singleton_method(rb_cLAMatrix, "from_columns", s_LAMatrix_NewFromColumns, -2);
+	rb_define_singleton_method(rb_cLAMatrix, "from_rows", s_LAMatrix_NewFromRows, -2);
+	rb_define_singleton_method(rb_cLAMatrix, "identity", s_LAMatrix_Identity, 1);
+	rb_define_singleton_method(rb_cLAMatrix, "zero", s_LAMatrix_Zero, -1);
+	rb_define_singleton_method(rb_cLAMatrix, "multiply", s_LAMatrix_Multiply_Singleton, -1);
 
 	/*  class IntGroup  */
 	rb_cIntGroup = rb_define_class_under(rb_mMolby, "IntGroup", rb_cObject);
