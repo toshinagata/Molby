@@ -1769,12 +1769,15 @@ s_LAMatrix_Multiply_Bang(int argc, VALUE *argv, VALUE self)
 				if (temp1Flag)
 					LAMatrixReleaseTempMatrix(mp1);
 			} else {
-				/*  mp1 = mp2  */
+				/*  mp1 = mp2 * mul  */
+				int i;
 				mptemp = LAMatrixAllocTempMatrix(mp2->row, mp2->column);
 				if (transposeFlag) 
 					LAMatrixTranspose(mptemp, mp2);
 				else
 					memmove(mptemp->data, mp2->data, sizeof(mp2->data[0]) * mp2->row * mp2->column);
+				for (i = mp2->row * mp2->column - 1; i >= 0; i--)
+					mptemp->data[i] *= mul;
 			}
 			mp1 = mptemp;
 			temp1Flag = 1;
