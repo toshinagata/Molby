@@ -3250,6 +3250,14 @@ ValueFromMoleculeAndIndex(Molecule *mol, int idx)
 	return Data_Wrap_Struct(rb_cAtomRef, 0, (void (*)(void *))AtomRefRelease, aref);
 }
 
+static VALUE
+s_AtomRef_GetMolecule(VALUE self)
+{
+	Molecule *mpp;
+	s_AtomIndexFromValue(self, NULL, &mpp);
+	return ValueFromMolecule(mpp);
+}
+
 static VALUE s_AtomRef_GetIndex(VALUE self) {
 	return INT2NUM(s_AtomIndexFromValue(self, NULL, NULL));
 }
@@ -8542,6 +8550,7 @@ Init_Molby(void)
 	rb_define_alias(rb_cAtomRef, "get_attr", "[]");
 	s_SetAtomAttrString = rb_str_new2("set_atom_attr");
 	rb_global_variable(&s_SetAtomAttrString);
+	rb_define_method(rb_cAtomRef, "molecule", s_AtomRef_GetMolecule, 0);
 	
 	/*  class Parameter  */
 	rb_cParameter = rb_define_class_under(rb_mMolby, "Parameter", rb_cObject);
