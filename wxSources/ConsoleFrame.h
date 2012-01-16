@@ -48,7 +48,8 @@ public:
 	void OnCopy(wxCommandEvent &event);
 	void OnPaste(wxCommandEvent &event);
 	void OnClear(wxCommandEvent &event);
-	
+	void EmptyBuffer();
+
 private:
 	DECLARE_EVENT_TABLE()
 };

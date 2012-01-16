@@ -99,7 +99,8 @@ enum {
 	myMenuID_CreateMOCube = 251,
 	myMenuID_ExecuteScript = 300,
 	myMenuID_OpenConsoleWindow = 301,
-	myMenuID_CustomScript = 302,
+	myMenuID_EmptyConsoleWindow = 302,
+	myMenuID_CustomScript = 303,
 	myMenuID_PredefinedFragment = 350,
 	myMenuID_MyLastMenuItem = 499
 };
@@ -158,6 +159,7 @@ class MyApp: public wxApp
 	void OnUpdateUI(wxUpdateUIEvent &event);
 	void OnExecuteScript(wxCommandEvent &event);
 	void OnOpenConsoleWindow(wxCommandEvent &event);
+	void OnEmptyConsoleWindow(wxCommandEvent &event);
 	void OnViewGlobalParameters(wxCommandEvent &event);
 	void OnViewParameterFilesList(wxCommandEvent &event);
 

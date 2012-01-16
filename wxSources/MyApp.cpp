@@ -82,6 +82,7 @@ BEGIN_EVENT_TABLE(MyApp, wxApp)
 	EVT_UPDATE_UI_RANGE(myMenuID_MyFirstMenuItem, myMenuID_MyLastMenuItem, MyApp::OnUpdateUI)
 	EVT_MENU(myMenuID_ExecuteScript, MyApp::OnExecuteScript)
 	EVT_MENU(myMenuID_OpenConsoleWindow, MyApp::OnOpenConsoleWindow)
+	EVT_MENU(myMenuID_EmptyConsoleWindow, MyApp::OnEmptyConsoleWindow)
 //	EVT_MENU(myMenuID_ReadParameters, MyApp::OnReadParameters)
 	EVT_MENU(myMenuID_ViewGlobalParameters, MyApp::OnViewGlobalParameters)
 	EVT_MENU(myMenuID_ViewParameterFilesList, MyApp::OnViewParameterFilesList)
@@ -453,6 +454,7 @@ MyApp::CreateMenuBar(int kind, wxMenu **out_file_history_menu, wxMenu **out_edit
 	wxMenu *script_menu = new wxMenu;
 	script_menu->Append(myMenuID_ExecuteScript, _T("Execute Script..."));
 	script_menu->Append(myMenuID_OpenConsoleWindow, _T("Open Console Window..."));
+	script_menu->Append(myMenuID_EmptyConsoleWindow, _T("Empty Console Window"));
 	script_menu->AppendSeparator();
 	countNonCustomScriptMenu = script_menu->GetMenuItemCount();
 
@@ -626,6 +628,12 @@ MyApp::OnOpenConsoleWindow(wxCommandEvent& event)
 {
 	consoleFrame->Show(true);
 	consoleFrame->Raise();
+}
+
+void
+MyApp::OnEmptyConsoleWindow(wxCommandEvent& event)
+{
+	consoleFrame->EmptyBuffer();
 }
 
 void
@@ -891,6 +899,7 @@ MyApp::OnUpdateUI(wxUpdateUIEvent& event)
 		switch (uid) {
 			case myMenuID_ExecuteScript:
 			case myMenuID_OpenConsoleWindow:
+			case myMenuID_EmptyConsoleWindow:
 			case myMenuID_ViewParameterFilesList:
 			case myMenuID_ViewGlobalParameters:
 			case myMenuID_MDTools:

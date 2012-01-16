@@ -283,3 +283,10 @@ ConsoleFrame::OnKeyDown(wxKeyEvent &event)
 	else
 		event.Skip();
 }
+
+void
+ConsoleFrame::EmptyBuffer()
+{
+	textCtrl->Clear();
+	MyAppCallback_showRubyPrompt();
+}
