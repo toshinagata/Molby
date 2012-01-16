@@ -1346,6 +1346,10 @@ s_LAMatrix_Initialize(int argc, VALUE *argv, VALUE self)
 		int row, column;
 		row = NUM2INT(rb_Integer(argv[0]));
 		column = NUM2INT(rb_Integer(argv[1]));
+		if (column <= 0)
+			rb_raise(rb_eMolbyError, "Bad column dimension (%d) for creating LAMatrix", column);
+		if (row <= 0)
+			rb_raise(rb_eMolbyError, "Bad row dimension (%d) for creating LAMatrix", row);
 		mp = DATA_PTR(self);
 		if (mp != NULL && mp->column * mp->row >= column * row) {
 			mp->column = column;
