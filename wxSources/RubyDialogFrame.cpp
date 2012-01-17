@@ -316,7 +316,7 @@ RubyDialogCallback_createItem(RubyDialog *dref, const char *type, const char *ti
 		control = pn;
 	} else if (strcmp(type, "line") == 0) {
 		/*  Separator line  */
-		int direction = (frame.size.width > frame.size.height ? wxLI_HORIZONTAL : wxLI_VERTICAL);
+		int direction = (rect.width > rect.height ? wxLI_HORIZONTAL : wxLI_VERTICAL);
 		wxStaticLine *ln = new wxStaticLine(parent, -1, rect.GetPosition(), rect.GetSize(), direction);
 		control = ln;
 	/*	printf("is_vertical = %d\n", (int)ln->IsVertical()); */
