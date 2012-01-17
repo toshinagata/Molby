@@ -58,6 +58,14 @@ VectorFromValue(VALUE val, Vector *vp)
 	if (rb_obj_is_kind_of(val, rb_cVector3D)) {
 		Data_Get_Struct(val, Vector, vp1);
 		*vp = *vp1;
+	} else if (rb_obj_is_kind_of(val, rb_cLAMatrix)) {
+		LAMatrix *mp;
+		Data_Get_Struct(val, LAMatrix, mp);
+		if ((mp->row == 1 && mp->column >= 3) || (mp->row >= 3 && mp->column == 1)) {
+			vp->x = mp->data[0];
+			vp->y = mp->data[1];
+			vp->z = mp->data[2];
+		}
 	} else {
 		static ID mname = 0;
 		if (mname == 0)
@@ -1216,7 +1224,7 @@ s_Transform_Inversion(int argc, VALUE *argv, VALUE klass)
 
 /*  Coerce the value to LAMatrix if necessary */
 LAMatrix *
-LAMatrixFromValue(VALUE val, int *needsRelease)
+LAMatrixFromValue(VALUE val, int *needsRelease, int rowHint, int columnHint)
 {
 	int i, j, row, column;
 	LAMatrix *mp1;
@@ -1231,28 +1239,40 @@ LAMatrixFromValue(VALUE val, int *needsRelease)
 		    a11 a12 a13 a14
 		    a21 a22 a23 a24
 		    a31 a32 a33 a34
-			0   0   0   1    */
+			0   0   0   1  
+		    or a 3x3 matrix, depending on the value of rowHint and columnHint.  */
 		Transform *tp;
 		Data_Get_Struct(val, Transform, tp);
-		mp1 = LAMatrixNew(4, 4);
-		for (i = 0; i < 4; i++) {
+		if (rowHint == 3 || columnHint == 3)
+			row = 3;
+		else row = 4;
+		mp1 = LAMatrixNew(row, row);
+		for (i = 0; i < row; i++) {
 			for (j = 0; j < 3; j++) {
-				mp1->data[i * 4 + j] = (*tp)[i * 3 + j];
+				mp1->data[i * row + j] = (*tp)[i * 3 + j];
 			}
-			mp1->data[i * 4 + 3] = (i == 3 ? 1.0 : 0.0);
+		}
+		if (row == 4) {
+			mp1->data[3] = mp1->data[7] = mp1->data[11] = 0.0;
+			mp1->data[15] = 1.0;
 		}
 		if (needsRelease != NULL)
 			*needsRelease = 1;
 		return mp1;
 	} else if (rb_obj_is_kind_of(val, rb_cVector3D)) {
-		/*  Vector3D is described as a column vector (vx vy vz 1).transpose  */
+		/*  Vector3D is described as a column vector (vx vy vz 1).transpose or (vx vy vz).transpose,
+		    depending on the rowHint. */
 		Vector *vp;
 		Data_Get_Struct(val, Vector, vp);
-		mp1 = LAMatrixNew(4, 1);
+		if (rowHint == 3)
+			row = 3;
+		else row = 4;
+		mp1 = LAMatrixNew(row, 1);
 		mp1->data[0] = vp->x;
 		mp1->data[1] = vp->y;
 		mp1->data[2] = vp->z;
-		mp1->data[3] = 1.0;
+		if (row == 4)
+			mp1->data[3] = 1.0;
 		if (needsRelease != NULL)
 			*needsRelease = 1;
 		return mp1;
@@ -1365,7 +1385,7 @@ s_LAMatrix_Initialize(int argc, VALUE *argv, VALUE self)
 		rb_raise(rb_eArgError, "Wrong number of arguments: expecting two integers (row, column) or a single Array, LAMatrix, Vector3D, or Transform");
 	} else {
 		int needsRelease;
-		mp = LAMatrixFromValue(argv[0], &needsRelease);
+		mp = LAMatrixFromValue(argv[0], &needsRelease, 0, 0);
 		if (!needsRelease) {
 			/*  Needs duplicate  */
 			mp = LAMatrixNewFromMatrix(mp);
@@ -1388,7 +1408,7 @@ s_LAMatrix_InitializeCopy(VALUE self, VALUE val)
 {
 	LAMatrix *mp1;
 	int needsRelease;
-	mp1 = LAMatrixFromValue(val, &needsRelease);
+	mp1 = LAMatrixFromValue(val, &needsRelease, 0, 0);
 	if (!needsRelease)
 		mp1 = LAMatrixNewFromMatrix(mp1);
 	if (DATA_PTR(self) != NULL)
@@ -1408,7 +1428,7 @@ s_LAMatrix_NewFromColumns(VALUE klass, VALUE val)
 {
 	LAMatrix *mp;
 	int needsRelease;
-	mp = LAMatrixFromValue(val, &needsRelease);
+	mp = LAMatrixFromValue(val, &needsRelease, 0, 0);
 	if (!needsRelease)
 		mp = LAMatrixNewFromMatrix(mp);
 	return Data_Wrap_Struct(rb_cLAMatrix, 0, -1, mp);
@@ -1425,7 +1445,7 @@ s_LAMatrix_NewFromRows(VALUE klass, VALUE val)
 {
 	LAMatrix *mp;
 	int needsRelease;
-	mp = LAMatrixFromValue(val, &needsRelease);
+	mp = LAMatrixFromValue(val, &needsRelease, 0, 0);
 	if (!needsRelease)
 		mp = LAMatrixNewFromMatrix(mp);
 	LAMatrixTranspose(mp, mp);
@@ -1540,7 +1560,7 @@ s_LAMatrix_IsEqual(VALUE self, VALUE val)
 	int i, needsRelease, n;
 	VALUE retval = Qtrue;
 	Data_Get_Struct(self, LAMatrix, mp1);
-	mp2 = LAMatrixFromValue(val, &needsRelease);
+	mp2 = LAMatrixFromValue(val, &needsRelease, mp1->row, mp1->column);
 	if (mp1->column != mp2->column || mp1->row != mp2->row)
 		retval = Qfalse;
 	else {
@@ -1567,7 +1587,7 @@ s_LAMatrix_Add(VALUE self, VALUE val)
 	LAMatrix *mp1, *mp2, *mp3;
 	int i, n, needsRelease;
 	Data_Get_Struct(self, LAMatrix, mp1);
-	mp2 = LAMatrixFromValue(val, &needsRelease);
+	mp2 = LAMatrixFromValue(val, &needsRelease, mp1->row, mp1->column);
 	if (mp1->column != mp2->column && mp1->row != mp2->row)
 		rb_raise(rb_eArgError, "mismatch dimensions of LAMatrix");
 	mp3 = LAMatrixNew(mp1->row, mp1->column);
@@ -1589,7 +1609,7 @@ s_LAMatrix_Subtract(VALUE self, VALUE val)
 	LAMatrix *mp1, *mp2, *mp3;
 	int i, n, needsRelease;
 	Data_Get_Struct(self, LAMatrix, mp1);
-	mp2 = LAMatrixFromValue(val, &needsRelease);
+	mp2 = LAMatrixFromValue(val, &needsRelease, mp1->row, mp1->column);
 	if (mp1->column != mp2->column && mp1->row != mp2->row)
 		rb_raise(rb_eArgError, "mismatch dimensions of LAMatrix");
 	mp3 = LAMatrixNew(mp1->row, mp1->column);
@@ -1623,7 +1643,7 @@ s_LAMatrix_Multiply(VALUE self, VALUE val)
 			mp2->data[i] *= w;
 		return Data_Wrap_Struct(rb_cLAMatrix, 0, -1, mp2);
 	} else {
-		mp2 = LAMatrixFromValue(val, &needsRelease);
+		mp2 = LAMatrixFromValue(val, &needsRelease, mp1->column, 0);
 		if (mp1->column != mp2->row)
 			rb_raise(rb_eArgError, "mismatch dimensions in LAMatrix multiplication");
 		mp3 = LAMatrixNew(mp1->row, mp2->column);
@@ -1646,7 +1666,7 @@ s_LAMatrix_Add_Bang(VALUE self, VALUE val)
 	LAMatrix *mp1, *mp2;
 	int i, n, needsRelease;
 	Data_Get_Struct(self, LAMatrix, mp1);
-	mp2 = LAMatrixFromValue(val, &needsRelease);
+	mp2 = LAMatrixFromValue(val, &needsRelease, mp1->row, mp1->column);
 	if (mp1->column != mp2->column && mp1->row != mp2->row)
 		rb_raise(rb_eArgError, "mismatch dimensions of LAMatrix");
 	n = mp1->row * mp1->column;
@@ -1669,7 +1689,7 @@ s_LAMatrix_Subtract_Bang(VALUE self, VALUE val)
 	LAMatrix *mp1, *mp2;
 	int i, n, needsRelease;
 	Data_Get_Struct(self, LAMatrix, mp1);
-	mp2 = LAMatrixFromValue(val, &needsRelease);
+	mp2 = LAMatrixFromValue(val, &needsRelease, mp1->row, mp1->column);
 	if (mp1->column != mp2->column && mp1->row != mp2->row)
 		rb_raise(rb_eArgError, "mismatch dimensions of LAMatrix");
 	n = mp1->row * mp1->column;
@@ -1741,8 +1761,9 @@ s_LAMatrix_Multiply_Bang(int argc, VALUE *argv, VALUE self)
 			}
 		} else {
 			LAMatrix *mptemp;
+			int sizeHint = (mp1 == NULL ? 0 : mp1->column);
 			temp2Flag = 0;
-			mp2 = LAMatrixFromValue(val, &needsRelease);
+			mp2 = LAMatrixFromValue(val, &needsRelease, (transposeFlag ? sizeHint : 0), (!transposeFlag ? sizeHint : 0));
 			if (inverseFlag) {
 				if (mp2->column != mp2->row)
 					rb_raise(rb_eStandardError, "cannot invert non-square matrix");
@@ -1965,7 +1986,7 @@ s_LAMatrix_Divide(VALUE self, VALUE val)
 			mp2->data[i] /= w;
 		return Data_Wrap_Struct(rb_cLAMatrix, 0, -1, mp2);
 	} else {
-		mp2 = LAMatrixFromValue(val, &needsRelease);
+		mp2 = LAMatrixFromValue(val, &needsRelease, mp1->column, mp1->column);
 		if (mp2->column != mp2->row)
 			rb_raise(rb_eArgError, "cannot invert non-square matrix");
 		if (mp1->column != mp2->row)
