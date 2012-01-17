@@ -704,12 +704,12 @@ s_RubyDialog_Layout(int argc, VALUE *argv, VALUE self)
 				cell.origin.x = (j > 0 ? widths[j - 1] : 0.0);
 				cell.origin.y = (i > 0 ? heights[i - 1] : 0.0);
 				for (k = j + 1; k < col; k++) {
-					if (itags[i * col + k] >= 0)
+					if (itags[i * col + k] != -1)
 						break;
 				}
 				cell.size.width = widths[k - 1] - cell.origin.x;
 				for (k = i + 1; k < row; k++) {
-					if (itags[k * col + j] >= 0)
+					if (itags[k * col + j] != -2)
 						break;
 				}
 				cell.size.height = heights[k - 1] - cell.origin.y;
@@ -717,9 +717,9 @@ s_RubyDialog_Layout(int argc, VALUE *argv, VALUE self)
 				pt.y = cell.origin.y + row_padding * 0.5 + offset;
 				{
 					/*  Handle item-specific options  */
+					/*  They can either be specified as layout options or as item attributes  */
 					VALUE oval1;
 					int resize = 0;
-					/*  HFill/VFill options can be specified as an item attribute or a layout option  */
 					if (!RTEST(opts[n]) || (oval1 = rb_hash_aref(opts[n], sHFillSymbol)) == Qnil)
 						oval1 = rb_ivar_get(item, SYM2ID(sHFillSymbol));
 					if (RTEST(oval1)) {
@@ -738,19 +738,18 @@ s_RubyDialog_Layout(int argc, VALUE *argv, VALUE self)
 						newFrameRect.size.height = sizes[n].height;
 						RubyDialogCallback_setFrameOfItem(ditem, newFrameRect);
 					}
-					/*  align/vertical_align can only be specified as a layout option  */
-					if (RTEST(opts[n]) && (oval1 = rb_hash_aref(opts[n], sAlignSymbol)) != Qnil) {
-						if (oval1 == sCenterSymbol)
-							pt.x += (cell.size.width - sizes[n].width - col_padding) * 0.5;
-						else if (oval1 == sRightSymbol)
-							pt.x += (cell.size.width - sizes[n].width) - col_padding;
-					}
-					if (RTEST(opts[n]) && (oval1 = rb_hash_aref(opts[n], sVerticalAlignSymbol)) != Qnil) {
-						if (oval1 == sCenterSymbol)
-							pt.y += (cell.size.height - sizes[n].height - row_padding) * 0.5;
-						else if (oval1 == sBottomSymbol)
-							pt.y += (cell.size.height - sizes[n].height) - row_padding;
-					}
+					if (!RTEST(opts[n]) || (oval1 = rb_hash_aref(opts[n], sAlignSymbol)) == Qnil)
+						oval1 = rb_ivar_get(item, SYM2ID(sAlignSymbol));
+					if (oval1 == sCenterSymbol)
+						pt.x += (cell.size.width - sizes[n].width - col_padding) * 0.5;
+					else if (oval1 == sRightSymbol)
+						pt.x += (cell.size.width - sizes[n].width) - col_padding;
+					if (!RTEST(opts[n]) || (oval1 = rb_hash_aref(opts[n], sVerticalAlignSymbol)) == Qnil)
+						oval1 = rb_ivar_get(item, SYM2ID(sVerticalAlignSymbol));
+					if (oval1 == sCenterSymbol)
+						pt.y += (cell.size.height - sizes[n].height - row_padding) * 0.5;
+					else if (oval1 == sBottomSymbol)
+						pt.y += (cell.size.height - sizes[n].height) - row_padding;
 				}
 				RubyDialogCallback_moveItemUnderView(ditem, layoutView, pt);
 			}
@@ -807,6 +806,8 @@ s_RubyDialog_Item(int argc, VALUE *argv, VALUE self)
 	rb_scan_args(argc, argv, "11", &type, &hash);
 	if (NIL_P(hash))
 		hash = rb_hash_new();
+	else if (TYPE(hash) != T_HASH)
+		rb_raise(rb_eMolbyError, "The second argument of Dialog#item must be a hash");
 	rect.size.width = rect.size.height = 1.0;
 	rect.origin.x = rect.origin.y = 0.0;
 
