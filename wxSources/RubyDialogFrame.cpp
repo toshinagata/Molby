@@ -32,9 +32,9 @@
 #include "MyMBConv.h"
 
 BEGIN_EVENT_TABLE(RubyDialogFrame, wxDialog)
-//    EVT_TEXT_ENTER(-1, ConsoleFrame::OnEnterPressed)
-//	EVT_CHAR(ConsoleFrame::OnChar)
-//	EVT_RICHTEXT_RETURN(-1, ConsoleFrame::OnEnterPressed)
+  EVT_TIMER(-1, RubyDialogFrame::OnTimerEvent)
+  EVT_BUTTON(wxID_OK, RubyDialogFrame::OnDefaultButtonPressed)
+  EVT_BUTTON(wxID_CANCEL, RubyDialogFrame::OnDefaultButtonPressed)
 END_EVENT_TABLE()
 
 RubyDialogFrame::RubyDialogFrame(wxWindow* parent, wxWindowID wid, const wxString& title, const wxPoint& pos, const wxSize& size, long style):
@@ -49,6 +49,7 @@ RubyDialogFrame::RubyDialogFrame(wxWindow* parent, wxWindowID wid, const wxStrin
 	contentSizer = new wxBoxSizer(wxVERTICAL);
 	contentPanel = NULL;
 	buttonSizer = NULL;  //  Will be created later
+	myTimer = NULL;  //  Will be created when necessary
 	boxSizer = new wxBoxSizer(wxVERTICAL);
 	boxSizer->Add(contentSizer, 1, wxALL | wxEXPAND, 14);
 	this->SetSizer(boxSizer);
@@ -58,6 +59,8 @@ RubyDialogFrame::RubyDialogFrame(wxWindow* parent, wxWindowID wid, const wxStrin
 
 RubyDialogFrame::~RubyDialogFrame()
 {
+	if (myTimer != NULL)
+		delete myTimer;
 	if (ditems != NULL)
 		free(ditems);
 }
@@ -143,6 +146,7 @@ RubyDialogFrame::CreateStandardButtons(const char *oktitle, const char *cancelti
 	ditems[1] = (RDItem *)wxWindow::FindWindowById(wxID_CANCEL, this);
 	if (oktitle == NULL) {
 		((wxWindow *)ditems[0])->Show(false);
+		((wxWindow *)ditems[0])->Enable(false);
 	} else {
 		if (oktitle[0] != 0) {
 			wxString label1(oktitle, WX_DEFAULT_CONV);
@@ -152,6 +156,7 @@ RubyDialogFrame::CreateStandardButtons(const char *oktitle, const char *cancelti
 	}
 	if (canceltitle == NULL) {
 		((wxWindow *)ditems[1])->Show(false);
+		((wxWindow *)ditems[1])->Enable(false);
 	} else {
 		if (canceltitle[0] != 0) {
 			wxString label2(canceltitle, WX_DEFAULT_CONV);
@@ -161,10 +166,42 @@ RubyDialogFrame::CreateStandardButtons(const char *oktitle, const char *cancelti
 	}
 }
 
+int
+RubyDialogFrame::StartIntervalTimer(int millisec)
+{
+	if (myTimer == NULL) {
+		myTimer = new wxTimer(this);
+	}
+	return myTimer->Start(millisec);
+}
+
+void
+RubyDialogFrame::StopIntervalTimer(void)
+{
+	if (myTimer != NULL)
+		myTimer->Stop();
+}
+
 void
 RubyDialogFrame::OnDialogItemAction(wxCommandEvent &event)
 {
 	RubyDialog_doItemAction((RubyValue)dval, (RDItem *)(event.GetEventObject()));
+}
+
+void
+RubyDialogFrame::OnDefaultButtonPressed(wxCommandEvent &event)
+{
+	/*  Ignore the wxID_OK and wxID_CANCEL requests if the default buttons are hidden  */
+	wxWindow *item = wxWindow::FindWindowById(event.GetId(), this);
+	if (!item->IsShown())
+		return;
+	event.Skip();
+}
+
+void
+RubyDialogFrame::OnTimerEvent(wxTimerEvent &event)
+{
+	RubyDialog_doTimerAction((RubyValue)dval);
 }
 
 #pragma mark ====== Plain C interface ======
@@ -208,13 +245,42 @@ RubyDialogCallback_runModal(RubyDialog *dref)
 void
 RubyDialogCallback_endModal(RubyDialog *dref, int status)
 {
-	((RubyDialogFrame *)dref)->EndModal(status == 0 ? wxID_OK : wxID_CANCEL);
+	((RubyDialogFrame *)dref)->StopIntervalTimer();
+	if (((RubyDialogFrame *)dref)->IsModal())
+		((RubyDialogFrame *)dref)->EndModal(status == 0 ? wxID_OK : wxID_CANCEL);
+	else ((RubyDialogFrame *)dref)->Close();
 }
 
 void
 RubyDialogCallback_close(RubyDialog *dref)
 {
+	((RubyDialogFrame *)dref)->StopIntervalTimer();
 	((RubyDialogFrame *)dref)->Close();
+}
+
+void
+RubyDialogCallback_show(RubyDialog *dref)
+{
+	((RubyDialogFrame *)dref)->Show(true);
+}
+
+void
+RubyDialogCallback_hide(RubyDialog *dref)
+{
+	((RubyDialogFrame *)dref)->StopIntervalTimer();
+	((RubyDialogFrame *)dref)->Show(false);
+}
+
+int
+RubyDialogCallback_startIntervalTimer(RubyDialog *dref, float interval)
+{
+	return ((RubyDialogFrame *)dref)->StartIntervalTimer(interval * 1000);
+}
+
+void
+RubyDialogCallback_stopIntervalTimer(RubyDialog *dref)
+{
+	((RubyDialogFrame *)dref)->StopIntervalTimer();
 }
 
 static inline RDRect
@@ -263,11 +329,19 @@ static wxRect
 OffsetForItemRect(const char *type)
 {
 	wxRect offset(0, 0, 0, 0);
-	if (strcmp(type, "textfield") == 0)
-		offset.height = 5;
+	if (strcmp(type, "textfield") == 0) {
+#if defined(__WXMAC__)
+		offset.height = 4;
+#endif
+	}
 	else if (strcmp(type, "button") == 0) {
+#if defined(__WXMAC__)
 		offset.width = 24;
 		offset.height = 14;
+#else
+		offset.width = 8;
+		offset.height = 0;
+#endif
 	} else if (strcmp(type, "checkbox") == 0) {
 		offset.width = 10;
 	}

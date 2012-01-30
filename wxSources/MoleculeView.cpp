@@ -128,6 +128,7 @@ MoleculeView::OnCreate(wxDocument *doc, long WXUNUSED(flags) )
 	
 	//  A splitter window embraces a grid (left) and main screen (right)
 	wxSplitterWindow *splitter = new wxSplitterWindow(frame, -1, wxDefaultPosition, wxDefaultSize, wxSP_3D | wxSP_LIVE_UPDATE);
+	splitter->SetMinimumPaneSize(1);
 	
 	//  Create the left half
 	//  A panel containing a popup menu and a list window

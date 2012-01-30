@@ -1517,6 +1517,47 @@ MyAppCallback_executeScriptFromFile(const char *cpath, int *status)
 	}
 	file.Close();
 	
+	/*  Check the encoding specification, and if present convert it to default encoding  */
+	{
+		char *lp = script, *eolp;
+		int n = 0;
+		while (n < 2) {  /*  Check the first two lines  */
+			while (*lp && isspace(*lp))
+				lp++;
+			if (*lp++ != '#')  /*  Check only the comment line  */
+				break;
+			if (*lp == '!') { /*  Shebang line  */
+				while (*lp && *lp != '\n')
+					lp++;  /*  Skip until end of line  */
+				n++;
+				lp++;
+				continue;
+			}
+			for (eolp = lp; *eolp && *eolp != '\n'; eolp++);
+			if (*eolp != '\n')
+				break;
+			*eolp = 0;  /*  Limit the search area  */
+			lp = strstr(lp, "coding:");
+			*eolp = '\n';  /*  Restore original string  */
+			if (lp != NULL) {
+				lp += 7;
+				while (*lp && isspace(*lp))
+					lp++;
+				if (strncasecmp(lp, "shift-jis", 9) == 0) {
+					wxString s(script, wxCSConv(wxT("cp932")));
+					free(script);
+					script = strdup(s.mb_str(WX_DEFAULT_CONV));
+				} else if (strncasecmp(lp, "utf-8", 5) == 0) {
+					wxString s(script, wxConvUTF8);
+					free(script);
+					script = strdup(s.mb_str(WX_DEFAULT_CONV));
+				}
+				break;
+			}
+			n++;
+		}
+	}
+	
 	retval = Molby_evalRubyScriptOnMolecule(script, MoleculeCallback_currentMolecule(), pp, status);
 	free(script);
 	free(p);

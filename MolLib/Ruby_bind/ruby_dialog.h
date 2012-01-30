@@ -46,6 +46,7 @@ extern const RDRect gZeroRect;
 /*  Utility function  */
 extern int RubyDialog_validateItemContent(RubyValue self, RDItem *ip, const char *s);
 extern void RubyDialog_doItemAction(RubyValue self, RDItem *ip);
+extern void RubyDialog_doTimerAction(RubyValue self);
 extern void RubyDialogInitClass(void);
 
 /*  Stub routines  */
@@ -56,6 +57,10 @@ STUB void RubyDialogCallback_setWindowTitle(RubyDialog *dref, const char *title)
 STUB int RubyDialogCallback_runModal(RubyDialog *dref);
 STUB void RubyDialogCallback_endModal(RubyDialog *dref, int status);
 STUB void RubyDialogCallback_close(RubyDialog *dref);
+STUB void RubyDialogCallback_show(RubyDialog *dref);
+STUB void RubyDialogCallback_hide(RubyDialog *dref);
+STUB int RubyDialogCallback_startIntervalTimer(RubyDialog *dref, float interval);
+STUB void RubyDialogCallback_stopIntervalTimer(RubyDialog *dref);
 STUB RDSize RubyDialogCallback_windowMinSize(RubyDialog *dref);
 STUB void RubyDialogCallback_setWindowSize(RubyDialog *dref, RDSize size);
 STUB void RubyDialogCallback_createStandardButtons(RubyDialog *dref, const char *oktitle, const char *canceltitle);

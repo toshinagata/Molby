@@ -23,8 +23,10 @@ $startup_dir = Dir.pwd
 case RUBY_PLATFORM
   when /mswin|mingw|cygwin|bccwin/
     $platform = "win"
+	$KCODE="SJIS"
   when /darwin/
     $platform = "mac"
+	$KCODE="UTF8"
   else
     $platform = "other"
 end

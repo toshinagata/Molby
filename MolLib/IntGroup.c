@@ -321,7 +321,7 @@ IntGroupAdd(IntGroup *psRef, int inStart, int inCount)
 	int theBeginIndex, theEndIndex;
 	int theBeginFlag, theEndFlag;
 
-	if (psRef == NULL)
+	if (psRef == NULL || inCount == 0)
 		return kIntGroupStatusNoError;
 	
 	/*  inStart, inStart+inCount が位置指定の中でどこにあるか探す  */
@@ -383,7 +383,7 @@ IntGroupRemove(IntGroup *psRef, int inStart, int inCount)
 	int theBeginIndex, theEndIndex;
 	int theBeginFlag, theEndFlag;
 	
-	if (psRef == NULL)
+	if (psRef == NULL || inCount == 0)
 		return kIntGroupStatusNoError;
 
 	/*  inStart, inStart+inCount が位置指定の中でどこにあるか探す  */

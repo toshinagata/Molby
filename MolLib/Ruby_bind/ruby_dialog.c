@@ -34,6 +34,7 @@ static VALUE
 
 VALUE rb_cDialog = Qfalse;
 VALUE rb_cDialogItem = Qfalse;
+VALUE gRubyDialogList = Qnil;
 
 const RDPoint gZeroPoint = {0, 0};
 const RDSize gZeroSize = {0, 0};
@@ -543,6 +544,44 @@ s_RubyDialog_Run(VALUE self)
 		return Qfalse;
 #endif
 }
+
+/*
+ *  call-seq:
+ *     show
+ *
+ *  Show the dialog modelessly. This is to be used with Dialog#hide in pairs.
+ *  To avoid garbage collection by Ruby interpreter, the dialog being shown is 
+ *  registered in a global variable, and unregistered when it is hidden.
+ *  Mixing Dialog#show and Dialog#run will lead to unpredictable results, including crash.
+ */
+static VALUE
+s_RubyDialog_Show(VALUE self)
+{
+	RubyDialog *dref = s_RubyDialog_GetController(self);
+	RubyDialogCallback_show(dref);
+	if (rb_ary_includes(gRubyDialogList, self) == Qfalse)
+		rb_ary_push(gRubyDialogList, self);
+	return self;
+}
+
+/*
+ *  call-seq:
+ *     hide
+ *
+ *  Hide the modeless dialog. This is to be used with Dialog#show in pairs.
+ *  If the dialog is registered in the ruby_dialog_list global variable, it becomes unregistered.
+ *  Mixing Dialog#hide and Dialog#run will lead to unpredictable results, including crash. The 
+ */
+static VALUE
+s_RubyDialog_Hide(VALUE self)
+{
+	RubyDialog *dref = s_RubyDialog_GetController(self);
+	RubyDialogCallback_hide(dref);
+	if (rb_ary_includes(gRubyDialogList, self) == Qtrue)
+		rb_ary_delete(gRubyDialogList, self);
+	return self;
+}
+
 
 /*
  *  call-seq:
@@ -1080,6 +1119,44 @@ s_RubyDialog_Action(VALUE self, VALUE item)
 
 /*
  *  call-seq:
+ *     start_timer(interval, action = nil)
+ *
+ *  Start dialog-specific interval timer. The timer interval is described in seconds (floating point
+ *  is allowed, however the resolution is not better than milliseconds on wxWidgets).
+ *  The action is either a symbol (method name) or a Proc object.
+ *  If no action is given, then the last set value is used.
+ *  If the timer is already running, it is stopped before new timer is run.
+ */
+static VALUE
+s_RubyDialog_StartTimer(int argc, VALUE *argv, VALUE self)
+{
+	VALUE itval, actval;
+	double dval;
+	RubyDialog *dref = s_RubyDialog_GetController(self);
+	rb_scan_args(argc, argv, "11", &itval, &actval);
+	if (actval != Qnil)
+		rb_iv_set(self, "_timer_action", actval);
+	dval = NUM2DBL(rb_Float(itval));
+	if (RubyDialogCallback_startIntervalTimer(dref, dval) == 0)
+		rb_raise(rb_eStandardError, "Cannot start timer for dialog");
+	return self;
+}
+
+/*
+ *  call-seq:
+ *     stop_timer()
+ *
+ *  Stop dialog-specific interval timer. Do nothing if no timer is running.
+ */
+static VALUE
+s_RubyDialog_StopTimer(VALUE self)
+{
+	RubyDialogCallback_stopIntervalTimer(s_RubyDialog_GetController(self));
+	return self;
+}
+
+/*
+ *  call-seq:
  *     save_panel(message = nil, directory = nil, default_filename = nil, wildcard = nil)
  *
  *  Display the "save as" dialog and returns the fullpath filename.
@@ -1284,6 +1361,31 @@ RubyDialog_doItemAction(RubyValue self, RDItem *ip)
 		Molby_showError(status);
 }
 
+static VALUE
+s_RubyDialog_doTimerAction(VALUE self)
+{
+	VALUE actval = rb_iv_get(self, "_timer_action");
+	if (actval != Qnil) {
+		if (TYPE(actval) == T_SYMBOL)
+			rb_funcall(self, SYM2ID(actval), 0);
+		else
+			rb_funcall(actval, rb_intern("call"), 0);
+	}
+	return Qnil;
+}
+	
+void
+RubyDialog_doTimerAction(RubyValue self)
+{
+	int status;
+	rb_protect(s_RubyDialog_doTimerAction, (VALUE)self, &status);
+	if (status != 0) {
+		/*  Stop timer before showing error dialog  */
+		RubyDialogCallback_stopIntervalTimer(s_RubyDialog_GetController((VALUE)self));
+		Molby_showError(status);
+	}
+}
+
 #pragma mark ====== Initialize class ======
 
 void
@@ -1308,6 +1410,10 @@ RubyDialogInitClass(void)
 	rb_define_method(rb_cDialog, "radio_group", s_RubyDialog_RadioGroup, -2);
 	rb_define_method(rb_cDialog, "action", s_RubyDialog_Action, 1);
 	rb_define_method(rb_cDialog, "end_modal", s_RubyDialog_EndModal, -1);
+	rb_define_method(rb_cDialog, "show", s_RubyDialog_Show, 0);
+	rb_define_method(rb_cDialog, "hide", s_RubyDialog_Hide, 0);
+	rb_define_method(rb_cDialog, "start_timer", s_RubyDialog_StartTimer, -1);
+	rb_define_method(rb_cDialog, "stop_timer", s_RubyDialog_StopTimer, 0);
 	rb_define_singleton_method(rb_cDialog, "save_panel", s_RubyDialog_SavePanel, -1);
 	rb_define_singleton_method(rb_cDialog, "open_panel", s_RubyDialog_OpenPanel, -1);
 
@@ -1323,4 +1429,8 @@ RubyDialogInitClass(void)
 		for (i = 0; i < sizeof(sTable1) / sizeof(sTable1[0]); i++)
 			*(sTable1[i]) = ID2SYM(rb_intern(sTable2[i]));
 	}
+	
+	/*  Global variable to hold open non-modal dialogs */
+	rb_define_variable("$non_modal_dialogs", &gRubyDialogList);
+	gRubyDialogList = rb_ary_new();
 }

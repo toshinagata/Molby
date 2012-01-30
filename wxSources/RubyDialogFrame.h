@@ -21,6 +21,7 @@
 #include "wx/dialog.h"
 #include "wx/sizer.h"
 #include "wx/panel.h"
+#include "wx/timer.h"
 #include "../Mollib/Ruby_bind/ruby_dialog.h"
 
 class RubyDialogFrame: public wxDialog {	
@@ -33,6 +34,7 @@ public:
 	wxSizer *contentSizer;
 	wxSizer *buttonSizer;
 	wxBoxSizer *boxSizer;
+	wxTimer *myTimer;
 	
 	RubyDialogFrame(wxWindow* parent, wxWindowID wid, const wxString& title, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxDEFAULT_DIALOG_STYLE);
 	virtual ~RubyDialogFrame();
@@ -42,8 +44,11 @@ public:
 	int SearchDialogItem(RDItem *item);
 	void SetRubyObject(RubyValue val);
 	void CreateStandardButtons(const char *oktitle, const char *canceltitle);
-
+	int StartIntervalTimer(int millisec);
+	void StopIntervalTimer(void);
 	void OnDialogItemAction(wxCommandEvent &event);
+	void OnTimerEvent(wxTimerEvent &event);
+	void OnDefaultButtonPressed(wxCommandEvent &event);
 	
 private:
 	DECLARE_EVENT_TABLE()
