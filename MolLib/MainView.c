@@ -853,10 +853,11 @@ setSinCache(int sect)
 }
 
 static void
-drawCylinder(const GLfloat *a, const GLfloat *b, GLfloat r, int sect)
+drawCylinder(const GLfloat *a, const GLfloat *b, GLfloat r, int sect, int closed)
 {
     GLfloat *c, *s;
     int n, i;
+	float nx, ny, nz;
     GLfloat d[3], v[3], w[3];
     n = setSinCache(sect);
     if (n <= 0)
@@ -870,7 +871,6 @@ drawCylinder(const GLfloat *a, const GLfloat *b, GLfloat r, int sect)
         return;
     glBegin(GL_QUAD_STRIP);
     for (i = 0; i <= n; i++) {
-        float nx, ny, nz;
         nx = v[0] * c[i] + w[0] * s[i];
         ny = v[1] * c[i] + w[1] * s[i];
         nz = v[2] * c[i] + w[2] * s[i];
@@ -878,7 +878,76 @@ drawCylinder(const GLfloat *a, const GLfloat *b, GLfloat r, int sect)
         glVertex3f(a[0] + r * nx, a[1] + r * ny, a[2] + r * nz);
         glVertex3f(b[0] + r * nx, b[1] + r * ny, b[2] + r * nz);
     }
-    glEnd();    
+    glEnd();
+	if (closed) {
+		glBegin(GL_TRIANGLE_FAN);
+		glNormal3f(-d[0], -d[1], -d[2]);
+		for (i = 0; i <= n; i++) {
+			nx = v[0] * c[i] + w[0] * s[i];
+			ny = v[1] * c[i] + w[1] * s[i];
+			nz = v[2] * c[i] + w[2] * s[i];
+			glVertex3f(a[0] + r * nx, a[1] + r * ny, a[2] + r * nz);
+		}
+		glEnd();
+		glBegin(GL_TRIANGLE_FAN);
+		glNormal3f(d[0], d[1], d[2]);
+		for (i = 0; i <= n; i++) {
+			nx = v[0] * c[i] + w[0] * s[i];
+			ny = v[1] * c[i] + w[1] * s[i];
+			nz = v[2] * c[i] + w[2] * s[i];
+			glVertex3f(b[0] + r * nx, b[1] + r * ny, b[2] + r * nz);
+		}
+		glEnd();
+	}
+}
+
+static void
+drawCone(const GLfloat *a, const GLfloat *b, GLfloat r, int sect, int closed)
+{
+    GLfloat *c, *s;
+    int n, i;
+	float nx, ny, nz;
+    GLfloat d[3], v[3], w[3];
+	Vector p1, p2;
+    n = setSinCache(sect);
+    if (n <= 0)
+        return;
+    s = sSinCache;
+    c = &sSinCache[n/4];
+    d[0] = b[0] - a[0];
+    d[1] = b[1] - a[1];
+    d[2] = b[2] - a[2];
+    if (getOrthogonalVectors(d, v, w) == 0)
+        return;
+    glBegin(GL_TRIANGLE_FAN);
+	glVertex3f(a[0], a[1], a[2]);
+	p1.x = b[0] + r * (v[0] * c[0] + w[0] * s[0]);
+	p1.y = b[1] + r * (v[1] * c[0] + w[1] * s[0]);
+	p1.z = b[2] + r * (v[2] * c[0] + w[2] * s[0]);
+	glVertex3f(p1.x, p1.y, p1.z);
+    for (i = 1; i <= n; i++) {
+        p2.x = b[0] + r * (v[0] * c[i] + w[0] * s[i]);
+        p2.y = b[1] + r * (v[1] * c[i] + w[1] * s[i]);
+        p2.z = b[2] + r * (v[2] * c[i] + w[2] * s[i]);
+		nx = p1.x + p2.x - b[0] * 2;
+		ny = p1.y + p2.y - b[1] * 2;
+		nz = p1.z + p2.z - b[2] * 2;
+        glNormal3f(nx, ny, nz);
+		glVertex3f(p2.x, p2.y, p2.z);
+		p1 = p2;
+    }
+    glEnd();
+	if (closed) {
+		glBegin(GL_TRIANGLE_FAN);
+		glNormal3f(d[0], d[1], d[2]);
+		for (i = 0; i <= n; i++) {
+			p2.x = b[0] + r * (v[0] * c[i] + w[0] * s[i]);
+			p2.y = b[1] + r * (v[1] * c[i] + w[1] * s[i]);
+			p2.z = b[2] + r * (v[2] * c[i] + w[2] * s[i]);
+			glVertex3f(p2.x, p2.y, p2.z);
+		}
+		glEnd();
+	}
 }
 
 static void
@@ -1316,7 +1385,7 @@ drawBond(MainView *mview, int i1, int i2, int selected, int selected2, int draft
 		glEnd();
 	} else {
 		glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, rgba);
-		drawCylinder(p, p + 3, mview->bondRadius, 6);
+		drawCylinder(p, p + 3, mview->bondRadius, 6, 0);
 	}
 	dp = &(gElementParameters[an[1]]);
 	if (dp == NULL)
@@ -1339,7 +1408,7 @@ drawBond(MainView *mview, int i1, int i2, int selected, int selected2, int draft
 		glEnd();
 	} else {
 		glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, rgba);
-		drawCylinder(p, p + 3, mview->bondRadius, 6);
+		drawCylinder(p, p + 3, mview->bondRadius, 6, 0);
 	}
 }
 
@@ -1539,11 +1608,52 @@ skip:
 }
 
 static void
+drawGraphics(MainView *mview)
+{
+	int i, j, n;
+	MainViewGraphic *g;
+	for (i = 0; i < mview->ngraphics; i++) {
+		g = &mview->graphics[i];
+		glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, g->rgba);
+		switch (g->kind) {
+			case kMainViewGraphicLine:
+				glDisable(GL_LIGHTING);
+				glColor4fv(g->rgba);
+				glBegin(GL_LINES);
+				n = g->npoints;
+				if (n % 2 == 1)
+					n--;
+				for (j = 0; j < n; j++)
+					glVertex3fv(&g->points[j * 3]);
+				glEnd();
+				glEnable(GL_LIGHTING);
+				break;
+			case kMainViewGraphicPoly:
+				glBegin(GL_TRIANGLE_FAN);
+				for (j = 0; j < g->npoints; j++)
+					glVertex3fv(&g->points[j * 3]);
+				if (g->closed)
+					glVertex3fv(g->points);
+				glEnd();
+				break;
+			case kMainViewGraphicCylinder:
+				drawCylinder(g->points, g->points + 3, g->points[6], 6, g->closed);
+				break;
+			case kMainViewGraphicCone:
+				drawCone(g->points, g->points + 3, g->points[6], 6, g->closed);
+				break;
+			case kMainViewGraphicEllipsoid:
+				drawEllipsoid(g->points, g->points + 3, g->points + 6, g->points + 9, 6);
+				break;
+		}
+	}
+}
+
+static void
 drawUnitCell(MainView *mview)
 {
 	GLfloat a[3], b[3], c[3], ab[3], bc[3], ca[3], abc[3];
 	XtalCell *cp;
-	static GLfloat sGrayColor[] = {0.5, 0.5, 0.5, 1};
 	GLfloat origin[3];
 	int i;
 	glDisable(GL_LIGHTING);
@@ -1588,18 +1698,18 @@ drawUnitCell(MainView *mview)
 		abc[0] = a[0] + bc[0]; abc[1] = a[1] + bc[1]; abc[2] = a[2] + bc[2];
 
 	/*	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, sGrayColor);
-		drawCylinder(sOrigin, a, 0.05, 4);
-		drawCylinder(sOrigin, b, 0.05, 4);
-		drawCylinder(sOrigin, c, 0.05, 4);
-		drawCylinder(a, ab, 0.05, 4);
-		drawCylinder(a, ca, 0.05, 4);
-		drawCylinder(b, ab, 0.05, 4);
-		drawCylinder(b, bc, 0.05, 4);
-		drawCylinder(c, ca, 0.05, 4);
-		drawCylinder(c, bc, 0.05, 4);
-		drawCylinder(ab, abc, 0.05, 4);
-		drawCylinder(bc, abc, 0.05, 4);
-		drawCylinder(ca, abc, 0.05, 4); */
+		drawCylinder(sOrigin, a, 0.05, 4, 0);
+		drawCylinder(sOrigin, b, 0.05, 4, 0);
+		drawCylinder(sOrigin, c, 0.05, 4, 0);
+		drawCylinder(a, ab, 0.05, 4, 0);
+		drawCylinder(a, ca, 0.05, 4, 0);
+		drawCylinder(b, ab, 0.05, 4, 0);
+		drawCylinder(b, bc, 0.05, 4, 0);
+		drawCylinder(c, ca, 0.05, 4, 0);
+		drawCylinder(c, bc, 0.05, 4, 0);
+		drawCylinder(ab, abc, 0.05, 4, 0);
+		drawCylinder(bc, abc, 0.05, 4, 0);
+		drawCylinder(ca, abc, 0.05, 4, 0); */
 
 		glBegin(GL_LINES);
 		glVertex3fv(origin);
@@ -1661,7 +1771,7 @@ drawRotationCenter(MainView *mview)
 	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, col);
 	drawSphere(ps, rr, 8);
 	drawSphere(pe, rr, 8);
-	drawCylinder(ps, pe, rr, 8);
+	drawCylinder(ps, pe, rr, 8, 0);
 	ps[0] = tr[0];
 	ps[1] = tr[1] - r;
 	pe[0] = tr[0];
@@ -1670,7 +1780,7 @@ drawRotationCenter(MainView *mview)
 	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, col);
 	drawSphere(ps, rr, 8);
 	drawSphere(pe, rr, 8);
-	drawCylinder(ps, pe, rr, 8);
+	drawCylinder(ps, pe, rr, 8, 0);
 	ps[1] = tr[1];
 	ps[2] = tr[2] - r;
 	pe[1] = tr[1];
@@ -1679,7 +1789,7 @@ drawRotationCenter(MainView *mview)
 	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, col);
 	drawSphere(ps, rr, 8);
 	drawSphere(pe, rr, 8);
-	drawCylinder(ps, pe, rr, 8);
+	drawCylinder(ps, pe, rr, 8, 0);
 }
 
 static int
@@ -1794,7 +1904,7 @@ MainView_drawModel(MainView *mview)
     }
     
     /*  Clear the buffer  */
-    glClearColor (0, 0, 0, 0);
+    glClearColor(mview->background_color[0], mview->background_color[1], mview->background_color[2], 0);
     glClear(GL_COLOR_BUFFER_BIT |
             GL_DEPTH_BUFFER_BIT);
 
@@ -1840,7 +1950,8 @@ MainView_drawModel(MainView *mview)
     drawModel(mview);
 	drawUnitCell(mview);
 	drawRotationCenter(mview);
-
+	drawGraphics(mview);
+	
 	/*  Get important matrices and vectors  */
     glGetDoublev(GL_MODELVIEW_MATRIX, mview->modelview_matrix);
     glGetDoublev(GL_PROJECTION_MATRIX, mview->projection_matrix);
@@ -2013,6 +2124,57 @@ MainView_getMode(const MainView *mview)
 	if (mview != NULL)
 		return mview->mode;
 	else return 0;
+}
+
+#pragma mark ====== Drawing Settings ======
+
+void
+MainView_setBackgroundColor(MainView *mview, float red, float green, float blue)
+{
+	if (mview != NULL) {
+		mview->background_color[0] = red;
+		mview->background_color[1] = green;
+		mview->background_color[2] = blue;
+		MoleculeCallback_notifyModification(mview->mol, 0);
+	}
+}
+
+void
+MainView_getBackgroundColor(const MainView *mview, float *rgb)
+{
+	if (mview != NULL) {
+		rgb[0] = mview->background_color[0];
+		rgb[1] = mview->background_color[1];
+		rgb[2] = mview->background_color[2];
+	}
+}
+
+#pragma mark ====== Graphics ======
+
+int
+MainView_insertGraphic(MainView *mview, int index, const MainViewGraphic *graphic)
+{
+	if (index < 0 || index >= mview->ngraphics)
+		index = mview->ngraphics;
+	InsertArray(&mview->graphics, &mview->ngraphics, sizeof(MainViewGraphic), index, 1, graphic);
+	MoleculeCallback_notifyModification(mview->mol, 0);
+	return index;
+}
+
+int
+MainView_deleteGraphic(MainView *mview, int index)
+{
+	MainViewGraphic *g;
+	if (index < 0 || index >= mview->ngraphics)
+		return -1;
+	g = &mview->graphics[index];
+	if (g->points != NULL)
+		free(g->points);
+	if (g->normals != NULL)
+		free(g->normals);
+	DeleteArray(&mview->graphics, &mview->ngraphics, sizeof(MainViewGraphic), index, 1, NULL);
+	MoleculeCallback_notifyModification(mview->mol, 0);
+	return index;
 }
 
 #pragma mark ====== Mouse operations ======

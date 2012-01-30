@@ -74,10 +74,26 @@ enum {
 	kMainViewParameterTableIndex = 5,
 	kMainViewMOTableIndex = 6
 };
-	
-/*  The custom python classes for MyMolView GUI  */
+
+enum {
+	kMainViewGraphicLine = 1,
+	kMainViewGraphicPoly = 2,
+	kMainViewGraphicCylinder = 3,
+	kMainViewGraphicCone = 4,
+	kMainViewGraphicEllipsoid = 5
+};
+
+typedef struct MainViewGraphic {
+	Int kind;
+	Int closed;
+	GLfloat rgba[4];
+	Int npoints;
+	GLfloat *points;
+	Int nnormals;
+	GLfloat *normals;
+} MainViewGraphic;
+
 typedef struct MainView {
-//	PyObject_HEAD
 	struct Molecule *mol;
 	void *ref;  /*  A platform-dependent pointer to the main view object (or the main window **controller** object)  */
 	void *tableRef;  /*  The table view object  */
@@ -99,6 +115,10 @@ typedef struct MainView {
 	float bondRadius; /* in angstrom */
 	float probabilityScale;
 	float dimension;
+	
+	float background_color[4];
+	Int ngraphics;
+	MainViewGraphic *graphics;
 	
 	Byte showUnitCell;
 	Byte showPeriodicBox;
@@ -151,7 +171,6 @@ typedef struct MainView {
 	struct IntGroup *tableSelection; /* Selected rows in the table  */
 
 } MainView;
-//extern PyTypeObject MainViewType;
 
 /*  Public functions  */
 MainView *MainView_newMainView(void *ref);
@@ -168,8 +187,15 @@ void MainView_mouseDown(MainView *view, const float *p, int eventMask);
 void MainView_mouseUp(MainView *view, const float *p, int eventMask, int clickCount);
 void MainView_mouseDragged(MainView *view, const float *p, int eventMask);
 void MainView_mouseMoved(MainView *view, const float *p, int eventMask);
+
 void MainView_setMode(MainView *mview, int mode);
 int MainView_getMode(const MainView *mview);
+
+void MainView_setBackgroundColor(MainView *mview, float red, float green, float blue);
+void MainView_getBackgroundColor(const MainView *mview, float *rgb);
+int MainView_insertGraphic(MainView *mview, int index, const MainViewGraphic *graphic);
+int MainView_deleteGraphic(MainView *mview, int index);
+
 void MainView_attachLabelToAtom(MainView *mview, int index);
 void MainView_detachLabelFromAtom(MainView *mview, int index);
 void MainView_purgeUnusedLabels(MainView *mview);

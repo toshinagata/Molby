@@ -7771,6 +7771,200 @@ s_Molecule_ResizeToFit(VALUE self)
 
 /*
  *  call-seq:
+ *     set_background_color(red, green, blue)
+ *
+ *  Set the background color of the model window.
+ */
+static VALUE
+s_Molecule_SetBackgroundColor(int argc, VALUE *argv, VALUE self)
+{
+    Molecule *mol;
+    Data_Get_Struct(self, Molecule, mol);
+	if (mol->mview != NULL) {
+		VALUE rval, gval, bval;
+		rb_scan_args(argc, argv, "30", &rval, &gval, &bval);
+		MainView_setBackgroundColor(mol->mview, NUM2DBL(rb_Float(rval)), NUM2DBL(rb_Float(gval)), NUM2DBL(rb_Float(bval)));
+	}
+	return self;	
+}
+
+/*
+ *  call-seq:
+ *     create_graphic(kind, color, points, fill = nil) -> integer
+ *
+ *  Create a new graphic object.
+ *   kind: a symbol representing the kind of the graphic. :line, :poly, :cylinder, :cone, :ellipsoid
+ *   color: an array of 3 (rgb) or 4 (rgba) floating numbers
+ *   points: an array of Vectors
+ *   
+ */
+static VALUE
+s_Molecule_CreateGraphic(int argc, VALUE *argv, VALUE self)
+{
+    Molecule *mol;
+	MainViewGraphic g;
+	int i, n, ni;
+	const char *p;
+	VALUE kval, cval, pval, fval;
+    Data_Get_Struct(self, Molecule, mol);
+	if (mol->mview == NULL)
+		rb_raise(rb_eMolbyError, "this molecule has no associated graphic view");
+	rb_scan_args(argc, argv, "31", &kval, &cval, &pval, &fval);
+	kval = rb_obj_as_string(kval);
+	memset(&g, 0, sizeof(g));
+	p = RSTRING_PTR(kval);
+	if (strcmp(p, "line") == 0)
+		g.kind = kMainViewGraphicLine;
+	else if (strcmp(p, "poly") == 0)
+		g.kind = kMainViewGraphicPoly;
+	else if (strcmp(p, "cylinder") == 0)
+		g.kind = kMainViewGraphicCylinder;
+	else if (strcmp(p, "cone") == 0)
+		g.kind = kMainViewGraphicCone;
+	else if (strcmp(p, "ellipsoid") == 0)
+		g.kind = kMainViewGraphicEllipsoid;
+	else rb_raise(rb_eMolbyError, "unknown graphic object type: %s", p);
+	g.closed = (RTEST(fval) ? 1 : 0);
+	cval = rb_ary_to_ary(cval);
+	n = RARRAY_LEN(cval);
+	if (n < 3 || n >= 5)
+		rb_raise(rb_eArgError, "the color should have 3 or 4 elements");
+	if (n == 3)
+		g.rgba[3] = 1.0;
+	for (i = 0; i < n; i++)
+		g.rgba[i] = NUM2DBL(rb_Float(RARRAY_PTR(cval)[i]));
+	pval = rb_ary_to_ary(pval);
+	n = RARRAY_LEN(pval);
+	ni = -1;  /*  If this is non-negative, then ni-th control point is [number, 0, 0] */
+	if (n <= 0)
+		rb_raise(rb_eArgError, "no control points are given");
+	switch (g.kind) {
+		case kMainViewGraphicLine:
+			if (n % 2 != 0)
+				rb_raise(rb_eArgError, "the line object must have even number of control points");
+			break;
+		case kMainViewGraphicPoly:
+			if (n < 3)
+				rb_raise(rb_eArgError, "the polygon object must have at least three control points");
+			break;
+		case kMainViewGraphicCylinder:
+		case kMainViewGraphicCone:
+			if (n != 3)
+				rb_raise(rb_eArgError, "the %s object must have two control points and one number (radius)", (g.kind == kMainViewGraphicCylinder ? "cylinder" : "cone"));
+			ni = 2;
+			break;
+		case kMainViewGraphicEllipsoid:
+			if (n == 2) {
+				ni = 1;
+			} else if (n != 4)
+				rb_raise(rb_eArgError, "the ellipsoid object must have either one point and one number (radius) or four points (center and three main axes)");
+			break;
+	}
+	NewArray(&g.points, &g.npoints, sizeof(GLfloat) * 3, n);
+	for (i = 0; i < n; i++) {
+		Vector v;
+		if (i == ni) {
+			v.x = NUM2DBL(rb_Float(RARRAY_PTR(pval)[i]));
+			v.y = v.z = 0;
+		} else {
+			VectorFromValue(RARRAY_PTR(pval)[i], &v);
+		}
+		g.points[i * 3] = v.x;
+		g.points[i * 3 + 1] = v.y;
+		g.points[i * 3 + 2] = v.z;
+	}
+	if (g.kind == kMainViewGraphicEllipsoid && ni == 2) {
+		/*  Sphere  */
+		AssignArray(&g.points, &g.npoints, sizeof(GLfloat) * 3, 4, NULL);
+		g.points[6] = g.points[8] = g.points[9] = g.points[10] = 0;
+		g.points[7] = g.points[11] = g.points[3];
+	}
+	MainView_insertGraphic(mol->mview, -1, &g);
+	return INT2NUM(mol->mview->ngraphics - 1);	
+}
+
+/*
+ *  call-seq:
+ *     delete_graphic(index) -> integer
+ *
+ *  Delete a graphic object.
+ */
+static VALUE
+s_Molecule_DeleteGraphic(VALUE self, VALUE ival)
+{
+    Molecule *mol;
+	int i;
+    Data_Get_Struct(self, Molecule, mol);
+	if (mol->mview == NULL)
+		rb_raise(rb_eMolbyError, "this molecule has no associated graphic view");
+	i = NUM2INT(rb_Integer(ival));
+	if (i < 0 || i >= mol->mview->ngraphics)
+		rb_raise(rb_eArgError, "graphic index is out of range");
+	MainView_deleteGraphic(mol->mview, i);
+	return ival;
+}
+
+/*
+ *  call-seq:
+ *     ngraphics -> integer
+ *
+ *  Get the number of graphic objects.
+ */
+static VALUE
+s_Molecule_NGraphics(VALUE self)
+{
+    Molecule *mol;
+    Data_Get_Struct(self, Molecule, mol);
+	if (mol->mview == NULL)
+		rb_raise(rb_eMolbyError, "this molecule has no associated graphic view");
+	return INT2NUM(mol->mview->ngraphics);
+}
+	
+/*
+ *  call-seq:
+ *     set_graphic_point(graphic_index, point_index, new_value) -> new_value
+ *
+ *  Change the point_index-th control point of graphic_index-th graphic object
+ *   
+ */
+static VALUE
+s_Molecule_SetGraphicPoint(VALUE self, VALUE gval, VALUE pval, VALUE nval)
+{
+	MainViewGraphic *gp;
+    Molecule *mol;
+	int index;
+	Vector v;
+    Data_Get_Struct(self, Molecule, mol);
+	if (mol->mview == NULL)
+		rb_raise(rb_eMolbyError, "this molecule has no associated graphic view");
+	index = NUM2INT(rb_Integer(gval));
+	if (index < 0 || index >= mol->mview->ngraphics)
+		rb_raise(rb_eArgError, "the graphic index is out of range");
+	gp = mol->mview->graphics + index;
+	index = NUM2INT(rb_Integer(pval));
+	if (index < 0 || index >= gp->npoints)
+		rb_raise(rb_eArgError, "the point index is out of range");
+	if (rb_obj_is_kind_of(nval, rb_cNumeric)) {
+		if ((gp->kind == kMainViewGraphicCylinder || gp->kind == kMainViewGraphicCone) && index == 2) {
+			v.x = NUM2DBL(rb_Float(nval));
+			v.y = v.z = 0;
+		} else if (gp->kind == kMainViewGraphicEllipsoid && index == 1) {
+			gp->points[3] = gp->points[7] = gp->points[11] = NUM2DBL(rb_Float(nval));
+			gp->points[4] = gp->points[5] = gp->points[6] = gp->points[8] = gp->points[9] = gp->points[10] = 0;
+			return nval;
+		} else rb_raise(rb_eArgError, "the argument must be an array-like object");
+	} else {
+		VectorFromValue(nval, &v);
+	}
+	gp->points[index * 3] = v.x;
+	gp->points[index * 3 + 1] = v.y;
+	gp->points[index * 3 + 2] = v.z;
+	MoleculeCallback_notifyModification(mol, 0);
+	return nval;
+}
+
+/*
+ *  call-seq:
  *     show_text(string)
  *
  *  Show the string in the info text box.
@@ -8503,6 +8697,11 @@ Init_Molby(void)
 	rb_define_method(rb_cMolecule, "line_mode", s_Molecule_LineMode, -1);
 	rb_define_alias(rb_cMolecule, "line_mode=", "line_mode");
 	rb_define_method(rb_cMolecule, "resize_to_fit", s_Molecule_ResizeToFit, 0);
+	rb_define_method(rb_cMolecule, "set_background_color", s_Molecule_SetBackgroundColor, -1);
+	rb_define_method(rb_cMolecule, "create_graphic", s_Molecule_CreateGraphic, -1);
+	rb_define_method(rb_cMolecule, "delete_graphic", s_Molecule_DeleteGraphic, 1);
+	rb_define_method(rb_cMolecule, "ngraphics", s_Molecule_NGraphics, 0);
+	rb_define_method(rb_cMolecule, "set_graphic_point", s_Molecule_SetGraphicPoint, 3);
 	rb_define_method(rb_cMolecule, "show_text", s_Molecule_ShowText, 1);
 	rb_define_method(rb_cMolecule, "md_arena", s_Molecule_MDArena, 0);
 	rb_define_method(rb_cMolecule, "set_parameter_attr", s_Molecule_SetParameterAttr, 5);
