@@ -4664,6 +4664,24 @@ s_Molecule_Name(VALUE self)
 
 /*
  *  call-seq:
+ *     set_name(string) -> self
+ *
+ *  Set the name of an untitled molecule. If the molecule is not associated with window
+ *  or it already has an associated file, then exception is thrown.
+ */
+static VALUE
+s_Molecule_SetName(VALUE self, VALUE nval)
+{
+    Molecule *mol;
+    Data_Get_Struct(self, Molecule, mol);
+	if (MoleculeCallback_setDisplayName(mol, StringValuePtr(nval)))
+		rb_raise(rb_eMolbyError, "Cannot change the window title");
+	return self;
+}
+
+
+/*
+ *  call-seq:
  *     path       -> String
  *
  *  Returns the full path name of the molecule, if it is associated with a file.
@@ -7470,6 +7488,22 @@ s_Molecule_Display(VALUE self)
 
 /*
  *  call-seq:
+ *     make_front
+ *
+ *  Make the window frontmost if this molecule is bound to a view. Otherwise do nothing.
+ */
+static VALUE
+s_Molecule_MakeFront(VALUE self)
+{
+    Molecule *mol;
+    Data_Get_Struct(self, Molecule, mol);
+	if (mol->mview != NULL)
+		MainViewCallback_makeFront(mol->mview);
+	return Qnil;
+}
+
+/*
+ *  call-seq:
  *     update_enabled? -> bool
  *
  *  Returns true if screen update is enabled; otherwise no.
@@ -7771,6 +7805,135 @@ s_Molecule_ResizeToFit(VALUE self)
 
 /*
  *  call-seq:
+ *     get_view_rotation -> [[ax, ay, az], angle]
+ *
+ *  Get the current rotation for the view. Angle is in degree, not radian.
+ */
+static VALUE
+s_Molecule_GetViewRotation(VALUE self)
+{
+    Molecule *mol;
+	float f[4];
+	Vector v;
+    Data_Get_Struct(self, Molecule, mol);
+	if (mol->mview == NULL)
+		return Qnil;
+	TrackballGetRotate(mol->mview->track, f);
+	v.x = f[1];
+	v.y = f[2];
+	v.z = f[3];
+	return rb_ary_new3(2, ValueFromVector(&v), rb_float_new(f[0]));
+}
+
+/*
+ *  call-seq:
+ *     get_view_scale -> float
+ *
+ *  Get the current scale for the view.
+ */
+static VALUE
+s_Molecule_GetViewScale(VALUE self)
+{
+    Molecule *mol;
+    Data_Get_Struct(self, Molecule, mol);
+	if (mol->mview == NULL)
+		return Qnil;
+	return rb_float_new(TrackballGetScale(mol->mview->track));
+}
+
+/*
+ *  call-seq:
+ *     get_view_translation -> Vector
+ *
+ *  Get the current translation factor for the view.
+ */
+static VALUE
+s_Molecule_GetViewTranslation(VALUE self)
+{
+    Molecule *mol;
+	float f[4];
+	Vector v;
+    Data_Get_Struct(self, Molecule, mol);
+	if (mol->mview == NULL)
+		return Qnil;
+	TrackballGetTranslate(mol->mview->track, f);
+	v.x = f[0];
+	v.y = f[1];
+	v.z = f[2];
+	return ValueFromVector(&v);
+}
+
+/*
+ *  call-seq:
+ *     set_view_rotation([ax, ay, az], angle) -> self
+ *
+ *  Set the current rotation for the view. Angle is in degree, not radian.
+ */
+static VALUE
+s_Molecule_SetViewRotation(VALUE self, VALUE aval, VALUE angval)
+{
+    Molecule *mol;
+	float f[4];
+	Vector v;
+    Data_Get_Struct(self, Molecule, mol);
+	if (mol->mview == NULL)
+		return Qnil;
+	VectorFromValue(aval, &v);
+	if (NormalizeVec(&v, &v))
+		rb_raise(rb_eMolbyError, "Cannot normalize nearly zero vector");
+	f[1] = v.x;
+	f[2] = v.y;
+	f[3] = v.z;
+	f[0] = NUM2DBL(rb_Float(angval));
+	TrackballSetRotate(mol->mview->track, f);
+	MainViewCallback_setNeedsDisplay(mol->mview, 0);
+	return self;
+}
+
+/*
+ *  call-seq:
+ *     set_view_scale(scale) -> self
+ *
+ *  Set the current scale for the view.
+ */
+static VALUE
+s_Molecule_SetViewScale(VALUE self, VALUE aval)
+{
+    Molecule *mol;
+    Data_Get_Struct(self, Molecule, mol);
+	if (mol->mview == NULL)
+		return Qnil;
+	TrackballSetScale(mol->mview->track, NUM2DBL(rb_Float(aval)));
+	MainViewCallback_setNeedsDisplay(mol->mview, 0);
+	return self;
+}
+
+/*
+ *  call-seq:
+ *     set_view_translation(vec) -> self
+ *
+ *  Set the current translation for the view.
+ */
+static VALUE
+s_Molecule_SetViewTranslation(VALUE self, VALUE aval)
+{
+    Molecule *mol;
+	Vector v;
+	float f[4];
+    Data_Get_Struct(self, Molecule, mol);
+	if (mol->mview == NULL)
+		return Qnil;
+	VectorFromValue(aval, &v);
+	f[0] = v.x;
+	f[1] = v.y;
+	f[2] = v.z;
+	TrackballSetTranslate(mol->mview->track, f);
+	MainViewCallback_setNeedsDisplay(mol->mview, 0);
+	return self;
+}
+
+/*
+ *  call-seq:
  *     set_background_color(red, green, blue)
  *
  *  Set the background color of the model window.
@@ -7812,6 +7975,7 @@ s_Molecule_CreateGraphic(int argc, VALUE *argv, VALUE self)
 	rb_scan_args(argc, argv, "31", &kval, &cval, &pval, &fval);
 	kval = rb_obj_as_string(kval);
 	memset(&g, 0, sizeof(g));
+	g.visible = 1;
 	p = RSTRING_PTR(kval);
 	if (strcmp(p, "line") == 0)
 		g.kind = kMainViewGraphicLine;
@@ -7840,8 +8004,8 @@ s_Molecule_CreateGraphic(int argc, VALUE *argv, VALUE self)
 		rb_raise(rb_eArgError, "no control points are given");
 	switch (g.kind) {
 		case kMainViewGraphicLine:
-			if (n % 2 != 0)
-				rb_raise(rb_eArgError, "the line object must have even number of control points");
+			if (n < 2)
+				rb_raise(rb_eArgError, "the line object must have at least two control points");
 			break;
 		case kMainViewGraphicPoly:
 			if (n < 3)
@@ -7954,13 +8118,99 @@ s_Molecule_SetGraphicPoint(VALUE self, VALUE gval, VALUE pval, VALUE nval)
 			return nval;
 		} else rb_raise(rb_eArgError, "the argument must be an array-like object");
 	} else {
-		VectorFromValue(nval, &v);
+		if (nval == Qnil) {
+			v.x = kInvalidFloat;
+			v.y = v.z = 0.0;
+		} else VectorFromValue(nval, &v);
 	}
 	gp->points[index * 3] = v.x;
 	gp->points[index * 3 + 1] = v.y;
 	gp->points[index * 3 + 2] = v.z;
 	MoleculeCallback_notifyModification(mol, 0);
 	return nval;
+}
+
+/*
+ *  call-seq:
+ *     set_graphic_color(graphic_index, new_value) -> new_value
+ *
+ *  Change the color of graphic_index-th graphic object
+ *   
+ */
+static VALUE
+s_Molecule_SetGraphicColor(VALUE self, VALUE gval, VALUE cval)
+{
+	MainViewGraphic *gp;
+    Molecule *mol;
+	int index, n;
+    Data_Get_Struct(self, Molecule, mol);
+	if (mol->mview == NULL)
+		rb_raise(rb_eMolbyError, "this molecule has no associated graphic view");
+	index = NUM2INT(rb_Integer(gval));
+	if (index < 0 || index >= mol->mview->ngraphics)
+		rb_raise(rb_eArgError, "the graphic index is out of range");
+	gp = mol->mview->graphics + index;
+	cval = rb_ary_to_ary(cval);
+	n = RARRAY_LEN(cval);
+	if (n != 3 && n != 4)
+		rb_raise(rb_eArgError, "the color argument must have 3 or 4 numbers");
+	for (index = 0; index < n; index++) {
+		gp->rgba[index] = NUM2DBL(rb_Float(RARRAY_PTR(cval)[index]));
+	}
+	if (n == 3)
+		gp->rgba[3] = 1.0;
+	MoleculeCallback_notifyModification(mol, 0);
+	return cval;
+}
+
+/*
+ *  call-seq:
+ *     show_graphic(graphic_index) -> self
+ *
+ *  Enable the visible flag of the graphic_index-th graphic object
+ *   
+ */
+static VALUE
+s_Molecule_ShowGraphic(VALUE self, VALUE gval)
+{
+	MainViewGraphic *gp;
+    Molecule *mol;
+	int index;
+    Data_Get_Struct(self, Molecule, mol);
+	if (mol->mview == NULL)
+		rb_raise(rb_eMolbyError, "this molecule has no associated graphic view");
+	index = NUM2INT(rb_Integer(gval));
+	if (index < 0 || index >= mol->mview->ngraphics)
+		rb_raise(rb_eArgError, "the graphic index is out of range");
+	gp = mol->mview->graphics + index;
+	gp->visible = 1;
+	MoleculeCallback_notifyModification(mol, 0);
+	return self;
+}
+
+/*
+ *  call-seq:
+ *     hide_graphic(graphic_index) -> self
+ *
+ *  Disable the visible flag of the graphic_index-th graphic object
+ *   
+ */
+static VALUE
+s_Molecule_HideGraphic(VALUE self, VALUE gval)
+{
+	MainViewGraphic *gp;
+    Molecule *mol;
+	int index;
+    Data_Get_Struct(self, Molecule, mol);
+	if (mol->mview == NULL)
+		rb_raise(rb_eMolbyError, "this molecule has no associated graphic view");
+	index = NUM2INT(rb_Integer(gval));
+	if (index < 0 || index >= mol->mview->ngraphics)
+		rb_raise(rb_eArgError, "the graphic index is out of range");
+	gp = mol->mview->graphics + index;
+	gp->visible = 0;
+	MoleculeCallback_notifyModification(mol, 0);
+	return self;
 }
 
 /*
@@ -8562,6 +8812,7 @@ Init_Molby(void)
     rb_define_method(rb_cMolecule, "savedcd", s_Molecule_Savedcd, 1);
     rb_define_method(rb_cMolecule, "savetep", s_Molecule_Savetep, 1);
     rb_define_method(rb_cMolecule, "name", s_Molecule_Name, 0);
+	rb_define_method(rb_cMolecule, "set_name", s_Molecule_SetName, 1);
     rb_define_method(rb_cMolecule, "path", s_Molecule_Path, 0);
     rb_define_method(rb_cMolecule, "dir", s_Molecule_Dir, 0);
     rb_define_method(rb_cMolecule, "inspect", s_Molecule_Inspect, 0);
@@ -8670,6 +8921,7 @@ Init_Molby(void)
 	rb_define_method(rb_cMolecule, "wrap_unit_cell", s_Molecule_WrapUnitCell, 1);
 	rb_define_method(rb_cMolecule, "find_conflicts", s_Molecule_FindConflicts, -1);
 	rb_define_method(rb_cMolecule, "display", s_Molecule_Display, 0);
+	rb_define_method(rb_cMolecule, "make_front", s_Molecule_MakeFront, 0);
 	rb_define_method(rb_cMolecule, "update_enabled?", s_Molecule_UpdateEnabled, 0);
 	rb_define_method(rb_cMolecule, "update_enabled=", s_Molecule_SetUpdateEnabled, 1);	
 	rb_define_method(rb_cMolecule, "show_unitcell", s_Molecule_ShowUnitCell, -1);
@@ -8697,11 +8949,20 @@ Init_Molby(void)
 	rb_define_method(rb_cMolecule, "line_mode", s_Molecule_LineMode, -1);
 	rb_define_alias(rb_cMolecule, "line_mode=", "line_mode");
 	rb_define_method(rb_cMolecule, "resize_to_fit", s_Molecule_ResizeToFit, 0);
+	rb_define_method(rb_cMolecule, "get_view_rotation", s_Molecule_GetViewRotation, 0);
+	rb_define_method(rb_cMolecule, "get_view_scale", s_Molecule_GetViewScale, 0);
+	rb_define_method(rb_cMolecule, "get_view_translation", s_Molecule_GetViewTranslation, 0);
+	rb_define_method(rb_cMolecule, "set_view_rotation", s_Molecule_SetViewRotation, 2);
+	rb_define_method(rb_cMolecule, "set_view_scale", s_Molecule_SetViewScale, 1);
+	rb_define_method(rb_cMolecule, "set_view_translation", s_Molecule_SetViewTranslation, 1);
 	rb_define_method(rb_cMolecule, "set_background_color", s_Molecule_SetBackgroundColor, -1);
 	rb_define_method(rb_cMolecule, "create_graphic", s_Molecule_CreateGraphic, -1);
 	rb_define_method(rb_cMolecule, "delete_graphic", s_Molecule_DeleteGraphic, 1);
 	rb_define_method(rb_cMolecule, "ngraphics", s_Molecule_NGraphics, 0);
 	rb_define_method(rb_cMolecule, "set_graphic_point", s_Molecule_SetGraphicPoint, 3);
+	rb_define_method(rb_cMolecule, "set_graphic_color", s_Molecule_SetGraphicColor, 2);
+	rb_define_method(rb_cMolecule, "show_graphic", s_Molecule_ShowGraphic, 1);
+	rb_define_method(rb_cMolecule, "hide_graphic", s_Molecule_HideGraphic, 1);
 	rb_define_method(rb_cMolecule, "show_text", s_Molecule_ShowText, 1);
 	rb_define_method(rb_cMolecule, "md_arena", s_Molecule_MDArena, 0);
 	rb_define_method(rb_cMolecule, "set_parameter_attr", s_Molecule_SetParameterAttr, 5);

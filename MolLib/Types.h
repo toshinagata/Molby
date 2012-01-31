@@ -71,6 +71,8 @@ typedef unsigned int UInt;
 
 #define kInvalidIndex -99999999  /*  Used for terminating integer array  */
 
+#define kInvalidFloat 1e30
+
 typedef struct Vector { Double x, y, z; } Vector;
 typedef struct Quat { Double x, y, z, w; } Quat;   /*  A quaternion  */
 typedef Double Mat33[9];  /*  Columns first!  */

@@ -906,9 +906,8 @@ drawCone(const GLfloat *a, const GLfloat *b, GLfloat r, int sect, int closed)
 {
     GLfloat *c, *s;
     int n, i;
-	float nx, ny, nz;
     GLfloat d[3], v[3], w[3];
-	Vector p1, p2;
+	Vector p1, nv;
     n = setSinCache(sect);
     if (n <= 0)
         return;
@@ -920,31 +919,32 @@ drawCone(const GLfloat *a, const GLfloat *b, GLfloat r, int sect, int closed)
     if (getOrthogonalVectors(d, v, w) == 0)
         return;
     glBegin(GL_TRIANGLE_FAN);
-	glVertex3f(a[0], a[1], a[2]);
-	p1.x = b[0] + r * (v[0] * c[0] + w[0] * s[0]);
-	p1.y = b[1] + r * (v[1] * c[0] + w[1] * s[0]);
-	p1.z = b[2] + r * (v[2] * c[0] + w[2] * s[0]);
-	glVertex3f(p1.x, p1.y, p1.z);
-    for (i = 1; i <= n; i++) {
-        p2.x = b[0] + r * (v[0] * c[i] + w[0] * s[i]);
-        p2.y = b[1] + r * (v[1] * c[i] + w[1] * s[i]);
-        p2.z = b[2] + r * (v[2] * c[i] + w[2] * s[i]);
-		nx = p1.x + p2.x - b[0] * 2;
-		ny = p1.y + p2.y - b[1] * 2;
-		nz = p1.z + p2.z - b[2] * 2;
-        glNormal3f(nx, ny, nz);
-		glVertex3f(p2.x, p2.y, p2.z);
-		p1 = p2;
+	nv.x = d[0];
+	nv.y = d[1];
+	nv.z = d[2];
+	NormalizeVec(&nv, &nv);
+	glNormal3f(nv.x, nv.y, nv.z);
+	glVertex3f(b[0], b[1], b[2]);
+    for (i = 0; i <= n; i++) {
+        nv.x = v[0] * c[i] + w[0] * s[i];
+        nv.y = v[1] * c[i] + w[1] * s[i];
+        nv.z = v[2] * c[i] + w[2] * s[i];
+		glNormal3f(nv.x, nv.y, nv.z);
+		p1.x = a[0] + r * nv.x;
+		p1.y = a[1] + r * nv.y;
+		p1.z = a[2] + r * nv.z;
+        glNormal3f(nv.x, nv.y, nv.z);
+		glVertex3f(p1.x, p1.y, p1.z);
     }
     glEnd();
 	if (closed) {
 		glBegin(GL_TRIANGLE_FAN);
 		glNormal3f(d[0], d[1], d[2]);
 		for (i = 0; i <= n; i++) {
-			p2.x = b[0] + r * (v[0] * c[i] + w[0] * s[i]);
-			p2.y = b[1] + r * (v[1] * c[i] + w[1] * s[i]);
-			p2.z = b[2] + r * (v[2] * c[i] + w[2] * s[i]);
-			glVertex3f(p2.x, p2.y, p2.z);
+			p1.x = a[0] + r * (v[0] * c[i] + w[0] * s[i]);
+			p1.y = a[1] + r * (v[1] * c[i] + w[1] * s[i]);
+			p1.z = a[2] + r * (v[2] * c[i] + w[2] * s[i]);
+			glVertex3f(p1.x, p1.y, p1.z);
 		}
 		glEnd();
 	}
@@ -1610,40 +1610,60 @@ skip:
 static void
 drawGraphics(MainView *mview)
 {
-	int i, j, n;
+	int i, j;
 	MainViewGraphic *g;
 	for (i = 0; i < mview->ngraphics; i++) {
 		g = &mview->graphics[i];
+		if (g->visible == 0)
+			continue;
 		glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, g->rgba);
 		switch (g->kind) {
 			case kMainViewGraphicLine:
 				glDisable(GL_LIGHTING);
 				glColor4fv(g->rgba);
-				glBegin(GL_LINES);
-				n = g->npoints;
-				if (n % 2 == 1)
-					n--;
-				for (j = 0; j < n; j++)
+				glBegin(GL_LINE_STRIP);
+				for (j = 0; j < g->npoints; j++) {
+					if (g->points[j * 3] >= kInvalidFloat)
+						break;
 					glVertex3fv(&g->points[j * 3]);
+				}
 				glEnd();
 				glEnable(GL_LIGHTING);
 				break;
-			case kMainViewGraphicPoly:
+			case kMainViewGraphicPoly: {
+				Vector v0, v1, v2, v3;
 				glBegin(GL_TRIANGLE_FAN);
-				for (j = 0; j < g->npoints; j++)
+				v1.x = g->points[0] - g->points[g->npoints - 3];
+				v1.y = g->points[1] - g->points[g->npoints - 2];
+				v1.z = g->points[2] - g->points[g->npoints - 1];
+				v0 = v1;
+				for (j = 0; j < g->npoints; j++) {
+					v2.x = g->points[j * 3 + 3] - g->points[j * 3];
+					v2.y = g->points[j * 3 + 4] - g->points[j * 3 + 1];
+					v2.z = g->points[j * 3 + 5] - g->points[j * 3 + 2];
+					VecCross(v3, v1, v2);
+					if (NormalizeVec(&v3, &v3) == 0)
+						glNormal3f(v3.x, v3.y, v3.z);
 					glVertex3fv(&g->points[j * 3]);
-				if (g->closed)
+					v1 = v2;
+				}
+				if (g->closed) {
+					VecCross(v3, v1, v0);
+					if (NormalizeVec(&v3, &v3) == 0)
+						glNormal3f(v3.x, v3.y, v3.z);
 					glVertex3fv(g->points);
+				}
 				glEnd();
 				break;
+			}
 			case kMainViewGraphicCylinder:
-				drawCylinder(g->points, g->points + 3, g->points[6], 6, g->closed);
+				drawCylinder(g->points, g->points + 3, g->points[6], 15, g->closed);
 				break;
 			case kMainViewGraphicCone:
-				drawCone(g->points, g->points + 3, g->points[6], 6, g->closed);
+				drawCone(g->points, g->points + 3, g->points[6], 15, g->closed);
 				break;
 			case kMainViewGraphicEllipsoid:
-				drawEllipsoid(g->points, g->points + 3, g->points + 6, g->points + 9, 6);
+				drawEllipsoid(g->points, g->points + 3, g->points + 6, g->points + 9, 8);
 				break;
 		}
 	}
@@ -1806,7 +1826,7 @@ compareLabelByDepth(const void *ap, const void *bp)
 static void
 drawLabels(MainView *mview)
 {
-	Transform *trp;
+/*	Transform *trp; */
 	Atom *ap;
 	LabelRecord *lp;
 	int i, nlabels;

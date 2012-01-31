@@ -831,6 +831,14 @@ MainViewCallback_display(MainView *mview)
 }
 
 void
+MainViewCallback_makeFront(MainView *mview)
+{
+	if (mview != NULL && mview->ref != NULL) {
+		((MoleculeView *)(mview->ref))->GetFrame()->Raise();
+	}
+}
+
+void
 MainViewCallback_setNeedsDisplay(MainView *mview, int flag)
 {
   if (mview != NULL && mview->ref != NULL) {

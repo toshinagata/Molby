@@ -1662,6 +1662,18 @@ MoleculeCallback_pathName(Molecule *mol, char *buf, int bufsize)
 	else buf[0] = 0;
 }
 
+int
+MoleculeCallback_setDisplayName(Molecule *mol, const char *name)
+{
+	MyDocument *doc = MyDocumentFromMolecule(mol);
+	if (doc == NULL || doc->hasFile)
+		return 1; /*  Cannot change file-associated window title  */
+	wxString fname(name, wxConvFile);
+	doc->SetTitle(fname);
+	doc->GetFirstView()->OnChangeFilename();
+	return 0;
+}
+
 void
 MoleculeCallback_lockMutex(void *mutex)
 {

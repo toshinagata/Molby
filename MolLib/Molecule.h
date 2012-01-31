@@ -509,6 +509,7 @@ STUB Molecule *MoleculeCallback_moleculeAtIndex(int idx);
 STUB Molecule *MoleculeCallback_moleculeAtOrderedIndex(int idx);
 STUB void MoleculeCallback_displayName(Molecule *mol, char *buf, int bufsize);
 STUB void MoleculeCallback_pathName(Molecule *mol, char *buf, int bufsize);
+STUB int MoleculeCallback_setDisplayName(Molecule *mol, const char *name);
 
 STUB void MoleculeCallback_lockMutex(void *mutex);
 STUB void MoleculeCallback_unlockMutex(void *mutex);

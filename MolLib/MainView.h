@@ -85,7 +85,8 @@ enum {
 
 typedef struct MainViewGraphic {
 	Int kind;
-	Int closed;
+	Byte closed;
+	Byte visible;
 	GLfloat rgba[4];
 	Int npoints;
 	GLfloat *points;
@@ -235,6 +236,7 @@ STUB void MainViewCallback_lockFocus(MainView *mview);
 STUB void MainViewCallback_unlockFocus(MainView *mview);
 STUB void MainViewCallback_frame(MainView *mview, float *rect);
 STUB void MainViewCallback_display(MainView *mview);
+STUB void MainViewCallback_makeFront(MainView *mview);
 STUB void MainViewCallback_setNeedsDisplay(MainView *mview, int flag);
 STUB void MainViewCallback_setKeyboardFocus(MainView *mview);
 STUB int MainViewCallback_mouseCheck(MainView *mview);
