@@ -8049,12 +8049,12 @@ s_Molecule_CreateGraphic(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     delete_graphic(index) -> integer
+ *     remove_graphic(index) -> integer
  *
- *  Delete a graphic object.
+ *  Remove a graphic object.
  */
 static VALUE
-s_Molecule_DeleteGraphic(VALUE self, VALUE ival)
+s_Molecule_RemoveGraphic(VALUE self, VALUE ival)
 {
     Molecule *mol;
 	int i;
@@ -8064,7 +8064,7 @@ s_Molecule_DeleteGraphic(VALUE self, VALUE ival)
 	i = NUM2INT(rb_Integer(ival));
 	if (i < 0 || i >= mol->mview->ngraphics)
 		rb_raise(rb_eArgError, "graphic index is out of range");
-	MainView_deleteGraphic(mol->mview, i);
+	MainView_removeGraphic(mol->mview, i);
 	return ival;
 }
 
@@ -8949,6 +8949,7 @@ Init_Molby(void)
 	rb_define_method(rb_cMolecule, "line_mode", s_Molecule_LineMode, -1);
 	rb_define_alias(rb_cMolecule, "line_mode=", "line_mode");
 	rb_define_method(rb_cMolecule, "resize_to_fit", s_Molecule_ResizeToFit, 0);
+#if !defined(__CMDMAC__)
 	rb_define_method(rb_cMolecule, "get_view_rotation", s_Molecule_GetViewRotation, 0);
 	rb_define_method(rb_cMolecule, "get_view_scale", s_Molecule_GetViewScale, 0);
 	rb_define_method(rb_cMolecule, "get_view_translation", s_Molecule_GetViewTranslation, 0);
@@ -8957,12 +8958,13 @@ Init_Molby(void)
 	rb_define_method(rb_cMolecule, "set_view_translation", s_Molecule_SetViewTranslation, 1);
 	rb_define_method(rb_cMolecule, "set_background_color", s_Molecule_SetBackgroundColor, -1);
 	rb_define_method(rb_cMolecule, "create_graphic", s_Molecule_CreateGraphic, -1);
-	rb_define_method(rb_cMolecule, "delete_graphic", s_Molecule_DeleteGraphic, 1);
+	rb_define_method(rb_cMolecule, "remove_graphic", s_Molecule_RemoveGraphic, 1);
 	rb_define_method(rb_cMolecule, "ngraphics", s_Molecule_NGraphics, 0);
 	rb_define_method(rb_cMolecule, "set_graphic_point", s_Molecule_SetGraphicPoint, 3);
 	rb_define_method(rb_cMolecule, "set_graphic_color", s_Molecule_SetGraphicColor, 2);
 	rb_define_method(rb_cMolecule, "show_graphic", s_Molecule_ShowGraphic, 1);
 	rb_define_method(rb_cMolecule, "hide_graphic", s_Molecule_HideGraphic, 1);
+#endif
 	rb_define_method(rb_cMolecule, "show_text", s_Molecule_ShowText, 1);
 	rb_define_method(rb_cMolecule, "md_arena", s_Molecule_MDArena, 0);
 	rb_define_method(rb_cMolecule, "set_parameter_attr", s_Molecule_SetParameterAttr, 5);

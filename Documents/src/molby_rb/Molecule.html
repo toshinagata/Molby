@@ -67,6 +67,12 @@ Many methods of <a href="Molecule.html">Molecule</a> take a "group" argument, wh
 <p>
 Many methods of <a href="Molecule.html">Molecule</a> are described as "undoable". This means, when such methods are invoked for a <a href="Molecule.html">Molecule</a> that has an associated document, an undo operation is automatically registered to the document. 
 </p>
+<h4>Graphic objects</h4>
+<a name="description-graphic-objects"></a>
+<p>
+(New in 0.6.2) Some Ruby methods allow you to handle graphic objects that are displayed in the same view as the molecule. The methods include <a href="#create_graphic">create_graphic</a>, <a href="#remove_graphic">remove_graphic</a>, <a href="#ngraphics">ngraphics</a>, <a href="#set_graphic_point">set_graphic_point</a>, <a href="#set_graphic_color">set_graphic_color</a>, <a href="#show_graphic">show_graphic</a>, and <a href="#hide_graphic">hide_graphic</a>.
+</p>
+
 </div>
 
 <div id="methods">
@@ -799,6 +805,23 @@ Same as <a href="Molecule.html#M000336">Molecule#insert_frames</a>(nil, coordina
 </div>
 </div>
 
+<div id="method-create_graphic" class="method-detail">
+<a name="create_graphic"></a>
+<div class="method-heading">
+<span class="method-name">create_graphic(kind, color, points, fill = nil) &rarr; Integer</span>
+</div>
+<div class="method-description">
+<p>
+Create a new graphic object. Kind: a symbol representing the kind of the graphic. :line, :poly, :cylinder, :cone, :ellipsoid. Color: an array of 3 (rgb) or 4 (rgba) floating numbers. Points: an array of <a href="Vector3D.html">Vector3D</a>s.
+</p>
+<p>
+Returns the index of the newly created graphic.
+</p>
+<p>
+<i>See Also:</i> <a href="#remove_graphic">Molecule#remove_graphic</a>
+</p></div>
+</div>
+
 <div id="method-M000318" class="method-detail">
 <a name="M000318"></a>
 <div class="method-heading">
@@ -1264,6 +1287,48 @@ Copy the coordinates from the specified frame. If group is specified, then only 
 </div>
 </div>
 
+<div id="method-get_view_rotation" class="method-detail">
+<a name="get_view_rotation"></a>
+<div class="method-heading">
+<span class="method-name">get_view_rotation &rarr; [[ax, ay, az], angle]</span>
+</div>
+<div class="method-description">
+<p>
+Get the current rotation for the view. Angle is in degree, not radian.
+</p>
+<p>
+<i>See Also:</i> <a href="#set_view_rotation">Molecule#set_view_rotation</a>
+</p></div>
+</div>
+
+<div id="method-get_view_scale" class="method-detail">
+<a name="get_view_scale"></a>
+<div class="method-heading">
+<span class="method-name">get_view_scale &rarr; Float</span>
+</div>
+<div class="method-description">
+<p>
+Get the current scale for the view. Scale is expressed with a floating-point number in the range -5.0 to 5.0. The scale parameter is transformed to perspective parameters (fovy and distance) in the following way: for negative scale, fovy = 30 deg and distance = cot(15) * 10^(-scale); for positive scale, fovy = 30 * 10^(-scale) and distance = cot(15).
+</p>
+<p>
+<i>See Also:</i> <a href="#set_view_scale">Molecule#set_view_scale</a>
+</p></div>
+</div>
+
+<div id="method-get_view_translation" class="method-detail">
+<a name="get_view_translation"></a>
+<div class="method-heading">
+<span class="method-name">get_view_translation &rarr; <a href="Vector3D.html">Vector3D</a></span>
+</div>
+<div class="method-description">
+<p>
+Get the current translation factor for the view.
+</p>
+<p>
+<i>See Also:</i> <a href="#set_view_translation">Molecule#set_view_translation</a>
+</p></div>
+</div>
+
 <div id="method-M000261" class="method-detail">
 <a name="M000261"></a>
 <div class="method-heading">
@@ -1275,6 +1340,20 @@ Copy the coordinates from the specified frame. If group is specified, then only 
 Create bonds between atoms that are within the threshold distance. If limit is a positive number, the threshold distance is the sum of the vdw radii times limit. If limit is a negative number, its absolute value is used for the threshold distance in angstrom. If limit is not given, a default value of 1.2 is used. The number of the newly created bonds is returned. This operation is undoable.
 </p>
 </div>
+</div>
+
+<div id="method-hide_graphic" class="method-detail">
+<a name="hide_graphic"></a>
+<div class="method-heading">
+<span class="method-name">hide_graphic(graphic_index) &rarr; self</span>
+</div>
+<div class="method-description">
+<p>
+Unset the visibility flag of the graphic_index-th graphic object.
+</p>
+<p>
+<i>See Also:</i> <a href="#show_graphic">Molecule#show_graphic</a>
+</p></div>
 </div>
 
 <div id="method-improper-par" class="method-detail">
@@ -1827,6 +1906,18 @@ Get the number of frames. Note that the minimum number of frames is 1, not 0.
 </div>
 </div>
 
+<div id="method-ngraphics" class="method-detail">
+<a name="ngraphics"></a>
+<div class="method-heading">
+<span class="method-name">ngraphics &rarr; Integer</span>
+</div>
+<div class="method-description">
+<p>
+Get the number of graphic objects.
+</p>
+</div>
+</div>
+
 <div id="method-M000221" class="method-detail">
 <a name="M000221"></a>
 <div class="method-heading">
@@ -2091,6 +2182,20 @@ of arrays of the coordinates in the removed frames is returned.
 If the given group corrensponds to all frames, then the current frame is retained. Otherwise, if the current frame is included in the given group, the frame immediately before the group is selected (if no frame is present before the group, the frame with the lowest index is selected).
 </p>
 </div>
+</div>
+
+<div id="method-remove_graphic" class="method-detail">
+<a name="remove_graphic"></a>
+<div class="method-heading">
+<span class="method-name">remove_graphic(index) &rarr; index</span>
+</div>
+<div class="method-description">
+<p>
+Remove a graphic object.
+</p>
+<p>
+<i>See Also:</i> <a href="#create_graphic">Molecule#create_graphic</a>
+</p></div>
 </div>
 
 <div id="method-M000257" class="method-detail">
@@ -2391,6 +2496,18 @@ Set the atom attribute for the specified atom. Equivalent to <a href="Molecule.h
 </div>
 </div>
 
+<div id="method-set_background_color" class="method-detail">
+<a name="set_background_color"></a>
+<div class="method-heading">
+<span class="method-name">set_background_color(red, green, blue) &rarr; self</span>
+</div>
+<div class="method-description">
+<p>
+Set the background color of the model view. Red, green, blue are in the range of [0, 1].
+</p>
+</div>
+</div>
+
 <div id="method-M000181" class="method-detail">
 <a name="M000181"></a>
 <div class="method-heading">
@@ -2399,6 +2516,30 @@ Set the atom attribute for the specified atom. Equivalent to <a href="Molecule.h
 <div class="method-description">
 <p>
 Set the dihedral angle n1-n2-n3-n4 to the specified value. The bond n2-n3 should be rotatable. The fragment including n3 and n4 are rotated. This operation is undoable.
+</p>
+</div>
+</div>
+
+<div id="method-set_graphic_color" class="method-detail">
+<a name="set_graphic_color"></a>
+<div class="method-heading">
+<span class="method-name">set_graphic_color(graphic_index, new_vaue) &rarr; new_value</span>
+</div>
+<div class="method-description">
+<p>
+Change the color of graphic_index-th graphic object. The new value must be an array-like object containing three or four numbers.
+</p>
+</div>
+</div>
+
+<div id="method-set_graphic_point" class="method-detail">
+<a name="set_graphic_point"></a>
+<div class="method-heading">
+<span class="method-name">set_graphic_point(graphic_index, point_index, new_value) &rarr; new_value</span>
+</div>
+<div class="method-description">
+<p>
+Change the point_index-th control point of graphic_index-th graphic object. If the object is a line strip, nil is allowed for the new value, which means the line strip ends at the last point.
 </p>
 </div>
 </div>
@@ -2416,6 +2557,48 @@ right-hand operand (of class <a href="IntGroup.html">IntGroup</a>) may be nil, i
 This operation is undoable.
 </p>
 </div>
+</div>
+
+<div id="method-set_view_rotation" class="method-detail">
+<a name="set_view_rotation"></a>
+<div class="method-heading">
+<span class="method-name">set_view_rotation(axis, angle) &rarr; self</span>
+</div>
+<div class="method-description">
+<p>
+Set the current rotation for the view. Axis is a <a href="Vector3D.html">Vector3D</a> or an object that can be transformed to a <a href="Vector3D.html">Vector3D</a>. Angle is in degree, not radian.
+</p>
+<p>
+<i>See Also:</i> <a href="#get_view_rotation">Molecule#get_view_rotation</a>
+</p></div>
+</div>
+
+<div id="method-set_view_scale" class="method-detail">
+<a name="set_view_scale"></a>
+<div class="method-heading">
+<span class="method-name">set_view_scale(scale) &rarr; self</span>
+</div>
+<div class="method-description">
+<p>
+Set the current scale for the view. For detailed description of the scale parameter, see <a href="#get_view_scale">Molecule#get_view_scale</a>.
+</p>
+<p>
+<i>See Also:</i> <a href="#get_view_scale">Molecule#get_view_scale</a>
+</p></div>
+</div>
+
+<div id="method-set_view_translation" class="method-detail">
+<a name="set_view_translation"></a>
+<div class="method-heading">
+<span class="method-name">set_view_translation(vec) &rarr; self</span>
+</div>
+<div class="method-description">
+<p>
+Set the current translation for the view.
+</p>
+<p>
+<i>See Also:</i> <a href="#get_view_translation">Molecule#get_view_translation</a>
+</p></div>
 </div>
 
 <div id="method-M000301" class="method-detail">
@@ -2464,6 +2647,20 @@ Set the flag whether to show the expanded atoms. If no argument is given, the cu
 </div>
 </div>
 
+<div id="method-show_graphic" class="method-detail">
+<a name="show_graphic"></a>
+<div class="method-heading">
+<span class="method-name">show_graphic(graphic_index) &rarr; self</span>
+</div>
+<div class="method-description">
+<p>
+Set the visibility flag of the graphic_index-th graphic object.
+</p>
+<p>
+<i>See Also:</i> <a href="#hide_graphic">Molecule#hide_graphic</a>
+</p></div>
+</div>
+
 <div id="method-M000307" class="method-detail">
 <a name="M000307"></a>
 <div class="method-heading">
@@ -2471,7 +2668,6 @@ Set the flag whether to show the expanded atoms. If no argument is given, the cu
 self.show_graphite = Integer<br />
 </span>
 </div>
-
 <div class="method-description">
 <p>
 Set whether to show the graphite plane. The plane is assumed to be on the xy plane. If the argument is positive, it also indicates the number of rings to display for each direction. If the argument is zero, the plane is not displayed. If no argument is given, the current value is returned.

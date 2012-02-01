@@ -2182,7 +2182,7 @@ MainView_insertGraphic(MainView *mview, int index, const MainViewGraphic *graphi
 }
 
 int
-MainView_deleteGraphic(MainView *mview, int index)
+MainView_removeGraphic(MainView *mview, int index)
 {
 	MainViewGraphic *g;
 	if (index < 0 || index >= mview->ngraphics)

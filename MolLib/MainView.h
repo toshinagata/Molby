@@ -195,7 +195,7 @@ int MainView_getMode(const MainView *mview);
 void MainView_setBackgroundColor(MainView *mview, float red, float green, float blue);
 void MainView_getBackgroundColor(const MainView *mview, float *rgb);
 int MainView_insertGraphic(MainView *mview, int index, const MainViewGraphic *graphic);
-int MainView_deleteGraphic(MainView *mview, int index);
+int MainView_removeGraphic(MainView *mview, int index);
 
 void MainView_attachLabelToAtom(MainView *mview, int index);
 void MainView_detachLabelFromAtom(MainView *mview, int index);

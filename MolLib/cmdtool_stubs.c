@@ -158,6 +158,11 @@ MainViewCallback_display(MainView *mview)
 {
 }
 
+void
+MainViewCallback_makeFront(MainView *mview)
+{
+}
+
 int
 MolActionCallback_setUndoRegistrationEnabled(Molecule *mol, int flag)
 {
@@ -218,6 +223,12 @@ void
 MoleculeCallback_displayName(Molecule *mol, char *buf, int bufsize)
 {
 	buf[0] = 0;
+}
+
+int
+MoleculeCallback_setDisplayName(Molecule *mol, const char *name)
+{
+	return 0;
 }
 
 void
