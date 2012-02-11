@@ -25,7 +25,7 @@ verstr = "v#{ver}"
 yrange = (year > 2008 ? "2008-#{year}" : "2008")
 
 def modify_file(name, &block)
-  ary = IO.readlines(name)
+  ary = IO.readlines(name) rescue return
   modified = false
   ary.each_with_index { |s, i|
     s = block.call(s)
@@ -39,6 +39,7 @@ def modify_file(name, &block)
     open(name, "wb") { |fp|
       ary.each { |s| fp.write(s) }
     }
+    File.delete(name + "~")
   end
 end
 
@@ -87,9 +88,11 @@ modify_file("wxSources/MyVersion.c") { |s|
 
 #  Modify doc_source.html
 modify_file("Documents/src/doc_source.html") { |s|
-  if s =~ /Version/ && s.sub!(/[Vv][-.0-9 A-Za-z_]*/, "Version #{ver}")
+  if s =~ /Version/ && s =~ /<!-- version -->/ && s.sub!(/[Vv][-.0-9 A-Za-z_]*/, "Version #{ver}")
     s
-  else
+  elsif s =~ /<!-- copyright -->/ && s.sub!(/\d\d\d\d(-\d\d\d\d)?/, yrange)
+    s
+  else 
     nil
   end
 }
@@ -97,6 +100,8 @@ modify_file("Documents/src/doc_source.html") { |s|
 #  Modify README
 modify_file("README") { |s|
   if s =~ /        Version/ && s.sub!(/[Vv][-.0-9 A-Za-z_]*/, "Version #{ver}")
+    s
+  elsif s =~ /       Copyright/ && s =~ /Toshi Nagata/ && s.sub!(/\d\d\d\d(-\d\d\d\d)?/, yrange)
     s
   else
     nil
