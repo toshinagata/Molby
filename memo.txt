@@ -334,3 +334,45 @@ Creating AMBER input now allows to select between AMBER8 (also for NAMD) and AMB
   molby_doc.zip の作り方。OS X のコマンドラインで、Documents フォルダに cd したあと、
 $ zip -r molby_doc.zip doc -x \*.DS_Store
   コマンドライン版の zip はリソースフォークなどを付加しないらしい。.DS_Store は残ってしまうので、それは明示的に除く。
+
+2012.2.2.
+Version 0.6.2
+
+Release note
+- グラフィックオブジェクトを分子に重ねて書けるようにした。ただし Ruby でのコーディングが必要。
+- Ruby ダイアログでモードレスな動作ができるようにした。
+- Ruby スクリプトの先頭行コメントに coding:shift-jis または coding:utf-8 が書けるようにした。今のところこの２つしか認識しない。
+- Ruby の LAMatrix (linear algebra matrix) クラスを実装し、任意の行列演算ができるようにした。ドキュメントはまだ書いていない。
+- Empty Console Window コマンドを実装。
+- 分子動力学のドキュメントを作成。
+- MM/MD で "log file" フィールドは明示的に指定しない限り空にするようにした。
+- CIF ファイルの読み込みで、座標値の標準偏差を認識するようにした。ただしmbsfへの保存はされない。
+
+- Graphic objects can be drawn together with the molecule (requires Ruby coding).
+- Modeless operation of Ruby Dialog is implemented.
+- The first comment line of the Ruby script (that is to be imported by "Execute Ruby Script" command) can now contain "coding:shift-jis" or "coding:utf-8" instruction. At present, only these two codings are recognized.
+- LAMatrix (linear algebra matrix) class is implemented in Ruby, which allow matrix arithmetic of arbitrary dimension. No document is provided yet.
+- Empty Console Window command is implemented.
+- Document for MD calculation is written.
+- Rms of crystallographic parameters (from the CIF file) are now kept in the molecule. Copying/saving of such parameters are not yet supported.
+
+ChangeLog
+- Document is updated to include new graphic objects in the model view.
+- Ruby: Molecule#make_front, set_name, get_view_rotation, get_view_scale, get_view_translation, set_view_rotation, set_view_scale, set_view_translation, set_graphic_color, hide_graphic, show_graphic are implemented.
+- Drawing custom graphics on the model view is implemented.
+- Ruby Dialog: modeless dialog is now implemented, and interval timer is implemented.
+- Ruby: $KCODE is set on startup, and coding:{shift-jis, utf-8} is recognized as the source code encoding (for executing script from file).
+- Molecule#all returns IntGroup[0] when the molecule is empty (it should return IntGroup[]), which causes crash on Molecule#delete.
+- Dialog#layout: the :align and :vertical_align options can now be specified as item attributes
+- The separator line in the Ruby Dialog was not working correctly.
+- Vector3D and Transform objects are converted to LAMatrix object with dimensions 3 or 4 depending upon the context.
+- LAMatrix#new errornously allows matrix with dimension 0. Fixed.
+- AtomRef#molecule is implemented.
+- Empty Console Window command is implemented.
+- LAMatrix.multiply was not working correctly when the first argument is a scalar. Fixed.
+- General matrix calculation (LAMatrix class in Ruby) is implemented. Seems to be working, but not documented yet.
+- In the document, navigation between the English/Japanese versions is possible in most pages.
+- Document for MD calculation is written.
+- The "log file" field is set to blank unless explicitly set by the user.
+- The structure Mat33 and Transform are now column-first arrangement (no change on Ruby interface and mbsf file format)
+- Rms of crystallographic parameters (from the CIF file) are now kept in the molecule. Copying/saving of such parameters are not yet supported.

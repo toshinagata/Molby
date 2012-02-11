@@ -75,6 +75,17 @@ p {
     margin-right: 1.5em;
 }
 
+p.code {
+    margin: 1ex 7%;
+    text-indent: 0;
+    background-color: #eeffff;
+    font-family: monospace;
+    font-size: small;
+    padding: 1em;
+    line-height: 1.2;
+    white-space: pre;
+}
+
 table {
     margin-left: 1.5em;
     margin-right: 1.5em;
