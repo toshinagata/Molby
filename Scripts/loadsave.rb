@@ -126,15 +126,13 @@ class Molecule
   alias :loadmdcrd :loadcrd
   alias :savemdcrd :savecrd
 
-  def loadlog(filename)
+  def sub_load_gamess_log(fp)
 
     if natoms == 0
 		new_unit = true
 	else
 		new_unit = false
     end
-#	save_undo_enabled = self.undo_enabled?
-#	self.undo_enabled = false
 	self.update_enabled = false
 	mes = "Loading GAMESS log file"
 	show_progress_panel(mes)
@@ -144,7 +142,6 @@ class Molecule
 	ncomps = 0   #  Number of AO terms per one MO (sum of the number of components over all shells)
 	alpha_beta = nil   #  Flag to read alpha/beta MO appropriately
 	begin
-		fp = open(filename, "rb")
 		if nframes > 0
 			create_frame
 			frame = nframes - 1
@@ -153,7 +150,6 @@ class Molecule
 		while 1
 			line = fp.gets
 			if line == nil
-				fp.close
 				break
 			end
 			line.chomp!
@@ -324,10 +320,6 @@ class Molecule
 				set_progress_message(mes)
 			end
 		end
-#	ensure
-#		self.undo_enabled = save_undo_enabled
-#        hide_progress_panel
-#		self.update_enabled = true
 	end
 	if nframes > 0
 	  select_frame(nframes - 1)
@@ -337,9 +329,96 @@ class Molecule
 	(n > 0 ? true : false)
   end
   
+  def sub_load_gaussian_log(fp)
+
+    if natoms == 0
+		new_unit = true
+	else
+		new_unit = false
+    end
+	if nframes > 0
+		create_frame
+		frame = nframes - 1
+	end
+	n = 0
+	nf = 0
+	use_input_orientation = false
+	show_progress_panel("Loading Gaussian out file...")
+	while 1
+		line = fp.gets
+		if line == nil
+			break
+		end
+		line.chomp
+		if line =~ /(Input|Standard) orientation/
+			match = $1
+			if match == "Input"
+				use_input_orientation = true if nf == 0
+				next if !use_input_orientation
+			else
+				next if use_input_orientation
+			end
+			4.times { line = fp.gets }    #  Skip four lines
+			n = 0
+			coords = []
+			anums = []
+			while (line = fp.gets) != nil
+				break if line =~ /-----/
+				num, charge, type, x, y, z = line.split
+				coords.push(Vector3D[x, y, z])
+				anums.push(charge)
+				n += 1
+			end
+			if new_unit
+				#  Build a new molecule
+				anums.each_index { |i|
+					ap = add_atom("X")
+					ap.atomic_number = anums[i]
+					ap.atom_type = ap.element
+					ap.name = sprintf("%s%d", ap.element, i)
+					ap.r = coords[i]
+				}
+				#  Find bonds
+			#	atoms.each { |ap|
+			#		j = ap.index
+			#		(j + 1 ... natoms).each { |k|
+			#			if calc_bond(j, k) < 1.7
+			#				create_bond(j, k)
+			#			end
+			#		}
+			#	}
+				guess_bonds
+				new_unit = false
+				create_frame
+			else
+				create_frame([coords])  #  Should not be (coords)
+			end
+			nf += 1
+		end
+	end
+	hide_progress_panel
+	(n > 0 ? true : false)
+  end
+
+  def loadout(filename)
+    retval = false
+    fp = open(filename, "rb")
+	while s = fp.gets
+	  if s =~ /Gaussian/
+	    retval = sub_load_gaussian_log(fp)
+		break
+	  elsif s =~ /GAMESS/
+	    retval = sub_load_gamess_log(fp)
+		break
+	  end
+	end
+	fp.close
+	return retval
+  end
+  
+  alias :loadlog :loadout
+
   def loadxyz(filename)
-#	save_undo_enabled = self.undo_enabled?
-#	self.undo_enabled = false
 	fp = open(filename, "rb")
 	n = 0
 	coords = []
@@ -403,83 +482,6 @@ class Molecule
 	(n > 0 ? true : false)
   end
   
-  def loadout(filename)
-
-    if natoms == 0
-		new_unit = true
- #     raise MolbyError, "cannot load crd; the molecule is empty"
-	else
-		new_unit = false
-    end
-#	save_undo_enabled = undo_enabled?
-#	self.undo_enabled = false
-	fp = open(filename, "rb")
-	if nframes > 0
-		create_frame
-		frame = nframes - 1
-	end
-	n = 0
-	nf = 0
-	use_input_orientation = false
-	show_progress_panel("Loading Gaussian out file...")
-	while 1
-		line = fp.gets
-		if line == nil
-			fp.close
-			break
-		end
-		line.chomp
-		if line =~ /(Input|Standard) orientation/
-			match = $1
-			if match == "Input"
-				use_input_orientation = true if nf == 0
-				next if !use_input_orientation
-			else
-				next if use_input_orientation
-			end
-			4.times { line = fp.gets }    #  Skip four lines
-			n = 0
-			coords = []
-			anums = []
-			while (line = fp.gets) != nil
-				break if line =~ /-----/
-				num, charge, type, x, y, z = line.split
-				coords.push(Vector3D[x, y, z])
-				anums.push(charge)
-				n += 1
-			end
-			if new_unit
-				#  Build a new molecule
-				anums.each_index { |i|
-					ap = add_atom("X")
-					ap.atomic_number = anums[i]
-					ap.atom_type = ap.element
-					ap.name = sprintf("%s%d", ap.element, i)
-					ap.r = coords[i]
-				}
-				#  Find bonds
-			#	atoms.each { |ap|
-			#		j = ap.index
-			#		(j + 1 ... natoms).each { |k|
-			#			if calc_bond(j, k) < 1.7
-			#				create_bond(j, k)
-			#			end
-			#		}
-			#	}
-				guess_bonds
-				new_unit = false
-				create_frame
-			else
-				create_frame([coords])  #  Should not be (coords)
-			end
-			nf += 1
-		end
-	end
-	hide_progress_panel
-#	self.undo_enabled = save_undo_enabled
-	(n > 0 ? true : false)
-  end
-
   def loadcom(filename)
 #	save_undo_enabled = self.undo_enabled?
 #	self.undo_enabled = false
