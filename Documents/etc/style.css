@@ -78,7 +78,8 @@ p {
 p.code {
     margin: 1ex 7%;
     text-indent: 0;
-    background-color: #eeffff;
+    background-color: #ffffff;
+    color: #004400;
     font-family: monospace;
     font-size: small;
     padding: 1em;

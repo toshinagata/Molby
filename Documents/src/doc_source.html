@@ -14,14 +14,14 @@
 <div class="centered" lang="en">
 <h1>Molby</h1>
 <h2>An Interactive Molecular Modeling Software<br />with Integrated Ruby Interpreter</h2>
-<h3>Version 0.6.1</h3> <!-- version -->
+<h3>Version 0.6.2</h3> <!-- version -->
 <h3>Toshi Nagata</h3>
 <p><a href="http://molby.sourceforge.jp/index-en.html">http://molby.sourceforge.jp/index-en.html</a></p>
 </div>
 <div class="centered" lang="ja">
 <h1>Molby</h1>
 <h2>対話型分子モデリングソフトウェア<br />（Ruby インタプリタ内蔵）</h2>
-<h3>Version 0.6.1</h3> <!-- version -->
+<h3>Version 0.6.2</h3> <!-- version -->
 <h3>永田　央</h3>
 <p><a href="http://molby.sourceforge.jp/index.html">http://molby.sourceforge.jp/index.html</a></p>
 </div>
@@ -203,7 +203,7 @@ Molbyフォルダの中にアンインストーラがあります。「スター
 Molby is a copyrighted product of Toshi Nagata.
 </p>
 <p>
-Copyright (C) 2009-2010 Toshi Nagata <!-- copyright -->
+Copyright (C) 2009-2012 Toshi Nagata <!-- copyright -->
 </p>
 <p>
 Molby includes the following softwares, which are copyrighted products as described below:
@@ -232,7 +232,7 @@ Molby is distributed under the GNU General Public License (version 2).
 Molby: An Interactive Molecular Modeling Software with Integrated Ruby Interpreter
 </p>
 <p>
-Copyright (C) 2009 Toshi Nagata <!-- copyright -->
+Copyright (C) 2009-2012 Toshi Nagata <!-- copyright -->
 </p>
 <p>
 This program is free software; you can redistribute it and/or modify
@@ -255,7 +255,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 Molby の著作権は永田　央が保持しています。
 </p>
 <p>
-Copyright (C) 2009-2010 Toshi Nagata <!-- copyright -->
+Copyright (C) 2009-2012 Toshi Nagata <!-- copyright -->
 </p>
 <p>
 Molby は以下のソフトウェアを含んでいます。それぞれの著作権表示は下の通りです。
@@ -281,7 +281,7 @@ Molby は <a href="../etc/gpl.txt">GNU General Public License (GNU 一般公衆�
 Molby: 対話型分子モデルソフトウェア（Ruby インタプリタ内蔵）
 </p>
 <p>
-Copyright (C) 2009 Toshi Nagata <!-- copyright -->
+Copyright (C) 2009-2012 Toshi Nagata <!-- copyright -->
 </p>
 <p>
 このプログラムはフリーソフトウェアです。あなたはこれを、フリーソフトウェア財団によって発行された GNU 一般公衆利用許諾契約書(バージョン2か、希望によってはそれ以降のバージョンのうちどれか)の定める条件の下で再頒布または改変することができます。
@@ -731,7 +731,7 @@ Make one more iteration to make the octamer.
 <link id="#header" />
 <div class="contents" lang="en">
 <h1>Step Four: Ring Fusion</h1>
-<p>(Version 0.6.1)</p>
+<p>(Version 0.6.1 and later)</p>
 <h2>1. Ring fusion by double-click and type-in</h2>
 <p>
 Molby has a capability (from version 0.6.1 and upper) to create a fused ring structure. As an example, here is presented yet another method to make indane. This time, we start from a benzene.
@@ -772,7 +772,7 @@ There is another way to make a ring fused structure, which includes copy and pas
 <p>
 Open the "File" menu, and select "Open Predefined" &rarr; "Alicyclic" &rarr; "cyclopentane".
 </p>
-<p class="note">(This is a new funcionality from Version 0.6.1)</p>
+<p class="note">(This is for Version 0.6.1 and later)</p>
 <p><img src="../etc/tutorial_4_08.png" /></p>
 <p>
 A new window named "*cyclopentane*" opens with one cyclopentane molecule. Select a portion containing three CH2 groups, and copy it by command-C or ctrl-C.
@@ -1066,7 +1066,7 @@ Following are the original papers published by the AMBER team. Please be sure to
 <li>Wang, J.; Wolf, R.M.; Caldwell, J.W.; Kollamn, P.A.; Case, D.A. Development and testing of a general Amber force field. <span class="italic">J. Comput. Chem.,</span> <span class="bold">2004,</span> <span class="italic">25,</span> 1157–1174.</li>
 <li>Wang, B.; Merz, K.M. Jr. A fast QM/MM (quantum mechanical/molecular mechanical) approach to calculate nuclear magnetic resonance chemical shifts for macromolecules. <span class="italic">J. Chem. Theory Comput.,</span> <span class="bold">2006,</span> <span class="italic">2,</span> 209–215. </li>
 </ul>
-<h2>2. Energy Minimization How-to</h2>
+<h2 id="minimize" name="minimize">2. Energy Minimization How-to</h2>
 <p>
 Now we try energy minimization. We use 2,2'-dimethoxybiphenyl as an example.
 </p>
@@ -1112,7 +1112,7 @@ If you save this molecule at this stage, all the frames will be also saved (when
 </p>
 <p><img src="../etc/tutorial_49.png" /></p>
 <p><img src="../etc/tutorial_50.png" /></p>
-<h2>3. Handling electrostatic interaction</h2>
+<h2 id="electrostatic" name="electrostatic">3. Handling electrostatic interaction</h2>
 <p>
 The above description is sufficient for initial cleanup of the molecular structure. However, we should go one further step to take electrostatic interaction into consideration. This is particularly important in molecules with polar functional groups (such as carbonyl).
 </p>
@@ -1129,7 +1129,7 @@ When calculation is done, the molecular structure may change, because structure 
 </p>
 <p><img src="../etc/tutorial_53.png" /></p>
 <p>
-Note that the atomic charges given in the above method are derived from semi-empirical quantum chemical calculations. On the other hand, it is generally considered that the charges derived from ab initio calculations are better. Molby does not have capability to perform ab initio calculations, but it can help creating necessary input files for external quantum chemical programs. This will be described elsewhere in this User's Manual (not yet written, but coming soon).
+Note that the atomic charges given in the above method are derived from semi-empirical quantum chemical calculations. On the other hand, it is generally considered that the charges derived from ab initio calculations are better. Molby does not have capability to perform ab initio calculations, but it can help creating necessary input files for external quantum chemical programs. This will be described <a href="qchem.html#gamess_resp">elsewhere</a> in this User's Manual.
 </p>
 </div>
 
@@ -1155,7 +1155,7 @@ Molby の分子力学計算は、基本的な分子力場（結合の伸縮、�
 <li>Wang, J.; Wolf, R.M.; Caldwell, J.W.; Kollamn, P.A.; Case, D.A. Development and testing of a general Amber force field. <span class="italic">J. Comput. Chem.,</span> <span class="bold">2004,</span> <span class="italic">25,</span> 1157–1174.</li>
 <li>Wang, B.; Merz, K.M. Jr. A fast QM/MM (quantum mechanical/molecular mechanical) approach to calculate nuclear magnetic resonance chemical shifts for macromolecules. <span class="italic">J. Chem. Theory Comput.,</span> <span class="bold">2006,</span> <span class="italic">2,</span> 209–215. </li>
 </ul>
-<h2>2. エネルギー最小化の方法</h2>
+<h2 id="minimize" name="minimize">2. エネルギー最小化の方法</h2>
 <p>
 さて、エネルギー最小化をやってみましょう。例として 2,2'-ジメトキシビフェニルを使うことにします。
 </p>
@@ -1201,7 +1201,7 @@ Molby の分子力学計算は、基本的な分子力場（結合の伸縮、�
 </p>
 <p><img src="../etc/tutorial_49.png" /></p>
 <p><img src="../etc/tutorial_50.png" /></p>
-<h2>3. 静電相互作用の取り扱い</h2>
+<h2 id="electrostatic" name="electrostatic">3. 静電相互作用の取り扱い</h2>
 <p>
 上の説明は、分子構造のひずみを取り除く最初の段階としては十分です。しかしながら、次の段階として、静電相互作用を考慮しなければなりません。特に、カルボニル基などの極性官能基が含まれている場合は、これは重要です。
 </p>
@@ -1218,7 +1218,7 @@ Molby の分子力学計算は、基本的な分子力場（結合の伸縮、�
 </p>
 <p><img src="../etc/tutorial_53.png" /></p>
 <p>
-上の方法で計算した電荷は、半経験的分子軌道計算によるものです。一方、一般的には ab initio 計算で求めた電荷の方が良いと考えられています。Molby は ab initio 計算を行う機能を持っていませんが、外部の量子化学計算プログラムへの入力ファイルを作成する機能があります。これは、このマニュアルの別のところで解説します（まだできていませんが、近いうちに）。
+上の方法で計算した電荷は、半経験的分子軌道計算によるものです。一方、一般的には ab initio 計算で求めた電荷の方が良いと考えられています。Molby は ab initio 計算を行う機能を持っていませんが、外部の量子化学計算プログラムへの入力ファイルを作成する機能があります。これは、このマニュアルの<a href="qchem.html#gamess_resp">別のところ</a>で解説します。
 </p>
 
 </div>
@@ -1463,9 +1463,205 @@ J. Phys. Chem. 1995, 99, 6208.
 <link id="#header" />
 <div class="contents" lang="en">
 <h1>Step Eight: Collaboration with Other Quantum Chemistry Softwares</h1>
+<p>
+Molby has a capability to export and import files for quantum chemistry softwares, namely <a href="http://www.gaussian.com/">Gaussian</a> and <a href="http://www.msg.ameslab.gov/GAMESS/">GAMESS</a>. At present, the capability is quite limited, and in many cases it would be much better to use other established softwares. Nevertheless, if you are already familiar with Molby, you may want to use Molby for creating input files for Gaussian and GAMESS and processing outputs. Here are instructions how to do it.
+</p>
+<p class="note">
+Needless to say, you need to have access to Gaussian or GAMESS program packages. They can be on the same machine or on other machines (workstations) than Molby. Please learn how to use these packages before using Molby as described in this section.
+</p>
+<h2>1. Using Gaussian</h2>
+<p>
+The Gaussian input can be created by selecting "Export..." command in the "File" menu. The file extension is either "gjf" (as is the convention in GaussianW) or "com" (as in UNIX version of Gaussian).
+</p>
+<p><img style="vertical-align:top;" src="../etc/tutorial_8_01.png" /><img src="../etc/tutorial_8_02.png" /></p>
+<p>
+The output will look like this. Although Molby can create only one type of Gaussian input (optimize with PM3), it should be relatively easy to modify the generated input file by hand.
+</p>
+<p class="code">%Chk=benzene.chk
+# PM3 Opt
+
+ unnamed1; created by Molby at Sat Feb 11 00:30:21 +0900 2012
+
+ 0 1
+C       -0.653000   0.585000  -1.068000
+H       -1.158000   1.039000  -1.898000
+C        0.729000   0.607000  -1.003000
+H        1.295000   1.076000  -1.783000
+C        1.382000   0.021000   0.069000
+H        2.452000   0.038000   0.119000
+C        0.651000  -0.586000   1.076000
+H        1.156000  -1.039000   1.906000
+C       -0.732000  -0.607000   1.012000
+H       -1.298000  -1.077000   1.792000
+C       -1.384000  -0.021000  -0.060000
+H       -2.455000  -0.038000  -0.110000
+
+</p>
+<p>
+When you do geometrical optimization, you may want to examine how the structure changes as the calculation proceeds. This can be done by importing the Gaussian output file. The extention should be either ".out" or ".log".
+</p>
+<p><img style="vertical-align:top;" src="../etc/tutorial_8_03.png" /><img src="../etc/tutorial_8_04.png" /></p>
+<h2>2. Using GAMESS</h2>
+<p>
+Creating GAMESS input can be more complicated than Gaussian, so that Molby provides a simple dialog to help creating GAMESS input. The dialog is accessible from the "Creating GAMESS input..." command in the "QChem" menu.
+</p>
+<p><img src="../etc/tutorial_8_05.png" /></p>
+<p>
+You can specify various settings in the dialog.
+</p>
+<p><img src="../etc/tutorial_8_06.png" /></p>
+<ul>
+<li><b>SCF Type:</b> RHF, ROHF, or UHF.</li>
+<li><b>Run Type:</b> Energy, Property, or Optimize.</li>
+<li><b>Use internal coordinates for structure optimization:</b> Add instructions for automatic generation of internal Z-matrix. (<i>Note:</i> It cannot be used for linear molecules.)</li>
+<li><b>Charge:</b> The (formal) charge of the molecule.</li>
+<li><b>Multiplicity:</b> The spin multiplicity.</li>
+<li><b>Use DFT:</b> Check if you want to use DFT.</li>
+<li><b>DFT type:</b> At present only B3LYP is available in this dialog.</li>
+<li><b>Basis set:</b> One of PM3, STO-3G, 3-21G, 6-31G, 6-31G(d), 6-31G(d, p), 6-311G, 6-311G(d, p), or LanL2DZ.</li>
+<li><b>Use secondary basis set:</b> Check if you want to use another basis set for certain elements.</li>
+<li><b>Elements:</b> The elements (comma separated) to use secondary basis set.</li>
+<li><b>Basis set:</b> The secondary basis set.</li>
+<li><b>Calculate electrostatic potential:</b> This is used for RESP charge calculation for AMBER.</li>
+</ul>
+<p>
+When the calculation of GAMESS is complete, you will find two output files, namely *.log and *.dat. Either format can be imported by use of the "Import..." menu command. Some informations are included in both (<i>e.g.</i> coordinates during structural optimization), but other informations are only in one of these files (<i>e.g.</i> the full description of gaussian functions is only in the *.log file, whereas the orbital coefficients with full precision are only in the *.dat file). You need to be familiar with the structure of the GAMESS output files to fully utilize the GAMESS import capability of Molby.
+</p>
+<h2 id="gamess_resp" name="gamess_resp">3. Using GAMESS for calculation of the RESP charges</h2>
+<p>
+We already saw <a href="mm_minimize.html#electrostatic">how to assign partial charges</a> for evaluation of electrostatic interactions in MM calculations. There we used semi-empirical calculations, although <i>ab initio</i> calculations will give better results if possible. Here are instructions how to do it using GAMESS.
+</p>
+<p>
+Select "MM/MD" &rarr; "Tools" &rarr; "GAMESS/RESP...".
+</p>
+<p><img src="../etc/tutorial_8_07.png" /></p>
+<p>
+The following window pops up. As the first step, press the "Create GAMESS Input..." button.
+</p>
+<p><img src="../etc/tutorial_8_08.png" /></p>
+<p>
+The familiar GAMESS dialog opens up. It is most important to turn on the "Calculate electrostatic potential (ESP)" checkbox (it should be turned on if you follow the steps as described here, but please double-check). Also make sure that the charge and multiplicity are correct, and select a suitable basis set (6-31G(d) is recommended).
+</p>
+<p><img src="../etc/tutorial_8_09.png" /></p>
+<p>
+Press OK to create the GAMESS input, and send it to GAMESS. The calculation will take time, so that you can finish Molby (after saving the molecule as a msbf file!), and work on something else at this stage.
+</p>
+<p>
+After the GAMESS calculation is complete, open the same molecule, and select "MM/MD" &rarr; "Tools" &rarr; "GAMESS/RESP..." again. This time, follow the second step by pressing the "Import GAMESS dat..." button.
+</p>
+<p><img src="../etc/tutorial_8_10.png" /></p>
+<p>
+Select the GAMESS dat file (which should be available when the GAMESS calculation ends successfully), and import it. When the import is complete, the "Run RESP..." button should be enabled. If it does not, the imported dat file does not have the electrostatic potential information. Start over from the step 1, and make sure that the "Calculate electrostatic potential (ESP)" checkbox is on.
+</p>
+<p><img src="../etc/tutorial_8_11.png" /></p>
+<p>
+Press the "Run RESP..." button, and the following dialog opens. This is almost the same as the dialog for Antechamber <a href="mm_minimize.html#minimize">described before</a>.
+</p>
+<p><img src="../etc/tutorial_8_12.png" /></p>
+<p>
+Press the "OK" button, and the RESP charge will be assigned to the atoms.
+</p>
 </div>
 <div class="contents" lang="ja">
 <h1>第八段階：他の量子化学ソフトウェアとの連携</h1>
+<p>
+Molby は量子化学計算ソフトウェア  <a href="http://www.gaussian.com/">Gaussian</a>、<a href="http://www.msg.ameslab.gov/GAMESS/">GAMESS</a> のファイルを作成／読み込みする機能を持っています。現状では、Molby には極めて制限された機能しかないため、おそらく他の実績あるソフトウェアを使った方がよいでしょう。しかし、Molby の操作に慣れているなら、Gaussian や GAMESS の入力を作成して結果を読み込むのに Molby を使いたいことがあるかもしれません。どのようにすればよいかを説明します。
+</p>
+<p class="note">
+当然のことながら、Gaussian や GAMESS のプログラムパッケージが使えることが前提です。これらが走るのは、Molby と同じマシン上でも異なるマシン（ワークステーション）上でも構いません。この項で説明するやり方で Molby を使う前に、これらのプログラムパッケージをどのように使うかを学んでおいてください。
+</p>
+<h2>1. Gaussian を使う</h2>
+<p>
+Gaussian の入力は "File" &rarr; "Export..." コマンドを使えば作成することができます。ファイルの拡張子は "gjf"（GaussianW での習慣）、または "com"（UNIX 版での習慣）です。
+</p>
+<p><img style="vertical-align:top;" src="../etc/tutorial_8_01.png" /><img src="../etc/tutorial_8_02.png" /></p>
+<p>
+できあがったファイルは次のようになります。Molby が作成できるのは、一種類の Gaussian 入力ファイル（PM3 による構造最適化）だけですが、Gaussian の入力ファイルを手作業で修正するのは比較的簡単です。
+</p>
+<p class="code">%Chk=benzene.chk
+# PM3 Opt
+
+ unnamed1; created by Molby at Sat Feb 11 00:30:21 +0900 2012
+
+ 0 1
+C       -0.653000   0.585000  -1.068000
+H       -1.158000   1.039000  -1.898000
+C        0.729000   0.607000  -1.003000
+H        1.295000   1.076000  -1.783000
+C        1.382000   0.021000   0.069000
+H        2.452000   0.038000   0.119000
+C        0.651000  -0.586000   1.076000
+H        1.156000  -1.039000   1.906000
+C       -0.732000  -0.607000   1.012000
+H       -1.298000  -1.077000   1.792000
+C       -1.384000  -0.021000  -0.060000
+H       -2.455000  -0.038000  -0.110000
+
+</p>
+<p>
+構造最適化を行ったあとは、構造がどのように変化するか見てみたいと思うでしょう。これは、Gaussian 出力ファイルを読み込めば実現できます。拡張子は ".out" または ".log" でなくてはなりません。
+</p>
+<p><img style="vertical-align:top;" src="../etc/tutorial_8_03.png" /><img src="../etc/tutorial_8_04.png" /></p>
+<h2>2. GAMESS を使う</h2>
+<p>
+GAMESS の入力を作成するのは Gaussian よりもずっと複雑なので、専用のダイアログが用意されています。このダイアログは、"QChem" &rarr; "Creating GAMESS input..." コマンドで開くことができます。
+</p>
+<p><img src="../etc/tutorial_8_05.png" /></p>
+<p>
+このダイアログでは、いろいろな設定を決めることができます。
+</p>
+<p><img src="../etc/tutorial_8_06.png" /></p>
+<ul>
+<li><b>SCF Type:</b> RHF, ROHF, または UHF.</li>
+<li><b>Run Type:</b> Energy, Property, または Optimize.</li>
+<li><b>Use internal coordinates for structure optimization:</b> 内部的に Z-matrix を自動生成するための命令を付け加えます。（<i>注：</i> 直線状分子には使えません。）</li>
+<li><b>Charge:</b> 分子の形式電荷。</li>
+<li><b>Multiplicity:</b> スピン多重度。</li>
+<li><b>Use DFT:</b> DFT 計算を行うときチェックします。</li>
+<li><b>DFT type:</b> このダイアログでは B3LYP のみ指定できます。</li>
+<li><b>Basis set:</b> 以下の基底が指定できます：PM3, STO-3G, 3-21G, 6-31G, 6-31G(d), 6-31G(d, p), 6-311G, 6-311G(d, p), または LanL2DZ.</li>
+<li><b>Use secondary basis set:</b> 特定の元素のみ別の基底を使いたいときチェックします。</li>
+<li><b>Elements:</b> 別の基底を使う元素（コンマで区切って複数指定できます）。</li>
+<li><b>Basis set:</b> 別の基底。</li>
+<li><b>Calculate electrostatic potential:</b> RESP 電荷を求めるための静電ポテンシャルの計算を行う。</li>
+</ul>
+<p>
+GAMESS の計算が終了すると、*.log と *.dat の２つのファイルができます。どちらも "Import..." コマンドで読み込むことができます。ある種の情報（たとえば構造最適化途中の座標）はどちらのファイルにも含まれていますが、その他の情報はどちらか一方にしか含まれません（たとえば、基底を構成する Gaussian 関数の完全な係数は *.log ファイルにしかなく、精度の高い軌道係数は *.dat にしかありません）。GAMESS 読み込み機能を十分に活用するには、GAMESS の出力が何を含んでいるかをよく理解する必要があります。
+</p>
+<h2 id="gamess_resp" name="gamess_resp">3. GAMESS を用いて RESP 電荷を計算する</h2>
+<p>
+分子力学計算で静電相互作用を評価するための部分電荷の計算については<a href="mm_minimize.html#electrostatic">すでに説明しました</a>。そこでは半経験的分子軌道計算を用いましたが、可能ならば ab initio 計算の方がよい結果を与えます。GAMESS を使って計算する方法を説明します。
+</p>
+<p>
+メニューより "MM/MD" &rarr; "Tools" &rarr; "GAMESS/RESP..." を選びます。
+</p>
+<p><img src="../etc/tutorial_8_07.png" /></p>
+<p>
+次のウィンドウが開きます。第１のステップとして、"Create GAMESS Input..." ボタンを押します。
+</p>
+<p><img src="../etc/tutorial_8_08.png" /></p>
+<p>
+GAMESS のダイアログが開きます。大切なのは、"Calculate electrostatic potential (ESP)" チェックボックスをオンにすることです（ここの手順に従えば、自動的にオンになっているはずですが、一応確認してください）。分子の電荷・スピン多重度が正しいことを確かめ，基底関数 (6-31G(d) がおすすめ) を指定してください。
+</p>
+<p><img src="../etc/tutorial_8_09.png" /></p>
+<p>
+OK ボタンを押して GAMESS 入力を作成し、GAMESS で計算を実行してください。計算には時間がかかりますから、この時点で Molby を終了して他の作業をしていただいて構いません（ただし、分子ファイルを mbsf 形式で保存することを忘れないで！）。
+</p>
+<p>
+GAMESS 計算が完了したら、同じ分子ファイルを開き、"MM/MD" &rarr; "Tools" &rarr; "GAMESS/RESP..." をもう一度選択してください。今度は、第２ステップの "Import GAMESS dat..." ボタンを押します。
+</p>
+<p><img src="../etc/tutorial_8_10.png" /></p>
+<p>
+GAMESS の dat ファイルを選択し（GAMESS の計算が成功すればこれができているはずです）、読み込んでください。読み込みが完了したら、"Run RESP..." ボタンが有効になっているはずです。もしそうならなかったら、読み込んだ dat ファイルに静電ポテンシャルのデータが含まれなかったということです。もう一度第１ステップからやり直し、特に "Calculate electrostatic potential (ESP)" チェックボックがオンになっていることを確かめてください。
+</p>
+<p><img src="../etc/tutorial_8_11.png" /></p>
+<p>
+"Run RESP..." ボタンを押すと、次のダイアログが開きます。これは、<a href="mm_minimize.html#minimize">前に説明した</a> Antechamber のダイアログとほとんど同じです。
+</p>
+<p><img src="../etc/tutorial_8_12.png" /></p>
+<p>
+"OK"ボタンを押すと、RESP 部分電荷が各原子に対してアサインされます。
+</p>
 </div>
 <link id="#navigation" />
 </div>
