@@ -803,8 +803,8 @@ end_of_header
 			data.each { |d|
 			  n1 = d[hlabel["_geom_bond_atom_site_label_1"]]
 			  n2 = d[hlabel["_geom_bond_atom_site_label_2"]]
-			  sym1 = d[hlabel["_geom_bond_site_symmetry_1"]]
-			  sym2 = d[hlabel["_geom_bond_site_symmetry_2"]]
+			  sym1 = d[hlabel["_geom_bond_site_symmetry_1"]] || "."
+			  sym2 = d[hlabel["_geom_bond_site_symmetry_2"]] || "."
 			  if sym1 != "." || sym2 != "."
 			    exbonds.push([n1, n2, sym1, sym2])
 			  else
@@ -858,8 +858,15 @@ end_of_header
 				  (2..3).each { |i|
 				    if ex[i] == "."
 					  ex[i] = ex[i - 2]    #  No expansion
-					elsif ex[i] =~ /(\d+)_(\d)(\d)(\d)/
+					  symop = nil
+					elsif (ex[i] =~ /(\d+)_(\d)(\d)(\d)/) || (ex[i] =~ /(\d+) +(\d)(\d)(\d)/)
 			          symop = [Integer($1) - 1, Integer($2) - 5, Integer($3) - 5, Integer($4) - 5, ex[i - 2]]
+					elsif (ex[i] =~ /^(\d+)$/)
+					  symop = [Integer($1) - 1, 0, 0, 0, ex[i - 2]]
+					else
+					  raise "unrecognizable symmetry operation: #{ex[i]}"
+					end
+					if symop
 					  if debug; puts "  symop = #{symop.inspect}"; end
 					  ap = self.atoms.find { |ap| (s = ap.symop) != nil && s === symop }
 					  if ap
@@ -878,8 +885,6 @@ end_of_header
 					    ap = self.atoms.find { |ap| (s = ap.symop) != nil && s === symop }
 						ex[i] = ap.index
 					  end
-					else
-					  raise "unrecognizable symmetry operation: #{ex[i]}"
 					end
 				  }
 				  if debug; puts "  creating bond #{ex[2]} - #{ex[3]}"; end
