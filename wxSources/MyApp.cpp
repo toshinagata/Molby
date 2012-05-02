@@ -1553,6 +1553,7 @@ MyAppCallback_executeScriptFromFile(const char *cpath, int *status)
 				}
 				break;
 			}
+			lp = eolp + 1;
 			n++;
 		}
 	}
