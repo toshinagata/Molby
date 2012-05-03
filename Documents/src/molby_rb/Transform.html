@@ -144,7 +144,7 @@ In the second form, the array must be either of the following two forms:
 a31 a12 a22 a32 a13 a23 a33 a14 a24 a34] where [a11..a33] denotes the rotation/reflexion part and [a14 a24 a34] denotes the translation part. All vectors in (1) are column vectors.
 </p>
 <p>
-In the third form, a new transform is built from a 3x4 matrix. The argument <tt>matrix</tt> must respond to a method call <tt>matrix[col, row]</tt> where <tt>row</tt> is in <tt>0..2</tt> and <tt>col</tt> in <tt>0..3</tt>.
+In the third form, a new transform is built from a 3x4 matrix. The argument <tt>matrix</tt> must respond to a method call <tt>matrix[col, row]</tt> where <tt>row</tt> is in <tt>0..2</tt> and <tt>col</tt> in <tt>0..3</tt>, and must have methods <tt>column_size</tt> and <tt>row_size</tt> (although the size arguments are not evaluated but only their existence is checked).
 </p>
 </div>
 </div>

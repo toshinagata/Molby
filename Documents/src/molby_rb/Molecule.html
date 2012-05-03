@@ -812,8 +812,15 @@ Same as <a href="Molecule.html#M000336">Molecule#insert_frames</a>(nil, coordina
 </div>
 <div class="method-description">
 <p>
-Create a new graphic object. Kind: a symbol representing the kind of the graphic. :line, :poly, :cylinder, :cone, :ellipsoid. Color: an array of 3 (rgb) or 4 (rgba) floating numbers. Points: an array of <a href="Vector3D.html">Vector3D</a>s.
+Create a new graphic object. Kind: a symbol representing the kind of the graphic. :line, :poly, :cylinder, :cone, :ellipsoid. Color: an array of 3 (rgb) or 4 (rgba) floating numbers. Points: an array of <a href="Vector3D.html">Vector3D</a>s or Floats (depending on the graphic type). The arguments points = [p1, p2, ..., pn] and fill have the following meanings for each kind of the graphic.
 </p>
+<ul>
+<li><b>line</b>: Points correspond to a set of lines (p1, p2), (p2, p3), ..., (p(n-1), pn). Fill has no meaning.</li>
+<li><b>poly</b>: Points correspond to a set of connected triangles (p1, p2, p3), (p1, p3, p4), ..., (p1, p(n-1), pn). Fill has no meaning.</li>
+<li><b>cylinder</b>: p1 = center of the bottom face, p2 = center of the top face, p3 (number) = radius. If fill is true, both faces are drawn. Otherwise, only the side surface is drawn.</li>
+<li><b>cone</b>: p1 = center of the bottom face, p2 = top point, p3 (number) = radius. If fill is true, the bottom face is drawn. Otherwise, only the side surface is drawn.</li>
+<li><b>ellipsoid</b>: Two argument types. (1) p1 = center, p2 (number) = radius. (2) p1 = center, p2, p3, p4 = main axis of the ellipsoid (not necessarily orthogonal each other). Fill has no meaning.</li>
+</ul>
 <p>
 Returns the index of the newly created graphic.
 </p>

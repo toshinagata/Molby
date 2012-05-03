@@ -66,6 +66,10 @@ VectorFromValue(VALUE val, Vector *vp)
 			vp->y = mp->data[1];
 			vp->z = mp->data[2];
 		}
+	} else if (rb_obj_is_kind_of(val, rb_cNumeric)) {
+		/*  Vector3D[1] is rejected; this is desirable because Integer implements 
+		    the index method ([]), which could cause confusion.  */
+		rb_raise(rb_eMolbyError, "single number cannot be converted to a Vector3D");
 	} else {
 		static ID mname = 0;
 		if (mname == 0)
@@ -498,15 +502,19 @@ s_Vector3D_SetZ(VALUE self, VALUE val)
 
 /* 
  *  call-seq:
+ *     Vector3d[vx] -> (new) Vector3D.
  *     Vector3d[fx, fy, fz]   -> (new) Vector3D
  *
- *  Create a new vector3d object. Equivalent to Vector3D#new([fx, fy, fz]).
+ *  Create a new vector3d object. The first form is equivalent to Vector3D#new(vx), and
+ *  the second form is equivalent to Vector3D#new([fx, fy, fz]).
  */
 static VALUE
 s_Vector3D_Create(VALUE klass, VALUE args)
 {
 	VALUE val = s_Vector3D_Alloc(klass);
-	s_Vector3D_Initialize(1, &args, val);
+	if (RARRAY_LEN(args) == 1)
+		s_Vector3D_Initialize(RARRAY_LEN(args), RARRAY_PTR(args), val);
+	else s_Vector3D_Initialize(1, &args, val);
 	return val;
 }
 
@@ -563,6 +571,10 @@ TransformFromValue(VALUE val, Transform *tp)
 		}
 	array_format_error:
 		rb_raise(rb_eMolbyError, "wrong array format; must be an array of either (1) four 3D column vectors or (2) 12 numerics");
+	} else if (rb_obj_is_kind_of(val, rb_cNumeric)) {
+		/*  Transform[1] is rejected; this is desirable because Integer implements 
+		 the index method ([]), which could cause confusion.  */
+		rb_raise(rb_eMolbyError, "single number cannot be converted to a Transform");
 	} else {
 		static ID index_mid = 0, row_size_mid, column_size_mid;
 		if (index_mid == 0) {
@@ -1065,12 +1077,17 @@ s_Transform_Eigenvalues(VALUE self)
  *     Transform[*args] -> (new) Transform
  *
  *  Create a new transform. Equivalent to Transform.new(args).
+ *  If only one argument is given that is not a number, then Transform.new(args[0])
+ *  is called instead of Transform.new(args).
  */
 static VALUE
 s_Transform_Create(VALUE klass, VALUE args)
 {
 	VALUE val = s_Transform_Alloc(klass);
-	s_Transform_Initialize(1, &args, val);
+	if (RARRAY_LEN(args) == 1 && !rb_obj_is_kind_of(RARRAY_PTR(args)[0], rb_cNumeric))
+		s_Transform_Initialize(RARRAY_LEN(args), RARRAY_PTR(args), val);
+	else
+		s_Transform_Initialize(1, &args, val);
 	return val;
 }
 
@@ -2176,6 +2193,34 @@ s_LAMatrix_Row(VALUE self, VALUE val)
 
 /*
  *  call-seq:
+ *     column_size -> LAMatrix
+ *
+ *  Returns the column size.
+ */
+static VALUE
+s_LAMatrix_ColumnSize(VALUE self)
+{
+	LAMatrix *mp;
+	Data_Get_Struct(self, LAMatrix, mp);
+	return INT2NUM(mp->column);
+}
+
+/*
+ *  call-seq:
+ *     row_size -> LAMatrix
+ *
+ *  Returns the row size.
+ */
+static VALUE
+s_LAMatrix_RowSize(VALUE self)
+{
+	LAMatrix *mp;
+	Data_Get_Struct(self, LAMatrix, mp);
+	return INT2NUM(mp->row);
+}
+
+/*
+ *  call-seq:
  *     eigenvalues -> [eigenvalues, eigenvectors]
  *
  *  Calculate the eigenvalues and eigenvectors. The matrix must be symmetric.
@@ -2851,6 +2896,8 @@ Init_MolbyTypes(void)
 	rb_define_method(rb_cLAMatrix, "submatrix", s_LAMatrix_Submatrix, 4);
 	rb_define_method(rb_cLAMatrix, "column", s_LAMatrix_Column, 1);
 	rb_define_method(rb_cLAMatrix, "row", s_LAMatrix_Row, 1);
+	rb_define_method(rb_cLAMatrix, "column_size", s_LAMatrix_ColumnSize, 0);
+	rb_define_method(rb_cLAMatrix, "row_size", s_LAMatrix_RowSize, 0);
 	rb_define_method(rb_cLAMatrix, "eigenvalues", s_LAMatrix_Eigenvalues, 0);
 	rb_define_method(rb_cLAMatrix, "to_a", s_LAMatrix_ToArray, 0);
 	rb_define_method(rb_cLAMatrix, "inspect", s_LAMatrix_Inspect, 0);

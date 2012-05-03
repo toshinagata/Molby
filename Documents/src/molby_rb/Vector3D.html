@@ -44,12 +44,13 @@ The class <a href="Vector3D.html">Vector3D</a> represents a three-dimensional ve
 <div id="method-M000371" class="method-detail">
 <a name="M000371"></a>
 <div class="method-heading">
+<span class="method-name">Vector3d[vx]   &rarr; (new) Vector3D<br />
 <span class="method-name">Vector3d[fx, fy, fz]   &rarr; (new) Vector3D<br />
 </span>
 </div>
 <div class="method-description">
 <p>
-Create a new vector3d object. Equivalent to <a href="#M000347">Vector3D#new</a>([fx, fy, fz]).
+Create a new vector3d object. The first form is equivalent to <a href="#M000347">Vector3D#new</a>(vx), and the second form is equivalent to <a href="#M000347">Vector3D#new</a>([fx, fy, fz]).
 </p>
 </div>
 </div>
@@ -58,13 +59,14 @@ Create a new vector3d object. Equivalent to <a href="#M000347">Vector3D#new</a>(
 <a name="M000347"></a>
 <div class="method-heading">
 <span class="method-name">new &rarr; (new) Vector3D<br />
-new(Vector3D) &rarr; (new) Vector3D<br />
+new(<a href="Vector3D.html">Vector3D</a>) &rarr; (new) Vector3D<br />
+new(<a href="LAMatrix.html">LAMatrix</a>) &rarr; (new) Vector3D<br />
 new([fx, fy, fz]) &rarr; (new) Vector3D<br />
 </span>
 </div>
 <div class="method-description">
 <p>
-Returns a new <a href="Vector3D.html">Vector3D</a> object. In the first form, a zero vector is returned. In the second form, the given vector3d is duplicated. In the third form, a vector [fx, fy, fz] is returned.
+Returns a new <a href="Vector3D.html">Vector3D</a> object. In the first form, a zero vector is returned. In the second form, the given vector3d is duplicated. In the third form, a row vector or a column vector (with dimension 3 or larger) is converted to a vector3d. In the fourth form, a vector [fx, fy, fz] is returned.
 </p>
 </div>
 </div>
