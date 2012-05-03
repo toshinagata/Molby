@@ -663,6 +663,19 @@ MyApp::OnImportAmberLib(wxCommandEvent &event)
 	MolActionCreateAndPerform(NULL, SCRIPT_ACTION(""), "cmd_import_amberlib");
 }
 
+int
+MyApp::LookupScriptMenu(const char *title)
+{
+	int i;
+	if (title == NULL)
+		return -1;
+	for (i = 0; i < countScriptMenu; i++) {
+		if (strcmp(title, scriptMenuTitles[i]) == 0)
+			return i;
+	}
+	return -1;
+}
+
 void
 MyApp::RegisterScriptMenu(const char *cmd, const char *title)
 {
@@ -1488,6 +1501,11 @@ MyAppCallback_registerScriptMenu(const char *cmd, const char *title)
 	wxGetApp().RegisterScriptMenu(cmd, title);
 }
 
+int
+MyAppCallback_lookupScriptMenu(const char *title)
+{
+	return wxGetApp().LookupScriptMenu(title);
+}
 
 RubyValue
 MyAppCallback_executeScriptFromFile(const char *cpath, int *status)

@@ -594,6 +594,13 @@ s_Kernel_RegisterMenu(VALUE self, VALUE title, VALUE method)
 }
 
 static VALUE
+s_Kernel_LookupMenu(VALUE self, VALUE title)
+{
+	int n = MyAppCallback_lookupScriptMenu(StringValuePtr(title));
+	return INT2NUM(n);
+}
+
+static VALUE
 s_Ruby_methodType_sub(VALUE data)
 {
 	const char **p = (const char **)data;
@@ -9091,6 +9098,7 @@ Init_Molby(void)
 	rb_define_method(rb_mKernel, "set_progress_message", s_SetProgressMessage, 1);
 	rb_define_method(rb_mKernel, "ask", s_Kernel_Ask, -1);
 	rb_define_method(rb_mKernel, "register_menu", s_Kernel_RegisterMenu, 2);
+	rb_define_method(rb_mKernel, "lookup_menu", s_Kernel_LookupMenu, 1);
 	rb_define_method(rb_mKernel, "get_global_settings", s_Kernel_GetGlobalSettings, 1);
 	rb_define_method(rb_mKernel, "set_global_settings", s_Kernel_SetGlobalSettings, 2);
 	rb_define_method(rb_mKernel, "execute_script", s_Kernel_ExecuteScript, 1);

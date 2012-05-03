@@ -149,6 +149,7 @@ class MyApp: public wxApp
 	void SetDefaultSetting(const wxString& key, const wxString& value);
 	wxString& GetDefaultSetting(const wxString& key);
 
+	int LookupScriptMenu(const char *title);
 	void RegisterScriptMenu(const char *cmd, const char *title);
 	void UpdateScriptMenu(wxMenuBar *mbar);
 	void OnScriptMenuModified(wxCommandEvent& event);

@@ -56,6 +56,7 @@ STUB void MyAppCallback_errorMessageBox(const char *fmt, ...);
 STUB char *MyAppCallback_getHomeDir(void);
 STUB char *MyAppCallback_getDocumentHomeDir(void);
 STUB void MyAppCallback_registerScriptMenu(const char *cmd, const char *title);
+STUB int MyAppCallback_lookupScriptMenu(const char *title);
 STUB RubyValue MyAppCallback_executeScriptFromFile(const char *path, int *status);
 STUB int MyAppCallback_callSubProcess(const char *cmdline, const char *procname);
 STUB void MyAppCallback_beginUndoGrouping(void);
