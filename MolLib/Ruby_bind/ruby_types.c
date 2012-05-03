@@ -1763,7 +1763,7 @@ s_LAMatrix_Multiply_Bang(int argc, VALUE *argv, VALUE self)
 			LAMatrix *mptemp;
 			int sizeHint = (mp1 == NULL ? 0 : mp1->column);
 			temp2Flag = 0;
-			mp2 = LAMatrixFromValue(val, &needsRelease, (transposeFlag ? sizeHint : 0), (!transposeFlag ? sizeHint : 0));
+			mp2 = LAMatrixFromValue(val, &needsRelease, (!transposeFlag ? sizeHint : 0), (transposeFlag ? sizeHint : 0));
 			if (inverseFlag) {
 				if (mp2->column != mp2->row)
 					rb_raise(rb_eStandardError, "cannot invert non-square matrix");
