@@ -1,0 +1,472 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>Class: LAMatrix</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta http-equiv="Content-Script-Type" content="text/javascript" />
+<link rel="stylesheet" href="rdoc-style.css" type="text/css" media="screen" />
+</head>
+<body>
+
+<div id="navi">
+<a href="../index.html">[Molby Document Home]</a>
+<a href="../ruby_ref.html">[Contents]</a>
+</div>
+
+<div id="classHeader">
+<table class="header-table">
+<tr>
+<td><strong>Class:</strong></td>
+<td class="class-name-in-header">LAMatrix</td>
+</tr>
+<tr>
+<td><strong>Parent:</strong></td>
+<td><a href="Object.html">Object</a></td>
+</tr>
+</table>
+</div>
+
+<div id="section">
+<h3 class="section-bar">Description</h3>
+<p>
+The class <a href="LAMatrix.html">LAMatrix</a> represents a matrix with methods implementing linear algebra.
+</p>
+<h4>Relationship between LAMatrix, Vector3D and Transform</h4>
+<p>
+In Molby, <a href="Vector3D.html">Vector3D</a> and <a href="Transform.html">Transform</a> class also represents matrix-like objects. For convenience, these classes can be used interconvertibly.
+</p>
+<ul>
+<li>
+An <a href="LAMatrix.html">LAMatrix</a> object can be converted to a <a href="Vector3D.html">Vector3D</a> object, when the former is either a (n,1) or (1,n) matrix and n >= 3 (see <a href="Vector3D.html#M000347">Vector3D.new</a> and <a href="Vector3D.html#M000371">Vector3D.[]</a>).
+</li>
+<li>
+An <a href="LAMatrix.html">LAMatrix</a> object can be converted to a <a href="Transform.html">Transform</a> object, when the former has row dimension >= 3 and column dimension >= 4 (see <a href="Transform.html#M000055">Transform.new</a> and <a href="Transform.html#M000072">Transform.[]</a>).
+</li>
+<li>
+A <a href="Vector3D.html">Vector3D</a> or <a href="Transform.html">Transform</a> object can be converted to <a href="LAMatrix.html#create">LAMatrix.[]</a>. Note that Vector3D[x, y, z] is converted to LAMatrix[[x, y, z, 1.0]], and Transform[[a11, a21, a31], ..., [a14, a24, a34]] is converted to LAMatrix[[a11, a21, a31, 0.0], ..., [a14, a24, a34, 1.0]].
+</li>
+<li>
+When <a href="Vector3D.html">Vector3D</a> or <a href="Transform.html">Transform</a> object is used as an argument of <a href="LAMatrix.html">LAMatrix</a> method, it can also be converted to a (3, 1) vector or a (3, 3) matrix.
+</li>
+</ul>
+</div>
+
+<div id="methods">
+<h3 class="section-bar">Public Class methods</h3>
+
+<div id="method-M000072" class="method-detail">
+<a name="create"></a>
+<div class="method-heading">
+<span class="method-name">
+LAMatrix[f1, f2, ..., fn] &rarr; (new) LAMatrix <br />
+LAMatrix[a1, a2, ..., an] &rarr; (new) LAMatrix <br />
+LAMatrix[obj] &rarr; (new) LAMatrix
+</span>
+</div>
+<div class="method-description">
+<p>
+Create a new matrix. In the first form, f1...fn must be numbers, and a (n, 1) matrix (a column vector) is created. In the second form, a1...an must be array-like objects, and a (m, n) matrix (m is the maximum dimension of a1...an) is created. In the third form, obj must be either an array, a Vector3D, a Transform, or an LAMatrix.
+</p>
+</div>
+</div>
+
+<div id="method-M000071" class="method-detail">
+<a name="diagonal"></a>
+<div class="method-heading">
+<span class="method-name">diagonal(Array) &rarr; (new) LAMatrix<br />
+diagonal(size, element) &rarr; (new) LAMatrix<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Create a diagonal matrix. In the first form, the diagonal elements are taken from the array argument. In the second form, a diagonal matrix of the specified size with all the diagonal component <tt>element</tt>.
+</p>
+</div>
+</div>
+
+<div id="method-M000073" class="method-detail">
+<a name="from_columns"></a>
+<div class="method-heading">
+<span class="method-name">from_columns(c1, ...) &rarr; (new) LAMatrix<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Create a new <a href="LAMatrix.html">LAMatrix</a> built from column vectors. This is equivalent to <tt><a href="LAMatrix.html#create">LAMatrix.new</a>([c1, ...])</tt>.
+</p>
+</div>
+</div>
+
+<div id="method-M000074" class="method-detail">
+<a name="from_rows"></a>
+<div class="method-heading">
+<span class="method-name">from_rows(r1, ...) &rarr; (new) LAMatrix<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Create a new <a href="LAMatrix.html">LAMatrix</a> built from row vectors.
+</p>
+</div>
+</div>
+
+<div id="method-M000075" class="method-detail">
+<a name="identity"></a>
+<div class="method-heading">
+<span class="method-name">identity(size)  &rarr; (new) LAMatrix<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Create an identity transform of size <tt>size</tt>.
+</p>
+</div>
+</div>
+
+<div id="method-M000062" class="method-detail">
+<a name="multiply_singleton"></a>
+<div class="method-heading">
+<span class="method-name">multiply(arg1, arg2, ...) &rarr; (new) LAMatrix<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Multiply the arguments. The arguments are interpreted as in <a href="#multiply_bang">LAMatrix.multiply!</a>.
+</p>
+</div>
+</div>
+
+<div id="method-M000055" class="method-detail">
+<a name="new"></a>
+<div class="method-heading">
+<span class="method-name">new(row, column) &rarr; (new) LAMatrix<br />
+new(array) &rarr; (new) LAMatrix<br />
+new(matrix) &rarr; (new) LAMatrix<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Create a new LAMatrix object.
+</p>
+<ul>
+<li>In the first form, a zero LAMatrix of given size is returned.</li>
+<li>In the second form, the array must be either of an array (the column vector), or an array of arrays (a set of column vectors).</li>
+<li>In the third form, a new transform is built from a matrix. The argument <tt>matrix</tt> must respond to a method call <tt>matrix[col, row]</tt>, <tt>row_size</tt> and <tt>column_size</tt>.</li>
+</ul>
+</div>
+</div>
+
+<div id="method-M000076" class="method-detail">
+<a name="zero"></a>
+<div class="method-heading">
+<span class="method-name">zero(row[, column])  &rarr; (new) LAMatrix<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Create a zero matrix of the specified size.
+</p>
+</div>
+</div>
+
+<h3 class="section-bar">Public Instance methods</h3>
+
+<div id="method-M000061" class="method-detail">
+<a name="add"></a>
+<div class="method-heading">
+<span class="method-name">self + val    &rarr; (new) LAMatrix
+</span>
+</div>
+<div class="method-description">
+<p>
+Perform the matrix addition. Both arguments must have the same dimensions.
+</p>
+</div>
+</div>
+
+<div id="method-M000061" class="method-detail">
+<a name="sub"></a>
+<div class="method-heading">
+<span class="method-name">self - val    &rarr; (new) LAMatrix
+</span>
+</div>
+<div class="method-description">
+<p>
+Perform the matrix subtraction. Both arguments must have the same dimensions.
+</p>
+</div>
+</div>
+
+<div id="method-M000061" class="method-detail">
+<a name="multiply"></a>
+<div class="method-heading">
+<span class="method-name">self * numeric          &rarr; (new) LAMatrix<br />
+self * matrix  &rarr; (new) LAMatrix<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Perform the matrix multiplication. In the first form, a new matrix with scaled elements is
+returned. In the second, the multiple of the two matrices is returned.
+</p>
+</div>
+</div>
+
+<div id="method-M000061" class="method-detail">
+<a name="divide"></a>
+<div class="method-heading">
+<span class="method-name">self / numeric          &rarr; (new) LAMatrix<br />
+self / matrix  &rarr; (new) LAMatrix<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Perform the matrix multiplication. In the first form, a new matrix with scaled elements is
+returned. In the second, <tt>self * matrix.inverse</tt> is returned.
+</p>
+</div>
+</div>
+
+<div id="method-M000058" class="method-detail">
+<a name="equal"></a>
+<div class="method-heading">
+<span class="method-name">self == val  &rarr; bool<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns <tt>true</tt> if and only if the dimensions are the same and all the corresponding elements of both arguments are equal. Usual caution about the comparison of floating-point numbers should be paid.
+</p>
+</div>
+</div>
+
+<div id="method-M000056" class="method-detail">
+<a name="index"></a>
+<div class="method-heading">
+<span class="method-name">self[i, j]  &rarr; Float<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get the element (<tt>i</tt>,<tt>j</tt>) of the matrix, i.e. column <tt>i</tt>, row <tt>j</tt>. Be careful about the order of the arguments. It follows convention of multi-dimensional arrays rather than mathematical notation.
+</p>
+</div>
+</div>
+
+<div id="method-M000057" class="method-detail">
+<a name="set_index"></a>
+<div class="method-heading">
+<span class="method-name">self[i, j] = val<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Set the element (<tt>i</tt>,<tt>j</tt>) of the matrix, i.e. column <tt>i</tt>, row <tt>j</tt>. Be careful about the order of the arguments. It follows convention of multi-dimensional arrays rather than mathematical notation.
+</p>
+</div>
+</div>
+
+<div id="method-M000059" class="method-detail">
+<a name="add_bang"></a>
+<div class="method-heading">
+<span class="method-name">add!(val)  &rarr; self<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Add a value to self.
+</p>
+</div>
+</div>
+
+<div id="method-M000067" class="method-detail">
+<a name="column"></a>
+<div class="method-heading">
+<span class="method-name">column(index) &rarr; (new) LAMatrix<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns the index-th column as a (n,1) matrix.
+</p>
+</div>
+</div>
+
+<div id="method-M000065" class="method-detail">
+<a name="determinant"></a>
+<div class="method-heading">
+<span class="method-name">determinant &rarr; Float<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns the determinant of the matrix.
+</p>
+</div>
+</div>
+
+<div id="method-M000068" class="method-detail">
+<a name="eigenvalues"></a>
+<div class="method-heading">
+<span class="method-name">eigenvalues &rarr; [eigenvalues, eigenvectors]<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Calculate the eigenvalues and eigenvectors. The matrix must be symmetric. The eigenvalues are given as a column matrix, and the eigenvectors are given as an orthogonal matrix (whose column vectors are the eigenvectors).
+</p>
+</div>
+</div>
+
+<div id="method-fnorm" class="method-detail">
+<a name="fnorm"></a>
+<div class="method-heading">
+<span class="method-name">
+fnorm &rarr; Float<br />
+fnorm2 &rarr; Float<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Calculate the Frobenius norm (the Hilbert–Schmidt norm). <tt>fnorm2</tt> returns the square of the norm.
+</p>
+</div>
+</div>
+
+<div id="method-M000070" class="method-detail">
+<a name="inspect"></a>
+<div class="method-heading">
+<span class="method-name">inspect  &rarr; String<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Convert a matrix to a string like &quot;<a
+href="LAMatrix.html">LAMatrix</a>[[a11,a21,...],[a12,a22,...],...,[a1N,a2N,...]]&quot;.
+</p>
+</div>
+</div>
+
+<div id="method-M000063" class="method-detail">
+<a name="inverse"></a>
+<div class="method-heading">
+<span class="method-name">
+inverse  &rarr; (new) LAMatrix<br />
+inverse!  &rarr; self<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Calculate the inverse matrix as a new object. If the matrix is not regular, an exception is raised. <tt>inverse!</tt> changes the object destructively and returns self.
+</p>
+</div>
+</div>
+
+<div id="method-M000062" class="method-detail">
+<a name="multiply_bang"></a>
+<div class="method-heading">
+<span class="method-name">multiply!(arg1, arg2, ...) &rarr; self<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Multiply the arguments to self.
+</p>
+<ul>
+<li>If <tt>argN</tt> is a string "t", then the subsequent matrix is transposed (the object is not modified; it is just transposed during calculation).</li>
+<li>If <tt>argN</tt> is a string "i", then the subsequent matrix is inverted (the object is not modified).</li>
+<li>The "t" and "i" can be combined as "ti" or "it".</li>
+<li>If <tt>argN</tt> is a number, then scalar multiplication is performed.</li>
+<li>Otherwise, <tt>argN</tt> must be a matrix, which has the same row-size as the column-size of the last result.</li>
+</ul>
+</div>
+</div>
+
+<div id="method-M000060" class="method-detail">
+<a name="sub_bang"></a>
+<div class="method-heading">
+<span class="method-name">sub!(val)  &rarr; self<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Subtract a value from self.
+</p>
+</div>
+</div>
+
+<div id="method-submatrix" class="method-detail">
+<a name="submatrix"></a>
+<div class="method-heading">
+<span class="method-name">
+submatrix(row_pos, column_pos, row_size = nil, column_size = nil) &rarr; (new) LAMatrix
+</span>
+</div>
+<div class="method-description">
+<p>
+Extract a submatrix beginning from <tt>(row_pos, column_pos)</tt> and size <tt>(row_size, column_size)</tt>. If <tt>row_size</tt> or <tt>column_size</tt> are given as nil, then all the elements to the end of the row/column are used.
+</p>
+</div>
+</div>
+
+<div id="method-M000069" class="method-detail">
+<a name="to_a"></a>
+<div class="method-heading">
+<span class="method-name">to_a  &rarr; Array<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Convert a transform to an array of arrays representing the column vectors.
+</p>
+</div>
+</div>
+
+<div id="method-M000081" class="method-detail">
+<a name="to_s"></a>
+<div class="method-heading">
+<span class="method-name">to_s &rarr; String</span>
+</div>
+<div class="method-description">
+<p>
+Alias for <a href="LAMatrix.html#M000070">inspect</a>
+</p>
+</div>
+</div>
+
+<div id="method-M000066" class="method-detail">
+<a name="trace"></a>
+<div class="method-heading">
+<span class="method-name">trace &rarr; Float<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns the trace (sum of the diagonal elements) of the matrix.
+</p>
+</div>
+</div>
+
+<div id="method-M000064" class="method-detail">
+<a name="transpose"></a>
+<div class="method-heading">
+<span class="method-name">
+transpose &rarr; (new) LAMatrix<br />
+transpose! &rarr; self<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Calculate the transpose matrix. <tt>transpose!</tt> changes the object destructively and returns self.
+</p>
+</div>
+</div>
+
+</div>
+
+</body>
+</html>
