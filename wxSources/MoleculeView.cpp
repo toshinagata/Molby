@@ -388,6 +388,8 @@ MoleculeView::OnClose(bool deleteWindow)
 	//  Dispose Connection between DocManager and file history menu
 	wxGetApp().DocManager()->FileHistoryRemoveMenu(file_history_menu);
 
+	wxGetApp().Disconnect(MyDocumentEvent_scriptMenuModified, MyDocumentEvent, wxCommandEventHandler(MoleculeView::OnScriptMenuModified), NULL, this);
+
 	// Clear the canvas in case we're in single-window mode,
 	// and the canvas stays.
 /*	canvas->ClearBackground();
