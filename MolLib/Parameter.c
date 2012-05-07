@@ -389,8 +389,7 @@ sParameterDeleteOrCopy(Parameter *par, Int type, UnionPar *up, struct IntGroup *
 			if (up != NULL)
 				memmove(up + i, *p + size * n1, size);
 		} else {
-			if (DeleteArray(p, ip, size, n1, 1, (up ? up + i : NULL)) == NULL)
-				return n2;
+			DeleteArray(p, ip, size, n1, 1, (up ? up + i : NULL));
 		}
 		n2++;
 	}
@@ -1348,7 +1347,7 @@ ParameterIsRelevantToAtomGroup(Int type, const UnionPar *up, const struct Atom *
 		for (j = 0; j < n; j++) {
 			if (types[j] < kAtomTypeMinimum)
 				continue;
-			if (types[j] == kAtomTypeWildcard || types[j] == api->type) {
+			if (types[j] == kAtomTypeWildcard || types[j] == api->type || types[j] == api->type % kAtomTypeVariantBase) {
 				retval = 1;
 				break;
 			}

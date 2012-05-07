@@ -545,6 +545,7 @@ sMolActionUpdateSelectionAndParameterNumbering(Molecule *mol, const IntGroup *ig
 	}
 	
 	/*  Update parameters  */
+	/*
 	if (mol->par != NULL) {
 		Int *ip = (Int *)malloc(sizeof(Int) * old_natoms);
 		if (is_insert) {
@@ -561,14 +562,14 @@ sMolActionUpdateSelectionAndParameterNumbering(Molecule *mol, const IntGroup *ig
 			if (!is_insert)
 				ig3 = IntGroupNew();
 			for (j = 0; (up = ParameterGetUnionParFromTypeAndIndex(mol->par, i, j)) != NULL; j++) {
-				ParameterCopyOneWithType(&usave, up, i);  /*  Don't say usave = *up  */
+				ParameterCopyOneWithType(&usave, up, i);  //  Don't say usave = *up
 				if (ParameterRenumberAtoms(i, up, old_natoms, ip) && !is_insert) {
-					IntGroupAdd(ig3, j, 1);  /*  This parameter is to be restored on undo  */
+					IntGroupAdd(ig3, j, 1);  //  This parameter is to be restored on undo
 					AssignArray(&upary, &count_upary, sizeof(UnionPar), count_upary, &usave);
 				}
 			}
 			if (count_upary > 0) {
-				/*  Register undo for modifying parameters  */
+				//  Register undo for modifying parameters
 				act = MolActionNew(gMolActionAddParameters, i, ig3, count_upary, upary);
 				MolActionCallback_registerUndo(mol, act);
 				MolActionRelease(act);
@@ -582,6 +583,8 @@ sMolActionUpdateSelectionAndParameterNumbering(Molecule *mol, const IntGroup *ig
 		}
 		free(ip);
 	}
+	 */
+	
 	IntGroupRelease(orig_atoms);
 }
 

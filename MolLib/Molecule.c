@@ -6333,9 +6333,19 @@ MoleculeMerge(Molecule *dst, Molecule *src, IntGroup *where, int resSeqOffset)
 		UnionPar *up1, *up2;
 		int type;
 		IntGroup *ig;
-		ig = IntGroupNew();
 		if (dst->par == NULL)
 			dst->par = ParameterNew();
+		else {
+			/*  Renumber existing parameters  */
+			for (type = kFirstParType; type <= kLastParType; type++) {
+				n1 = ParameterGetCountForType(dst->par, type);
+				for (i = 0; i < n1; i++) {
+					up1 = ParameterGetUnionParFromTypeAndIndex(dst->par, type, i);
+					ParameterRenumberAtoms(type, up1, ndst, old2new);
+				}
+			}
+		}
+		ig = IntGroupNew();
 		for (type = kFirstParType; type <= kLastParType; type++) {
 			n1 = ParameterGetCountForType(src->par, type);
 			n2 = ParameterGetCountForType(dst->par, type);
@@ -6687,10 +6697,10 @@ sMoleculeUnmergeSub(Molecule *src, Molecule **dstp, IntGroup *where, int resSeqO
 	/*  Copy the parameters to dst */
 	if (dst != NULL && dst_par_g != NULL && (n2 = IntGroupGetCount(dst_par_g)) > 0) {
 		IntGroup *dst_new_g = IntGroupNew();
-		Int dst_par_count[kLastParType - kFirstParType];
+		Int dst_par_count[kLastParType - kFirstParType + 1];
 		if (dst_new_g == NULL)
 			goto panic;
-		for (i = 0; i < kLastParType - kFirstParType; i++)
+		for (i = 0; i <= kLastParType - kFirstParType; i++)
 			dst_par_count[i] = 0;
 		up = (UnionPar *)calloc(sizeof(UnionPar), n2);
 		if (up == NULL)
@@ -6710,7 +6720,7 @@ sMoleculeUnmergeSub(Molecule *src, Molecule **dstp, IntGroup *where, int resSeqO
 			old2new[i] += nsrcnew;
 		if (dst->par == NULL)
 			dst->par = ParameterNew();
-		for (i = 0; i < kLastParType - kFirstParType; i++) {
+		for (i = 0; i <= kLastParType - kFirstParType; i++) {
 			if (dst_par_count[i] > 0)
 				IntGroupAdd(dst_new_g, i * kParameterIndexOffset, dst_par_count[i]);
 		}
@@ -6725,48 +6735,15 @@ sMoleculeUnmergeSub(Molecule *src, Molecule **dstp, IntGroup *where, int resSeqO
 	if (remove_par_g != NULL && (n2 = IntGroupGetCount(remove_par_g)) > 0) {
 		ParameterDelete(src->par, kFirstParType, NULL, remove_par_g);
 	}
-		
-	/*
-		for (n1 = kFirstParType; n1 <= kLastParType; n1++) {
-			n2 = ParameterGetCountForType(src->par, n1);
-			if (n2 == 0)
-				continue;
-			//  Find parameters to be copied to dst
-			for (i = 0; i < n2; i++) {
-				up = ParameterGetUnionParFromTypeAndIndex(src->par, n1, i);
-				for (j = 0, ap = dst->atoms; j < dst->natoms; j++, ap = ATOM_NEXT(ap)) {
-					if (ParameterDoesContainAtom(n1, up, new2old[j + nsrcnew], kParameterLookupNoWildcard) || ParameterDoesContainAtom(n1, up, ap->type, kParameterLookupNoWildcard)) {
-						IntGroupAdd(move_g, i, 1);
-						break;
-					}
-				}
-			}
-			n2 = IntGroupGetCount(move_g);
-			if (n2 == 0)
-				continue;
-			upary = (UnionPar *)calloc(sizeof(UnionPar), n2);
-			if (upary == NULL)
-				goto panic;
-			//  Copy parameters and renumber indices if necessary
-			for (i = 0; i < n2; i++) {
-				up = ParameterGetUnionParFromTypeAndIndex(src->par, n1, IntGroupGetNthPoint(move_g, i));
-				upary[i] = *up;
-				ParameterRenumberAtoms(n1, upary + i, nsrc, old2new);
-			}
-			IntGroupClear(move_g);
-			IntGroupAdd(move_g, ParameterGetCountForType(dst->par, n1), n2);
-			//  Insert new parameters
-			if (ParameterInsert(dst->par, n1, upary, move_g) < n2)
-				goto panic;
-			IntGroupClear(move_g);
-			free(upary);
+	
+	/*  Renumber the parameter records remaining in the src  */
+	for (n1 = kFirstParType; n1 <= kLastParType; n1++) {
+		n2 = ParameterGetCountForType(src->par, n1);
+		for (i = 0; i < n2; i++) {
+			up = ParameterGetUnionParFromTypeAndIndex(src->par, n1, i);
+			ParameterRenumberAtoms(n1, up, nsrc, old2new);
 		}
-		for (i = 0; i < nsrc; i++) {
-			old2new[i] += nsrcnew;  //  Restore indices
-		}
-		IntGroupRelease(move_g);
-	 }
-	*/
+	}
 	
 	/*  Clean up  */
 	MoleculeCleanUpResidueTable(src);

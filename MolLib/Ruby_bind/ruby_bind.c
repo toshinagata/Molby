@@ -2775,13 +2775,45 @@ s_Parameter_Lookup_sub(int argc, VALUE *argv, int parType, Molecule *mol)
 		if ((flags & 256) == 0 || mol == NULL || mol->par == NULL)
 			return Qnil;		
 		else {
-			/*  Insert a new (empty) parameter record  */
+			/*  Insert a new parameter record  */
+			UnionPar *up;
 			Int count = ParameterGetCountForType(mol->par, parType);
 			IntGroup *ig = IntGroupNewWithPoints(count, 1, -1);
 			MolActionCreateAndPerform(mol, gMolActionAddParameters, parType, ig, 0, NULL);
 			IntGroupRelease(ig);
 			is_global = 0;
 			idx = count;
+			/*  Set atom types  */
+			up = ParameterGetUnionParFromTypeAndIndex(mol->par, parType, idx);
+			if (up == NULL)
+				return Qnil;
+			switch (parType) {
+				case kBondParType:
+					up->bond.type1 = t[0];
+					up->bond.type2 = t[1];
+					break;
+				case kAngleParType:
+					up->angle.type1 = t[0];
+					up->angle.type2 = t[1];
+					up->angle.type3 = t[2];
+					break;
+				case kDihedralParType:
+				case kImproperParType:
+					up->torsion.type1 = t[0];
+					up->torsion.type2 = t[1];
+					up->torsion.type3 = t[2];
+					up->torsion.type4 = t[3];
+					break;
+				case kVdwParType:
+					up->vdw.type1 = t[0];
+					break;
+				case kVdwPairParType:
+					up->vdwp.type1 = t[0];
+					up->vdwp.type2 = t[1];
+					break;
+				default:
+					return Qnil;
+			}
 		}
 	}
 	return ValueFromMoleculeWithParameterTypeAndIndex(mol, parType, idx);
