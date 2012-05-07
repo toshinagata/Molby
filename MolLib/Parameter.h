@@ -114,8 +114,10 @@ typedef struct VdwPairPar {
 
 typedef struct VdwCutoffPar {
 	Int    com, src;   /*  Index to the comment array  */
-	Byte   type;       /* 0: atom type specific, 1: atom number specific */
-	UInt    n1, n2, n3, n4;  /*  atom type specific: n1 and n2 are atom types  */
+	UInt   type1, type2;
+/*  The fields type and n1-n4 are now obsolete; atom index range is no longer supported  */
+/*	Byte   type;          *//* 0: atom type specific, 1: atom number specific */
+/*	UInt   n1, n2, n3, n4;*//*  atom type specific: n1 and n2 are atom types  */
 	                        /*  atom number specific: (n1,n2) and (n3,n4) are atom ranges */
 							/*  (n1<=n2, n3<=n4, including the bounds)  */
 	Double cutoff;
@@ -198,6 +200,7 @@ void ParameterRefRelease(ParameterRef *pref);
 UnionPar *ParameterRefGetPar(ParameterRef *pref);
 	
 struct IntGroup;  /*  forward declaration  */
+struct Atom;      /*  forward declaration  */
 int ParameterInsert(Parameter *par, Int type, const UnionPar *up, struct IntGroup *where);
 int ParameterDelete(Parameter *par, Int type, UnionPar *up, struct IntGroup *where);
 int ParameterCopy(Parameter *par, Int type, UnionPar *up, struct IntGroup *where);
@@ -209,7 +212,8 @@ int ParameterCopy(Parameter *par, Int type, UnionPar *up, struct IntGroup *where
 void ParameterCopyOneWithType(UnionPar *dst, const UnionPar *src, int type);
 
 int ParameterRenumberAtoms(Int type, UnionPar *up, Int oldnatoms, const Int *old2new);
-int ParameterDoesContainAtom(Int type, UnionPar *up, UInt atom_type, Int options);
+int ParameterDoesContainAtom(Int type, const UnionPar *up, UInt atom_type, Int options);
+int ParameterIsRelevantToAtomGroup(Int type, const UnionPar *up, const struct Atom *ap, struct IntGroup *ig);
 
 BondPar *ParameterLookupBondPar(Parameter *par, UInt t1, UInt t2, Int options);
 AnglePar *ParameterLookupAnglePar(Parameter *par, UInt t1, UInt t2, UInt t3, Int options);

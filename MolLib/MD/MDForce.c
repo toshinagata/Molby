@@ -550,18 +550,14 @@ s_make_verlet_list(MDArena *arena)
 			vdw_cutoff = arena->cutoff;
 			for (k = par->nvdwCutoffPars - 1; k >= 0; k--) {
 				VdwCutoffPar *cr = par->vdwCutoffPars + k;
-				if (cr->type == 0) {
-					if (((cr->n1 < 0 || cr->n1 == api->type) && (cr->n2 < 0 || cr->n2 == apj->type)) ||
-						((cr->n1 < 0 || cr->n1 == apj->type) && (cr->n2 < 0 || cr->n2 == api->type))) {
-						vdw_cutoff = cr->cutoff;
-						break;
-					}
-				} else {
-					if ((cr->n1 <= i && i <= cr->n2 && cr->n3 <= j && j <= cr->n4)||
-						(cr->n3 <= i && i <= cr->n4 && cr->n1 <= j && j <= cr->n2)) {
-						vdw_cutoff = cr->cutoff;
-						break;
-					}
+				if (((cr->type1 == kAtomTypeWildcard || cr->type1 == api->type) && (cr->type2 == kAtomTypeWildcard || cr->type2 == apj->type)) ||
+					((cr->type1 == kAtomTypeWildcard || cr->type1 == apj->type) && (cr->type2 == kAtomTypeWildcard || cr->type2 == api->type))) {
+					vdw_cutoff = cr->cutoff;
+					break;
+				}
+				if ((cr->type1 == i && cr->type2 == j) || (cr->type1 == j && cr->type2 == i)) {
+					vdw_cutoff = cr->cutoff;
+					break;
 				}
 			}
 			if (vdw_cutoff < 0) {

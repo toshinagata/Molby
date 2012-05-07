@@ -622,7 +622,7 @@ MyDocument::OnCreateNewParameter(wxCommandEvent &event)
 			break;
 		case myMenuID_CreateNewVdwCutoffParameter:
 			parType = kVdwCutoffParType;
-			ubuf.vdwcutoff.n1 = ubuf.vdwcutoff.n2 = ctype;
+			ubuf.vdwcutoff.type1 = ubuf.vdwcutoff.type2 = ctype;
 			break;			
 		default:
 			return;

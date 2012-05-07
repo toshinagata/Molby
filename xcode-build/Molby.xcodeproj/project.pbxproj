@@ -94,7 +94,7 @@
 		E42D8AF01030193F00C20247 /* MDGraphite.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MDGraphite.h; sourceTree = "<group>"; };
 		E42D8AF11030193F00C20247 /* MDCore.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = MDCore.c; sourceTree = "<group>"; };
 		E42D8AF21030193F00C20247 /* MDCore.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MDCore.h; sourceTree = "<group>"; };
-		E42D8AF31030193F00C20247 /* MDForce.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = MDForce.c; sourceTree = "<group>"; };
+		E42D8AF31030193F00C20247 /* MDForce.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = MDForce.c; sourceTree = "<group>"; wrapsLines = 1; };
 		E42D8AF41030193F00C20247 /* MDForce.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MDForce.h; sourceTree = "<group>"; };
 		E42D8AF61030193F00C20247 /* MDPressure.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = MDPressure.c; sourceTree = "<group>"; };
 		E42D8AF71030193F00C20247 /* MDPressure.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MDPressure.h; sourceTree = "<group>"; };
@@ -104,7 +104,7 @@
 		E43226E20ECE8681004963D7 /* MySlider.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = MySlider.cpp; path = ../wxSources/MySlider.cpp; sourceTree = SOURCE_ROOT; };
 		E433CE740EC7099B00675985 /* Molby_extern.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Molby_extern.h; path = ../MolLib/Ruby_bind/Molby_extern.h; sourceTree = SOURCE_ROOT; };
 		E433CE750EC7099B00675985 /* Molby.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Molby.h; path = ../MolLib/Ruby_bind/Molby.h; sourceTree = SOURCE_ROOT; };
-		E433CE760EC7099B00675985 /* ruby_bind.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ruby_bind.c; path = ../MolLib/Ruby_bind/ruby_bind.c; sourceTree = SOURCE_ROOT; };
+		E433CE760EC7099B00675985 /* ruby_bind.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ruby_bind.c; path = ../MolLib/Ruby_bind/ruby_bind.c; sourceTree = SOURCE_ROOT; wrapsLines = 1; };
 		E433CE770EC7099B00675985 /* ruby_dialog.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ruby_dialog.c; path = ../MolLib/Ruby_bind/ruby_dialog.c; sourceTree = SOURCE_ROOT; };
 		E433CE780EC7099B00675985 /* ruby_dialog.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ruby_dialog.h; path = ../MolLib/Ruby_bind/ruby_dialog.h; sourceTree = SOURCE_ROOT; };
 		E433CE7C0EC709BD00675985 /* IntGroup.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = IntGroup.c; path = ../MolLib/IntGroup.c; sourceTree = SOURCE_ROOT; };
@@ -120,8 +120,8 @@
 		E433CE860EC709BD00675985 /* MolLib.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MolLib.h; path = ../MolLib/MolLib.h; sourceTree = SOURCE_ROOT; };
 		E433CE870EC709BD00675985 /* Object.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = Object.c; path = ../MolLib/Object.c; sourceTree = SOURCE_ROOT; };
 		E433CE880EC709BD00675985 /* Object.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Object.h; path = ../MolLib/Object.h; sourceTree = SOURCE_ROOT; };
-		E433CE890EC709BD00675985 /* Parameter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = Parameter.c; path = ../MolLib/Parameter.c; sourceTree = SOURCE_ROOT; };
-		E433CE8A0EC709BD00675985 /* Parameter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Parameter.h; path = ../MolLib/Parameter.h; sourceTree = SOURCE_ROOT; };
+		E433CE890EC709BD00675985 /* Parameter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = Parameter.c; path = ../MolLib/Parameter.c; sourceTree = SOURCE_ROOT; wrapsLines = 1; };
+		E433CE8A0EC709BD00675985 /* Parameter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Parameter.h; path = ../MolLib/Parameter.h; sourceTree = SOURCE_ROOT; wrapsLines = 1; };
 		E433CE8B0EC709BD00675985 /* Trackball.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = Trackball.c; path = ../MolLib/Trackball.c; sourceTree = SOURCE_ROOT; };
 		E433CE8C0EC709BD00675985 /* Trackball.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Trackball.h; path = ../MolLib/Trackball.h; sourceTree = SOURCE_ROOT; };
 		E433CE8D0EC709BD00675985 /* Types.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = Types.c; path = ../MolLib/Types.c; sourceTree = SOURCE_ROOT; };

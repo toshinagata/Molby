@@ -901,13 +901,8 @@ static VALUE s_ParameterRef_GetAtomTypes(VALUE self) {
 			break;
 		case kVdwCutoffParType:
 			n = 2;
-			types[0] = up->vdwcutoff.n1;
-			types[1] = up->vdwcutoff.n2;
-			if (up->vdwcutoff.type == 1) {
-				n = 4;
-				types[2] = up->vdwcutoff.n3;
-				types[3] = up->vdwcutoff.n4;
-			}
+			types[0] = up->vdwcutoff.type1;
+			types[1] = up->vdwcutoff.type2;
 			break;
 		default:
 			rb_raise(rb_eMolbyError, "invalid member atom_types");
@@ -1478,21 +1473,9 @@ static VALUE s_ParameterRef_SetAtomTypes(VALUE self, VALUE val) {
 			up->vdwp.type2 = types[1];
 			break;
 		case kVdwCutoffParType:
-			if (up->vdwcutoff.type == 0) {
-				s_ScanAtomTypes(val, 2, types);
-				if ((types[0] >= 0 && types[0] < kAtomTypeMinimum) || (types[1] >= 0 && types[1] < kAtomTypeMinimum))
-					rb_raise(rb_eMolbyError, "the atom type parameters should be string");
-				up->vdwcutoff.n1 = types[0];
-				up->vdwcutoff.n2 = types[1];
-			} else {
-				s_ScanAtomTypes(val, 4, types);
-				if (types[0] < 0 || types[0] >= kAtomTypeMinimum || types[1] < 0 || types[1] >= kAtomTypeMinimum || types[2] < 0 || types[2] >= kAtomTypeMinimum || types[3] < 0 || types[3] >= kAtomTypeMinimum)
-					rb_raise(rb_eMolbyError, "the atom type parameters should be atom indices");
-				up->vdwcutoff.n1 = types[0];
-				up->vdwcutoff.n2 = types[1];
-				up->vdwcutoff.n3 = types[2];
-				up->vdwcutoff.n4 = types[3];
-			}
+			s_ScanAtomTypes(val, 2, types);
+			up->vdwcutoff.type1 = types[0];
+			up->vdwcutoff.type2 = types[1];
 			break;
 		default:
 			return Qnil;
@@ -2107,10 +2090,7 @@ s_ParameterRef_ToString(VALUE self)
 			snprintf(buf, sizeof buf, "nbfi %4.6s %4.6s %12.8e %12.8e %12.8e %12.8e", AtomTypeDecodeToString(up->vdwp.type1, types[0]), AtomTypeDecodeToString(up->vdwp.type2, types[1]), up->vdwp.A * INTERNAL2KCAL, up->vdwp.B * INTERNAL2KCAL, up->vdwp.A14 * INTERNAL2KCAL, up->vdwp.B14 * INTERNAL2KCAL);
 			break;
 		case kVdwCutoffParType:
-			if (up->vdwcutoff.type == 0)
-				snprintf(buf, sizeof buf, "vdwcutoff %4.6s %4.6s %8.4f", AtomTypeDecodeToString(up->vdwcutoff.n1, types[0]), AtomTypeDecodeToString(up->vdwcutoff.n2, types[1]), up->vdwcutoff.cutoff);
-			else
-				snprintf(buf, sizeof buf, "vdwcutoff %d %d %d %d %8.4f", up->vdwcutoff.n1, up->vdwcutoff.n2, up->vdwcutoff.n3, up->vdwcutoff.n4, up->vdwcutoff.cutoff);
+			snprintf(buf, sizeof buf, "vdwcutoff %4.6s %4.6s %8.4f", AtomTypeDecodeToString(up->vdwcutoff.type1, types[0]), AtomTypeDecodeToString(up->vdwcutoff.type2, types[1]), up->vdwcutoff.cutoff);
 			break;
 		case kElementParType:
 			snprintf(buf, sizeof buf, "element %2.2s %3d %6.3f %6.3f %6.3f %6.3f %8.4f %s", up->atom.name, up->atom.number, up->atom.radius, up->atom.r, up->atom.g, up->atom.b, up->atom.weight, up->atom.fullname);

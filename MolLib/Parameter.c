@@ -461,9 +461,7 @@ ParameterRenumberAtoms(Int type, UnionPar *up, Int oldnatoms, const Int *old2new
 		case kVdwPairParType:
 			return RENUMBER_FIELD(VdwPairPar, type1) + RENUMBER_FIELD(VdwPairPar, type2);
 		case kVdwCutoffParType:
-			if (((VdwCutoffPar *)up)->type == 1)
-				return RENUMBER_FIELD(VdwCutoffPar, n1) + RENUMBER_FIELD(VdwCutoffPar, n2) + RENUMBER_FIELD(VdwCutoffPar, n3) || RENUMBER_FIELD(VdwCutoffPar, n4);
-			else return 0;
+			return RENUMBER_FIELD(VdwCutoffPar, type1) + RENUMBER_FIELD(VdwCutoffPar, type2);
 		default:
 			return -1;
 	}
@@ -599,15 +597,8 @@ ParameterCompare(const UnionPar *up1, const UnionPar *up2, int type)
 		case kVdwCutoffParType: {
 			const VdwCutoffPar *vp1 = &up1->vdwcutoff;
 			const VdwCutoffPar *vp2 = &up2->vdwcutoff;
-			if (vp1->type != vp2->type)
+			if ((vp1->type1 != vp2->type1 || vp1->type2 != vp2->type2) && (vp1->type1 != vp2->type2 || vp1->type2 != vp2->type1))
 				return 0;
-			if (vp1->type == 0) {
-				if ((vp1->n1 != vp2->n1 || vp1->n2 != vp2->n2) && (vp1->n1 != vp2->n2 || vp1->n2 != vp2->n1))
-					return 0;
-			} else {
-				if (vp1->n1 != vp2->n1 || vp1->n2 != vp2->n2 || vp1->n3 != vp2->n3 || vp1->n4 != vp2->n4)
-					return 0;
-			}
 			return fabs(vp1->cutoff - vp2->cutoff) < 1e-8;
 		}
 	}
@@ -1294,9 +1285,9 @@ ParameterGetComment(int idx)
 /*  Returns non-zero if the parameter record contains designated atom_type.
  The atom_type can also be an atom index.  */
 int
-ParameterDoesContainAtom(Int type, UnionPar *up, UInt atom_type, Int options)
+ParameterDoesContainAtom(Int type, const UnionPar *up, UInt atom_type, Int options)
 {
-#define CHECK_FIELD(_tp, _field) s_ParMatch((((_tp *)up)->_field), atom_type, nowildcard)
+#define CHECK_FIELD(_tp, _field) s_ParMatch((((const _tp *)up)->_field), atom_type, nowildcard)
 	Int nowildcard = (options & kParameterLookupNoWildcard);
 	switch (type) {
 		case kBondParType:
@@ -1311,11 +1302,68 @@ ParameterDoesContainAtom(Int type, UnionPar *up, UInt atom_type, Int options)
 		case kVdwPairParType:
 			return CHECK_FIELD(VdwPairPar, type1) || CHECK_FIELD(VdwPairPar, type2);
 		case kVdwCutoffParType:
-			if (((VdwCutoffPar *)up)->type == 1)
-				return CHECK_FIELD(VdwCutoffPar, n1) || CHECK_FIELD(VdwCutoffPar, n2) || CHECK_FIELD(VdwCutoffPar, n3) || CHECK_FIELD(VdwCutoffPar, n4);
-			else return 0;
+			return CHECK_FIELD(VdwCutoffPar, type1) || CHECK_FIELD(VdwCutoffPar, type2);
 		default: return 0;
 	}
+}
+
+/*  Returns non-zero if the parameter is relevant to the atom group, i.e. the parameter contains atom type or atom index
+    that is included in the atom group.
+    This function does _not_ check whether bond, angle, and dihedrals of the designated type is really present
+    in the molecule; it only checks the existence of the atom type/index.  */
+int
+ParameterIsRelevantToAtomGroup(Int type, const UnionPar *up, const struct Atom *ap, struct IntGroup *ig)
+{
+	IntGroupIterator iter;
+	int i, j, n, retval;
+	UInt types[4];
+	const struct Atom *api;
+	if (ig == NULL)
+		return 0;
+	IntGroupIteratorInit(ig, &iter);
+	retval = 0;
+	while ((i = IntGroupIteratorNext(&iter)) >= 0) {
+		api = ATOM_AT_INDEX(ap, i);
+		switch (type) {
+			case kBondParType:
+				types[0] = ((const BondPar *)up)->type1;
+				types[1] = ((const BondPar *)up)->type2;
+				n = 2;
+				break;
+			case kAngleParType:
+				types[0] = ((const AnglePar *)up)->type1;
+				types[1] = ((const AnglePar *)up)->type2;
+				types[2] = ((const AnglePar *)up)->type3;
+				n = 3;
+				break;
+			case kDihedralParType:
+			case kImproperParType:
+				types[0] = ((const TorsionPar *)up)->type1;
+				types[1] = ((const TorsionPar *)up)->type2;
+				types[2] = ((const TorsionPar *)up)->type3;
+				types[3] = ((const TorsionPar *)up)->type4;
+				n = 4;
+				break;
+			case kVdwParType:
+				types[0] = ((const VdwPar *)up)->type1;
+				n = 1;
+				break;
+			case kVdwPairParType:
+				types[0] = ((const VdwPairPar *)up)->type1;
+				types[1] = ((const VdwPairPar *)up)->type2;
+				n = 2;
+				break;
+			case kVdwCutoffParType:
+				types[0] = ((const VdwCutoffPar *)up)->type1;
+				types[1] = ((const VdwCutoffPar *)up)->type2;
+				n = 2;
+				break;
+			default:
+				n = 0;
+				break;
+		}
+	}
+	IntGroupIteratorRelease(&iter);
 }
 
 BondPar *
@@ -1485,17 +1533,10 @@ ParameterLookupVdwCutoffPar(Parameter *par, UInt t1, UInt t2, Int options)
 			|| (vp->src == 0 && !(options & kParameterLookupLocal))
 			|| (vp->src < 0 && !(options & kParameterLookupMissing)))
 			continue;
-		if (vp->type == 0) {
-			if (s_ParMatch(vp->n1, t1, nowildcard) && s_ParMatch(vp->n2, t2, nowildcard))
-				return vp;
-			if (s_ParMatch(vp->n1, t2, nowildcard) && s_ParMatch(vp->n2, t1, nowildcard))
-				return vp;
-		} else {
-			if (vp->n1 <= t1 && vp->n2 >= t1 && vp->n3 <= t2 && vp->n4 <= t2)
-				return vp;
-			if (vp->n1 <= t2 && vp->n2 >= t2 && vp->n3 <= t1 && vp->n4 >= t1)
-				return vp;
-		}
+		if (s_ParMatch(vp->type1, t1, nowildcard) && s_ParMatch(vp->type2, t2, nowildcard))
+			return vp;
+		if (s_ParMatch(vp->type1, t2, nowildcard) && s_ParMatch(vp->type2, t1, nowildcard))
+			return vp;
 	}
 	if (options & kParameterLookupNoBaseAtomType)
 		return NULL;
