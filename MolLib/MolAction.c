@@ -37,7 +37,6 @@ const char *gMolActionAddDihedrals    = "addDihedrals:IG";
 const char *gMolActionDeleteDihedrals = "deleteDihedrals:G";
 const char *gMolActionAddImpropers    = "addImpropers:IG";
 const char *gMolActionDeleteImpropers = "deleteImpropers:G";
-/* const char *gMolActionReplaceTables   = "replaceTables:III"; */
 const char *gMolActionTranslateAtoms  = "translateAtoms:vG";
 const char *gMolActionRotateAtoms     = "rotate:vdvG";
 const char *gMolActionTransformAtoms  = "transform:tG";
@@ -59,7 +58,6 @@ const char *gMolActionAddSymmetryOperation = "addSymop:t";
 const char *gMolActionSetCell         = "setCell:Di";
 const char *gMolActionSetBox          = "setBox:vvvvi";
 const char *gMolActionClearBox        = "clearBox";
-/*const char *gMolActionSetParameterAttribute = "setParameterAttr:iirri"; */
 const char *gMolActionAddParameters   = "addParameters:iGU";
 const char *gMolActionDeleteParameters = "deleteParameters:iG";
 const char *gMolActionCartesianToXtal  = "cartesianToXtal";
@@ -175,18 +173,6 @@ MolActionNewArgv(const char *name, va_list ap)
 				}
 				break;
 			}
-/*			case 's':
-				arg.u.sval = va_arg(ap, char *);
-				arg.u.sval = strdup(arg.u.sval);
-				break; */
-/*			case 'v': {
-				Vector *vp = va_arg(ap, Vector *);
-				arg.u.vval = (Vector *)malloc(sizeof(Vector));
-				if (arg.u.vval == NULL)
-					goto low_memory;
-				*(arg.u.vval) = *vp;
-				break;
-			} */
 			case 'G':
 				arg.u.igval = va_arg(ap, IntGroup *);
 				if (arg.u.igval != NULL)
@@ -295,19 +281,6 @@ MolActionRelease(MolAction *action)
 				if (argp->u.arval.ptr != NULL)
 					free(argp->u.arval.ptr);
 				break;
-			
-		/*	case 'a':
-				if (argp->u.iaval != NULL)
-					free(argp->u.iaval);
-				break;
-			case 's':
-				if (argp->u.sval != NULL)
-					free(argp->u.sval);
-				break;
-			case 'v':
-				if (argp->u.vval != NULL)
-					free(argp->u.vval);
-				break; */
 			case 'G':
 				if (argp->u.igval != NULL)
 					IntGroupRelease(argp->u.igval);
@@ -487,18 +460,45 @@ s_MolActionStoreReturnValue(MolRubyActionInfo *info, VALUE val)
 }
 
 static VALUE
-s_MolActionPerformRubyScript(VALUE vinfo)
+s_MolActionExecuteRubyScript(VALUE vinfo)
 {
-/*	VALUE save_interrupt_flag; */
 	VALUE val;
 	MolRubyActionInfo *info = (MolRubyActionInfo *)vinfo;
-/*	if (info->enable_interrupt)
-		save_interrupt_flag = Ruby_SetInterruptFlag(Qtrue); */
 	val = rb_funcall2(info->receiver, info->method_id, RARRAY_LEN(info->ary), RARRAY_PTR(info->ary));
 	s_MolActionStoreReturnValue(info, val);
-/*	if (info->enable_interrupt)
-		Ruby_SetInterruptFlag(save_interrupt_flag); */
 	return val;
+}
+
+static int
+s_MolActionPerformRubyScript(Molecule *mol, MolAction *action)
+{
+	int result;
+	MolRubyActionInfo info;
+	memset(&info, 0, sizeof(info));
+	if (gMolbyIsCheckingInterrupt) {
+		MolActionAlertRubyIsRunning();
+		return -1;
+	}
+	info.mol = mol; /*  May be NULL  */
+	info.action = action;
+	gMolbyRunLevel++;
+	rb_protect(s_MolActionToRubyArguments, (VALUE)&info, &result);
+	gMolbyRunLevel--;
+	if (result == 0) {
+		VALUE save_interrupt;
+		MyAppCallback_beginUndoGrouping();
+		save_interrupt = Ruby_SetInterruptFlag(Qtrue);
+		gMolbyRunLevel++;
+		rb_protect(s_MolActionExecuteRubyScript, (VALUE)&info, &result);
+		gMolbyRunLevel--;
+		Ruby_SetInterruptFlag(save_interrupt);
+		MyAppCallback_endUndoGrouping();
+	}
+	if (result != 0) {
+		Molby_showError(result);
+	}
+	MyAppCallback_hideProgressPanel();  /*  In case when the progress panel is still onscreen */
+	return (result == 0 ? 0 : -1);
 }
 
 static void
@@ -585,197 +585,144 @@ sMolActionUpdateSelectionAndParameterNumbering(Molecule *mol, const IntGroup *ig
 	IntGroupRelease(orig_atoms);
 }
 
-int
-MolActionPerform(Molecule *mol, MolAction *action)
+static int
+s_MolActionAddAnAtom(Molecule *mol, MolAction *action, MolAction **actp)
 {
-	int n1, result, natoms;
-	Molecule *mol2;
+	Int *ip, n1;
 	IntGroup *ig;
-	MolAction *act2 = NULL;
-	int needsSymmetryAmendment = 0;
-	int needsRebuildMDArena = 0;
-	Int *ip;
-	Vector *vp, v;
-	n1 = 0;
-	
-	if (action == NULL)
+	n1 = MoleculeCreateAnAtom(mol, action->args[0].u.aval, action->args[1].u.ival);
+	if ((ip = action->args[2].u.pval) != NULL)
+		*ip = n1;
+	if (n1 < 0)
 		return -1;
-	
-	if (action->frame >= 0 && mol->cframe != action->frame)
-		MoleculeSelectFrame(mol, action->frame, 1);
+	ig = IntGroupNewWithPoints(n1, 1, -1);
+	sMolActionUpdateSelectionAndParameterNumbering(mol, ig, 1);
+	IntGroupRelease(ig);
+	*actp = MolActionNew(gMolActionDeleteAnAtom, n1);
+	return 0;
+}
 
-	/*  Ruby script execution  */
-	if (strncmp(action->name, kMolActionPerformScript, strlen(kMolActionPerformScript)) == 0) {
-		MolRubyActionInfo info;
-		memset(&info, 0, sizeof(info));
-		if (gMolbyIsCheckingInterrupt) {
-			MolActionAlertRubyIsRunning();
+static int
+s_MolActionMergeMolecule(Molecule *mol, MolAction *action, MolAction **actp)
+{
+	int n1, result, minreg, maxreg;
+	Atom *ap;
+	IntGroup *ig, *ig2;
+	Molecule *mol2;
+	ig = action->args[1].u.igval;
+	mol2 = action->args[0].u.mval;
+	if (ig != NULL) {
+		ig2 = ig;
+		IntGroupRetain(ig2);
+	} else {
+		ig2 = IntGroupNew();
+		IntGroupAdd(ig2, mol->natoms, mol2->natoms);
+	}
+
+	/*  Calculate the offset for the residue number  */
+	maxreg = -1;
+	for (n1 = 0, ap = mol->atoms; n1 < mol->natoms; n1++, ap = ATOM_NEXT(ap)) {
+		if (ap->resSeq > maxreg)
+			maxreg = ap->resSeq;
+	}
+	minreg = ATOMS_MAX_NUMBER;
+	for (n1 = 0, ap = mol2->atoms; n1 < mol2->natoms; n1++, ap = ATOM_NEXT(ap)) {
+		if (ap->resSeq < minreg)
+			minreg = ap->resSeq;
+	}
+	if (maxreg < 0)
+		maxreg = 0;
+	if (minreg == ATOMS_MAX_NUMBER)
+		minreg = 0;
+	if (maxreg >= minreg)
+		n1 = maxreg - minreg + 1;
+	else n1 = 0;
+
+	if ((result = MoleculeMerge(mol, mol2, ig, n1)) != 0)
+		return result;
+	
+	sMolActionUpdateSelectionAndParameterNumbering(mol, ig, 1);
+	
+	*actp = MolActionNew(gMolActionUnmergeMolecule, ig2);
+	IntGroupRelease(ig2);
+	return 0;
+}
+
+static int
+s_MolActionDeleteAtoms(Molecule *mol, MolAction *action, MolAction **actp)
+{
+	Int n1, result, *ip;
+	IntGroup *bg, *ig;
+	Molecule *mol2;
+	if (strcmp(action->name, gMolActionDeleteAnAtom) == 0) {
+		ig = IntGroupNew();
+		if (ig == NULL || IntGroupAdd(ig, action->args[0].u.ival, 1) != 0)
 			return -1;
+	} else {
+		ig = action->args[0].u.igval;
+		IntGroupRetain(ig);
+	}
+	/*  Search bonds crossing the molecule border  */
+	bg = MoleculeSearchBondsAcrossAtomGroup(mol, ig);
+	ip = NULL;
+	if (bg != NULL) {
+		n1 = IntGroupGetCount(bg);
+		if (n1 > 0) {
+			IntGroupIterator iter;
+			Int i, idx;
+			ip = (Int *)calloc(sizeof(Int), n1 * 2 + 1);
+			if (ip == NULL) {
+				IntGroupRelease(bg);
+				IntGroupRelease(ig);
+				return -1;
+			}
+			IntGroupIteratorInit(bg, &iter);
+			idx = 0;
+			while ((i = IntGroupIteratorNext(&iter)) >= 0) {
+				/*  The atoms at the border  */
+				ip[idx++] = mol->bonds[i * 2];
+				ip[idx++] = mol->bonds[i * 2 + 1];
+			}
+			IntGroupIteratorRelease(&iter);
 		}
-	/*	gMolbyBacktrace = Qnil; */
-		info.mol = mol; /*  May be NULL  */
-		info.action = action;
-		gMolbyRunLevel++;
-		rb_protect(s_MolActionToRubyArguments, (VALUE)&info, &result);
-		gMolbyRunLevel--;
-		if (result == 0) {
-			VALUE save_interrupt;
-			MyAppCallback_beginUndoGrouping();
-		/*	info.enable_interrupt = 1; */
-			save_interrupt = Ruby_SetInterruptFlag(Qtrue);
-			gMolbyRunLevel++;
-			rb_protect(s_MolActionPerformRubyScript, (VALUE)&info, &result);
-			gMolbyRunLevel--;
-			Ruby_SetInterruptFlag(save_interrupt);
-			MyAppCallback_endUndoGrouping();
-		}
-		if (result != 0) {
-			Molby_showError(result);
-		}
-		MyAppCallback_hideProgressPanel();  /*  In case when the progress panel is still onscreen */
-		return (result == 0 ? 0 : -1);
+		IntGroupRelease(bg);
+	}
+	/*  Unmerge molecule  */
+	if ((result = MoleculeUnmerge(mol, &mol2, ig, 0)) != 0) {
+		if (ip != NULL)
+			free(ip);
+		return result;
 	}
 	
-	if (mol == NULL)
-		return -1;
-	natoms = mol->natoms;
+	sMolActionUpdateSelectionAndParameterNumbering(mol, ig, 0);
 	
-	if (strcmp(action->name, gMolActionAddAnAtom) == 0) {
-		n1 = MoleculeCreateAnAtom(mol, action->args[0].u.aval, action->args[1].u.ival);
-		if ((ip = action->args[2].u.pval) != NULL)
-			*ip = n1;
-		if (n1 < 0)
-			return -1;
-		ig = IntGroupNewWithPoints(n1, 1, -1);
+	if (mol2 == NULL)
+		*actp = NULL;
+	else {
+		/*  If there exist bonds crossing the molecule border, then register
+		 an action to restore them  */
+		if (ip != NULL) {
+			MolAction *act2 = MolActionNew(gMolActionAddBonds, n1 * 2, ip);
+			MolActionCallback_registerUndo(mol, act2);
+			MolActionRelease(act2);
+			free(ip);
+		}
+		*actp = MolActionNew(gMolActionMergeMolecule, mol2, ig);
+		MoleculeRelease(mol2);
+	}
+	IntGroupRelease(ig);
+	return 0;
+}
 
-		/*  Update selection  */
-		sMolActionUpdateSelectionAndParameterNumbering(mol, ig, 1);
+static int
+s_MolActionAddStructuralElements(Molecule *mol, MolAction *action, MolAction **actp, int type)
+{
+	Int *ip, n1, result;
+	IntGroup *ig;
+	
+	ip = (Int *)action->args[0].u.arval.ptr;
 
-		act2 = MolActionNew(gMolActionDeleteAnAtom, n1);
-		needsRebuildMDArena = 1;
-	} else if (strcmp(action->name, gMolActionMergeMolecule) == 0) {
-		IntGroup *ig2;
-		Molecule *mol2;
-		ig = action->args[1].u.igval;
-		mol2 = action->args[0].u.mval;
-		if (ig != NULL) {
-			ig2 = ig;
-			IntGroupRetain(ig2);
-		} else {
-			ig2 = IntGroupNew();
-			IntGroupAdd(ig2, mol->natoms, mol2->natoms);
-		}
-		/*  Calculate the offset for the residue number  */
-		{
-			int minreg, maxreg;
-			Atom *ap;
-			maxreg = -1;
-			for (n1 = 0, ap = mol->atoms; n1 < mol->natoms; n1++, ap = ATOM_NEXT(ap)) {
-				if (ap->resSeq > maxreg)
-					maxreg = ap->resSeq;
-			}
-			minreg = ATOMS_MAX_NUMBER;
-			for (n1 = 0, ap = mol2->atoms; n1 < mol2->natoms; n1++, ap = ATOM_NEXT(ap)) {
-				if (ap->resSeq < minreg)
-					minreg = ap->resSeq;
-			}
-			if (maxreg < 0)
-				maxreg = 0;
-			if (minreg == ATOMS_MAX_NUMBER)
-				minreg = 0;
-			if (maxreg >= minreg)
-				n1 = maxreg - minreg + 1;
-			else n1 = 0;
-		}
-		if ((result = MoleculeMerge(mol, mol2, ig, n1)) != 0)
-			return result;
-
-		sMolActionUpdateSelectionAndParameterNumbering(mol, ig, 1);
-
-		act2 = MolActionNew(gMolActionUnmergeMolecule, ig2);
-		IntGroupRelease(ig2);
-		needsRebuildMDArena = 1;
-	} else if (strcmp(action->name, gMolActionDeleteAnAtom) == 0 || (strcmp(action->name, gMolActionUnmergeMolecule) == 0 && (n1 = 1))) {
-		IntGroup *bg;
-		if (n1 == 0) {
-			ig = IntGroupNew();
-			if (ig == NULL || IntGroupAdd(ig, action->args[0].u.ival, 1) != 0)
-				return -1;
-		} else {
-			ig = action->args[0].u.igval;
-			IntGroupRetain(ig);
-		}
-		/*  Search bonds crossing the molecule border  */
-		bg = MoleculeSearchBondsAcrossAtomGroup(mol, ig);
-		ip = NULL;
-		if (bg != NULL) {
-			n1 = IntGroupGetCount(bg);
-			if (n1 > 0) {
-				IntGroupIterator iter;
-				Int i, idx;
-				ip = (Int *)calloc(sizeof(Int), n1 * 2 + 1);
-				if (ip == NULL)
-					return -1;
-				IntGroupIteratorInit(bg, &iter);
-				idx = 0;
-				while ((i = IntGroupIteratorNext(&iter)) >= 0) {
-					/*  The atoms at the border  */
-					ip[idx++] = mol->bonds[i * 2];
-					ip[idx++] = mol->bonds[i * 2 + 1];
-				}
-				IntGroupIteratorRelease(&iter);
-			}
-			IntGroupRelease(bg);
-		}
-		/*  Unmerge molecule  */
-		if ((result = MoleculeUnmerge(mol, &mol2, ig, 0)) != 0) {
-			if (ip != NULL)
-				free(ip);
-			return result;
-		}
-		
-		sMolActionUpdateSelectionAndParameterNumbering(mol, ig, 0);
-
-#if 0
-		/*  Update selection  */
-		{
-			IntGroup *sel = MoleculeGetSelection(mol);
-			if (sel != NULL && IntGroupGetCount(sel) > 0) {
-				IntGroup *remain_atoms = IntGroupNew();  /*  Remaining atoms (with original indices)  */
-				IntGroup *sel2 = IntGroupNew();
-				IntGroup *sel3 = IntGroupNew();
-				IntGroupXor(ig, IntGroupNewWithPoints(0, mol->natoms + IntGroupGetCount(ig), -1), remain_atoms);
-				IntGroupIntersect(sel, remain_atoms, sel2);  /*  Atoms to select after deletion  */
-				IntGroupDeconvolute(sel2, remain_atoms, sel3);  /*  Renumber  */
-				if (!IntGroupIsEqual(sel, sel3)) {
-					MoleculeSetSelection(mol, sel3);
-					act2 = MolActionNew(gMolActionSetSelection, sel);
-					MolActionCallback_registerUndo(mol, act2);
-					act2 = NULL;
-				}
-				IntGroupRelease(sel3);
-				IntGroupRelease(sel2);
-				IntGroupRelease(remain_atoms);
-			}
-		}
-#endif
-		if (mol2 == NULL)
-			act2 = NULL;
-		else {
-			/*  If there exist bonds crossing the molecule border, then register
-			    an action to restore them  */
-			if (ip != NULL) {
-				act2 = MolActionNew(gMolActionAddBonds, n1 * 2, ip);
-				MolActionCallback_registerUndo(mol, act2);
-				free(ip);
-			}
-			act2 = MolActionNew(gMolActionMergeMolecule, mol2, ig);
-			MoleculeRelease(mol2);
-		}
-		IntGroupRelease(ig);
-		needsRebuildMDArena = 1;
-	} else if (strcmp(action->name, gMolActionAddBonds) == 0) {
-		ip = (Int *)action->args[0].u.arval.ptr;
+	if (type == 0) {  /*  bond  */
 		n1 = action->args[0].u.arval.nitems / 2;
 		if ((result = MoleculeAddBonds(mol, n1, ip)) <= 0)
 			return result;
@@ -783,18 +730,9 @@ MolActionPerform(Molecule *mol, MolAction *action)
 		if (ip == NULL)
 			return -4;
 		memmove(ip, mol->bonds + (mol->nbonds - result) * 2, sizeof(Int) * 2 * result);
-		act2 = MolActionNew(gMolActionDeleteBonds, result * 2, ip);
+		*actp = MolActionNew(gMolActionDeleteBonds, result * 2, ip);
 		free(ip);
-		needsRebuildMDArena = 1;
-	} else if (strcmp(action->name, gMolActionDeleteBonds) == 0) {
-		ip = (Int *)action->args[0].u.arval.ptr;
-		n1 = action->args[0].u.arval.nitems / 2;
-		if ((result = MoleculeDeleteBonds(mol, n1, ip)) < 0)
-			return result;
-		act2 = MolActionNew(gMolActionAddBonds, n1 * 2, ip);
-		needsRebuildMDArena = 1;
-	} else if (strcmp(action->name, gMolActionAddAngles) == 0) {
-		ip = (Int *)action->args[0].u.arval.ptr;
+	} else if (type == 1) {  /*  angle  */
 		n1 = action->args[0].u.arval.nitems / 3;
 		ig = action->args[1].u.igval;
 		if (ig == NULL)
@@ -805,22 +743,9 @@ MolActionPerform(Molecule *mol, MolAction *action)
 			IntGroupRelease(ig);
 			return result;
 		}
-		act2 = MolActionNew(gMolActionDeleteAngles, ig);
+		*actp = MolActionNew(gMolActionDeleteAngles, ig);
 		IntGroupRelease(ig);
-		needsRebuildMDArena = 1;
-	} else if (strcmp(action->name, gMolActionDeleteAngles) == 0) {
-		ig = action->args[0].u.igval;
-		n1 = IntGroupGetCount(ig) * 3;
-		ip = (Int *)malloc(sizeof(Int) * n1);
-		if ((result = MoleculeDeleteAngles(mol, ip, ig)) < 0) {
-			free(ip);
-			return result;
-		}
-		act2 = MolActionNew(gMolActionAddAngles, n1, ip, ig);
-		free(ip);
-		needsRebuildMDArena = 1;
-	} else if (strcmp(action->name, gMolActionAddDihedrals) == 0) {
-		ip = (Int *)action->args[0].u.arval.ptr;
+	} else if (type == 2) {  /*  dihedral  */
 		n1 = action->args[0].u.arval.nitems / 4;
 		ig = action->args[1].u.igval;
 		if (ig == NULL)
@@ -831,22 +756,9 @@ MolActionPerform(Molecule *mol, MolAction *action)
 			IntGroupRelease(ig);
 			return result;
 		}
-		act2 = MolActionNew(gMolActionDeleteDihedrals, ig);
-		IntGroupRelease(ig);
-		needsRebuildMDArena = 1;
-	} else if (strcmp(action->name, gMolActionDeleteDihedrals) == 0) {
-		ig = action->args[0].u.igval;
-		n1 = IntGroupGetCount(ig) * 4;
-		ip = (Int *)malloc(sizeof(Int) * n1);
-		if ((result = MoleculeDeleteDihedrals(mol, ip, ig)) < 0) {
-			free(ip);
-			return result;
-		}
-		act2 = MolActionNew(gMolActionAddDihedrals, n1, ip, ig);
-		free(ip);
-		needsRebuildMDArena = 1;
-	} else if (strcmp(action->name, gMolActionAddImpropers) == 0) {
-		ip = (Int *)action->args[0].u.arval.ptr;
+		*actp = MolActionNew(gMolActionDeleteDihedrals, ig);
+		IntGroupRelease(ig);		
+	} else if (type == 3) {  /*  improper  */
 		n1 = action->args[0].u.arval.nitems / 4;
 		ig = action->args[1].u.igval;
 		if (ig == NULL)
@@ -857,10 +769,44 @@ MolActionPerform(Molecule *mol, MolAction *action)
 			IntGroupRelease(ig);
 			return result;
 		}
-		act2 = MolActionNew(gMolActionDeleteImpropers, ig);
+		*actp = MolActionNew(gMolActionDeleteImpropers, ig);
 		IntGroupRelease(ig);
-		needsRebuildMDArena = 1;
-	} else if (strcmp(action->name, gMolActionDeleteImpropers) == 0) {
+	}
+	return 0;
+}
+
+static int
+s_MolActionDeleteStructuralElements(Molecule *mol, MolAction *action, MolAction **actp, int type)
+{
+	Int *ip, n1, result;
+	IntGroup *ig;
+	if (type == 0) {  /*  bond  */
+		ip = (Int *)action->args[0].u.arval.ptr;
+		n1 = action->args[0].u.arval.nitems / 2;
+		if ((result = MoleculeDeleteBonds(mol, n1, ip)) < 0)
+			return result;
+		*actp = MolActionNew(gMolActionAddBonds, n1 * 2, ip);
+	} else if (type == 1) {  /*  angle  */
+		ig = action->args[0].u.igval;
+		n1 = IntGroupGetCount(ig) * 3;
+		ip = (Int *)malloc(sizeof(Int) * n1);
+		if ((result = MoleculeDeleteAngles(mol, ip, ig)) < 0) {
+			free(ip);
+			return result;
+		}
+		*actp = MolActionNew(gMolActionAddAngles, n1, ip, ig);
+		free(ip);
+	} else if (type == 2) {  /*  dihedral  */
+		ig = action->args[0].u.igval;
+		n1 = IntGroupGetCount(ig) * 4;
+		ip = (Int *)malloc(sizeof(Int) * n1);
+		if ((result = MoleculeDeleteDihedrals(mol, ip, ig)) < 0) {
+			free(ip);
+			return result;
+		}
+		*actp = MolActionNew(gMolActionAddDihedrals, n1, ip, ig);
+		free(ip);
+	} else if (type == 3) {  /*  improper  */
 		ig = action->args[0].u.igval;
 		n1 = IntGroupGetCount(ig) * 4;
 		ip = (Int *)malloc(sizeof(Int) * n1);
@@ -868,49 +814,40 @@ MolActionPerform(Molecule *mol, MolAction *action)
 			free(ip);
 			return result;
 		}
-		act2 = MolActionNew(gMolActionAddImpropers, n1, ip, ig);
+		*actp = MolActionNew(gMolActionAddImpropers, n1, ip, ig);
 		free(ip);
-		needsRebuildMDArena = 1;
-/*	} else if (strcmp(action->name, gMolActionReplaceTables) == 0) {
-		Int i1, i2, i3;
-		Int *ip1, *ip2, *ip3;
-		if ((i1 = MoleculeReplaceAllAngles(mol, action->args[0].u.arval.nitems / 3, (Int *)action->args[0].u.arval.ptr, &ip1)) < 0)
-			return -1;
-		if ((i2 = MoleculeReplaceAllDihedrals(mol, action->args[1].u.arval.nitems / 4, (Int *)action->args[1].u.arval.ptr, &ip2)) < 0)
-			return -1;
-		if ((i3 = MoleculeReplaceAllImpropers(mol, action->args[2].u.arval.nitems / 4, (Int *)action->args[2].u.arval.ptr, &ip3)) < 0)
-			return -1;
-		act2 = MolActionNew(gMolActionReplaceTables, i1, ip1, i2, ip2, i3, ip3);
-		free(ip1);
-		free(ip2);
-		free(ip3);
-		needsRebuildMDArena = 1; */
-	} else if (strcmp(action->name, gMolActionTranslateAtoms) == 0) {
+	}
+	return 0;
+}
+
+static int
+s_MolActionTransformAtoms(Molecule *mol, MolAction *action, MolAction **actp, IntGroup **igp, int type)
+{
+	Vector *vp, v;
+	if (type == 0) {  /*  translate  */
 		vp = (Vector *)action->args[0].u.arval.ptr;
-		ig = action->args[1].u.igval;
+		*igp = action->args[1].u.igval;
 		if (vp == NULL)
 			return -1;
-		MoleculeTranslate(mol, vp, ig);
+		MoleculeTranslate(mol, vp, *igp);
 		VecScale(v, *vp, -1);
-		act2 = MolActionNew(gMolActionTranslateAtoms, &v, ig);
-		act2->frame = mol->cframe;
-		needsSymmetryAmendment = 1;
-	} else if (strcmp(action->name, gMolActionRotateAtoms) == 0) {
-		Vector *vp2;
+		*actp = MolActionNew(gMolActionTranslateAtoms, &v, *igp);
+		(*actp)->frame = mol->cframe;
+	} else if (type == 1) {  /*  rotate  */
 		Double ang;
+		Vector *vp2;
 		vp = (Vector *)action->args[0].u.arval.ptr;
 		ang = action->args[1].u.dval;
 		vp2 = (Vector *)action->args[2].u.arval.ptr;
-		ig = action->args[3].u.igval;
-		MoleculeRotate(mol, vp, ang, vp2, ig);
-		act2 = MolActionNew(gMolActionRotateAtoms, vp, -ang, vp2, ig);
-		act2->frame = mol->cframe;
-		needsSymmetryAmendment = 1;
-	} else if (strcmp(action->name, gMolActionTransformAtoms) == 0) {
+		*igp = action->args[3].u.igval;
+		MoleculeRotate(mol, vp, ang, vp2, *igp);
+		*actp = MolActionNew(gMolActionRotateAtoms, vp, -ang, vp2, *igp);
+		(*actp)->frame = mol->cframe;
+	} else if (type == 2) {  /*  general transform  */
 		Transform *trp, tr_inv;
 		int atomPositions = 0; /* Save atom positions for undo? */
 		trp = (Transform *)action->args[0].u.arval.ptr;
-		ig = action->args[1].u.igval;
+		*igp = action->args[1].u.igval;
 		if (TransformInvert(tr_inv, *trp) != 0)
 			atomPositions = 1;
 		else {
@@ -930,388 +867,604 @@ MolActionPerform(Molecule *mol, MolAction *action)
 		}
 		if (atomPositions) {
 			IntGroupIterator iter;
-			int j, k;
-			n1 = IntGroupGetCount(ig);
+			int j, k, n1;
+			n1 = IntGroupGetCount(*igp);
 			vp = (Vector *)malloc(sizeof(Vector) * n1);
 			if (vp == NULL)
 				return -1;
-			IntGroupIteratorInit(ig, &iter);
+			IntGroupIteratorInit(*igp, &iter);
 			k = 0;
 			while ((j = IntGroupIteratorNext(&iter)) >= 0) {
 				vp[k++] = (ATOM_AT_INDEX(mol->atoms, j))->r;
 			}
-			act2 = MolActionNew(gMolActionSetAtomPositions, ig, n1, vp);
+			*actp = MolActionNew(gMolActionSetAtomPositions, *igp, n1, vp);
 			free(vp);
 			IntGroupIteratorRelease(&iter);
 		} else {
-			act2 = MolActionNew(gMolActionTransformAtoms, &tr_inv, ig);
+			*actp = MolActionNew(gMolActionTransformAtoms, &tr_inv, *igp);
 		}
-		MoleculeTransform(mol, *trp, ig);
-		act2->frame = mol->cframe;
-		needsSymmetryAmendment = 1;
-	} else if (strcmp(action->name, gMolActionSetAtomPositions) == 0 || (strcmp(action->name, gMolActionSetAtomVelocities) == 0 && (n1 = 1)) || (strcmp(action->name, gMolActionSetAtomForces) == 0 && (n1 = 2))) {
-		IntGroupIterator iter;
-		int j, k, n2;
-		Atom *ap;
-		ig = action->args[0].u.igval;
-		n2 = IntGroupGetCount(ig);
-		vp = (Vector *)malloc(sizeof(Vector) * n2);
-		if (vp == NULL)
-			return -1;
-		IntGroupIteratorInit(ig, &iter);
-		k = 0;
-		while ((j = IntGroupIteratorNext(&iter)) >= 0) {
-			ap = ATOM_AT_INDEX(mol->atoms, j);
-			vp[k++] = (n1 == 0 ? ap->r : (n1 == 1 ? ap->v : ap->f));
-		}
-		act2 = MolActionNew(gMolActionSetAtomPositions, ig, n2, vp);
-		free(vp);
-		vp = (Vector *)action->args[1].u.arval.ptr;
-		IntGroupIteratorReset(&iter);
-		k = 0;
-		while ((j = IntGroupIteratorNext(&iter)) >= 0) {
-			Vector w = vp[k++];
-			ap = ATOM_AT_INDEX(mol->atoms, j);
-			if (n1 == 0)
-				ap->r = w;
-			else if (n1 == 1)
-				ap->v = w;
-			else ap->f = w;
-		}
-		IntGroupIteratorRelease(&iter);
-		act2->frame = mol->cframe;
-		needsSymmetryAmendment = 1;
-	} else if (strcmp(action->name, gMolActionInsertFrames) == 0) {
-		int old_nframes, new_nframes, old_cframe;
-		Vector *vp2;
-		ig = action->args[0].u.igval;
-		vp = (Vector *)action->args[1].u.arval.ptr;
-		vp2 = (Vector *)action->args[2].u.arval.ptr;
-		old_cframe = mol->cframe;
-		n1 = IntGroupGetCount(ig);
-		if (n1 == 0)
-			return 0;  /*  Do nothing  */
-		if (vp != NULL && action->args[1].u.arval.nitems != n1 * mol->natoms)
-			return -1;  /*  Internal inconsistency  */
-		if (vp2 != NULL && action->args[2].u.arval.nitems != n1 * 4)
-			return -1;  /*  Internal inconsistency  */
-		old_nframes = MoleculeGetNumberOfFrames(mol);
-		if (MoleculeInsertFrames(mol, ig, vp, vp2) < 0)
-			return -1;  /*  Error  */
+		MoleculeTransform(mol, *trp, *igp);
+		(*actp)->frame = mol->cframe;		
+	}
+	return 0;
+}
 
-		/*  Undo action for restoring old cframe  */
-		act2 = MolActionNew(gMolActionNone);
-		act2->frame = old_cframe;
+static int
+s_MolActionSetAtomGeometry(Molecule *mol, MolAction *action, MolAction **actp, IntGroup **igp, int type)
+{
+	IntGroupIterator iter;
+	int j, k, n2;
+	Vector *vp;
+	Atom *ap;
+	*igp = action->args[0].u.igval;
+	n2 = IntGroupGetCount(*igp);
+	vp = (Vector *)malloc(sizeof(Vector) * n2);
+	if (vp == NULL)
+		return -1;
+	IntGroupIteratorInit(*igp, &iter);
+	k = 0;
+	while ((j = IntGroupIteratorNext(&iter)) >= 0) {
+		ap = ATOM_AT_INDEX(mol->atoms, j);
+		vp[k++] = (type == 0 ? ap->r : (type == 1 ? ap->v : ap->f));
+	}
+	*actp = MolActionNew(gMolActionSetAtomPositions, *igp, n2, vp);
+	free(vp);
+	vp = (Vector *)action->args[1].u.arval.ptr;
+	IntGroupIteratorReset(&iter);
+	k = 0;
+	while ((j = IntGroupIteratorNext(&iter)) >= 0) {
+		Vector w = vp[k++];
+		ap = ATOM_AT_INDEX(mol->atoms, j);
+		if (type == 0)
+			ap->r = w;
+		else if (type == 1)
+			ap->v = w;
+		else ap->f = w;
+	}
+	IntGroupIteratorRelease(&iter);
+	(*actp)->frame = mol->cframe;
+	return 0;
+}
+
+static int
+s_MolActionInsertFrames(Molecule *mol, MolAction *action, MolAction **actp, IntGroup **igp)
+{
+	Int n1, old_nframes, new_nframes, old_cframe;
+	Vector *vp, *vp2;
+	MolAction *act2;
+
+	*igp = action->args[0].u.igval;
+	vp = (Vector *)action->args[1].u.arval.ptr;
+	vp2 = (Vector *)action->args[2].u.arval.ptr;
+	old_cframe = mol->cframe;
+	n1 = IntGroupGetCount(*igp);
+	if (n1 == 0)
+		return 0;  /*  Do nothing  */
+	if (vp != NULL && action->args[1].u.arval.nitems != n1 * mol->natoms)
+		return -1;  /*  Internal inconsistency  */
+	if (vp2 != NULL && action->args[2].u.arval.nitems != n1 * 4)
+		return -1;  /*  Internal inconsistency  */
+	old_nframes = MoleculeGetNumberOfFrames(mol);
+	if (MoleculeInsertFrames(mol, *igp, vp, vp2) < 0)
+		return -1;  /*  Error  */
+	
+	/*  Undo action for restoring old cframe  */
+	act2 = MolActionNew(gMolActionNone);
+	act2->frame = old_cframe;
+	MolActionCallback_registerUndo(mol, act2);
+	MolActionRelease(act2);
+	
+	new_nframes = MoleculeGetNumberOfFrames(mol);
+	if (old_nframes + n1 < new_nframes) {
+		/*  "Extra" frames were automatically inserted because large frame indices were specified  */
+		/*  Register undo operation to remove these extra frames  */
+		IntGroup *ig2 = IntGroupNewWithPoints(old_nframes, new_nframes - (old_nframes + n1), -1);
+		act2 = MolActionNew(gMolActionRemoveFrames, ig2);
+		IntGroupRelease(ig2);
 		MolActionCallback_registerUndo(mol, act2);
 		MolActionRelease(act2);
+	}			
+	*actp = MolActionNew(gMolActionRemoveFrames, *igp);
+	(*actp)->frame = mol->cframe;
+	return 0;
+}
 
-		new_nframes = MoleculeGetNumberOfFrames(mol);
-		if (old_nframes + n1 < new_nframes) {
-			/*  "Extra" frames were automatically inserted because large frame indices were specified  */
-			/*  Register undo operation to remove these extra frames  */
-			IntGroup *ig2 = IntGroupNewWithPoints(old_nframes, new_nframes - (old_nframes + n1), -1);
-			act2 = MolActionNew(gMolActionRemoveFrames, ig2);
+static int
+s_MolActionRemoveFrames(Molecule *mol, MolAction *action, MolAction **actp, IntGroup **igp)
+{
+	Vector *vp, *vp2;
+	IntGroup *ig2;
+	Int n1, n2, nframes, old_cframe;
+	MolAction *act2;
+	
+	*igp = ig2 = action->args[0].u.igval;
+	old_cframe = mol->cframe;
+	n1 = IntGroupGetCount(*igp);
+	if (n1 == 0)
+		return 0;  /*  Do nothing  */
+	nframes = MoleculeGetNumberOfFrames(mol);
+	n2 = IntGroupGetEndPoint(*igp, IntGroupGetIntervalCount(*igp) - 1);  /*  Max point + 1  */
+	if (n2 > nframes) {
+		/*  Remove extra points  */
+		ig2 = IntGroupNewFromIntGroup(*igp);
+		IntGroupRemove(ig2, nframes, n2 - nframes);
+		n1 = IntGroupGetCount(ig2);
+	}
+	if (nframes == n1 && nframes >= 2) {
+		/*  Remove all frames: keep the current frame  */
+		if (ig2 == *igp)
+			ig2 = IntGroupNewFromIntGroup(*igp);
+		IntGroupRemove(ig2, mol->cframe, 1);
+		n1--;
+	}
+	if (n1 == 0) {
+		if (ig2 != *igp)
 			IntGroupRelease(ig2);
+		return 0;  /*  Do nothing  */
+	}
+	vp = (Vector *)calloc(sizeof(Vector), n1 * mol->natoms);
+	if (mol->cell != NULL && mol->frame_cells != NULL)
+		vp2 = (Vector *)calloc(sizeof(Vector) * 4, n1);
+	else vp2 = NULL;
+	if (MoleculeRemoveFrames(mol, ig2, vp, vp2) < 0) {
+		if (ig2 != *igp)
+			IntGroupRelease(ig2);
+		return -1;  /*  Error  */
+	}
+	/*  Undo action for restoring old cframe  */
+	act2 = MolActionNew(gMolActionNone);
+	act2->frame = old_cframe;
+	MolActionCallback_registerUndo(mol, act2);
+	MolActionRelease(act2);
+	
+	*actp = MolActionNew(gMolActionInsertFrames, ig2, n1 * mol->natoms, vp, (vp2 != NULL ? n1 * 4 : 0), vp2);
+	(*actp)->frame = mol->cframe;
+
+	free(vp);
+	if (vp2 != NULL)
+		free(vp2);
+	if (ig2 != *igp)
+		IntGroupRelease(ig2);
+	return 0;
+}
+
+static int
+s_MolActionSetSelection(Molecule *mol, MolAction *action, MolAction **actp)
+{
+	IntGroup *ig, *ig2;
+	ig2 = MoleculeGetSelection(mol);
+	if (ig2 != NULL)
+		IntGroupRetain(ig2);  /*  To avoid releasing during MoleculeSetSelection() */
+	ig = action->args[0].u.igval;
+	MoleculeSetSelection(mol, ig);
+	*actp = MolActionNew(gMolActionSetSelection, ig2);
+	if (ig2 != NULL)
+		IntGroupRelease(ig2);
+	return 0;
+}
+
+static int
+s_MolActionRenumberAtoms(Molecule *mol, MolAction *action, MolAction **actp)
+{
+	Int *ip, n1, result;
+	Int *ip2 = (Int *)malloc(sizeof(Int) * (mol->natoms + 1));
+	if (ip2 == NULL)
+		return -1;
+	ip = (Int *)action->args[0].u.arval.ptr;
+	n1 = action->args[0].u.arval.nitems;
+	result = MoleculeRenumberAtoms(mol, ip, ip2, n1);
+	if (result != 0) {
+		free(ip2);
+		return result;
+	}
+	*actp = MolActionNew(gMolActionRenumberAtoms, mol->natoms, ip2);
+	return 0;
+}
+
+static int
+s_MolActionChangeResidueNumber(Molecule *mol, MolAction *action, MolAction **actp, int forUndo)
+{
+	IntGroup *ig;
+	IntGroupIterator iter;
+	Int i, n1, *ip, nresidues;
+
+	ig = action->args[0].u.igval;
+	n1 = IntGroupGetCount(ig);
+	ip = (Int *)calloc(sizeof(Int), n1 + 1);
+	IntGroupIteratorInit(ig, &iter);
+	i = 0;
+	while ((n1 = IntGroupIteratorNext(&iter)) >= 0) {
+		ip[i++] = ATOM_AT_INDEX(mol->atoms, n1)->resSeq;
+	}
+	n1 = i;
+	ip[i] = kInvalidIndex;
+	nresidues = mol->nresidues;
+	if (forUndo) {
+		MoleculeChangeResidueNumberWithArray(mol, ig, (Int *)action->args[1].u.arval.ptr);
+		MoleculeChangeNumberOfResidues(mol, action->args[2].u.ival);
+	} else {
+		MoleculeChangeResidueNumber(mol, ig, action->args[1].u.ival);
+	}
+	*actp = MolActionNew(gMolActionChangeResidueNumberForUndo, ig, n1, ip, nresidues);
+	return 0;
+}
+
+static int
+s_MolActionOffsetResidueNumbers(Molecule *mol, MolAction *action, MolAction **actp)
+{
+	IntGroup *ig;
+	Int n1, result;
+	ig = action->args[0].u.igval;
+	n1 = mol->nresidues;
+	result = MoleculeOffsetResidueNumbers(mol, ig, action->args[1].u.ival, action->args[2].u.ival);
+	if (result != 0)
+		return result;  /*  The molecule is not modified  */
+	*actp = MolActionNew(gMolActionOffsetResidueNumbers, ig, -(action->args[1].u.ival), n1);
+	return 0;
+}
+
+static int
+s_MolActionChangeResidueNames(Molecule *mol, MolAction *action, MolAction **actp)
+{
+	char *new_names, *old_names;
+	Int *ip, i, argc;
+	ip = (Int *)action->args[0].u.arval.ptr;
+	argc = action->args[0].u.arval.nitems;
+	new_names = action->args[1].u.arval.ptr;
+	old_names = (char *)malloc(argc * 4 + 1);
+	for (i = 0; i < argc; i++) {
+		if (ip[i] >= mol->nresidues)
+			old_names[i * 4] = 0;
+		else
+			strncpy(old_names + i * 4, mol->residues[ip[i]], 4);
+	}
+	MoleculeChangeResidueNames(mol, argc, ip, new_names);
+	*actp = MolActionNew(gMolActionChangeResidueNames, argc, ip, argc * 4, old_names);
+	free(old_names);
+	return 0;
+}
+
+static int
+s_MolActionChangeNumberOfResidues(Molecule *mol, MolAction *action, MolAction **actp)
+{
+	Int n1, nresidues = mol->nresidues;
+	n1 = action->args[0].u.ival;
+	if (n1 < nresidues) {
+		/*  The residue names will be lost, so undo must be registered to restore the names  */
+		int argc = nresidues - n1;
+		char *names = (char *)malloc(4 * argc + 1);
+		Int *ip = (Int *)malloc(sizeof(Int) * (argc + 1));
+		int i;
+		MolAction *act2;
+		for (i = 0; i < argc; i++) {
+			strncpy(names + i * 4, mol->residues[i + n1], 4);
+			ip[i] = i + n1;
+		}
+		ip[i] = kInvalidIndex;
+		act2 = MolActionNew(gMolActionChangeResidueNames, argc, ip, argc * 4, names);
+		MolActionCallback_registerUndo(mol, act2);
+		free(ip);
+		free(names);
+	}
+	MoleculeChangeNumberOfResidues(mol, n1);
+	*actp = MolActionNew(gMolActionChangeNumberOfResidues, nresidues);
+	return 0;
+}
+
+static int
+s_MolActionExpandBySymmetry(Molecule *mol, MolAction *action, MolAction **actp)
+{
+	Int n1;
+	Symop symop;
+	IntGroup *ig = action->args[0].u.igval;
+	symop.dx = action->args[1].u.ival;
+	symop.dy = action->args[2].u.ival;
+	symop.dz = action->args[3].u.ival;
+	symop.sym = action->args[4].u.ival;
+	symop.alive = (symop.dx != 0 || symop.dy != 0 || symop.dz != 0 || symop.sym != 0);
+	n1 = MoleculeAddExpandedAtoms(mol, symop, ig);
+	if (n1 > 0) {
+		ig = IntGroupNew();
+		IntGroupAdd(ig, mol->natoms - n1, n1);
+		(*actp) = MolActionNew(gMolActionUnmergeMolecule, ig);
+		IntGroupRelease(ig);
+		return 0;
+	} else return n1;
+}
+
+static int
+s_MolActionAddSymmetryOperation(Molecule *mol, MolAction *action, MolAction **actp)
+{
+	Int n1;
+	Transform *trp;
+	Transform itr = {1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0};
+	trp = (Transform *)action->args[0].u.arval.ptr;
+	if (mol->nsyms == 0) {
+		for (n1 = 0; n1 < 12; n1++) {
+			if (fabs((*trp)[n1] - itr[n1]) > 1e-8)
+				break;
+		}
+		if (n1 < 12) {
+			MolAction *act2;
+			if (AssignArray(&mol->syms, &mol->nsyms, sizeof(Transform), mol->nsyms, &itr) == 0)
+				return -1;
+			act2 = MolActionNew(gMolActionDeleteSymmetryOperation);
 			MolActionCallback_registerUndo(mol, act2);
 			MolActionRelease(act2);
-		}			
-		act2 = MolActionNew(gMolActionRemoveFrames, ig);
-		act2->frame = mol->cframe;
-		needsSymmetryAmendment = 1;
-	} else if (strcmp(action->name, gMolActionRemoveFrames) == 0) {
-		Vector *vp2;
-		IntGroup *ig2;
-		int n2, nframes, old_cframe;
-		ig = ig2 = action->args[0].u.igval;
-		old_cframe = mol->cframe;
-		n1 = IntGroupGetCount(ig);
-		if (n1 == 0)
+		}
+	}
+	if (AssignArray(&mol->syms, &mol->nsyms, sizeof(Transform), mol->nsyms, trp) == 0)
+		return -1;
+	*actp = MolActionNew(gMolActionDeleteSymmetryOperation);
+	return 0;
+}
+
+static int
+s_MolActionDeleteSymmetryOperation(Molecule *mol, MolAction *action, MolAction **actp)
+{
+	if (mol->nsyms == 0)
+		return -1;
+	*actp = MolActionNew(gMolActionAddSymmetryOperation, &(mol->syms[mol->nsyms - 1]));
+	mol->nsyms--;
+	if (mol->nsyms == 0) {
+		free(mol->syms);
+		mol->syms = NULL;
+	}
+	return 0;
+}
+
+static int
+s_MolActionSetCell(Molecule *mol, MolAction *action, MolAction **actp)
+{
+	double *dp, d[12];
+	Int convertCoord, n1, n2;
+	if (mol->cell == NULL) {
+		d[0] = 0.0;
+		n1 = 0;
+	} else {
+		for (n1 = 0; n1 < 6; n1++)
+			d[n1] = mol->cell->cell[n1];
+		if (mol->cell->has_sigma) {
+			for (n1 = 6; n1 < 12; n1++)
+				d[n1] = mol->cell->cellsigma[n1 - 6];
+		}
+	}
+	convertCoord = action->args[1].u.ival;
+	dp = action->args[0].u.arval.ptr;
+	n2 = action->args[0].u.arval.nitems;
+	if (n2 == 0)
+		MoleculeSetCell(mol, 0, 0, 0, 0, 0, 0, convertCoord);
+	else {
+		MoleculeSetCell(mol, dp[0], dp[1], dp[2], dp[3], dp[4], dp[5], convertCoord);
+		if (n2 == 12) {
+			mol->cell->has_sigma = 1;
+			for (n2 = 6; n2 < 12; n2++)
+				mol->cell->cellsigma[n2 - 6] = dp[n2];
+		} else mol->cell->has_sigma = 0;
+	}
+	*actp = MolActionNew(gMolActionSetCell, n1, (n1 == 0 ? NULL : d), convertCoord);
+	return 0;
+}
+
+static int
+s_MolActionSetBox(Molecule *mol, MolAction *action, MolAction **actp)
+{
+	Int n1;
+	if (action == NULL) {
+		/*  Clear box  */
+		if (mol->cell == NULL)
 			return 0;  /*  Do nothing  */
-		nframes = MoleculeGetNumberOfFrames(mol);
-		n2 = IntGroupGetEndPoint(ig, IntGroupGetIntervalCount(ig) - 1);  /*  Max point + 1  */
-		if (n2 > nframes) {
-			/*  Remove extra points  */
-			ig2 = IntGroupNewFromIntGroup(ig);
-			IntGroupRemove(ig2, nframes, n2 - nframes);
-			n1 = IntGroupGetCount(ig2);
-		}
-		if (nframes == n1 && nframes >= 2) {
-			/*  Remove all frames: keep the current frame  */
-			if (ig2 == ig)
-				ig2 = IntGroupNewFromIntGroup(ig);
-			IntGroupRemove(ig2, mol->cframe, 1);
-			n1--;
-		}
-		if (n1 == 0) {
-			if (ig2 != ig)
-				IntGroupRelease(ig2);
-			return 0;  /*  Do nothing  */
-		}
-		vp = (Vector *)calloc(sizeof(Vector), n1 * mol->natoms);
-		if (mol->cell != NULL && mol->frame_cells != NULL)
-			vp2 = (Vector *)calloc(sizeof(Vector) * 4, n1);
-		else vp2 = NULL;
-		if (MoleculeRemoveFrames(mol, ig2, vp, vp2) < 0) {
-			if (ig2 != ig)
-				IntGroupRelease(ig2);
-			return -1;  /*  Error  */
-		}
-		/*  Undo action for restoring old cframe  */
-		act2 = MolActionNew(gMolActionNone);
-		act2->frame = old_cframe;
-		MolActionCallback_registerUndo(mol, act2);
-		MolActionRelease(act2);
-		act2 = MolActionNew(gMolActionInsertFrames, ig2, n1 * mol->natoms, vp, (vp2 != NULL ? n1 * 4 : 0), vp2);
-		act2->frame = mol->cframe;
-		free(vp);
-		if (vp2 != NULL)
-			free(vp2);
-		if (ig2 != ig)
-			IntGroupRelease(ig2);
-		needsSymmetryAmendment = 1;
-	} else if (strcmp(action->name, gMolActionSetSelection) == 0) {
-		IntGroup *ig2;
-		ig2 = MoleculeGetSelection(mol);
-		if (ig2 != NULL)
-			IntGroupRetain(ig2);  /*  To avoid releasing during MoleculeSetSelection() */
-		ig = action->args[0].u.igval;
-		MoleculeSetSelection(mol, ig);
-		act2 = MolActionNew(gMolActionSetSelection, ig2);
-		if (ig2 != NULL)
-			IntGroupRelease(ig2);
-	} else if (strcmp(action->name, gMolActionRenumberAtoms) == 0) {
-		Int *ip2 = (Int *)malloc(sizeof(Int) * (mol->natoms + 1));
-		if (ip2 == NULL)
-			return -1;
-		ip = (Int *)action->args[0].u.arval.ptr;
-		n1 = action->args[0].u.arval.nitems;
-	/*	for (n1 = 0; n1 < mol->natoms; n1++) {
-			if (ip[n1] < 0)
-				break;
-		} */
-		result = MoleculeRenumberAtoms(mol, ip, ip2, n1);
-		if (result != 0) {
-			free(ip2);
-			return result;
-		}
-		act2 = MolActionNew(gMolActionRenumberAtoms, mol->natoms, ip2);
-		needsRebuildMDArena = 1;
-	} else if (strcmp(action->name, gMolActionChangeResidueNumber) == 0 || (strcmp(action->name, gMolActionChangeResidueNumberForUndo) == 0 && (n1 = 1))) {
-		IntGroupIterator iter;
-		int i, nresidues;
-		int forUndo;
-		forUndo = n1;
-		ig = action->args[0].u.igval;
-		n1 = IntGroupGetCount(ig);
-		ip = (Int *)calloc(sizeof(Int), n1 + 1);
-		IntGroupIteratorInit(ig, &iter);
-		i = 0;
-		while ((n1 = IntGroupIteratorNext(&iter)) >= 0) {
-			ip[i++] = ATOM_AT_INDEX(mol->atoms, n1)->resSeq;
-		}
-		n1 = i;
-		ip[i] = kInvalidIndex;
-		nresidues = mol->nresidues;
-		if (forUndo) {
-			MoleculeChangeResidueNumberWithArray(mol, ig, (Int *)action->args[1].u.arval.ptr);
-			MoleculeChangeNumberOfResidues(mol, action->args[2].u.ival);
-		} else {
-			MoleculeChangeResidueNumber(mol, ig, action->args[1].u.ival);
-		}
-		act2 = MolActionNew(gMolActionChangeResidueNumberForUndo, ig, n1, ip, nresidues);
-	} else if (strcmp(action->name, gMolActionChangeResidueNames) == 0) {
-		char *new_names, *old_names;
-		int i, argc;
-		ip = (Int *)action->args[0].u.arval.ptr;
-		argc = action->args[0].u.arval.nitems;
-		new_names = action->args[1].u.arval.ptr;
-		old_names = (char *)malloc(argc * 4 + 1);
-		for (i = 0; i < argc; i++) {
-			if (ip[i] >= mol->nresidues)
-				old_names[i * 4] = 0;
-			else
-				strncpy(old_names + i * 4, mol->residues[ip[i]], 4);
-		}
-		MoleculeChangeResidueNames(mol, argc, ip, new_names);
-		act2 = MolActionNew(gMolActionChangeResidueNames, argc, ip, argc * 4, old_names);
-		free(old_names);
-	} else if (strcmp(action->name, gMolActionOffsetResidueNumbers) == 0) {
-		ig = action->args[0].u.igval;
-		n1 = mol->nresidues;
-		result = MoleculeOffsetResidueNumbers(mol, ig, action->args[1].u.ival, action->args[2].u.ival);
-		if (result != 0)
-			return result;  /*  The molecule is not modified  */
-		act2 = MolActionNew(gMolActionOffsetResidueNumbers, ig, -(action->args[1].u.ival), n1);
-	} else if (strcmp(action->name, gMolActionChangeNumberOfResidues) == 0) {
-		int nresidues = mol->nresidues;
-		n1 = action->args[0].u.ival;
-		if (n1 < nresidues) {
-			/*  The residue names will be lost, so undo must be registered to restore the names  */
-			int argc = nresidues - n1;
-			char *names = (char *)malloc(4 * argc + 1);
-			Int *ip = (Int *)malloc(sizeof(Int) * (argc + 1));
-			int i;
-			for (i = 0; i < argc; i++) {
-				strncpy(names + i * 4, mol->residues[i + n1], 4);
-				ip[i] = i + n1;
-			}
-			ip[i] = kInvalidIndex;
-			act2 = MolActionNew(gMolActionChangeResidueNames, argc, ip, argc * 4, names);
-			MolActionCallback_registerUndo(mol, act2);
-			free(ip);
-			free(names);
-		}
-		MoleculeChangeNumberOfResidues(mol, n1);
-		act2 = MolActionNew(gMolActionChangeNumberOfResidues, nresidues);
-	} else if (strcmp(action->name, gMolActionExpandBySymmetry) == 0) {
-		Symop symop;
-		ig = action->args[0].u.igval;
-		symop.dx = action->args[1].u.ival;
-		symop.dy = action->args[2].u.ival;
-		symop.dz = action->args[3].u.ival;
-		symop.sym = action->args[4].u.ival;
-		symop.alive = (symop.dx != 0 || symop.dy != 0 || symop.dz != 0 || symop.sym != 0);
-		n1 = MoleculeAddExpandedAtoms(mol, symop, ig);
-		if (n1 > 0) {
-			ig = IntGroupNew();
-			IntGroupAdd(ig, mol->natoms - n1, n1);
-			act2 = MolActionNew(gMolActionUnmergeMolecule, ig);
-			IntGroupRelease(ig);
-		} else return n1;
-		needsRebuildMDArena = 1;
-	} else if (strcmp(action->name, gMolActionAddSymmetryOperation) == 0) {
-		Transform *trp;
-		Transform itr = {1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0};
-		trp = (Transform *)action->args[0].u.arval.ptr;
-		if (mol->nsyms == 0) {
-			for (n1 = 0; n1 < 12; n1++) {
-				if (fabs((*trp)[n1] - itr[n1]) > 1e-8)
-					break;
-			}
-			if (n1 < 12) {
-				if (AssignArray(&mol->syms, &mol->nsyms, sizeof(Transform), mol->nsyms, &itr) == 0)
-					return -1;
-				act2 = MolActionNew(gMolActionDeleteSymmetryOperation);
-				MolActionCallback_registerUndo(mol, act2);
-				MolActionRelease(act2);
-			}
-		}
-		if (AssignArray(&mol->syms, &mol->nsyms, sizeof(Transform), mol->nsyms, trp) == 0)
-				return -1;
-		act2 = MolActionNew(gMolActionDeleteSymmetryOperation);
-	} else if (strcmp(action->name, gMolActionDeleteSymmetryOperation) == 0) {
-		if (mol->nsyms == 0)
-			return -1;
-		act2 = MolActionNew(gMolActionAddSymmetryOperation, &(mol->syms[mol->nsyms - 1]));
-		mol->nsyms--;
-	/*	if (mol->nsyms == 1)
-			mol->nsyms--;  *//*  Remove the identity operation  */
-		if (mol->nsyms == 0) {
-			free(mol->syms);
-			mol->syms = NULL;
-		}
-	} else if (strcmp(action->name, gMolActionSetCell) == 0) {
-		double *dp, d[12];
-		int convertCoord, n2;
-		if (mol->cell == NULL) {
-			d[0] = 0.0;
-			n1 = 0;
-		} else {
-			for (n1 = 0; n1 < 6; n1++)
-				d[n1] = mol->cell->cell[n1];
-			if (mol->cell->has_sigma) {
-				for (n1 = 6; n1 < 12; n1++)
-					d[n1] = mol->cell->cellsigma[n1 - 6];
-			}
-		}
-		convertCoord = action->args[1].u.ival;
-		dp = action->args[0].u.arval.ptr;
-		n2 = action->args[0].u.arval.nitems;
-		if (n2 == 0)
-			MoleculeSetCell(mol, 0, 0, 0, 0, 0, 0, convertCoord);
-		else {
-			MoleculeSetCell(mol, dp[0], dp[1], dp[2], dp[3], dp[4], dp[5], convertCoord);
-			if (n2 == 12) {
-				mol->cell->has_sigma = 1;
-				for (n2 = 6; n2 < 12; n2++)
-					mol->cell->cellsigma[n2 - 6] = dp[n2];
-			} else mol->cell->has_sigma = 0;
-		}
-		act2 = MolActionNew(gMolActionSetCell, n1, (n1 == 0 ? NULL : d), convertCoord);
-		needsRebuildMDArena = 1;
-	} else if (strcmp(action->name, gMolActionSetBox) == 0) {
+		n1 = ((mol->cell->flags[0] != 0) * 4 + (mol->cell->flags[1] != 0) * 2 + (mol->cell->flags[2] != 0));
+		*actp = MolActionNew(gMolActionSetBox, &(mol->cell->axes[0]), &(mol->cell->axes[1]), &(mol->cell->axes[2]), &(mol->cell->origin), n1);
+		MoleculeSetPeriodicBox(mol, NULL, NULL, NULL, NULL, NULL);
+	} else {
+		/*  Set box  */
 		Vector v[4];
 		char flags[3];
 		if (mol->cell == NULL)
-			act2 = MolActionNew(gMolActionClearBox);
+			*actp = MolActionNew(gMolActionClearBox);
 		else {
 			n1 = ((mol->cell->flags[0] != 0) * 4 + (mol->cell->flags[1] != 0) * 2 + (mol->cell->flags[2] != 0));
-			act2 = MolActionNew(gMolActionSetBox, &(mol->cell->axes[0]), &(mol->cell->axes[1]), &(mol->cell->axes[2]), &(mol->cell->origin), n1);
+			*actp = MolActionNew(gMolActionSetBox, &(mol->cell->axes[0]), &(mol->cell->axes[1]), &(mol->cell->axes[2]), &(mol->cell->origin), n1);
 		}
 		for (n1 = 0; n1 < 4; n1++)
 			v[n1] = *((Vector *)(action->args[n1].u.arval.ptr));
 		for (n1 = 0; n1 < 3; n1++)
 			flags[n1] = ((action->args[4].u.ival >> (2 - n1)) & 1);
 		MoleculeSetPeriodicBox(mol, &v[0], &v[1], &v[2], &v[3], flags);
+	}
+	return 0;
+}
+
+static int
+s_MolActionAddParameters(Molecule *mol, MolAction *action, MolAction **actp)
+{
+	UnionPar *up;
+	IntGroup *ig;
+	Int parType;
+	if (mol->par == NULL)
+		return -1;
+	parType = action->args[0].u.ival;
+	ig = action->args[1].u.igval;
+	up = action->args[2].u.arval.ptr;
+	ParameterInsert(mol->par, parType, up, ig);
+	*actp = MolActionNew(gMolActionDeleteParameters, parType, ig);
+	mol->parameterTableSelectionNeedsClear = 1;
+	return 0;
+}
+
+static int
+s_MolActionDeleteParameters(Molecule *mol, MolAction *action, MolAction **actp)
+{
+	UnionPar *up;
+	IntGroup *ig;
+	Int parType, n1;
+	if (mol->par == NULL)
+		return -1;
+	parType = action->args[0].u.ival;
+	ig = action->args[1].u.igval;
+	n1 = IntGroupGetCount(ig);
+	up = (UnionPar *)calloc(sizeof(UnionPar), n1);
+	ParameterDelete(mol->par, parType, up, ig);
+	*actp = MolActionNew(gMolActionAddParameters, parType, ig, n1, up);
+	free(up);
+	mol->parameterTableSelectionNeedsClear = 1;
+	return 0;
+}
+
+int
+MolActionPerform(Molecule *mol, MolAction *action)
+{
+	int result;
+	IntGroup *ig = NULL;
+	MolAction *act2 = NULL;
+	int needsSymmetryAmendment = 0;
+	int needsRebuildMDArena = 0;
+
+	if (action == NULL)
+		return -1;
+	
+	if (action->frame >= 0 && mol->cframe != action->frame)
+		MoleculeSelectFrame(mol, action->frame, 1);
+
+	/*  Ruby script execution  */
+	if (strncmp(action->name, kMolActionPerformScript, strlen(kMolActionPerformScript)) == 0) {
+		return s_MolActionPerformRubyScript(mol, action);
+	}
+	
+	if (mol == NULL)
+		return -1;
+	
+	if (strcmp(action->name, gMolActionAddAnAtom) == 0) {
+		if ((result = s_MolActionAddAnAtom(mol, action, &act2)) != 0)
+			return result;
+		needsRebuildMDArena = 1;
+	} else if (strcmp(action->name, gMolActionMergeMolecule) == 0) {
+		if ((result = s_MolActionMergeMolecule(mol, action, &act2)) != 0)
+			return result;
+		needsRebuildMDArena = 1;
+	} else if (strcmp(action->name, gMolActionDeleteAnAtom) == 0 || strcmp(action->name, gMolActionUnmergeMolecule) == 0) {
+		if ((result = s_MolActionDeleteAtoms(mol, action, &act2)) != 0)
+			return result;
+		needsRebuildMDArena = 1;
+	} else if (strcmp(action->name, gMolActionAddBonds) == 0) {
+		if ((result = s_MolActionAddStructuralElements(mol, action, &act2, 0)) != 0)
+			return result;
+		needsRebuildMDArena = 1;
+	} else if (strcmp(action->name, gMolActionDeleteBonds) == 0) {
+		if ((result = s_MolActionDeleteStructuralElements(mol, action, &act2, 0)) != 0)
+			return result;
+		needsRebuildMDArena = 1;
+	} else if (strcmp(action->name, gMolActionAddAngles) == 0) {
+		if ((result = s_MolActionAddStructuralElements(mol, action, &act2, 1)) != 0)
+			return result;
+		needsRebuildMDArena = 1;
+	} else if (strcmp(action->name, gMolActionDeleteAngles) == 0) {
+		if ((result = s_MolActionDeleteStructuralElements(mol, action, &act2, 1)) != 0)
+			return result;
+		needsRebuildMDArena = 1;
+	} else if (strcmp(action->name, gMolActionAddDihedrals) == 0) {
+		if ((result = s_MolActionAddStructuralElements(mol, action, &act2, 2)) != 0)
+			return result;
+		needsRebuildMDArena = 1;
+	} else if (strcmp(action->name, gMolActionDeleteDihedrals) == 0) {
+		if ((result = s_MolActionDeleteStructuralElements(mol, action, &act2, 2)) != 0)
+			return result;
+		needsRebuildMDArena = 1;
+	} else if (strcmp(action->name, gMolActionAddImpropers) == 0) {
+		if ((result = s_MolActionAddStructuralElements(mol, action, &act2, 3)) != 0)
+			return result;
+		needsRebuildMDArena = 1;
+	} else if (strcmp(action->name, gMolActionDeleteImpropers) == 0) {
+		if ((result = s_MolActionDeleteStructuralElements(mol, action, &act2, 3)) != 0)
+			return result;
+		needsRebuildMDArena = 1;
+	} else if (strcmp(action->name, gMolActionTranslateAtoms) == 0) {
+		if ((result = s_MolActionTransformAtoms(mol, action, &act2, &ig, 0)) != 0)
+			return result;
+		needsSymmetryAmendment = 1;
+	} else if (strcmp(action->name, gMolActionRotateAtoms) == 0) {
+		if ((result = s_MolActionTransformAtoms(mol, action, &act2, &ig, 1)) != 0)
+			return result;
+		needsSymmetryAmendment = 1;
+	} else if (strcmp(action->name, gMolActionTransformAtoms) == 0) {
+		if ((result = s_MolActionTransformAtoms(mol, action, &act2, &ig, 2)) != 0)
+			return result;
+		needsSymmetryAmendment = 1;
+	} else if (strcmp(action->name, gMolActionSetAtomPositions) == 0) {
+		if ((result = s_MolActionSetAtomGeometry(mol, action, &act2, &ig, 0)) != 0)
+			return result;
+		needsSymmetryAmendment = 1;
+	} else if (strcmp(action->name, gMolActionSetAtomVelocities) == 0) {
+		if ((result = s_MolActionSetAtomGeometry(mol, action, &act2, &ig, 1)) != 0)
+			return result;
+		needsSymmetryAmendment = 1;
+	} else if (strcmp(action->name, gMolActionSetAtomForces) == 0) {
+		if ((result = s_MolActionSetAtomGeometry(mol, action, &act2, &ig, 2)) != 0)
+			return result;
+		needsSymmetryAmendment = 1;
+	} else if (strcmp(action->name, gMolActionInsertFrames) == 0) {
+		if ((result = s_MolActionInsertFrames(mol, action, &act2, &ig)) != 0)
+			return result;
+		needsSymmetryAmendment = 1;
+	} else if (strcmp(action->name, gMolActionRemoveFrames) == 0) {
+		if ((result = s_MolActionRemoveFrames(mol, action, &act2, &ig)) != 0)
+			return result;
+		needsSymmetryAmendment = 1;
+	} else if (strcmp(action->name, gMolActionSetSelection) == 0) {
+		if ((result = s_MolActionSetSelection(mol, action, &act2)) != 0)
+			return result;
+	} else if (strcmp(action->name, gMolActionRenumberAtoms) == 0) {
+		if ((result = s_MolActionRenumberAtoms(mol, action, &act2)) != 0)
+			return result;
+		needsRebuildMDArena = 1;
+	} else if (strcmp(action->name, gMolActionChangeResidueNumber) == 0) {
+		if ((result = s_MolActionChangeResidueNumber(mol, action, &act2, 0)) != 0)
+			return result;
+	} else if (strcmp(action->name, gMolActionChangeResidueNumberForUndo) == 0) {
+		if ((result = s_MolActionChangeResidueNumber(mol, action, &act2, 1)) != 0)
+			return result;
+	} else if (strcmp(action->name, gMolActionOffsetResidueNumbers) == 0) {
+		if ((result = s_MolActionOffsetResidueNumbers(mol, action, &act2)) != 0)
+			return result;
+	} else if (strcmp(action->name, gMolActionChangeResidueNames) == 0) {
+		if ((result = s_MolActionChangeResidueNames(mol, action, &act2)) != 0)
+			return result;
+	} else if (strcmp(action->name, gMolActionChangeNumberOfResidues) == 0) {
+		if ((result = s_MolActionChangeNumberOfResidues(mol, action, &act2)) != 0)
+			return result;
+	} else if (strcmp(action->name, gMolActionExpandBySymmetry) == 0) {
+		if ((result = s_MolActionExpandBySymmetry(mol, action, &act2)) != 0)
+			return result;
+		needsRebuildMDArena = 1;
+	} else if (strcmp(action->name, gMolActionAddSymmetryOperation) == 0) {
+		if ((result = s_MolActionAddSymmetryOperation(mol, action, &act2)) != 0)
+			return result;
+		needsRebuildMDArena = 1;
+	} else if (strcmp(action->name, gMolActionDeleteSymmetryOperation) == 0) {
+		if ((result = s_MolActionDeleteSymmetryOperation(mol, action, &act2)) != 0)
+			return result;
+		needsRebuildMDArena = 1;
+	} else if (strcmp(action->name, gMolActionSetCell) == 0) {
+		if ((result = s_MolActionSetCell(mol, action, &act2)) != 0)
+			return result;
+		needsRebuildMDArena = 1;
+	} else if (strcmp(action->name, gMolActionSetBox) == 0) {
+		if ((result = s_MolActionSetBox(mol, action, &act2)) != 0)
+			return result;
 		needsRebuildMDArena = 1;
 	} else if (strcmp(action->name, gMolActionClearBox) == 0) {
-		if (mol->cell == NULL)
-			return 0;  /*  Do nothing  */
-		n1 = ((mol->cell->flags[0] != 0) * 4 + (mol->cell->flags[1] != 0) * 2 + (mol->cell->flags[2] != 0));
-		act2 = MolActionNew(gMolActionSetBox, &(mol->cell->axes[0]), &(mol->cell->axes[1]), &(mol->cell->axes[2]), &(mol->cell->origin), n1);
-		MoleculeSetPeriodicBox(mol, NULL, NULL, NULL, NULL, NULL);
+		if ((result = s_MolActionSetBox(mol, NULL, &act2)) != 0)
+			return result;
 		needsRebuildMDArena = 1;
 	} else if (strcmp(action->name, gMolActionAddParameters) == 0) {
-		UnionPar *up;
-		Int parType;
-		if (mol->par == NULL)
-			return -1;
-		parType = action->args[0].u.ival;
-		ig = action->args[1].u.igval;
-		up = action->args[2].u.arval.ptr;
-		ParameterInsert(mol->par, parType, up, ig);
-		act2 = MolActionNew(gMolActionDeleteParameters, parType, ig);
+		if ((result = s_MolActionAddParameters(mol, action, &act2)) != 0)
+			return result;
 		needsRebuildMDArena = 1;
-		mol->parameterTableSelectionNeedsClear = 1;
 	} else if (strcmp(action->name, gMolActionDeleteParameters) == 0) {
-		UnionPar *up;
-		Int parType;
-		if (mol->par == NULL)
-			return -1;
-		parType = action->args[0].u.ival;
-		ig = action->args[1].u.igval;
-		n1 = IntGroupGetCount(ig);
-		up = (UnionPar *)calloc(sizeof(UnionPar), n1);
-		ParameterDelete(mol->par, parType, up, ig);
-		act2 = MolActionNew(gMolActionAddParameters, parType, ig, n1, up);
-		free(up);
+		if ((result = s_MolActionDeleteParameters(mol, action, &act2)) != 0)
+			return result;
 		needsRebuildMDArena = 1;
-		mol->parameterTableSelectionNeedsClear = 1;
-/*	} else if (strcmp(action->name, gMolActionCartesianToXtal) == 0 || (strcmp(action->name, gMolActionXtalToCartesian) == 0 && (n1 = 1))) {
-		Int i, j;
-		Atom *ap;
-		if (mol->cell == NULL || (n1 == 0 && mol->is_xtal_coord) || (n1 == 1 && !mol->is_xtal_coord))
-			return 0;
-		if (n1 == 0) {
-			for (i = 0, ap = mol->atoms; i < mol->natoms; i++, ap = ATOM_NEXT(ap)) {
-				TransformVec(&(ap->r), mol->cell->tr, &(ap->r));
-				if (ap->nframes > 0) {
-					for (j = 0; j < ap->nframes; j++)
-						TransformVec(&(ap->frames[j]), mol->cell->tr, &(ap->frames[j]));
-				}
-			}
-			mol->is_xtal_coord = 1;
-			act2 = MolActionNew(gMolActionXtalToCartesian);
-		} else {
-			for (i = 0, ap = mol->atoms; i < mol->natoms; i++, ap = ATOM_NEXT(ap))
-				TransformVec(&(ap->r), mol->cell->rtr, &(ap->r));
-			if (ap->nframes > 0) {
-				for (j = 0; j < ap->nframes; j++)
-					TransformVec(&(ap->frames[j]), mol->cell->rtr, &(ap->frames[j]));
-			}
-			mol->is_xtal_coord = 0;
-			act2 = MolActionNew(gMolActionCartesianToXtal);
-		} */
 	} else if (strcmp(action->name, gMolActionNone) == 0) {
 		/*  Do nothing  */
 	} else {
@@ -1322,10 +1475,10 @@ MolActionPerform(Molecule *mol, MolAction *action)
 		MolActionCallback_registerUndo(mol, act2);
 		MolActionRelease(act2);
 	}
-	if (needsSymmetryAmendment) {
-		//  ig should be valid
+	if (needsSymmetryAmendment && ig != NULL) {
 		IntGroup *ig2;
 		Vector *vp2;
+		int n1;
 		n1 = MoleculeAmendBySymmetry(mol, ig, &ig2, &vp2);
 		if (n1 > 0) {
 			act2 = MolActionNew(gMolActionSetAtomPositions, ig2, n1, vp2);
