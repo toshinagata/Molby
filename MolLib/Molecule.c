@@ -6341,16 +6341,28 @@ MoleculeMerge(Molecule *dst, Molecule *src, IntGroup *where, int resSeqOffset)
 			n2 = ParameterGetCountForType(dst->par, type);
 			if (n1 == 0)
 				continue;
+			/*  Determine which parameter should be copied from src to dst  */
 			for (i = 0; i < n1; i++) {
+				UInt types[4];
 				up1 = ParameterGetUnionParFromTypeAndIndex(src->par, type, i);
-				for (j = 0; j < n2; j++) {
-					up2 = ParameterGetUnionParFromTypeAndIndex(dst->par, type, j);
-					if (ParameterCompare(up1, up2, type))
+				n3 = ParameterGetAtomTypes(type, up1, types);
+				for (j = 0; j < n3; j++) {
+					/*  If it includes explicit atom index, then it should be copied  */
+					if (types[j] < kAtomTypeMinimum) {
+						IntGroupAdd(ig, i, 1);
 						break;
+					}
 				}
-				if (j >= n2)
-					/*  This is an unknown parameter; should be copied  */
-					IntGroupAdd(ig, i, 1);
+				if (j == n3) {
+					for (j = 0; j < n2; j++) {
+						up2 = ParameterGetUnionParFromTypeAndIndex(dst->par, type, j);
+						if (ParameterCompare(up1, up2, type))
+							break;
+					}
+					if (j >= n2)
+						/*  This is an unknown parameter; should be copied  */
+						IntGroupAdd(ig, i, 1);
+				}
 			}
 			n1 = IntGroupGetCount(ig);
 			if (n1 == 0)
@@ -6374,6 +6386,7 @@ MoleculeMerge(Molecule *dst, Molecule *src, IntGroup *where, int resSeqOffset)
 			IntGroupClear(ig);
 			free(up1);
 		}
+		IntGroupRelease(ig);
 	}
 	
 	/*  Copy the residues if necessary  */
@@ -6412,9 +6425,10 @@ sMoleculeUnmergeSub(Molecule *src, Molecule **dstp, IntGroup *where, int resSeqO
 	int nsrc, ndst, nsrcnew;
 	int i, j, n1, n2, n3, n4;
 	Int *new2old, *old2new;
-	IntGroup *move_g, *del_g;
+	IntGroup *move_g, *del_g, *remain_g, *dst_par_g, *remove_par_g;
 	Molecule *dst;
 	Atom *ap, *dst_ap;
+	UnionPar *up;
 	
 	if (src == NULL || src->natoms == 0 || where == NULL || IntGroupGetIntervalCount(where) == 0) {
 		/*  Do nothing  */
@@ -6469,16 +6483,36 @@ sMoleculeUnmergeSub(Molecule *src, Molecule **dstp, IntGroup *where, int resSeqO
 		i++;
 	}
 
-	/*  Make sure that no bond between the two fragments exists  */
-/*	for (i = 0; i < src->nbonds; i++) {
-		n1 = old2new[src->bonds[i * 2]];
-		n2 = old2new[src->bonds[i * 2 + 1]];
-		if ((n1 < nsrcnew && n2 >= nsrcnew) || (n1 >= nsrcnew && n2 < nsrcnew)) {
-			free(new2old);
-			return 2;
-		}
-	} */
+	/*  Atoms to remain in the source group  */
+	if (moveFlag) {
+		remain_g = IntGroupNewWithPoints(0, nsrc, -1);
+		IntGroupRemoveIntGroup(remain_g, where);
+	} else remain_g = NULL;
 	
+	/*  Find parameters to be moved to the dst (dst_par_g), and to be removed from the src (remove_par_g) */
+	if (src->par != NULL) {
+		dst_par_g = IntGroupNew();
+		if (moveFlag)
+			remove_par_g = IntGroupNew();
+		else remove_par_g = NULL;
+		for (n1 = kFirstParType; n1 <= kLastParType; n1++) {
+			n2 = ParameterGetCountForType(src->par, n1);
+			if (n2 == 0)
+				continue;
+			for (i = 0; i < n2; i++) {
+				up = ParameterGetUnionParFromTypeAndIndex(src->par, n1, i);
+				if (ParameterIsRelevantToAtomGroup(n1, up, src->atoms, where)) {
+					/*  This parameter is to be copied to dst  */
+					IntGroupAdd(dst_par_g, i + (n1 - kFirstParType) * kParameterIndexOffset, 1);
+				}
+				if (moveFlag && !ParameterIsRelevantToAtomGroup(n1, up, src->atoms, remain_g)) {
+					/*  This parameter is to be removed  */
+					IntGroupAdd(remove_par_g, i + (n1 - kFirstParType) * kParameterIndexOffset, 1);
+				}
+			}
+		}
+	} else dst_par_g = remove_par_g = NULL;
+		
 	/*  Make a new molecule  */
 	if (dstp != NULL) {
 		dst = MoleculeNew();
@@ -6510,17 +6544,6 @@ sMoleculeUnmergeSub(Molecule *src, Molecule **dstp, IntGroup *where, int resSeqO
 			for (i = 0; (n1 = IntGroupGetNthPoint(where, i)) >= 0; i++)
 				AtomDuplicate(ATOM_AT_INDEX(dst_ap, i), ATOM_AT_INDEX(src->atoms, n1));
 		}
-#if 0
-		if (sCopyElementsFromArrayAtPositions(src->atoms, src->natoms, dst_ap, gSizeOfAtomRecord, where) != 0)
-			goto panic;
-		if (dst != NULL) {
-			/*  The atom record must be deep-copied correctly  */
-			for (i = 0; i < ndst; i++) {
-				if (AtomDuplicate(ATOM_AT_INDEX(dst_ap, i), ATOM_AT_INDEX(src->atoms, i)) == NULL)
-					goto panic;
-			}
-		}
-#endif
 	}
 	
 	if (dst == NULL) {
@@ -6661,20 +6684,54 @@ sMoleculeUnmergeSub(Molecule *src, Molecule **dstp, IntGroup *where, int resSeqO
 		}
 	}
 
-	/*  Copy the parameters  */
-	if (dst != NULL && src->par != NULL) {
-		UnionPar *up, *upary;
+	/*  Copy the parameters to dst */
+	if (dst != NULL && dst_par_g != NULL && (n2 = IntGroupGetCount(dst_par_g)) > 0) {
+		IntGroup *dst_new_g = IntGroupNew();
+		Int dst_par_count[kLastParType - kFirstParType];
+		if (dst_new_g == NULL)
+			goto panic;
+		for (i = 0; i < kLastParType - kFirstParType; i++)
+			dst_par_count[i] = 0;
+		up = (UnionPar *)calloc(sizeof(UnionPar), n2);
+		if (up == NULL)
+			goto panic;
+		if (ParameterCopy(src->par, kFirstParType, up, dst_par_g) < n2)
+			goto panic;
+		/*  Renumber the explicit atom indices  */
+		for (i = 0; i < nsrc; i++)
+			old2new[i] -= nsrcnew;  /*  new indices for atoms in dst; otherwise negative numbers  */
+		for (i = 0; i < n2; i++) {
+			/*  Renumber the indices, and count the number of parameters for each type  */
+			n1 = kFirstParType + IntGroupGetNthPoint(dst_par_g, i) / kParameterIndexOffset;
+			dst_par_count[n1 - kFirstParType]++;
+			ParameterRenumberAtoms(n1, up + i, nsrc, old2new);
+		}
+		for (i = 0; i < nsrc; i++)
+			old2new[i] += nsrcnew;
 		if (dst->par == NULL)
 			dst->par = ParameterNew();
-		for (i = 0; i < nsrc; i++) {
-			old2new[i] -= nsrcnew;  /*  new indices for atoms in dst; otherwise negative numbers  */
+		for (i = 0; i < kLastParType - kFirstParType; i++) {
+			if (dst_par_count[i] > 0)
+				IntGroupAdd(dst_new_g, i * kParameterIndexOffset, dst_par_count[i]);
 		}
-		move_g = IntGroupNew();
+		if (ParameterInsert(dst->par, kFirstParType, up, dst_new_g) < n2)
+			goto panic;
+		free(up);
+		IntGroupRelease(dst_new_g);
+	}
+	
+	/*  Remove the unused parameter. Note: the parameters that are in remove_par_g and not in 
+	    dst_par_g will disappear. To support undo, these parameters should be taken care separately.  */
+	if (remove_par_g != NULL && (n2 = IntGroupGetCount(remove_par_g)) > 0) {
+		ParameterDelete(src->par, kFirstParType, NULL, remove_par_g);
+	}
+		
+	/*
 		for (n1 = kFirstParType; n1 <= kLastParType; n1++) {
 			n2 = ParameterGetCountForType(src->par, n1);
 			if (n2 == 0)
 				continue;
-			/*  Find parameters to be copied to dst  */
+			//  Find parameters to be copied to dst
 			for (i = 0; i < n2; i++) {
 				up = ParameterGetUnionParFromTypeAndIndex(src->par, n1, i);
 				for (j = 0, ap = dst->atoms; j < dst->natoms; j++, ap = ATOM_NEXT(ap)) {
@@ -6690,7 +6747,7 @@ sMoleculeUnmergeSub(Molecule *src, Molecule **dstp, IntGroup *where, int resSeqO
 			upary = (UnionPar *)calloc(sizeof(UnionPar), n2);
 			if (upary == NULL)
 				goto panic;
-			/*  Copy parameters and renumber indices if necessary  */
+			//  Copy parameters and renumber indices if necessary
 			for (i = 0; i < n2; i++) {
 				up = ParameterGetUnionParFromTypeAndIndex(src->par, n1, IntGroupGetNthPoint(move_g, i));
 				upary[i] = *up;
@@ -6698,17 +6755,18 @@ sMoleculeUnmergeSub(Molecule *src, Molecule **dstp, IntGroup *where, int resSeqO
 			}
 			IntGroupClear(move_g);
 			IntGroupAdd(move_g, ParameterGetCountForType(dst->par, n1), n2);
-			/*  Insert new parameters  */
+			//  Insert new parameters
 			if (ParameterInsert(dst->par, n1, upary, move_g) < n2)
 				goto panic;
 			IntGroupClear(move_g);
 			free(upary);
 		}
 		for (i = 0; i < nsrc; i++) {
-			old2new[i] += nsrcnew;  /*  Restore indices  */
+			old2new[i] += nsrcnew;  //  Restore indices
 		}
 		IntGroupRelease(move_g);
-	}
+	 }
+	*/
 	
 	/*  Clean up  */
 	MoleculeCleanUpResidueTable(src);

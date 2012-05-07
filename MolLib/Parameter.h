@@ -69,6 +69,14 @@ enum {
 #define kAtomTypeWildcard 0x7fffffff
 #define kAtomTypeVariantBase 84934656  /* 96*96*96*96 */
 
+	
+/*  Parameters are stored in separate arrays for each type. However, it is sometimes more
+    convenient when a single number can represent a specific parameter regardless of type.
+    kParameterIndexOffset is used for that purpose. Thus, the i-th bond parameter corresponds
+    to i, the i-th angle parameter to i + kParameterIndexOffset, the i-th dihedral parameter
+    to i + 2 * kParameterIndexOffset, etc.  */
+#define kParameterIndexOffset 10000000
+
 /*  Parameters  */
 typedef struct BondPar {
 	Int    com, src;   /*  Index to the comment array  */
@@ -211,6 +219,7 @@ int ParameterCopy(Parameter *par, Int type, UnionPar *up, struct IntGroup *where
     This copy function does take care of such case.  */
 void ParameterCopyOneWithType(UnionPar *dst, const UnionPar *src, int type);
 
+int ParameterGetAtomTypes(Int type, const UnionPar *up, UInt *outTypes);
 int ParameterRenumberAtoms(Int type, UnionPar *up, Int oldnatoms, const Int *old2new);
 int ParameterDoesContainAtom(Int type, const UnionPar *up, UInt atom_type, Int options);
 int ParameterIsRelevantToAtomGroup(Int type, const UnionPar *up, const struct Atom *ap, struct IntGroup *ig);

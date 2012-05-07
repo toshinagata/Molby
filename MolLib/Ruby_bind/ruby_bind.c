@@ -867,46 +867,13 @@ static VALUE s_ParameterRef_GetParType(VALUE self) {
  */
 static VALUE s_ParameterRef_GetAtomTypes(VALUE self) {
 	UnionPar *up;
-	Int tp, i, n, types[4];
+	Int tp, i, n;
+	UInt types[4];
 	VALUE vals[4];
 	up = s_UnionParFromValue(self, &tp, 0);
-	switch (tp) {
-		case kBondParType:
-			n = 2;
-			types[0] = up->bond.type1;
-			types[1] = up->bond.type2;
-			break;
-		case kAngleParType:
-			n = 3;
-			types[0] = up->angle.type1;
-			types[1] = up->angle.type2;
-			types[2] = up->angle.type3;
-			break;
-		case kDihedralParType:
-		case kImproperParType:
-			n = 4;
-			types[0] = up->torsion.type1; 
-			types[1] = up->torsion.type2;
-			types[2] = up->torsion.type3;
-			types[3] = up->torsion.type4;
-			break;
-		case kVdwParType:
-			n = 1;
-			types[0] = up->vdw.type1;
-			break;
-		case kVdwPairParType:
-			n = 2;
-			types[0] = up->vdwp.type1;
-			types[1] = up->vdwp.type2;
-			break;
-		case kVdwCutoffParType:
-			n = 2;
-			types[0] = up->vdwcutoff.type1;
-			types[1] = up->vdwcutoff.type2;
-			break;
-		default:
-			rb_raise(rb_eMolbyError, "invalid member atom_types");
-	}
+	n = ParameterGetAtomTypes(tp, up, types);
+	if (n == 0)
+		rb_raise(rb_eMolbyError, "invalid member atom_types");
 	for (i = 0; i < n; i++) {
 		if (types[i] >= 0 && types[i] < kAtomTypeMinimum)
 			vals[i] = INT2NUM(types[i]);

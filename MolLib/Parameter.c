@@ -299,59 +299,68 @@ ParameterRefGetPar(ParameterRef *pref)
 
 #pragma mark ====== Insert/Delete (for MolAction) ======
 
+static int
+sParameterGetArrayPointers(Parameter *par, Int type, void **outPars, Int **outNpars, Int *outSize)
+{
+	if (par == NULL)
+		return 0;
+	switch (type) {
+		case kBondParType:
+			*outPars = &par->bondPars;
+			*outNpars = &par->nbondPars;
+			*outSize = sizeof(BondPar);
+			break;
+		case kAngleParType:
+			*outPars = &par->anglePars;
+			*outNpars = &par->nanglePars;
+			*outSize = sizeof(AnglePar);
+			break;
+		case kDihedralParType:
+			*outPars = &par->dihedralPars;
+			*outNpars = &par->ndihedralPars;
+			*outSize = sizeof(TorsionPar);
+			break;
+		case kImproperParType:
+			*outPars = &par->improperPars;
+			*outNpars = &par->nimproperPars;
+			*outSize = sizeof(TorsionPar);
+			break;
+		case kVdwParType:
+			*outPars = &par->vdwPars;
+			*outNpars = &par->nvdwPars;
+			*outSize = sizeof(VdwPar);
+			break;
+		case kVdwPairParType:
+			*outPars = &par->vdwpPars;
+			*outNpars = &par->nvdwpPars;
+			*outSize = sizeof(VdwPairPar);
+			break;
+		case kVdwCutoffParType:
+			*outPars = &par->vdwCutoffPars;
+			*outNpars = &par->nvdwCutoffPars;
+			*outSize = sizeof(VdwCutoffPar);
+			break;
+		default:
+			return 0;
+	}
+	return 1;
+}
+
 int
 ParameterInsert(Parameter *par, Int type, const UnionPar *up, struct IntGroup *where)
 {
-	Int i, n1, n2, size, *ip;
+	Int i, n1, n2, size, *ip, typeOffset;
 	void *p;
-	if (par == NULL)
-		return -1;
-	switch (type) {
-		case kBondParType:
-			p = &par->bondPars;
-			ip = &par->nbondPars;
-			size = sizeof(BondPar);
-			break;
-		case kAngleParType:
-			p = &par->anglePars;
-			ip = &par->nanglePars;
-			size = sizeof(AnglePar);
-			break;
-		case kDihedralParType:
-			p = &par->dihedralPars;
-			ip = &par->ndihedralPars;
-			size = sizeof(TorsionPar);
-			break;
-		case kImproperParType:
-			p = &par->improperPars;
-			ip = &par->nimproperPars;
-			size = sizeof(TorsionPar);
-			break;
-		case kVdwParType:
-			p = &par->vdwPars;
-			ip = &par->nvdwPars;
-			size = sizeof(VdwPar);
-			break;
-		case kVdwPairParType:
-			p = &par->vdwpPars;
-			ip = &par->nvdwpPars;
-			size = sizeof(VdwPairPar);
-			break;
-		case kVdwCutoffParType:
-			p = &par->vdwCutoffPars;
-			ip = &par->nvdwCutoffPars;
-			size = sizeof(VdwCutoffPar);
-			break;
-	/*	case kElementParType:
-			p = &par->atomPars;
-			ip = &par->natomPars;
-			size = sizeof(ElementPar);
-			break; */
-		default:
-			return -1;
-	}
 	n2 = 0;
+	typeOffset = -1;
 	for (i = 0; (n1 = IntGroupGetNthPoint(where, i)) >= 0; i++) {
+		Int t1 = n1 / kParameterIndexOffset;
+		if (t1 != typeOffset) {
+			if (!sParameterGetArrayPointers(par, type + t1, &p, &ip, &size))
+				return n2; /*  Only the first n2 parameters were inserted  */
+			typeOffset = t1;
+		}
+		n1 -= typeOffset * kParameterIndexOffset;
 		if (InsertArray(p, ip, size, n1, 1, (up ? up + i : NULL)) == NULL)
 			return n2;
 		n2++;
@@ -362,56 +371,18 @@ ParameterInsert(Parameter *par, Int type, const UnionPar *up, struct IntGroup *w
 static int
 sParameterDeleteOrCopy(Parameter *par, Int type, UnionPar *up, struct IntGroup *where, Int copyflag)
 {
-	Int i, n1, n2, size, *ip;
+	Int i, n1, n2, size, *ip, typeOffset;
 	char **p;
-	if (par == NULL)
-		return -1;
-	switch (type) {
-		case kBondParType:
-			p = (char **)&par->bondPars;
-			ip = &par->nbondPars;
-			size = sizeof(BondPar);
-			break;
-		case kAngleParType:
-			p = (char **)&par->anglePars;
-			ip = &par->nanglePars;
-			size = sizeof(AnglePar);
-			break;
-		case kDihedralParType:
-			p = (char **)&par->dihedralPars;
-			ip = &par->ndihedralPars;
-			size = sizeof(TorsionPar);
-			break;
-		case kImproperParType:
-			p = (char **)&par->improperPars;
-			ip = &par->nimproperPars;
-			size = sizeof(TorsionPar);
-			break;
-		case kVdwParType:
-			p = (char **)&par->vdwPars;
-			ip = &par->nvdwPars;
-			size = sizeof(VdwPar);
-			break;
-		case kVdwPairParType:
-			p = (char **)&par->vdwpPars;
-			ip = &par->nvdwpPars;
-			size = sizeof(VdwPairPar);
-			break;
-		case kVdwCutoffParType:
-			p = (char **)&par->vdwCutoffPars;
-			ip = &par->nvdwCutoffPars;
-			size = sizeof(VdwCutoffPar);
-			break;
-	/*	case kElementParType:
-			p = (char **)&par->atomPars;
-			ip = &par->natomPars;
-			size = sizeof(ElementPar);
-			break; */
-		default:
-			return -1;
-	}
 	n2 = 0;
+	typeOffset = -1;
 	for (i = IntGroupGetCount(where) - 1; i >= 0 && (n1 = IntGroupGetNthPoint(where, i)) >= 0; i--) {
+		Int t1 = n1 / kParameterIndexOffset;
+		if (t1 != typeOffset) {
+			if (!sParameterGetArrayPointers(par, type + t1, (void **)&p, &ip, &size))
+				return n2;  /*  Only last n2 elements were removed  */
+			typeOffset = t1;
+		}
+		n1 -= typeOffset * kParameterIndexOffset;
 		if (n1 >= *ip)
 			return -1; /*  Internal error  */
 		if (copyflag) {
@@ -1307,6 +1278,42 @@ ParameterDoesContainAtom(Int type, const UnionPar *up, UInt atom_type, Int optio
 	}
 }
 
+int
+ParameterGetAtomTypes(Int type, const UnionPar *up, UInt *outTypes)
+{
+	switch (type) {
+		case kBondParType:
+			outTypes[0] = ((const BondPar *)up)->type1;
+			outTypes[1] = ((const BondPar *)up)->type2;
+			return 2;
+		case kAngleParType:
+			outTypes[0] = ((const AnglePar *)up)->type1;
+			outTypes[1] = ((const AnglePar *)up)->type2;
+			outTypes[2] = ((const AnglePar *)up)->type3;
+			return 3;
+		case kDihedralParType:
+		case kImproperParType:
+			outTypes[0] = ((const TorsionPar *)up)->type1;
+			outTypes[1] = ((const TorsionPar *)up)->type2;
+			outTypes[2] = ((const TorsionPar *)up)->type3;
+			outTypes[3] = ((const TorsionPar *)up)->type4;
+			return 4;
+		case kVdwParType:
+			outTypes[0] = ((const VdwPar *)up)->type1;
+			return 1;
+		case kVdwPairParType:
+			outTypes[0] = ((const VdwPairPar *)up)->type1;
+			outTypes[1] = ((const VdwPairPar *)up)->type2;
+			return 2;
+		case kVdwCutoffParType:
+			outTypes[0] = ((const VdwCutoffPar *)up)->type1;
+			outTypes[1] = ((const VdwCutoffPar *)up)->type2;
+			return 2;
+		default:
+			return 0;
+	}
+}
+
 /*  Returns non-zero if the parameter is relevant to the atom group, i.e. the parameter contains atom type or atom index
     that is included in the atom group.
     This function does _not_ check whether bond, angle, and dihedrals of the designated type is really present
@@ -1318,52 +1325,39 @@ ParameterIsRelevantToAtomGroup(Int type, const UnionPar *up, const struct Atom *
 	int i, j, n, retval;
 	UInt types[4];
 	const struct Atom *api;
+
 	if (ig == NULL)
 		return 0;
+
+	/*  Check the atom indices first  */
+	n = ParameterGetAtomTypes(type, up, types);
+	retval = 0;
+	for (j = 0; j < n; j++) {
+		if (types[j] >= kAtomTypeMinimum)
+			continue;
+		if (IntGroupLookup(ig, types[j], NULL) == 0)
+			return 0; /*  All explicit atom indices must be included in ig  */
+		retval++;
+	}
+	if (retval == n)
+		return 1;  /*  Explicit atom specification only  */
 	IntGroupIteratorInit(ig, &iter);
 	retval = 0;
 	while ((i = IntGroupIteratorNext(&iter)) >= 0) {
 		api = ATOM_AT_INDEX(ap, i);
-		switch (type) {
-			case kBondParType:
-				types[0] = ((const BondPar *)up)->type1;
-				types[1] = ((const BondPar *)up)->type2;
-				n = 2;
+		for (j = 0; j < n; j++) {
+			if (types[j] < kAtomTypeMinimum)
+				continue;
+			if (types[j] == kAtomTypeWildcard || types[j] == api->type) {
+				retval = 1;
 				break;
-			case kAngleParType:
-				types[0] = ((const AnglePar *)up)->type1;
-				types[1] = ((const AnglePar *)up)->type2;
-				types[2] = ((const AnglePar *)up)->type3;
-				n = 3;
-				break;
-			case kDihedralParType:
-			case kImproperParType:
-				types[0] = ((const TorsionPar *)up)->type1;
-				types[1] = ((const TorsionPar *)up)->type2;
-				types[2] = ((const TorsionPar *)up)->type3;
-				types[3] = ((const TorsionPar *)up)->type4;
-				n = 4;
-				break;
-			case kVdwParType:
-				types[0] = ((const VdwPar *)up)->type1;
-				n = 1;
-				break;
-			case kVdwPairParType:
-				types[0] = ((const VdwPairPar *)up)->type1;
-				types[1] = ((const VdwPairPar *)up)->type2;
-				n = 2;
-				break;
-			case kVdwCutoffParType:
-				types[0] = ((const VdwCutoffPar *)up)->type1;
-				types[1] = ((const VdwCutoffPar *)up)->type2;
-				n = 2;
-				break;
-			default:
-				n = 0;
-				break;
+			}
 		}
+		if (retval)
+			break;
 	}
 	IntGroupIteratorRelease(&iter);
+	return retval;
 }
 
 BondPar *
