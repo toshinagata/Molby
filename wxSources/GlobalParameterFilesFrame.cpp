@@ -91,10 +91,17 @@ GlobalParameterFilesFrame::OnCreate()
 GlobalParameterFilesFrame *
 GlobalParameterFilesFrame::CreateGlobalParameterFilesFrame(wxMDIParentFrame *parent)
 {
-	GlobalParameterFilesFrame *frame = new GlobalParameterFilesFrame(parent, _T("Load/Unload Global Parameters"), wxDefaultPosition, wxDefaultSize, wxDEFAULT_FRAME_STYLE | wxNO_FULL_REPAINT_ON_RESIZE);
+#ifdef __WXMSW__
+	wxPoint origin(16, 16);
+	wxSize size(700, 240);
+#else
+	wxPoint origin(26, 40);
+	wxSize size(700, 240);
+#endif
+
+	GlobalParameterFilesFrame *frame = new GlobalParameterFilesFrame(parent, _T("Load/Unload Global Parameters"), origin, size, wxDEFAULT_FRAME_STYLE | wxNO_FULL_REPAINT_ON_RESIZE);
 	
 	frame->OnCreate();
-	frame->Centre();
 	return frame;
 }
 
