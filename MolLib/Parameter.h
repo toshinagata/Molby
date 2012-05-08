@@ -224,10 +224,10 @@ int ParameterRenumberAtoms(Int type, UnionPar *up, Int oldnatoms, const Int *old
 int ParameterDoesContainAtom(Int type, const UnionPar *up, UInt atom_type, Int options);
 int ParameterIsRelevantToAtomGroup(Int type, const UnionPar *up, const struct Atom *ap, struct IntGroup *ig);
 
-BondPar *ParameterLookupBondPar(Parameter *par, UInt t1, UInt t2, Int options);
-AnglePar *ParameterLookupAnglePar(Parameter *par, UInt t1, UInt t2, UInt t3, Int options);
-TorsionPar *ParameterLookupDihedralPar(Parameter *par, UInt t1, UInt t2, UInt t3, UInt t4, Int options);
-TorsionPar *ParameterLookupImproperPar(Parameter *par, UInt t1, UInt t2, UInt t3, UInt t4, Int options);
+BondPar *ParameterLookupBondPar(Parameter *par, UInt t1, UInt t2, Int idx1, Int idx2, Int options);
+AnglePar *ParameterLookupAnglePar(Parameter *par, UInt t1, UInt t2, UInt t3, Int idx1, Int idx2, Int idx3, Int options);
+TorsionPar *ParameterLookupDihedralPar(Parameter *par, UInt t1, UInt t2, UInt t3, UInt t4, Int idx1, Int idx2, Int idx3, Int idx4, Int options);
+TorsionPar *ParameterLookupImproperPar(Parameter *par, UInt t1, UInt t2, UInt t3, UInt t4, Int idx1, Int idx2, Int idx3, Int idx4, Int options);
 VdwPar *ParameterLookupVdwPar(Parameter *par, UInt t1, Int options);
 VdwPairPar *ParameterLookupVdwPairPar(Parameter *par, UInt t1, UInt t2, Int options);
 VdwCutoffPar *ParameterLookupVdwCutoffPar(Parameter *par, UInt t1, UInt t2, Int options);

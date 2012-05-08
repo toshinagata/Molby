@@ -787,20 +787,18 @@ s_find_bond_parameters(MDArena *arena)
 			type2 = ap2->type;
 			bp = NULL;
 			if (mol->par != NULL) {
-				bp = ParameterLookupBondPar(mol->par, i1, i2, kParameterLookupLocal | kParameterLookupNoWildcard);
-				if (bp == NULL)
-					bp = ParameterLookupBondPar(mol->par, type1, type2, kParameterLookupLocal | kParameterLookupGlobal);
+				bp = ParameterLookupBondPar(mol->par, type1, type2, i1, i2, 0);
 				if (bp != NULL) {
 					arena->bond_par_i[i] = (bp - mol->par->bondPars) + ATOMS_MAX_NUMBER * 2;
 					continue;
 				}
 			}
-			bp = ParameterLookupBondPar(gBuiltinParameters, type1, type2, 0);
+			bp = ParameterLookupBondPar(gBuiltinParameters, type1, type2, -1, -1, 0);
 			if (bp != NULL) {
 				arena->bond_par_i[i] = (bp - gBuiltinParameters->bondPars) + ATOMS_MAX_NUMBER;
 				continue;
 			}
-			bp = ParameterLookupBondPar(par, type1, type2, kParameterLookupMissing | kParameterLookupNoBaseAtomType);
+			bp = ParameterLookupBondPar(par, type1, type2, -1, -1, kParameterLookupMissing | kParameterLookupNoBaseAtomType);
 			if (bp == NULL) {
 				/*  Record as missing  */
 				bp = AssignArray(&par->bondPars, &par->nbondPars, sizeof(BondPar), par->nbondPars, NULL);
@@ -874,21 +872,19 @@ s_find_angle_parameters(MDArena *arena)
 			type2 = ATOM_AT_INDEX(mol->atoms, i2)->type;
 			type3 = ATOM_AT_INDEX(mol->atoms, i3)->type;
 			if (mol->par != NULL) {
-				ap = ParameterLookupAnglePar(mol->par, i1, i2, i3, kParameterLookupLocal | kParameterLookupNoWildcard);
-				if (ap == NULL)
-					ap = ParameterLookupAnglePar(mol->par, type1, type2, type3, kParameterLookupLocal | kParameterLookupGlobal);
+				ap = ParameterLookupAnglePar(mol->par, type1, type2, type3, i1, i2, i3, 0);
 				if (ap != NULL) {
 					arena->angle_par_i[i] = (ap - mol->par->anglePars) + ATOMS_MAX_NUMBER * 2;
 					continue;
 				}
 			}
-			ap = ParameterLookupAnglePar(gBuiltinParameters, type1, type2, type3, 0);
+			ap = ParameterLookupAnglePar(gBuiltinParameters, type1, type2, type3, -1, -1, -1, 0);
 			if (ap != NULL) {
 				arena->angle_par_i[i] = (ap - gBuiltinParameters->anglePars) + ATOMS_MAX_NUMBER;
 				continue;
 			}
 			/*  Record as missing  */
-			ap = ParameterLookupAnglePar(par, type1, type2, type3, kParameterLookupMissing | kParameterLookupNoBaseAtomType);
+			ap = ParameterLookupAnglePar(par, type1, type2, type3, -1, -1, -1, kParameterLookupMissing | kParameterLookupNoBaseAtomType);
 			if (ap == NULL) {
 				ap = AssignArray(&par->anglePars, &par->nanglePars, sizeof(AnglePar), par->nanglePars, NULL);
 				ap->src = -1;
@@ -965,21 +961,19 @@ s_find_dihedral_parameters(MDArena *arena)
 			type3 = ATOM_AT_INDEX(mol->atoms, i3)->type;
 			type4 = ATOM_AT_INDEX(mol->atoms, i4)->type;
 			if (mol->par != NULL) {
-			 	tp = ParameterLookupDihedralPar(mol->par, i1, i2, i3, i4, kParameterLookupLocal | kParameterLookupNoWildcard);
-				if (tp == NULL)
-					tp = ParameterLookupDihedralPar(mol->par, type1, type2, type3, type4, kParameterLookupLocal | kParameterLookupGlobal);
+			 	tp = ParameterLookupDihedralPar(mol->par, type1, type2, type3, type4, i1, i2, i3, i4, 0);
 				if (tp != NULL) {
 					arena->dihedral_par_i[i] = (tp - mol->par->dihedralPars) + ATOMS_MAX_NUMBER * 2;
 					continue;
 				}
 			}
-			tp = ParameterLookupDihedralPar(gBuiltinParameters, type1, type2, type3, type4, 0);
+			tp = ParameterLookupDihedralPar(gBuiltinParameters, type1, type2, type3, type4, -1, -1, -1, -1, 0);
 			if (tp != NULL) {
 				arena->dihedral_par_i[i] = (tp - gBuiltinParameters->dihedralPars) + ATOMS_MAX_NUMBER;
 				continue;
 			}
 			/*  Record as missing  */
-			tp = ParameterLookupDihedralPar(par, type1, type2, type3, type4, kParameterLookupMissing | kParameterLookupNoBaseAtomType);
+			tp = ParameterLookupDihedralPar(par, type1, type2, type3, type4, -1, -1, -1, -1, kParameterLookupMissing | kParameterLookupNoBaseAtomType);
 			if (tp == NULL) {
 				tp = AssignArray(&par->dihedralPars, &par->ndihedralPars, sizeof(TorsionPar), par->ndihedralPars, NULL);
 				tp->src = -1;
@@ -1062,21 +1056,19 @@ s_find_improper_parameters(MDArena *arena)
 			type3 = ATOM_AT_INDEX(mol->atoms, i3)->type;
 			type4 = ATOM_AT_INDEX(mol->atoms, i4)->type;
 			if (mol->par != NULL) {
-				tp = ParameterLookupImproperPar(mol->par, i1, i2, i3, i4, kParameterLookupLocal | kParameterLookupNoWildcard);
-				if (tp == NULL)
-					tp = ParameterLookupImproperPar(mol->par, type1, type2, type3, type4, kParameterLookupLocal | kParameterLookupGlobal);
+				tp = ParameterLookupImproperPar(mol->par, type1, type2, type3, type4, i1, i2, i3, i4, 0);
 				if (tp != NULL) {
 					arena->improper_par_i[i] = (tp - mol->par->improperPars) + ATOMS_MAX_NUMBER * 2;
 					continue;
 				}
 			}
-			tp = ParameterLookupImproperPar(gBuiltinParameters, type1, type2, type3, type4, 0);
+			tp = ParameterLookupImproperPar(gBuiltinParameters, type1, type2, type3, type4, -1, -1, -1, -1, 0);
 			if (tp != NULL) {
 				arena->improper_par_i[i] = (tp - gBuiltinParameters->improperPars) + ATOMS_MAX_NUMBER;
 				continue;
 			}
 			/*  Record as missing  */
-			tp = ParameterLookupImproperPar(par, type1, type2, type3, type4, kParameterLookupMissing | kParameterLookupNoBaseAtomType);
+			tp = ParameterLookupImproperPar(par, type1, type2, type3, type4, -1, -1, -1, -1, kParameterLookupMissing | kParameterLookupNoBaseAtomType);
 			if (tp == NULL) {
 				tp = AssignArray(&par->improperPars, &par->nimproperPars, sizeof(TorsionPar), par->nimproperPars, NULL);
 				tp->src = -1;

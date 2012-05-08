@@ -7600,11 +7600,9 @@ MoleculeFindMissingImpropers(Molecule *mol, Int **outImpropers)
 					n4 = ap3->connects[i4];
 					t4 = ATOM_AT_INDEX(ap, n4)->type;
 					found = 0;
-					if (ParameterLookupImproperPar(par, n1, n2, n3, n4, 1) != NULL)
+					if (ParameterLookupImproperPar(par, t1, t2, t3, t4, n1, n2, n3, n4, 0) != NULL)
 						found = 1;
-					else if (ParameterLookupImproperPar(par, t1, t2, t3, t4, 0) != NULL)
-						found = 1;
-					else if (ParameterLookupImproperPar(gBuiltinParameters, t1, t2, t3, t4, 0) != NULL)
+					else if (ParameterLookupImproperPar(gBuiltinParameters, t1, t2, t3, t4, -1, -1, -1, -1, 0) != NULL)
 						found = 1;
 					if (found && MoleculeLookupImproper(mol, n1, n2, n3, n4) < 0) {
 						ip = (Int *)AssignArray(&impropers, &nimpropers, sizeof(Int) * 4, nimpropers, NULL);

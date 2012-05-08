@@ -733,7 +733,7 @@ ParameterReadFromString(Parameter *par, char *buf, char **wbufp, const char *fna
 			itype[1] = i;
 		}
 		val[0] *= KCAL2INTERNAL;
-		bp = ParameterLookupBondPar(par, itype[0], itype[1], options);
+		bp = ParameterLookupBondPar(par, itype[0], itype[1], -1, -1, options);
 		if (bp != NULL) {
 			if (bp->k != val[0] || bp->r0 != val[1]) {
 				s_AppendWarning(wbufp, "%s:%d: The BOND %s-%s parameter appeared twice; the values (%f, %f) are used\n", fname, lineNumber, AtomTypeDecodeToString(itype[0], type[0]), AtomTypeDecodeToString(itype[1], type[1]), val[0], val[1]);
@@ -762,7 +762,7 @@ ParameterReadFromString(Parameter *par, char *buf, char **wbufp, const char *fna
 		}
 		val[0] *= KCAL2INTERNAL;
 		val[1] *= (3.14159265358979 / 180.0);
-		ap = ParameterLookupAnglePar(par, itype[0], itype[1], itype[2], options);
+		ap = ParameterLookupAnglePar(par, itype[0], itype[1], itype[2], -1, -1, -1, options);
 		if (ap != NULL) {
 			if (ap->k != val[0] || ap->a0 != val[1]) {
 				s_AppendWarning(wbufp, "%s:%d: The ANGLE %s-%s-%s parameter appeared twice; the values (%f, %f) are used\n", fname, lineNumber, AtomTypeDecodeToString(itype[0], type[0]), AtomTypeDecodeToString(itype[1], type[1]), AtomTypeDecodeToString(itype[2], type[2]), val[0], val[1]);
@@ -794,7 +794,7 @@ ParameterReadFromString(Parameter *par, char *buf, char **wbufp, const char *fna
 			itype[1] = itype[2];
 			itype[2] = i;
 		}
-		dp = ParameterLookupDihedralPar(par, itype[0], itype[1], itype[2], itype[3], options);
+		dp = ParameterLookupDihedralPar(par, itype[0], itype[1], itype[2], itype[3], -1, -1, -1, -1, options);
 		val[0] *= KCAL2INTERNAL;
 		val[1] *= 3.14159265358979 / 180.0;
 		if (dp != NULL) {
@@ -838,7 +838,7 @@ ParameterReadFromString(Parameter *par, char *buf, char **wbufp, const char *fna
 			itype[1] = itype[3];
 			itype[3] = i;
 		}
-		ip = ParameterLookupImproperPar(par, itype[0], itype[1], itype[2], itype[3], options);
+		ip = ParameterLookupImproperPar(par, itype[0], itype[1], itype[2], itype[3], -1, -1, -1, -1, options);
 		val[0] *= KCAL2INTERNAL;
 		val[1] *= 3.14159265358979 / 180.0;
 		if (ip != NULL) {
@@ -1250,14 +1250,14 @@ ParameterGetComment(int idx)
 
 #pragma mark ====== Parameter Lookup ======
 
-#define s_ParMatch(_t1, _t2, _nowildcard) (_t1 == _t2 || (!_nowildcard && _t1 == kAtomTypeWildcard))
+#define s_ParMatch(_t1, _t2, _idx, _nowildcard) (_t1 == _t2 || _t1 == _idx || (!_nowildcard && _t2 >= kAtomTypeMinimum && _t1 == kAtomTypeWildcard))
 
 /*  Returns non-zero if the parameter record contains designated atom_type.
  The atom_type can also be an atom index.  */
 int
 ParameterDoesContainAtom(Int type, const UnionPar *up, UInt atom_type, Int options)
 {
-#define CHECK_FIELD(_tp, _field) s_ParMatch((((const _tp *)up)->_field), atom_type, nowildcard)
+#define CHECK_FIELD(_tp, _field) s_ParMatch((((const _tp *)up)->_field), atom_type, -1, nowildcard)
 	Int nowildcard = (options & kParameterLookupNoWildcard);
 	switch (type) {
 		case kBondParType:
@@ -1360,7 +1360,7 @@ ParameterIsRelevantToAtomGroup(Int type, const UnionPar *up, const struct Atom *
 }
 
 BondPar *
-ParameterLookupBondPar(Parameter *par, UInt t1, UInt t2, Int options)
+ParameterLookupBondPar(Parameter *par, UInt t1, UInt t2, Int idx1, Int idx2, Int options)
 {
 	int i;
 	BondPar *bp;
@@ -1374,18 +1374,18 @@ ParameterLookupBondPar(Parameter *par, UInt t1, UInt t2, Int options)
 			|| (bp->src == 0 && !(options & kParameterLookupLocal))
 			|| (bp->src < 0 && !(options & kParameterLookupMissing)))
 			continue;
-		if (s_ParMatch(bp->type1, t1, nowildcard) && s_ParMatch(bp->type2, t2, nowildcard))
+		if (s_ParMatch(bp->type1, t1, idx1, nowildcard) && s_ParMatch(bp->type2, t2, idx2, nowildcard))
 			return bp;
-		if (s_ParMatch(bp->type1, t2, nowildcard) && s_ParMatch(bp->type2, t1, nowildcard))
+		if (s_ParMatch(bp->type1, t2, idx2, nowildcard) && s_ParMatch(bp->type2, t1, idx1, nowildcard))
 			return bp;		
 	}
 	if (options & kParameterLookupNoBaseAtomType)
 		return NULL;
-	return ParameterLookupBondPar(par, t1 % kAtomTypeVariantBase, t2 % kAtomTypeVariantBase, options | kParameterLookupNoBaseAtomType);
+	return ParameterLookupBondPar(par, t1 % kAtomTypeVariantBase, t2 % kAtomTypeVariantBase, idx1, idx2, options | kParameterLookupNoBaseAtomType);
 }
 
 AnglePar *
-ParameterLookupAnglePar(Parameter *par, UInt t1, UInt t2, UInt t3, Int options)
+ParameterLookupAnglePar(Parameter *par, UInt t1, UInt t2, UInt t3, Int idx1, Int idx2, Int idx3, Int options)
 {
 	int i;
 	AnglePar *ap;
@@ -1399,18 +1399,18 @@ ParameterLookupAnglePar(Parameter *par, UInt t1, UInt t2, UInt t3, Int options)
 			|| (ap->src == 0 && !(options & kParameterLookupLocal))
 			|| (ap->src < 0 && !(options & kParameterLookupMissing)))
 			continue;
-		if (s_ParMatch(ap->type1, t1, nowildcard) && s_ParMatch(ap->type2, t2, nowildcard) && s_ParMatch(ap->type3, t3, nowildcard))
+		if (s_ParMatch(ap->type1, t1, idx1, nowildcard) && s_ParMatch(ap->type2, t2, idx2, nowildcard) && s_ParMatch(ap->type3, t3, idx3, nowildcard))
 			return ap;
-		if (s_ParMatch(ap->type1, t3, nowildcard) && s_ParMatch(ap->type2, t2, nowildcard) && s_ParMatch(ap->type3, t1, nowildcard))
+		if (s_ParMatch(ap->type1, t3, idx3, nowildcard) && s_ParMatch(ap->type2, t2, idx2, nowildcard) && s_ParMatch(ap->type3, t1, idx1, nowildcard))
 			return ap;
 	}
 	if (options & kParameterLookupNoBaseAtomType)
 		return NULL;
-	return ParameterLookupAnglePar(par, t1 % kAtomTypeVariantBase, t2 % kAtomTypeVariantBase, t3 % kAtomTypeVariantBase, options | kParameterLookupNoBaseAtomType);
+	return ParameterLookupAnglePar(par, t1 % kAtomTypeVariantBase, t2 % kAtomTypeVariantBase, t3 % kAtomTypeVariantBase, idx1, idx2, idx3, options | kParameterLookupNoBaseAtomType);
 }
 
 TorsionPar *
-ParameterLookupDihedralPar(Parameter *par, UInt t1, UInt t2, UInt t3, UInt t4, Int options)
+ParameterLookupDihedralPar(Parameter *par, UInt t1, UInt t2, UInt t3, UInt t4, Int idx1, Int idx2, Int idx3, Int idx4, Int options)
 {
 	int i;
 	TorsionPar *tp;
@@ -1424,18 +1424,18 @@ ParameterLookupDihedralPar(Parameter *par, UInt t1, UInt t2, UInt t3, UInt t4, I
 			|| (tp->src == 0 && !(options & kParameterLookupLocal))
 			|| (tp->src < 0 && !(options & kParameterLookupMissing)))
 			continue;
-		if (s_ParMatch(tp->type1, t1, nowildcard) && s_ParMatch(tp->type2, t2, nowildcard) && s_ParMatch(tp->type3, t3, nowildcard) && s_ParMatch(tp->type4, t4, nowildcard))
+		if (s_ParMatch(tp->type1, t1, idx1, nowildcard) && s_ParMatch(tp->type2, t2, idx2, nowildcard) && s_ParMatch(tp->type3, t3, idx3, nowildcard) && s_ParMatch(tp->type4, t4, idx4, nowildcard))
 			return tp;
-		if (s_ParMatch(tp->type1, t4, nowildcard) && s_ParMatch(tp->type2, t3, nowildcard) && s_ParMatch(tp->type3, t2, nowildcard) && s_ParMatch(tp->type4, t1, nowildcard))
+		if (s_ParMatch(tp->type1, t4, idx4, nowildcard) && s_ParMatch(tp->type2, t3, idx3, nowildcard) && s_ParMatch(tp->type3, t2, idx2, nowildcard) && s_ParMatch(tp->type4, t1, idx1, nowildcard))
 			return tp;
 	}
 	if (options & kParameterLookupNoBaseAtomType)
 		return NULL;
-	return ParameterLookupDihedralPar(par, t1 % kAtomTypeVariantBase, t2 % kAtomTypeVariantBase, t3 % kAtomTypeVariantBase, t4 % kAtomTypeVariantBase, options | kParameterLookupNoBaseAtomType);
+	return ParameterLookupDihedralPar(par, t1 % kAtomTypeVariantBase, t2 % kAtomTypeVariantBase, t3 % kAtomTypeVariantBase, t4 % kAtomTypeVariantBase, idx1, idx2, idx3, idx4, options | kParameterLookupNoBaseAtomType);
 }
 
 TorsionPar *
-ParameterLookupImproperPar(Parameter *par, UInt t1, UInt t2, UInt t3, UInt t4, Int options)
+ParameterLookupImproperPar(Parameter *par, UInt t1, UInt t2, UInt t3, UInt t4, Int idx1, Int idx2, Int idx3, Int idx4, Int options)
 {
 	int i;
 	TorsionPar *tp;
@@ -1449,19 +1449,19 @@ ParameterLookupImproperPar(Parameter *par, UInt t1, UInt t2, UInt t3, UInt t4, I
 			|| (tp->src == 0 && !(options & kParameterLookupLocal))
 			|| (tp->src < 0 && !(options & kParameterLookupMissing)))
 			continue;
-		if (!s_ParMatch(tp->type3, t3, nowildcard))
+		if (!s_ParMatch(tp->type3, t3, idx3, nowildcard))
 			continue;
-		if ((s_ParMatch(tp->type1, t1, nowildcard) && s_ParMatch(tp->type2, t2, nowildcard) && s_ParMatch(tp->type4, t4, nowildcard))
-			|| (s_ParMatch(tp->type1, t1, nowildcard) && s_ParMatch(tp->type2, t4, nowildcard) && s_ParMatch(tp->type4, t2, nowildcard))
-			|| (s_ParMatch(tp->type1, t2, nowildcard) && s_ParMatch(tp->type2, t1, nowildcard) && s_ParMatch(tp->type4, t4, nowildcard))
-			|| (s_ParMatch(tp->type1, t2, nowildcard) && s_ParMatch(tp->type2, t4, nowildcard) && s_ParMatch(tp->type4, t1, nowildcard))
-			|| (s_ParMatch(tp->type1, t4, nowildcard) && s_ParMatch(tp->type2, t1, nowildcard) && s_ParMatch(tp->type4, t2, nowildcard))
-			|| (s_ParMatch(tp->type1, t4, nowildcard) && s_ParMatch(tp->type2, t2, nowildcard) && s_ParMatch(tp->type4, t1, nowildcard)))
+		if ((s_ParMatch(tp->type1, t1, idx1, nowildcard) && s_ParMatch(tp->type2, t2, idx2, nowildcard) && s_ParMatch(tp->type4, t4, idx4, nowildcard))
+			|| (s_ParMatch(tp->type1, t1, idx1, nowildcard) && s_ParMatch(tp->type2, t4, idx4, nowildcard) && s_ParMatch(tp->type4, t2, idx2, nowildcard))
+			|| (s_ParMatch(tp->type1, t2, idx2, nowildcard) && s_ParMatch(tp->type2, t1, idx1, nowildcard) && s_ParMatch(tp->type4, t4, idx4, nowildcard))
+			|| (s_ParMatch(tp->type1, t2, idx2, nowildcard) && s_ParMatch(tp->type2, t4, idx4, nowildcard) && s_ParMatch(tp->type4, t1, idx1, nowildcard))
+			|| (s_ParMatch(tp->type1, t4, idx4, nowildcard) && s_ParMatch(tp->type2, t1, idx1, nowildcard) && s_ParMatch(tp->type4, t2, idx2, nowildcard))
+			|| (s_ParMatch(tp->type1, t4, idx4, nowildcard) && s_ParMatch(tp->type2, t2, idx2, nowildcard) && s_ParMatch(tp->type4, t1, idx1, nowildcard)))
 			return tp;
 	}
 	if (options & kParameterLookupNoBaseAtomType)
 		return NULL;
-	return ParameterLookupImproperPar(par, t1 % kAtomTypeVariantBase, t2 % kAtomTypeVariantBase, t3 % kAtomTypeVariantBase, t4 % kAtomTypeVariantBase, options | kParameterLookupNoBaseAtomType);
+	return ParameterLookupImproperPar(par, t1 % kAtomTypeVariantBase, t2 % kAtomTypeVariantBase, t3 % kAtomTypeVariantBase, t4 % kAtomTypeVariantBase, idx1, idx2, idx3, idx4, options | kParameterLookupNoBaseAtomType);
 }
 
 VdwPar *
@@ -1479,7 +1479,7 @@ ParameterLookupVdwPar(Parameter *par, UInt t1, Int options)
 			|| (vp->src == 0 && !(options & kParameterLookupLocal))
 			|| (vp->src < 0 && !(options & kParameterLookupMissing)))
 			continue;
-		if (s_ParMatch(vp->type1, t1, nowildcard))
+		if (s_ParMatch(vp->type1, t1, -1, nowildcard))
 			return vp;
 	}
 	if (options & kParameterLookupNoBaseAtomType)
@@ -1502,8 +1502,8 @@ ParameterLookupVdwPairPar(Parameter *par, UInt t1, UInt t2, Int options)
 			|| (vp->src == 0 && !(options & kParameterLookupLocal))
 			|| (vp->src < 0 && !(options & kParameterLookupMissing)))
 			continue;
-		if ((s_ParMatch(vp->type1, t1, nowildcard) && s_ParMatch(vp->type2, t2, nowildcard))
-			|| (s_ParMatch(vp->type1, t2, nowildcard) && s_ParMatch(vp->type2, t1, nowildcard)))
+		if ((s_ParMatch(vp->type1, t1, -1, nowildcard) && s_ParMatch(vp->type2, t2, -1, nowildcard))
+			|| (s_ParMatch(vp->type1, t2, -1, nowildcard) && s_ParMatch(vp->type2, t1, -1, nowildcard)))
 			return vp;
 	}
 	if (options & kParameterLookupNoBaseAtomType)
@@ -1526,9 +1526,9 @@ ParameterLookupVdwCutoffPar(Parameter *par, UInt t1, UInt t2, Int options)
 			|| (vp->src == 0 && !(options & kParameterLookupLocal))
 			|| (vp->src < 0 && !(options & kParameterLookupMissing)))
 			continue;
-		if (s_ParMatch(vp->type1, t1, nowildcard) && s_ParMatch(vp->type2, t2, nowildcard))
+		if (s_ParMatch(vp->type1, t1, -1, nowildcard) && s_ParMatch(vp->type2, t2, -1, nowildcard))
 			return vp;
-		if (s_ParMatch(vp->type1, t2, nowildcard) && s_ParMatch(vp->type2, t1, nowildcard))
+		if (s_ParMatch(vp->type1, t2, -1, nowildcard) && s_ParMatch(vp->type2, t1, -1, nowildcard))
 			return vp;
 	}
 	if (options & kParameterLookupNoBaseAtomType)
