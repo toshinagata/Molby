@@ -770,7 +770,8 @@ s_RegisterUndoForParameterAttrChange(VALUE self, VALUE key, VALUE val, VALUE old
 	if (pref->mol == NULL)
 		return;
 	up = ParameterRefGetPar(pref);
-	up->bond.src = 0;  /*  Becomes automatically molecule-local  */
+	if (key != s_SourceSym)
+		up->bond.src = 0;  /*  Becomes automatically molecule-local  */
 	if (MolActionCallback_isUndoRegistrationEnabled(pref->mol)) {
 		/*  Register undo  */
 		MolAction *act;
@@ -1902,6 +1903,23 @@ static VALUE s_ParameterRef_SetComment(VALUE self, VALUE val) {
 	return val;	
 }
 
+/*  Only false (undefined) and nil (local) can be set  */
+static VALUE s_ParameterRef_SetSource(VALUE self, VALUE val) {
+	UnionPar *up;
+	Int tp, oldsrc;
+	VALUE oldval;
+	up = s_UnionParFromValue(self, &tp, 1);
+	if (val != Qfalse && val != Qnil)
+		rb_raise(rb_eMolbyError, "set source: only false (undefined parameter) or nil (local parameter) is allowed");
+	oldval = s_ParameterRef_GetSource(self);
+	oldsrc = up->bond.src;
+	if (oldsrc != 0 && oldsrc != -1)
+		rb_raise(rb_eMolbyError, "source information of global parameter cannot be modified");
+	up->bond.src = (val == Qfalse ? -1 : 0);
+	s_RegisterUndoForParameterAttrChange(self, s_SourceSym, val, oldval, oldsrc);	
+	return val;	
+}
+
 static struct s_ParameterAttrDef {
 	char *name;
 	VALUE *symref;  /*  Address of s_IndexSymbol etc. */
@@ -1933,9 +1951,9 @@ static struct s_ParameterAttrDef {
 	{"atomic_number",&s_AtomicNumberSym, 0, s_ParameterRef_GetAtomicNumber, s_ParameterRef_SetAtomicNumber},
 	{"name",         &s_NameSym,         0, s_ParameterRef_GetName,         s_ParameterRef_SetName},
 	{"weight",       &s_WeightSym,       0, s_ParameterRef_GetWeight,       s_ParameterRef_SetWeight},
-	{"fullname",         &s_FullNameSym,         0, s_ParameterRef_GetFullName,         s_ParameterRef_SetFullName},
+	{"fullname",     &s_FullNameSym,     0, s_ParameterRef_GetFullName,     s_ParameterRef_SetFullName},
 	{"comment",      &s_CommentSym,      0, s_ParameterRef_GetComment,      s_ParameterRef_SetComment},
-	{"source",       &s_SourceSym,       0, s_ParameterRef_GetSource,       NULL},
+	{"source",       &s_SourceSym,       0, s_ParameterRef_GetSource,       s_ParameterRef_SetSource},
 	{NULL} /* Sentinel */
 };
 
@@ -6264,7 +6282,6 @@ s_Molecule_RenumberAtoms(VALUE self, VALUE array)
 		new2old[i] = s_Molecule_AtomIndexFromValue(mol, valp[i]);
 	new2old[i] = kInvalidIndex;
 	i = MolActionCreateAndPerform(mol, gMolActionRenumberAtoms, i, new2old);
-/*	i = MoleculeRenumberAtoms(mol, new2old, n); */
 	if (i == 1)
 		rb_raise(rb_eMolbyError, "Atom index out of range");
 	else if (i == 2)

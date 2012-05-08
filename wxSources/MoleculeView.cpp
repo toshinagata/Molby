@@ -654,17 +654,19 @@ MoleculeView::OnLeftDClickInListCtrl(wxMouseEvent &event)
 	listctrl->OnLeftDClick(event);
 	if (mview->tableIndex >= kMainViewBondTableIndex && mview->tableIndex <= kMainViewImproperTableIndex && mview->mol->par != NULL) {
 		int row, col, i;
-		char names[64], types[64], value[20], params[3][20];
+		char indices[64], names[64], types[64], value[20], partypes[64], params[3][20];
 		char *ptype, *parstr;
 		wxPoint pos = event.GetPosition();
 		if (!listctrl->FindItemAtPosition(pos, &row, &col) || col < 4)
 			return;
 		/*  Start editing the local parameter; open a separate dialog  */
+		MainView_valueForTable(mview, 0, row, indices, sizeof indices);
 		MainView_valueForTable(mview, 1, row, names, sizeof names);
 		MainView_valueForTable(mview, 2, row, types, sizeof types);
 		MainView_valueForTable(mview, 3, row, value, sizeof value);
+		MainView_valueForTable(mview, 4, row, partypes, sizeof partypes);
 		for (i = 0; i < 3; i++) {
-			MainView_valueForTable(mview, 4 + i, row, params[i], sizeof(params[0]));			
+			MainView_valueForTable(mview, 5 + i, row, params[i], sizeof(params[0]));			
 		}
 		switch (mview->tableIndex) {
 			case kMainViewBondTableIndex: ptype = "bond"; break;
@@ -674,7 +676,7 @@ MoleculeView::OnLeftDClickInListCtrl(wxMouseEvent &event)
 			default: return;
 		}
 		asprintf(&parstr, "%s %s %s", params[0], params[1], params[2]);
-		MolActionCreateAndPerform(mview->mol, SCRIPT_ACTION("sssss"), "cmd_edit_local_parameter_in_mainview", ptype, names, types, value, parstr);
+		MolActionCreateAndPerform(mview->mol, SCRIPT_ACTION("sssssss"), "cmd_edit_local_parameter_in_mainview", ptype, indices, names, types, value, partypes, parstr);
 	}
 }
 

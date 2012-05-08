@@ -92,7 +92,7 @@
 		E4299DA60F2A191600780B44 /* ruby_types.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ruby_types.c; sourceTree = "<group>"; };
 		E42D8AEF1030193F00C20247 /* MDGraphite.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = MDGraphite.c; sourceTree = "<group>"; };
 		E42D8AF01030193F00C20247 /* MDGraphite.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MDGraphite.h; sourceTree = "<group>"; };
-		E42D8AF11030193F00C20247 /* MDCore.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = MDCore.c; sourceTree = "<group>"; };
+		E42D8AF11030193F00C20247 /* MDCore.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = MDCore.c; sourceTree = "<group>"; wrapsLines = 1; };
 		E42D8AF21030193F00C20247 /* MDCore.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MDCore.h; sourceTree = "<group>"; };
 		E42D8AF31030193F00C20247 /* MDForce.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = MDForce.c; sourceTree = "<group>"; wrapsLines = 1; };
 		E42D8AF41030193F00C20247 /* MDForce.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MDForce.h; sourceTree = "<group>"; };
@@ -109,7 +109,7 @@
 		E433CE780EC7099B00675985 /* ruby_dialog.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ruby_dialog.h; path = ../MolLib/Ruby_bind/ruby_dialog.h; sourceTree = SOURCE_ROOT; };
 		E433CE7C0EC709BD00675985 /* IntGroup.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = IntGroup.c; path = ../MolLib/IntGroup.c; sourceTree = SOURCE_ROOT; };
 		E433CE7D0EC709BD00675985 /* IntGroup.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = IntGroup.h; path = ../MolLib/IntGroup.h; sourceTree = SOURCE_ROOT; };
-		E433CE7E0EC709BD00675985 /* MainView.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = MainView.c; path = ../MolLib/MainView.c; sourceTree = SOURCE_ROOT; };
+		E433CE7E0EC709BD00675985 /* MainView.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = MainView.c; path = ../MolLib/MainView.c; sourceTree = SOURCE_ROOT; wrapsLines = 1; };
 		E433CE7F0EC709BD00675985 /* MainView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MainView.h; path = ../MolLib/MainView.h; sourceTree = SOURCE_ROOT; };
 		E433CE800EC709BD00675985 /* Missing.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = Missing.c; path = ../MolLib/Missing.c; sourceTree = SOURCE_ROOT; };
 		E433CE810EC709BD00675985 /* Missing.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Missing.h; path = ../MolLib/Missing.h; sourceTree = SOURCE_ROOT; };
@@ -128,7 +128,7 @@
 		E433CE8E0EC709BD00675985 /* Types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Types.h; path = ../MolLib/Types.h; sourceTree = SOURCE_ROOT; };
 		E433CE990EC709D300675985 /* ConsoleFrame.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ConsoleFrame.cpp; path = ../wxSources/ConsoleFrame.cpp; sourceTree = SOURCE_ROOT; };
 		E433CE9A0EC709D300675985 /* ConsoleFrame.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ConsoleFrame.h; path = ../wxSources/ConsoleFrame.h; sourceTree = SOURCE_ROOT; };
-		E433CE9B0EC709D300675985 /* MoleculeView.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = MoleculeView.cpp; path = ../wxSources/MoleculeView.cpp; sourceTree = SOURCE_ROOT; };
+		E433CE9B0EC709D300675985 /* MoleculeView.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = MoleculeView.cpp; path = ../wxSources/MoleculeView.cpp; sourceTree = SOURCE_ROOT; wrapsLines = 1; };
 		E433CE9C0EC709D300675985 /* MoleculeView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MoleculeView.h; path = ../wxSources/MoleculeView.h; sourceTree = SOURCE_ROOT; };
 		E433CE9D0EC709D300675985 /* MyApp.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = MyApp.cpp; path = ../wxSources/MyApp.cpp; sourceTree = SOURCE_ROOT; };
 		E433CE9E0EC709D300675985 /* MyApp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MyApp.h; path = ../wxSources/MyApp.h; sourceTree = SOURCE_ROOT; };

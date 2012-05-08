@@ -3081,16 +3081,16 @@ static ColumnInfoRecord sAtomColumns[] = {
 {"x", 6, 1}, {"y", 6, 1}, {"z", 6, 1}, {"charge", 6, 1}, {NULL}
 };
 static ColumnInfoRecord sBondColumns[] = {
-{"atoms", 9, 0}, {"names", 9, 0}, {"type", 9, 0}, {"length", 8, 0}, {"r0", 8, 0}, {"force", 8, 0}, {NULL}
+	{"atoms", 9, 0}, {"names", 9, 0}, {"type", 9, 0}, {"length", 8, 0}, {"par type", 8, 0}, {"r0", 8, 0}, {"force", 8, 0}, {NULL}
 };
 static ColumnInfoRecord sAngleColumns[] = {
-{"atoms", 12, 0}, {"names", 12, 0}, {"type", 12, 0}, {"angle", 8, 0}, {"a0", 8, 0}, {"force", 8, 0}, {NULL}
+{"atoms", 12, 0}, {"names", 12, 0}, {"type", 12, 0}, {"angle", 8, 0}, {"par type", 8, 0}, {"a0", 8, 0}, {"force", 8, 0}, {NULL}
 };
 static ColumnInfoRecord sDihedralColumns[] = {
-{"atoms", 15, 0}, {"names", 15, 0}, {"type", 15, 0}, {"dihedral", 8, 0}, {"force", 8, 0}, {"period", 4, 0}, {"phi0", 8, 0}, {NULL}
+{"atoms", 15, 0}, {"names", 15, 0}, {"type", 15, 0}, {"dihedral", 8, 0}, {"par type", 8, 0}, {"force", 8, 0}, {"period", 4, 0}, {"phi0", 8, 0}, {NULL}
 };
 static ColumnInfoRecord sImproperColumns[] = {
-{"atoms", 15, 0}, {"names", 15, 0}, {"type", 15, 0}, {"improper", 8, 0}, {"force", 8, 0}, {"period", 4, 0}, {"phi0", 8, 0}, {NULL}
+{"atoms", 15, 0}, {"names", 15, 0}, {"type", 15, 0}, {"improper", 8, 0}, {"par type", 8, 0}, {"force", 8, 0}, {"period", 4, 0}, {"phi0", 8, 0}, {NULL}
 };
 static ColumnInfoRecord sParameterColumns[] = {
 {"class", 5, 0}, {"type", 9, 0}, {"", 6, 0}, {"", 6, 0}, {"", 6, 0}, {"", 6, 0}, {"", 6, 0}, {"", 6, 0}, {"src", 8, 0}, {"comment", 25, 0}, {NULL}
@@ -3289,11 +3289,17 @@ MainView_valueForTable(MainView *mview, int column, int row, char *buf, int bufs
 				snprintf(buf, bufsize, "%.3f", MoleculeMeasureBond(mview->mol, &(ap[0]->r), &(ap[1]->r)));
 				break;
 			case 4:
-			case 5: {
+			case 5:
+			case 6: {
 				BondPar *bp = (BondPar *)sParameterOfTypeAtIndex(mol, kBondParType, idx);
 				if (bp == NULL)
 					buf[0] = 0;
-				else snprintf(buf, bufsize, "%.3f", (column == 4 ? bp->r0 : bp->k * INTERNAL2KCAL));
+				else {
+					if (column == 4)
+						snprintf(buf, bufsize, "%.6s-%.6s", AtomTypeDecodeToString(bp->type1, typebuf[0]), AtomTypeDecodeToString(bp->type2, typebuf[1]));
+					else
+						snprintf(buf, bufsize, "%.3f", (column == 5 ? bp->r0 : bp->k * INTERNAL2KCAL));
+				}
 				break;
 			}
 			default: buf[0] = 0; break;
@@ -3312,11 +3318,17 @@ MainView_valueForTable(MainView *mview, int column, int row, char *buf, int bufs
 				snprintf(buf, bufsize, "%.3f", MoleculeMeasureAngle(mview->mol, &(ap[0]->r), &(ap[1]->r), &(ap[2]->r)));
 				break;
 			case 4:
-			case 5: {
+			case 5:
+			case 6: {
 				AnglePar *anp = (AnglePar *)sParameterOfTypeAtIndex(mol, kAngleParType, idx);
 				if (anp == NULL)
 					buf[0] = 0;
-				else snprintf(buf, bufsize, "%.3f", (column == 4 ? anp->a0 * kRad2Deg : anp->k * INTERNAL2KCAL));
+				else {
+					if (column == 4)
+						snprintf(buf, bufsize, "%.6s-%.6s-%.6s", AtomTypeDecodeToString(anp->type1, typebuf[0]), AtomTypeDecodeToString(anp->type2, typebuf[1]), AtomTypeDecodeToString(anp->type3, typebuf[2]));
+					else
+						snprintf(buf, bufsize, "%.3f", (column == 5 ? anp->a0 * kRad2Deg : anp->k * INTERNAL2KCAL));
+				}
 				break;
 			}
 			default: buf[0] = 0; break;
@@ -3338,13 +3350,16 @@ MainView_valueForTable(MainView *mview, int column, int row, char *buf, int bufs
 				break;
 			case 4:
 			case 5:
-			case 6: {
+			case 6:
+			case 7: {
 				TorsionPar *tp = (TorsionPar *)sParameterOfTypeAtIndex(mol, (f ? kDihedralParType : kImproperParType), idx);
 				if (tp == NULL)
 					buf[0] = 0;
-				else if (column == 5)
+				else if (column == 4)
+					snprintf(buf, bufsize, "%.6s-%.6s-%.6s-%.6s", AtomTypeDecodeToString(tp->type1, typebuf[0]), AtomTypeDecodeToString(tp->type2, typebuf[1]), AtomTypeDecodeToString(tp->type3, typebuf[2]), AtomTypeDecodeToString(tp->type4, typebuf[3]));
+				else if (column == 6)
 					snprintf(buf, bufsize, "%d", tp->period[0]);
-				else snprintf(buf, bufsize, "%.3f", (column == 4 ? tp->k[0] * INTERNAL2KCAL : tp->phi0[0] * kRad2Deg));
+				else snprintf(buf, bufsize, "%.3f", (column == 5 ? tp->k[0] * INTERNAL2KCAL : tp->phi0[0] * kRad2Deg));
 				break;
 			}
 			default: buf[0] = 0; break;

@@ -1379,7 +1379,7 @@ class Molecule
 	}
   end
   
-  def cmd_edit_local_parameter_in_mainview(ptype, names, types, value, params)
+  def cmd_edit_local_parameter_in_mainview(ptype, indices, names, types, value, partypes, params)
     #  The parameters are given as space separated strings
 	#  e.g. "1.862 200.000"
 	case ptype
@@ -1401,7 +1401,7 @@ class Molecule
 	p = params.split
 	hash = Dialog.run("Edit local parameter") {
       layout(1,
-	    item(:text, :title=>"Edit #{ptype} parameter for #{names} (#{types})"),
+	    item(:text, :title=>"Edit #{ptype} parameter for #{indices} (#{names}, #{types})"),
 		item(:text, :title=>"(Current value = #{value})"),
 	    layout(4,
 	      [item(:text, :title=>"types"), {:align=>:center}],
@@ -1409,7 +1409,7 @@ class Molecule
 	      [item(:text, :title=>k[1]), {:align=>:center}],
 	      (k[2] ? [item(:text, :title=>k[2]), {:align=>:center}] : -1),
 		
-		  item(:textfield, :width=>100, :value=>types, :tag=>"types"),
+		  item(:textfield, :width=>100, :value=>partypes, :tag=>"types"),
 		  item(:textfield, :width=>100, :value=>p[0], :tag=>k[0]),
 		  item(:textfield, :width=>100, :value=>p[1], :tag=>k[1]),
 		  (k[2] ? item(:textfield, :width=>100, :value=>p[2], :tag=>k[2]) : -1)

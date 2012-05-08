@@ -6737,11 +6737,13 @@ sMoleculeUnmergeSub(Molecule *src, Molecule **dstp, IntGroup *where, int resSeqO
 	}
 	
 	/*  Renumber the parameter records remaining in the src  */
-	for (n1 = kFirstParType; n1 <= kLastParType; n1++) {
-		n2 = ParameterGetCountForType(src->par, n1);
-		for (i = 0; i < n2; i++) {
-			up = ParameterGetUnionParFromTypeAndIndex(src->par, n1, i);
-			ParameterRenumberAtoms(n1, up, nsrc, old2new);
+	if (moveFlag) {
+		for (n1 = kFirstParType; n1 <= kLastParType; n1++) {
+			n2 = ParameterGetCountForType(src->par, n1);
+			for (i = 0; i < n2; i++) {
+				up = ParameterGetUnionParFromTypeAndIndex(src->par, n1, i);
+				ParameterRenumberAtoms(n1, up, nsrc, old2new);
+			}
 		}
 	}
 	
@@ -8033,6 +8035,18 @@ MoleculeRenumberAtoms(Molecule *mp, const Int *new2old, Int *old2new_out, Int is
 		Int *ip;
 		for (j = 0, ip = ap->connects; j < ap->nconnects; j++, ip++)
 			*ip = old2new[*ip];
+	}
+	if (mp->par != NULL) {
+		/*  Renumber the parameters  */
+		int n;
+		for (j = kFirstParType; j <= kLastParType; j++) {
+			n = ParameterGetCountForType(mp->par, j);
+			for (i = 0; i < n; i++) {
+				UnionPar *up = ParameterGetUnionParFromTypeAndIndex(mp->par, j, i);
+				if (up != NULL)
+					ParameterRenumberAtoms(j, up, mp->natoms, old2new);
+			}
+		}
 	}
 	
 	/*  Renumber the atoms  */

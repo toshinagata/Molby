@@ -502,11 +502,10 @@ s_MolActionPerformRubyScript(Molecule *mol, MolAction *action)
 }
 
 static void
-sMolActionUpdateSelectionAndParameterNumbering(Molecule *mol, const IntGroup *ig, int is_insert)
+s_UpdateSelection(Molecule *mol, const IntGroup *ig, int is_insert)
 {
-	int i, j, n, old_natoms;
+	int n, old_natoms;
 	IntGroup *sel, *orig_atoms, *ig3;
-	UnionPar *up;
 	MolAction *act;
 
 	if (ig == NULL || (n = IntGroupGetCount(ig)) == 0)
@@ -544,47 +543,6 @@ sMolActionUpdateSelectionAndParameterNumbering(Molecule *mol, const IntGroup *ig
 		IntGroupRelease(sel);
 	}
 	
-	/*  Update parameters  */
-	/*
-	if (mol->par != NULL) {
-		Int *ip = (Int *)malloc(sizeof(Int) * old_natoms);
-		if (is_insert) {
-			for (i = 0; i < old_natoms; i++)
-				ip[i] = IntGroupGetNthPoint(orig_atoms, i);
-		} else {
-			for (i = 0; i < old_natoms; i++)
-				ip[i] = IntGroupLookupPoint(orig_atoms, i);
-		}
-		for (i = kFirstParType; i <= kLastParType; i++) {
-			UnionPar usave;
-			UnionPar *upary = NULL;
-			Int count_upary = 0;
-			if (!is_insert)
-				ig3 = IntGroupNew();
-			for (j = 0; (up = ParameterGetUnionParFromTypeAndIndex(mol->par, i, j)) != NULL; j++) {
-				ParameterCopyOneWithType(&usave, up, i);  //  Don't say usave = *up
-				if (ParameterRenumberAtoms(i, up, old_natoms, ip) && !is_insert) {
-					IntGroupAdd(ig3, j, 1);  //  This parameter is to be restored on undo
-					AssignArray(&upary, &count_upary, sizeof(UnionPar), count_upary, &usave);
-				}
-			}
-			if (count_upary > 0) {
-				//  Register undo for modifying parameters
-				act = MolActionNew(gMolActionAddParameters, i, ig3, count_upary, upary);
-				MolActionCallback_registerUndo(mol, act);
-				MolActionRelease(act);
-				act = MolActionNew(gMolActionDeleteParameters, i, ig3);
-				MolActionCallback_registerUndo(mol, act);
-				MolActionRelease(act);
-				free(upary);
-			}
-			if (!is_insert)
-				IntGroupRelease(ig3);
-		}
-		free(ip);
-	}
-	 */
-	
 	IntGroupRelease(orig_atoms);
 }
 
@@ -599,7 +557,7 @@ s_MolActionAddAnAtom(Molecule *mol, MolAction *action, MolAction **actp)
 	if (n1 < 0)
 		return -1;
 	ig = IntGroupNewWithPoints(n1, 1, -1);
-	sMolActionUpdateSelectionAndParameterNumbering(mol, ig, 1);
+	s_UpdateSelection(mol, ig, 1);
 	IntGroupRelease(ig);
 	*actp = MolActionNew(gMolActionDeleteAnAtom, n1);
 	return 0;
@@ -644,7 +602,7 @@ s_MolActionMergeMolecule(Molecule *mol, MolAction *action, MolAction **actp)
 	if ((result = MoleculeMerge(mol, mol2, ig, n1)) != 0)
 		return result;
 	
-	sMolActionUpdateSelectionAndParameterNumbering(mol, ig, 1);
+	s_UpdateSelection(mol, ig, 1);
 	
 	*actp = MolActionNew(gMolActionUnmergeMolecule, ig2);
 	IntGroupRelease(ig2);
@@ -655,7 +613,8 @@ static int
 s_MolActionDeleteAtoms(Molecule *mol, MolAction *action, MolAction **actp)
 {
 	Int n1, result, *ip;
-	IntGroup *bg, *ig;
+	IntGroup *bg, *ig, *pg;
+	UnionPar *up;
 	Molecule *mol2;
 	if (strcmp(action->name, gMolActionDeleteAnAtom) == 0) {
 		ig = IntGroupNew();
@@ -690,6 +649,32 @@ s_MolActionDeleteAtoms(Molecule *mol, MolAction *action, MolAction **actp)
 		}
 		IntGroupRelease(bg);
 	}
+	/*  Search parameters that may disappear after unmerging  */
+	pg = NULL;
+	up = NULL;
+	if (mol->par != NULL) {
+		Int i, j, n;
+		IntGroup *rg = IntGroupNewWithPoints(0, mol->natoms, -1);
+		IntGroupRemoveIntGroup(rg, ig);  /*  Remaining atoms  */
+		pg = IntGroupNew();
+		for (j = kFirstParType; j <= kLastParType; j++) {
+			n = ParameterGetCountForType(mol->par, j);
+			for (i = 0; i < n; i++) {
+				UnionPar *up1 = ParameterGetUnionParFromTypeAndIndex(mol->par, j, i);
+				if (!ParameterIsRelevantToAtomGroup(j, up1, mol->atoms, ig) && !ParameterIsRelevantToAtomGroup(j, up1, mol->atoms, rg)) {
+					IntGroupAdd(pg, i + (j - kFirstParType) * kParameterIndexOffset, 1);
+				}
+			}
+		}
+		n = IntGroupGetCount(pg);
+		if (n > 0) {
+			up = (UnionPar *)calloc(sizeof(UnionPar), n);
+			ParameterCopy(mol->par, kFirstParType, up, pg);
+		} else {
+			IntGroupRelease(pg);
+			pg = NULL;
+		}
+	}
 	/*  Unmerge molecule  */
 	if ((result = MoleculeUnmerge(mol, &mol2, ig, 0)) != 0) {
 		if (ip != NULL)
@@ -697,18 +682,27 @@ s_MolActionDeleteAtoms(Molecule *mol, MolAction *action, MolAction **actp)
 		return result;
 	}
 	
-	sMolActionUpdateSelectionAndParameterNumbering(mol, ig, 0);
+	s_UpdateSelection(mol, ig, 0);
 	
 	if (mol2 == NULL)
 		*actp = NULL;
 	else {
+		MolAction *act2;
 		/*  If there exist bonds crossing the molecule border, then register
-		 an action to restore them  */
+		 an undo action to restore them  */
 		if (ip != NULL) {
-			MolAction *act2 = MolActionNew(gMolActionAddBonds, n1 * 2, ip);
+			act2 = MolActionNew(gMolActionAddBonds, n1 * 2, ip);
 			MolActionCallback_registerUndo(mol, act2);
 			MolActionRelease(act2);
 			free(ip);
+		}
+		/*  Register an undo action to restore the disappearing parameters  */
+		if (up != NULL) {
+			act2 = MolActionNew(gMolActionAddParameters, kFirstParType, pg, IntGroupGetCount(pg), up);
+			MolActionCallback_registerUndo(mol, act2);
+			MolActionRelease(act2);
+			IntGroupRelease(pg);
+			free(up);
 		}
 		*actp = MolActionNew(gMolActionMergeMolecule, mol2, ig);
 		MoleculeRelease(mol2);
