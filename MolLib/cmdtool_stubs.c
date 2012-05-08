@@ -192,6 +192,12 @@ MyAppCallback_registerScriptMenu(const char *cmd, const char *title)
 {
 }
 
+int
+MyAppCallback_lookupScriptMenu(const char *title)
+{
+	return 0;
+}
+
 void
 MyAppCallback_endUndoGrouping(void)
 {
