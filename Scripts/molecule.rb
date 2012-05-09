@@ -41,16 +41,27 @@ class Molecule
     rv
   end
 
-  def neutralize(charge = 0.0, group = nil)
+  def charge(group = nil)
     group = atom_group(group ? group : 0...natoms)
-    csum = 0.0
-    group.each { |i| csum += atoms[i].charge }
-    if csum != 0.0
-      csum = -csum / group.length
-      group.each { |i| atoms[i].charge += csum }
-    end
+	return nil if group.length == 0
+	csum = 0.0
+	each_atom(group) { |ap| csum += ap.charge }
+	csum
   end
-
+  
+  def neutralize(c = 0.0, group = nil)
+    group = atom_group(group ? group : 0...natoms)
+	return nil if group.length == 0
+    csum = self.charge
+	w = c - csum
+    if w < -1e6 || w > 1e6
+      w /= group.length
+      group.each { |i| atoms[i].charge += w }
+	  csum = self.charge
+    end
+	csum
+  end
+  
   def all
     return atom_group
   end
