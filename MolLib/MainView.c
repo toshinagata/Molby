@@ -3081,16 +3081,16 @@ static ColumnInfoRecord sAtomColumns[] = {
 {"x", 6, 1}, {"y", 6, 1}, {"z", 6, 1}, {"charge", 6, 1}, {NULL}
 };
 static ColumnInfoRecord sBondColumns[] = {
-	{"atoms", 9, 0}, {"names", 9, 0}, {"type", 9, 0}, {"length", 8, 0}, {"par type", 8, 0}, {"r0", 8, 0}, {"force", 8, 0}, {NULL}
+	{"atoms", 9, 0}, {"names", 9, 0}, {"type", 9, 0}, {"length", 8, 0}, {"par type", 8, 0}, {"k", 8, 0}, {"r0", 8, 0}, {NULL}
 };
 static ColumnInfoRecord sAngleColumns[] = {
-{"atoms", 12, 0}, {"names", 12, 0}, {"type", 12, 0}, {"angle", 8, 0}, {"par type", 8, 0}, {"a0", 8, 0}, {"force", 8, 0}, {NULL}
+{"atoms", 12, 0}, {"names", 12, 0}, {"type", 12, 0}, {"angle", 8, 0}, {"par type", 8, 0}, {"k", 8, 0}, {"a0", 8, 0}, {NULL}
 };
 static ColumnInfoRecord sDihedralColumns[] = {
-{"atoms", 15, 0}, {"names", 15, 0}, {"type", 15, 0}, {"dihedral", 8, 0}, {"par type", 8, 0}, {"force", 8, 0}, {"period", 4, 0}, {"phi0", 8, 0}, {NULL}
+{"atoms", 15, 0}, {"names", 15, 0}, {"type", 15, 0}, {"dihedral", 8, 0}, {"par type", 8, 0}, {"k", 8, 0}, {"period", 4, 0}, {"phi0", 8, 0}, {NULL}
 };
 static ColumnInfoRecord sImproperColumns[] = {
-{"atoms", 15, 0}, {"names", 15, 0}, {"type", 15, 0}, {"improper", 8, 0}, {"par type", 8, 0}, {"force", 8, 0}, {"period", 4, 0}, {"phi0", 8, 0}, {NULL}
+{"atoms", 15, 0}, {"names", 15, 0}, {"type", 15, 0}, {"improper", 8, 0}, {"par type", 8, 0}, {"k", 8, 0}, {"period", 4, 0}, {"phi0", 8, 0}, {NULL}
 };
 static ColumnInfoRecord sParameterColumns[] = {
 {"class", 5, 0}, {"type", 9, 0}, {"", 6, 0}, {"", 6, 0}, {"", 6, 0}, {"", 6, 0}, {"", 6, 0}, {"", 6, 0}, {"src", 8, 0}, {"comment", 25, 0}, {NULL}
@@ -3150,8 +3150,23 @@ void
 MainView_refreshTable(MainView *mview)
 {
 	/*  Reload data  */
-	if (mview != NULL && mview->mol != NULL)
+	if (mview != NULL && mview->mol != NULL) {
 		MainView_refreshCachedInfo(mview);
+		if (mview->mol->arena == NULL) {
+			if (mview->tableIndex == kMainViewParameterTableIndex) {
+				MoleculePrepareMDArena(mview->mol, 1, NULL);
+			}
+		} else {
+			if (mview->mol->needsMDRebuild &&
+				(mview->tableIndex == kMainViewBondTableIndex || 
+				 mview->tableIndex == kMainViewAngleTableIndex || 
+				 mview->tableIndex == kMainViewDihedralTableIndex || 
+				 mview->tableIndex == kMainViewImproperTableIndex || 
+				 mview->tableIndex == kMainViewParameterTableIndex)) {
+					md_prepare(mview->mol->arena, 1);
+			}
+		}
+	}
 	
 	MainViewCallback_reloadTableData(mview);
 
@@ -3298,7 +3313,7 @@ MainView_valueForTable(MainView *mview, int column, int row, char *buf, int bufs
 					if (column == 4)
 						snprintf(buf, bufsize, "%.6s-%.6s", AtomTypeDecodeToString(bp->type1, typebuf[0]), AtomTypeDecodeToString(bp->type2, typebuf[1]));
 					else
-						snprintf(buf, bufsize, "%.3f", (column == 5 ? bp->r0 : bp->k * INTERNAL2KCAL));
+						snprintf(buf, bufsize, "%.3f", (column == 5 ? bp->k * INTERNAL2KCAL : bp->r0));
 				}
 				break;
 			}
@@ -3327,7 +3342,7 @@ MainView_valueForTable(MainView *mview, int column, int row, char *buf, int bufs
 					if (column == 4)
 						snprintf(buf, bufsize, "%.6s-%.6s-%.6s", AtomTypeDecodeToString(anp->type1, typebuf[0]), AtomTypeDecodeToString(anp->type2, typebuf[1]), AtomTypeDecodeToString(anp->type3, typebuf[2]));
 					else
-						snprintf(buf, bufsize, "%.3f", (column == 5 ? anp->a0 * kRad2Deg : anp->k * INTERNAL2KCAL));
+						snprintf(buf, bufsize, "%.3f", (column == 5 ? anp->k * INTERNAL2KCAL : anp->a0 * kRad2Deg));
 				}
 				break;
 			}
