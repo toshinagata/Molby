@@ -46,6 +46,7 @@ load "formula.rb"
 load "dialog.rb"
 load "commands.rb"
 load "md.rb"
+load "uff.rb"
 load "gamess.rb"
 
 GC.start

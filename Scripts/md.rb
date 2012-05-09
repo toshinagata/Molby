@@ -1382,6 +1382,7 @@ class Molecule
   def cmd_edit_local_parameter_in_mainview(ptype, indices, names, types, value, partypes, params)
     #  The parameters are given as space separated strings
 	#  e.g. "1.862 200.000"
+	mol = self
 	case ptype
 	when "bond"
 	  k = ["r0", "k"]
@@ -1413,7 +1414,16 @@ class Molecule
 		  item(:textfield, :width=>100, :value=>p[0], :tag=>k[0]),
 		  item(:textfield, :width=>100, :value=>p[1], :tag=>k[1]),
 		  (k[2] ? item(:textfield, :width=>100, :value=>p[2], :tag=>k[2]) : -1)
-		)
+		),
+		(ptype == "bond" || ptype == "angle" ?
+		  item(:button, :title=>"Guess k by UFF...", :align=>:right,
+		    :action=>proc { |it|
+			  guess = mol.guess_uff_parameter_dialog(value(k[0]), indices)
+			  if guess
+			    set_value("k", guess)
+			  end
+			}) : 
+	      nil)
 	  )
 	}
 	if hash[:status] == 0
