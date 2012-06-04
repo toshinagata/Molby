@@ -6500,6 +6500,68 @@ s_Molecule_SetUndoableSelection(VALUE self, VALUE val)
 
 /*
  *  call-seq:
+ *     hidden_atoms       -> IntGroup
+ *
+ *  Returns the currently hidden atoms.
+ */
+static VALUE
+s_Molecule_HiddenAtoms(VALUE self)
+{
+    Molecule *mol;
+	IntGroup *ig;
+	VALUE val;
+    Data_Get_Struct(self, Molecule, mol);
+	if (mol != NULL) {
+		Atom *ap;
+		int i;
+		ig = IntGroupNew();
+		for (i = 0, ap = mol->atoms; i < mol->natoms; i++, ap = ATOM_NEXT(ap)) {
+			if (ap->exflags & kAtomHiddenFlag)
+				IntGroupAdd(ig, i, 1);
+		}
+		val = ValueFromIntGroup(ig);
+		IntGroupRelease(ig);
+		rb_obj_freeze(val);
+		return val;
+	} else return Qnil;
+}
+
+/*
+ *  call-seq:
+ *     set_hidden_atoms(IntGroup)
+ *     self.hidden_atoms = IntGroup
+ *
+ *  Hide the specified atoms. This operation is _not_ undoable.
+ */
+static VALUE
+s_Molecule_SetHiddenAtoms(VALUE self, VALUE val)
+{
+	Molecule *mol;
+    Data_Get_Struct(self, Molecule, mol);
+	if (mol != NULL) {
+		Atom *ap;
+		int i;
+		IntGroup *ig;
+		if (val == Qnil)
+			ig = NULL;
+		else
+			ig = s_Molecule_AtomGroupFromValue(self, val);
+		for (i = 0, ap = mol->atoms; i < mol->natoms; i++, ap = ATOM_NEXT(ap)) {
+			if (ig != NULL && IntGroupLookup(ig, i, NULL)) {
+				ap->exflags |= kAtomHiddenFlag;
+			} else {
+				ap->exflags &= kAtomHiddenFlag;
+			}
+		}
+		if (ig != NULL)
+			IntGroupRelease(ig);
+		MoleculeCallback_notifyModification(mol, 0);
+	}
+	return val;
+}
+
+/*
+ *  call-seq:
  *     select_frame(index)
  *     frame = index
  *
@@ -8905,6 +8967,9 @@ Init_Molby(void)
 	rb_define_method(rb_cMolecule, "selection", s_Molecule_Selection, 0);
 	rb_define_method(rb_cMolecule, "selection=", s_Molecule_SetSelection, 1);
 	rb_define_method(rb_cMolecule, "set_undoable_selection", s_Molecule_SetUndoableSelection, 1);
+	rb_define_method(rb_cMolecule, "hidden_atoms", s_Molecule_HiddenAtoms, 0);
+	rb_define_method(rb_cMolecule, "hidden_atoms=", s_Molecule_SetHiddenAtoms, 1);	
+	rb_define_alias(rb_cMolecule, "set_hidden_atoms", "hidden_atoms=");
 	rb_define_method(rb_cMolecule, "frame", s_Molecule_Frame, 0);
 	rb_define_method(rb_cMolecule, "frame=", s_Molecule_SelectFrame, 1);
 	rb_define_alias(rb_cMolecule, "select_frame", "frame=");
