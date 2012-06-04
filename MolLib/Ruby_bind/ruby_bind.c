@@ -7925,12 +7925,12 @@ s_Molecule_GetViewScale(VALUE self)
 
 /*
  *  call-seq:
- *     get_view_translation -> Vector
+ *     get_view_center -> Vector
  *
- *  Get the current translation factor for the view.
+ *  Get the current center point of the view.
  */
 static VALUE
-s_Molecule_GetViewTranslation(VALUE self)
+s_Molecule_GetViewCenter(VALUE self)
 {
     Molecule *mol;
 	float f[4];
@@ -7939,9 +7939,9 @@ s_Molecule_GetViewTranslation(VALUE self)
 	if (mol->mview == NULL)
 		return Qnil;
 	TrackballGetTranslate(mol->mview->track, f);
-	v.x = f[0];
-	v.y = f[1];
-	v.z = f[2];
+	v.x = -f[0] * mol->mview->dimension;
+	v.y = -f[1] * mol->mview->dimension;
+	v.z = -f[2] * mol->mview->dimension;
 	return ValueFromVector(&v);
 }
 
@@ -7992,12 +7992,12 @@ s_Molecule_SetViewScale(VALUE self, VALUE aval)
 
 /*
  *  call-seq:
- *     set_view_translation(vec) -> self
+ *     set_view_center(vec) -> self
  *
- *  Set the current translation for the view.
+ *  Set the current center point of the view.
  */
 static VALUE
-s_Molecule_SetViewTranslation(VALUE self, VALUE aval)
+s_Molecule_SetViewCenter(VALUE self, VALUE aval)
 {
     Molecule *mol;
 	Vector v;
@@ -8006,9 +8006,9 @@ s_Molecule_SetViewTranslation(VALUE self, VALUE aval)
 	if (mol->mview == NULL)
 		return Qnil;
 	VectorFromValue(aval, &v);
-	f[0] = v.x;
-	f[1] = v.y;
-	f[2] = v.z;
+	f[0] = -v.x / mol->mview->dimension;
+	f[1] = -v.y / mol->mview->dimension;
+	f[2] = -v.z / mol->mview->dimension;
 	TrackballSetTranslate(mol->mview->track, f);
 	MainViewCallback_setNeedsDisplay(mol->mview, 0);
 	return self;
@@ -9037,10 +9037,10 @@ Init_Molby(void)
 #if !defined(__CMDMAC__)
 	rb_define_method(rb_cMolecule, "get_view_rotation", s_Molecule_GetViewRotation, 0);
 	rb_define_method(rb_cMolecule, "get_view_scale", s_Molecule_GetViewScale, 0);
-	rb_define_method(rb_cMolecule, "get_view_translation", s_Molecule_GetViewTranslation, 0);
+	rb_define_method(rb_cMolecule, "get_view_center", s_Molecule_GetViewCenter, 0);
 	rb_define_method(rb_cMolecule, "set_view_rotation", s_Molecule_SetViewRotation, 2);
 	rb_define_method(rb_cMolecule, "set_view_scale", s_Molecule_SetViewScale, 1);
-	rb_define_method(rb_cMolecule, "set_view_translation", s_Molecule_SetViewTranslation, 1);
+	rb_define_method(rb_cMolecule, "set_view_center", s_Molecule_SetViewCenter, 1);
 	rb_define_method(rb_cMolecule, "set_background_color", s_Molecule_SetBackgroundColor, -1);
 	rb_define_method(rb_cMolecule, "create_graphic", s_Molecule_CreateGraphic, -1);
 	rb_define_method(rb_cMolecule, "remove_graphic", s_Molecule_RemoveGraphic, 1);

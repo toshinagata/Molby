@@ -40,7 +40,7 @@ extern "C" {
 		
 /*  Anisotropic thermal parameter  */
 typedef struct Aniso {
-	Double  bij[6];    /*  b11, b22, b33, b12, b23, b31 (ORTEP type 0) */
+	Double  bij[6];    /*  b11, b22, b33, b12, b13, b23 (ORTEP type 0) */
 	char has_bsig;     /*  Has sigma values?  */
 	Double  bsig[6];   /*  sigma values  */
 	Mat33  pmat;      /*  A 3x3 matrix whose three column vectors are the principal axes of the ellipsoid. Note: If the B matrix is not positive definite, the axis length corresponding to the negative eigenvalue is replaced with 0.001.  */
@@ -351,7 +351,7 @@ AtomRef *AtomRefNew(Molecule *mol, int idx);
 void AtomRefRelease(AtomRef *aref);
 
 void MoleculeSetCell(Molecule *mp, Double a, Double b, Double c, Double alpha, Double beta, Double gamma, int convertCoordinates);
-void MoleculeSetAniso(Molecule *mp, int n1, int type, Double x11, Double x22, Double x33, Double x12, Double x23, Double x31, const Double *sigmap);
+void MoleculeSetAniso(Molecule *mp, int n1, int type, Double x11, Double x22, Double x33, Double x12, Double x13, Double x23, const Double *sigmap);
 int MoleculeSetPeriodicBox(Molecule *mp, const Vector *ax, const Vector *ay, const Vector *az, const Vector *ao, const char *periodic);
 
 int MoleculeReadCoordinatesFromFile(Molecule *mp, const char *fname, const char *ftype, char *errbuf, int errbufsize);

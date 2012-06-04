@@ -4338,7 +4338,7 @@ MoleculeWriteToTepFile(Molecule *mp, const char *fname, char *errbuf, int errbuf
 		fprintf(fp, " %4.4s%22s%9.4f%9.4f%9.4f%9d\n", ap->aname, "", ap->v.x, ap->v.y, ap->v.z, 0);
 		if (ap->aniso != NULL) {
 			cp = ap->aniso->bij;
-			fprintf(fp, " %8.5f%9.6f%9.6f%9.6f%9.6f%9.6f%9d\n", cp[0], cp[1], cp[2], cp[3], cp[5], cp[4], 0);
+			fprintf(fp, " %8.5f%9.6f%9.6f%9.6f%9.6f%9.6f%9d\n", cp[0], cp[1], cp[2], cp[3], cp[4], cp[5], 0);
 		} else {
 			Double temp = ap->tempFactor;
 			if (temp <= 0)
@@ -8522,7 +8522,7 @@ MoleculeSetCell(Molecule *mp, Double a, Double b, Double c, Double alpha, Double
 }
 
 void
-MoleculeSetAniso(Molecule *mp, int n1, int type, Double x11, Double x22, Double x33, Double x12, Double x23, Double x31, const Double *sigmaptr)
+MoleculeSetAniso(Molecule *mp, int n1, int type, Double x11, Double x22, Double x33, Double x12, Double x13, Double x23, const Double *sigmaptr)
 {
 	Double d, dx;
 	int u = 0;
@@ -8560,8 +8560,8 @@ MoleculeSetAniso(Molecule *mp, int n1, int type, Double x11, Double x22, Double 
 	anp->bij[1] = x22 * d;
 	anp->bij[2] = x33 * d;
 	anp->bij[3] = x12 * dx;
-	anp->bij[4] = x23 * dx;
-	anp->bij[5] = x31 * dx;
+	anp->bij[4] = x13 * dx;
+	anp->bij[5] = x23 * dx;
 	if (sigmaptr != NULL) {
 		anp->has_bsig = 1;
 		anp->bsig[0] = sigmaptr[0] * d;
@@ -8580,15 +8580,15 @@ MoleculeSetAniso(Molecule *mp, int n1, int type, Double x11, Double x22, Double 
 		anp->bij[1] *= cp->rcell[1] * cp->rcell[1];
 		anp->bij[2] *= cp->rcell[2] * cp->rcell[2];
 		anp->bij[3] *= cp->rcell[0] * cp->rcell[1]; /* * cos(cp->rcell[5] * kDeg2Rad); */
-		anp->bij[4] *= cp->rcell[1] * cp->rcell[2]; /* * cos(cp->rcell[3] * kDeg2Rad); */
-		anp->bij[5] *= cp->rcell[2] * cp->rcell[0]; /* * cos(cp->rcell[4] * kDeg2Rad); */
+		anp->bij[4] *= cp->rcell[2] * cp->rcell[0]; /* * cos(cp->rcell[3] * kDeg2Rad); */
+		anp->bij[5] *= cp->rcell[1] * cp->rcell[2]; /* * cos(cp->rcell[4] * kDeg2Rad); */
 		if (sigmaptr != NULL) {
 			anp->bsig[0] *= cp->rcell[0] * cp->rcell[0];
 			anp->bsig[1] *= cp->rcell[1] * cp->rcell[1];
 			anp->bsig[2] *= cp->rcell[2] * cp->rcell[2];
 			anp->bsig[3] *= cp->rcell[0] * cp->rcell[1];
-			anp->bsig[4] *= cp->rcell[1] * cp->rcell[2];
-			anp->bsig[5] *= cp->rcell[2] * cp->rcell[0];
+			anp->bsig[4] *= cp->rcell[2] * cp->rcell[0];
+			anp->bsig[5] *= cp->rcell[1] * cp->rcell[2];
 		}
 	}
 	
@@ -8600,8 +8600,8 @@ MoleculeSetAniso(Molecule *mp, int n1, int type, Double x11, Double x22, Double 
 	m1[4] = anp->bij[1] / pi22;
 	m1[8] = anp->bij[2] / pi22;
 	m1[1] = m1[3] = anp->bij[3] / pi22;
-	m1[5] = m1[7] = anp->bij[4] / pi22;
-	m1[2] = m1[6] = anp->bij[5] / pi22;
+	m1[2] = m1[6] = anp->bij[4] / pi22;
+	m1[5] = m1[7] = anp->bij[5] / pi22;
 	MatrixInvert(m1, m1);
 	if (cp != NULL) {
 		memmove(m2, cp->rtr, sizeof(Mat33));
