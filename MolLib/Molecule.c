@@ -5795,6 +5795,62 @@ MoleculeSearchEquivalentAtoms(Molecule *mol, IntGroup *ig)
 #pragma mark ====== Symmetry expansion ======
 
 int
+MoleculeGetTransformForSymop(Molecule *mp, Symop symop, Transform *tf)
+{
+	Transform t;
+	if (mp == NULL || mp->cell == NULL)
+		return -1;
+	if (symop.sym >= mp->nsyms)
+		return -2;
+	memmove(t, mp->syms[symop.sym], sizeof(Transform));
+	t[9] += symop.dx;
+	t[10] += symop.dy;
+	t[11] += symop.dz;
+	TransformMul(t, t, mp->cell->rtr);
+	TransformMul(*tf, mp->cell->tr, t);
+	return 0;
+}
+
+int
+MoleculeGetSymopForTransform(Molecule *mp, const Transform tf, Symop *symop)
+{
+	Transform t;
+	int i, j, n[3];
+	if (mp == NULL || mp->cell == NULL)
+		return -1;
+	if (mp->nsyms == 0)
+		return -2;
+	TransformMul(t, tf, mp->cell->tr);
+	TransformMul(t, mp->cell->rtr, t);
+	for (i = 0; i < mp->nsyms; i++) {
+		Transform *tp = mp->syms + i;
+		for (j = 0; j < 9; j++) {
+			if (fabs((*tp)[j] - t[j]) > 1e-4)
+				break;
+		}
+		if (j == 9) {
+			for (j = 9; j < 12; j++) {
+				double f1 = t[j] - (*tp)[j];
+				double f2 = floor(f1 + 0.5);
+				if (fabs(f1 - f2) > 1e-4)
+					break;
+				n[j - 9] = f2;
+			}
+			if (j == 12) {
+				/*  Found  */
+				symop->sym = i;
+				symop->dx = n[0];
+				symop->dy = n[1];
+				symop->dz = n[2];
+				symop->alive = (SYMOP_ALIVE((*symop)) != 0);
+				return 0;
+			}
+		}
+	}
+	return -3;  /*  Not found  */
+}
+
+int
 MoleculeTransformBySymop(Molecule *mp, const Vector *vpin, Vector *vpout, Symop symop)
 {
 	if (mp == NULL)
@@ -8083,6 +8139,7 @@ MoleculeTransform(Molecule *mp, Transform tr, IntGroup *group)
 	sMoleculeNotifyChangeAppearance(mp);
 }
 
+/*
 void
 MoleculeMove(Molecule *mp, Transform tr, IntGroup *group)
 {
@@ -8100,6 +8157,7 @@ MoleculeMove(Molecule *mp, Transform tr, IntGroup *group)
 	__MoleculeUnlock(mp);
 	sMoleculeNotifyChangeAppearance(mp);
 }
+*/
 
 void
 MoleculeTranslate(Molecule *mp, const Vector *vp, IntGroup *group)

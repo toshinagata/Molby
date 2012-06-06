@@ -444,6 +444,9 @@ int MoleculeIsAtomSelected(Molecule *mp, int n1);
 int MoleculeIsBondSelected(Molecule *mp, int n1, int n2);
 IntGroup *MoleculeModifySelectionByRemovingAtoms(Molecule *mp, IntGroup *selection, IntGroup *remove);
 
+int MoleculeGetTransformForSymop(Molecule *mp, Symop symop, Transform *tf);
+int MoleculeGetSymopForTransform(Molecule *mp, const Transform tf, Symop *symop);
+
 int MoleculeTransformBySymop(Molecule *mp, const Vector *vpin, Vector *vpout, Symop symop);
 int MoleculeAddExpandedAtoms(Molecule *mp, Symop symop, IntGroup *group);
 int MoleculeAmendBySymmetry(Molecule *mp, IntGroup *group, IntGroup **groupout, Vector **vpout);
@@ -455,7 +458,7 @@ int MoleculeHideAtoms(Molecule *mp, IntGroup *ig);
 int MoleculeRenumberAtoms(Molecule *mp, const Int *new2old, Int *old2new_out, Int isize);
 
 void MoleculeTransform(Molecule *mp, Transform tr, IntGroup *group);
-void MoleculeMove(Molecule *mp, Transform tr, IntGroup *group);
+/*void MoleculeMove(Molecule *mp, Transform tr, IntGroup *group);*/
 void MoleculeTranslate(Molecule *mp, const Vector *vp, IntGroup *group);
 void MoleculeRotate(Molecule *mp, const Vector *axis, Double angle, const Vector *center, IntGroup *group);
 void MoleculeReaxis(Molecule *mp, const Vector *xaxis, const Vector *yaxis, const Vector *zaxis, IntGroup *group);
