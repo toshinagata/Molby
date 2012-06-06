@@ -494,11 +494,16 @@ Get/set the segment number.
 <div class="method-heading">
 <span class="method-name">
 symop       &rarr; nil or [sym, dx, dy, dz, base]<br />
+self.symop = [sym, dx, dy, dz, base]<br />
+self.symop = nil
 </span>
 </div>
 <div class="method-description">
 <p>
-Get the symmetry operation. If this atom is not symmetry expanded, then nil is returned. Otherwise, an array of symmetry operation index, cell translation (x, y, z), and the original atom index. This is a read-only attribute; to make symmetry-expanded atoms use <a href="Molecule.html#M000292">Molecule#expand_by_symmetry</a>.
+Get/set the symmetry operation. If this atom is not symmetry expanded, then nil is returned. Otherwise, an array of symmetry operation index, cell translation (x, y, z), and the original atom index. When this attribute is set, you will be responsible for keeping the other attribute consistent (for example, the atomic number and atom types should be the same with the base atom). If the right-hand argument has less than five elements or some of the elements are nil, then that attribute is not changed.
+</p>
+<p>
+<i>See Also:</i> <a href="Molecule.html#M000292">Molecule#expand_by_symmetry</a>
 </p>
 </div>
 </div>

@@ -3826,8 +3826,47 @@ static VALUE s_AtomRef_SetAniso(VALUE self, VALUE val) {
 }
 
 static VALUE s_AtomRef_SetSymop(VALUE self, VALUE val) {
-	rb_raise(rb_eMolbyError, "symmetry operation cannot be directly set. Use Molecule#expand_by_symmetry instead.");
-	return val; /* Not reached */
+	Molecule *mol;
+	Atom *ap;
+	int i, n;
+	VALUE *valp;
+	Int ival[5];
+	VALUE oval = s_AtomRef_GetSymop(self);
+	i = s_AtomIndexFromValue(self, &ap, &mol);
+	if (val == Qnil) {
+		ival[0] = ival[1] = ival[2] = ival[3] = ival[4] = 0;
+	} else {
+		val = rb_funcall(val, rb_intern("to_a"), 0);
+		n = RARRAY_LEN(val);
+		valp = RARRAY_PTR(val);
+		for (i = 0; i < 5; i++) {
+			if (i < n) {
+				if (valp[i] == Qnil)
+					ival[i] = -100000;
+				else 
+					ival[i] = NUM2INT(rb_Integer(valp[i]));
+			} else ival[i] = -100000;
+		}
+	}
+	if (ival[0] != -100000 && (ival[0] < 0 || ival[0] >= mol->nsyms))
+		rb_raise(rb_eMolbyError, "index of symmetry (%d) is out of range (should be 0..%d)", ival[0], mol->nsyms - 1);
+	if (ival[4] != -100000 && (ival[4] < 0 || ival[4] >= mol->natoms))
+		rb_raise(rb_eMolbyError, "atom index number (%d) is out of range (should be 0..%d)", ival[4], mol->natoms - 1);
+	if (ap->symop.sym == ival[0] && ap->symop.dx == ival[1] && ap->symop.dy == ival[2] && ap->symop.dz == ival[3])
+		return val;  /*  No need to change  */
+	if (ival[0] != -100000)
+		ap->symop.sym = ival[0];
+	if (ival[1] != -100000)
+		ap->symop.dx = ival[1];
+	if (ival[2] != -100000)
+		ap->symop.dy = ival[2];
+	if (ival[3] != -100000)
+		ap->symop.dz = ival[3];
+	ap->symop.alive = (SYMOP_ALIVE(ap->symop) != 0);
+	if (ival[4] != -100000)
+		ap->symbase = ival[4];
+	s_RegisterUndoForAtomAttrChange(self, s_SymopSym, val, oval);
+	return val;
 }
 
 static VALUE s_AtomRef_SetIntCharge(VALUE self, VALUE val) {
