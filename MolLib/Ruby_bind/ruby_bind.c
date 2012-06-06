@@ -7418,6 +7418,30 @@ s_Molecule_ExpandBySymmetry(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
+ *     amend_by_symmetry(group = nil) -> IntGroup
+ *
+ *  Expand the specified part of the molecule by the given symmetry operation.
+ *  Returns an IntGroup containing the added atoms.
+ */
+static VALUE
+s_Molecule_AmendBySymmetry(int argc, VALUE *argv, VALUE self)
+{
+    Molecule *mol;
+	IntGroup *ig, *ig2;
+	VALUE rval, gval;
+    Data_Get_Struct(self, Molecule, mol);
+	rb_scan_args(argc, argv, "01", &gval);
+	if (gval != Qnil)
+		ig = s_Molecule_AtomGroupFromValue(self, gval);
+	else ig = NULL;
+	MolActionCreateAndPerform(mol, gMolActionAmendBySymmetry, ig, &ig2);
+	rval = ValueFromIntGroup(ig2);
+	IntGroupRelease(ig2);
+	return rval;
+}
+
+/*
+ *  call-seq:
  *     wrap_unit_cell(group) -> Vector3D
  *
  *  Move the specified group so that the center of mass of the group is within the
@@ -9003,6 +9027,7 @@ Init_Molby(void)
 	rb_define_method(rb_cMolecule, "measure_angle", s_Molecule_MeasureAngle, 3);
 	rb_define_method(rb_cMolecule, "measure_dihedral", s_Molecule_MeasureDihedral, 4);
 	rb_define_method(rb_cMolecule, "expand_by_symmetry", s_Molecule_ExpandBySymmetry, -1);
+	rb_define_method(rb_cMolecule, "amend_by_symmetry", s_Molecule_AmendBySymmetry, -1);
 	rb_define_method(rb_cMolecule, "wrap_unit_cell", s_Molecule_WrapUnitCell, 1);
 	rb_define_method(rb_cMolecule, "find_conflicts", s_Molecule_FindConflicts, -1);
 	rb_define_method(rb_cMolecule, "display", s_Molecule_Display, 0);

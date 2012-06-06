@@ -62,6 +62,7 @@ const char *gMolActionAddParameters   = "addParameters:iGU";
 const char *gMolActionDeleteParameters = "deleteParameters:iG";
 const char *gMolActionCartesianToXtal  = "cartesianToXtal";
 const char *gMolActionXtalToCartesian  = "xtalToCartesian";
+const char *gMolActionAmendBySymmetry = "amendBySymmetry:G;G";
 
 /*  A Ruby array to retain objects used in MolActionArg  */
 static VALUE sMolActionArgValues = Qfalse;
@@ -71,7 +72,7 @@ static VALUE sMolActionArgValues = Qfalse;
  (Array types)   I: array of Int, D: array of double, V: array of Vector, C: array of char, T: array of Transform, U: array of UnionPars
  (Complex types) M: Molecule, G: IntGroup, A: Atom
  (Ruby value)    b: Ruby boolean, r: Ruby object, R: an array of Ruby object (a Ruby array)
- (Return value from Ruby script) i, d, s, v, t + 0x80 */
+ (Return value)  i, d, s, v, t, G + 0x80 */
 typedef struct MolActionArg {
 	Byte type;
 	union {
@@ -85,7 +86,7 @@ typedef struct MolActionArg {
 		struct Molecule *mval; /* The record is retained but not duplicated */
 		struct Atom *aval; /* The value is duplicated, so any pointer can be passed */
 		VALUE vval;        /* The value is retained in sMolActionArgValues  */
-		void *pval;        /* Store address for the return value; only meaningful in performing Ruby script  */
+		void *pval;        /* Store address for the return value; usually used in performing Ruby script  */
 	} u;
 } MolActionArg;
 
@@ -208,7 +209,7 @@ MolActionNewArgv(const char *name, va_list ap)
 				arg.u.vval = (va_arg(ap, Int) ? Qtrue : Qfalse);
 				break;
 			case ';':
-				if (*p == 'i' || *p == 'd' || *p == 's' || *p == 'v' || *p == 't' || *p == 'r') {
+				if (*p == 'i' || *p == 'd' || *p == 's' || *p == 'v' || *p == 't' || *p == 'r' || *p == 'G') {
 					arg.type = (*p | 0x80);
 					p++;
 					arg.u.pval = va_arg(ap, void *);
@@ -455,6 +456,7 @@ s_MolActionStoreReturnValue(MolRubyActionInfo *info, VALUE val)
 			case 'v': VectorFromValue(val, (Vector *)(info->return_ptr)); break;
 			case 't': TransformFromValue(val, (Transform *)(info->return_ptr)); break;
 			case 'r': *((RubyValue *)(info->return_ptr)) = (RubyValue)val; break;
+			case 'G': *((IntGroup **)(info->return_ptr)) = (val == Qnil ? NULL : IntGroupFromValue(val)); break;
 		}
 	}
 }
@@ -823,9 +825,9 @@ s_MolActionTransformAtoms(Molecule *mol, MolAction *action, MolAction **actp, In
 	Vector *vp, v;
 	if (type == 0) {  /*  translate  */
 		vp = (Vector *)action->args[0].u.arval.ptr;
-		*igp = action->args[1].u.igval;
 		if (vp == NULL)
 			return -1;
+		*igp = action->args[1].u.igval;
 		MoleculeTranslate(mol, vp, *igp);
 		VecScale(v, *vp, -1);
 		*actp = MolActionNew(gMolActionTranslateAtoms, &v, *igp);
@@ -867,8 +869,10 @@ s_MolActionTransformAtoms(Molecule *mol, MolAction *action, MolAction **actp, In
 			int j, k, n1;
 			n1 = IntGroupGetCount(*igp);
 			vp = (Vector *)malloc(sizeof(Vector) * n1);
-			if (vp == NULL)
+			if (vp == NULL) {
+				*igp = NULL;
 				return -1;
+			}
 			IntGroupIteratorInit(*igp, &iter);
 			k = 0;
 			while ((j = IntGroupIteratorNext(&iter)) >= 0) {
@@ -883,6 +887,8 @@ s_MolActionTransformAtoms(Molecule *mol, MolAction *action, MolAction **actp, In
 		MoleculeTransform(mol, *trp, *igp);
 		(*actp)->frame = mol->cframe;		
 	}
+	if (*igp != NULL)
+		IntGroupRetain(*igp);
 	return 0;
 }
 
@@ -896,8 +902,10 @@ s_MolActionSetAtomGeometry(Molecule *mol, MolAction *action, MolAction **actp, I
 	*igp = action->args[0].u.igval;
 	n2 = IntGroupGetCount(*igp);
 	vp = (Vector *)malloc(sizeof(Vector) * n2);
-	if (vp == NULL)
+	if (vp == NULL) {
+		*igp = NULL;
 		return -1;
+	}
 	IntGroupIteratorInit(*igp, &iter);
 	k = 0;
 	while ((j = IntGroupIteratorNext(&iter)) >= 0) {
@@ -920,21 +928,24 @@ s_MolActionSetAtomGeometry(Molecule *mol, MolAction *action, MolAction **actp, I
 	}
 	IntGroupIteratorRelease(&iter);
 	(*actp)->frame = mol->cframe;
+	if (*igp != NULL)
+		IntGroupRetain(*igp);
 	return 0;
 }
 
 static int
-s_MolActionInsertFrames(Molecule *mol, MolAction *action, MolAction **actp, IntGroup **igp)
+s_MolActionInsertFrames(Molecule *mol, MolAction *action, MolAction **actp)
 {
 	Int n1, old_nframes, new_nframes, old_cframe;
 	Vector *vp, *vp2;
+	IntGroup *ig;
 	MolAction *act2;
 
-	*igp = action->args[0].u.igval;
+	ig = action->args[0].u.igval;
 	vp = (Vector *)action->args[1].u.arval.ptr;
 	vp2 = (Vector *)action->args[2].u.arval.ptr;
 	old_cframe = mol->cframe;
-	n1 = IntGroupGetCount(*igp);
+	n1 = IntGroupGetCount(ig);
 	if (n1 == 0)
 		return 0;  /*  Do nothing  */
 	if (vp != NULL && action->args[1].u.arval.nitems != n1 * mol->natoms)
@@ -942,7 +953,7 @@ s_MolActionInsertFrames(Molecule *mol, MolAction *action, MolAction **actp, IntG
 	if (vp2 != NULL && action->args[2].u.arval.nitems != n1 * 4)
 		return -1;  /*  Internal inconsistency  */
 	old_nframes = MoleculeGetNumberOfFrames(mol);
-	if (MoleculeInsertFrames(mol, *igp, vp, vp2) < 0)
+	if (MoleculeInsertFrames(mol, ig, vp, vp2) < 0)
 		return -1;  /*  Error  */
 	
 	/*  Undo action for restoring old cframe  */
@@ -961,41 +972,41 @@ s_MolActionInsertFrames(Molecule *mol, MolAction *action, MolAction **actp, IntG
 		MolActionCallback_registerUndo(mol, act2);
 		MolActionRelease(act2);
 	}			
-	*actp = MolActionNew(gMolActionRemoveFrames, *igp);
+	*actp = MolActionNew(gMolActionRemoveFrames, ig);
 	(*actp)->frame = mol->cframe;
 	return 0;
 }
 
 static int
-s_MolActionRemoveFrames(Molecule *mol, MolAction *action, MolAction **actp, IntGroup **igp)
+s_MolActionRemoveFrames(Molecule *mol, MolAction *action, MolAction **actp)
 {
 	Vector *vp, *vp2;
-	IntGroup *ig2;
+	IntGroup *ig, *ig2;
 	Int n1, n2, nframes, old_cframe;
 	MolAction *act2;
 	
-	*igp = ig2 = action->args[0].u.igval;
+	ig = ig2 = action->args[0].u.igval;
 	old_cframe = mol->cframe;
-	n1 = IntGroupGetCount(*igp);
+	n1 = IntGroupGetCount(ig);
 	if (n1 == 0)
 		return 0;  /*  Do nothing  */
 	nframes = MoleculeGetNumberOfFrames(mol);
-	n2 = IntGroupGetEndPoint(*igp, IntGroupGetIntervalCount(*igp) - 1);  /*  Max point + 1  */
+	n2 = IntGroupGetEndPoint(ig, IntGroupGetIntervalCount(ig) - 1);  /*  Max point + 1  */
 	if (n2 > nframes) {
 		/*  Remove extra points  */
-		ig2 = IntGroupNewFromIntGroup(*igp);
+		ig2 = IntGroupNewFromIntGroup(ig);
 		IntGroupRemove(ig2, nframes, n2 - nframes);
 		n1 = IntGroupGetCount(ig2);
 	}
 	if (nframes == n1 && nframes >= 2) {
 		/*  Remove all frames: keep the current frame  */
-		if (ig2 == *igp)
-			ig2 = IntGroupNewFromIntGroup(*igp);
+		if (ig2 == ig)
+			ig2 = IntGroupNewFromIntGroup(ig);
 		IntGroupRemove(ig2, mol->cframe, 1);
 		n1--;
 	}
 	if (n1 == 0) {
-		if (ig2 != *igp)
+		if (ig2 != ig)
 			IntGroupRelease(ig2);
 		return 0;  /*  Do nothing  */
 	}
@@ -1004,7 +1015,7 @@ s_MolActionRemoveFrames(Molecule *mol, MolAction *action, MolAction **actp, IntG
 		vp2 = (Vector *)calloc(sizeof(Vector) * 4, n1);
 	else vp2 = NULL;
 	if (MoleculeRemoveFrames(mol, ig2, vp, vp2) < 0) {
-		if (ig2 != *igp)
+		if (ig2 != ig)
 			IntGroupRelease(ig2);
 		return -1;  /*  Error  */
 	}
@@ -1020,7 +1031,7 @@ s_MolActionRemoveFrames(Molecule *mol, MolAction *action, MolAction **actp, IntG
 	free(vp);
 	if (vp2 != NULL)
 		free(vp2);
-	if (ig2 != *igp)
+	if (ig2 != ig)
 		IntGroupRelease(ig2);
 	return 0;
 }
@@ -1167,6 +1178,27 @@ s_MolActionExpandBySymmetry(Molecule *mol, MolAction *action, MolAction **actp)
 		IntGroupRelease(ig);
 		return 0;
 	} else return n1;
+}
+
+static int
+s_MolActionAmendBySymmetry(Molecule *mol, MolAction *action, MolAction **actp)
+{
+	IntGroup *ig1, *ig2;
+	Vector *vp2;
+	int n1;
+	ig1 = action->args[0].u.igval;
+	n1 = MoleculeAmendBySymmetry(mol, ig1, &ig2, &vp2);
+	if (action->args[1].u.pval != NULL) {
+		*((IntGroup **)(action->args[1].u.pval)) = ig2;
+		IntGroupRetain(ig2);
+	}
+	if (n1 > 0) {
+		*actp = MolActionNew(gMolActionSetAtomPositions, ig2, n1, vp2);
+		free(vp2);
+		IntGroupRelease(ig2);
+	}
+	mol->needsMDCopyCoordinates = 1;
+	return 0;
 }
 
 static int
@@ -1401,11 +1433,11 @@ MolActionPerform(Molecule *mol, MolAction *action)
 			return result;
 		needsSymmetryAmendment = 1;
 	} else if (strcmp(action->name, gMolActionInsertFrames) == 0) {
-		if ((result = s_MolActionInsertFrames(mol, action, &act2, &ig)) != 0)
+		if ((result = s_MolActionInsertFrames(mol, action, &act2)) != 0)
 			return result;
 		needsSymmetryAmendment = 1;
 	} else if (strcmp(action->name, gMolActionRemoveFrames) == 0) {
-		if ((result = s_MolActionRemoveFrames(mol, action, &act2, &ig)) != 0)
+		if ((result = s_MolActionRemoveFrames(mol, action, &act2)) != 0)
 			return result;
 		needsSymmetryAmendment = 1;
 	} else if (strcmp(action->name, gMolActionSetSelection) == 0) {
@@ -1430,10 +1462,13 @@ MolActionPerform(Molecule *mol, MolAction *action)
 	} else if (strcmp(action->name, gMolActionChangeNumberOfResidues) == 0) {
 		if ((result = s_MolActionChangeNumberOfResidues(mol, action, &act2)) != 0)
 			return result;
+	} else if (strcmp(action->name, gMolActionAmendBySymmetry) == 0) {
+		if ((result = s_MolActionAmendBySymmetry(mol, action, &act2)) != 0)
+			return result;
+		needsRebuildMDArena = 1;
 	} else if (strcmp(action->name, gMolActionExpandBySymmetry) == 0) {
 		if ((result = s_MolActionExpandBySymmetry(mol, action, &act2)) != 0)
 			return result;
-		needsRebuildMDArena = 1;
 	} else if (strcmp(action->name, gMolActionAddSymmetryOperation) == 0) {
 		if ((result = s_MolActionAddSymmetryOperation(mol, action, &act2)) != 0)
 			return result;
@@ -1472,20 +1507,21 @@ MolActionPerform(Molecule *mol, MolAction *action)
 		MolActionCallback_registerUndo(mol, act2);
 		MolActionRelease(act2);
 	}
-	if (needsSymmetryAmendment && ig != NULL) {
-		IntGroup *ig2;
-		Vector *vp2;
-		int n1;
-		n1 = MoleculeAmendBySymmetry(mol, ig, &ig2, &vp2);
-		if (n1 > 0) {
-			act2 = MolActionNew(gMolActionSetAtomPositions, ig2, n1, vp2);
-			act2->frame = mol->cframe;
+
+	if (needsSymmetryAmendment) {
+		MolAction *act3;
+		act3 = MolActionNew(gMolActionAmendBySymmetry, ig, NULL);
+		if (ig != NULL)
+			IntGroupRelease(ig);
+		act2 = NULL;
+		result = s_MolActionAmendBySymmetry(mol, act3, &act2);
+		MolActionRelease(act3);
+		if (result != 0)
+			return result;
+		if (act2 != NULL) {
 			MolActionCallback_registerUndo(mol, act2);
 			MolActionRelease(act2);
-			free(vp2);
-			IntGroupRelease(ig2);
 		}
-		mol->needsMDCopyCoordinates = 1;
 	}
 	
 	if (needsRebuildMDArena) {

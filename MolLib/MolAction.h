@@ -65,7 +65,8 @@ extern const char *gMolActionAddParameters;
 extern const char *gMolActionDeleteParameters;
 extern const char *gMolActionCartesianToXtal;
 extern const char *gMolActionXtalToCartesian;
-	
+extern const char *gMolActionAmendBySymmetry;
+
 /*  Special action signatures to invoke the Ruby script. Used as follows:
  *  MolActionCreateAndPerform(mol, SCRIPT_ACTION("vd"), "rotate", vec, angle);
  *    (Will perform 'mol.rotate(vec, angle)')
