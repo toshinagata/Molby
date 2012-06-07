@@ -8126,13 +8126,36 @@ MoleculeTransform(Molecule *mp, Transform tr, IntGroup *group)
 {
 	int i;
 	Atom *ap;
+	Symop new_symop;
+	Transform rtr, symtr;
 	if (mp == NULL || tr == NULL)
 		return;
+	TransformInvert(rtr, tr);
 	__MoleculeLock(mp);
 	for (i = 0, ap = mp->atoms; i < mp->natoms; i++, ap = ATOM_NEXT(ap)) {
-		if (group != NULL && IntGroupLookup(group, i, NULL) == 0)
+		if (group == NULL || IntGroupLookup(group, i, NULL) != 0) {
+			TransformVec(&ap->r, tr, &ap->r);
+			if (!SYMOP_ALIVE(ap->symop))
+				continue;
+			/*  Transform symop  */
+			if (MoleculeGetTransformForSymop(mp, ap->symop, &symtr) != 0)
+				continue;
+			TransformMul(symtr, tr, symtr);
+			if (group == NULL || IntGroupLookup(group, ap->symbase, NULL) != 0)
+				TransformMul(symtr, symtr, rtr);
+		} else {
+			if (!SYMOP_ALIVE(ap->symop))
+				continue;
+			/*  Transform symop if the base atom is transformed  */
+			if (group != NULL && IntGroupLookup(group, ap->symbase, NULL) == 0)
+				continue;
+			if (MoleculeGetTransformForSymop(mp, ap->symop, &symtr) != 0)
+				continue;
+			TransformMul(symtr, symtr, rtr);
+		}
+		if (MoleculeGetSymopForTransform(mp, symtr, &new_symop) != 0)
 			continue;
-		TransformVec(&ap->r, tr, &ap->r);
+		ap->symop = new_symop;
 	}
 	mp->needsMDCopyCoordinates = 1;
 	__MoleculeUnlock(mp);
@@ -8162,72 +8185,23 @@ MoleculeMove(Molecule *mp, Transform tr, IntGroup *group)
 void
 MoleculeTranslate(Molecule *mp, const Vector *vp, IntGroup *group)
 {
-	int i;
-	Atom *ap;
+	Transform tr;
 	if (mp == NULL || vp == NULL)
 		return;
-	__MoleculeLock(mp);
-	for (i = 0, ap = mp->atoms; i < mp->natoms; i++, ap = ATOM_NEXT(ap)) {
-		if (group != NULL && IntGroupLookup(group, i, NULL) == 0)
-			continue;
-		VecInc(ap->r, *vp);
-	}
-	mp->needsMDCopyCoordinates = 1;
-	__MoleculeUnlock(mp);
-	sMoleculeNotifyChangeAppearance(mp);
+	memset(tr, 0, sizeof(tr));
+	tr[0] = tr[4] = tr[8] = 1.0;
+	tr[9] = vp->x;
+	tr[10] = vp->y;
+	tr[11] = vp->z;
+	MoleculeTransform(mp, tr, group);
 }
 
 void
 MoleculeRotate(Molecule *mp, const Vector *axis, Double angle, const Vector *center, IntGroup *group)
 {
-	int i;
-	Double w;
 	Transform tr;
-	Vector cv;
-	Atom *ap;
-	if (mp == NULL || axis == NULL)
-		return;
-	w = VecLength(*axis);
-	if (w < 1e-7)
-		return;
-	__MoleculeLock(mp);
-	/*  Construct a rotation transform: p' = c + A * (p - c)  */
-	if (center == NULL)
-		cv.x = cv.y = cv.z = 0.0;
-	else
-		cv = *center;
-	TransformForRotation(tr, axis, angle, &cv);
-
-	for (i = 0, ap = mp->atoms; i < mp->natoms; i++, ap = ATOM_NEXT(ap)) {
-		if (group != NULL && IntGroupLookup(group, i, NULL) == 0)
-			continue;
-		TransformVec(&ap->r, tr, &ap->r);
-	}
-	mp->needsMDCopyCoordinates = 1;
-	__MoleculeUnlock(mp);
-	sMoleculeNotifyChangeAppearance(mp);
-}
-
-void
-MoleculeReaxis(Molecule *mp, const Vector *xaxis, const Vector *yaxis, const Vector *zaxis, IntGroup *group)
-{
-	int i;
-	Atom *ap;
-	Vector v;
-	if (mp == NULL || xaxis == NULL || yaxis == NULL || zaxis == NULL)
-		return;
-	__MoleculeLock(mp);
-	for (i = 0, ap = mp->atoms; i < mp->natoms; i++, ap = ATOM_NEXT(ap)) {
-		if (group != NULL && IntGroupLookup(group, i, NULL) == 0)
-			continue;
-		v.x = VecDot(ap->r, *xaxis);
-		v.y = VecDot(ap->r, *yaxis);
-		v.z = VecDot(ap->r, *zaxis);
-		ap->r = v;
-	}
-	mp->needsMDCopyCoordinates = 1;
-	__MoleculeUnlock(mp);
-	sMoleculeNotifyChangeAppearance(mp);
+	TransformForRotation(tr, axis, angle, center);
+	MoleculeTransform(mp, tr, group);
 }
 
 int

@@ -461,7 +461,6 @@ void MoleculeTransform(Molecule *mp, Transform tr, IntGroup *group);
 /*void MoleculeMove(Molecule *mp, Transform tr, IntGroup *group);*/
 void MoleculeTranslate(Molecule *mp, const Vector *vp, IntGroup *group);
 void MoleculeRotate(Molecule *mp, const Vector *axis, Double angle, const Vector *center, IntGroup *group);
-void MoleculeReaxis(Molecule *mp, const Vector *xaxis, const Vector *yaxis, const Vector *zaxis, IntGroup *group);
 int MoleculeCenterOfMass(Molecule *mp, Vector *center, IntGroup *group);
 int MoleculeBounds(Molecule *mp, Vector *min, Vector *max, IntGroup *group);
 	
