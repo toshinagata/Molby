@@ -175,6 +175,7 @@ def guess_uff_parameter_dialog(current_value, indices)
     par_type = "angle"
   else
     message_box("UFF parameter guess of this type is not implemented.", "Guess UFF Force", "OK")
+	return nil
   end
   
   #  Look up the UFFParams entry
@@ -214,7 +215,7 @@ def guess_uff_parameter_dialog(current_value, indices)
 	  t3 = value("uff_type_2").to_i rescue 0
 	  b1 = value("bond_order_0").to_f rescue 1.0
 	  b2 = value("bond_order_1").to_f rescue 1.0
-      set_value("guessed", recalc.call(t1, t2, t3, b1, b2))
+      set_value("guessed", recalc.call(t1, t2, t3, b1, b2)) rescue nil
     }
     type_selects = []
     uff_types.each_with_index { |p, i|

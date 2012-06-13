@@ -1385,10 +1385,10 @@ class Molecule
 	mol = self
 	case ptype
 	when "bond"
-	  k = ["r0", "k"]
+	  k = ["k", "r0"]
 	  pen = self.parameter.bonds
 	when "angle"
-	  k = ["a0", "k"]
+	  k = ["k", "a0"]
 	  pen = self.parameter.angles
 	when "dihedral"
 	  k = ["k", "period", "phi0"]
