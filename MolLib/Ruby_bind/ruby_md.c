@@ -62,7 +62,6 @@ s_MDArena_Run_or_minimize(VALUE self, VALUE arg, int minimize)
 {
 	MDArena *arena;
 	int nsteps, retval, start_step;
-	IntGroup *ig;
 	Data_Get_Struct(self, MDArena, arena);
 	nsteps = NUM2INT(rb_Integer(arg));
 	if (arena->is_running)
@@ -88,20 +87,26 @@ s_MDArena_Run_or_minimize(VALUE self, VALUE arg, int minimize)
 	/*  Run simulation  */
 	retval = md_main(arena, minimize);
 
-	if (arena->step > start_step) {
-		/*  Copy new coordinates  */
+	if (retval == 0 || arena->step > start_step) {
 		int i, natoms = arena->xmol->natoms;
 		Atom *ap;
 		Vector *vp = (Vector *)malloc(sizeof(Vector) * natoms);
-		/*  Copy from mol (not xmol)  */
+		IntGroup *ig = IntGroupNewWithPoints(0, natoms, -1);
+		if (arena->step > start_step) {
+			/*  Copy coordinates and velocities from mol to xmol */
+			for (i = 0, ap = arena->mol->atoms; i < natoms; i++, ap = ATOM_NEXT(ap))
+				vp[i] = ap->r;
+			MolActionCreateAndPerform(arena->xmol, gMolActionSetAtomPositions, ig, natoms, vp);
+			for (i = 0, ap = arena->mol->atoms; i < natoms; i++, ap = ATOM_NEXT(ap))
+				vp[i] = ap->v;
+			MolActionCreateAndPerform(arena->xmol, gMolActionSetAtomVelocities, ig, natoms, vp);
+		}
+		/*  Copy forces (this is valid even for "zero-step" run)  */
 		for (i = 0, ap = arena->mol->atoms; i < natoms; i++, ap = ATOM_NEXT(ap))
-			vp[i] = ap->r;
-		ig = IntGroupNewWithPoints(0, natoms, -1);
-		MolActionCreateAndPerform(arena->xmol, gMolActionSetAtomPositions, ig, natoms, vp);
+			vp[i] = ap->f;
+		MolActionCreateAndPerform(arena->xmol, gMolActionSetAtomForces, ig, natoms, vp);
 		free(vp);
 		IntGroupRelease(ig);
-		/*  TODO: support undo for velocities and forces  */
-		md_copy_coordinates_from_internal(arena);
 	}
 
 	if (retval != 0)
