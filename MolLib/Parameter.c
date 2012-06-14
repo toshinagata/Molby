@@ -721,7 +721,7 @@ ParameterReadFromString(Parameter *par, char *buf, char **wbufp, const char *fna
 	options = kParameterLookupNoWildcard | kParameterLookupNoBaseAtomType;
 	if (strncmp(com, "bond", len) == 0) {
 		BondPar *bp;
-		if (sscanf(buf, " %11s %4s %4s %f %f %n", com2, type[0], type[1], &val[0], &val[1], &n) < 5) {
+		if (sscanf(buf, " %11s %6s %6s %f %f %n", com2, type[0], type[1], &val[0], &val[1], &n) < 5) {
 			s_AppendWarning(wbufp, "%s:%d: missing parameter in BOND record\n", fname, lineNumber);
 			return 1;
 		}
@@ -748,7 +748,7 @@ ParameterReadFromString(Parameter *par, char *buf, char **wbufp, const char *fna
 		s_StoreComment(kBondParType, bp, buf + n, src);
 	} else if (strncmp(com, "angle", len) == 0) {
 		AnglePar *ap;
-		if (sscanf(buf, " %11s %4s %4s %4s %f %f %n", com2, type[0], type[1], type[2], &val[0], &val[1], &n) < 6) {
+		if (sscanf(buf, " %11s %6s %6s %6s %f %f %n", com2, type[0], type[1], type[2], &val[0], &val[1], &n) < 6) {
 			s_AppendWarning(wbufp, "%s:%d: missing parameter in ANGLE record\n", fname, lineNumber);
 			return 1;
 		}
@@ -778,7 +778,7 @@ ParameterReadFromString(Parameter *par, char *buf, char **wbufp, const char *fna
 		s_StoreComment(kAngleParType, (BondPar *)ap, buf + n, src);
 	} else if (strncmp(com, "dihedral", len) == 0) {
 		TorsionPar *dp;
-		if (sscanf(buf, " %11s %4s %4s %4s %4s %f %d %f %n", com2, type[0], type[1], type[2], type[3], &val[0], &ival[0], &val[1], &n) < 8) {
+		if (sscanf(buf, " %11s %6s %6s %6s %6s %f %d %f %n", com2, type[0], type[1], type[2], type[3], &val[0], &ival[0], &val[1], &n) < 8) {
 			s_AppendWarning(wbufp, "%s:%d: missing parameter in DIHEDRAL record\n", fname, lineNumber);
 			return 1;
 		}
@@ -815,7 +815,7 @@ ParameterReadFromString(Parameter *par, char *buf, char **wbufp, const char *fna
 		s_StoreComment(kDihedralParType, (BondPar *)dp, buf + n, src);
 	} else if (strncmp(com, "improper", len) == 0) {
 		TorsionPar *ip;
-		if (sscanf(buf, " %11s %4s %4s %4s %4s %f %d %f %n", com2, type[0], type[1], type[2], type[3], &val[0], &ival[0], &val[1], &n) < 8) {
+		if (sscanf(buf, " %11s %6s %6s %6s %6s %f %d %f %n", com2, type[0], type[1], type[2], type[3], &val[0], &ival[0], &val[1], &n) < 8) {
 			s_AppendWarning(wbufp, "%s:%d: missing parameter in IMPROPER record\n", fname, lineNumber);
 			return 1;
 		}
@@ -862,7 +862,7 @@ ParameterReadFromString(Parameter *par, char *buf, char **wbufp, const char *fna
 		char *p;
 		/*  NOTE: the nonbonded record lists "2*sigma", not "sigma"!  */
 		int flag = (com[0] == 'v');
-		if (sscanf(buf, " %11s %4s %f %f %f %f %n", com2, type[0], &val[0], &val[1], &val[2], &val[3], &n) < 6) {
+		if (sscanf(buf, " %11s %6s %f %f %f %f %n", com2, type[0], &val[0], &val[1], &val[2], &val[3], &n) < 6) {
 			s_AppendWarning(wbufp, "%s:%d: missing parameter in %s record\n", fname, lineNumber, (flag ? "VDW" : "NONBONDED"));
 			return 1;
 		}
@@ -922,7 +922,7 @@ ParameterReadFromString(Parameter *par, char *buf, char **wbufp, const char *fna
 	} else if (strncmp(com, "nbfi", len) == 0 || strncmp(com, "vdwpair", len) == 0) {
 		VdwPairPar *vp, vtemp;
 		int flag = (com[0] == 'v');
-		if (sscanf(buf, " %11s %4s %4s %f %f %f %f %n", com2, type[0], type[1], &val[0], &val[1], &val[2], &val[3], &n) < 6) {
+		if (sscanf(buf, " %11s %6s %6s %f %f %f %f %n", com2, type[0], type[1], &val[0], &val[1], &val[2], &val[3], &n) < 6) {
 			s_AppendWarning(wbufp, "%s:%d: missing parameter in %s record\n", fname, lineNumber, (flag ? "VDWP" : "NBFI"));
 			return 1;
 		}

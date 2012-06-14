@@ -561,7 +561,7 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 	double dbuf[12];
 	int mview_ibuf[16];
 	float mview_fbuf[8];
-	char cbuf[12][6];
+	char cbuf[12][8];
 	const char **pp;
 	char *bufp, *valp, *comp;
 	Int *ip;
@@ -604,7 +604,7 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 				if (buf[0] == '\n')
 					break;
 				/* idx seg_name res_seq res_name name type charge weight element atomic_number occupancy temp_factor int_charge */
-				if (sscanf(buf, "%d %4s %d %4s %4s %4s %lf %lf %4s %d %lf %lf %d", &ibuf[0], cbuf[0], &ibuf[1], cbuf[1], cbuf[2], cbuf[3], &dbuf[0], &dbuf[1], cbuf[4], &ibuf[2], &dbuf[2], &dbuf[3], &ibuf[3]) < 13) {
+				if (sscanf(buf, "%d %6s %d %6s %6s %6s %lf %lf %6s %d %lf %lf %d", &ibuf[0], cbuf[0], &ibuf[1], cbuf[1], cbuf[2], cbuf[3], &dbuf[0], &dbuf[1], cbuf[4], &ibuf[2], &dbuf[2], &dbuf[3], &ibuf[3]) < 13) {
 					snprintf(errbuf, errbufsize, "line %d: coordinates cannot be read for atom %d", lineNumber, mp->natoms + 1);
 					goto exit;
 				}
@@ -3383,17 +3383,23 @@ MoleculeWriteToMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbu
 	n1 = n2 = n3 = 0;
 	for (i = 0, ap = mp->atoms; i < mp->natoms; i++, ap = ATOM_NEXT(ap)) {
 		strncpy(bufs[0], ap->segName, 4);
+		bufs[0][4] = 0;
 		strncpy(bufs[1], ap->resName, 4);
+		bufs[1][4] = 0;
 		strncpy(bufs[2], ap->aname, 4);
+		bufs[2][4] = 0;
 		AtomTypeDecodeToString(ap->type, bufs[3]);
+		bufs[3][6] = 0;
 		strncpy(bufs[4], ap->element, 4);
+		bufs[4][2] = 0;
 		for (j = 0; j < 5; j++) {
-			bufs[j][4] = 0;
 			if (bufs[j][0] == 0) {
 				bufs[j][0] = '_';
 				bufs[j][1] = 0;
 			}
-			for (k = 0; k < 4; k++) {
+			for (k = 0; k < 6; k++) {
+				if (bufs[j][k] == 0)
+					break;
 				if (bufs[j][k] > 0 && bufs[j][k] < ' ')
 					bufs[j][k] = '_';
 			}
