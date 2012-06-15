@@ -1363,12 +1363,13 @@ s_LAMatrix_Alloc(VALUE klass)
 
 /*
  *  call-seq:
- *     new(row, column)
+ *     new(column, row)
  *     new(array)
  *     new(matrix)
  *
  *  Returns a new LAMatrix object.
- *  In the first form, a zero LAMatrix of given size is returned.
+ *  In the first form, a zero LAMatrix of given size is returned. Note the order of the
+ *  arguments; they are opposite to the mathematical convention.
  *  In the second form, the array must be either of an array (the column vector),
  *  or an array of arrays (a set of column vectors).
  *  In the third form, a new transform is built from a matrix. The argument
@@ -1381,8 +1382,8 @@ s_LAMatrix_Initialize(int argc, VALUE *argv, VALUE self)
 	LAMatrix *mp;
 	if (argc == 2) {
 		int row, column;
-		row = NUM2INT(rb_Integer(argv[0]));
-		column = NUM2INT(rb_Integer(argv[1]));
+		row = NUM2INT(rb_Integer(argv[1]));
+		column = NUM2INT(rb_Integer(argv[0]));
 		if (column <= 0)
 			rb_raise(rb_eMolbyError, "Bad column dimension (%d) for creating LAMatrix", column);
 		if (row <= 0)
@@ -1887,7 +1888,7 @@ s_LAMatrix_Identity(VALUE klass, VALUE val)
 
 /*
  *  call-seq:
- *     zero(row [, column])  -> LAMatrix
+ *     zero(column [, row])  -> LAMatrix
  *
  *  Returns a zero matrix of the specified size.
  */
@@ -1902,7 +1903,7 @@ s_LAMatrix_Zero(int argc, VALUE *argv, VALUE klass)
 	n2 = (val2 == Qnil ? n1 : NUM2INT(rb_Integer(val2)));
 	if (n1 <= 0 || n2 <= 0)
 		rb_raise(rb_eArgError, "invalid matrix dimension");
-	mp = LAMatrixNew(n1, n2);
+	mp = LAMatrixNew(n2, n1);
 	return Data_Wrap_Struct(rb_cLAMatrix, 0, -1, mp);
 }
 
@@ -2156,13 +2157,14 @@ s_LAMatrix_Submatrix_sub(VALUE self, int rowpos, int columnpos, int row, int col
 
 /*
  *  call-seq:
- *     submatrix(rowpos, columnpos, row, column) -> LAMatrix
+ *     submatrix(columnpos, rowpos, column, row) -> LAMatrix
  *
- *  Returns the submatrix beginning from (rowpos, columnpos) and size (row, column).
+ *  Returns the submatrix beginning from (columnpos, rowpos) and size (column, row).
+ *  Note the order of the arguments; they are opposite to the mathematical convention.
  *  If -1 is specified for row or column, all elements in that direction are used.
  */
 static VALUE
-s_LAMatrix_Submatrix(VALUE self, VALUE rowposval, VALUE columnposval, VALUE rowval, VALUE columnval)
+s_LAMatrix_Submatrix(VALUE self, VALUE columnposval, VALUE rowposval, VALUE columnval, VALUE rowval)
 {
 	return s_LAMatrix_Submatrix_sub(self, NUM2INT(rb_Integer(rowposval)), NUM2INT(rb_Integer(columnposval)), NUM2INT(rb_Integer(rowval)), NUM2INT(rb_Integer(columnval)));
 }
@@ -2247,9 +2249,9 @@ s_LAMatrix_Eigenvalues(VALUE self)
  *     LAMatrix[obj] -> (new) LAMatrix
  *
  *  Create a new matrix.
- *  In the first form, f1...fn must be numbers, and a (n, 1) matrix (a column vector) is created.
+ *  In the first form, f1...fn must be numbers, and a (n, 1) matrix (a column vector; LAMatrix[1, n] in our convention) is created.
  *  In the second form, a1...an must be array-like objects, and a (m, n) matrix (m is the maximum 
- *  dimension of a1...an) is created.
+ *  dimension of a1...an; LAMatrix[n, m] in our convention) is created.
  *  In the third form, obj must be either an array, a Vector3D, a Transform, or an LAMatrix.
  */
 static VALUE

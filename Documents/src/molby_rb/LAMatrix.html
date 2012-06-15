@@ -35,6 +35,13 @@
 <p>
 The class <a href="LAMatrix.html">LAMatrix</a> represents a matrix with methods implementing linear algebra.
 </p>
+<h4>Note about the Order of Indices</h4>
+<p>
+LAMatrix methods always handles indices in "column, row" order. This is opposite from the mathematical convention, but consistent with representation of multidimensional array. Be careful when you write code to represent mathematical transformation by LAMatrix.
+</p>
+<p>
+For example, when <code>a = LAMatrix.new(1,3)</code> and <code>b = LAMatrix.new(3,5)</code>, <code>a * b</code> causes exception because the dimensions do not match (you are trying to multiply two matrices of size (3,1) and (5,3)). <code>b * a</code> goes without error to give a row vector (which has the same dimension with <code>LAMatrix.new(1,5)</code>).
+</p>
 <h4>Relationship between LAMatrix, Vector3D and Transform</h4>
 <p>
 In Molby, <a href="Vector3D.html">Vector3D</a> and <a href="Transform.html">Transform</a> class also represents matrix-like objects. For convenience, these classes can be used interconvertibly.
@@ -143,7 +150,7 @@ Multiply the arguments. The arguments are interpreted as in <a href="#multiply_b
 <div id="method-M000055" class="method-detail">
 <a name="new"></a>
 <div class="method-heading">
-<span class="method-name">new(row, column) &rarr; (new) LAMatrix<br />
+<span class="method-name">new(column, row) &rarr; (new) LAMatrix<br />
 new(array) &rarr; (new) LAMatrix<br />
 new(matrix) &rarr; (new) LAMatrix<br />
 </span>
@@ -153,7 +160,7 @@ new(matrix) &rarr; (new) LAMatrix<br />
 Create a new LAMatrix object.
 </p>
 <ul>
-<li>In the first form, a zero LAMatrix of given size is returned.</li>
+<li>In the first form, a zero LAMatrix of given size is returned. Note the order of the arguments; they are opposite to the mathematical convention.</li>
 <li>In the second form, the array must be either of an array (the column vector), or an array of arrays (a set of column vectors).</li>
 <li>In the third form, a new transform is built from a matrix. The argument <tt>matrix</tt> must respond to a method call <tt>matrix[col, row]</tt>, <tt>row_size</tt> and <tt>column_size</tt>.</li>
 </ul>
@@ -163,7 +170,7 @@ Create a new LAMatrix object.
 <div id="method-M000076" class="method-detail">
 <a name="zero"></a>
 <div class="method-heading">
-<span class="method-name">zero(row[, column])  &rarr; (new) LAMatrix<br />
+<span class="method-name">zero(column[, row])  &rarr; (new) LAMatrix<br />
 </span>
 </div>
 <div class="method-description">
@@ -403,12 +410,12 @@ Subtract a value from self.
 <a name="submatrix"></a>
 <div class="method-heading">
 <span class="method-name">
-submatrix(row_pos, column_pos, row_size = nil, column_size = nil) &rarr; (new) LAMatrix
+submatrix(column_pos, row_pos, column_size, row_size) &rarr; (new) LAMatrix
 </span>
 </div>
 <div class="method-description">
 <p>
-Extract a submatrix beginning from <tt>(row_pos, column_pos)</tt> and size <tt>(row_size, column_size)</tt>. If <tt>row_size</tt> or <tt>column_size</tt> are given as nil, then all the elements to the end of the row/column are used.
+Extract a submatrix beginning from <tt>(row_pos, column_pos)</tt> and size <tt>(row_size, column_size)</tt>. If <tt>row_size</tt> or <tt>column_size</tt> are given as -1, then all the elements to the end of the row/column are used. Note the order of the arguments; they are opposite to the mathematical convention.
 </p>
 </div>
 </div>
