@@ -7615,6 +7615,321 @@ s_Molecule_FindConflicts(int argc, VALUE *argv, VALUE self)
 	return rval;
 }
 
+/*  Calculate the transform that moves the current coordinates to the reference
+ coordinates with least displacements.   */
+static Double
+s_Molecule_FitCoordinates_Sub(Molecule *mol, IntGroup *ig, Vector *ref, Double *weights, Transform trans)
+{
+	Atom *ap, *ap1;
+	Int natoms, nn;
+	Vector org1, org2;
+	Int i, in, j, k;
+	Double w, w1;
+	Mat33 r, q, u;
+	Double eigen_val[3];
+	Vector eigen_vec[3];
+	Vector s[3];
+	IntGroupIterator iter;
+
+	natoms = mol->natoms;
+	ap = mol->atoms;
+	IntGroupIteratorInit(ig, &iter);
+	
+	/*  Calculate the weighted center  */
+	VecZero(org1);
+	VecZero(org2);
+	w = 0.0;
+	for (i = 0; (in = IntGroupIteratorNext(&iter)) >= 0; i++) {
+		ap1 = ATOM_AT_INDEX(ap, in);
+		w1 = (weights != NULL ? weights[i] : ap1->weight);
+		if (w1 == 0.0)
+			continue;
+		VecScaleInc(org1, ap1->r, w1);
+		VecScaleInc(org2, ref[i], w1);
+		w += w1;
+	}
+	w = 1.0 / w;
+	VecScaleSelf(org1, w);
+	VecScaleSelf(org2, w);
+
+    /*  R = sum(weight[n] * x[n] * t(y[n]));  */
+    /*  Matrix to diagonalize = R * tR    */
+	memset(r, 0, sizeof(Mat33));
+	memset(q, 0, sizeof(Mat33));
+	memset(u, 0, sizeof(Mat33));
+	nn = 0;
+	IntGroupIteratorReset(&iter);
+	for (i = 0; (in = IntGroupIteratorNext(&iter)) >= 0; i++) {
+		Vector v1, v2;
+		ap1 = ATOM_AT_INDEX(ap, in);
+		w1 = (weights != NULL ? weights[i] : ap1->weight);
+		if (w1 == 0.0)
+			continue;
+		VecSub(v1, ap1->r, org1);
+		VecSub(v2, ref[i], org2);
+		r[0] += w1 * v2.x * v1.x;
+		r[1] += w1 * v2.y * v1.x;
+		r[2] += w1 * v2.z * v1.x;
+		r[3] += w1 * v2.x * v1.y;
+		r[4] += w1 * v2.y * v1.y;
+		r[5] += w1 * v2.z * v1.y;
+		r[6] += w1 * v2.x * v1.z;
+		r[7] += w1 * v2.y * v1.z;
+		r[8] += w1 * v2.z * v1.z;
+		nn++;
+	}
+	for (i = 0; i < 9; i++)
+		r[i] /= (nn * nn);
+	for (i = 0; i < 3; i++) {
+		for (j = 0; j < 3; j++) {
+			for (k = 0; k < 3; k++) {
+				q[j*3+i] += r[k*3+i] * r[k*3+j];
+			}
+		}
+	}
+	
+#if 1 || DEBUG_FIT_COORDINATES
+	printf("Matrix to diagonalize:\n");
+	for (i = 0; i < 3; i++) {
+		printf("%10.6g %10.6g %10.6g\n", q[i*3], q[i*3+1], q[i*3+2]);
+	}
+#endif
+	
+	if (MatrixSymDiagonalize(q, eigen_val, eigen_vec) != 0) {
+		IntGroupIteratorRelease(&iter);
+		return -1.0;  /*  Cannot determine the eigenvector  */
+	}
+
+#if 1 || DEBUG_FIT_COORDINATES
+	for (i = 0; i < 3; i++) {
+		printf("Eigenvalue %d = %.6g\n", i+1, eigen_val[i]);
+		printf("Eigenvector %d: %.6g %.6g %.6g\n", i+1, eigen_vec[i].x, eigen_vec[i].y, eigen_vec[i].z);
+	}
+#endif
+	
+    /*  s[i] = normalize(tR * v[i])  */
+    /*  U = s0*t(v0) + s1*t(v1) + s2*t(v2)  */
+	MatrixTranspose(r, r);
+	for (i = 0; i < 3; i++) {
+		MatrixVec(&s[i], r, &eigen_vec[i]);
+		w1 = 1.0 / VecLength(s[i]);
+		VecScaleSelf(s[i], w1);
+	}
+	for (k = 0; k < 3; k++) {
+		u[0] += s[k].x * eigen_vec[k].x;
+		u[1] += s[k].x * eigen_vec[k].y;
+		u[2] += s[k].x * eigen_vec[k].z;
+		u[3] += s[k].y * eigen_vec[k].x;
+		u[4] += s[k].y * eigen_vec[k].y;
+		u[5] += s[k].y * eigen_vec[k].z;
+		u[6] += s[k].z * eigen_vec[k].x;
+		u[7] += s[k].z * eigen_vec[k].y;
+		u[8] += s[k].z * eigen_vec[k].z;
+	}
+	
+	/*  y = U*(x - org1) + org2 = U*x + (org2 - U*org1)  */
+	MatrixVec(&org1, u, &org1);
+	VecDec(org2, org1);
+	for (i = 0; i < 9; i++)
+		trans[i] = u[i];
+	trans[9] = org2.x;
+	trans[10] = org2.y;
+	trans[11] = org2.z;
+	
+	/*  Calculate rmsd  */
+	IntGroupIteratorReset(&iter);
+	w = 0.0;
+	for (i = 0; (in = IntGroupIteratorNext(&iter)) >= 0; i++) {
+		Vector tv;
+		w1 = (weights != NULL ? weights[i] : ap1->weight);
+		if (w1 == 0.0)
+			continue;
+		TransformVec(&tv, trans, &ap1->r);
+		VecDec(tv, ref[i]);
+		w += VecLength2(tv);
+	}
+	w = sqrt(w / nn);
+	IntGroupIteratorRelease(&iter);
+	return w;
+}
+
+/*
+ *  call-seq:
+ *     fit_coordinates(group, ref, weight = nil) -> [transform, rmsd]
+ *
+ *  Calculate the transform to fit the given group to the set of reference coordinates.
+ *  The reference coordinates ref is given as either a frame number, an array of
+ *  Vector3Ds or arrays, or an LAMatrix. Weight can be optionally given as an array
+ *  of numbers or an LAMatrix. If weight is not given, the atomic weights are used.
+ *  Return values are the transform (that converts the present coordinates to the
+ *  target coordinates) and root mean square deviation (without weight).
+ */
+static VALUE
+s_Molecule_FitCoordinates(int argc, VALUE *argv, VALUE self)
+{
+	Molecule *mol;
+	Atom *ap;
+	VALUE gval, rval, wval;
+	IntGroup *ig;
+	IntGroupIterator iter;
+	int nn, errno, i, j, in, status;
+	Vector *ref;
+	Double *weights, dval[3];
+	Transform tr;
+
+	Data_Get_Struct(self, Molecule, mol);
+	rb_scan_args(argc, argv, "21", &gval, &rval, &wval);
+	if (gval == Qnil)
+		ig = IntGroupNewWithPoints(0, mol->natoms, -1);
+	else
+		ig = IntGroupFromValue(gval);
+	if (ig == NULL || (nn = IntGroupGetCount(ig)) == 0) {
+		IntGroupRelease(ig);
+		rb_raise(rb_eMolbyError, "atom group is not given correctly");
+	}
+	ref = (Vector *)calloc(sizeof(Vector), nn);
+	weights = (Double *)calloc(sizeof(Double), nn);
+	IntGroupIteratorInit(ig, &iter);
+	if (rb_obj_is_kind_of(rval, rb_cNumeric)) {
+		int fn = NUM2INT(rb_Integer(rval));
+		if (fn < 0 || fn >= MoleculeGetNumberOfFrames(mol)) {
+			errno = 1;
+			status = fn;
+			goto err;
+		}
+		for (i = 0; (in = IntGroupIteratorNext(&iter)) >= 0; i++) {
+			ap = ATOM_AT_INDEX(mol->atoms, in);
+			if (fn < ap->nframes)
+				ref[i] = ap->frames[fn];
+			else ref[i] = ap->r;
+		}
+	} else if (rb_obj_is_kind_of(rval, rb_cLAMatrix)) {
+		LAMatrix *m = LAMatrixFromValue(rval, NULL, 0, 0);
+		if (m->row * m->column < nn * 3) {
+			errno = 2;
+			goto err;
+		}
+		for (i = 0; i < nn; i++) {
+			ref[i].x = m->data[i * 3];
+			ref[i].y = m->data[i * 3 + 1];
+			ref[i].z = m->data[i * 3 + 2];
+		}
+	} else {
+		VALUE aval;
+		rval = rb_protect(rb_ary_to_ary, rval, &status);
+		if (status != 0) {
+			errno = 3;
+			goto err;
+		}
+		if (RARRAY_LEN(rval) < nn) {
+			errno = 2;
+			goto err;
+		}
+		if (rb_obj_is_kind_of((RARRAY_PTR(rval))[0], rb_cNumeric)) {
+			/*  Array of 3*nn numbers  */
+			if (RARRAY_LEN(rval) < nn * 3) {
+				errno = 2;
+				goto err;
+			}
+			for (i = 0; i < nn; i++) {
+				for (j = 0; j < 3; j++) {
+					aval = rb_protect(rb_Float, (RARRAY_PTR(rval))[i * 3 + j], &status);
+					if (status != 0) {
+						errno = 3;
+						goto err;
+					}
+					dval[j] = NUM2DBL(aval);
+				}
+				ref[i].x = dval[0];
+				ref[i].y = dval[1];
+				ref[i].z = dval[2];
+			}
+		} else {
+			/*  Array of nn Vector3Ds or Arrays  */
+			for (i = 0; i < RARRAY_LEN(rval); i++) {
+				aval = (RARRAY_PTR(rval))[i];
+				if (rb_obj_is_kind_of(aval, rb_cVector3D)) {
+					VectorFromValue(aval, &ref[i]);
+				} else {
+					aval = rb_protect(rb_ary_to_ary, aval, &status);
+					if (status != 0) {
+						errno = 3;
+						goto err;
+					}
+					if (RARRAY_LEN(aval) < 3) {
+						errno = 4;
+						status = i;
+						goto err;
+					}
+					for (j = 0; j < 3; j++) {
+						VALUE aaval = rb_protect(rb_Float, (RARRAY_PTR(aval))[j], &status);
+						if (status != 0) {
+							errno = 3;
+							goto err;
+						}
+						dval[j] = NUM2DBL(aaval);
+					}
+					ref[i].x = dval[0];
+					ref[i].y = dval[1];
+					ref[i].z = dval[2];
+				}
+			}
+		}
+	}
+	if (wval == Qnil) {
+		/*  Use atomic weights  */
+		IntGroupIteratorReset(&iter);
+		for (i = 0; (in = IntGroupIteratorNext(&iter)) >= 0; i++) {
+			ap = ATOM_AT_INDEX(mol->atoms, in);
+			weights[i] = ap->weight;
+		}
+	} else {
+		wval = rb_protect(rb_ary_to_ary, wval, &status);
+		if (status != 0) {
+			errno = 3;
+			goto err;
+		}
+		if (RARRAY_LEN(wval) < nn) {
+			errno = 5;
+			goto err;
+		}
+		for (i = 0; i < nn; i++) {
+			VALUE wwval = rb_protect(rb_Float, (RARRAY_PTR(wval))[i], &status);
+			if (status != 0) {
+				errno = 3;
+				goto err;
+			}
+			weights[i] = NUM2DBL(wwval);
+		}
+	}
+	dval[0] = s_Molecule_FitCoordinates_Sub(mol, ig, ref, weights, tr);
+	if (dval[0] < 0) {
+		errno = 6;
+		goto err;
+	}
+	errno = 0;
+err:
+	IntGroupIteratorRelease(&iter);
+	free(ref);
+	free(weights);
+	if (errno == 0) {
+		return rb_ary_new3(2, ValueFromTransform(&tr), rb_float_new(dval[0]));
+	} else if (errno == 1) {
+		rb_raise(rb_eMolbyError, "frame index (%d) is out of range", status);
+	} else if (errno == 2) {
+		rb_raise(rb_eMolbyError, "insufficient number of reference coordinates");
+	} else if (errno == 3) {
+		rb_jump_tag(status);
+	} else if (errno == 4) {
+		rb_raise(rb_eMolbyError, "less than 3 elements for index %d of reference coordinates", status);
+	} else if (errno == 5) {
+		rb_raise(rb_eMolbyError, "insufficient number of weight values");
+	} else if (errno == 6) {
+		rb_raise(rb_eMolbyError, "matrix calculation failed during coordinate fitting");
+	}
+	return Qnil;  /*  Not reached  */
+}
+
 /*
  *  call-seq:
  *     display
@@ -9069,6 +9384,7 @@ Init_Molby(void)
 	rb_define_method(rb_cMolecule, "amend_by_symmetry", s_Molecule_AmendBySymmetry, -1);
 	rb_define_method(rb_cMolecule, "wrap_unit_cell", s_Molecule_WrapUnitCell, 1);
 	rb_define_method(rb_cMolecule, "find_conflicts", s_Molecule_FindConflicts, -1);
+	rb_define_method(rb_cMolecule, "fit_coordinates", s_Molecule_FitCoordinates, -1);
 	rb_define_method(rb_cMolecule, "display", s_Molecule_Display, 0);
 	rb_define_method(rb_cMolecule, "make_front", s_Molecule_MakeFront, 0);
 	rb_define_method(rb_cMolecule, "update_enabled?", s_Molecule_UpdateEnabled, 0);

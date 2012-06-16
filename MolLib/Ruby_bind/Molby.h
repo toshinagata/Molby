@@ -72,6 +72,7 @@ extern VALUE ValueFromTransform(Transform *tp);
 
 extern void VectorFromValue(VALUE val, Vector *vp);
 extern void TransformFromValue(VALUE val, Transform *tp);
+extern LAMatrix *LAMatrixFromValue(VALUE val, int *needsRelease, int rowHint, int columnHint);
 extern IntGroup *IntGroupFromValue(VALUE val);
 extern Molecule *MoleculeFromValue(VALUE val);
 
