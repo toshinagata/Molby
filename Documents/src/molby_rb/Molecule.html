@@ -1219,6 +1219,21 @@ whose name begins with an underscore.
 </div>
 </div>
 
+<div id="method-M000109" class="method-detail">
+<a name="fit_coordinates"></a>
+<div class="method-heading">
+<span class="method-name">fit_coordinates(group, ref, weight = nil) -> [transform, rmsd]</span>
+</div>
+<div class="method-description">
+<p>
+Calculate the transform to fit the given group to the set of reference coordinates. The reference coordinates ref is given as either a frame number, an array of <a href="Vector3D.html">Vector3D</a>s or arrays, or an <a href="LAMatrix.html">LAMatrix</a>. Weight can be optionally given as an array of numbers or an <a href="LAMatrix.html">LAMatrix</a>. If weight is not given, the atomic weights are used.
+</p>
+<p>
+Return values are the transform (that converts the present coordinates to the target coordinates) and root mean square deviation (without weight).
+</p>
+</div>
+</div>
+
 <div id="method-M000277" class="method-detail">
 <a name="M000277"></a>
 <div class="method-heading">

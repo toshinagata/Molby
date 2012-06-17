@@ -7642,8 +7642,6 @@ s_Molecule_FitCoordinates_Sub(Molecule *mol, IntGroup *ig, Vector *ref, Double *
 	for (i = 0; (in = IntGroupIteratorNext(&iter)) >= 0; i++) {
 		ap1 = ATOM_AT_INDEX(ap, in);
 		w1 = (weights != NULL ? weights[i] : ap1->weight);
-		if (w1 == 0.0)
-			continue;
 		VecScaleInc(org1, ap1->r, w1);
 		VecScaleInc(org2, ref[i], w1);
 		w += w1;
@@ -7652,7 +7650,7 @@ s_Molecule_FitCoordinates_Sub(Molecule *mol, IntGroup *ig, Vector *ref, Double *
 	VecScaleSelf(org1, w);
 	VecScaleSelf(org2, w);
 
-    /*  R = sum(weight[n] * x[n] * t(y[n]));  */
+    /*  R = sum(weight[n]^2 * x[n] * t(y[n]));  */
     /*  Matrix to diagonalize = R * tR    */
 	memset(r, 0, sizeof(Mat33));
 	memset(q, 0, sizeof(Mat33));
@@ -7663,19 +7661,18 @@ s_Molecule_FitCoordinates_Sub(Molecule *mol, IntGroup *ig, Vector *ref, Double *
 		Vector v1, v2;
 		ap1 = ATOM_AT_INDEX(ap, in);
 		w1 = (weights != NULL ? weights[i] : ap1->weight);
-		if (w1 == 0.0)
-			continue;
+		w1 *= w1;
 		VecSub(v1, ap1->r, org1);
 		VecSub(v2, ref[i], org2);
-		r[0] += w1 * v2.x * v1.x;
-		r[1] += w1 * v2.y * v1.x;
-		r[2] += w1 * v2.z * v1.x;
-		r[3] += w1 * v2.x * v1.y;
-		r[4] += w1 * v2.y * v1.y;
-		r[5] += w1 * v2.z * v1.y;
-		r[6] += w1 * v2.x * v1.z;
-		r[7] += w1 * v2.y * v1.z;
-		r[8] += w1 * v2.z * v1.z;
+		r[0] += w1 * v1.x * v2.x;
+		r[1] += w1 * v1.y * v2.x;
+		r[2] += w1 * v1.z * v2.x;
+		r[3] += w1 * v1.x * v2.y;
+		r[4] += w1 * v1.y * v2.y;
+		r[5] += w1 * v1.z * v2.y;
+		r[6] += w1 * v1.x * v2.z;
+		r[7] += w1 * v1.y * v2.z;
+		r[8] += w1 * v1.z * v2.z;
 		nn++;
 	}
 	for (i = 0; i < 9; i++)
@@ -7683,47 +7680,33 @@ s_Molecule_FitCoordinates_Sub(Molecule *mol, IntGroup *ig, Vector *ref, Double *
 	for (i = 0; i < 3; i++) {
 		for (j = 0; j < 3; j++) {
 			for (k = 0; k < 3; k++) {
-				q[j*3+i] += r[k*3+i] * r[k*3+j];
+				q[i+j*3] += r[i+k*3] * r[j+k*3];
 			}
 		}
 	}
-	
-#if 1 || DEBUG_FIT_COORDINATES
-	printf("Matrix to diagonalize:\n");
-	for (i = 0; i < 3; i++) {
-		printf("%10.6g %10.6g %10.6g\n", q[i*3], q[i*3+1], q[i*3+2]);
-	}
-#endif
 	
 	if (MatrixSymDiagonalize(q, eigen_val, eigen_vec) != 0) {
 		IntGroupIteratorRelease(&iter);
 		return -1.0;  /*  Cannot determine the eigenvector  */
 	}
 
-#if 1 || DEBUG_FIT_COORDINATES
-	for (i = 0; i < 3; i++) {
-		printf("Eigenvalue %d = %.6g\n", i+1, eigen_val[i]);
-		printf("Eigenvector %d: %.6g %.6g %.6g\n", i+1, eigen_vec[i].x, eigen_vec[i].y, eigen_vec[i].z);
-	}
-#endif
-	
-    /*  s[i] = normalize(tR * v[i])  */
+    /*  s[i] = tR * v[i] / sqrt(eigenval[i])  */
     /*  U = s0*t(v0) + s1*t(v1) + s2*t(v2)  */
 	MatrixTranspose(r, r);
 	for (i = 0; i < 3; i++) {
 		MatrixVec(&s[i], r, &eigen_vec[i]);
-		w1 = 1.0 / VecLength(s[i]);
+		w1 = 1.0 / sqrt(eigen_val[i]);
 		VecScaleSelf(s[i], w1);
 	}
 	for (k = 0; k < 3; k++) {
 		u[0] += s[k].x * eigen_vec[k].x;
-		u[1] += s[k].x * eigen_vec[k].y;
-		u[2] += s[k].x * eigen_vec[k].z;
-		u[3] += s[k].y * eigen_vec[k].x;
+		u[1] += s[k].y * eigen_vec[k].x;
+		u[2] += s[k].z * eigen_vec[k].x;
+		u[3] += s[k].x * eigen_vec[k].y;
 		u[4] += s[k].y * eigen_vec[k].y;
-		u[5] += s[k].y * eigen_vec[k].z;
-		u[6] += s[k].z * eigen_vec[k].x;
-		u[7] += s[k].z * eigen_vec[k].y;
+		u[5] += s[k].z * eigen_vec[k].y;
+		u[6] += s[k].x * eigen_vec[k].z;
+		u[7] += s[k].y * eigen_vec[k].z;
 		u[8] += s[k].z * eigen_vec[k].z;
 	}
 	
@@ -7741,9 +7724,7 @@ s_Molecule_FitCoordinates_Sub(Molecule *mol, IntGroup *ig, Vector *ref, Double *
 	w = 0.0;
 	for (i = 0; (in = IntGroupIteratorNext(&iter)) >= 0; i++) {
 		Vector tv;
-		w1 = (weights != NULL ? weights[i] : ap1->weight);
-		if (w1 == 0.0)
-			continue;
+		ap1 = ATOM_AT_INDEX(ap, in);
 		TransformVec(&tv, trans, &ap1->r);
 		VecDec(tv, ref[i]);
 		w += VecLength2(tv);
@@ -7846,7 +7827,7 @@ s_Molecule_FitCoordinates(int argc, VALUE *argv, VALUE self)
 			}
 		} else {
 			/*  Array of nn Vector3Ds or Arrays  */
-			for (i = 0; i < RARRAY_LEN(rval); i++) {
+			for (i = 0; i < nn; i++) {
 				aval = (RARRAY_PTR(rval))[i];
 				if (rb_obj_is_kind_of(aval, rb_cVector3D)) {
 					VectorFromValue(aval, &ref[i]);
