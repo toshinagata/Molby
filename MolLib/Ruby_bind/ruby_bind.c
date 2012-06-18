@@ -5458,7 +5458,7 @@ s_Molecule_EachAtom(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     cell     -> [a, b, c, alpha, beta, gamma]
+ *     cell     -> [a, b, c, alpha, beta, gamma [, sig_a, sig_b, sig_c, sig_alpha, sig_beta, sig_gamma]]
  *
  *  Returns the unit cell parameters. If cell is not set, returns nil.
  */
@@ -5474,42 +5474,48 @@ s_Molecule_Cell(VALUE self)
 	val = rb_ary_new2(6);
 	for (i = 0; i < 6; i++)
 		rb_ary_push(val, rb_float_new(mol->cell->cell[i]));
+	if (mol->cell->has_sigma) {
+		for (i = 0; i < 6; i++) {
+			rb_ary_push(val, rb_float_new(mol->cell->cellsigma[i]));
+		}
+	}
 	return val;
 }
 
 /*
  *  call-seq:
- *     cell = [a, b, c, alpha, beta, gamma]
- *     set_cell([a, b, c, alpha, beta, gamma], flag = nil, sigma = nil)
+ *     cell = [a, b, c, alpha, beta, gamma [, sig_a, sig_b, sig_c, sig_alpha, sig_beta, sig_gamma]]
+ *     set_cell([a, b, c, alpha, beta, gamma[, sig_a, sig_b, sig_c, sig_alpha, sig_beta, sig_gamma]], flag = nil)
  *
- *  Set the unit cell parameters. If the cell value is nil, then clear the current cell. 
+ *  Set the unit cell parameters. If the cell value is nil, then clear the current cell.
+    If the given argument has 12 members, then the second half of the parameters represents the sigma values.
     This operation is undoable. If the second argument is given as non-nil, then 
 	the coordinates are transformed so that the cartesian coordinates remain the same.
-    If the third argument is given, then standard deviations of the cell is also set.
  */
 static VALUE
 s_Molecule_SetCell(int argc, VALUE *argv, VALUE self)
 {
     Molecule *mol;
-	VALUE val, fval, sval;
-	int i, flag;
+	VALUE val, fval;
+	int i, flag, n;
 	double d[12];
     Data_Get_Struct(self, Molecule, mol);
-	rb_scan_args(argc, argv, "12", &val, &fval, &sval);
+	rb_scan_args(argc, argv, "11", &val, &fval);
 	flag = RTEST(fval);
 	if (val == Qnil) {
 		MolActionCreateAndPerform(mol, gMolActionSetCell, 0, d, flag);
 	//	MoleculeSetCell(mol, 1, 1, 1, 90, 90, 90);
 		return Qnil;
 	}
-	for (i = 0; i < 6; i++)
-		d[i] = NUM2DBL(rb_Float(Ruby_ObjectAtIndex(val, i)));
-	if (sval != Qnil) {
-		for (i = 6; i < 11; i++)
-			d[i] = NUM2DBL(rb_Float(Ruby_ObjectAtIndex(sval, i - 6)));
-	}
-	MolActionCreateAndPerform(mol, gMolActionSetCell, i, d, flag);
-//	MoleculeSetCell(mol, d[0], d[1], d[2], d[3], d[4], d[5]);
+	val = rb_ary_to_ary(val);
+	if (RARRAY_LEN(val) >= 12) {
+		n = 12;
+	} else if (RARRAY_LEN(val) >= 6) {
+		n = 6;
+	} else rb_raise(rb_eMolbyError, "too few members for cell parameters (6 or 12 required)");
+	for (i = 0; i < n; i++)
+		d[i] = NUM2DBL(rb_Float((RARRAY_PTR(val))[i]));
+	MolActionCreateAndPerform(mol, gMolActionSetCell, n, d, flag);
 	return val;
 }
 
@@ -5569,6 +5575,7 @@ s_Molecule_Box(VALUE self)
     periodic along the axis.
     In the second form, an isotropic box with cell-length d is set.
     In the third form, the existing box is cleared.
+    Note: the sigma of the cell parameters is not cleared unless the periodic box itself is cleared.
  */
 static VALUE
 s_Molecule_SetBox(int argc, VALUE *argv, VALUE self)

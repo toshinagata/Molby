@@ -628,6 +628,9 @@ the existing unit cell is cleared.
 This operation is undoable, in any of the above form.
 </p>
 <p>
+Note: if the sigma values of the cell parameters were already set by <a href="Molecule.html#M000236">Molecule#cell=</a>, those values are left untouched unless the cell itself is cleared.
+</p>
+<p>
 <i>See Also:</i> <a href="Molecule.html#M000238">Molecule#box</a>, <a href="Molecule.html#M000235">Molecule#cell</a>, <a href="Molecule.html#M000236">Molecule#cell=</a>
 </p>
 </div>
@@ -681,12 +684,12 @@ Calculate the dihedral angle defined by the four atoms. The result is in degree.
 <div id="method-M000235" class="method-detail">
 <a name="M000235"></a>
 <div class="method-heading">
-<span class="method-name">cell     &rarr; [a, b, c, alpha, beta, gamma]<br />
+<span class="method-name">cell     &rarr; [a, b, c, alpha, beta, gamma [, sig_a, sig_b, sig_c, sig_alpha, sig_beta, sig_gamma]]<br />
 </span>
 </div>
 <div class="method-description">
 <p>
-Returns the unit cell parameters. If a unit cell is not set, returns nil. Alpha/beta/gamma are in degree.
+Returns the unit cell parameters. If a unit cell is not set, returns nil. Alpha/beta/gamma are in degree. If the sigma value are present, the return value is an array of 12 floats instead of 6.
 </p>
 <p>
 <i>See Also:</i> <a href="Molecule.html#M000238">Molecule#box</a>, <a href="Molecule.html#M000239">Molecule#box=</a>, <a href="Molecule.html#M000236">Molecule#cell=</a>
@@ -697,14 +700,14 @@ Returns the unit cell parameters. If a unit cell is not set, returns nil. Alpha/
 <div id="method-M000236" class="method-detail">
 <a name="M000236"></a>
 <div class="method-heading">
-<span class="method-name">cell = [a, b, c, alpha, beta, gamma]<br />
-set_cell([a, b, c, alpha, beta, gamma], flag = nil)<br />
+<span class="method-name">cell = [a, b, c, alpha, beta, gamma [, sig_a, sig_b, sig_c, sig_alpha, sig_beta, sig_gamma]]<br />
+set_cell([a, b, c, alpha, beta, gamma [, sig_a, sig_b, sig_c, sig_alpha, sig_beta, sig_gamma]], flag = nil)<br />
 </span>
 </div>
 <div class="method-description">
 <p>
 Set the unit cell parameters. Alpha/beta/gamma are in degree. If the right-hand value (or the first argument) is nil, then clear the current unit cell. If the second argument is given as non-nil, then
-the coordinates are transformed so that the cartesian coordinates remain the same. This operation is undoable.
+the coordinates are transformed so that the cartesian coordinates remain the same. If the cell parameters are given as an array of 12 floats, then the second half of the array is to represent the sigma value (that are common in crystallographic data). This operation is undoable.
 </p>
 <p>
 <i>See Also:</i> <a href="Molecule.html#M000238">Molecule#box</a>, <a href="Molecule.html#M000239">Molecule#box=</a>, <a href="Molecule.html#M000235">Molecule#cell</a>

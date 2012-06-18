@@ -967,8 +967,8 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 				if (buf[0] == '\n')
 					break;
 				/* ax ay az; bx by bz; cx cy cz; ox oy oz; fx fy fz [sigma; sa sb sc s_alpha s_beta s_gamma] */
-				if (i < 5) {
-					if (sscanf(buf, "%lf %lf %lf %d", &dbuf[0], &dbuf[1], &dbuf[2]) < 3) {
+				if (i < 4) {
+					if (sscanf(buf, "%lf %lf %lf", &dbuf[0], &dbuf[1], &dbuf[2]) < 3) {
 						snprintf(errbuf, errbufsize, "line %d: bad periodic_box format", lineNumber);
 						goto exit;
 					}
@@ -984,9 +984,9 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 				}
 				if (j == 4 && ibuf[3] != 0)
 					has_sigma = 1;
-				cbuf[0][0] = dbuf[0];
-				cbuf[0][1] = dbuf[1];
-				cbuf[0][2] = dbuf[2];
+				cbuf[0][0] = ibuf[0];
+				cbuf[0][1] = ibuf[1];
+				cbuf[0][2] = ibuf[2];
 				MoleculeSetPeriodicBox(mp, vs, vs + 1, vs + 2, vs + 3, cbuf[0]);
 				if (has_sigma) {
 					if (ReadLine(buf, sizeof buf, fp, &lineNumber) <= 0) {
@@ -8817,8 +8817,14 @@ MoleculeSetPeriodicBox(Molecule *mp, const Vector *ax, const Vector *ay, const V
 	if (MoleculeCalculateCellFromAxes(&b, 1) < 0)
 		return -1;
 	__MoleculeLock(mp);
-	if (mp->cell != NULL)
+	if (mp->cell != NULL) {
+		if (mp->cell->has_sigma) {
+			/*  Keep the sigma  */
+			b.has_sigma = 1;
+			memmove(b.cellsigma, mp->cell->cellsigma, sizeof(mp->cell->cellsigma));
+		}
 		free(mp->cell);
+	}
 	mp->cell = (XtalCell *)calloc(sizeof(XtalCell), 1);
 	if (mp->cell != NULL) {
 		memmove(mp->cell, &b, sizeof(XtalCell));
