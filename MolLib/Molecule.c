@@ -702,8 +702,16 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 				if (buf[0] == '\n')
 					break;
 				/* idx x y z */
-				if (sscanf(buf, "%d %lf %lf %lf", &ibuf[0], &dbuf[0], &dbuf[1], &dbuf[2]) < 4) {
+				if ((j = sscanf(buf, "%d %lf %lf %lf %lf %lf %lf", &ibuf[0], &dbuf[0], &dbuf[1], &dbuf[2], &dbuf[3], &dbuf[4], &dbuf[5])) < 4) {
 					snprintf(errbuf, errbufsize, "line %d: atom position cannot be read for atom %d frame %d", lineNumber, i + 1, nframes);
+					goto exit;
+				}
+				if (j > 4 && nframes != 0) {
+					snprintf(errbuf, errbufsize, "line %d: atom position sigma can only be given for frame 0", lineNumber);
+					goto exit;
+				}
+				if (j > 4 && j != 7) {
+					snprintf(errbuf, errbufsize, "line %d: atom position sigma cannot be read for atom %d frame %d", lineNumber, i + 1, nframes);
 					goto exit;
 				}
 				if (i >= mp->natoms) {
@@ -720,6 +728,11 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 						ap->frames[0] = ap->r;
 				}
 				ap->r = v;
+				if (j == 7) {
+					ap->sigma.x = dbuf[3];
+					ap->sigma.y = dbuf[4];
+					ap->sigma.z = dbuf[5];
+				}
 				i++;
 			}
 			nframes++;
@@ -847,12 +860,30 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 					continue;
 				if (buf[0] == '\n')
 					break;
-				/* a b c alpha beta gamma */ 
-				if (sscanf(buf, "%lf %lf %lf %lf %lf %lf", &dbuf[0], &dbuf[1], &dbuf[2], &dbuf[3], &dbuf[4], &dbuf[5]) < 6) {
+				/* a b c alpha beta gamma [sigmaflag] */ 
+				if ((j = sscanf(buf, "%lf %lf %lf %lf %lf %lf %d", &dbuf[0], &dbuf[1], &dbuf[2], &dbuf[3], &dbuf[4], &dbuf[5], &ibuf[0])) < 6) {
 					snprintf(errbuf, errbufsize, "line %d: bad xtalcell format", lineNumber);
 					goto exit;
 				}
 				MoleculeSetCell(mp, dbuf[0], dbuf[1], dbuf[2], dbuf[3], dbuf[4], dbuf[5], 0);
+				if (j == 7 && ibuf[0] != 0) {
+					if (ReadLine(buf, sizeof buf, fp, &lineNumber) <= 0) {
+						snprintf(errbuf, errbufsize, "line %d: sigma for xtalcell are missing", lineNumber);
+						goto exit;
+					}
+					if (sscanf(buf, "%lf %lf %lf %lf %lf %lf", &dbuf[0], &dbuf[1], &dbuf[2], &dbuf[3], &dbuf[4], &dbuf[5]) < 6) {
+						snprintf(errbuf, errbufsize, "line %d: bad xtalcell sigma format", lineNumber);
+						goto exit;
+					}
+					if (mp->cell != NULL) {
+						mp->cell->has_sigma = 1;
+						for (i = 0; i < 6; i++) {
+							mp->cell->cellsigma[i] = dbuf[i];
+						}
+					} else {
+						snprintf(errbuf, errbufsize, "line %d: cell sigma are given while cell is not given", lineNumber);
+					}
+				}
 			}
 			continue;
 		} else if (strcmp(buf, "!:symmetry_operations") == 0) {
@@ -884,32 +915,98 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 				}
 			}
 			continue;
-		} else if (strcmp(buf, "!:periodic_box") == 0) {
-			Vector vs[5];
+		} else if (strcmp(buf, "!:anisotropic_thermal_parameters") == 0) {
 			i = 0;
 			while (ReadLine(buf, sizeof buf, fp, &lineNumber) > 0) {
 				if (buf[0] == '!')
 					continue;
 				if (buf[0] == '\n')
 					break;
-				/* ax ay az; bx by bz; cx cy cz; ox oy oz; fx fy fz */
-				if (sscanf(buf, "%lf %lf %lf", &dbuf[0], &dbuf[1], &dbuf[2]) < 3) {
-					snprintf(errbuf, errbufsize, "line %d: bad symmetry_operation format", lineNumber);
+				/* b11 b22 b33 b12 b13 b23 [has_sigma] */
+				if ((j = sscanf(buf, "%lf %lf %lf %lf %lf %lf %d", &dbuf[0], &dbuf[1], &dbuf[2], &dbuf[3], &dbuf[4], &dbuf[5], &ibuf[0])) < 6) {
+					snprintf(errbuf, errbufsize, "line %d: anisotropic thermal parameters cannot be read for atom %d", lineNumber, i + 1);
 					goto exit;
 				}
-				vs[i].x = dbuf[0];
-				vs[i].y = dbuf[1];
-				vs[i].z = dbuf[2];
-				i++;
-				if (i == 5) {
-				/*	j = sscanf(buf, "%d %d %d %d", &ibuf[0], &ibuf[1], &ibuf[2], &ibuf[3]); */
-					cbuf[0][0] = dbuf[0];
-					cbuf[0][1] = dbuf[1];
-					cbuf[0][2] = dbuf[2];
-					MoleculeSetPeriodicBox(mp, vs, vs + 1, vs + 2, vs + 3, cbuf[0]);
-				/*	if (j == 4)
-						mp->is_xtal_coord = (ibuf[3] != 0); */
+				if (i >= mp->natoms) {
+					snprintf(errbuf, errbufsize, "line %d: too many anisotropic thermal parameters\n", lineNumber);
+					goto exit;
 				}
+				if (dbuf[0] == 0.0 && dbuf[1] == 0.0 && dbuf[2] == 0.0 && dbuf[3] == 0.0 && dbuf[4] == 0.0 && dbuf[5] == 0.0) {
+					/*  Skip it  */
+				} else {
+					MoleculeSetAniso(mp, i, 0, dbuf[0], dbuf[1], dbuf[2], dbuf[3], dbuf[4], dbuf[5], NULL);
+				}
+				if (j == 7 && ibuf[0] != 0) {
+					if (ReadLine(buf, sizeof buf, fp, &lineNumber) <= 0) {
+						snprintf(errbuf, errbufsize, "line %d: anisotropic thermal parameters sigma missing", lineNumber);
+						goto exit;
+					}
+					if (sscanf(buf, "%lf %lf %lf %lf %lf %lf", &dbuf[0], &dbuf[1], &dbuf[2], &dbuf[3], &dbuf[4], &dbuf[5]) < 6) {
+						snprintf(errbuf, errbufsize, "line %d: anisotropic thermal parameters sigma cannot be read for atom %d", lineNumber, i + 1);
+						goto exit;
+					}
+					ap = ATOM_AT_INDEX(mp->atoms, i);
+					if (ap->aniso == NULL) {
+						snprintf(errbuf, errbufsize, "line %d: anisotropic thermal parameters sigma are given while the parameters are not given", lineNumber);
+						goto exit;
+					}
+					ap->aniso->has_bsig = 1;
+					for (j = 0; j < 6; j++)
+						ap->aniso->bsig[j] = dbuf[j];
+				}
+				i++;
+			}
+			continue;
+		} else if (strcmp(buf, "!:periodic_box") == 0) {
+			Vector vs[5];
+			Byte has_sigma = 0;
+			i = 0;
+			while (ReadLine(buf, sizeof buf, fp, &lineNumber) > 0) {
+				if (buf[0] == '!')
+					continue;
+				if (buf[0] == '\n')
+					break;
+				/* ax ay az; bx by bz; cx cy cz; ox oy oz; fx fy fz [sigma; sa sb sc s_alpha s_beta s_gamma] */
+				if (i < 5) {
+					if (sscanf(buf, "%lf %lf %lf %d", &dbuf[0], &dbuf[1], &dbuf[2]) < 3) {
+						snprintf(errbuf, errbufsize, "line %d: bad periodic_box format", lineNumber);
+						goto exit;
+					}
+					vs[i].x = dbuf[0];
+					vs[i].y = dbuf[1];
+					vs[i].z = dbuf[2];
+					i++;
+					continue;
+				}
+				if ((j = sscanf(buf, "%d %d %d %d", &ibuf[0], &ibuf[1], &ibuf[2], &ibuf[3])) < 3) {
+					snprintf(errbuf, errbufsize, "line %d: bad periodic_box format", lineNumber);
+					goto exit;
+				}
+				if (j == 4 && ibuf[3] != 0)
+					has_sigma = 1;
+				cbuf[0][0] = dbuf[0];
+				cbuf[0][1] = dbuf[1];
+				cbuf[0][2] = dbuf[2];
+				MoleculeSetPeriodicBox(mp, vs, vs + 1, vs + 2, vs + 3, cbuf[0]);
+				if (has_sigma) {
+					if (ReadLine(buf, sizeof buf, fp, &lineNumber) <= 0) {
+						snprintf(errbuf, errbufsize, "line %d: sigma for cell parameters are missing", lineNumber);
+						goto exit;
+					}
+					if (sscanf(buf, "%lf %lf %lf %lf %lf %lf", &dbuf[0], &dbuf[1], &dbuf[2], &dbuf[3], &dbuf[4], &dbuf[5]) < 6) {
+						snprintf(errbuf, errbufsize, "line %d: bad periodic_box sigma format", lineNumber);
+						goto exit;
+					}
+					if (mp->cell != NULL) {
+						mp->cell->has_sigma = 1;
+						for (i = 0; i < 6; i++) {
+							mp->cell->cellsigma[i] = dbuf[i];
+						}
+					} else {
+						snprintf(errbuf, errbufsize, "line %d: cell sigma are given while cell is not given", lineNumber);
+					}
+				}
+				break;
 			}
 			continue;
 		} else if (strcmp(buf, "!:md_parameters") == 0) {
@@ -3367,7 +3464,7 @@ int
 MoleculeWriteToMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsize)
 {
 	FILE *fp;
-	int i, j, k, n1, n2, n3;
+	int i, j, k, n1, n2, n3, n_aniso;
 	Atom *ap;
 	char bufs[6][8];
 
@@ -3380,7 +3477,7 @@ MoleculeWriteToMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbu
 
 	fprintf(fp, "!:atoms\n");
 	fprintf(fp, "! idx seg_name res_seq res_name name type charge weight element atomic_number occupancy temp_factor int_charge\n");
-	n1 = n2 = n3 = 0;
+	n1 = n2 = n3 = n_aniso = 0;
 	for (i = 0, ap = mp->atoms; i < mp->natoms; i++, ap = ATOM_NEXT(ap)) {
 		strncpy(bufs[0], ap->segName, 4);
 		bufs[0][4] = 0;
@@ -3410,6 +3507,8 @@ MoleculeWriteToMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbu
 			n2++;
 		if (ap->mm_exclude || ap->periodic_exclude)
 			n3++;
+		if (ap->aniso != NULL)
+			n_aniso++;
 		fprintf(fp, "%d %s %d %s %s %s %.5f %.5f %s %d %f %f %d\n", i, bufs[0], ap->resSeq, bufs[1], bufs[2], bufs[3], ap->charge, ap->weight, bufs[4], ap->atomicNumber, ap->occupancy, ap->tempFactor, ap->intCharge);
 	}
 	fprintf(fp, "\n");
@@ -3449,14 +3548,22 @@ MoleculeWriteToMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbu
 		n2 = 0;
 	for (i = 0; (i == n2 || i < n1); i++) {
 		fprintf(fp, "!:positions ; frame %d\n", i);
-		fprintf(fp, "! idx x y z\n");
+		fprintf(fp, "! idx x y z [sx sy sz]\n");
 		for (j = 0, ap = mp->atoms; j < mp->natoms; j++, ap = ATOM_NEXT(ap)) {
 			Vector *vp;
+			Byte sig_flag = 0;
 			if (i != n2 && i < ap->nframes)
 				vp = ap->frames + i;
-			else
+			else {
 				vp = &(ap->r);
-			fprintf(fp, "%d %.8f %.8f %.8f\n", j, vp->x, vp->y, vp->z);
+				if (ap->sigma.x != 0.0 || ap->sigma.y != 0.0 || ap->sigma.z != 0.0)
+					sig_flag = 1;
+			}
+			fprintf(fp, "%d %.8f %.8f %.8f", j, vp->x, vp->y, vp->z);
+			if (sig_flag) {
+				fprintf(fp, " %.8f %.8f %.8f", ap->sigma.x, ap->sigma.y, ap->sigma.z);
+			}
+			fprintf(fp, "\n");
 		}
 		fprintf(fp, "\n");
 	}
@@ -3498,18 +3605,23 @@ MoleculeWriteToMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbu
 	}
 	
 	if (mp->cell != NULL) {
+		fprintf(fp, "!:xtalcell\n");
+		fprintf(fp, "! a b c alpha beta gamma\n");
+		fprintf(fp, "! This information is redundant and overridden by the following periodic_box info\n");
+		fprintf(fp, "%f %f %f %f %f %f\n", mp->cell->cell[0], mp->cell->cell[1], mp->cell->cell[2], mp->cell->cell[3], mp->cell->cell[4], mp->cell->cell[5]);
+		fprintf(fp, "\n");
+
 		fprintf(fp, "!:periodic_box\n");
-		fprintf(fp, "! ax ay az; bx by bz; cx cy cz; ox oy oz; fa fb fc\n");
+		fprintf(fp, "! ax ay az; bx by bz; cx cy cz; ox oy oz; fa fb fc [sigma; sa sb sc s_alpha s_beta s_gamma]\n");
 		for (i = 0; i < 3; i++)
 			fprintf(fp, "%15.8f %15.8f %15.8f\n", mp->cell->axes[i].x, mp->cell->axes[i].y, mp->cell->axes[i].z);
 		fprintf(fp, "%15.8f %15.8f %15.8f\n", mp->cell->origin.x, mp->cell->origin.y, mp->cell->origin.z);
-		fprintf(fp, "%d %d %d\n", mp->cell->flags[0], mp->cell->flags[1], mp->cell->flags[2]);
+		fprintf(fp, "%d %d %d%s\n", mp->cell->flags[0], mp->cell->flags[1], mp->cell->flags[2], (mp->cell->has_sigma ? " 1" : ""));
+		if (mp->cell->has_sigma) {
+			fprintf(fp, "%f %f %f %f %f %f\n", mp->cell->cellsigma[0], mp->cell->cellsigma[1], mp->cell->cellsigma[2], mp->cell->cellsigma[3], mp->cell->cellsigma[4], mp->cell->cellsigma[5]);
+		}
 		fprintf(fp, "\n");
 
-		fprintf(fp, "!:xtalcell\n");
-		fprintf(fp, "! a b c alpha beta gamma; this info is redundant, periodic_box is used instead\n");
-		fprintf(fp, "%f %f %f %f %f %f\n", mp->cell->cell[0], mp->cell->cell[1], mp->cell->cell[2], mp->cell->cell[3], mp->cell->cell[4], mp->cell->cell[5]);
-		fprintf(fp, "\n");
 	}
 	
 	if (mp->nsyms > 0) {
@@ -3522,6 +3634,24 @@ MoleculeWriteToMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbu
 				fprintf(fp, "%11.6f%c", (*tp)[s_index_order[j]], (j % 3 == 2 ? '\n' : ' '));
 		}
 		fprintf(fp, "\n");
+	}
+	
+	if (n_aniso > 0) {
+		fprintf(fp, "!:anisotropic_thermal_parameters\n");
+		fprintf(fp, "! b11 b22 b33 b12 b13 b23 [sigma; sb11 sb22 sb33 sb12 sb13 sb23]\n");
+		for (i = 0, ap = mp->atoms; i < mp->natoms; i++, ap = ATOM_NEXT(ap)) {
+			if (ap->aniso != NULL) {
+				Double *bp = ap->aniso->bij;
+				fprintf(fp, "%14.8g %14.8g %14.8g %14.8g %14.8g %14.8g%s\n", bp[0], bp[1], bp[2], bp[3], bp[4], bp[5], (ap->aniso->has_bsig ? " 1" : ""));
+				if (ap->aniso->has_bsig) {
+					bp = ap->aniso->bsig;
+					fprintf(fp, "%14.8g %14.8g %14.8g %14.8g %14.8g %14.8g\n", bp[0], bp[1], bp[2], bp[3], bp[4], bp[5]);
+				}
+			} else {
+				fprintf(fp, "0 0 0 0 0 0\n");
+			}
+		}
+		fprintf(fp, "\n");		
 	}
 	
 	if (mp->arena != NULL) {
@@ -8451,12 +8581,12 @@ MoleculeCalculateCellFromAxes(XtalCell *cp, int calc_abc)
 	
 	if (calc_abc) {
 		/*  Calculate a, b, c, alpha, beta, gamma  */
-		cp->cell[0] = sqrt(cp->tr[0] * cp->tr[0] + cp->tr[3] * cp->tr[3] + cp->tr[6] * cp->tr[6]);
-		cp->cell[1] = sqrt(cp->tr[1] * cp->tr[1] + cp->tr[4] * cp->tr[4] + cp->tr[7] * cp->tr[7]);
-		cp->cell[2] = sqrt(cp->tr[2] * cp->tr[2] + cp->tr[5] * cp->tr[5] + cp->tr[8] * cp->tr[8]);
-		cp->cell[3] = acos((cp->tr[1] * cp->tr[2] + cp->tr[4] * cp->tr[5] + cp->tr[7] * cp->tr[8]) / (cp->cell[1] * cp->cell[2])) * kRad2Deg;
-		cp->cell[4] = acos((cp->tr[2] * cp->tr[0] + cp->tr[5] * cp->tr[3] + cp->tr[8] * cp->tr[6]) / (cp->cell[2] * cp->cell[0])) * kRad2Deg;
-		cp->cell[5] = acos((cp->tr[0] * cp->tr[1] + cp->tr[3] * cp->tr[4] + cp->tr[6] * cp->tr[7]) / (cp->cell[0] * cp->cell[1])) * kRad2Deg;
+		cp->cell[0] = sqrt(cp->tr[0] * cp->tr[0] + cp->tr[1] * cp->tr[1] + cp->tr[2] * cp->tr[2]);
+		cp->cell[1] = sqrt(cp->tr[3] * cp->tr[3] + cp->tr[4] * cp->tr[4] + cp->tr[5] * cp->tr[5]);
+		cp->cell[2] = sqrt(cp->tr[6] * cp->tr[6] + cp->tr[7] * cp->tr[7] + cp->tr[8] * cp->tr[8]);
+		cp->cell[3] = acos((cp->tr[3] * cp->tr[6] + cp->tr[4] * cp->tr[7] + cp->tr[5] * cp->tr[8]) / (cp->cell[1] * cp->cell[2])) * kRad2Deg;
+		cp->cell[4] = acos((cp->tr[6] * cp->tr[0] + cp->tr[7] * cp->tr[1] + cp->tr[8] * cp->tr[2]) / (cp->cell[2] * cp->cell[0])) * kRad2Deg;
+		cp->cell[5] = acos((cp->tr[0] * cp->tr[3] + cp->tr[1] * cp->tr[4] + cp->tr[2] * cp->tr[5]) / (cp->cell[0] * cp->cell[1])) * kRad2Deg;
 	}
 	
 	return 0;
