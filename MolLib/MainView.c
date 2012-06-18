@@ -1278,8 +1278,12 @@ drawAtom(MainView *mview, int i1, int selected, const Vector *dragOffset, const 
 			drawEllipsoid(p, elip, elip+3, elip+6, 15);
 		} else {
 			Double rad;
-			rad = biso2radius(ap->tempFactor);
-			rad *= mview->probabilityScale;
+			if (ap != NULL) {
+				rad = biso2radius(ap->tempFactor);
+				rad *= mview->probabilityScale;
+			} else {
+				rad = dp->radius * mview->atomRadius;
+			}
 			drawSphere(p, rad, 8);
 		}
 	} else {
