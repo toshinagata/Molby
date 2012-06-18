@@ -376,3 +376,58 @@ ChangeLog
 - The "log file" field is set to blank unless explicitly set by the user.
 - The structure Mat33 and Transform are now column-first arrangement (no change on Ruby interface and mbsf file format)
 - Rms of crystallographic parameters (from the CIF file) are now kept in the molecule. Copying/saving of such parameters are not yet supported.
+
+2012.6.18.
+Version 0.6.3
+
+リリースノート
+- LAMatrix クラスのドキュメントを作成。
+- 量子化学計算ソフトウェアとの連携のドキュメントを作成。
+- CIFファイルから読み込んだ座標値・異方性温度因子・セルパラメータの標準偏差を mbsf ファイルに保存するようにした。
+- Ruby コマンド新設: Molecule#fit_coordinates, Molecule#amend_by_symmetry, Molecule#set(get)_view_center, Molecule#hidden_atoms, Molecule#set_hidden_atoms, Molecule#charge, Kernel#lookup_menu
+- Bond, angle などのテーブルから分子力学パラメータを編集するとき、Universal Force Field (UFF) で力の定数を見積もる機能をつけた。
+- 分子力学パラメータを原子のインデックスで指定できるようにした（実はもともとあった機能だが、分子を編集してもパラメータが維持されるようになった）。
+- その他バグ修正（ChangeLog を参照）
+
+- Document for the LAMatrix class was written.
+- Document for the collaboration with other quantum chemistry softwares was written.
+- Mbsf files now retain sigmas for the crystallographic parameters (imported from CIF).
+- New Ruby commands: Molecule#fit_coordinates, Molecule#amend_by_symmetry, Molecule#set(get)_view_center, Molecule#hidden_atoms, Molecule#set_hidden_atoms, Molecule#charge, Kernel#lookup_menu
+- When the MM parameters are edited from the bond/angle table, the force constant can be guessed by Universal Force Field (UFF).
+- The MM parameters can now be specified by explicit atom indices.
+- Other bug fixes (see the change log).
+
+ChangeLog
+- Features of Molecule#cell and Molecule#box are modified so that the handling of the sigma values of the cell parameters looks more consistent.
+- Mbsf format now retains anisotropic parameters and sigma (for crystallographic data)
+- Crash during creating bonds when ellipsoid display is on is fixed.
+- Ruby: Molecule#fit_coordinates is implemented.
+- LAMatrix#new, #zero, #submatrix now accept arguments in 'column,row' order.
+- MM forces are updated after 'run(0)'
+- Load/save mbsf files were broken when atom type variants were used for atom types with 3 or 4 characters. Fixed.
+- The order of parameters in cmd_edit_local_parameter_in_mainview dialog was inconsistent. Fixed. Also fixed Ruby exception in UFF guess dialog.
+- Molecule#transform, rotate, invert, etc. are now aware of symmetry related atoms. That is, the symmetry operation is updated so that the atoms are also symmetry related after transformation.
+- Ruby: AtomRef#symop can now be set from script.
+- Ruby: Molecule#amend_by_symmetry is implemented.
+- Ruby: Molecule#set(get)_view_translation is now obsolete and replaced by set(get)_view_center.
+- The order of the anisotropic thermal parameters is changed to 'b11, b22, b33, b12, b13, b23'. Inconsistency in some of the codes is fixed. TODO: when symmetry expansion is done, the anisotropic thermal parameters should be correctly converted.
+- Ruby: Molecule#hidden_atoms and Molecule#set_hidden_atoms are implemented.
+- The order of columns for MD parameters in the bond/angle/dihedral tables are changed, so that the columns appear in the same order as in the parameter table.
+- UFF parameter guess is implemented.
+- Molecule#neutralize was not working correctly. Fixed, and Molecule#charge was implemented.
+- The load/unload global parameters dialog is sometimes out of the screen. Fixed.
+- Windows version does not display last build date in the about dialog. Fixed.
+- Parameters now can be specified by using both explicit indices and atom types, like '7-ca-8'.
+- Parameter editing is improved.
+- Restructure MolAction.c.
+- Atom range specification for the vdw cutoff parameter is now made obsolete.
+- Vector3D[] and Transform[] are modified to accept an LAMatrix argument. The document is written for LAMatrix.
+- Load Script Menu caused crash when no window is open. Fixed.
+- Ruby: Kernel#lookup_menu is implemented.
+- Document is written for LAMatrix.
+- LAMatrix#multiply was not working correctly when on-the-fly size conversion was required. Fixed.
+- Execute Script command was broken. Fixed.
+- CIF import may fail when _geom_bond_site_symmetry_1 field is missing. Fixed.
+- Document was written for the collaboration with other quantum chemistry softwares.
+- .log and .out are both accepted as the extension of the Gaussian and GAMESS log files.
+- update_version.rb is improved.
