@@ -767,6 +767,22 @@ MainView_getCamera(MainView *mview, Vector *outCamera, Vector *outLookAt, Vector
 
 #pragma mark ====== Draw model ======
 
+static void
+enableLighting(void)
+{
+	static GLfloat pos[] = {0.0f, 0.0f, 1.0f, 0.0f};
+	glEnable(GL_LIGHTING);
+#if __WXMAC__
+	/*  On Mac OS 10.6, redefining the light position seems to be necessary
+		every time lighting is made enabled  */
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glLoadIdentity();
+	glLightfv(GL_LIGHT0, GL_POSITION, pos);
+	glPopMatrix();
+#endif
+}
+
 void
 MainView_initializeOpenGLView(MainView *mview)
 {
@@ -1157,7 +1173,7 @@ drawGraphite(MainView *mview)
 			glEnd();
 		}
 	}
-	glEnable(GL_LIGHTING);	
+	enableLighting();
 }
 
 static GLfloat sRedColor[] = {1, 0, 0, 1};
@@ -1606,7 +1622,7 @@ skip:
 	
 /*  cleanup: */
 	if (draft)
-		glEnable(GL_LIGHTING);
+		enableLighting();
 	if (selectFlags != NULL)
 		free(selectFlags);
 }
@@ -1632,7 +1648,7 @@ drawGraphics(MainView *mview)
 					glVertex3fv(&g->points[j * 3]);
 				}
 				glEnd();
-				glEnable(GL_LIGHTING);
+				enableLighting();
 				break;
 			case kMainViewGraphicPoly: {
 				Vector v0, v1, v2, v3;
@@ -1762,7 +1778,7 @@ drawUnitCell(MainView *mview)
 		glVertex3fv(abc);
 		glEnd();
 	}
-	glEnable(GL_LIGHTING);
+	enableLighting();
 }
 
 static void
@@ -2008,7 +2024,7 @@ MainView_drawModel(MainView *mview)
 #endif
 //	glDisable(GL_BLEND);
 //	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_LIGHTING);
+	enableLighting();
 
     if (mview->draggingMode == kMainViewSelectingRegion) {
 		/*  Draw selection rectangle  */
@@ -2028,7 +2044,7 @@ MainView_drawModel(MainView *mview)
 		glVertex2f(mview->dragStartPos[0], mview->dragStartPos[1]);
         glEnd();
 		glEnable(GL_DEPTH_TEST);
-		glEnable(GL_LIGHTING);
+		enableLighting();
     }
 
     glFinish();
