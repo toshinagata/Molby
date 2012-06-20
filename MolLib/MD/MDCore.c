@@ -1736,9 +1736,9 @@ md_prepare(MDArena *arena, int check_only)
 
 	/*  Graphite potential  */
 	if (arena->use_graphite) {
-		if (arena->graphite != NULL)
-			graphite_release(arena->graphite);
-		arena->graphite = graphite_new();
+		if (arena->graphite == NULL)
+			arena->graphite = graphite_new();
+		graphite_set_needs_update(arena->graphite, 1);
 	}
 
 	if (arena->velocities_read == 0)

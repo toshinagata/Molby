@@ -440,8 +440,6 @@ s_graphite_init(MDGraphiteArena *graphite, MDArena *arena)
 		graphite->last_forces = (Vector *)malloc(sizeof(Vector) * nuniq);
 	else
 		graphite->last_forces = (Vector *)realloc(graphite->last_forces, sizeof(Vector) * nuniq);
-	if (graphite->tables != NULL)
-		s_graphite_release_tables(graphite);
 	
 	/*  Calculate the tables  */
 	md_log(arena, "Building the graphite table...\n");
@@ -620,3 +618,9 @@ graphite_get_axes(MDGraphiteArena *graphite, Vector *op, Vector *xp, Vector *yp,
 	}
 }
 
+void
+graphite_set_needs_update(MDGraphiteArena *graphite, int flag)
+{
+	if (graphite != NULL)
+		graphite->needs_update = flag;
+}

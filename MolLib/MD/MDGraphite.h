@@ -31,7 +31,8 @@ void graphite_release(MDGraphiteArena *graphite);
 void graphite_set_origin(MDGraphiteArena *graphite, const Vector *vp);
 void graphite_force(MDGraphiteArena *graphite, MDArena *arena, Double *energy, Vector *force);
 void graphite_get_axes(MDGraphiteArena *graphite, Vector *op, Vector *xp, Vector *yp, Vector *zp, Double *rp);
-
+void graphite_set_needs_update(MDGraphiteArena *graphite, int flag);
+	
 #ifdef __cplusplus
 }
 #endif
