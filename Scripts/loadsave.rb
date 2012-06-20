@@ -735,11 +735,11 @@ end_of_header
 				  num = -num if a[0][0] == ?-
 				  xyz = (a[5] || a[6])
 				  if xyz == "x" || xyz == "X"
-				    sym[i * 3] = num
+				    sym[i] = num
 				  elsif xyz == "y" || xyz == "Y"
-				    sym[i * 3 + 1] = num
+				    sym[i + 3] = num
 				  elsif xyz == "z" || xyz == "Z"
-				    sym[i * 3 + 2] = num
+				    sym[i + 6] = num
 				  else
 				    sym[9 + i] = num
 				  end
