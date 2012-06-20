@@ -37,7 +37,7 @@ md_panic(MDArena *arena, const char *fmt,...)
 	jmp_buf *envp;
 
 	/*  Clean up the running simulation  */
-	md_finish(arena);
+	md_flush_output_files(arena);
 	arena->is_running = 0;
 	arena->mol->needsMDRebuild = 1;
 
@@ -1434,10 +1434,14 @@ md_prepare(MDArena *arena, int check_only)
 	if (!check_only) {
 		char *cwd = NULL;
 		const char *err = NULL;
-		if (mol->path != NULL) {
+		
+		if (arena->xmol->path != NULL || mol->path != NULL) {
 			/*  Temporarily change to the document directory  */
 			char *p;
-			char *fname = strdup(mol->path);
+			char *fname = (char *)arena->xmol->path;
+			if (fname == NULL)
+				fname = (char *)mol->path;
+			fname = strdup(fname);
 			if ((p = strrchr(fname, '/')) != NULL
 				|| (p = strrchr(fname, '\\')) != NULL
 				) {
@@ -2682,7 +2686,7 @@ md_scale_cell(MDArena *arena, const Transform tf, int scale_atoms)
 }
 
 void
-md_finish(MDArena *arena)
+md_flush_output_files(MDArena *arena)
 {
 	if (arena->coord_result != NULL) {
 		fflush(arena->coord_result);
@@ -2699,6 +2703,32 @@ md_finish(MDArena *arena)
 	
 	if (arena->debug_result != NULL) {
 		fflush(arena->debug_result);
+	}
+}
+
+void
+md_close_output_files(MDArena *arena)
+{
+	if (arena->coord_result != NULL) {
+		fclose(arena->coord_result);
+		arena->coord_result = NULL;
+	}
+	if (arena->vel_result != NULL) {
+		fclose(arena->vel_result);
+		arena->vel_result = NULL;
+	}
+	if (arena->force_result != NULL) {
+		fclose(arena->force_result);
+		arena->force_result = NULL;
+	}
+	if (arena->extend_result != NULL) {
+		fclose(arena->extend_result);
+		arena->extend_result = NULL;
+	}
+	
+	if (arena->debug_result != NULL) {
+		fclose(arena->debug_result);
+		arena->debug_result = NULL;
 	}
 }
 
@@ -2888,7 +2918,7 @@ cleanup:
 
 	if (arena->is_running) {
 		arena->is_running = 0;
-		md_finish(arena);
+		md_flush_output_files(arena);
 	}
 
 	return retval;

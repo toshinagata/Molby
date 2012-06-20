@@ -475,7 +475,9 @@ MDArena *md_arena_set_molecule(MDArena *arena, Molecule *mol);
 MDArena *md_arena_retain(MDArena *arena);
 void md_arena_release(MDArena *arena);
 void md_arena_init_from_arena(MDArena *arena, MDArena *another_arena);
-void md_finish(MDArena *arena);
+
+void md_flush_output_files(MDArena *arena);
+void md_close_output_files(MDArena *arena);
 
 void md_panic(MDArena *arena, const char *fmt,...);
 void md_debug(MDArena *arena, const char *fmt,...);

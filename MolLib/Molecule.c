@@ -279,17 +279,26 @@ MoleculeSetPath(Molecule *mol, const char *fname)
 	char *buf, *cwd;
 	if (mol == NULL || fname == NULL)
 		return;
-	if (mol->path != NULL)
-		free((void *)(mol->path));
 	if (fname[0] == '/' || (isalpha(fname[0]) && fname[1] == ':')) {
 		/*  Full path  */
-		mol->path = strdup(fname);
-		return;
+		buf = strdup(fname);
+	} else {
+		cwd = getcwd(NULL, 0);
+		asprintf(&buf, "%s/%s", cwd, fname);
+		free(cwd);
 	}
-	cwd = getcwd(NULL, 0);
-	asprintf(&buf, "%s/%s", cwd, fname);
-	free(cwd);
+	if (mol->path != NULL) {
+		if (strcmp(mol->path, buf) == 0) {
+			/*  No change  */
+			free(buf);
+			return;
+		}
+		free((void *)(mol->path));
+	}
 	mol->path = buf;
+	if (mol->arena != NULL) {
+		md_close_output_files(mol->arena);
+	}
 }
 
 const char *

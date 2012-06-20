@@ -185,27 +185,29 @@ MyDocument::DoSaveDocument(const wxString& file)
 	MoleculeLock(mol);
 	if (len > 4 && strcasecmp(p + len - 4, ".psf") == 0) {
 		/*  Write as a psf and a pdb file  */
-		strcpy(p + len - 4, ".pdb");
-		retval = MoleculeWriteToPdbFile(mol, p, buf, sizeof buf);
+		char *pp = (char *)malloc(len + 2);
+		strcpy(pp, p);
+		strcpy(pp + len - 4, ".pdb");
+		retval = MoleculeWriteToPdbFile(mol, pp, buf, sizeof buf);
 		if (retval != 0) {
-			free(p);
+			free(pp);
 			goto exit;
 		}
 		if (mol->cell != NULL) {
 			/*  Write an extended info (bounding box)  */
-			p = (char *)realloc(p, len + 2);
-			strcpy(p + len - 4, ".info");
-			retval = MoleculeWriteExtendedInfo(mol, p, buf, sizeof buf);
+			strcpy(pp + len - 4, ".info");
+			retval = MoleculeWriteExtendedInfo(mol, pp, buf, sizeof buf);
 			if (retval != 0) {
-				free(p);
+				free(pp);
 				goto exit;
 			}
 		}
 	}
-	free(p);
 	GetCommandProcessor()->MarkAsSaved();
 	hasFile = true;
+	MoleculeSetPath(mol, p);
 exit:
+	free(p);
 	MoleculeUnlock(mol);
 	return (retval == 0);
 }
@@ -895,8 +897,14 @@ void
 MyDocument::DoMDOrMinimize(int minimize)
 {
 	Int n;
+	char buf[4096];
 	if (sCheckIsSubThreadRunning(mol, subThreadKind))
 		return;
+
+	/*  Update the path information of the molecule before MD setup  */
+	MoleculeCallback_pathName(mol, buf, sizeof buf);
+	MoleculeSetPath(mol, buf);
+	
 	MolActionCreateAndPerform(mol, SCRIPT_ACTION("b;i"), "cmd_md", minimize, &n);
 	if (n < 0)
 		return;  /*  Canceled  */

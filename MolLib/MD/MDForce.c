@@ -497,28 +497,31 @@ s_enum_neighbors(MDArena *arena, Vector v, Double d)
 	bn[0] = axes[0];
 	bl[0] = VecLength2(bn[0]);
 	mu[0] = VecDot(axes[1], bn[0]) / bl[0];  /*  bl[0] should be non-zero  */
-	if (dim == 1 || mu[0] < 1e-10) {
+	if (dim == 1) {
 		VecZero(bn[1]);
 		VecZero(bn[2]);
 		bl[1] = bl[2] = 0.0;
 		mu[1] = mu[2] = 0.0;
-		dim = 1;
 	} else {
 		bn[1] = axes[1];
 		VecScaleInc(bn[1], bn[0], -mu[0]);
 		bl[1] = VecLength2(bn[1]);
 		mu[1] = VecDot(axes[2], bn[0]) / bl[0];
-		if (dim == 2 || mu[1] < 1e-10) {
+		if (dim == 2 || bl[1] < 1e-10) {
 			VecZero(bn[2]);
 			bl[2] = mu[2] = 0.0;
-			dim = 2;
+			if (bl[1] < 1e-10)
+				dim = 1;
+			else dim = 2;
 		} else {
 			mu[2] = VecDot(axes[3], bn[1]) / bl[1];
 			bn[2] = axes[2];
 			VecScaleInc(bn[2], bn[0], -mu[1]);
 			VecScaleInc(bn[2], bn[1], -mu[2]);
 			bl[2] = VecLength2(bn[2]);
-			dim = 3;
+			if (bl[2] < 1e-10)
+				dim = 2;
+			else dim = 3;
 		}
 	}
 	
@@ -600,7 +603,6 @@ s_make_verlet_list(MDArena *arena)
 	Double limit;
 	Byte use_sym;
 	XtalCell *cell = mol->cell;
-	Vector cell_offsets[27];
 	Parameter *par = arena->par;
 	Double vdw_cutoff;
 	
@@ -611,22 +613,6 @@ s_make_verlet_list(MDArena *arena)
 	ndx = (arena->periodic_a ? 1 : 0);
 	ndy = (arena->periodic_b ? 1 : 0);
 	ndz = (arena->periodic_c ? 1 : 0);
-
-	if (cell != NULL && (ndx != 0 || ndy != 0 || ndz != 0)) {
-		nn = 0;
-		for (i = -1; i <= 1; i++) {
-			for (j = -1; j <= 1; j++) {
-				for (k = -1; k <= 1; k++) {
-					VecZero(cell_offsets[nn]);
-					VecScaleInc(cell_offsets[nn], cell->axes[0], i);
-					VecScaleInc(cell_offsets[nn], cell->axes[1], j);
-					VecScaleInc(cell_offsets[nn], cell->axes[2], k);
-					nn++;
-				}
-			}
-		}
-	}
-	
 	limit = arena->pairlist_distance * arena->pairlist_distance;
 	n = 0;
 	use_sym = (arena->mol->nsyms > 0);
@@ -637,7 +623,7 @@ s_make_verlet_list(MDArena *arena)
 		Int vdw_idx, vdw_idx2;
 		arena->verlet_i[i] = n;
 
-		for (j = i + 1, apj = atoms + j; j < natoms; j++, apj++) {
+		for (j = i, apj = atoms + j; j < natoms; j++, apj++) {
 			Vector rij;
 			Double lenij2;
 			Int *ip, index0;
@@ -654,11 +640,13 @@ s_make_verlet_list(MDArena *arena)
 			if (api->mm_exclude || apj->mm_exclude)
 				continue;
 
+			/*  If no symmetry expansion, then no interaction with self  */
+			if (ndx + ndy + ndz == 0 && i == j)
+				continue;
+
 			VecSub(rij, apj->r, api->r);
 
 			/*  Calculate the cell offset for the nearest neighbor  */
-			/*  NOTE: the offset is calculated independently for each axis. This may result
-			    in unexpected choice when the angles between the axes are far from 90 deg */
 			if (apj->periodic_exclude == 0 && cell != NULL) {
 				count = s_enum_neighbors(arena, rij, limit);
 			} else {
@@ -666,30 +654,6 @@ s_make_verlet_list(MDArena *arena)
 				AssignArray(&arena->lattice_offsets, &arena->nlattice_offsets, sizeof(Int) * 3, 0, sZeros);
 				count = 1;
 			}
-			/*	TransformPtr rtp = cell->rtr;
-				TransformPtr tp = cell->tr;
-				Double w;
-				if (arena->periodic_a) {
-					w = rtp[0] * rij.x + rtp[1] * rij.y + rtp[2] * rij.z;
-					dxbase = floor(-w + 0.5);
-				} else dxbase = 0;
-				if (arena->periodic_b) {
-					w = rtp[3] * rij.x + rtp[4] * rij.y + rtp[5] * rij.z;
-					dybase = floor(-w + 0.5);
-				} else dybase = 0;
-				if (arena->periodic_c) {
-					w = rtp[6] * rij.x + rtp[7] * rij.y + rtp[8] * rij.z;
-					dzbase = floor(-w + 0.5);
-				} else dzbase = 0;
-				rij.x += tp[0] * dxbase + tp[1] * dybase + tp[2] * dzbase;
-				rij.y += tp[3] * dxbase + tp[4] * dybase + tp[5] * dzbase;
-				rij.z += tp[6] * dxbase + tp[7] * dybase + tp[8] * dzbase;
-			} else dxbase = dybase = dzbase = 0; */
-
-			/*  Non unique atom pair  */
-		/*	if (use_sym && api->symop.alive && apj->symop.alive)
-				continue; */
-
 			/*  Check the specific cutoff table for (i, j) pair  */
 			vdw_idx2 = arena->vdw_par_i[j];
 			if (vdw_idx1 < 0 || vdw_idx2 < 0)
@@ -726,6 +690,8 @@ s_make_verlet_list(MDArena *arena)
 				dz = arena->lattice_offsets[nn * 3 + 2];
 				if (dx == 0 && dy == 0 && dz == 0) {
 					/*  Pair within the unit cell  */
+					if (i == j)
+						continue;  /*  No interaction with self  */
 					/*  Is this pair to be excluded?  */
 					for (index0 = exinfo->index0, ip = arena->exlist + index0; index0 < index4; index0++, ip++) {
 						if (*ip == j)
@@ -780,9 +746,9 @@ s_make_verlet_list(MDArena *arena)
 		
 	if (arena->debug_result && arena->debug_output_level > 2) {
 		fprintf(arena->debug_result, "\n  Verlet list at step %d\n", arena->step);
-		fprintf(arena->debug_result, "  {atom1 atom2 vdw_type (=1 if 1-4 bonded) vdw_index}\n");
+		fprintf(arena->debug_result, "  {atom1 atom2 vdw_type (=1 if 1-4 bonded) vdw_index cell_translation}\n");
 		for (i = 0; i < arena->nverlets; i++) {
-			fprintf(arena->debug_result, "{%d %d %d %d}%c", vl[i].n1+1, vl[i].n2+1, vl[i].vdw_type, vl[i].index, (i % 4 == 3 ? '\n' : ' '));
+			fprintf(arena->debug_result, "{%d %d %d %d %06d}%c", vl[i].n1+1, vl[i].n2+1, vl[i].vdw_type, vl[i].index, (vl[i].symop.dx + 50) * 10000 + (vl[i].symop.dy + 50) * 100 + (vl[i].symop.dz + 50), (i % 4 == 3 ? '\n' : ' '));
 		}
 		if (i % 4 != 0)
 			fprintf(arena->debug_result, "\n");
