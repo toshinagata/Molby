@@ -401,6 +401,11 @@ typedef struct MDArena {
 	Int    last_verlet_step;  /*  The timestep when the Verlet list was updated last */
 	Int    *verlet_i;    /*  The verlet entries for atom i begins at verlet_i[i]  */
 	
+	/*  Internal working area for verlet list calculations  */
+	/*  Count the lattice points within distance d from point v  */
+	Int    nlattice_offsets;
+	Int    *lattice_offsets;  /*  Array of three integers  */
+
 	/*  Save snapshot and restore  */
 	Int    nsnapshots;
 	MDSnapshot **snapshots;

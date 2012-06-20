@@ -441,6 +441,150 @@ md_check_verlet_list(MDArena *arena)
 
 /*  ==================================================================== */
 
+/*  Count all lattice points within distance d from point v  */
+/*  Ref. "Algorithms for the Shortest and Closest Lattice Vector Problems"
+    Guillaume Hanrot, Xavier Pujol, Damien Stehle
+    Coding and Cryptology; Lecture Notes in Computer Science, 2011 vol. 6639/2011 pp. 159-190
+    DOI: 10.1007/978-3-642-20901-7_10  */
+static int
+s_enum_neighbors(MDArena *arena, Vector v, Double d)
+{
+	Vector bn[3];  /*  Base vectors for the cell axes  */
+	Double bl[3];  /*  Square of the length of base vectors  */
+	Double mu[3];  /*  Non-diagonal terms for Gram-Schmidt orthogonalization  */
+	XtalCell *cell = arena->mol->cell;
+	Int dim;       /*  Number of periodic axes  */
+	Int ijk[3];    /*  Renumber the indices. For 1-dimensional case, axes[ijk[0]] is the periodic axis.
+					   For 2-dimensional case, axes[ijk[0]] and axes[ijk[1]] are the periodic axes.
+					   Only uses exchange of two elements, so that ijk[ijk[i]] == i for i=0,1,2  */
+	Vector axes[3]; /*  Renumbered cell axes  */
+	Double t[3];   /*  Projected vector v on bn[]  */
+	Int count;     /*  Number of results  */
+	Int x[3];      /*  Lattice point candidate  */
+	Double r[3];
+	Int i;
+	Double w;
+	
+	dim = (arena->periodic_a != 0) + (arena->periodic_b != 0) + (arena->periodic_c != 0);
+	ijk[0] = 0; ijk[1] = 1; ijk[2] = 2;
+	if (dim == 0) {
+		/*  Non-periodic case: check whether (0,0,0) is within d or not  */
+		if (VecLength(v) < d) {
+			x[0] = x[1] = x[2] = 0;
+			AssignArray(&arena->lattice_offsets, &arena->nlattice_offsets, sizeof(Int) * 3, 0, x);
+			return 1;
+		} else return 0;
+	}
+	
+	if (dim == 1) {
+		if (arena->periodic_b) {
+			ijk[0] = 1; ijk[1] = 0;
+		} else if (arena->periodic_c) {
+			ijk[0] = 2; ijk[2] = 0;
+		}
+	} else if (dim == 2) {
+		if (!arena->periodic_a) {
+			ijk[2] = 0; ijk[0] = 2;
+		} else if (!arena->periodic_b) {
+			ijk[1] = 0; ijk[0] = 1;
+		}
+	}
+	axes[0] = cell->axes[ijk[0]];
+	axes[1] = cell->axes[ijk[1]];
+	axes[2] = cell->axes[ijk[2]];
+
+	/*  Gram-Schmidt orthogonalization  */
+	bn[0] = axes[0];
+	bl[0] = VecLength2(bn[0]);
+	mu[0] = VecDot(axes[1], bn[0]) / bl[0];  /*  bl[0] should be non-zero  */
+	if (dim == 1 || mu[0] < 1e-10) {
+		VecZero(bn[1]);
+		VecZero(bn[2]);
+		bl[1] = bl[2] = 0.0;
+		mu[1] = mu[2] = 0.0;
+		dim = 1;
+	} else {
+		bn[1] = axes[1];
+		VecScaleInc(bn[1], bn[0], -mu[0]);
+		bl[1] = VecLength2(bn[1]);
+		mu[1] = VecDot(axes[2], bn[0]) / bl[0];
+		if (dim == 2 || mu[1] < 1e-10) {
+			VecZero(bn[2]);
+			bl[2] = mu[2] = 0.0;
+			dim = 2;
+		} else {
+			mu[2] = VecDot(axes[3], bn[1]) / bl[1];
+			bn[2] = axes[2];
+			VecScaleInc(bn[2], bn[0], -mu[1]);
+			VecScaleInc(bn[2], bn[1], -mu[2]);
+			bl[2] = VecLength2(bn[2]);
+			dim = 3;
+		}
+	}
+	
+	/*  Project the target vector  */
+	t[0] = t[1] = t[2] = 0.0;
+	t[0] = VecDot(v, bn[0]) / bl[0];
+	if (dim >= 2) {
+		t[1] = VecDot(v, bn[1]) / bl[1];
+		if (dim >= 3) {
+			t[2] = VecDot(v, bn[2]) / bl[2];
+		}
+	}
+	
+	/*  Enumerate  */
+	count = 0;
+	x[0] = x[1] = x[2] = 0;
+	r[0] = r[1] = r[2] = 0.0;
+	i = dim - 1;
+	w = -10000.0;
+	x[i] = ceil(t[i] - d / sqrt(bl[i]));
+	while (1) {
+		Int j;
+		Double w2;
+		if (w == -10000.0) {
+			w = 0.0;
+			for (j = i + 1; j < dim; j++) {
+				w += x[j] * mu[j + i - 1];
+			}
+		}
+		w2 = x[i] - t[i] + w;
+		r[i] = w2 * w2 * bl[i];
+		w2 = 0.0;
+		for (j = i; j < dim; j++) {
+			w2 += r[j];
+		}
+		w2 = d * d - w2;
+		if (w2 >= 0.0) {
+			if (i == 0) {
+				/*  Found  */
+				Int xx[3];
+				xx[0] = x[ijk[0]];
+				xx[1] = x[ijk[1]];
+				xx[2] = x[ijk[2]];
+				AssignArray(&arena->lattice_offsets, &arena->nlattice_offsets, sizeof(Int) * 3, count, xx);
+				count++;
+				x[0]++;
+				w = -10000.0;
+			} else {
+				/*  Step down  */
+				i--;
+				w = 0.0;
+				for (j = i + 1; j < dim; j++) {
+					w += x[j] * mu[j + i - 1];
+				}
+				x[i] = ceil(t[i] - w - sqrt(w2 / bl[i]));
+			}
+		} else {
+			i++;
+			if (i >= dim)
+				break;
+			x[i]++;
+			w = -10000.0;
+		}
+	}
+	return count;
+}
 
 /*  Update the Verlet list (for non-bonding interaction)  */
 static void
@@ -499,7 +643,8 @@ s_make_verlet_list(MDArena *arena)
 			Int *ip, index0;
 			int exflag = 0;
 			int mult = 1;
-			int dxbase, dybase, dzbase;
+		/*	int dxbase, dybase, dzbase; */
+			int count;
 
 			/*  Fixed atoms  */
 			if (api->fix_force < 0 && apj->fix_force < 0)
@@ -515,7 +660,13 @@ s_make_verlet_list(MDArena *arena)
 			/*  NOTE: the offset is calculated independently for each axis. This may result
 			    in unexpected choice when the angles between the axes are far from 90 deg */
 			if (apj->periodic_exclude == 0 && cell != NULL) {
-				TransformPtr rtp = cell->rtr;
+				count = s_enum_neighbors(arena, rij, limit);
+			} else {
+				static Int sZeros[3] = {0, 0, 0};
+				AssignArray(&arena->lattice_offsets, &arena->nlattice_offsets, sizeof(Int) * 3, 0, sZeros);
+				count = 1;
+			}
+			/*	TransformPtr rtp = cell->rtr;
 				TransformPtr tp = cell->tr;
 				Double w;
 				if (arena->periodic_a) {
@@ -533,7 +684,7 @@ s_make_verlet_list(MDArena *arena)
 				rij.x += tp[0] * dxbase + tp[1] * dybase + tp[2] * dzbase;
 				rij.y += tp[3] * dxbase + tp[4] * dybase + tp[5] * dzbase;
 				rij.z += tp[6] * dxbase + tp[7] * dybase + tp[8] * dzbase;
-			} else dxbase = dybase = dzbase = 0;
+			} else dxbase = dybase = dzbase = 0; */
 
 			/*  Non unique atom pair  */
 		/*	if (use_sym && api->symop.alive && apj->symop.alive)
@@ -567,57 +718,58 @@ s_make_verlet_list(MDArena *arena)
 				vdw_cutoff = r_eq * (-vdw_cutoff);
 			}
 
-			/*  Search for pairs, taking periodicity into account  */
-			for (dx = -ndx; dx <= ndx; dx++) {
-				for (dy = -ndy; dy <= ndy; dy++) {
-					for (dz = -ndz; dz <= ndz; dz++) {
-						Vector rij0 = rij;
-						nn = dx * 9 + dy * 3 + dz + 13; 
-						if (nn == 13) {
-							/*  Pair within the unit cell  */
-							/*  Is this pair to be excluded?  */
-							for (index0 = exinfo->index0, ip = arena->exlist + index0; index0 < index4; index0++, ip++) {
-								if (*ip == j)
-									break;
-							}
-							if (index0 < exinfo->index3)
-								continue;  /*  Special exclusion, 1-2, 1-3  */
-							if (index0 < index4)
-								exflag = 1;  /*  1-4 interaction  */
-						} else if (apj->periodic_exclude) {
-							continue;
-						} else {
-							VecInc(rij0, cell_offsets[nn]);
-							exflag = 0;
-						}
+			/*  Search for pairs  */
+			for (nn = 0; nn < count; nn++) {
+				Vector rij0 = rij;
+				dx = arena->lattice_offsets[nn * 3];
+				dy = arena->lattice_offsets[nn * 3 + 1];
+				dz = arena->lattice_offsets[nn * 3 + 2];
+				if (dx == 0 && dy == 0 && dz == 0) {
+					/*  Pair within the unit cell  */
+					/*  Is this pair to be excluded?  */
+					for (index0 = exinfo->index0, ip = arena->exlist + index0; index0 < index4; index0++, ip++) {
+						if (*ip == j)
+							break;
+					}
+					if (index0 < exinfo->index3)
+						continue;  /*  Special exclusion, 1-2, 1-3  */
+					if (index0 < index4)
+						exflag = 1;  /*  1-4 interaction  */
+				} else if (apj->periodic_exclude) {
+					continue;
+				} else {
+					VecScaleInc(rij0, cell->axes[0], dx);
+					VecScaleInc(rij0, cell->axes[1], dy);
+					VecScaleInc(rij0, cell->axes[2], dz);
+				/*	VecInc(rij0, cell_offsets[nn]); */
+					exflag = 0;
+				}
 
-						lenij2 = VecLength2(rij0);
-						if (lenij2 <= limit) {
-							MDVerlet *vlp;
-							if (n >= arena->max_nverlets) {
-								arena->max_nverlets += 32;
-								vl = (MDVerlet *)realloc(vl, sizeof(MDVerlet) * arena->max_nverlets);
-								if (vl == NULL)
-									md_panic(arena, "Low memory");
-							}
-							vlp = &vl[n];
-							vlp->vdw_type = (exflag ? 1 : 0);
-							vlp->mult = mult;
-							vlp->symop.dx = dx + dxbase;
-							vlp->symop.dy = dy + dybase;
-							vlp->symop.dz = dz + dzbase;
-							vlp->symop.sym = 0;
-							vlp->symop.alive = (vlp->symop.dx != 0 || vlp->symop.dy != 0 || vlp->symop.dz != 0);
-							vlp->index = vdw_idx;
-							vlp->n1 = i;
-							vlp->n2 = j;
-							vlp->vdw_cutoff = vdw_cutoff;
-							vlp->length = sqrt(lenij2);
-							n++;
-						} /* end if lenij2 <= limit */
-					} /* end loop dz */
-				} /* end loop dy */
-			} /* end loop dx */
+				lenij2 = VecLength2(rij0);
+				if (lenij2 <= limit) {
+					MDVerlet *vlp;
+					if (n >= arena->max_nverlets) {
+						arena->max_nverlets += 32;
+						vl = (MDVerlet *)realloc(vl, sizeof(MDVerlet) * arena->max_nverlets);
+						if (vl == NULL)
+							md_panic(arena, "Low memory");
+					}
+					vlp = &vl[n];
+					vlp->vdw_type = (exflag ? 1 : 0);
+					vlp->mult = mult;
+					vlp->symop.dx = dx;
+					vlp->symop.dy = dy;
+					vlp->symop.dz = dz;
+					vlp->symop.sym = 0;
+					vlp->symop.alive = (vlp->symop.dx != 0 || vlp->symop.dy != 0 || vlp->symop.dz != 0);
+					vlp->index = vdw_idx;
+					vlp->n1 = i;
+					vlp->n2 = j;
+					vlp->vdw_cutoff = vdw_cutoff;
+					vlp->length = sqrt(lenij2);
+					n++;
+				} /* end if lenij2 <= limit */
+			} /* end loop nn */
 		} /* end loop j */
 
 	} /* end loop i */
