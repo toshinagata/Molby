@@ -1696,88 +1696,55 @@ drawUnitCell(MainView *mview)
 	XtalCell *cp;
 	GLfloat origin[3];
 	int i;
+	if (!mview->showUnitCell || (cp = mview->mol->cell) == NULL)
+		return;
+	origin[0] = cp->origin.x;
+	origin[1] = cp->origin.y;
+	origin[2] = cp->origin.z;
+	a[0] = cp->axes[0].x + origin[0];
+	a[1] = cp->axes[0].y + origin[1];
+	a[2] = cp->axes[0].z + origin[2];
+	b[0] = cp->axes[1].x + origin[0];
+	b[1] = cp->axes[1].y + origin[1];
+	b[2] = cp->axes[1].z + origin[2];
+	c[0] = cp->axes[2].x + origin[0];
+	c[1] = cp->axes[2].y + origin[1];
+	c[2] = cp->axes[2].z + origin[2];
+
+	ab[0] = a[0] + b[0]; ab[1] = a[1] + b[1]; ab[2] = a[2] + b[2];
+	bc[0] = b[0] + c[0]; bc[1] = b[1] + c[1]; bc[2] = b[2] + c[2];
+	ca[0] = c[0] + a[0]; ca[1] = c[1] + a[1]; ca[2] = c[2] + a[2];
+	abc[0] = a[0] + bc[0]; abc[1] = a[1] + bc[1]; abc[2] = a[2] + bc[2];
+
 	glDisable(GL_LIGHTING);
-	for (i = 0; i < 1; i++) {
-		if (i == 0) {
-			if (!mview->showUnitCell || (cp = mview->mol->cell) == NULL)
-				continue;
-			a[0] = cp->tr[0];
-			a[1] = cp->tr[3];
-			a[2] = cp->tr[6];
-			b[0] = cp->tr[1];
-			b[1] = cp->tr[4];
-			b[2] = cp->tr[7];
-			c[0] = cp->tr[2];
-			c[1] = cp->tr[5];
-			c[2] = cp->tr[8];
-			origin[0] = cp->origin.x;
-			origin[1] = cp->origin.y;
-			origin[2] = cp->origin.z;
-			glColor3f(0.75, 0.2, 0.0);
-/*		} else {
-			if (!mview->showPeriodicBox || (bp = mview->mol->box) == NULL)
-				continue;
-			origin[0] = bp->origin.x;
-			origin[1] = bp->origin.y;
-			origin[2] = bp->origin.z;
-			a[0] = bp->axes[0].x + origin[0];
-			a[1] = bp->axes[0].y + origin[1];
-			a[2] = bp->axes[0].z + origin[2];
-			b[0] = bp->axes[1].x + origin[0];
-			b[1] = bp->axes[1].y + origin[1];
-			b[2] = bp->axes[1].z + origin[2];
-			c[0] = bp->axes[2].x + origin[0];
-			c[1] = bp->axes[2].y + origin[1];
-			c[2] = bp->axes[2].z + origin[2];
-			glColor3f(0.0, 0.75, 0.2); */
-		}
-	
-		ab[0] = a[0] + b[0]; ab[1] = a[1] + b[1]; ab[2] = a[2] + b[2];
-		bc[0] = b[0] + c[0]; bc[1] = b[1] + c[1]; bc[2] = b[2] + c[2];
-		ca[0] = c[0] + a[0]; ca[1] = c[1] + a[1]; ca[2] = c[2] + a[2];
-		abc[0] = a[0] + bc[0]; abc[1] = a[1] + bc[1]; abc[2] = a[2] + bc[2];
+	glColor3f(0.75, 0.2, 0.0);
+	glBegin(GL_LINES);
+	glVertex3fv(origin);
+	glVertex3fv(a);
+	glVertex3fv(origin);
+	glVertex3fv(b);
+	glVertex3fv(origin);
+	glVertex3fv(c);
+	glVertex3fv(a);
+	glVertex3fv(ab);
+	glVertex3fv(a);
+	glVertex3fv(ca);
+	glVertex3fv(b);
+	glVertex3fv(ab);
+	glVertex3fv(b);
+	glVertex3fv(bc);
+	glVertex3fv(c);
+	glVertex3fv(ca);
+	glVertex3fv(c);
+	glVertex3fv(bc);
+	glVertex3fv(ab);
+	glVertex3fv(abc);
+	glVertex3fv(bc);
+	glVertex3fv(abc);
+	glVertex3fv(ca);
+	glVertex3fv(abc);
+	glEnd();
 
-	/*	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, sGrayColor);
-		drawCylinder(sOrigin, a, 0.05, 4, 0);
-		drawCylinder(sOrigin, b, 0.05, 4, 0);
-		drawCylinder(sOrigin, c, 0.05, 4, 0);
-		drawCylinder(a, ab, 0.05, 4, 0);
-		drawCylinder(a, ca, 0.05, 4, 0);
-		drawCylinder(b, ab, 0.05, 4, 0);
-		drawCylinder(b, bc, 0.05, 4, 0);
-		drawCylinder(c, ca, 0.05, 4, 0);
-		drawCylinder(c, bc, 0.05, 4, 0);
-		drawCylinder(ab, abc, 0.05, 4, 0);
-		drawCylinder(bc, abc, 0.05, 4, 0);
-		drawCylinder(ca, abc, 0.05, 4, 0); */
-
-		glBegin(GL_LINES);
-		glVertex3fv(origin);
-		glVertex3fv(a);
-		glVertex3fv(origin);
-		glVertex3fv(b);
-		glVertex3fv(origin);
-		glVertex3fv(c);
-		glVertex3fv(a);
-		glVertex3fv(ab);
-		glVertex3fv(a);
-		glVertex3fv(ca);
-		glVertex3fv(b);
-		glVertex3fv(ab);
-		glVertex3fv(b);
-		glVertex3fv(bc);
-		glVertex3fv(c);
-		glVertex3fv(ca);
-		glVertex3fv(c);
-		glVertex3fv(bc);
-		glVertex3fv(ab);
-		glVertex3fv(abc);
-		glVertex3fv(bc);
-		glVertex3fv(abc);
-		glVertex3fv(ca);
-		glVertex3fv(abc);
-		glEnd();
-	}
 	enableLighting();
 }
 
