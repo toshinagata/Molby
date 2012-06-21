@@ -215,6 +215,7 @@ def guess_uff_parameter_dialog(current_value, indices)
 	  t3 = value("uff_type_2").to_i rescue 0
 	  b1 = value("bond_order_0").to_f rescue 1.0
 	  b2 = value("bond_order_1").to_f rescue 1.0
+	  current_value = value("current_value") rescue nil
       set_value("guessed", recalc.call(t1, t2, t3, b1, b2)) rescue nil
     }
     type_selects = []
@@ -239,14 +240,19 @@ def guess_uff_parameter_dialog(current_value, indices)
         layout(2, *type_selects),
         layout(2, *bond_orders)
       ),
+	  (par_type == "bond" ? nil :
+		layout(2,
+		  item(:text, :title=>"Equilibrium angle = "),
+		  item(:textfield, :width=>100, :value=>current_value, :tag=>"current_value", :action=>action_proc))
+	  ),
       layout(2,
-        item(:text, :title=>"Guessed value = "),
+        item(:text, :title=>"Guessed force = "),
         item(:textfield, :editable=>false, :width=>100, :value=>recalc.call(0, 0, 0, 1.0, 1.0), :tag=>"guessed")
       )
     )
   }
   if hash[:status] == 0
-    return hash["guessed"]
+    return hash["guessed"], current_value
   else
     return nil
   end

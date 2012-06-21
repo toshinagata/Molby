@@ -1418,9 +1418,12 @@ class Molecule
 		(ptype == "bond" || ptype == "angle" ?
 		  item(:button, :title=>"Guess k by UFF...", :align=>:right,
 		    :action=>proc { |it|
-			  guess = mol.guess_uff_parameter_dialog(value(k[0]), indices)
+			  guess, cval = mol.guess_uff_parameter_dialog(value(k[1]), indices)
 			  if guess
 			    set_value("k", guess)
+				if (ptype == "angle")
+				  set_value("a0", cval)
+				end
 			  end
 			}) : 
 	      nil)
