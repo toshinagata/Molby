@@ -58,6 +58,8 @@ const char *gMolActionAddSymmetryOperation = "addSymop:t";
 const char *gMolActionSetCell         = "setCell:Di";
 const char *gMolActionSetBox          = "setBox:vvvvi";
 const char *gMolActionClearBox        = "clearBox";
+const char *gMolActionEnableCellFlexibility = "enableCellFlexibility:V";
+const char *gMolActionDisableCellFlexibility = "disableCellFlexibility";
 const char *gMolActionAddParameters   = "addParameters:iGU";
 const char *gMolActionDeleteParameters = "deleteParameters:iG";
 const char *gMolActionCartesianToXtal  = "cartesianToXtal";
@@ -1306,6 +1308,46 @@ s_MolActionSetBox(Molecule *mol, MolAction *action, MolAction **actp)
 }
 
 static int
+s_MolActionSetCellFlexibility(Molecule *mol, MolAction *action, MolAction **actp)
+{
+	Int n1, n2, i;
+	if (action == NULL) {
+		/*  Disable cell flexibility  */
+		if (mol->frame_cells == NULL)
+			return 0;  /*  Do nothing  */
+		*actp = MolActionNew(gMolActionEnableCellFlexibility, mol->nframes * 4, mol->frame_cells);
+		free(mol->frame_cells);
+		mol->frame_cells = NULL;
+		mol->nframe_cells = 0;
+	} else {
+		/*  Enable cell flexibility, and restore the cell parameters if given  */
+		if (mol->cell == NULL)
+			return 0;  /*  If cell is not defined, do nothing  */
+		n1 = MoleculeGetNumberOfFrames(mol);
+		if (n1 == 0)
+			return 0;  /*  Do nothing  */
+		if (mol->frame_cells != NULL) {
+			*actp = MolActionNew(gMolActionEnableCellFlexibility, mol->nframes * 4, mol->frame_cells);
+		} else {
+			*actp = MolActionNew(gMolActionDisableCellFlexibility);
+		}
+		NewArray(&mol->frame_cells, &mol->nframe_cells, sizeof(Vector) * 4, n1);
+		n2 = action->args[0].u.arval.nitems;
+		/*  Copy the given cell parameters, and if not given copy the current cell parameters  */
+		for (i = 0; i < n1 * 4 && i < n2; i++) {
+			mol->frame_cells[i] = ((Vector *)(action->args[0].u.arval.ptr))[i];
+		}
+		while (i < n1 * 4) {
+			mol->frame_cells[i++] = mol->cell->axes[0];
+			mol->frame_cells[i++] = mol->cell->axes[1];
+			mol->frame_cells[i++] = mol->cell->axes[2];
+			mol->frame_cells[i++] = mol->cell->origin;
+		}
+	}
+	return 0;
+}
+
+static int
 s_MolActionAddParameters(Molecule *mol, MolAction *action, MolAction **actp)
 {
 	UnionPar *up;
@@ -1487,6 +1529,14 @@ MolActionPerform(Molecule *mol, MolAction *action)
 		needsRebuildMDArena = 1;
 	} else if (strcmp(action->name, gMolActionClearBox) == 0) {
 		if ((result = s_MolActionSetBox(mol, NULL, &act2)) != 0)
+			return result;
+		needsRebuildMDArena = 1;
+	} else if (strcmp(action->name, gMolActionEnableCellFlexibility) == 0) {
+		if ((result = s_MolActionSetCellFlexibility(mol, action, &act2)) != 0)
+			return result;
+		needsRebuildMDArena = 1;
+	} else if (strcmp(action->name, gMolActionDisableCellFlexibility) == 0) {
+		if ((result = s_MolActionSetCellFlexibility(mol, NULL, &act2)) != 0)
 			return result;
 		needsRebuildMDArena = 1;
 	} else if (strcmp(action->name, gMolActionAddParameters) == 0) {

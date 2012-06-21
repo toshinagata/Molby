@@ -5578,10 +5578,10 @@ s_Molecule_Box(VALUE self)
     Note: the sigma of the cell parameters is not cleared unless the periodic box itself is cleared.
  */
 static VALUE
-s_Molecule_SetBox(int argc, VALUE *argv, VALUE self)
+s_Molecule_SetBox(VALUE self, VALUE aval)
 {
     Molecule *mol;
-	VALUE v[4], fval;
+	VALUE v[5];
 	static Vector ax[3] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
 	Vector vv[3];
 	Vector origin = {0, 0, 0};
@@ -5589,7 +5589,11 @@ s_Molecule_SetBox(int argc, VALUE *argv, VALUE self)
 	Double d;
 	int i;
     Data_Get_Struct(self, Molecule, mol);
-	rb_scan_args(argc, argv, "05", &v[0], &v[1], &v[2], &v[3], &fval);
+	for (i = 0; i < 5; i++) {
+		if (i < RARRAY_LEN(aval))
+			v[i] = (RARRAY_PTR(aval))[i];
+		else v[i] = Qnil;
+	}
 	if (v[0] == Qnil) {
 		MolActionCreateAndPerform(mol, gMolActionClearBox);
 		return self;
@@ -5615,14 +5619,72 @@ s_Molecule_SetBox(int argc, VALUE *argv, VALUE self)
 		}
 		if (v[3] != Qnil)
 			VectorFromValue(v[3], &origin);
-		if (fval != Qnil) {
+		if (v[4] != Qnil) {
 			for (i = 0; i < 3; i++) {
-				VALUE val = Ruby_ObjectAtIndex(fval, i);
+				VALUE val = Ruby_ObjectAtIndex(v[4], i);
 				flags[i] = (NUM2INT(rb_Integer(val)) != 0);
 			}
 		}
 	}
 	MolActionCreateAndPerform(mol, gMolActionSetBox, &(vv[0]), &(vv[1]), &(vv[2]), &origin, (flags[0] * 4 + flags[1] * 2 + flags[2]));
+	return self;
+}
+
+/*
+ *  call-seq:
+ *     enable_cell_flexibility(array = nil) -> self
+ *
+ *  Enable the unit cell flexibility. If array is given, it should be an array of Vector3Ds
+ *  (or something that can be transformed into Vector3Ds), consisting of avec, bvec, cvec, origin vectors
+ *  for each frames. If the number of Vectors is less than the number of frames x 4, then the cell parameters
+ *  for the missing frame is set to the present cell parameters.
+ *  If unit cell is not defined, an exception is raised.
+ */
+static VALUE
+s_Molecule_EnableCellFlexibility(int argc, VALUE *argv, VALUE self)
+{
+	Molecule *mol;
+	VALUE aval;
+	Vector *vp;
+	Int i, n1;
+	Data_Get_Struct(self, Molecule, mol);
+	if (mol->cell == NULL)
+		rb_raise(rb_eMolbyError, "cannot enable cell flexibility because unit cell is not defined yet");
+	rb_scan_args(argc, argv, "01", &aval);
+	if (aval == Qnil) {
+		n1 = 0;
+		vp = NULL;
+	} else {
+		aval = rb_ary_to_ary(aval);
+		n1 = RARRAY_LEN(aval);
+		if (n1 == 0)
+			vp = NULL;
+		else {
+			vp = (Vector *)calloc(sizeof(Vector), n1);
+			for (i = 0; i < n1; i++) {
+				VectorFromValue((RARRAY_PTR(aval))[i], vp + i);
+			}
+		}
+	}
+	MolActionCreateAndPerform(mol, gMolActionEnableCellFlexibility, n1, vp);
+	free(vp);
+	return self;
+}
+
+/*
+ *  call-seq:
+ *     disable_cell_flexibility -> self
+ *
+ *  Disable the unit cell flexibility.
+ */
+static VALUE
+s_Molecule_DisableCellFlexibility(VALUE self)
+{
+    Molecule *mol;
+    Data_Get_Struct(self, Molecule, mol);
+	if (mol->cell == NULL)
+		return self;
+	MolActionCreateAndPerform(mol, gMolActionDisableCellFlexibility);
 	return self;
 }
 
@@ -9299,8 +9361,10 @@ Init_Molby(void)
 	rb_define_alias(rb_cMolecule, "set_cell", "cell=");
 	rb_define_method(rb_cMolecule, "cell_transform", s_Molecule_CellTransform, 0);
 	rb_define_method(rb_cMolecule, "box", s_Molecule_Box, 0);
-	rb_define_method(rb_cMolecule, "box=", s_Molecule_SetBox, -1);
+	rb_define_method(rb_cMolecule, "box=", s_Molecule_SetBox, -2);
 	rb_define_alias(rb_cMolecule, "set_box", "box=");
+	rb_define_method(rb_cMolecule, "enable_cell_flexibility", s_Molecule_EnableCellFlexibility, -1);
+	rb_define_method(rb_cMolecule, "disable_cell_flexibility", s_Molecule_DisableCellFlexibility, 0);
 	rb_define_method(rb_cMolecule, "symmetry", s_Molecule_Symmetry, 0);
 	rb_define_alias(rb_cMolecule, "symmetries", "symmetry");
 	rb_define_method(rb_cMolecule, "nsymmetries", s_Molecule_Nsymmetries, 0);

@@ -262,7 +262,8 @@ typedef struct Molecule {
 							 recalculated from the atoms if it is -1  */
 	Int    cframe;       /*  The current frame number  */
 
-	Vector *frame_cells; /*  The cell vectors for frames; (nframes*3) array of Vectors  */
+	Int    nframe_cells;
+	Vector *frame_cells; /*  The cell vectors for frames; (nframe_cells*4) array of Vectors  */
 
 	struct MainView *mview;  /*  Reference to the MainView object if present (no retain)  */
 	Int    modifyCount;  /*  Internal counter for modification. This value is not to be modified

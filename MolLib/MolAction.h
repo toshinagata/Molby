@@ -60,6 +60,8 @@ extern const char *gMolActionAddSymmetryOperation;
 extern const char *gMolActionSetCell;
 extern const char *gMolActionSetBox;
 extern const char *gMolActionClearBox;
+extern const char *gMolActionEnableCellFlexibility;
+extern const char *gMolActionDisableCellFlexibility;
 /*extern const char *gMolActionSetParameterAttributeForUndo; */
 extern const char *gMolActionAddParameters;
 extern const char *gMolActionDeleteParameters;

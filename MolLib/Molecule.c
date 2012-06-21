@@ -1018,6 +1018,28 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 				break;
 			}
 			continue;
+		} else if (strcmp(buf, "!:frame_periodic_boxes") == 0) {
+			Vector vs[5];
+			i = 0;
+			while (ReadLine(buf, sizeof buf, fp, &lineNumber) > 0) {
+				if (buf[0] == '!')
+					continue;
+				if (buf[0] == '\n')
+					break;
+				if (sscanf(buf, "%lf %lf %f", &dbuf[0], &dbuf[1], &dbuf[2]) < 3) {
+					snprintf(errbuf, errbufsize, "line %d: bad frame_periodic_box format", lineNumber);
+					goto exit;
+				}
+				vs[i].x = dbuf[0];
+				vs[i].y = dbuf[1];
+				vs[i].z = dbuf[2];
+				i++;
+				if (i == 4) {
+					AssignArray(&mp->frame_cells, &mp->nframe_cells, sizeof(Vector) * 4, mp->nframe_cells, vs);
+					i = 0;
+				}
+			}
+			continue;
 		} else if (strcmp(buf, "!:md_parameters") == 0) {
 			MDArena *arena;
 			if (mp->arena == NULL)
@@ -3630,7 +3652,15 @@ MoleculeWriteToMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbu
 			fprintf(fp, "%f %f %f %f %f %f\n", mp->cell->cellsigma[0], mp->cell->cellsigma[1], mp->cell->cellsigma[2], mp->cell->cellsigma[3], mp->cell->cellsigma[4], mp->cell->cellsigma[5]);
 		}
 		fprintf(fp, "\n");
-
+	}
+	
+	if (mp->frame_cells != NULL) {
+		fprintf(fp, "!:frame_periodic_boxes\n");
+		fprintf(fp, "! ax ay az; bx by bz; cx cy cz; ox oy oz\n");
+		for (i = 0; i < mp->nframe_cells * 4; i++) {
+			fprintf(fp, "%15.8f %15.8f %15.8f\n", mp->frame_cells[i].x, mp->frame_cells[i].y, mp->frame_cells[i].z);
+		}
+		fprintf(fp, "\n");
 	}
 	
 	if (mp->nsyms > 0) {
@@ -4020,7 +4050,7 @@ MoleculeWriteToDcdFile(Molecule *mp, const char *fname, char *errbuf, int errbuf
 			memset(yp + i, 0, sz);
 			memset(zp + i, 0, sz);
 		}
-		if (n < mp->nframes && mp->frame_cells != NULL) {
+		if (n < mp->nframe_cells && mp->frame_cells != NULL) {
 			Vector *cp = &(mp->frame_cells[n * 4]);
 			dcd.globalcell[0] = VecLength(cp[0]);
 			dcd.globalcell[2] = VecLength(cp[1]);
@@ -9058,6 +9088,16 @@ MoleculeInsertFrames(Molecule *mp, IntGroup *group, const Vector *inFrame, const
 		ap->frames = vp;
 	}
 	if (mp->cell != NULL && (mp->frame_cells != NULL || inFrameCell != NULL)) {
+		vp = mp->frame_cells;
+		AssignArray(&mp->frame_cells, &mp->nframe_cells, sizeof(Vector) * 4, n_new - 1, NULL);
+		if (vp == NULL) {
+			/*  Set the first cell parameters  */
+			mp->frame_cells[0] = mp->cell->axes[0];
+			mp->frame_cells[1] = mp->cell->axes[1];
+			mp->frame_cells[2] = mp->cell->axes[2];
+			mp->frame_cells[3] = mp->cell->origin;
+		}
+/*		vp = mp->frame_cells;
 		if (mp->frame_cells == NULL) {
 			vp = (Vector *)calloc(sizeof(Vector), n_new * 4);
 			vp[0] = mp->cell->axes[0];
@@ -9070,7 +9110,7 @@ MoleculeInsertFrames(Molecule *mp, IntGroup *group, const Vector *inFrame, const
 			__MoleculeUnlock(mp);
 			return -1;
 		}
-		mp->frame_cells = vp;
+		mp->frame_cells = vp; */
 	}
 	
 	/*  group = [n0..n1-1, n2..n3-1, ...]  */
@@ -9282,8 +9322,9 @@ MoleculeRemoveFrames(Molecule *mp, IntGroup *inGroup, Vector *outFrame, Vector *
 		} else {
 			if (i < mp->natoms)
 				ap->frames = (Vector *)realloc(ap->frames, sizeof(Vector) * s);
-			else
-				mp->frame_cells = (Vector *)realloc(mp->frame_cells, sizeof(Vector) * 4 * s);
+			else {
+				AssignArray(&mp->frame_cells, &mp->nframe_cells, sizeof(Vector) * 4, s - 1, NULL);
+			}
 		}
 	}
 	free(tempv);
@@ -9323,6 +9364,15 @@ MoleculeSelectFrame(Molecule *mp, int frame, int copyback)
 	}
 
 	if (mp->cell != NULL && mp->frame_cells != NULL) {
+		/*  Write the current cell back to the frame_cells array  */
+		if (copyback && cframe >= 0) {
+			Vector *vp = (Vector *)AssignArray(&mp->frame_cells, &mp->nframe_cells, sizeof(Vector) * 4, cframe, NULL);
+			vp[0] = mp->cell->axes[0];
+			vp[1] = mp->cell->axes[1];
+			vp[2] = mp->cell->axes[2];
+			vp[3] = mp->cell->origin;
+		}
+		/*  Set the cell from the frame array  */
 		MoleculeSetPeriodicBox(mp, &mp->frame_cells[frame * 4], &mp->frame_cells[frame * 4 + 1], &mp->frame_cells[frame * 4 + 2], &mp->frame_cells[frame * 4 + 3], mp->cell->flags);
 	}
 	mp->needsMDCopyCoordinates = 1;
