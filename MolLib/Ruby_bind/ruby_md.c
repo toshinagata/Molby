@@ -322,8 +322,8 @@ s_EnergyOutputFreqSym, s_CoordFrameSym, s_TimestepSym, s_CutoffSym,
 s_ElectroCutoffSym, s_PairlistDistanceSym, s_TemperatureSym, s_TransientTempSym, 
 s_AverageTempSym, s_AndersenFreqSym, s_AndersenCouplingSym, s_RandomSeedSym, 
 s_DielectricSym, s_GradientConvergenceSym, s_CoordinateConvergenceSym, s_UseXplorShiftSym, 
-s_Scale14VdwSym, s_Scale14ElectSym, s_RelocateCenterSym, s_SurfaceProbeRadiusSym, 
-s_SurfaceTensionSym, s_SurfacePotentialFreqSym, s_UseGraphiteSym,
+s_Scale14VdwSym, s_Scale14ElectSym, s_RelocateCenterSym, 
+s_SurfaceProbeRadiusSym, s_SurfaceTensionSym, s_SurfacePotentialFreqSym, s_UseGraphiteSym,
 s_AlchemicalLambdaSym, s_AlchemicalDeltaLambdaSym, s_AlchemicalEnergySym;
 
 struct s_MDArenaAttrDef {

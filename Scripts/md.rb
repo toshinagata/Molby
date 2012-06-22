@@ -185,7 +185,8 @@ class Molecule
 		bx = Vector3D[h["b0"], h["b1"], h["b2"]]
 		cx = Vector3D[h["c0"], h["c1"], h["c2"]]
 		ox = Vector3D[h["o0"], h["o1"], h["o2"]]
-		@mol.set_box(ax, bx, cx, ox)
+		fx = [value("aflag").to_i, value("bflag").to_i, value("cflag").to_i]
+		@mol.set_box(ax, bx, cx, ox, fx)
 		return @mol
 	  end
 #	  def action(item1)
@@ -197,25 +198,30 @@ class Molecule
 #		super
 #	  end
 	  box = @mol.box
-	  layout(4,
+	  layout(5,
 	    item(:text, :title=>"Unit cell:"),
 		-1, -1, -1,
+		item(:text, :title=>"Enable"),
 	    item(:text, :title=>"origin"),
 		item(:textfield, :width=>140, :tag=>"o0", :value=>(box ? box[3].x.to_s : "")),
 		item(:textfield, :width=>140, :tag=>"o1", :value=>(box ? box[3].y.to_s : "")),
 		item(:textfield, :width=>140, :tag=>"o2", :value=>(box ? box[3].z.to_s : "")),
+		-1,
 	    item(:text, :title=>"a-axis"),
 		item(:textfield, :width=>140, :tag=>"a0", :value=>(box ? box[0].x.to_s : "")),
 		item(:textfield, :width=>140, :tag=>"a1", :value=>(box ? box[0].y.to_s : "")),
 		item(:textfield, :width=>140, :tag=>"a2", :value=>(box ? box[0].z.to_s : "")),
+		item(:checkbox, :title=>"", :tag=>"aflag", :value=>(box ? box[4][0] : 0)),
 	    item(:text, :title=>"b-axis"),
 		item(:textfield, :width=>140, :tag=>"b0", :value=>(box ? box[1].x.to_s : "")),
 		item(:textfield, :width=>140, :tag=>"b1", :value=>(box ? box[1].y.to_s : "")),
 		item(:textfield, :width=>140, :tag=>"b2", :value=>(box ? box[1].z.to_s : "")),
+		item(:checkbox, :title=>"", :tag=>"bflag", :value=>(box ? box[4][1] : 0)),
 	    item(:text, :title=>"c-axis"),
 		item(:textfield, :width=>140, :tag=>"c0", :value=>(box ? box[2].x.to_s : "")),
 		item(:textfield, :width=>140, :tag=>"c1", :value=>(box ? box[2].y.to_s : "")),
 		item(:textfield, :width=>140, :tag=>"c2", :value=>(box ? box[2].z.to_s : "")),
+		item(:checkbox, :title=>"", :tag=>"cflag", :value=>(box ? box[4][2] : 0)),
 		item(:button, :title=>"Set", :action=>:set_box_value),
 		item(:text, :title=>"(Ruby expressions are allowed as the values)"),
 		-1, -1)

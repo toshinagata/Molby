@@ -262,6 +262,28 @@ MolActionCallback_registerUndo(Molecule *mol, MolAction *action)
 {
 }
 
+void
+MainView_setBackgroundColor(MainView *mview, float red, float green, float blue)
+{
+}
+
+void
+MainView_getBackgroundColor(const MainView *mview, float *rgb)
+{
+}
+
+int
+MainView_insertGraphic(MainView *mview, int index, const MainViewGraphic *graphic)
+{
+	return 0;
+}
+
+int
+MainView_removeGraphic(MainView *mview, int index)
+{
+	return 0;
+}
+
 int
 main(int argc, const char **argv)
 {

@@ -647,7 +647,7 @@ s_make_verlet_list(MDArena *arena)
 			VecSub(rij, apj->r, api->r);
 
 			/*  Calculate the cell offset for the nearest neighbor  */
-			if (apj->periodic_exclude == 0 && cell != NULL) {
+			if (ndx + ndy + ndz != 0 && apj->periodic_exclude == 0 && cell != NULL) {
 				count = s_enum_neighbors(arena, rij, limit);
 			} else {
 				static Int sZeros[3] = {0, 0, 0};
