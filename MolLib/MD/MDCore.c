@@ -278,9 +278,11 @@ s_register_missing_parameters(Int **missing, Int *nmissing, Int type, Int t1, In
 static int
 s_check_bonded(Atom *ap, Int *results)
 {
-	int i, n, *ip;
-	for (i = 0; i < ap->nconnects; i++) {
-		n = ap->connects[i];
+	Int i, n, *ip;
+	const Int *cp;
+	cp = AtomConnects(ap);
+	for (i = 0; i < ap->nconnects; i++, cp++) {
+		n = *cp;
 		for (ip = results; *ip >= 0; ip++) {
 			if (n == *ip)
 				break;
@@ -1129,7 +1131,7 @@ s_find_fragment_sub(MDArena *arena, Int start_index, Int fragment_index)
 	Atom *atoms = arena->mol->atoms;
 	int i, j;
 	for (i = 0; i < atoms[start_index].nconnects; i++) {
-		j = atoms[start_index].connects[i];
+		AtomConnectEntryAtIndex(ATOM_AT_INDEX(atoms, start_index), i);
 		if (j >= 0 && j < arena->natoms_uniq) {
 			int n = arena->fragment_indices[j];
 			if (n < 0) {

@@ -883,7 +883,11 @@ end_of_header
 						self.expand_by_symmetry(ig, symop[0], symop[1], symop[2], symop[3])
 						#  Find again the expanded atom
 					    ap = self.atoms.find { |ap| (s = ap.symop) != nil && s === symop }
-						ex[i] = ap.index
+						if ap == nil
+						  puts "ig = #{ig.inspect} symop = #{symop.inspect}"
+						else
+						  ex[i] = ap.index
+					    end
 					  end
 					end
 				  }

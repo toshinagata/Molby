@@ -3314,11 +3314,12 @@ static VALUE s_AtomRef_GetAtomicNumber(VALUE self) {
 
 static VALUE s_AtomRef_GetConnects(VALUE self) {
 	VALUE retval;
-	int i;
+	Int i, *cp;
 	Atom *ap = s_AtomFromValue(self);
 	retval = rb_ary_new();
+	cp = AtomConnects(ap);
 	for (i = 0; i < ap->nconnects; i++)
-		rb_ary_push(retval, INT2NUM(ap->connects[i]));
+		rb_ary_push(retval, INT2NUM(cp[i]));
 	return retval;
 }
 
@@ -5953,9 +5954,10 @@ s_Molecule_Remove(VALUE self, VALUE group)
 	IntGroupIteratorInit(ig, &iter);
 	while ((i = IntGroupIteratorNext(&iter)) >= 0) {
 		Atom *ap = ATOM_AT_INDEX(mol1->atoms, i);
-		int j;
+		Int j, *cp;
+		cp = AtomConnects(ap);
 		for (j = 0; j < ap->nconnects; j++) {
-			int n = ap->connects[j];
+			int n = cp[j];
 			if (!IntGroupLookup(ig, n, NULL)) {
 				/*  bond i-n, i is in ig and n is not  */
 				temp[0] = i;
