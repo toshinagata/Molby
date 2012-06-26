@@ -1345,7 +1345,7 @@ Get the current rotation for the view. Angle is in degree, not radian. The sign 
 </div>
 <div class="method-description">
 <p>
-Get the current scale for the view. Scale is expressed with a floating-point number in the range -5.0 to 5.0. The scale parameter is transformed to perspective parameters (fovy and distance) in the following way: for negative scale, fovy = 30 deg and distance = cot(15) * 10^(-scale); for positive scale, fovy = 30 * 10^(-scale) and distance = cot(15).
+Get the current scale for the view. Scale is expressed with a dimensionless floating-point number in the range -5.0 to 5.0. The scale parameter is transformed to perspective parameters (fovy and distance) in the following way: for negative scale, fovy = 30 degree and distance = cot(15) * 10^(-scale) * 10 &Aring;; for positive scale, fovy = 30 * 10^(-scale) degree and distance = cot(15) * 10 &Aring;.
 </p>
 <p>
 <i>See Also:</i> <a href="#set_view_scale">Molecule#set_view_scale</a>
@@ -1377,36 +1377,6 @@ Get the current center point of the view.
 Create bonds between atoms that are within the threshold distance. If limit is a positive number, the threshold distance is the sum of the vdw radii times limit. If limit is a negative number, its absolute value is used for the threshold distance in angstrom. If limit is not given, a default value of 1.2 is used. The number of the newly created bonds is returned. This operation is undoable.
 </p>
 </div>
-</div>
-
-<div id="method-hide_graphic" class="method-detail">
-<a name="hidden_atoms"></a>
-<div class="method-heading">
-<span class="method-name">hidden_atoms &rarr; <a href="IntGroup.html">IntGroup</a></span>
-</div>
-<div class="method-description">
-<p>
-Returns a list of currently hidden atoms.
-</p>
-<p>
-<i>See Also:</i> <a href="#set_hidden_atoms">Molecule#hidden_atoms=</a>
-</p></div>
-</div>
-
-<div id="method-hide_graphic" class="method-detail">
-<a name="set_hidden_atoms"></a>
-<div class="method-heading">
-<span class="method-name">self.hidden_atoms = <a href="IntGroup.html">IntGroup</a><br />
-set_hidden_atoms(<a href="IntGroup.html">IntGroup</a>)
-</span>
-</div>
-<div class="method-description">
-<p>
-Hide the specified atoms. Note: this operation is _not_ undoable.
-</p>
-<p>
-<i>See Also:</i> <a href="#hidden_atoms">Molecule#hidden_atoms</a>
-</p></div>
 </div>
 
 <div id="method-hide_graphic" class="method-detail">
@@ -1506,6 +1476,19 @@ href="Molecule.html">Molecule</a>:0x****&gt;&quot; is returned.
 <div class="method-description">
 <p>
 Invert the molecule with the given center. If group is given, only the atoms in the group are moved. This operation is undoable.
+</p>
+</div>
+</div>
+
+<div id="method-M000284" class="method-detail">
+<a name="is_atom_hidden"></a>
+<div class="method-heading">
+<span class="method-name">is_atom_hidden(index)       &rarr; Boolean<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Check whether the atom is visible or not. Unlike <a href="AtomRef.html#hidden">AtomRef#hidden</a>, this method takes care of the Molecule attributes <a href="Molecule.html#show_hydrogens">show_hydrogens</a>, <a href="Molecule.html#show_expanded">show_expanded</a> and <a href="Molecule.html#show_dummy_atoms">show_dummy_atoms</a>. 
 </p>
 </div>
 </div>

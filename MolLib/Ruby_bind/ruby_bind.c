@@ -69,7 +69,8 @@ static VALUE
 	s_SigmaSym, s_SigmaXSym, s_SigmaYSym, s_SigmaZSym,
 	s_VSym, s_FSym, s_OccupancySym, s_TempFactorSym,
 	s_AnisoSym, s_SymopSym, s_IntChargeSym, s_FixForceSym,
-	s_FixPosSym, s_ExclusionSym, s_MMExcludeSym, s_PeriodicExcludeSym;
+	s_FixPosSym, s_ExclusionSym, s_MMExcludeSym, s_PeriodicExcludeSym,
+	s_HiddenSym;
 
 /*  Symbols for parameter attributes  */
 static VALUE
@@ -3482,6 +3483,10 @@ static VALUE s_AtomRef_GetPeriodicExclude(VALUE self) {
 	return INT2NUM(s_AtomFromValue(self)->periodic_exclude);
 }
 
+static VALUE s_AtomRef_GetHidden(VALUE self) {
+	return ((s_AtomFromValue(self)->exflags & kAtomHiddenFlag) != 0 ? Qtrue : Qfalse);
+}
+
 static VALUE s_AtomRef_SetIndex(VALUE self, VALUE val) {
 	rb_raise(rb_eMolbyError, "index cannot be directly set");
 	return Qnil;
@@ -3920,6 +3925,18 @@ static VALUE s_AtomRef_SetPeriodicExclude(VALUE self, VALUE val) {
 	return val;
 }
 
+static VALUE s_AtomRef_SetHidden(VALUE self, VALUE val) {
+	Atom *ap = s_AtomFromValue(self);
+	VALUE oval = ((ap->exflags & kAtomHiddenFlag) != 0 ? Qtrue : Qfalse);
+	if (RTEST(val)) {
+		ap->exflags |= kAtomHiddenFlag;
+	} else {
+		ap->exflags &= ~kAtomHiddenFlag;
+	}
+	s_RegisterUndoForAtomAttrChange(self, s_HiddenSym, val, oval);
+	return val;
+}
+
 static struct s_AtomAttrDef {
 	char *name;
 	VALUE *symref;  /*  Address of s_IndexSymbol etc. */
@@ -3963,6 +3980,7 @@ static struct s_AtomAttrDef {
 	{"exclusion",    &s_ExclusionSym,    0, s_AtomRef_GetExclusion,    s_AtomRef_SetExclusion},
 	{"mm_exclude",   &s_MMExcludeSym,    0, s_AtomRef_GetMMExclude,    s_AtomRef_SetMMExclude},
 	{"periodic_exclude", &s_PeriodicExcludeSym, 0, s_AtomRef_GetPeriodicExclude, s_AtomRef_SetPeriodicExclude},
+	{"hidden",       &s_HiddenSym,       0, s_AtomRef_GetHidden,       s_AtomRef_SetHidden},
 	{NULL} /* Sentinel */
 };
 
@@ -6617,7 +6635,9 @@ s_Molecule_SetUndoableSelection(VALUE self, VALUE val)
 static VALUE
 s_Molecule_HiddenAtoms(VALUE self)
 {
-    Molecule *mol;
+	rb_raise(rb_eMolbyError, "set_hidden_atoms is now obsolete. Try using Molecule#is_atom_visible or AtomRef#hidden.");
+	return Qnil;  /*  Not reached  */
+/*    Molecule *mol;
 	IntGroup *ig;
 	VALUE val;
     Data_Get_Struct(self, Molecule, mol);
@@ -6633,7 +6653,7 @@ s_Molecule_HiddenAtoms(VALUE self)
 		IntGroupRelease(ig);
 		rb_obj_freeze(val);
 		return val;
-	} else return Qnil;
+	} else return Qnil; */
 }
 
 /*
@@ -6646,6 +6666,9 @@ s_Molecule_HiddenAtoms(VALUE self)
 static VALUE
 s_Molecule_SetHiddenAtoms(VALUE self, VALUE val)
 {
+	rb_raise(rb_eMolbyError, "set_hidden_atoms is now obsolete. Try using Molecule#is_atom_visible or AtomRef#hidden.");
+	return Qnil;  /*  Not reached  */
+/*
 	Molecule *mol;
     Data_Get_Struct(self, Molecule, mol);
 	if (mol != NULL) {
@@ -6667,7 +6690,7 @@ s_Molecule_SetHiddenAtoms(VALUE self, VALUE val)
 			IntGroupRelease(ig);
 		MoleculeCallback_notifyModification(mol, 0);
 	}
-	return val;
+	return val; */
 }
 
 /*
@@ -8166,6 +8189,35 @@ s_Molecule_ShowEllipsoids(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
+ *     is_atom_visible(index)  -> Boolean
+ *
+ *  Check is an atom is visible. It examines the atom attribute (ap->exflags & kAtomHiddenFlag)
+ *  as well as the molecule attributes (showHydrogens, etc.)
+ */
+static VALUE
+s_Molecule_IsAtomVisible(VALUE self, VALUE ival)
+{
+	Molecule *mol;
+	Int idx;
+	Atom *ap;
+    Data_Get_Struct(self, Molecule, mol);
+	idx = s_Molecule_AtomIndexFromValue(mol, ival);
+	if (idx < 0 || idx >= mol->natoms)
+		return Qnil;
+	ap = ATOM_AT_INDEX(mol->atoms, idx);
+	if (mol->mview != NULL) {
+		if (mol->mview->showHydrogens == 0 && ap->atomicNumber == 1)
+			return Qfalse;
+		if (mol->mview->showExpandedAtoms == 0 && SYMOP_ALIVE(ap->symop))
+			return Qfalse;
+		if (mol->mview->showDummyAtoms == 0 && ap->atomicNumber == 0)
+			return Qfalse;
+	}
+	return ((ap->exflags & kAtomHiddenFlag) != 0 ? Qfalse : Qtrue);
+}
+
+/*
+ *  call-seq:
  *     show_graphite -> Integer
  *     show_graphite = Integer
  *     show_graphite = boolean
@@ -9400,9 +9452,9 @@ Init_Molby(void)
 	rb_define_method(rb_cMolecule, "selection", s_Molecule_Selection, 0);
 	rb_define_method(rb_cMolecule, "selection=", s_Molecule_SetSelection, 1);
 	rb_define_method(rb_cMolecule, "set_undoable_selection", s_Molecule_SetUndoableSelection, 1);
-	rb_define_method(rb_cMolecule, "hidden_atoms", s_Molecule_HiddenAtoms, 0);
-	rb_define_method(rb_cMolecule, "hidden_atoms=", s_Molecule_SetHiddenAtoms, 1);	
-	rb_define_alias(rb_cMolecule, "set_hidden_atoms", "hidden_atoms=");
+	rb_define_method(rb_cMolecule, "hidden_atoms", s_Molecule_HiddenAtoms, 0);  /*  obsolete  */
+	rb_define_method(rb_cMolecule, "hidden_atoms=", s_Molecule_SetHiddenAtoms, 1);	/*  obsolete  */
+	rb_define_alias(rb_cMolecule, "set_hidden_atoms", "hidden_atoms=");  /*  obsolete  */
 	rb_define_method(rb_cMolecule, "frame", s_Molecule_Frame, 0);
 	rb_define_method(rb_cMolecule, "frame=", s_Molecule_SelectFrame, 1);
 	rb_define_alias(rb_cMolecule, "select_frame", "frame=");
@@ -9451,6 +9503,7 @@ Init_Molby(void)
 	rb_define_method(rb_cMolecule, "show_dummy_atoms=", s_Molecule_ShowDummyAtoms, -1);
 	rb_define_method(rb_cMolecule, "show_expanded", s_Molecule_ShowExpanded, -1);
 	rb_define_method(rb_cMolecule, "show_expanded=", s_Molecule_ShowExpanded, -1);
+	rb_define_method(rb_cMolecule, "is_atom_visible", s_Molecule_IsAtomVisible, 1);
 	rb_define_method(rb_cMolecule, "show_ellipsoids", s_Molecule_ShowEllipsoids, -1);
 	rb_define_method(rb_cMolecule, "show_ellipsoids=", s_Molecule_ShowEllipsoids, -1);
 	rb_define_method(rb_cMolecule, "show_graphite", s_Molecule_ShowGraphite, -1);
