@@ -8331,6 +8331,7 @@ s_Molecule_GetViewRotation(VALUE self)
 	if (mol->mview == NULL)
 		return Qnil;
 	TrackballGetRotate(mol->mview->track, f);
+	f[0] = -f[0];  /*  Convert to left-handed screw (to be consistent with Transform)  */
 	v.x = f[1];
 	v.y = f[2];
 	v.z = f[3];
@@ -8398,7 +8399,7 @@ s_Molecule_SetViewRotation(VALUE self, VALUE aval, VALUE angval)
 	f[3] = v.z;
 	f[0] = NUM2DBL(rb_Float(angval));
 	TrackballSetRotate(mol->mview->track, f);
-	MainViewCallback_setNeedsDisplay(mol->mview, 0);
+	MainViewCallback_setNeedsDisplay(mol->mview, 1);
 	return self;
 }
 
@@ -8416,7 +8417,7 @@ s_Molecule_SetViewScale(VALUE self, VALUE aval)
 	if (mol->mview == NULL)
 		return Qnil;
 	TrackballSetScale(mol->mview->track, NUM2DBL(rb_Float(aval)));
-	MainViewCallback_setNeedsDisplay(mol->mview, 0);
+	MainViewCallback_setNeedsDisplay(mol->mview, 1);
 	return self;
 }
 
@@ -8440,7 +8441,7 @@ s_Molecule_SetViewCenter(VALUE self, VALUE aval)
 	f[1] = -v.y / mol->mview->dimension;
 	f[2] = -v.z / mol->mview->dimension;
 	TrackballSetTranslate(mol->mview->track, f);
-	MainViewCallback_setNeedsDisplay(mol->mview, 0);
+	MainViewCallback_setNeedsDisplay(mol->mview, 1);
 	return self;
 }
 

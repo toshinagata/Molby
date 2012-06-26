@@ -1331,7 +1331,7 @@ Copy the coordinates from the specified frame. If group is specified, then only 
 </div>
 <div class="method-description">
 <p>
-Get the current rotation for the view. Angle is in degree, not radian.
+Get the current rotation for the view. Angle is in degree, not radian. The sign of the angle is positive when the rotation and the axis vector follow the left-hand rule (i.e. clockwise when viewed from the tip of the axis). Note that this is opposite from the OpenGL convention.
 </p>
 <p>
 <i>See Also:</i> <a href="#set_view_rotation">Molecule#set_view_rotation</a>
@@ -1352,17 +1352,17 @@ Get the current scale for the view. Scale is expressed with a floating-point num
 </p></div>
 </div>
 
-<div id="method-get_view_translation" class="method-detail">
-<a name="get_view_translation"></a>
+<div id="method-get_view_center" class="method-detail">
+<a name="get_view_center"></a>
 <div class="method-heading">
-<span class="method-name">get_view_translation &rarr; <a href="Vector3D.html">Vector3D</a></span>
+<span class="method-name">get_view_center &rarr; <a href="Vector3D.html">Vector3D</a></span>
 </div>
 <div class="method-description">
 <p>
-Get the current translation factor for the view.
+Get the current center point of the view.
 </p>
 <p>
-<i>See Also:</i> <a href="#set_view_translation">Molecule#set_view_translation</a>
+<i>See Also:</i> <a href="#set_view_center">Molecule#set_view_center</a>
 </p></div>
 </div>
 
@@ -2633,7 +2633,7 @@ This operation is undoable.
 </div>
 <div class="method-description">
 <p>
-Set the current rotation for the view. Axis is a <a href="Vector3D.html">Vector3D</a> or an object that can be transformed to a <a href="Vector3D.html">Vector3D</a>. Angle is in degree, not radian.
+Set the current rotation for the view. Axis is a <a href="Vector3D.html">Vector3D</a> or an object that can be transformed to a <a href="Vector3D.html">Vector3D</a>. Angle is in degree, not radian. The sign of the angle is positive when the rotation and the axis vector follow the left-hand rule (i.e. clockwise when viewed from the tip of the axis). Note that this is opposite from the OpenGL convention.
 </p>
 <p>
 <i>See Also:</i> <a href="#get_view_rotation">Molecule#get_view_rotation</a>
@@ -2654,17 +2654,17 @@ Set the current scale for the view. For detailed description of the scale parame
 </p></div>
 </div>
 
-<div id="method-set_view_translation" class="method-detail">
-<a name="set_view_translation"></a>
+<div id="method-set_view_center" class="method-detail">
+<a name="set_view_center"></a>
 <div class="method-heading">
-<span class="method-name">set_view_translation(vec) &rarr; self</span>
+<span class="method-name">set_view_center(vec) &rarr; self</span>
 </div>
 <div class="method-description">
 <p>
-Set the current translation for the view.
+Set the current center point of the view.
 </p>
 <p>
-<i>See Also:</i> <a href="#get_view_translation">Molecule#get_view_translation</a>
+<i>See Also:</i> <a href="#get_view_center">Molecule#get_view_center</a>
 </p></div>
 </div>
 
