@@ -2871,6 +2871,26 @@ defined, returns an empty array.
 </div>
 </div>
 
+<div id="method-M000240" class="method-detail">
+<a name="symop_for_transform"></a>
+<div class="method-heading">
+<span class="method-name">symop_for_transform(transform, is_cartesian = nil) &rarr; [sym, dx, dy, dz]
+</span>
+</div>
+<div class="method-description">
+<p>
+Get the symmetry operation corresponding to the given transform.
+If is_cartesian is true, the given transform is for cartesian coordinates.
+Otherwise, the given transform is for fractional coordinates.
+Raises exception when no cell or no transform are defined.
+Returns nil if the given transform cannot be expressed as a symmetry operation.
+</p>
+<p>
+<i>See Also:</i><a href="Molecule.html#transform_for_symop">Molecule#transform_for_symop</a>
+</p>
+</div>
+</div>
+
 <div id="method-M000285" class="method-detail">
 <a name="M000285"></a>
 <div class="method-heading">
@@ -2881,6 +2901,26 @@ defined, returns an empty array.
 <p>
 Transform the molecule by the given <a href="Transform.html">Transform</a> object.
 If group is given, only the atoms in the group are moved. This operation is undoable.
+</p>
+</div>
+</div>
+
+<div id="method-M000240" class="method-detail">
+<a name="transform_for_symop"></a>
+<div class="method-heading">
+<span class="method-name">transform_for_symop(symop, is_cartesian = nil) &rarr; <a href="Transform.html">Transform</a>
+</span>
+</div>
+<div class="method-description">
+<p>
+Get the transform corresponding to the symmetry operation. The symop can either be
+an integer (index of symmetry operation) or [sym, dx, dy, dz].
+If is_cartesian is true, the returned transform is for cartesian coordinates.
+Otherwise, the returned transform is for fractional coordinates.
+Raises exception when no cell or no transform are defined.
+</p>
+<p>
+<i>See Also:</i><a href="Molecule.html#transform_for_symop">Molecule#symop_for_transform</a>
 </p>
 </div>
 </div>

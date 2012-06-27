@@ -665,6 +665,7 @@ end_of_header
 	self.remove(All)
 	fp = open(filename, "rb")
 	cell = []
+	cell_trans = cell_trans_inv = Transform.identity
 	token = getciftoken(fp)
 	pardigits_re = /\(\d+\)/
 	calculated_atoms = []
@@ -688,6 +689,8 @@ end_of_header
 		  self.cell = cell
 		  puts "Unit cell is set to #{cell.inspect}."
 		  cell = []
+		  cell_trans = self.cell_transform
+		  cell_trans_inv = cell_trans.inverse
 		end
 		token = getciftoken(fp)
 		next
@@ -855,6 +858,7 @@ end_of_header
 				}
 				exbonds.each { |ex|
 				  if debug; puts "extra bond #{ex[4]}(#{ex[2]}) - #{ex[5]}(#{ex[3]})"; end
+				  ex0 = ex.dup
 				  (2..3).each { |i|
 				    if ex[i] == "."
 					  ex[i] = ex[i - 2]    #  No expansion
@@ -883,16 +887,32 @@ end_of_header
 						self.expand_by_symmetry(ig, symop[0], symop[1], symop[2], symop[3])
 						#  Find again the expanded atom
 					    ap = self.atoms.find { |ap| (s = ap.symop) != nil && s === symop }
-						if ap == nil
-						  puts "ig = #{ig.inspect} symop = #{symop.inspect}"
-						else
+						if ap
 						  ex[i] = ap.index
+						else
+						  #  It is likely that the expanded atom coincide with an existing atom
+						  #  Calculate the cartesian coordinate of the expanded atom
+						  tr = Transform.translation([symop[1], symop[2], symop[3]]) * symmetries[symop[0]]
+						  r = (cell_trans * tr * cell_trans_inv) * atoms[ex[i - 2]].r
+						  ap = self.atoms.find { |ap| (ap.r - r).length2 < 1e-6 }
+						  if ap
+						    ex[i] = ap.index
+						  else
+						    #  Still cannot find the target atom
+							puts "Cannot create bond for #{ex[0]}(#{ex[2]})-#{ex[1]}(#{ex[3]})"
+							ex[i] = nil
+						  end
 					    end
 					  end
 					end
 				  }
-				  if debug; puts "  creating bond #{ex[2]} - #{ex[3]}"; end
-				  self.create_bond(ex[2], ex[3])
+				  if ex[2] && ex[3] && ex[2] != ex[3]
+					if (ex[2] == 6 && ex[3] == 280) || (ex[2] == 280 && ex[3] == 6)
+					  puts "(6,280) ex0 = #{ex0.inspect}"
+					end
+				    if debug; puts "  creating bond #{ex[2]} - #{ex[3]}"; end
+				    self.create_bond(ex[2], ex[3])
+				  end
 				}
 			  end
 			end

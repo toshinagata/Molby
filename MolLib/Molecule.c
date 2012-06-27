@@ -6121,24 +6121,26 @@ MoleculeSearchEquivalentAtoms(Molecule *mol, IntGroup *ig)
 #pragma mark ====== Symmetry expansion ======
 
 int
-MoleculeGetTransformForSymop(Molecule *mp, Symop symop, Transform *tf)
+MoleculeGetTransformForSymop(Molecule *mp, Symop symop, Transform *tf, int is_cartesian)
 {
 	Transform t;
 	if (mp == NULL || mp->cell == NULL)
 		return -1;
 	if (symop.sym >= mp->nsyms)
 		return -2;
-	memmove(t, mp->syms[symop.sym], sizeof(Transform));
-	t[9] += symop.dx;
-	t[10] += symop.dy;
-	t[11] += symop.dz;
-	TransformMul(t, t, mp->cell->rtr);
-	TransformMul(*tf, mp->cell->tr, t);
+	memmove(*tf, mp->syms[symop.sym], sizeof(Transform));
+	(*tf)[9] += symop.dx;
+	(*tf)[10] += symop.dy;
+	(*tf)[11] += symop.dz;
+	if (is_cartesian) {
+		TransformMul(t, *tf, mp->cell->rtr);
+		TransformMul(*tf, mp->cell->tr, t);
+	}
 	return 0;
 }
 
 int
-MoleculeGetSymopForTransform(Molecule *mp, const Transform tf, Symop *symop)
+MoleculeGetSymopForTransform(Molecule *mp, const Transform tf, Symop *symop, int is_cartesian)
 {
 	Transform t;
 	int i, j, n[3];
@@ -6146,8 +6148,12 @@ MoleculeGetSymopForTransform(Molecule *mp, const Transform tf, Symop *symop)
 		return -1;
 	if (mp->nsyms == 0)
 		return -2;
-	TransformMul(t, tf, mp->cell->tr);
-	TransformMul(t, mp->cell->rtr, t);
+	if (is_cartesian) {
+		TransformMul(t, tf, mp->cell->tr);
+		TransformMul(t, mp->cell->rtr, t);
+	} else {
+		memmove(t, tf, sizeof(Transform));
+	}
 	for (i = 0; i < mp->nsyms; i++) {
 		Transform *tp = mp->syms + i;
 		for (j = 0; j < 9; j++) {
@@ -8482,7 +8488,7 @@ MoleculeTransform(Molecule *mp, Transform tr, IntGroup *group)
 			if (!SYMOP_ALIVE(ap->symop))
 				continue;
 			/*  Transform symop  */
-			if (MoleculeGetTransformForSymop(mp, ap->symop, &symtr) != 0)
+			if (MoleculeGetTransformForSymop(mp, ap->symop, &symtr, 1) != 0)
 				continue;
 			TransformMul(symtr, tr, symtr);
 			if (group == NULL || IntGroupLookup(group, ap->symbase, NULL) != 0)
@@ -8493,11 +8499,11 @@ MoleculeTransform(Molecule *mp, Transform tr, IntGroup *group)
 			/*  Transform symop if the base atom is transformed  */
 			if (group != NULL && IntGroupLookup(group, ap->symbase, NULL) == 0)
 				continue;
-			if (MoleculeGetTransformForSymop(mp, ap->symop, &symtr) != 0)
+			if (MoleculeGetTransformForSymop(mp, ap->symop, &symtr, 1) != 0)
 				continue;
 			TransformMul(symtr, symtr, rtr);
 		}
-		if (MoleculeGetSymopForTransform(mp, symtr, &new_symop) != 0)
+		if (MoleculeGetSymopForTransform(mp, symtr, &new_symop, 1) != 0)
 			continue;
 		ap->symop = new_symop;
 	}

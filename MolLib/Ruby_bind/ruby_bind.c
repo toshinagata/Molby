@@ -7575,6 +7575,79 @@ s_Molecule_AmendBySymmetry(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
+ *     transform_for_symop(symop, is_cartesian = nil) -> Transform
+ *
+ *  Get the transform corresponding to the symmetry operation. The symop can either be
+ *  an integer (index of symmetry operation) or [sym, dx, dy, dz].
+ *  If is_cartesian is true, the returned transform is for cartesian coordinates.
+ *  Otherwise, the returned transform is for fractional coordinates.
+ *  Raises exception when no cell or no transform are defined.
+ */
+static VALUE
+s_Molecule_TransformForSymop(int argc, VALUE *argv, VALUE self)
+{
+    Molecule *mol;
+	VALUE sval, fval;
+	Symop symop;
+	Transform tr;
+    Data_Get_Struct(self, Molecule, mol);
+	if (mol->cell == NULL)
+		rb_raise(rb_eMolbyError, "no unit cell is defined");
+	if (mol->nsyms == 0)
+		rb_raise(rb_eMolbyError, "no symmetry operation is defined");
+	rb_scan_args(argc, argv, "11", &sval, &fval);
+	if (rb_obj_is_kind_of(sval, rb_cNumeric)) {
+		symop.sym = NUM2INT(rb_Integer(sval));
+		symop.dx = symop.dy = symop.dz = 0;
+	} else {
+		sval = rb_ary_to_ary(sval);
+		if (RARRAY_LEN(sval) < 4)
+			rb_raise(rb_eMolbyError, "missing arguments as symop; at least four integers should be given");
+		symop.sym = NUM2INT(rb_Integer(RARRAY_PTR(sval)[0]));
+		symop.dx = NUM2INT(rb_Integer(RARRAY_PTR(sval)[1]));
+		symop.dy = NUM2INT(rb_Integer(RARRAY_PTR(sval)[2]));
+		symop.dz = NUM2INT(rb_Integer(RARRAY_PTR(sval)[3]));
+	}
+	if (symop.sym >= mol->nsyms)
+		rb_raise(rb_eMolbyError, "index of symmetry operation (%d) is out of range", symop.sym);
+	MoleculeGetTransformForSymop(mol, symop, &tr, (RTEST(fval) != 0));
+	return ValueFromTransform(&tr);
+}
+	
+/*
+ *  call-seq:
+ *     symop_for_transform(transform, is_cartesian = nil) -> [sym, dx, dy, dz]
+ *
+ *  Get the symmetry operation corresponding to the given transform.
+ *  If is_cartesian is true, the given transform is for cartesian coordinates.
+ *  Otherwise, the given transform is for fractional coordinates.
+ *  Raises exception when no cell or no transform are defined.
+ */
+static VALUE
+s_Molecule_SymopForTransform(int argc, VALUE *argv, VALUE self)
+{
+    Molecule *mol;
+	VALUE tval, fval;
+	Symop symop;
+	Transform tr;
+	int n;
+    Data_Get_Struct(self, Molecule, mol);
+	if (mol->cell == NULL)
+		rb_raise(rb_eMolbyError, "no unit cell is defined");
+	if (mol->nsyms == 0)
+		rb_raise(rb_eMolbyError, "no symmetry operation is defined");
+	rb_scan_args(argc, argv, "11", &tval, &fval);
+	TransformFromValue(tval, &tr);
+	n = MoleculeGetSymopForTransform(mol, tr, &symop, (RTEST(fval) != 0));
+	if (n == 0) {
+		return rb_ary_new3(4, INT2NUM(symop.sym), INT2NUM(symop.dx), INT2NUM(symop.dy), INT2NUM(symop.dz));
+	} else {
+		return Qnil;  /*  Not found  */
+	}
+}
+
+/*
+ *  call-seq:
  *     wrap_unit_cell(group) -> Vector3D
  *
  *  Move the specified group so that the center of mass of the group is within the
@@ -9489,6 +9562,8 @@ Init_Molby(void)
 	rb_define_method(rb_cMolecule, "measure_dihedral", s_Molecule_MeasureDihedral, 4);
 	rb_define_method(rb_cMolecule, "expand_by_symmetry", s_Molecule_ExpandBySymmetry, -1);
 	rb_define_method(rb_cMolecule, "amend_by_symmetry", s_Molecule_AmendBySymmetry, -1);
+	rb_define_method(rb_cMolecule, "transform_for_symop", s_Molecule_TransformForSymop, -1);
+	rb_define_method(rb_cMolecule, "symop_for_transform", s_Molecule_SymopForTransform, -1);
 	rb_define_method(rb_cMolecule, "wrap_unit_cell", s_Molecule_WrapUnitCell, 1);
 	rb_define_method(rb_cMolecule, "find_conflicts", s_Molecule_FindConflicts, -1);
 	rb_define_method(rb_cMolecule, "fit_coordinates", s_Molecule_FitCoordinates, -1);

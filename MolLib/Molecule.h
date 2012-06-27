@@ -464,8 +464,8 @@ int MoleculeIsAtomSelected(Molecule *mp, int n1);
 int MoleculeIsBondSelected(Molecule *mp, int n1, int n2);
 IntGroup *MoleculeModifySelectionByRemovingAtoms(Molecule *mp, IntGroup *selection, IntGroup *remove);
 
-int MoleculeGetTransformForSymop(Molecule *mp, Symop symop, Transform *tf);
-int MoleculeGetSymopForTransform(Molecule *mp, const Transform tf, Symop *symop);
+int MoleculeGetTransformForSymop(Molecule *mp, Symop symop, Transform *tf, int is_cartesian);
+int MoleculeGetSymopForTransform(Molecule *mp, const Transform tf, Symop *symop, int is_cartesian);
 
 int MoleculeTransformBySymop(Molecule *mp, const Vector *vpin, Vector *vpout, Symop symop);
 int MoleculeAddExpandedAtoms(Molecule *mp, Symop symop, IntGroup *group);
