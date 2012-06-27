@@ -1153,15 +1153,14 @@ present, then returns nil.
 </div>
 
 <div id="method-M000292" class="method-detail">
-<a name="M000292"></a>
+<a name="expand_by_symmetry"></a>
 <div class="method-heading">
-<span class="method-name">expand_by_symmetry(group, sym, dx=0, dy=0, dz=0) &rarr; <a href="IntGroup.html">IntGroup</a><br />
+<span class="method-name">expand_by_symmetry(group, sym, dx=0, dy=0, dz=0) &rarr; Array<br />
 </span>
 </div>
 <div class="method-description">
 <p>
-Expand the specified part of the molecule by the given symmetry operation. Sym is the index to the <a href="Molecule.html#M000331">symmetries</a> array, and dx/dy/dz are the integers representing the translational operations along the unit cell axes. Returns an <a
-href="IntGroup.html">IntGroup</a> that represents the added atoms. This operation is undoable.
+Expand the specified part of the molecule by the given symmetry operation. Sym is the index to the <a href="Molecule.html#M000331">symmetries</a> array, and dx/dy/dz are the integers representing the translational operations along the unit cell axes. Returns an array of indices of the expanded atoms (corresponding the atoms in group).  This operation is undoable.
 </p>
 </div>
 </div>

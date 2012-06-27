@@ -52,7 +52,7 @@ const char *gMolActionChangeResidueNames = "changeResNames:IC";
 const char *gMolActionOffsetResidueNumbers = "offsetResSeq:Gii";
 const char *gMolActionChangeNumberOfResidues = "changeNres:i";
 const char *gMolActionRenumberAtoms    = "renumberAtoms:I";
-const char *gMolActionExpandBySymmetry = "expandSym:Giiii";
+const char *gMolActionExpandBySymmetry = "expandSym:Giiii;I";
 const char *gMolActionDeleteSymmetryOperation = "deleteSymop";
 const char *gMolActionAddSymmetryOperation = "addSymop:t";
 const char *gMolActionSetCell         = "setCell:Di";
@@ -74,7 +74,7 @@ static VALUE sMolActionArgValues = Qfalse;
  (Array types)   I: array of Int, D: array of double, V: array of Vector, C: array of char, T: array of Transform, U: array of UnionPars
  (Complex types) M: Molecule, G: IntGroup, A: Atom
  (Ruby value)    b: Ruby boolean, r: Ruby object, R: an array of Ruby object (a Ruby array)
- (Return value)  i, d, s, v, t, G + 0x80 */
+ (Return value)  i, d, s, v, t, r, G + 0x80 */
 typedef struct MolActionArg {
 	Byte type;
 	union {
@@ -88,7 +88,10 @@ typedef struct MolActionArg {
 		struct Molecule *mval; /* The record is retained but not duplicated */
 		struct Atom *aval; /* The value is duplicated, so any pointer can be passed */
 		VALUE vval;        /* The value is retained in sMolActionArgValues  */
-		void *pval;        /* Store address for the return value; usually used in performing Ruby script  */
+		struct {
+			void *ptr;    /*  Return value pointer  */
+			Int *nptr;    /*  If the return value is an array, then *ptr contains a malloc'ed pointer, and *nptr contains the number of items.  */
+		} retval;          /*  Store address for the return value; usually used in performing Ruby script */
 	} u;
 } MolActionArg;
 
@@ -214,7 +217,12 @@ MolActionNewArgv(const char *name, va_list ap)
 				if (*p == 'i' || *p == 'd' || *p == 's' || *p == 'v' || *p == 't' || *p == 'r' || *p == 'G') {
 					arg.type = (*p | 0x80);
 					p++;
-					arg.u.pval = va_arg(ap, void *);
+					arg.u.retval.ptr = va_arg(ap, void *);
+				} else if (*p == 'I' || *p == 'D' || *p == 'V') {
+					arg.type = (*p | 0x80);
+					p++;
+					arg.u.retval.nptr = va_arg(ap, Int *);
+					arg.u.retval.ptr = va_arg(ap, void *);
 				} else {
 					fprintf(stderr, "Internal error: unknown return-type \'%c\' in NewMolAction()", *p);
 				}
@@ -343,6 +351,7 @@ typedef struct MolRubyActionInfo {
 	char enable_interrupt;
 	char return_type;
 	void *return_ptr;
+	Int *return_nptr;
 } MolRubyActionInfo;
 
 static VALUE
@@ -362,7 +371,8 @@ s_MolActionToRubyArguments(VALUE vinfo)
 		if (argp->type & 0x80) {
 			/*  Return value specified  */
 			info->return_type = (argp->type & 0x7f);
-			info->return_ptr = argp->u.pval;
+			info->return_ptr = argp->u.retval.ptr;
+			info->return_nptr = argp->u.retval.nptr;  /*  May be unused  */
 			break;  /*  This should be the last argument  */
 		}
 		switch (argp->type) {
@@ -459,6 +469,39 @@ s_MolActionStoreReturnValue(MolRubyActionInfo *info, VALUE val)
 			case 't': TransformFromValue(val, (Transform *)(info->return_ptr)); break;
 			case 'r': *((RubyValue *)(info->return_ptr)) = (RubyValue)val; break;
 			case 'G': *((IntGroup **)(info->return_ptr)) = (val == Qnil ? NULL : IntGroupFromValue(val)); break;
+			case 'I':
+			case 'D':
+			case 'V': {
+				int i, n, size;
+				void *p;
+				val = rb_ary_to_ary(val);
+				n = RARRAY_LEN(val);
+				*(info->return_nptr) = n;
+				if (n == 0) {
+					*((void **)(info->return_ptr)) = NULL;
+					break;
+				}
+				if (info->return_type == 'I')
+					size = sizeof(Int);
+				else if (info->return_type == 'D')
+					size = sizeof(Double);
+				else if (info->return_type == 'V')
+					size = sizeof(Vector);
+				else break;
+				*((void **)(info->return_ptr)) = p = calloc(size, n);
+				for (i = 0; i < n; i++) {
+					VALUE rval = (RARRAY_PTR(val))[i];
+					if (info->return_type == 'I') {
+						((Int *)p)[i] = NUM2INT(rb_Integer(rval));
+					} else if (info->return_type == 'D') {
+						((Double *)p)[i] = NUM2DBL(rb_Float(rval));
+					} else if (info->return_type == 'V') {
+						VectorFromValue(rval, (Vector *)p + i);
+					}
+				}
+				break;
+			}
+			default: break;
 		}
 	}
 }
@@ -556,7 +599,7 @@ s_MolActionAddAnAtom(Molecule *mol, MolAction *action, MolAction **actp)
 	Int *ip, n1;
 	IntGroup *ig;
 	n1 = MoleculeCreateAnAtom(mol, action->args[0].u.aval, action->args[1].u.ival);
-	if ((ip = action->args[2].u.pval) != NULL)
+	if ((ip = action->args[2].u.retval.ptr) != NULL)
 		*ip = n1;
 	if (n1 < 0)
 		return -1;
@@ -1160,26 +1203,42 @@ s_MolActionChangeNumberOfResidues(Molecule *mol, MolAction *action, MolAction **
 	*actp = MolActionNew(gMolActionChangeNumberOfResidues, nresidues);
 	return 0;
 }
-
+	
 static int
 s_MolActionExpandBySymmetry(Molecule *mol, MolAction *action, MolAction **actp)
 {
-	Int n1;
+	Int n1, *ip, count;
 	Symop symop;
 	IntGroup *ig = action->args[0].u.igval;
+	count = IntGroupGetCount(ig);
+	if (count == 0)
+		return 0;  /*  No operation  */
 	symop.dx = action->args[1].u.ival;
 	symop.dy = action->args[2].u.ival;
 	symop.dz = action->args[3].u.ival;
 	symop.sym = action->args[4].u.ival;
 	symop.alive = (symop.dx != 0 || symop.dy != 0 || symop.dz != 0 || symop.sym != 0);
-	n1 = MoleculeAddExpandedAtoms(mol, symop, ig);
+	if (action->args[5].u.retval.ptr != NULL) {
+		/*  Request the indices of the atoms  */
+		ip = (Int *)calloc(sizeof(Int), count);
+	} else ip = NULL;
+	n1 = MoleculeAddExpandedAtoms(mol, symop, ig, ip);
 	if (n1 > 0) {
 		ig = IntGroupNew();
 		IntGroupAdd(ig, mol->natoms - n1, n1);
 		(*actp) = MolActionNew(gMolActionUnmergeMolecule, ig);
 		IntGroupRelease(ig);
-		return 0;
-	} else return n1;
+	}
+	if (ip != NULL) {
+		if (n1 < 0) {
+			free(ip);
+			ip = NULL;
+			count = 0;
+		}
+		*((Int **)(action->args[5].u.retval.ptr)) = ip;
+		*(action->args[5].u.retval.nptr) = count;
+	}
+	return n1;
 }
 
 static int
@@ -1190,8 +1249,8 @@ s_MolActionAmendBySymmetry(Molecule *mol, MolAction *action, MolAction **actp)
 	int n1;
 	ig1 = action->args[0].u.igval;
 	n1 = MoleculeAmendBySymmetry(mol, ig1, &ig2, &vp2);
-	if (action->args[1].u.pval != NULL) {
-		*((IntGroup **)(action->args[1].u.pval)) = ig2;
+	if (action->args[1].u.retval.ptr != NULL) {
+		*((IntGroup **)(action->args[1].u.retval.ptr)) = ig2;
 		IntGroupRetain(ig2);
 	}
 	if (n1 > 0) {

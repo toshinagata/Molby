@@ -468,7 +468,7 @@ int MoleculeGetTransformForSymop(Molecule *mp, Symop symop, Transform *tf, int i
 int MoleculeGetSymopForTransform(Molecule *mp, const Transform tf, Symop *symop, int is_cartesian);
 
 int MoleculeTransformBySymop(Molecule *mp, const Vector *vpin, Vector *vpout, Symop symop);
-int MoleculeAddExpandedAtoms(Molecule *mp, Symop symop, IntGroup *group);
+int MoleculeAddExpandedAtoms(Molecule *mp, Symop symop, IntGroup *group, Int *indices);
 int MoleculeAmendBySymmetry(Molecule *mp, IntGroup *group, IntGroup **groupout, Vector **vpout);
 
 int MoleculeShowAllAtoms(Molecule *mp);

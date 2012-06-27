@@ -884,7 +884,8 @@ end_of_header
 						  ig = fragments.find { |f| f.include?(ex[i - 2]) }
 						end
 					    if debug; puts "  expanding #{ig} by #{symop.inspect}"; end
-						self.expand_by_symmetry(ig, symop[0], symop[1], symop[2], symop[3])
+						a = self.expand_by_symmetry(ig, symop[0], symop[1], symop[2], symop[3])
+						puts "expand atoms: #{a.inspect}"
 						#  Find again the expanded atom
 					    ap = self.atoms.find { |ap| (s = ap.symop) != nil && s === symop }
 						if ap
@@ -907,9 +908,6 @@ end_of_header
 					end
 				  }
 				  if ex[2] && ex[3] && ex[2] != ex[3]
-					if (ex[2] == 6 && ex[3] == 280) || (ex[2] == 280 && ex[3] == 6)
-					  puts "(6,280) ex0 = #{ex0.inspect}"
-					end
 				    if debug; puts "  creating bond #{ex[2]} - #{ex[3]}"; end
 				    self.create_bond(ex[2], ex[3])
 				  end

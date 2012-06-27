@@ -1695,7 +1695,6 @@ drawUnitCell(MainView *mview)
 	GLfloat a[3], b[3], c[3], ab[3], bc[3], ca[3], abc[3];
 	XtalCell *cp;
 	GLfloat origin[3];
-	int i;
 	if (!mview->showUnitCell || (cp = mview->mol->cell) == NULL)
 		return;
 	origin[0] = cp->origin.x;

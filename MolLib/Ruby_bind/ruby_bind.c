@@ -7513,10 +7513,10 @@ s_Molecule_MeasureDihedral(VALUE self, VALUE nval1, VALUE nval2, VALUE nval3, VA
 
 /*
  *  call-seq:
- *     expand_by_symmetry(group, sym, dx=0, dy=0, dz=0) -> IntGroup
+ *     expand_by_symmetry(group, sym, dx=0, dy=0, dz=0) -> Array
  *
  *  Expand the specified part of the molecule by the given symmetry operation.
- *  Returns an IntGroup containing the added atoms.
+ *  Returns the array of atom indices corresponding to the expanded atoms.
  */
 static VALUE
 s_Molecule_ExpandBySymmetry(int argc, VALUE *argv, VALUE self)
@@ -7524,8 +7524,10 @@ s_Molecule_ExpandBySymmetry(int argc, VALUE *argv, VALUE self)
     Molecule *mol;
 	VALUE gval, sval, xval, yval, zval, rval;
 	IntGroup *ig;
-	int n[4];
-	int natoms;
+	Int n[4];
+	Int natoms;
+	Int nidx, *idx;
+
     Data_Get_Struct(self, Molecule, mol);
 	rb_scan_args(argc, argv, "23", &gval, &sval, &xval, &yval, &zval);
 	n[0] = NUM2INT(rb_Integer(sval));
@@ -7537,15 +7539,19 @@ s_Molecule_ExpandBySymmetry(int argc, VALUE *argv, VALUE self)
 		rb_raise(rb_eMolbyError, "symmetry index is out of bounds");
 	natoms = mol->natoms;
 	
-	MolActionCreateAndPerform(mol, gMolActionExpandBySymmetry, ig, n[1], n[2], n[3], n[0]);
+	MolActionCreateAndPerform(mol, gMolActionExpandBySymmetry, ig, n[1], n[2], n[3], n[0], &nidx, &idx);
 
-	if (natoms == mol->natoms)
+	rval = rb_ary_new2(nidx);
+	while (--nidx >= 0) {
+		rb_ary_store(rval, nidx, INT2NUM(idx[nidx]));
+	}
+/*	if (natoms == mol->natoms)
 		rval = Qnil;
 	else {
 		rval = IntGroup_Alloc(rb_cIntGroup);
 		Data_Get_Struct(rval, IntGroup, ig);
 		IntGroup_RaiseIfError(IntGroupAdd(ig, natoms, mol->natoms - natoms));
-	}
+	} */
 	return rval;
 }
 

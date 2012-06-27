@@ -6205,19 +6205,23 @@ MoleculeTransformBySymop(Molecule *mp, const Vector *vpin, Vector *vpout, Symop 
 	return 0;
 }
 
-/*  TODO: Decide whether the symmetry operations are expressed in internal coordinates or cartesian coordinates. */
+/*  Add expanded atoms. Returns the number of newly created atoms.
+	If indices is non-NULL, it should be an array of Int with at least 
+	IntGroupGetCount(group) entries, and on return it contains the
+    indices of the expanded atoms (may be existing atoms if the expanded
+    atoms are already present)  */
 int
-MoleculeAddExpandedAtoms(Molecule *mp, Symop symop, IntGroup *group)
+MoleculeAddExpandedAtoms(Molecule *mp, Symop symop, IntGroup *group, Int *indices)
 {
 	int i, n, n0, n1, count, *table;
 	Atom *ap;
 	IntGroupIterator iter;
-/*	int debug = 0; */
+	Transform tr;
+
 	if (mp == NULL || mp->natoms == 0 || group == NULL || (count = IntGroupGetCount(group)) == 0)
 		return -1;
 	if (symop.sym >= mp->nsyms)
 		return -2;
-/*	fprintf(stderr, "symop = {%d %d %d %d}\n", symop.sym, symop.dx, symop.dy, symop.dz); */
 
 	/*  Create atoms, with avoiding duplicates  */
 	n0 = n1 = mp->natoms;
@@ -6227,24 +6231,39 @@ MoleculeAddExpandedAtoms(Molecule *mp, Symop symop, IntGroup *group)
 	for (i = 0; i < n0; i++)
 		table[i] = -1;
 	IntGroupIteratorInit(group, &iter);
+	MoleculeGetTransformForSymop(mp, symop, &tr, 0);
 	__MoleculeLock(mp);
 	for (i = 0; i < count; i++) {
-		int n2;
+		int n2, base;
+		Symop symop1;
 		Atom *ap2;
 		Vector nr, dr;
 		n = IntGroupIteratorNext(&iter);
 		ap = ATOM_AT_INDEX(mp->atoms, n);
 		if (SYMOP_ALIVE(ap->symop)) {
-			/*  Skip if the atom is expanded  */
-			continue;
+			/*  Calculate the cumulative symop  */
+			Transform t1;
+			MoleculeGetTransformForSymop(mp, ap->symop, &t1, 0);
+			TransformMul(t1, tr, t1);
+			if (MoleculeGetSymopForTransform(mp, t1, &symop1, 0) != 0) {
+				if (indices != NULL)
+					indices[i] = -1;
+				continue;  /*  Skip this atom  */
+			}
+			base = ap->symbase;
+		} else {
+			symop1 = symop;
+			base = n;
 		}
 		/*  Is this expansion already present?  */
 		for (n2 = 0, ap2 = mp->atoms; n2 < n0; n2++, ap2 = ATOM_NEXT(ap2)) {
-			if (ap2->symbase == n && SYMOP_EQUAL(symop, ap2->symop))
+			if (ap2->symbase == base && SYMOP_EQUAL(symop1, ap2->symop))
 				break;
 		}
 		if (n2 < n0) {
 			/*  If yes, then skip it  */
+			if (indices != NULL)
+				indices[i] = n2;
 			continue;
 		}
 		/*  Is the expanded position coincides with itself?  */
@@ -6253,6 +6272,8 @@ MoleculeAddExpandedAtoms(Molecule *mp, Symop symop, IntGroup *group)
 		if (VecLength2(dr) < 1e-6) {
 			/*  If yes, then this atom is included but no new atom is created  */
 			table[n] = n;
+			if (indices != NULL)
+				indices[i] = n;
 		} else {
 			/*  Create a new atom  */
 			Atom newAtom;
@@ -6265,6 +6286,8 @@ MoleculeAddExpandedAtoms(Molecule *mp, Symop symop, IntGroup *group)
 			ap2->symop = symop;
 			ap2->symop.alive = (symop.dx != 0 || symop.dy != 0 || symop.dz != 0 || symop.sym != 0);
 			table[n] = n1;  /*  The index of the new atom  */
+			if (indices != NULL)
+				indices[i] = n1;
 			n1++;
 		}
 	}
