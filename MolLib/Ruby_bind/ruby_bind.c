@@ -4265,8 +4265,8 @@ s_Molecule_Loadmbsf(int argc, VALUE *argv, VALUE self)
 	fstr = FileStringValuePtr(fname);
 	retval = MoleculeLoadMbsfFile(mol, fstr, errbuf, sizeof errbuf);
 	if (retval != 0) {
-		if (retval == -1)
-			return Qnil;
+	/*	if (retval == -1)
+			return Qnil; */
 		rb_raise(rb_eMolbyError, errbuf);
 	}
 	return Qtrue;	
@@ -4296,8 +4296,8 @@ s_Molecule_Loadpsf(int argc, VALUE *argv, VALUE self)
 	fstr = FileStringValuePtr(fname);
 	retval = MoleculeLoadPsfFile(mol, fstr, errbuf, sizeof errbuf);
 	if (retval != 0) {
-		if (retval == -1)
-			return Qnil;
+	/*	if (retval == -1)
+			return Qnil; */
 		rb_raise(rb_eMolbyError, errbuf);
 	}
 	pdbstr = NULL;
@@ -4348,8 +4348,8 @@ s_Molecule_Loadpdb(int argc, VALUE *argv, VALUE self)
 	fstr = FileStringValuePtr(fname);
 	retval = MoleculeReadCoordinatesFromPdbFile(mol, fstr, errbuf, sizeof errbuf);
 	if (retval != 0) {
-		if (retval == -1)
-			return Qnil;
+	/*	if (retval == -1)
+			return Qnil; */
 		rb_raise(rb_eMolbyError, errbuf);
 	}
 	return Qtrue;	
@@ -4375,8 +4375,8 @@ s_Molecule_Loaddcd(int argc, VALUE *argv, VALUE self)
 	fstr = FileStringValuePtr(fname);
 	retval = MoleculeReadCoordinatesFromDcdFile(mol, fstr, errbuf, sizeof errbuf);
 	if (retval != 0) {
-		if (retval == -1)
-			return Qnil;
+	/*	if (retval == -1)
+			return Qnil; */
 		rb_raise(rb_eMolbyError, errbuf);
 	}
 	return Qtrue;	
@@ -4402,8 +4402,8 @@ s_Molecule_Loadtep(int argc, VALUE *argv, VALUE self)
 	fstr = FileStringValuePtr(fname);
 	retval = MoleculeLoadTepFile(mol, fstr, errbuf, sizeof errbuf);
 	if (retval != 0) {
-		if (retval == -1)
-			return Qnil;
+	/*	if (retval == -1)
+			return Qnil; */
 		rb_raise(rb_eMolbyError, errbuf);
 	}
 	return Qtrue;	
@@ -4429,8 +4429,8 @@ s_Molecule_Loadres(int argc, VALUE *argv, VALUE self)
 	fstr = FileStringValuePtr(fname);
 	retval = MoleculeLoadShelxFile(mol, fstr, errbuf, sizeof errbuf);
 	if (retval != 0) {
-		if (retval == -1)
-			return Qnil;
+	/*	if (retval == -1)
+			return Qnil; */
 		rb_raise(rb_eMolbyError, errbuf);
 	}
 	return Qtrue;	
@@ -4456,8 +4456,8 @@ s_Molecule_Loadfchk(int argc, VALUE *argv, VALUE self)
 	fstr = FileStringValuePtr(fname);
 	retval = MoleculeLoadGaussianFchkFile(mol, fstr, errbuf, sizeof errbuf);
 	if (retval != 0) {
-		if (retval == -1)
-			return Qnil;
+	/*	if (retval == -1)
+			return Qnil; */
 		rb_raise(rb_eMolbyError, errbuf);
 	}
 	return Qtrue;	
@@ -4485,8 +4485,8 @@ s_Molecule_Loaddat(int argc, VALUE *argv, VALUE self)
 	retval = MoleculeLoadGamessDatFile(mol, fstr, errbuf, sizeof errbuf);
 	MyAppCallback_hideProgressPanel();
 	if (retval != 0) {
-		if (retval == -1)
-			return Qnil;
+	/*	if (retval == -1)
+			return Qnil; */
 		rb_raise(rb_eMolbyError, errbuf);
 	}
 	return Qtrue;	
