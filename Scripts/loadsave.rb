@@ -661,7 +661,18 @@ end_of_header
 	  end
 	  return i, rms
 	end
+	def parse_symmetry_operation(str)
+	  if str == "."
+	    return nil
+	  elsif (str =~ /(\d+)_(\d)(\d)(\d)/) || (str =~ /(\d+) +(\d)(\d)(\d)/)
+	    return [Integer($1) - 1, Integer($2) - 5, Integer($3) - 5, Integer($4) - 5]
+	  elsif (str =~ /^(\d+)$/)
+	    return [Integer($1) - 1, 0, 0, 0]
+	  end
+	end
+	verbose = nil
 	@tokens = []
+	special_positions = []
 	self.remove(All)
 	fp = open(filename, "rb")
 	cell = []
@@ -687,7 +698,7 @@ end_of_header
 		end
 		if cell.length == 12 && cell.all?
 		  self.cell = cell
-		  puts "Unit cell is set to #{cell.inspect}."
+		  puts "Unit cell is set to #{cell.inspect}." if verbose
 		  cell = []
 		  cell_trans = self.cell_transform
 		  cell_trans_inv = cell_trans.inverse
@@ -748,10 +759,10 @@ end_of_header
 				  end
 				}
 			  }
-			  puts "symmetry operation #{sym.inspect}"
+			  puts "symmetry operation #{sym.inspect}" if verbose
 			  add_symmetry(Transform.new(sym))
 			}
-			puts "#{self.nsymmetries} symmetry operations are added"
+			puts "#{self.nsymmetries} symmetry operations are added" if verbose
 		  elsif labels[0] =~ /^_atom_site_label/
 			#  Create atoms
 			data.each { |d|
@@ -777,8 +788,26 @@ end_of_header
 			  if calc == "c" || calc == "calc"
 			    calculated_atoms.push(ap.index)
 		      end
+			  #  Guess special positions
+			  (1...nsymmetries).each { |isym|
+			    sr = ap.fract_r
+			    sr = (transform_for_symop(isym) * sr) - sr;
+				nx = (sr.x + 0.5).floor
+				ny = (sr.y + 0.5).floor
+				nz = (sr.z + 0.5).floor
+				if (Vector3D[sr.x - nx, sr.y - ny, sr.z - nz].length2 < 1e-6)
+				  #  [isym, -nx, -ny, -nz] transforms this atom to itself
+				  #  The following line is equivalent to:
+				  #    if special_positions[ap.index] == nil; special_positions[ap.index] = []; end;
+				  #    special_positions[ap.index].push(...)
+				  (special_positions[ap.index] ||= []).push([isym, -nx, -ny, -nz])
+				end
+			  }
+			  if verbose && special_positions[ap.index]
+			    puts "#{name} is on the special position: #{special_positions[ap.index].inspect}"
+			  end
 			}
-			puts "#{self.natoms} atoms are created."
+			puts "#{self.natoms} atoms are created." if verbose
 		  elsif labels[0] =~ /^_atom_site_aniso_label/
 		    #  Set anisotropic parameters
 			c = 0
@@ -799,7 +828,7 @@ end_of_header
 				c += 1
 			  end
 			}
-			puts "#{c} anisotropic parameters are set."
+			puts "#{c} anisotropic parameters are set." if verbose
 		  elsif labels[0] =~ /^_geom_bond/
 		    #  Create bonds
 			exbonds = []
@@ -808,13 +837,34 @@ end_of_header
 			  n2 = d[hlabel["_geom_bond_atom_site_label_2"]]
 			  sym1 = d[hlabel["_geom_bond_site_symmetry_1"]] || "."
 			  sym2 = d[hlabel["_geom_bond_site_symmetry_2"]] || "."
-			  if sym1 != "." || sym2 != "."
+			  n1 = self.atoms[n1].index
+			  n2 = self.atoms[n2].index
+			  sym1 = parse_symmetry_operation(sym1)
+			  sym2 = parse_symmetry_operation(sym2)
+			  if sym1 || sym2
 			    exbonds.push([n1, n2, sym1, sym2])
 			  else
 			    self.create_bond(n1, n2)
 			  end
+			  tr1 = (sym1 ? transform_for_symop(sym1) : Transform.identity)
+			  tr2 = (sym2 ? transform_for_symop(sym2) : Transform.identity)
+			  if special_positions[n1]
+				#  Add extra bonds for equivalent positions of n1
+				special_positions[n1].each { |symop|
+				  sym2x = symop_for_transform(tr1 * transform_for_symop(symop) * tr1.inverse * tr2)
+				  exbonds.push([n1, n2, sym1, sym2x])
+				}
+			  end
+			  if special_positions[n2]
+				#  Add extra bonds n2-n1.symop, where symop transforms n2 to self
+				tr = (sym1 ? transform_for_symop(sym1) : Transform.identity)
+				special_positions[n2].each { |symop|
+				  sym1x = symop_for_transform(tr2 * transform_for_symop(symop) * tr2.inverse * tr1)
+				  exbonds.push([n2, n1, sym2, sym1x])
+				}
+			  end				
 		    }
-			puts "#{self.nbonds} bonds are created."
+			puts "#{self.nbonds} bonds are created." if verbose
 			if calculated_atoms.length > 0
 			  #  Guess bonds for calculated hydrogen atoms
 			  n1 = 0
@@ -827,7 +877,7 @@ end_of_header
 				  }
 				end
 			  }
-			  puts "#{n1} bonds are guessed."
+			  puts "#{n1} bonds are guessed." if verbose
 			end
 			if exbonds.length > 0
 			  h = Dialog.run {
@@ -845,76 +895,38 @@ end_of_header
 				  fragments = []
 				  self.each_fragment { |f| fragments.push(f) }
 				end
-				sym_decoder = /(\d+)_(\d)(\d)(\d)/
 				debug = nil
 				exbonds.each { |ex|
-				  #  Convert name to index before expansion
-				  if debug
-				    ex[4] = ex[0]
-					ex[5] = ex[1]
-				  end
-				  ex[0] = self.atoms[ex[0]].index
-				  ex[1] = self.atoms[ex[1]].index
-				}
-				exbonds.each { |ex|
-				  if debug; puts "extra bond #{ex[4]}(#{ex[2]}) - #{ex[5]}(#{ex[3]})"; end
+				  if debug; puts "extra bond #{ex[0]}(#{ex[2].inspect}) - #{ex[1]}(#{ex[3].inspect})"; end
 				  ex0 = ex.dup
 				  (2..3).each { |i|
-				    if ex[i] == "."
-					  ex[i] = ex[i - 2]    #  No expansion
-					  symop = nil
-					elsif (ex[i] =~ /(\d+)_(\d)(\d)(\d)/) || (ex[i] =~ /(\d+) +(\d)(\d)(\d)/)
-			          symop = [Integer($1) - 1, Integer($2) - 5, Integer($3) - 5, Integer($4) - 5, ex[i - 2]]
-					elsif (ex[i] =~ /^(\d+)$/)
-					  symop = [Integer($1) - 1, 0, 0, 0, ex[i - 2]]
+				    symop = ex[i]
+					if symop == nil
+					  ex[i + 2] = ex[i - 2]
 					else
-					  raise "unrecognizable symmetry operation: #{ex[i]}"
-					end
-					if symop
 					  if debug; puts "  symop = #{symop.inspect}"; end
-					  ap = self.atoms.find { |ap| (s = ap.symop) != nil && s === symop }
-					  if ap
-					    if debug; puts "  already expanded (atom #{ap.index}, #{ap.name}, #{ap.symop.inspect})"; end
-					    ex[i] = ap.index   #  Already expanded
+					  #  Expand the atom or the fragment including the atom
+					  if atoms_only
+						ig = IntGroup[ex[i - 2]]
+						idx = 0
 					  else
-					    #  Expand the atom or the fragment including the atom
-						if atoms_only
-						  ig = IntGroup[ex[i - 2]]
-						else
-						  ig = fragments.find { |f| f.include?(ex[i - 2]) }
-						end
-					    if debug; puts "  expanding #{ig} by #{symop.inspect}"; end
-						a = self.expand_by_symmetry(ig, symop[0], symop[1], symop[2], symop[3])
-						puts "expand atoms: #{a.inspect}"
-						#  Find again the expanded atom
-					    ap = self.atoms.find { |ap| (s = ap.symop) != nil && s === symop }
-						if ap
-						  ex[i] = ap.index
-						else
-						  #  It is likely that the expanded atom coincide with an existing atom
-						  #  Calculate the cartesian coordinate of the expanded atom
-						  tr = Transform.translation([symop[1], symop[2], symop[3]]) * symmetries[symop[0]]
-						  r = (cell_trans * tr * cell_trans_inv) * atoms[ex[i - 2]].r
-						  ap = self.atoms.find { |ap| (ap.r - r).length2 < 1e-6 }
-						  if ap
-						    ex[i] = ap.index
-						  else
-						    #  Still cannot find the target atom
-							puts "Cannot create bond for #{ex[0]}(#{ex[2]})-#{ex[1]}(#{ex[3]})"
-							ex[i] = nil
-						  end
-					    end
+						ig = fragments.find { |f| f.include?(ex[i - 2]) }
+						ig.each_with_index { |n, ii| if n == ex[i - 2]; idx = ii; break; end }
 					  end
+					  symop[4] = ex[i - 2]  #  Base atom
+					  if debug; puts "  expanding #{ig} by #{symop.inspect}"; end
+					  a = self.expand_by_symmetry(ig, symop[0], symop[1], symop[2], symop[3])
+					  ex[i + 2] = a[idx]   #  Index of the expanded atom
 					end
 				  }
-				  if ex[2] && ex[3] && ex[2] != ex[3]
-				    if debug; puts "  creating bond #{ex[2]} - #{ex[3]}"; end
-				    self.create_bond(ex[2], ex[3])
+				  if ex[4] && ex[5] && ex[4] != ex[5]
+				    if debug; puts "  creating bond #{ex[4]} - #{ex[5]}"; end
+				    self.create_bond(ex[4], ex[5])
 				  end
 				}
 			  end
 			end
-			puts "#{self.nbonds} bonds are created."
+			puts "#{self.nbonds} bonds are created." if verbose
 		  end
 		  next
 		else
