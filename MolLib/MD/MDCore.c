@@ -2855,14 +2855,16 @@ md_main(MDArena *arena, int minimize)
 
 			retval = (*md_step_func)(arena);
 			md_calc_kinetic_energy(arena);
-			if (arena->rescale_temp_freq > 0 && arena->step % arena->rescale_temp_freq == 0)
-				md_scale_velocities(arena);
-			if (arena->reinit_temp_freq > 0 && arena->step % arena->reinit_temp_freq == 0)
-				md_init_velocities(arena);
-			if (arena->andersen_thermo_freq > 0 && arena->step % arena->andersen_thermo_freq == 0)
-				md_andersen_thermostat(arena);
-			if (arena->pressure != NULL)
-				pressure_control(arena);
+			if (!minimize) {
+				if (arena->rescale_temp_freq > 0 && arena->step % arena->rescale_temp_freq == 0)
+					md_scale_velocities(arena);
+				if (arena->reinit_temp_freq > 0 && arena->step % arena->reinit_temp_freq == 0)
+					md_init_velocities(arena);
+				if (arena->andersen_thermo_freq > 0 && arena->step % arena->andersen_thermo_freq == 0)
+					md_andersen_thermostat(arena);
+				if (arena->pressure != NULL)
+					pressure_control(arena);
+			}
 
 			if (arena->coord_output_freq > 0 && arena->step % arena->coord_output_freq == 0)
 				md_output_results(arena);
