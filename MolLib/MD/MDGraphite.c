@@ -241,7 +241,9 @@ s_linear_interpolate(MDGraphiteArena *graphite, Double *base, Double dx, Double 
 {
 	Int Sy = graphite->Sy;
 	Int Sz = graphite->Sz;
-#if 1     /*  Linear interpolate on (x,y), and cubic interpolate on z  */
+
+#if 1
+	/*  Linear interpolate on (x,y), and cubic interpolate on z  */
 	Double az[4];
 	Int i;
 	for (i = 0; i < 4; i++) {
@@ -253,7 +255,9 @@ s_linear_interpolate(MDGraphiteArena *graphite, Double *base, Double dx, Double 
 		base += 4;
 	}
 	return az[1] + 0.5 * dz * (-az[0] + az[2] + dz * (2 * az[0] - 5 * az[1] + 4 * az[2] - az[3] + dz * (-az[0] + 3 * az[1] - 3 * az[2] + az[3])));
-#elif 1   /*  Linear interpolate  */
+
+#else
+	/*  Linear interpolate  */
 	Double a0 = base[0];
 	Double a1 = base[Sy * Sz * 4] - a0;
 	Double a2 = base[Sz * 4] - a0;
@@ -263,19 +267,6 @@ s_linear_interpolate(MDGraphiteArena *graphite, Double *base, Double dx, Double 
 	Double a6 = base[(Sy * Sz + 1) * 4] - a0 - a1 - a3;
 	Double a7 = base[((Sy + 1) * Sz + 1) * 4] - a0 - a1 - a2 - a3 - a4 - a5 - a6;
 	return a0 + a1 * dx + a2 * dy + a3 * dz + a4 * dx * dy + a5 * dy * dz + a6 * dx * dz + a7 * dx * dy * dz;
-#else
-	Double a0 = base[0];
-	Double a1 = base[Sy * Sz * 4];
-	Double a2 = base[Sz * 4];
-	Double a3 = base[4];
-	Double a4 = base[(Sy + 1) * Sz * 4];
-	Double a5 = base[(Sz + 1) * 4];
-	Double a6 = base[(Sy * Sz + 1) * 4];
-	Double a7 = base[((Sy + 1) * Sz + 1) * 4];
-	Double rx = 1.0 - dx;
-	Double ry = 1.0 - dy;
-	Double rz = 1.0 - dz;
-	return a0 * rx * ry * rz + a1 * dx * ry * rz + a2 * rx * dy * rz + a3 * rx * ry * dz + a4 * dx * dy * rz + a5 * rx * dy * dz + a6 * dx * ry * dz + a7 * dx * dy * dz;
 #endif
 }
 
@@ -285,7 +276,7 @@ s_graphite(MDGraphiteArena *graphite, Vector v, MDGraphiteTable *tr, Vector *f)
 	Int i, j, k;
 	Double cella, cellb;
 	Double en, dx, dy, dz, *fp;
-	Int ix, iy, negx, negy, negz, symop;
+	Int ix, iy, negx, negy, negz;
 	Vector v0, f0;
 	
 	if (v.z < 0) {
@@ -302,11 +293,11 @@ s_graphite(MDGraphiteArena *graphite, Vector v, MDGraphiteTable *tr, Vector *f)
 	dx = v.x / (cella * 4);
 	ix = floor(dx + 0.5);
 	dx -= ix;
-	dy = v.y / (cellb * 4);
+	dy = v.y / (cellb * 2);
 	iy = floor(dy + 0.5);
 	dy -= iy;
 	
-	/*  Move vector to the asymmetric unit (0,0)-(0.25,0.25) */
+	/*  Move vector to the asymmetric unit (0,0)-(0.25,0.5) */
 	if (dx < 0) {
 		dx = -dx;
 		negx = 1;
@@ -315,29 +306,21 @@ s_graphite(MDGraphiteArena *graphite, Vector v, MDGraphiteTable *tr, Vector *f)
 		dy = -dy;
 		negy = 1;
 	} else negy = 0;
-	if (dy > 0.25) {
-		if (dx > 0.25) {
-			dx = 0.5 - dx;
-			dy -= 0.25;
-			symop = 3;
-		} else {
-			dy = 0.5 - dy;
-			symop = 2;
-		}
-	} else if (dx > 0.25) {
+	if (dx > 0.25) {
 		dx = 0.5 - dx;
-		dy = 0.25 - dy;
-		symop = 1;
-	} else symop = 0;
+		dy = 0.5 - dy;
+		negx = !negx;
+		negy = !negy;
+	}
 	v0.x = dx * cella * 4;
-	v0.y = dy * cellb * 4;
+	v0.y = dy * cellb * 2;
 	v0.z = v.z;
 	
 	if (tr->cache != NULL) {
-		/* 0 <= dx <= 0.25, 0 <= dy <= 0.25, 1.0 <= v.z <= 10.0 */
+		/* 0 <= dx <= 0.25, 0 <= dy <= 0.5, 1.0 <= v.z <= 10.0 */
 		/* 0 <= i <= Sx-1, 0 <= j <= Sy-1, 0 <= k <= Sz-1 */
 		dx = dx * (graphite->Sx - 1.0) / 0.25;
-		dy = dy * (graphite->Sy - 1.0) / 0.25;
+		dy = dy * (graphite->Sy - 1.0) / 0.5;
 		if (v.z >= graphite->Z_switch)
 			dz = (v.z - graphite->Z_switch) * (graphite->Sz - graphite->Sz0 - 3) / (graphite->Z_lim - graphite->Z_switch) + graphite->Sz0;
 		else
@@ -377,12 +360,6 @@ s_graphite(MDGraphiteArena *graphite, Vector v, MDGraphiteTable *tr, Vector *f)
 	}
 	
 	/*  Back transform to original axis system  */
-	switch (symop) {
-		case 3: negx = !negx; break;
-		case 2: negy = !negy; break;
-		case 1: negx = !negx; negy = !negy; break;
-		default: break;
-	}
 	if (negx)
 		f->x = -f->x;
 	if (negy)
