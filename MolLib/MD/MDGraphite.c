@@ -46,7 +46,7 @@ struct MDGraphiteArena {
 	Vector xaxis, yaxis, zaxis;  /*  The axes of the graphite plane in cartesian coordinates */
 	Mat33 rcell;                 /*  Convert cartesian to graphite internal coordinates  */
 
-	Double R;  /* C-C bond length. Default: 1.23  */
+	Double R;  /* C-C bond length. Default: 1.42  */
 	Double C_eps;  /* LJ epsilon for graphite C atoms. Default: 0.0860 * KCAL2INTERNAL  */
 	Double C_sig;  /* LJ sigma for graphite C atoms. Default: 3.3997  */
 
@@ -235,6 +235,7 @@ s_linear_interpolate(MDGraphiteArena *graphite, Double *base, Double dx, Double 
 {
 	Int Sy = graphite->Sy;
 	Int Sz = graphite->Sz;
+#if 0
 	Double a0 = base[0];
 	Double a1 = base[Sy * Sz * 4] - a0;
 	Double a2 = base[Sz * 4] - a0;
@@ -243,7 +244,21 @@ s_linear_interpolate(MDGraphiteArena *graphite, Double *base, Double dx, Double 
 	Double a5 = base[(Sz + 1) * 4] - a0 - a2 - a3;
 	Double a6 = base[(Sy * Sz + 1) * 4] - a0 - a1 - a3;
 	Double a7 = base[((Sy + 1) * Sz + 1) * 4] - a0 - a1 - a2 - a3 - a4 - a5 - a6;
-	return a0 + a1 * dx + a2 * dy + a3 * dz + a4 * dx * dy + a5 * dy * dz + a6 * dz * dx + a7 * dx * dy * dz;
+	return a0 + a1 * dx + a2 * dy + a3 * dz + a4 * dx * dy + a5 * dy * dz + a6 * dx * dz + a7 * dx * dy * dz;
+#else
+	Double a0 = base[0];
+	Double a1 = base[Sy * Sz * 4];
+	Double a2 = base[Sz * 4];
+	Double a3 = base[4];
+	Double a4 = base[(Sy + 1) * Sz * 4];
+	Double a5 = base[(Sz + 1) * 4];
+	Double a6 = base[(Sy * Sz + 1) * 4];
+	Double a7 = base[((Sy + 1) * Sz + 1) * 4];
+	Double rx = 1.0 - dx;
+	Double ry = 1.0 - dy;
+	Double rz = 1.0 - dz;
+	return a0 * rx * ry * rz + a1 * dx * ry * rz + a2 * rx * dy * rz + a3 * rx * ry * dz + a4 * dx * dy * rz + a5 * rx * dy * dz + a6 * dx * ry * dz + a7 * dx * dy * dz;
+#endif
 }
 
 static Double
@@ -366,14 +381,14 @@ graphite_new(void)
 	static Mat33 u = {1, 0, 0, 0, 1, 0, 0, 0, 1};
 	MDGraphiteArena *graphite = (MDGraphiteArena *)calloc(sizeof(MDGraphiteArena), 1);
 	graphite->use_table = 1;
-	graphite->Sx = 16;
-	graphite->Sy = 16;
+	graphite->Sx = 32;
+	graphite->Sy = 32;
 	graphite->Sz = 64;
-	graphite->Sz0 = 52;
+	graphite->Sz0 = 42;
 	graphite->Z_min = 1.0;
 	graphite->Z_switch = 5.0;
 	graphite->Z_lim = 10.0;
-	graphite->R = 1.23;
+	graphite->R = 1.42;
 	graphite->C_eps = 0.0860 * KCAL2INTERNAL;
 	graphite->C_sig = 3.3997;
 	graphite->xaxis = x;
@@ -482,8 +497,10 @@ s_graphite_init(MDGraphiteArena *graphite, MDArena *arena)
 			/*  Calculate the offset: set 0 to offset temporarily, and call s_graphite_lj */
 			tp->cutoff2 = arena->cutoff * arena->cutoff + 1.0;  /* +1.0 to avoid cutoff */
 			tp->offset = 0.0;
-			v.x = arena->cutoff;
-			v.y = v.z = 0.0;
+		/*	v.x = arena->cutoff;
+			v.y = v.z = 0.0; */
+			v.x = v.y = 0.0;
+			v.z = arena->cutoff;
 			tp->offset = -s_graphite_lj(v, tp, &v);
 			tp->cutoff2 = arena->cutoff * arena->cutoff; /* This is the real value */
 			if (graphite->use_table)

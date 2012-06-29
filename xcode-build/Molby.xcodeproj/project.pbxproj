@@ -90,7 +90,7 @@
 		9E12580E119EC42E00E95DC3 /* docview.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = docview.cpp; path = ../wxSources/docview.cpp; sourceTree = SOURCE_ROOT; };
 		E40DDC6C1435C03E000F0E81 /* MyMBConv.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MyMBConv.h; path = ../wxSources/MyMBConv.h; sourceTree = SOURCE_ROOT; };
 		E4299DA60F2A191600780B44 /* ruby_types.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ruby_types.c; sourceTree = "<group>"; };
-		E42D8AEF1030193F00C20247 /* MDGraphite.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = MDGraphite.c; sourceTree = "<group>"; };
+		E42D8AEF1030193F00C20247 /* MDGraphite.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = MDGraphite.c; sourceTree = "<group>"; wrapsLines = 1; };
 		E42D8AF01030193F00C20247 /* MDGraphite.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MDGraphite.h; sourceTree = "<group>"; };
 		E42D8AF11030193F00C20247 /* MDCore.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = MDCore.c; sourceTree = "<group>"; wrapsLines = 1; };
 		E42D8AF21030193F00C20247 /* MDCore.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MDCore.h; sourceTree = "<group>"; };
