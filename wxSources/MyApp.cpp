@@ -255,7 +255,7 @@ bool MyApp::OnInit(void)
 	
 		dirname += wxFILE_SEP_PATH;
 		dirname += wxT("Scripts");
-		wxString cwd = wxGetCwd();
+	/*	wxString cwd = wxGetCwd(); */
 		wxSetWorkingDirectory(dirname);
 
 		/*  Read build information (for About dialog)  */
@@ -296,7 +296,12 @@ bool MyApp::OnInit(void)
 		wxString fnamestr(fname, wxConvFile);
 		Molby_startup(wxFileExists(fnamestr) ? fname : NULL, (const char *)dirname.mb_str(wxConvFile));
 		
-		wxSetWorkingDirectory(cwd);
+	/*	wxSetWorkingDirectory(cwd); */
+		{
+			wxString docHome(MyAppCallback_getDocumentHomeDir(), wxConvFile);
+			wxSetWorkingDirectory(docHome);
+			
+		}
 		MyAppCallback_showScriptMessage("%% ");
 		
 		/*  Build the predefined fragments menu  */
