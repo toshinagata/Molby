@@ -17,31 +17,33 @@ class Molecule
 
   def cmd_md_sub
     arena = self.md_arena
-    keys = arena.to_hash.keys
+#    keys = arena.to_hash.keys
 	#  The read-only keys
-	read_only = [:step, :coord_frame, :transient_temperature, :average_temperature, :alchemical_energy]
+	read_only = [:step, :coord_frame, :transient_temperature, :average_temperature]
 	#  Sort the keys so that they are (a little more) readable
-	[:timestep, :temperature, :cutoff, :electro_cutoff, :pairlist_distance,
+	keys = [:timestep, :temperature, :cutoff, :electro_cutoff, :pairlist_distance,
 	 :scale14_vdw, :scale14_elect, :use_xplor_shift, :dielectric,
 	 :andersen_freq, :andersen_coupling, :random_seed, :relocate_center,
-	 :use_graphite, :surface_probe_radius, :surface_tension, :surface_potential_freq,
+	 :use_graphite,
+   # :surface_probe_radius, :surface_tension, :surface_potential_freq,
 	 :gradient_convergence, :coordinate_convergence,
 	 :log_file, :coord_file, :vel_file, :force_file, :debug_file, :debug_output_level,
 	 :coord_output_freq, :energy_output_freq,
-	 :step, :coord_frame, :transient_temperature, :average_temperature].each_with_index { |k, i|
-	  keys.delete(k)
-	  keys.insert(i, k)
-	}
+	 :step, :coord_frame, :transient_temperature, :average_temperature]
+#	 .each_with_index { |k, i|
+#	  keys.delete(k)
+#	  keys.insert(i, k)
+#	}
 	#  Arrange the items in vertical direction
 	n = (keys.count + 1) / 2
 	i = 0
 	keys = keys.sort_by { |k| i += 1; (i > n ? i - n + 0.5 : i) }
 	#  Do dialog
-    hash = Dialog.run("Molecular Dynamics Advanced Settings", "Close", nil) {
+    hash = Dialog.run("MM/MD Advanced Settings", "Close", nil) {
 	  items = []
 	  keys.each { |k|
 	    enabled = !read_only.include?(k)
-	    items.push(item(:text, :title=>k.to_s))
+	    items.push(item(:text, :title=>k.to_s + (enabled ? "" : "*")))
 		it = item(:textfield, :width=>120, :value=>arena[k].to_s)
 		if enabled
 		  it[:tag] = k
@@ -50,6 +52,7 @@ class Molecule
 		end
 		items.push(it)
 	  }
+	  items.push(item(:text, :title=>"(*: read-only parameters)"), -1, -1, -1)
 	  layout(4, *items)
 	}
 #	if hash[:status] == 0

@@ -434,7 +434,7 @@ MyApp::CreateMenuBar(int kind, wxMenu **out_file_history_menu, wxMenu **out_edit
 	md_menu->AppendSeparator();
 	md_menu->Append(myMenuID_DefinePeriodicBox, _T("Define Unit Cell..."));
 	md_menu->Append(myMenuID_ShowPeriodicImage, _T("Show Periodic Image..."));
-	md_menu->Append(myMenuID_PressureControl, _T("Pressure Control..."));
+/*	md_menu->Append(myMenuID_PressureControl, _T("Pressure Control...")); */
 /*	md_menu->Append(myMenuID_DefineSymmetry, _T("Define Symmetry Operations..."));
 	md_menu->Append(myMenuID_ExpandBySymmetry, _T("Expand by Symmetry...")); */
 	md_menu->AppendSeparator();
