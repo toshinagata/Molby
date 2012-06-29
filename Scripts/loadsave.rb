@@ -782,7 +782,8 @@ end_of_header
 			  if biso
 			    ap.temp_factor, sig = float_strip_rms(biso)
 			  elsif uiso
-			    ap.temp_factor, sig = float_strip_rms(uiso) * 78.9568352087149 #  8*pi*pi
+			    ap.temp_factor, sig = float_strip_rms(uiso)
+				ap.temp_factor *= 78.9568352087149          #  8*pi*pi
 			  end
 			  ap.occupancy, sig = float_strip_rms(occ)
 			  if calc == "c" || calc == "calc"

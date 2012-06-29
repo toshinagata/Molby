@@ -6286,6 +6286,7 @@ MoleculeAddExpandedAtoms(Molecule *mp, Symop symop, IntGroup *group, Int *indice
 			ap2->symop = symop;
 			ap2->symop.alive = (symop.dx != 0 || symop.dy != 0 || symop.dz != 0 || symop.sym != 0);
 			table[n] = n1;  /*  The index of the new atom  */
+			MoleculeSetAnisoBySymop(mp, n1);  /*  Recalculate anisotropic parameters according to symop  */
 			if (indices != NULL)
 				indices[i] = n1;
 			n1++;
@@ -9027,6 +9028,47 @@ MoleculeSetAniso(Molecule *mp, int n1, int type, Double x11, Double x22, Double 
 		anp->pmat[u*3+2] = axis[u].z * val[u];
 	}
 	__MoleculeUnlock(mp);
+}
+
+/*  Set the anisotropic parameter for atom idx according to the symop. If symop is not alive, nothing is done. */
+void
+MoleculeSetAnisoBySymop(Molecule *mp, int idx)
+{
+	Atom *ap, *ap2;
+	Transform t1, t2;
+	if (mp == NULL || idx < 0 || idx >= mp->natoms)
+		return;
+	ap = ATOM_AT_INDEX(mp->atoms, idx);
+	if (!SYMOP_ALIVE(ap->symop))
+		return;
+	ap2 = ATOM_AT_INDEX(mp->atoms, ap->symbase);
+	if (ap2->aniso == NULL) {
+		if (ap->aniso != NULL) {
+			free(ap->aniso);
+			ap->aniso = NULL;
+		}
+		return;
+	}
+	if (ap->aniso == NULL)
+		ap->aniso = (Aniso *)calloc(sizeof(Aniso), 1);
+	if (ap->symop.sym == 0 || ap->symop.sym >= mp->nsyms) {
+		/*  Just copy the aniso parameters  */
+		memmove(ap->aniso, ap2->aniso, sizeof(Aniso));
+		return;
+	}
+	memmove(t1, mp->syms[ap->symop.sym], sizeof(Transform));
+	t1[9] = t1[10] = t1[11] = 0.0;
+	memset(t2, 0, sizeof(Transform));
+	t2[0] = ap2->aniso->bij[0];
+	t2[4] = ap2->aniso->bij[1];
+	t2[8] = ap2->aniso->bij[2];
+	t2[1] = t2[3] = ap2->aniso->bij[3];
+	t2[2] = t2[6] = ap2->aniso->bij[4];
+	t2[5] = t2[7] = ap2->aniso->bij[5];
+	TransformMul(t2, t1, t2);
+	TransformInvert(t1, t1);
+	TransformMul(t2, t2, t1);
+	MoleculeSetAniso(mp, idx, 0, t2[0], t2[4], t2[8], t2[1], t2[2], t2[5], (ap2->aniso->has_bsig ? ap2->aniso->bsig : NULL));
 }
 
 int

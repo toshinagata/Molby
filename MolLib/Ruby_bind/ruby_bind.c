@@ -3871,6 +3871,12 @@ static VALUE s_AtomRef_SetSymop(VALUE self, VALUE val) {
 	ap->symop.alive = (SYMOP_ALIVE(ap->symop) != 0);
 	if (ival[4] != -100000)
 		ap->symbase = ival[4];
+	if (ap->symop.alive && (ap->aniso != NULL || (ATOM_AT_INDEX(mol->atoms, ap->symbase))->aniso != NULL)) {
+		/*  The anisotropic parameters should be recalculated  */
+		VALUE oaval = s_AtomRef_GetAniso(self);
+		MoleculeSetAnisoBySymop(mol, i);
+		s_RegisterUndoForAtomAttrChange(self, s_AnisoSym, val, oaval);
+	}
 	s_RegisterUndoForAtomAttrChange(self, s_SymopSym, val, oval);
 	return val;
 }
