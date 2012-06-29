@@ -66,14 +66,20 @@ struct MDGraphiteArena {
 	The cached value can be accessed by:
 		table[((i*Sy + j)*Sz + k)*4 + n]
 	where n is 0, 1, 2, 3 for the energy, force.x, force.y, force.z, respectively.
+ 
+    Note: At present, same values are set to Sz and Sz0, and Z_switch and Z_lim, so no
+    switching is utilized.
+ 
+	Note 2: For z direction, cubic interpolation is implemented, so actually there are
+    (Sz0 - 2) points span [Z_min, Z_switch) and (Sz - Sz0 - 2) points span [Z_switch, Z_lim].
 */
 	Int use_table;
-	Int Sx;  /*  Default: 16  */
-	Int Sy;  /*  Default: 16  */
+	Int Sx;  /*  Default: 32  */
+	Int Sy;  /*  Default: 32  */
 	Int Sz;  /*  Default: 64  */
-	Int Sz0; /*  Default: 52  */
+	Int Sz0; /*  Default: 64  */
 	Double Z_min;     /*  Default: 1.0  */
-	Double Z_switch;  /*  Default: 5.0  */
+	Double Z_switch;  /*  Default: 10.0  */
 	Double Z_lim;     /*  Default: 10.0  */
 	
 	/*  If periodic_average > 0 and periodic boundary conditions are enabled, then
@@ -211,9 +217,9 @@ s_graphite_make_table(MDGraphiteArena *graphite, MDGraphiteTable *tr)
 	memset(tr->cache, 0, k);
 	for (k = 0; k < graphite->Sz; k++) {
 		if (k >= graphite->Sz0)
-			v.z = graphite->Z_switch + (graphite->Z_lim - graphite->Z_switch) * (k - graphite->Sz0) / (graphite->Sz - graphite->Sz0 - 1);
+			v.z = graphite->Z_switch + (graphite->Z_lim - graphite->Z_switch) * (k - graphite->Sz0 - 1) / (graphite->Sz - graphite->Sz0 - 3);
 		else
-			v.z = graphite->Z_min + (graphite->Z_switch - graphite->Z_min) * k / graphite->Sz0;  /*  Not (Sz0 - 1)  */
+			v.z = graphite->Z_min + (graphite->Z_switch - graphite->Z_min) * (k - 1) / (graphite->Sz0 - 3);
 		for (i = 0; i < graphite->Sx; i++) {
 			for (j = 0; j < graphite->Sy; j++) {
 				v.x = 0.75 * graphite->R * i / (graphite->Sx - 1.0);
@@ -235,7 +241,19 @@ s_linear_interpolate(MDGraphiteArena *graphite, Double *base, Double dx, Double 
 {
 	Int Sy = graphite->Sy;
 	Int Sz = graphite->Sz;
-#if 0
+#if 1     /*  Linear interpolate on (x,y), and cubic interpolate on z  */
+	Double az[4];
+	Int i;
+	for (i = 0; i < 4; i++) {
+		Double a00 = base[0];
+		Double a10 = base[Sy * Sz * 4] - a00;
+		Double a01 = base[Sz * 4] - a00;
+		Double a11 = base[(Sy + 1) * Sz * 4] - a00 - a10 - a01;
+		az[i] = a00 + a10 * dx + a01 * dy + a11 * dx * dy;
+		base += 4;
+	}
+	return az[1] + 0.5 * dz * (-az[0] + az[2] + dz * (2 * az[0] - 5 * az[1] + 4 * az[2] - az[3] + dz * (-az[0] + 3 * az[1] - 3 * az[2] + az[3])));
+#elif 1   /*  Linear interpolate  */
 	Double a0 = base[0];
 	Double a1 = base[Sy * Sz * 4] - a0;
 	Double a2 = base[Sz * 4] - a0;
@@ -321,9 +339,9 @@ s_graphite(MDGraphiteArena *graphite, Vector v, MDGraphiteTable *tr, Vector *f)
 		dx = dx * (graphite->Sx - 1.0) / 0.25;
 		dy = dy * (graphite->Sy - 1.0) / 0.25;
 		if (v.z >= graphite->Z_switch)
-			dz = (v.z - graphite->Z_switch) * (graphite->Sz - graphite->Sz0 - 1) / (graphite->Z_lim - graphite->Z_switch) + graphite->Sz0;
+			dz = (v.z - graphite->Z_switch) * (graphite->Sz - graphite->Sz0 - 3) / (graphite->Z_lim - graphite->Z_switch) + graphite->Sz0;
 		else
-			dz = (v.z - graphite->Z_min) * graphite->Sz0 / (graphite->Z_switch - graphite->Z_min);
+			dz = (v.z - graphite->Z_min) * (graphite->Sz0 - 3) / (graphite->Z_switch - graphite->Z_min);
 		i = floor(dx);
 		dx -= i;
 		j = floor(dy);
@@ -341,8 +359,8 @@ s_graphite(MDGraphiteArena *graphite, Vector v, MDGraphiteTable *tr, Vector *f)
 		if (k < 0) {
 			k = 0;
 			dz = 0.0;
-		} else if (k >= graphite->Sz - 1) {
-			k = graphite->Sz - 2;
+		} else if (k >= graphite->Sz - 3) {
+			k = graphite->Sz - 4;
 			dz = 1.0;
 		}
 		fp = tr->cache + ((i*graphite->Sy + j)*graphite->Sz + k)*4;
@@ -384,9 +402,9 @@ graphite_new(void)
 	graphite->Sx = 32;
 	graphite->Sy = 32;
 	graphite->Sz = 64;
-	graphite->Sz0 = 42;
+	graphite->Sz0 = 64;
 	graphite->Z_min = 1.0;
-	graphite->Z_switch = 5.0;
+	graphite->Z_switch = 10.0;
 	graphite->Z_lim = 10.0;
 	graphite->R = 1.42;
 	graphite->C_eps = 0.0860 * KCAL2INTERNAL;
