@@ -9765,6 +9765,8 @@ Init_Molby(void)
 
 #pragma mark ====== External functions ======
 
+static VALUE s_ruby_top_self = Qfalse;
+
 static VALUE
 s_evalRubyScriptOnMoleculeSub(VALUE val)
 {
@@ -9772,6 +9774,9 @@ s_evalRubyScriptOnMoleculeSub(VALUE val)
 	Molecule *mol = (Molecule *)ptr[1];
 	VALUE sval = rb_str_new2((char *)ptr[0]);
 	VALUE fnval;
+	if (s_ruby_top_self == Qfalse) {
+		s_ruby_top_self = rb_eval_string("eval(\"self\",TOPLEVEL_BINDING)");
+	}
 	if (ptr[2] == NULL) {
 		fnval = Qnil;
 	} else {
@@ -9779,9 +9784,9 @@ s_evalRubyScriptOnMoleculeSub(VALUE val)
 	}
 	if (mol == NULL) {
 		if (fnval == Qnil)
-			return rb_funcall(rb_mKernel, rb_intern("eval"), 1, sval);
+			return rb_funcall(s_ruby_top_self, rb_intern("eval"), 1, sval);
 		else
-			return rb_funcall(rb_mKernel, rb_intern("eval"), 4, sval, Qnil, fnval, INT2FIX(1));
+			return rb_funcall(s_ruby_top_self, rb_intern("eval"), 4, sval, Qnil, fnval, INT2FIX(1));
 	} else {
 		VALUE mval = ValueFromMolecule(mol);
 		if (fnval == Qnil)
