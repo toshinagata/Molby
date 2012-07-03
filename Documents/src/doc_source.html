@@ -1672,9 +1672,611 @@ GAMESS の dat ファイルを選択し（GAMESS の計算が成功すればこ�
 <link id="#header" />
 <div class="contents" lang="en">
 <h1>Step Nine: Using Embedded Ruby Interpreter</h1>
+<p>
+One of the most useful features of Molby is the embedded Ruby interpreter. When working on molecular modeling, it is often necessary to modify the model according to some mathematical relations. It is also convenient if we can extract some molecular information by automated "scripts" (i.e. computer programs), and export as a text file that can be processed by graphing software. The embedded Ruby interpreter is very useful under these circumstances. Actually, many functions of Molby itself are implemented by Ruby scripts.
+</p>
+<p>
+To use the embedded Ruby interpreter in Molby, you need to be familiar with the Ruby programming language. You can find several good on-line tutorials in the Internet. However, you can also get the idea by going through the following sections.
+</p>
+<h2>1. Using the Ruby Console</h2>
+<p>
+The Ruby <i>console window</i> is open when Molby starts up.
+</p>
+<p><img src="../etc/ruby_01.png" /></p>
+<p>
+On this window, you can execute Ruby scripts in an interactive manner. Let us try something on it now. Make the console window active by clicking on it, and type "1+2" followed by hitting the Return key. You will find this:
+</p>
+<p class="code">% <span class="blue">1+2</span>
+<span class="red">--&gt; 3</span>
+%
+</p>
+<p>
+The Ruby interpreter calculated "1+2", and displayed the answer (3) in the following line.
+</p>
+<p>
+You can give a longer expression including parenthesis.
+</p>
+<p class="code">% <span class="blue">(13.0*13.0+7.0*7.0)/1.365</span>
+<span class="red">--&gt;159.70695970696</span>
+%
+</p>
+<p>
+Or use common mathematical functions.
+</p>
+<p class="code">% <span class="blue">exp(-2.0) * (sin(0.25) + cos(0.25))</span>
+<span class="red">--&gt;0.1646105219232536</span>
+%
+</p>
+<p class="note">Usually in Ruby, you need to say <code>Math.exp</code> or <code>Math.sin</code> when using these mathematical functions. In Molby, the prefix <code>Math</code> is not necessary, because Molby automatically "includes" the <code>Math</code> module on startup.</p>
+<p>
+You can also use <i>Strings</i>, which is a series of characters.
+</p>
+<p class="code">% <span class="blue">"C" + "32"</span>
+<span class="red">--&gt;"C32"</span>
+%
+</p>
+<p>
+The "32" here is not a number but a string, because it is surrounded by quotation marks. If you omit these quotation marks, what happens?
+</p>
+<p class="code">% <span class="blue">"C" + 32</span>
+</p>
+<p><img src="../etc/ruby_02.png" /></p>
+<p>
+Molby complains with this error dialog. It says "in '+': can't convert Fixnum into String," which means the integer 32 cannot be added to a string "C". Such kind of "type mismatch" error occurs very often, so please get used to it and learn how to fix it.
+</p>
+<p>
+Another useful feature of Ruby is an <i>Array</i>, which is an ordered collection of other Ruby objects. An array is expressed by comma-separated values surrounded by a pair of brackets.
+</p>
+<p class="code">% <span class="blue">[1, 2, 3]</span>
+<span class="red">--&gt;[1, 2, 3]</span>
+%
+</p>
+<p>
+Any Ruby object can be stored in a <i>variable</i>. The name of variables should begin with a lowercase alphabet and should consist of alphabets, number characters and underline "_".
+</p>
+<p class="code">% <span class="blue">a = ["apple", "orange", "grape"]</span>
+<span class="red">--&gt;["apple", "orange", "grape"]</span>
+% <span class="blue">a[0]</span>     <span class="comment"># This shows how to access the array elements</span>
+<span class="red">--&gt;"apple"</span>
+</p>
+
+<h2>2. How to Handle Molecules in Molby Scripts</h2>
+<p>
+The examples so far used only built-in types (<code>Integer</code>, <code>String</code>, <code>Array</code>) in Ruby, but you will definitely need to handle <i>Molecules</i> from your Molby scripts. Suppose we have a benzene molecule (again).
+</p>
+<p><img src="../etc/ruby_03.png" /></p>
+<p>
+What if you want to convert it to chlorobenzene? There are two GUI ways; double-click on the H1 atom, and enter "Cl" into the dialog box, or double-click on the "H" text in the "element" column of the property table and change it to "Cl". But there is also a "Ruby" way, as follows:
+</p>
+<p class="code">% <span class="blue">atoms[1].element = "Cl"</span>
+<span class="red">--&gt;"Cl"</span>
+%
+</p>
+<p><img src="../etc/ruby_04.png" /></p>
+<p>
+This short piece of code implies some important concepts for coding in Molby. First, <code>atoms</code> denotes the atoms in the <i>current molecule</i>, which is the molecule in the frontmost window (except for the console window). <code>atoms</code> is not really an Array (as in the Ruby terminology), but can be used in a similar way as Array in many aspects. Specifically, it can be "indexed" to extract a specific atom.
+</p>
+<p class="code">atoms[i]   <span class="comment">#  Gives the i-th atom in the current molecule</span>
+</p>
+<p>
+Please make sure to say <code>atoms[i]</code>, not <code>atom[i]</code>. This may be confusing, but it is because <code>atoms</code> is a collection of atoms and <code>[]</code> denotes "extraction of the i-th element."
+</p>
+<p>
+The second point in the above example is <code>.element = "Cl"</code>. In Ruby, a period (<code>.</code>) followed by a word (<code>element</code>) indicates a "method call." <i>Method</i> is a technical term in Ruby programming language; it is a function that is specific to an object. In this case, <code>atoms[1]</code> is an object, and it has a method named <code>element=</code> (including the last equal sign) whose meaning is "to change the element as indicated by the string value in the right side." In this way, the script <code>atoms[1].element = "Cl"</code> causes the element of the atom 1 changed to chlorine.
+</p>
+<p>
+What if you want to change all hydrogen atoms to chlorine? Here is the code:
+</p>
+<p class="code">% <span class="blue">natoms.times { |i| if atoms[i].element == "H"; atoms[i].element = "Cl"; end }</span>
+<span class="red">--&gt;12</span>
+%
+</p>
+<p>
+This is far more complicated than the previous example. A step-by-step explanation follows.
+</p>
+<p>
+<code>natoms</code> gives the number of atoms in the current molecule as an integer number. This is actually a method call (<code>natoms</code> is a method of a <code>Molecule</code> object). Why a method is called even though no period is preceding the word? It is because Ruby has a feature called "implicit method call." This will be explained in more detail later.
+</p>
+<p class="code">natoms   <span class="comment"># Gives 12</span>
+</p>
+<p>
+<code>times</code> is a method of <code>Integer</code> (which is a built-in class of Ruby), which causes the following code surrounded by a pair of braces to be repeated the given number of times.
+</p>
+<p class="code">natoms.times { ... }   <span class="comment"># { ... } is executed 12 times</span>
+</p>
+<p class="note">The code within the braces is called <i>"block"</i> in Ruby terminology.</p>
+<p>
+In the repeated code (or <i>"block"</i>), it is very likely that you want to know "how many times have I repeated?" This is achieved by declaring a variable name at the top of the block, surrounded by two vertical bars.
+</p>
+<p class="code">natoms.times { |i| ... }   <span class="comment"># In { ... }, the variable i indicates the number of repeats</span>
+</p>
+<p>
+The following piece of codes is often used for testing. (<code>puts</code> prints the arguments to the console.)
+</p>
+<p class="code">% <span class="blue">natoms.times { |i| puts i }</span>
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+<span class="red">--&gt;12</span>
+</p>
+<p>
+The "12" in the last line is the "result value" of the method <code>times</code>, and the numbers 0 to 11 are the outputs from the <code>puts</code> method. Now you can see the block was executed 12 times with changing the variable <code>i</code> from 0 to 11.
+</p>
+<p>
+In the block, there is an <code>if</code> statement:
+</p>
+<p class="code">if atoms[i].element == "H"; atoms[i].element = "Cl"; end
+</p>
+<p>
+The <code>if</code> statement has the following general form:
+</p>
+<p class="code">if <i>&lt;condition&gt;</i>; <i>&lt;statements&gt;</i>; end
+</p>
+<p>
+The <i>&lt;condition&gt;</i> is evaluated first, and if it is "true", the <i>&lt;statements&gt;</i> are executed; otherwise the <i>&lt;statements&gt;</i> are skipped.
+</p>
+<p>
+<i>Note:</i> Ruby interprets only <code>false</code> and <code>nil</code> as non-true values. Other values are all "true". Specifically, the number <code>0</code> (zero) and an empty string (<code>""</code>) are evaluated to "true" (this is unlike other programming language such as Perl). Many Ruby methods returns <code>nil</code> in case of failure; such methods are suitable for the condition part.
+</p>
+<p>
+Finally, the <code>element</code> method in the following code is different from the <code>element=</code> method that we previously used:
+</p>
+<p class="code">atoms[i].element == "H"
+</p>
+<p>
+In this case, the following symbol is "<code>==</code>", which means "are these equal?". This is distinct from the symbol "<code>=</code>", which means "the right side is assigned to the left side." The <code>element</code> symbol is interpreted as the <code>element=</code> method only when it is followed by the assignment symbol "<code>=</code>". The above code is not the case, so that it is interpreted as the <code>element</code> method, which returns the present element symbol as a <code>String</code>.
+</p>
+<p>
+After execution of the script, the molecule should look like this:
+</p>
+<p><img src="../etc/ruby_05.png" /></p>
+
+<h2>3. About the "Implicit" Method Call</h2>
+<p>
+In the preceding section, we saw that <code>natoms</code> was a method of a <code>Molecule</code> object.
+</p>
+<p class="code">natoms     <span class="comment"># 12, in case of benzene</span>
+</p>
+<p>
+Why this symbol <code>natoms</code> is regarded as a method call? Actually, when the Ruby interpreter finds a symbol beginning with a lowercase alphabet, it looks for a (local) variable first, and if none is found, then it assumes that the symbol is a method belonging to the <i>"current object"</i>. Since Ruby is an object-oriented language, there is always a "current object", which is denoted as <code>self</code>. We can see it on our console:
+</p>
+<p class="code">% <span class="blue">self</span>
+<span class="red">--&gt;Molecule["unnamed1"]</span>
+%
+</p>
+<p>
+This piece of code indicates that the "current object" is a <code>Molecule</code> object. In fact, the <code>Molecule</code> object corresponding to the frontmost window becomes the "current object" when a script is executed on the Molby console. 
+</p>
+<p class="note">When no molecule is open, the "current object" is "main", which is the standard toplevel object in Ruby.</p>
+<p>
+Sometimes you happen to define a variable with the same name as a method of <code>Molecule</code>. In that case, access to the variable is preferred and the method is no longer called.
+</p>
+<p class="code">% <span class="blue">natoms = 2</span>    <span class="comment"># Define a variable</span>
+<span class="red">--&gt;2</span>
+% <span class="blue">natoms</span>    <span class="comment"># Now this is an access to the variable, not a method call</span>
+<span class="red">--&gt;2</span>
+%
+</p>
+<p>
+In this situation, you can explicitly request a method call by specifying <code>self</code>.
+</p>
+<p class="code">% <span class="blue">self.natoms</span>    <span class="comment"># This is a method call</span>
+<span class="red">--&gt;12</span>
+%
+</p>
+<p>
+A special case is the methods with the assignment symbol ("<code>=</code>"). For example, a method <code>show_hydrogens=</code> can control whether the hydrogen atoms are shown or not. However, without specifying <code>self</code>, the expression is always regarded as the assignment to a local variable. Therefore, <code>self</code> should be always explicitly given.
+</p>
+<p class="code">% <span class="blue">show_hydrogens = false</span>    <span class="comment"># This does not change the Molecule's state, just changes a local variable</span>
+<span class="red">--&gt;false</span>
+% <span class="blue">self.show_hydrogens = false</span>    <span class="comment"># This changes the Molecule's state</span>
+<span class="red">--&gt;false</span>
+%
+</p>
+<h2>4. Executing a Ruby Script on a File</h2>
+<p>
+From the Ruby console, you can only execute a one-line script. For more complex scripts, or if you want to use the script many times over, it will be more convenient to store the script in a file and execute it. The "Execute Script..." command in the "Script" menu does this job.
+</p>
+<p><img src="../etc/ruby_06.png" /></p>
+<p>
+There are endless possibilities for the script; here are presented only a few examples. The first script is to create a table of bond lengths including metal atoms (Fe):
+</p>
+<p class="code"><span class="comment">#  Create a bond table including Fe
+#  Requires Molby</span>
+fp = open("bond_table.txt", "w") <span class="comment">#  Create an output file</span>
+atoms.each { |ap|  <span class="comment">#  This is another way to repeat over all atoms;
+                   #  ap points to the atom on each iteration</span>
+  if ap.element == "Fe"
+    r1 = ap.r               <span class="comment"># The cartesian coordinate of Fe</span>
+    ap.connects.each { |n|  <span class="comment"># ap.connects is an array of atom indices connected to this atom</span>
+      ap2 = atoms[n]        <span class="comment"># The atom connected to Fe</span>
+      r2 = ap2.r            <span class="comment"># The cartesian coordinate of the atom</span>
+      d = (r - r2).length   <span class="comment"># The bond length</span>
+      fp.printf "%s-%s %.3f\n", ap.name, ap2.name, d <span class="comment"># Write a table entry to the file</span>
+    }                       <span class="comment"># End loop (ap.connects)</span>
+  end                       <span class="comment"># End if</span>
+}                           <span class="comment"># End loop (atoms.each)</span>
+fp.close                    <span class="comment"># We are done with this file</span>
+</p>
+<p>
+Save this text to a file, select "Execute Script..." command (be sure that the target molecule is on the front), and choose the script file. After execution, a file named "bond_table.txt" will be generated in the same directory as the script file.
+</p>
+<p>
+Here is another example, which works on a MD trajectory. For each frame, the molecule is reoriented so that the atom 0 is at the origin and atoms 1 and 2 are on the xy plane (with the atom 1 on the x-axis), and calculate the center of mass of the atoms 6 to 11. Such processing is useful to visualize how a particular part of the molecule moves around throughout the MD run.
+</p>
+<p class="code"><span class="comment">#  Reorient the molecule and extract center of some group
+#  Requires Molby</span>
+fp = open("extract_group.txt", "w") <span class="comment">#  Create an output file</span>
+each_frame { |n|  <span class="comment">#  This is an idiom to iterate over all frames</span>
+  rotate_with_axis(1, 2, 0)  <span class="comment">#  Reorientation of the molecule is so frequently used
+                             #  that the Molecule class has a method to do it</span>
+  r = center_of_mass(6..11)  <span class="comment">#  Also has a method to calculate the center of mass</span>
+  fp.printf "%d %.6f %.6f %.6f\n", n, r.x, r.y, r.z  <span class="comment">#  Write the coordinates</span>
+}
+fp.close                     <span class="comment">#  We are done with this file</span>
+</p>
+<p>
+The last example is probably of more practical use. It generates a model of carbon nanotube with any chirality and length as you like.
+</p>
+<p class="code"><span class="comment">#  Create a model of carbon nanotube
+#  Requires Molby</span>
+r = 1.42     <span class="comment">#  The C-C bond length</span>
+n = 10       <span class="comment">#  The chirality index</span>
+m = 5        <span class="comment">#  (ibid)</span>
+aspect = 5.0 <span class="comment">#  The aspect ratio (length / diameter)</span>
+
+k = aspect / (PI * sqrt(3.0))
+points = []
+<span class="comment">#  The limiting points are (0, 0), (n, m), (k(n+2m), -k(2n+m)), (k(n+2m)+n, -k(2n+m)+n)
+#  Search for the lattice points that are within the parallelogram
+#  surrounded by the above points
+#  det is the determinant of the matrix that converts the unit cell to the above parallelogram </span>
+delta = 2 * k * (n * n + m * m + n * m)
+(0..(k * (n + 2 * m) + n).ceil).each { |s|
+  ((-k * (2 * n + m)).floor..m).each { |t|
+    [0, 2.0/3.0].each { |d|   <span class="comment">#  For two lattice points within the unit cell</span>
+      ss = (k * (2 * n + m) * (s + d) + k * (n + 2 * m) * (t + d)) / delta
+      tt = (m * (s + d) - n * (t + d)) / delta
+      if ss &gt;= 0.0 &amp;&amp; ss &lt; 1.0 &amp;&amp; tt &gt;= 0.0 &amp;&amp; tt &lt;= 1.0
+        points.push([ss, tt, s, t])   <span class="comment">#  This point is within the parallelogram</span>
+      end
+    }
+  }
+}
+<span class="comment">#  Create nanotube: line up [ss, tt] into cylindric shape</span>
+rad = sqrt(3.0) * r * sqrt(n * n + m * m + n * m) / (2 * PI)
+len = rad * 2 * aspect
+mol = Molecule.new
+points.each { |p|
+  ap = mol.create_atom
+  ap.element = "C"
+  ap.atom_type = "ca"
+  ap.r = [rad * cos(2 * PI * p[0]), rad * sin(2 * PI * p[0]), len * p[1]]
+}
+mol.guess_bonds
+<span class="comment">#  Show the result in a new window</span>
+mol2 = Molecule.open
+mol2.add(mol)
+</p>
+<p><img src="../etc/ruby_07.png" /><img src="../etc/ruby_08.png" /></p>
+
+<h2>5. Where to Go from Here</h2>
+<p>
+The embedded Ruby capability is very strong, and cannot be fully explained in this short tutorial. If you are interested, read carefully the <a href="ruby_ref.html">reference of the Ruby extension</a>. There are also many scripts in the Molby application, which you can examine by opening the "Scripts" folder (which is within the Application package in Mac OS X, and in the same folder as the Molby application in Windows).
+</p>
 </div>
 <div class="contents" lang="ja">
 <h1>第九段階：組み込み Ruby インタプリタを使う</h1>
+<p>
+Molby の最も有用な機能の１つは、内蔵の Ruby インタプリタです。分子モデリングを行うとき、ある数学的な規則に従ってモデルを変更したいことがしばしばあります。また、分子のある種の情報を自動化された「スクリプト」（コンピュータプログラム）で抽出してテキストとして書き出し、グラフ描画ソフトウェアで処理することも有用です。内蔵 Ruby インタプリタは、このような場合に威力を発揮します。実は、Molby の機能の多くの部分は Ruby スクリプトで実装されているのです。
+</p>
+<p>
+Molby の内蔵 Ruby インタプリタを使うためには、プログラミング言語 Ruby の知識が必要です。インターネット上で良いオンラインチュートリアルを見つけてください。もっとも、以下の解説を読めば、ある程度のイメージはつかめるでしょう。
+</p>
+<h2>1. Ruby コンソールを使う</h2>
+<p>
+Molby が起動すると、Ruby の「コンソールウィンドウ」が開きます。
+</p>
+<p><img src="../etc/ruby_01.png" /></p>
+<p>
+このウィンドウ上で、Ruby スクリプトを対話的に実行することができます。いくつか試してみましょう。コンソールウィンドウをクリックしてアクティブにして、"1+2"、続いてリターンキーをタイプしてください。次のようになります。
+</p>
+<p class="code">% <span class="blue">1+2</span>
+<span class="red">--&gt; 3</span>
+%
+</p>
+<p>
+Ruby インタプリタが "1+2" を計算し、答え (3) を次の行に表示したところです。
+</p>
+<p>
+カッコを含む長い式も計算できます。
+</p>
+<p class="code">% <span class="blue">(13.0*13.0+7.0*7.0)/1.365</span>
+<span class="red">--&gt;159.70695970696</span>
+%
+</p>
+<p>
+数学関数も使うことができます。
+</p>
+<p class="code">% <span class="blue">exp(-2.0) * (sin(0.25) + cos(0.25))</span>
+<span class="red">--&gt;0.1646105219232536</span>
+%
+</p>
+<p class="note">通常 Ruby では、これらの数学関数を使うときには <code>Math.exp</code>, <code>Math.sin</code> のように書かなくてはなりません。Molby では、<code>Math</code> という接頭辞は必要ありません。これは Molby が起動時に <code>Math</code> モジュールを "include" するためです。</p>
+<p>
+文字列 <i>(Strings)</i> を使うこともできます。
+</p>
+<p class="code">% <span class="blue">"C" + "32"</span>
+<span class="red">--&gt;"C32"</span>
+%
+</p>
+<p>
+ここの "32" は数ではなく文字列です。引用符で囲まれているからです。引用符を省略するとどうなるでしょう？
+</p>
+<p class="code">% <span class="blue">"C" + 32</span>
+</p>
+<p><img src="../etc/ruby_02.png" /></p>
+<p>
+Molby はエラーメッセージ "in '+': can't convert Fixnum into String" を表示します。これは、「整数」32 を「文字列」"C" に足すことはできないことを意味しています。このような「型が違う」エラーはとてもよく起きるので、どのように直せばいいかをよく理解しておいてください。
+</p>
+<p>
+Ruby のもう１つの便利な機能は「配列」<i>(Array)</i> です。これは、他の Ruby オブジェクトを順番に並べたものです。配列は、値をコンマで区切って角括弧 [] で囲むことで表します。
+</p>
+<p class="code">% <span class="blue">[1, 2, 3]</span>
+<span class="red">--&gt;[1, 2, 3]</span>
+%
+</p>
+<p>
+Ruby のオブジェクトは「変数」に格納することができます。変数の名前は、小文字のアルファベットで始まり、数字またはアルファベット ("_" を含む) の並びでなくてはなりません。
+</p>
+<p class="code">% <span class="blue">a = ["apple", "orange", "grape"]</span>
+<span class="red">--&gt;["apple", "orange", "grape"]</span>
+% <span class="blue">a[0]</span>     <span class="comment"># 配列の要素を指定する</span>
+<span class="red">--&gt;"apple"</span>
+</p>
+
+<h2>2. Molby スクリプトで分子を扱う</h2>
+<p>
+ここまでの例では、Ruby の組み込み型 <code>Integer</code>, <code>String</code>, <code>Array</code> を使ってきましたが、Molby スクリプトでは「分子」を扱うことが必要になります。ベンゼン分子があるとしましょう。
+</p>
+<p><img src="../etc/ruby_03.png" /></p>
+<p>
+これをクロロベンゼンに変えたいとします。グラフィックインターフェイスでは２つのやり方があります。H1原子をダブルクリックしてダイアログボックスに "Cl" と入力するか、属性テーブルの "element" のセルで "H" を "Cl" に変えます。これを Ruby スクリプトで行うには、次のようにします。
+</p>
+<p class="code">% <span class="blue">atoms[1].element = "Cl"</span>
+<span class="red">--&gt;"Cl"</span>
+%
+</p>
+<p><img src="../etc/ruby_04.png" /></p>
+<p>
+この短いコードに、Molby でのコーディングの重要な技法が含まれています。まず、<code>atoms</code> は「現在の分子」（コンソールウィンドウを除いて最も手前側にあるウィンドウの分子）に含まれる原子の並びを表します。<code>atoms</code> は Ruby の配列 (<code>Array</code>) ではありませんが、多くの点で配列と同じように使うことができます。特に、「添字」をつけて特定の原子を指定することができます。
+</p>
+<p class="code">atoms[i]   <span class="comment">#  現在の分子の i 番目の原子</span>
+</p>
+<p>
+<code>atom[i]</code> ではなく <code>atoms[i]</code> であることに注意してください。混乱しますが、これは <code>atoms</code> が原子の並びで <code>[]</code> が「…番目の要素を取り出す」という機能を表すためです。
+</p>
+<p>
+次は <code>.element = "Cl"</code> です。Ruby では、ピリオド (<code>.</code>) に続けて単語 (<code>element</code>) を書くと、「メソッド呼び出し」になります。「メソッド」とはプログラミング言語 Ruby の用語で、ある対象（オブジェクト）に固有の動作を指します。この場合は、<code>atoms[1]</code> がオブジェクトで、<code>element=</code> という名前のメソッドを持っています（最後の '=' を含みます）。このメソッドは、「その原子の元素記号を右辺の文字列で表されたものに変える」という働きをします。このようにして、スクリプト <code>atoms[1].element = "Cl"</code> は、原子１の元素記号を Cl に変えます。
+</p>
+<p>
+もし、全部の水素原子を塩素に変えたいとしたらどうでしょう？　次のようにします。
+</p>
+<p class="code">% <span class="blue">natoms.times { |i| if atoms[i].element == "H"; atoms[i].element = "Cl"; end }</span>
+<span class="red">--&gt;12</span>
+%
+</p>
+<p>
+これは前の例よりずっと複雑です。ステップごとに説明していきます。
+</p>
+<p>
+<code>natoms</code> は、現在の分子の原子数を整数で返します。これは実はメソッド呼び出しで、<code>Molecule</code> 型オブジェクトのメソッド <code>natoms</code> を呼んでいます。ピリオドがないのにメソッドが呼び出されているのはなぜでしょう？　これは Ruby 言語の仕様に、「暗黙のメソッド呼び出し」があるためです。あとでもう少し詳しく説明します。
+</p>
+<p class="code">natoms   <span class="comment"># 12 となる</span>
+</p>
+<p>
+<code>times</code> は、<code>Integer</code> （これは Ruby の組み込み型です）のメソッドです。その後ろの中括弧 {} で囲まれたコードを、指定した回数実行します。
+</p>
+<p class="code">natoms.times { ... }   <span class="comment"># { ... } が 12 回実行される</span>
+</p>
+<p class="note">中括弧で囲んだコードを Ruby の用語で「ブロック」と呼びます。</p>
+<p>
+繰り返すコード（ブロック）の中で、「今実行しているのは何回目？」かを知りたいことがあります。このためには、ブロックの先頭で、２本の縦棒 "|" で囲んで変数を指定します。
+</p>
+<p class="code">natoms.times { |i| ... }   <span class="comment"># { ... } の中で、変数 i は繰り返し回数を表す</span>
+</p>
+<p>
+次のようなコードがテストのためによく使われます。(<code>puts</code> は与えられたオブジェクトをコンソールに出力します。)
+</p>
+<p class="code">% <span class="blue">natoms.times { |i| puts i }</span>
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+<span class="red">--&gt;12</span>
+</p>
+<p>
+最後の行の "12" は、<code>times</code> メソッドの「戻り値」です。その上の 0 から 11 の数は、<code>puts</code> メソッドからの出力です。ブロックが 12 回実行され、変数 <code>i</code> が 0 から 11 まで変化したことがわかりますね。
+</p>
+<p>
+ブロックの中には、<code>if</code> 文があります。
+</p>
+<p class="code">if atoms[i].element == "H"; atoms[i].element = "Cl"; end
+</p>
+<p>
+<code>if</code> 文の一般形は次の通りです。
+</p>
+<p class="code">if <i>&lt;条件&gt;</i>; <i>&lt;実行文&gt;</i>; end
+</p>
+<p>
+まず <i>&lt;条件&gt;</i> が評価されます。それが「真」ならば、<i>&lt;実行文&gt;</i> が実行されます。条件が「真」でなければ、<i>&lt;実行文&gt;</i> はスキップされます。
+</p>
+<p>
+<i>注:</i> Ruby は <code>false</code> と <code>nil</code> だけを「真でない」値とします。その他の値はすべて「真」です。特に、数値の <code>0</code>（ゼロ）と空の文字列 (<code>""</code>) も「真」となります（これは Perl などの他のプログラミング言語とは異なります）。多くの Ruby メソッドは、失敗したときに nil を返します。これらのメソッドは条件部分にそのまま使えます。
+</p>
+<p>
+最後に出てくる <code>element</code> メソッドは、先に出て来た <code>element=</code> メソッドとは違います。
+</p>
+<p class="code">atoms[i].element == "H"
+</p>
+<p>
+この場合は、<code>element</code> の次に来る記号は "<code>==</code>" で、これは「２つの値は等しいか？」という意味です。この記号は "<code>=</code>" とは違います。後者は「右辺を左辺に代入する」という意味です。<code>element</code> という記号は、その次に "<code>=</code>" 記号が来るときに限って、"<code>element=</code>" メソッドとして解釈されます。この場合はそうではないので、<code>element</code> メソッドが呼び出されます。このメソッドは、現在の元素記号を <code>String</code> （文字列）として返します。
+</p>
+<p>
+スクリプトを実行したら、分子は次のようになるはずです。
+</p>
+<p><img src="../etc/ruby_05.png" /></p>
+
+<h2>3. 暗黙のメソッド呼び出し</h2>
+<p>
+前の節で、<code>natoms</code> は <code>Molecule</code> オブジェクトのメソッドであることを学びました。
+</p>
+<p class="code">natoms     <span class="comment"># 12 （ベンゼンの場合）</span>
+</p>
+<p>
+なぜこの <code>natoms</code> はメソッド呼び出しと見なされるのでしょう？　実は、Ruby インタプリタ（Ruby スクリプトを実行するプログラム）は小文字のアルファベットで始まる単語を見つけると、まず変数（ローカル変数）を探し、それが見つからなければ「現在のオブジェクト」に属するメソッドであると見なすのです。Ruby は「オブジェクト指向言語」なので、Ruby スクリプトの実行中は必ず「現在のオブジェクト」が存在しています。これを <code>self</code> と呼びます。コンソールで試してみましょう：
+</p>
+<p class="code">% <span class="blue">self</span>
+<span class="red">--&gt;Molecule["unnamed1"]</span>
+%
+</p>
+<p>
+この結果は、「現在のオブジェクト」が "unnamed1" という分子を表す <code>Molecule</code> オブジェクトであることを示しています。Molby コンソールでスクリプトを実行する時は、最前面にあるウィンドウの分子に対応する <code>Molecule</code> オブジェクトが「現在のオブジェクト」になります。
+</p>
+<p class="note">分子のウィンドウが１つも開いていない時は、現在のオブジェクトは <code>main</code> になります。これは Ruby 起動時の「現在のオブジェクト」と同じものです。</p>
+<p>
+ときどき、<code>Molecule</code> が持つメソッド名と同じ名前の変数を作ってしまうことがあります。この場合、変数へのアクセスが優先されますので、メソッドを呼び出すことはできなくなります。
+</p>
+<p class="code">% <span class="blue">natoms = 2</span>    <span class="comment"># 変数 natoms を定義</span>
+<span class="red">--&gt;2</span>
+% <span class="blue">natoms</span>    <span class="comment"># これは変数へのアクセスになり、メソッド呼び出しではない</span>
+<span class="red">--&gt;2</span>
+%
+</p>
+<p>
+この場合でも、<code>self</code> を指定すればメソッドを呼び出すことができます。
+</p>
+<p class="code">% <span class="blue">self.natoms</span>    <span class="comment"># これはメソッド呼び出し</span>
+<span class="red">--&gt;12</span>
+%
+</p>
+<p>
+特に注意が必要なのは、代入記号 ("<code>=</code>") を持つメソッドです。例えば、<code>show_hydrogens=</code> というメソッドは、水素原子を表示するかどうかを指定するものです。しかし、<code>self</code> を使わないと、ローカル変数への代入になってしまいます。従って、この場合は常に <code>self</code> を指定する必要があります。
+</p>
+<p class="code">% <span class="blue">show_hydrogens = false</span>    <span class="comment"># これはローカル変数への代入で、分子の状態は変わらない</span>
+<span class="red">--&gt;false</span>
+% <span class="blue">self.show_hydrogens = false</span>    <span class="comment"># これはメソッド呼び出しで、分子の状態を変える</span>
+<span class="red">--&gt;false</span>
+%
+</p>
+<h2>4. ファイル上の Ruby スクリプトを実行する</h2>
+<p>
+Ruby コンソール上では、１行のスクリプトしか実行できません。もっと複雑なスクリプトを実行したい時や、同じスクリプトを何度も実行したい時は、ファイルにスクリプトを格納して実行する方が便利です。"Script" メニューの "Execute Script..." コマンドでこれが実現できます。
+</p>
+<p><img src="../etc/ruby_06.png" /></p>
+<p>
+スクリプトには無限の可能性があります。いくつかの例をここに示します。最初のものは、「鉄原子を含む結合長のテーブルを作る」スクリプトです。
+</p>
+<p class="code"><span class="comment">#  Create a bond table including Fe
+#  Requires Molby</span>
+fp = open("bond_table.txt", "w") <span class="comment">#  Create an output file</span>
+atoms.each { |ap|  <span class="comment">#  This is another way to repeat over all atoms;
+                   #  ap points to the atom on each iteration</span>
+  if ap.element == "Fe"
+    r1 = ap.r               <span class="comment"># The cartesian coordinate of Fe</span>
+    ap.connects.each { |n|  <span class="comment"># ap.connects is an array of atom indices connected to this atom</span>
+      ap2 = atoms[n]        <span class="comment"># The atom connected to Fe</span>
+      r2 = ap2.r            <span class="comment"># The cartesian coordinate of the atom</span>
+      d = (r - r2).length   <span class="comment"># The bond length</span>
+      fp.printf "%s-%s %.3f\n", ap.name, ap2.name, d <span class="comment"># Write a table entry to the file</span>
+    }                       <span class="comment"># End loop (ap.connects)</span>
+  end                       <span class="comment"># End if</span>
+}                           <span class="comment"># End loop (atoms.each)</span>
+fp.close                    <span class="comment"># We are done with this file</span>
+</p>
+<p>
+このテキストをファイルに保存し、"Execute Script..." コマンドを実行し（目的の分子が一番前のウィンドウに表示されていることを確かめて）、スクリプトファイルを選びます。実行後、"bond_table.txt" というファイルが、スクリプトファイルと同じディレクトリに作成されています。
+</p>
+<p>
+次の例は、MD トラジェクトリを処理するものです。各フレームに対して、原子 0 が原点、原子 1, 2 が xy 平面上（原子 1 が x 軸上）に来るように分子を再配向して、原子 6 から 11 の重心を計算します。このような処理は、MD の結果分子のある部分がどのように動くかを可視化するのに便利です。
+</p>
+<p class="code"><span class="comment">#  Reorient the molecule and extract center of some group
+#  Requires Molby</span>
+fp = open("extract_group.txt", "w") <span class="comment">#  Create an output file</span>
+each_frame { |n|  <span class="comment">#  This is an idiom to iterate over all frames</span>
+  rotate_with_axis(1, 2, 0)  <span class="comment">#  Reorientation of the molecule is so frequently used
+                             #  that the Molecule class has a method to do it</span>
+  r = center_of_mass(6..11)  <span class="comment">#  Also has a method to calculate the center of mass</span>
+  fp.printf "%d %.6f %.6f %.6f\n", n, r.x, r.y, r.z  <span class="comment">#  Write the coordinates</span>
+}
+fp.close                     <span class="comment">#  We are done with this file</span>
+</p>
+<p>
+最後の例はたぶんもっと実用的です。これは、任意のキラリティ・長さのカーボンナノチューブのモデルを作成するスクリプトです。
+</p>
+<p class="code"><span class="comment">#  Create a model of carbon nanotube
+#  Requires Molby</span>
+r = 1.42     <span class="comment">#  The C-C bond length</span>
+n = 10       <span class="comment">#  The chirality index</span>
+m = 5        <span class="comment">#  (ibid)</span>
+aspect = 5.0 <span class="comment">#  The aspect ratio (length / diameter)</span>
+
+k = aspect / (PI * sqrt(3.0))
+points = []
+<span class="comment">#  The limiting points are (0, 0), (n, m), (k(n+2m), -k(2n+m)), (k(n+2m)+n, -k(2n+m)+n)
+#  Search for the lattice points that are within the parallelogram
+#  surrounded by the above points
+#  det is the determinant of the matrix that converts the unit cell to the above parallelogram </span>
+delta = 2 * k * (n * n + m * m + n * m)
+(0..(k * (n + 2 * m) + n).ceil).each { |s|
+  ((-k * (2 * n + m)).floor..m).each { |t|
+    [0, 2.0/3.0].each { |d|   <span class="comment">#  For two lattice points within the unit cell</span>
+      ss = (k * (2 * n + m) * (s + d) + k * (n + 2 * m) * (t + d)) / delta
+      tt = (m * (s + d) - n * (t + d)) / delta
+      if ss &gt;= 0.0 &amp;&amp; ss &lt; 1.0 &amp;&amp; tt &gt;= 0.0 &amp;&amp; tt &lt;= 1.0
+        points.push([ss, tt, s, t])   <span class="comment">#  This point is within the parallelogram</span>
+      end
+    }
+  }
+}
+<span class="comment">#  Create nanotube: line up [ss, tt] into cylindric shape</span>
+rad = sqrt(3.0) * r * sqrt(n * n + m * m + n * m) / (2 * PI)
+len = rad * 2 * aspect
+mol = Molecule.new
+points.each { |p|
+  ap = mol.create_atom
+  ap.element = "C"
+  ap.atom_type = "ca"
+  ap.r = [rad * cos(2 * PI * p[0]), rad * sin(2 * PI * p[0]), len * p[1]]
+}
+mol.guess_bonds
+<span class="comment">#  Show the result in a new window</span>
+mol2 = Molecule.open
+mol2.add(mol)
+</p>
+<p><img src="../etc/ruby_07.png" /><img src="../etc/ruby_08.png" /></p>
+
+<h2>5. 次に学ぶべきこと</h2>
+<p>
+組み込み Ruby インタプリタは非常に強力であるため、この短いチュートリアルでは説明しきれません。興味があるなら、<a href="ruby_ref.html">Ruby 拡張のリファレンス</a> に目を通してください。また、Molby アプリケーション本体にはたくさんの Ruby スクリプトが内蔵されています。"Scripts" フォルダを参照してください（Mac OS X では Molby アプリケーションパッケージの中、Windows では Molby アプリケーションと同じフォルダにあります）。
+</p>
 </div>
 <link id="#navigation" />
 </div>

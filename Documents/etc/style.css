@@ -78,11 +78,11 @@ p {
 p.code {
     margin: 1ex 7%;
     text-indent: 0;
-    background-color: #ffffff;
+    background-color: #ffffdd;
     color: #004400;
     font-family: monospace;
     font-size: small;
-    padding: 1em;
+    padding: 1.5ex 1.5em;
     line-height: 1.2;
     white-space: pre;
 }
@@ -136,4 +136,26 @@ span.bold {
 
 span.float_right {
     float: right;
+}
+
+span.blue {
+    color: #0000ff;
+}
+
+span.red {
+    color: #ff0000;
+}
+
+span.comment {
+    font-size: 8pt;
+    color: #aa00aa;
+}
+
+code {
+    font-family: monospace;
+    background-color: #ddeecc;
+}
+
+p.note code {
+    font-size: 8pt;
 }
