@@ -1519,6 +1519,14 @@ md_prepare(MDArena *arena, int check_only)
 		arena->periodic_a = (mol->cell->flags[0] != 0);
 		arena->periodic_b = (mol->cell->flags[1] != 0);
 		arena->periodic_c = (mol->cell->flags[2] != 0);
+		if (mol->nsyms > 0) {
+			arena->cellsyms = (Transform *)realloc(arena->cellsyms, sizeof(Transform) * mol->nsyms);
+			for (i = 0; i < mol->nsyms; i++) {
+				Transform temp;
+				TransformMul(temp, mol->syms[i], mol->cell->rtr);
+				TransformMul(arena->cellsyms[i], mol->cell->tr, temp);
+			}
+		}
 	} else {
 		arena->periodic_a = arena->periodic_b = arena->periodic_c = 0;
 	}
