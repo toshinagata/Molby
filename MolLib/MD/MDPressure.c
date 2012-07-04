@@ -231,7 +231,7 @@ pressure_control(MDArena *arena)
 			needs_cell_recalculate = 1;
 		}
 		if (needs_cell_recalculate)
-			md_cell_recalculate(arena);
+			md_update_cell(arena);
 
 		/*  Recalc the energies  */
 		md_amend_by_symmetry(arena);
@@ -250,7 +250,7 @@ pressure_control(MDArena *arena)
 			cell->axes[1] = cellb_save;
 			cell->axes[2] = cellc_save;
 			cell->origin = cello_save;
-			md_cell_recalculate(arena);
+			md_update_cell(arena);
 			if (pressure->control_algorithm != 1) {
 				md_restore(arena, 0);
 				arena->total_energy = total_energy_save;

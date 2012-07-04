@@ -1581,15 +1581,21 @@ MolActionPerform(Molecule *mol, MolAction *action)
 	} else if (strcmp(action->name, gMolActionSetCell) == 0) {
 		if ((result = s_MolActionSetCell(mol, action, &act2)) != 0)
 			return result;
+		if (mol->arena != NULL)
+			md_set_cell(mol->arena);
 		needsRebuildMDArena = 1;
 	} else if (strcmp(action->name, gMolActionSetBox) == 0) {
 		if ((result = s_MolActionSetBox(mol, action, &act2)) != 0)
 			return result;
-		needsRebuildMDArena = 1;
+		if (mol->arena != NULL)
+			md_set_cell(mol->arena);
+		needsSymmetryAmendment = 1;
 	} else if (strcmp(action->name, gMolActionClearBox) == 0) {
 		if ((result = s_MolActionSetBox(mol, NULL, &act2)) != 0)
 			return result;
-		needsRebuildMDArena = 1;
+		if (mol->arena != NULL)
+			md_set_cell(mol->arena);
+		needsSymmetryAmendment = 1;
 	} else if (strcmp(action->name, gMolActionEnableCellFlexibility) == 0) {
 		if ((result = s_MolActionSetCellFlexibility(mol, action, &act2)) != 0)
 			return result;

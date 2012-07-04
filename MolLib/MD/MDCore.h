@@ -335,6 +335,7 @@ typedef struct MDArena {
 	/*  Symmetry operation  */
 //	Int    nsyms;
 //	Transform  *syms;
+	Int ncellsyms;
 	Transform  *cellsyms;  /*  celltr * syms[i] * rcelltr  */
 	
 	/*  Unit cell vectors  */
@@ -452,7 +453,8 @@ int md_check_abnormal_improper(MDArena *arena, Molecule *mol, int idx);
 int md_set_alchemical_flags(MDArena *arena, int nflags, const char *flags);
 
 void md_amend_by_symmetry(MDArena *arena);
-void md_cell_recalculate(MDArena *arena);
+void md_set_cell(MDArena *arena);
+void md_update_cell(MDArena *arena);
 void md_scale_cell(MDArena *arena, const Transform tf, int scale_atoms);
 void md_wrap_coordinates(MDArena *arena);
 

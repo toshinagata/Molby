@@ -1515,21 +1515,7 @@ md_prepare(MDArena *arena, int check_only)
 /*	if (t1 > mol->natoms && mol->box == NULL)
 		return "symmetry operation is used but no periodic box is defined"; */
 
-	if (mol->cell != NULL) {
-		arena->periodic_a = (mol->cell->flags[0] != 0);
-		arena->periodic_b = (mol->cell->flags[1] != 0);
-		arena->periodic_c = (mol->cell->flags[2] != 0);
-		if (mol->nsyms > 0) {
-			arena->cellsyms = (Transform *)realloc(arena->cellsyms, sizeof(Transform) * mol->nsyms);
-			for (i = 0; i < mol->nsyms; i++) {
-				Transform temp;
-				TransformMul(temp, mol->syms[i], mol->cell->rtr);
-				TransformMul(arena->cellsyms[i], mol->cell->tr, temp);
-			}
-		}
-	} else {
-		arena->periodic_a = arena->periodic_b = arena->periodic_c = 0;
-	}
+	md_set_cell(arena);
 
 	arena->natoms_uniq = t1;
 	
@@ -2603,7 +2589,7 @@ md_minimize_step(MDArena *arena)
 }
 
 void
-md_cell_recalculate(MDArena *arena)
+md_update_cell(MDArena *arena)
 {
 	Molecule *mol = arena->mol;
 	XtalCell *cell = mol->cell;
@@ -2613,6 +2599,38 @@ md_cell_recalculate(MDArena *arena)
 		Transform temp;
 		TransformMul(temp, mol->syms[i], cell->rtr);
 		TransformMul(arena->cellsyms[i], cell->tr, temp);
+	}
+}
+
+void
+md_set_cell(MDArena *arena)
+{
+	Molecule *mol = arena->mol;
+	if (mol == NULL)
+		return;
+	if (mol->cell != NULL) {
+		arena->periodic_a = (mol->cell->flags[0] != 0);
+		arena->periodic_b = (mol->cell->flags[1] != 0);
+		arena->periodic_c = (mol->cell->flags[2] != 0);
+		if (mol->nsyms > 0) {
+			Int i;
+			if (mol->nsyms != arena->ncellsyms) {
+				arena->ncellsyms = mol->nsyms;
+				arena->cellsyms = (Transform *)realloc(arena->cellsyms, sizeof(Transform) * mol->nsyms);
+			}
+			for (i = 0; i < mol->nsyms; i++) {
+				Transform temp;
+				TransformMul(temp, mol->syms[i], mol->cell->rtr);
+				TransformMul(arena->cellsyms[i], mol->cell->tr, temp);
+			}
+		} else {
+			arena->ncellsyms = 0;
+			if (arena->cellsyms != NULL)
+				free(arena->cellsyms);
+			arena->cellsyms = NULL;
+		}
+	} else {
+		arena->periodic_a = arena->periodic_b = arena->periodic_c = 0;
 	}
 }
 
@@ -2635,7 +2653,7 @@ md_scale_cell(MDArena *arena, const Transform tf, int scale_atoms)
 	TransformVec(&cell->axes[0], tf, &cell->axes[0]);
 	TransformVec(&cell->axes[1], tf, &cell->axes[1]);
 	TransformVec(&cell->axes[2], tf, &cell->axes[2]);
-	md_cell_recalculate(arena);
+	md_update_cell(arena);
 
 	/*  Deformation gradient (temp) = celltr * old_rcelltr  */
 	TransformMul(grad, cell->tr, grad);
@@ -3002,7 +3020,7 @@ md_set_default(MDArena *arena)
 	arena->cellc.y = 0;
 	arena->cellc.z = 1; */
 /*	if (arena->mol != NULL && arena->mol->box != NULL)
-		md_cell_recalculate(arena); */
+		md_update_cell(arena); */
 }
 
 MDArena *
