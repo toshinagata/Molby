@@ -2231,7 +2231,7 @@ md_transform_vec_by_symmetry(MDArena *arena, Vector *dst, const Vector *src, Sym
 	if (!rec.alive)
 		return;
 	if (rec.sym > 0 && rec.sym <= arena->mol->nsyms) {
-		memmove(temp, arena->cellsyms[rec.sym - 1], sizeof(temp));
+		memmove(temp, arena->cellsyms[rec.sym], sizeof(temp));
 		if (no_translation)
 			temp[9] = temp[10] = temp[11] = 0.0;
 		TransformVec(dst, temp, src);
