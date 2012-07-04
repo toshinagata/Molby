@@ -5657,59 +5657,35 @@ s_Molecule_SetBox(VALUE self, VALUE aval)
 
 /*
  *  call-seq:
- *     enable_cell_flexibility(array = nil) -> self
+ *     cell_flexibility -> bool
  *
- *  Enable the unit cell flexibility. If array is given, it should be an array of Vector3Ds
- *  (or something that can be transformed into Vector3Ds), consisting of avec, bvec, cvec, origin vectors
- *  for each frames. If the number of Vectors is less than the number of frames x 4, then the cell parameters
- *  for the missing frame is set to the present cell parameters.
- *  If unit cell is not defined, an exception is raised.
+ *  Returns the unit cell is flexible or not
  */
 static VALUE
-s_Molecule_EnableCellFlexibility(int argc, VALUE *argv, VALUE self)
-{
-	Molecule *mol;
-	VALUE aval;
-	Vector *vp;
-	Int i, n1;
-	Data_Get_Struct(self, Molecule, mol);
-	if (mol->cell == NULL)
-		rb_raise(rb_eMolbyError, "cannot enable cell flexibility because unit cell is not defined yet");
-	rb_scan_args(argc, argv, "01", &aval);
-	if (aval == Qnil) {
-		n1 = 0;
-		vp = NULL;
-	} else {
-		aval = rb_ary_to_ary(aval);
-		n1 = RARRAY_LEN(aval);
-		if (n1 == 0)
-			vp = NULL;
-		else {
-			vp = (Vector *)calloc(sizeof(Vector), n1);
-			for (i = 0; i < n1; i++) {
-				VectorFromValue((RARRAY_PTR(aval))[i], vp + i);
-			}
-		}
-	}
-	MolActionCreateAndPerform(mol, gMolActionEnableCellFlexibility, n1, vp);
-	free(vp);
-	return self;
-}
-
-/*
- *  call-seq:
- *     disable_cell_flexibility -> self
- *
- *  Disable the unit cell flexibility.
- */
-static VALUE
-s_Molecule_DisableCellFlexibility(VALUE self)
+s_Molecule_CellFlexibility(VALUE self)
 {
     Molecule *mol;
     Data_Get_Struct(self, Molecule, mol);
 	if (mol->cell == NULL)
-		return self;
-	MolActionCreateAndPerform(mol, gMolActionDisableCellFlexibility);
+		return Qfalse;
+	if (mol->useFlexibleCell)
+		return Qtrue;
+	else return Qfalse;
+}
+
+/*
+ *  call-seq:
+ *     self.cell_flexibility = bool
+ *     set_cell_flexibility(bool)
+ *
+ *  Change the unit cell is flexible or not
+ */
+static VALUE
+s_Molecule_SetCellFlexibility(VALUE self, VALUE arg)
+{
+    Molecule *mol;
+    Data_Get_Struct(self, Molecule, mol);
+	MolActionCreateAndPerform(mol, gMolActionSetCellFlexibility, RTEST(arg) != 0);
 	return self;
 }
 
@@ -9505,8 +9481,9 @@ Init_Molby(void)
 	rb_define_method(rb_cMolecule, "box", s_Molecule_Box, 0);
 	rb_define_method(rb_cMolecule, "box=", s_Molecule_SetBox, 1);
 	rb_define_method(rb_cMolecule, "set_box", s_Molecule_SetBox, -2);
-	rb_define_method(rb_cMolecule, "enable_cell_flexibility", s_Molecule_EnableCellFlexibility, -1);
-	rb_define_method(rb_cMolecule, "disable_cell_flexibility", s_Molecule_DisableCellFlexibility, 0);
+	rb_define_method(rb_cMolecule, "cell_flexibility", s_Molecule_CellFlexibility, 0);
+	rb_define_method(rb_cMolecule, "cell_flexibility=", s_Molecule_SetCellFlexibility, 1);
+	rb_define_alias(rb_cMolecule, "set_cell_flexibility", "cell_flexibility=");
 	rb_define_method(rb_cMolecule, "symmetry", s_Molecule_Symmetry, 0);
 	rb_define_alias(rb_cMolecule, "symmetries", "symmetry");
 	rb_define_method(rb_cMolecule, "nsymmetries", s_Molecule_Nsymmetries, 0);

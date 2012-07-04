@@ -356,6 +356,15 @@ MoleculeInitWithMolecule(Molecule *mp2, const Molecule *mp)
 		mp2->syms = (Transform *)calloc(sizeof(Transform), mp2->nsyms);
 		memmove(mp2->syms, mp->syms, sizeof(Transform) * mp2->nsyms);
 	}
+	mp2->useFlexibleCell = mp->useFlexibleCell;
+	if (mp->nframe_cells > 0) {
+		if (NewArray(&mp2->frame_cells, &mp2->nframe_cells, sizeof(Vector) * 4, mp->nframe_cells) == NULL)
+			goto error;
+		memmove(mp2->frame_cells, mp->frame_cells, sizeof(Vector) * 4 * mp->nframe_cells);
+	}
+	
+	/* FIXME: should bset (basis set info) and elpot be duplicated or not?  */
+
 	if (mp->par != NULL)
 		mp2->par = ParameterDuplicate(mp->par);
 	if (mp->arena != NULL) {
@@ -1176,6 +1185,7 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 		} else if (strcmp(buf, "!:frame_periodic_boxes") == 0) {
 			Vector vs[5];
 			i = 0;
+			mp->useFlexibleCell = 1;  /*  The presence of this block causes asserting this flag  */
 			while (ReadLine(buf, sizeof buf, fp, &lineNumber) > 0) {
 				if (buf[0] == '!')
 					continue;
@@ -3814,7 +3824,7 @@ MoleculeWriteToMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbu
 		fprintf(fp, "\n");
 	}
 	
-	if (mp->frame_cells != NULL) {
+	if (mp->useFlexibleCell != 0) {
 		fprintf(fp, "!:frame_periodic_boxes\n");
 		fprintf(fp, "! ax ay az; bx by bz; cx cy cz; ox oy oz\n");
 		for (i = 0; i < mp->nframe_cells * 4; i++) {
@@ -9375,7 +9385,8 @@ MoleculeInsertFrames(Molecule *mp, IntGroup *group, const Vector *inFrame, const
 			vp[j] = ap->r;
 		ap->frames = vp;
 	}
-	if (mp->cell != NULL && (mp->frame_cells != NULL || inFrameCell != NULL)) {
+	if (mp->cell != NULL && (mp->useFlexibleCell || inFrameCell != NULL)) {
+		mp->useFlexibleCell = 1;
 		vp = mp->frame_cells;
 		AssignArray(&mp->frame_cells, &mp->nframe_cells, sizeof(Vector) * 4, n_new - 1, NULL);
 		if (vp == NULL) {
@@ -9385,20 +9396,6 @@ MoleculeInsertFrames(Molecule *mp, IntGroup *group, const Vector *inFrame, const
 			mp->frame_cells[2] = mp->cell->axes[2];
 			mp->frame_cells[3] = mp->cell->origin;
 		}
-/*		vp = mp->frame_cells;
-		if (mp->frame_cells == NULL) {
-			vp = (Vector *)calloc(sizeof(Vector), n_new * 4);
-			vp[0] = mp->cell->axes[0];
-			vp[1] = mp->cell->axes[1];
-			vp[2] = mp->cell->axes[2];
-			vp[3] = mp->cell->origin;
-		} else
-			vp = (Vector *)realloc(mp->frame_cells, sizeof(Vector) * 4 * n_new);
-		if (vp == NULL) {
-			__MoleculeUnlock(mp);
-			return -1;
-		}
-		mp->frame_cells = vp; */
 	}
 	
 	/*  group = [n0..n1-1, n2..n3-1, ...]  */

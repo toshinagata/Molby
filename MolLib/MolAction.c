@@ -58,8 +58,8 @@ const char *gMolActionAddSymmetryOperation = "addSymop:t";
 const char *gMolActionSetCell         = "setCell:Di";
 const char *gMolActionSetBox          = "setBox:vvvvi";
 const char *gMolActionClearBox        = "clearBox";
-const char *gMolActionEnableCellFlexibility = "enableCellFlexibility:V";
-const char *gMolActionDisableCellFlexibility = "disableCellFlexibility";
+const char *gMolActionSetBoxForFrames = "setBoxForFrames:V";
+const char *gMolActionSetCellFlexibility = "setCellFlexibility:i";
 const char *gMolActionAddParameters   = "addParameters:iGU";
 const char *gMolActionDeleteParameters = "deleteParameters:iG";
 const char *gMolActionCartesianToXtal  = "cartesianToXtal";
@@ -1366,43 +1366,81 @@ s_MolActionSetBox(Molecule *mol, MolAction *action, MolAction **actp)
 	return 0;
 }
 
+/*  This action is used for undoing "cell_flexibility = false"  */
 static int
-s_MolActionSetCellFlexibility(Molecule *mol, MolAction *action, MolAction **actp)
+s_MolActionSetBoxForFrames(Molecule *mol, MolAction *action, MolAction **actp)
 {
-	Int n1, n2, i;
-	if (action == NULL) {
-		/*  Disable cell flexibility  */
-		if (mol->frame_cells == NULL)
-			return 0;  /*  Do nothing  */
-		*actp = MolActionNew(gMolActionEnableCellFlexibility, mol->nframes * 4, mol->frame_cells);
-		free(mol->frame_cells);
-		mol->frame_cells = NULL;
-		mol->nframe_cells = 0;
-	} else {
-		/*  Enable cell flexibility, and restore the cell parameters if given  */
-		if (mol->cell == NULL)
-			return 0;  /*  If cell is not defined, do nothing  */
-		n1 = MoleculeGetNumberOfFrames(mol);
-		if (n1 == 0)
-			return 0;  /*  Do nothing  */
-		if (mol->frame_cells != NULL) {
-			*actp = MolActionNew(gMolActionEnableCellFlexibility, mol->nframes * 4, mol->frame_cells);
-		} else {
-			*actp = MolActionNew(gMolActionDisableCellFlexibility);
-		}
-		NewArray(&mol->frame_cells, &mol->nframe_cells, sizeof(Vector) * 4, n1);
-		n2 = action->args[0].u.arval.nitems;
-		/*  Copy the given cell parameters, and if not given copy the current cell parameters  */
-		for (i = 0; i < n1 * 4 && i < n2; i++) {
-			mol->frame_cells[i] = ((Vector *)(action->args[0].u.arval.ptr))[i];
-		}
-		while (i < n1 * 4) {
+	Int i, n1, n2;
+	Vector *vp1, *vp2;
+	n2 = MoleculeGetNumberOfFrames(mol);
+	if (n2 == 0 || mol->cell == NULL)
+		return 0;  /*  Do nothing  */
+	n1 = action->args[0].u.arval.nitems / 4;
+	vp1 = (Vector *)(action->args[0].u.arval.ptr);
+	if (mol->nframe_cells < n2) {
+		/*  Expand the array before processing  */
+		i = mol->nframe_cells * 4;
+		AssignArray(&(mol->frame_cells), &(mol->nframe_cells), sizeof(Vector) * 4, n2 - 1, NULL);
+		while (i < n2 * 4) {
+			/*  Copy the current cell  */
 			mol->frame_cells[i++] = mol->cell->axes[0];
 			mol->frame_cells[i++] = mol->cell->axes[1];
 			mol->frame_cells[i++] = mol->cell->axes[2];
 			mol->frame_cells[i++] = mol->cell->origin;
 		}
 	}
+	
+	vp2 = (Vector *)malloc(sizeof(Vector) * n2 * 4);
+	memmove(vp2, mol->frame_cells, sizeof(Vector) * n2 * 4);
+	memmove(mol->frame_cells, vp1, sizeof(Vector) * 4 * (n1 < n2 ? n1 : n2));
+	*actp = MolActionNew(gMolActionSetBoxForFrames, n2 * 4, vp2);
+	free(vp2);
+
+	/*  Set the current cell (no change on the periodic flags)  */
+	vp2 = mol->frame_cells + mol->cframe * 4;
+	MoleculeSetPeriodicBox(mol, vp2, vp2 + 1, vp2 + 2, vp2 + 3, mol->cell->flags);
+	
+	return 0;
+}
+
+static int
+s_MolActionSetCellFlexibility(Molecule *mol, MolAction *action, MolAction **actp)
+{
+	Int n1;
+	n1 = action->args[0].u.ival;
+	if ((n1 != 0) == (mol->useFlexibleCell != 0))
+		return 0;  /*  Do nothing  */
+	mol->useFlexibleCell = (n1 != 0);
+	if (n1 == 0) {
+		/*  Clear the existing cells, and register undo  */
+		if (mol->nframe_cells > 0) {
+			MolAction *act2 = MolActionNew(gMolActionSetBoxForFrames, mol->nframe_cells * 4, mol->frame_cells);
+			MolActionSetFrame(act2, mol->cframe);
+			MolActionCallback_registerUndo(mol, act2);
+			MolActionRelease(act2);
+		}
+		free(mol->frame_cells);
+		mol->frame_cells = NULL;
+		mol->nframe_cells = 0;
+	} else {
+		/*  Allocate cells for all frames and copy the current cell  */
+		Int i, nframes = MoleculeGetNumberOfFrames(mol);
+		if (nframes != 0 && mol->cell != NULL) {
+			if (mol->nframe_cells < nframes) {
+				/*  Expand the array  */
+				AssignArray(&(mol->frame_cells), &(mol->nframe_cells), sizeof(Vector) * 4, nframes - 1, NULL);
+			}
+			/*  Copy the current cell  */
+			/*  (No undo action is registered; actually, the frame_cells array should be empty)  */
+			for (i = 0; i < nframes; i++) {
+				mol->frame_cells[i * 4] = mol->cell->axes[0];
+				mol->frame_cells[i * 4 + 1] = mol->cell->axes[1];
+				mol->frame_cells[i * 4 + 2] = mol->cell->axes[2];
+				mol->frame_cells[i * 4 + 3] = mol->cell->origin;
+			}
+		}
+	}
+	*actp = MolActionNew(gMolActionSetCellFlexibility, (n1 == 0));
 	return 0;
 }
 
@@ -1596,14 +1634,12 @@ MolActionPerform(Molecule *mol, MolAction *action)
 		if (mol->arena != NULL)
 			md_set_cell(mol->arena);
 		needsSymmetryAmendment = 1;
-	} else if (strcmp(action->name, gMolActionEnableCellFlexibility) == 0) {
+	} else if (strcmp(action->name, gMolActionSetBoxForFrames) == 0) {
+		if ((result = s_MolActionSetBoxForFrames(mol, action, &act2)) != 0)
+			return result;
+	} else if (strcmp(action->name, gMolActionSetCellFlexibility) == 0) {
 		if ((result = s_MolActionSetCellFlexibility(mol, action, &act2)) != 0)
 			return result;
-		needsRebuildMDArena = 1;
-	} else if (strcmp(action->name, gMolActionDisableCellFlexibility) == 0) {
-		if ((result = s_MolActionSetCellFlexibility(mol, NULL, &act2)) != 0)
-			return result;
-		needsRebuildMDArena = 1;
 	} else if (strcmp(action->name, gMolActionAddParameters) == 0) {
 		if ((result = s_MolActionAddParameters(mol, action, &act2)) != 0)
 			return result;

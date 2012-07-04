@@ -38,7 +38,6 @@ extern const char *gMolActionAddDihedrals;
 extern const char *gMolActionDeleteDihedrals;
 extern const char *gMolActionAddImpropers;
 extern const char *gMolActionDeleteImpropers;
-/* extern const char *gMolActionReplaceTables; */
 extern const char *gMolActionTranslateAtoms;
 extern const char *gMolActionRotateAtoms;
 extern const char *gMolActionTransformAtoms;
@@ -60,9 +59,8 @@ extern const char *gMolActionAddSymmetryOperation;
 extern const char *gMolActionSetCell;
 extern const char *gMolActionSetBox;
 extern const char *gMolActionClearBox;
-extern const char *gMolActionEnableCellFlexibility;
-extern const char *gMolActionDisableCellFlexibility;
-/*extern const char *gMolActionSetParameterAttributeForUndo; */
+extern const char *gMolActionSetBoxForFrames;
+extern const char *gMolActionSetCellFlexibility;
 extern const char *gMolActionAddParameters;
 extern const char *gMolActionDeleteParameters;
 extern const char *gMolActionCartesianToXtal;
