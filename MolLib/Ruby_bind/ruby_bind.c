@@ -9503,8 +9503,8 @@ Init_Molby(void)
 	rb_define_alias(rb_cMolecule, "set_cell", "cell=");
 	rb_define_method(rb_cMolecule, "cell_transform", s_Molecule_CellTransform, 0);
 	rb_define_method(rb_cMolecule, "box", s_Molecule_Box, 0);
-	rb_define_method(rb_cMolecule, "box=", s_Molecule_SetBox, -2);
-	rb_define_alias(rb_cMolecule, "set_box", "box=");
+	rb_define_method(rb_cMolecule, "box=", s_Molecule_SetBox, 1);
+	rb_define_method(rb_cMolecule, "set_box", s_Molecule_SetBox, -2);
 	rb_define_method(rb_cMolecule, "enable_cell_flexibility", s_Molecule_EnableCellFlexibility, -1);
 	rb_define_method(rb_cMolecule, "disable_cell_flexibility", s_Molecule_DisableCellFlexibility, 0);
 	rb_define_method(rb_cMolecule, "symmetry", s_Molecule_Symmetry, 0);
