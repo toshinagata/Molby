@@ -4617,7 +4617,7 @@ s_Molecule_LoadSave(int argc, VALUE *argv, VALUE self, int loadFlag)
 		for (i = lslen; methname[i] != 0; i++)
 			methname[i] = tolower(methname[i]);
 		mid = rb_intern(methname);
-		free(methname);
+		xfree(methname);
 		argc--;
 		argv++;
 		rval = rb_funcall2(self, mid, argc, argv);
@@ -4643,7 +4643,7 @@ s_Molecule_LoadSave(int argc, VALUE *argv, VALUE self, int loadFlag)
 			for (i = lslen; methname[i] != 0; i++)
 				methname[i] = tolower(methname[i]);
 			mid = rb_intern(methname);
-			free(methname);
+			xfree(methname);
 			if (loadFlag) {
 				if (rb_respond_to(self, mid)) {
 					/*  Load: try to call the load procedure only if it is available  */
@@ -6122,6 +6122,7 @@ s_Molecule_CreateBond(int argc, VALUE *argv, VALUE self)
 	ip[argc] = kInvalidIndex;
 	old_nbonds = mol->nbonds;
 	i = MolActionCreateAndPerform(mol, gMolActionAddBonds, argc, ip);
+	xfree(ip);
 	if (i == -1)
 		rb_raise(rb_eMolbyError, "atom index out of range");
 	else if (i == -2)
@@ -6159,6 +6160,7 @@ s_Molecule_RemoveBond(int argc, VALUE *argv, VALUE self)
 	ip[argc] = kInvalidIndex;
 	old_nbonds = mol->nbonds;
 	MolActionCreateAndPerform(mol, gMolActionDeleteBonds, argc, ip);
+	xfree(ip);
 	return INT2NUM(old_nbonds - mol->nbonds);
 }
 
@@ -6443,7 +6445,7 @@ s_Molecule_RenumberAtoms(VALUE self, VALUE array)
 	Data_Get_Struct(retval, IntGroup, ig);
 	if (mol->natoms > n)
 		IntGroup_RaiseIfError(IntGroupAdd(ig, n, mol->natoms - n));
-	free(new2old);
+	xfree(new2old);
 	return retval;
 }
 
@@ -6834,9 +6836,9 @@ s_Molecule_InsertFrames(int argc, VALUE *argv, VALUE self)
 	}
 	ival = MolActionCreateAndPerform(mol, gMolActionInsertFrames, ig, mol->natoms * count, vp, (vp2 != NULL ? 4 * count : 0), vp2);
 	IntGroupRelease(ig);
-	free(vp);
+	xfree(vp);
 	if (vp2 != NULL)
-		free(vp2);
+		xfree(vp2);
 	return (ival >= 0 ? val : Qnil);
 }
 

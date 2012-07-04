@@ -63,6 +63,8 @@ ObjectDealloc(Object *obj, Object **objRootPtr)
 void
 ObjectSetName(Object *obj, const char *name, Object *objRoot)
 {
+	if (obj->name != NULL)
+		free((void *)(obj->name));
 	obj->name = strdup(name);
 	return;
 #if 0

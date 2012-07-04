@@ -26,7 +26,7 @@ extern "C" {
 #endif
 	
 /* #define ATOMS_MAX_CONNECTS 12 */
-#define ATOM_CONNECTS_LIMIT 2
+#define ATOM_CONNECTS_LIMIT 6
 #define ATOMS_MAX_SYMMETRY 12
 #define ATOMS_MAX_NUMBER 100000000  /*  Sufficiently large value  */
 

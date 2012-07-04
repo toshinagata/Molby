@@ -3041,6 +3041,8 @@ md_arena_set_molecule(MDArena *arena, Molecule *xmol)
 	
 	/*  Dispose the internal cache  */
 	if (arena->mol != NULL) {
+		if (arena->mol->arena == arena)
+			arena->mol->arena = NULL;
 		MoleculeRelease(arena->mol);
 		arena->mol = NULL;
 	}
@@ -3048,16 +3050,16 @@ md_arena_set_molecule(MDArena *arena, Molecule *xmol)
 	if (xmol != NULL) {
 		/*  Create an internal copy  */
 		Molecule *mol = MoleculeNew();
-		Atom *ap;
+		Atom *ap, *ap2, arec;
 		int i;
-		memset(mol, 0, sizeof(Molecule));
 		NewArray(&mol->atoms, &mol->natoms, gSizeOfAtomRecord, xmol->natoms);
-		memmove(mol->atoms, xmol->atoms, gSizeOfAtomRecord * xmol->natoms);
-		/*  Note: aniso and frames are unnecessary  */
-		for (i = 0, ap = mol->atoms; i < xmol->natoms; i++, ap = ATOM_NEXT(ap)) {
-			ap->aniso = NULL;
-			ap->frames= NULL;
-			ap->nframes = 0;
+		for (i = 0, ap = mol->atoms, ap2 = xmol->atoms; i < xmol->natoms; i++, ap = ATOM_NEXT(ap), ap2 = ATOM_NEXT(ap2)) {
+			memmove(&arec, ap2, gSizeOfAtomRecord);
+			/*  Aniso and frames are unnecessary  */
+			arec.aniso = NULL;
+			arec.frames = NULL;
+			arec.nframes = 0;
+			AtomDuplicate(ap, &arec);
 		}
 		NewArray(&mol->bonds, &mol->nbonds, sizeof(Int) * 2, xmol->nbonds);
 		memmove(mol->bonds, xmol->bonds, sizeof(Int) * 2 * xmol->nbonds);

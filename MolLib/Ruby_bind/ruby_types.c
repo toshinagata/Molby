@@ -1347,7 +1347,7 @@ LAMatrixFromValue(VALUE val, int *needsRelease, int rowHint, int columnHint)
 				for (j = 0; j < RARRAY_LEN(val2); j++)
 					mp1->data[i * row + j] = NUM2DBL(rb_Float((RARRAY_PTR(val2))[j]));
 			}
-			free(valp2);
+			xfree(valp2);
 		}
 	}
 	if (needsRelease != NULL)

@@ -98,6 +98,11 @@ AtomClean(Atom *ap)
 		ap->frames = NULL;
 		ap->nframes = 0;
 	}
+	if (ap->nconnects > ATOM_CONNECTS_LIMIT) {
+		ap->nconnects = 0;
+		free(ap->connects.ptr);
+		ap->connects.ptr = NULL;
+	}
 }
 
 void
@@ -476,6 +481,42 @@ MoleculeClear(Molecule *mp)
 		mp->residues = NULL;
 		mp->nresidues = 0;
 	}
+	if (mp->cell != NULL) {
+		free(mp->cell);
+		mp->cell = NULL;
+	}
+	if (mp->syms != NULL) {
+		free(mp->syms);
+		mp->syms = NULL;
+		mp->nsyms = 0;
+	}
+	if (mp->selection != NULL) {
+		IntGroupRelease(mp->selection);
+		mp->selection = NULL;
+	}
+	if (mp->exatoms != NULL) {
+		free(mp->exatoms);
+		mp->exatoms = NULL;
+		mp->nexatoms = 0;
+	}
+	if (mp->exbonds != NULL) {
+		free(mp->exbonds);
+		mp->exbonds = NULL;
+		mp->nexbonds = 0;
+	}
+	if (mp->frame_cells != NULL) {
+		free(mp->frame_cells);
+		mp->frame_cells = NULL;
+		mp->nframe_cells = 0;
+	}
+	if (mp->bset != NULL) {
+		BasisSetRelease(mp->bset);
+		mp->bset = NULL;
+	}
+	if (mp->par != NULL) {
+		ParameterRelease(mp->par);
+		mp->par = NULL;
+	}
 	if (mp->elpots != NULL) {
 		free(mp->elpots);
 		mp->elpots = NULL;
@@ -492,8 +533,10 @@ MoleculeRelease(Molecule *mp)
 {
 	if (mp == NULL)
 		return;
-	if (mp->exmolobj != NULL)
+	if (mp->exmolobj != NULL) {
 		MoleculeReleaseExternalHook(mp);
+		mp->exmolobj = NULL;
+	}
 	if (ObjectDecrRefCount((Object *)mp) == 0) {
 		MoleculeClear(mp);
 		ObjectDealloc((Object *)mp, (Object **)&sMoleculeRoot);
@@ -7148,12 +7191,14 @@ sMoleculeUnmergeSub(Molecule *src, Molecule **dstp, IntGroup *where, int resSeqO
 		free(up);
 		IntGroupRelease(dst_new_g);
 	}
-	
+	IntGroupRelease(dst_par_g);
+
 	/*  Remove the unused parameter. Note: the parameters that are in remove_par_g and not in 
 	    dst_par_g will disappear. To support undo, these parameters should be taken care separately.  */
 	if (remove_par_g != NULL && (n2 = IntGroupGetCount(remove_par_g)) > 0) {
 		ParameterDelete(src->par, kFirstParType, NULL, remove_par_g);
 	}
+	IntGroupRelease(remove_par_g);
 	
 	/*  Renumber the parameter records remaining in the src  */
 	if (moveFlag) {
@@ -7167,6 +7212,7 @@ sMoleculeUnmergeSub(Molecule *src, Molecule **dstp, IntGroup *where, int resSeqO
 	}
 	
 	/*  Clean up  */
+	IntGroupRelease(remain_g);
 	MoleculeCleanUpResidueTable(src);
 	if (dst != NULL)
 		MoleculeCleanUpResidueTable(dst);
