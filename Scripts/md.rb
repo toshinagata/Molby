@@ -17,23 +17,15 @@ class Molecule
 
   def cmd_md_sub
     arena = self.md_arena
-#    keys = arena.to_hash.keys
-	#  The read-only keys
 	read_only = [:step, :coord_frame, :transient_temperature, :average_temperature]
-	#  Sort the keys so that they are (a little more) readable
 	keys = [:timestep, :temperature, :cutoff, :electro_cutoff, :pairlist_distance,
 	 :scale14_vdw, :scale14_elect, :use_xplor_shift, :dielectric,
 	 :andersen_freq, :andersen_coupling, :random_seed, :relocate_center,
-	 :use_graphite,
-   # :surface_probe_radius, :surface_tension, :surface_potential_freq,
+	 :use_graphite, :minimize_cell,
 	 :gradient_convergence, :coordinate_convergence,
 	 :log_file, :coord_file, :vel_file, :force_file, :debug_file, :debug_output_level,
 	 :coord_output_freq, :energy_output_freq,
 	 :step, :coord_frame, :transient_temperature, :average_temperature]
-#	 .each_with_index { |k, i|
-#	  keys.delete(k)
-#	  keys.insert(i, k)
-#	}
 	#  Arrange the items in vertical direction
 	n = (keys.count + 1) / 2
 	i = 0

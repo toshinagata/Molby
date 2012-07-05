@@ -324,7 +324,7 @@ s_AverageTempSym, s_AndersenFreqSym, s_AndersenCouplingSym, s_RandomSeedSym,
 s_DielectricSym, s_GradientConvergenceSym, s_CoordinateConvergenceSym, s_UseXplorShiftSym, 
 s_Scale14VdwSym, s_Scale14ElectSym, s_RelocateCenterSym, 
 s_SurfaceProbeRadiusSym, s_SurfaceTensionSym, s_SurfacePotentialFreqSym, s_UseGraphiteSym,
-s_AlchemicalLambdaSym, s_AlchemicalDeltaLambdaSym, s_AlchemicalEnergySym;
+s_AlchemicalLambdaSym, s_AlchemicalDeltaLambdaSym, s_AlchemicalEnergySym, s_MinimizeCellSym;
 
 struct s_MDArenaAttrDef {
 	char *name;
@@ -370,6 +370,7 @@ static struct s_MDArenaAttrDef s_MDArenaAttrDefTable[] = {
 	{"alchemical_lambda", &s_AlchemicalLambdaSym, 0, 0, 'f', offsetof(MDArena, alchem_lambda)},
 	{"alchemical_delta_lambda", &s_AlchemicalDeltaLambdaSym, 0, 0, 'f', offsetof(MDArena, alchem_dlambda)},
 	{"alchemical_energy", &s_AlchemicalEnergySym, 0, 0, 'E', offsetof(MDArena, alchem_energy)},
+	{"minimize_cell",     &s_MinimizeCellSym,     0, 0, 'b', offsetof(MDArena, minimize_cell)},
 	{NULL} /* Sentinel */
 };
 
@@ -410,6 +411,9 @@ s_MDArena_Get(VALUE self, VALUE attr)
 					else
 						return Ruby_NewFileStringValue(cp);
 				}
+				case 'b':
+				case 'B':
+					return INT2NUM((Int)(*((Byte *)p)));
 				case 'i':
 				case 'I':
 					return INT2NUM(*((Int *)p));
@@ -435,6 +439,9 @@ s_MDArena_Get(VALUE self, VALUE attr)
 				case 'i':
 				case 'I':
 					return INT2NUM(*((Int *)pp));
+				case 'b':
+				case 'B':
+					return INT2NUM((Int)(*((Byte *)pp)));
 				case 'f':
 				case 'F':
 					return rb_float_new(*((Double *)pp));
@@ -519,13 +526,16 @@ s_MDArena_Set(VALUE self, VALUE attr, VALUE val)
 				case 'i':
 					*((Int *)p) = NUM2INT(rb_Integer(val));
 					return val;
+				case 'b':
+					*((Byte *)p) = NUM2INT(rb_Integer(val));
+					return val;
 				case 'f':
 					*((Double *)p) = NUM2DBL(rb_Float(val));
 					return val;
 				case 'e':
 					*((Double *)p) = NUM2DBL(rb_Float(val) * KCAL2INTERNAL);
 					return val;
-				case 'S': case 'I': case 'F': case 'E':
+				case 'S': case 'I': case 'B': case 'F': case 'E':
 					rb_raise(rb_eMolbyError, "The attribute '%s' is read-only", rb_id2name(aid));
 				default:
 					rb_raise(rb_eMolbyError, "Internal inconsistency: unknown type field");
@@ -542,6 +552,9 @@ s_MDArena_Set(VALUE self, VALUE attr, VALUE val)
 			switch (dp->type) {
 				case 'i':
 					*((Int *)pp) = NUM2INT(rb_Integer(val));
+					return val;
+				case 'b':
+					*((Byte *)pp) = NUM2INT(rb_Integer(val));
 					return val;
 				case 'f':
 					*((Double *)pp) = NUM2DBL(rb_Float(val));
@@ -564,7 +577,7 @@ s_MDArena_Set(VALUE self, VALUE attr, VALUE val)
 						else pres->cell_flexibility[j] = 0.0;
 					}
 					return val;
-				case 'S': case 'I': case 'F': case 'E':
+				case 'S': case 'I': case 'B': case 'F': case 'E':
 					rb_raise(rb_eMolbyError, "The attribute '%s' is read-only", rb_id2name(aid));
 				default:
 					rb_raise(rb_eMolbyError, "Internal inconsistency: unknown type field");

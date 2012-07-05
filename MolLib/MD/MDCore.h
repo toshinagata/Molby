@@ -238,6 +238,10 @@ typedef struct MDArena {
 	Double alchem_dlambda;
 	Double alchem_energy;
 	
+#if MINIMIZE_CELL
+	Byte minimize_cell;
+#endif
+	
 	/*  Fix atoms  */
 	/*	Int nfix_atoms;
 	 fix_atom_record *fix_atoms; */
@@ -284,7 +288,8 @@ typedef struct MDArena {
 	/*  Initialize flag  */
 	Byte   is_initialized;  /*  0: not initialized, 1: only the static fields (structure-related) are initialized, 2: the runtime fields are initialized (i.e. MD is ready to go)  */
 	Byte   is_running;
-	
+
+	Byte   is_minimizing;
 	Byte   request_abort;	/*  If early return is necesarry, assert this flag.  */
 	Byte   minimize_complete;  /*  Becomes non-zero if minimization completed.  */
 
@@ -426,7 +431,6 @@ typedef struct MDArena {
 	Int    conv_flag;         /*  0: not converged, 1: converged by coordinate, 2: converged by gradient  */
 	
 #if MINIMIZE_CELL
-	Byte minimize_cell;
 	Double cell_forces[12];
 	Double cell_vels[12];
 	Double old_cell_forces[12];  /*  The forces in the previous step  */

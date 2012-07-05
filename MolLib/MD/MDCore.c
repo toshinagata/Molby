@@ -1680,7 +1680,11 @@ md_prepare(MDArena *arena, int check_only)
 		md_panic(arena, ERROR_out_of_memory);
 	arena->ring->size = mol->natoms;
 	if (arena->pressure != NULL && arena->pressure->disabled == 0)
-		arena->ring->size += 4;
+		arena->ring->size = mol->natoms + 4;
+#if MINIMIZE_CELL
+	if (arena->minimize_cell && arena->mol->cell != NULL)
+		arena->ring->size = mol->natoms + 4;
+#endif
 	arena->ring->nframes = 2000 / arena->ring->size;
 	if (arena->ring->nframes < 2)
 		arena->ring->nframes = 2;
@@ -2405,7 +2409,6 @@ md_minimize_init(MDArena *arena)
 	}
 	arena->conv_flag = 0;
 #if MINIMIZE_CELL
-	arena->minimize_cell = 1;
 	memset(arena->cell_forces, 0, sizeof(Double) * 12);
 	memset(arena->cell_vels, 0, sizeof(Double) * 12);
 	memset(arena->old_cell_forces, 0, sizeof(Double) * 12);
@@ -2415,7 +2418,7 @@ md_minimize_init(MDArena *arena)
 }
 
 int
-md_minimize_step(MDArena *arena)
+md_minimize_atoms_step(MDArena *arena)
 {
 	Double bk, w1, w2, w3, dump;
 	Double low, mid, high, low_energy, mid_energy, high_energy, lambda;
@@ -2594,6 +2597,187 @@ md_minimize_step(MDArena *arena)
   cleanup:
 /*	printf("Final lambda = %g (%g)\n", lambda, arena->total_energy); */
 	return retval;
+}
+
+#if MINIMIZE_CELL
+static inline void
+s_md_modify_cell_parameters(MDArena *arena, Double lambda)
+{
+	XtalCell *cell = arena->mol->cell;
+	if (arena->periodic_a) {
+		cell->axes[0].x = arena->old_cell_pars[0] + arena->cell_vels[0] * lambda;
+		cell->axes[0].y = arena->old_cell_pars[1] + arena->cell_vels[1] * lambda;
+		cell->axes[0].z = arena->old_cell_pars[2] + arena->cell_vels[2] * lambda;
+	}
+	if (arena->periodic_b) {
+		cell->axes[1].x = arena->old_cell_pars[3] + arena->cell_vels[3] * lambda;
+		cell->axes[1].y = arena->old_cell_pars[4] + arena->cell_vels[4] * lambda;
+		cell->axes[1].z = arena->old_cell_pars[5] + arena->cell_vels[5] * lambda;
+	}
+	if (arena->periodic_b) {
+		cell->axes[2].x = arena->old_cell_pars[6] + arena->cell_vels[6] * lambda;
+		cell->axes[2].y = arena->old_cell_pars[7] + arena->cell_vels[7] * lambda;
+		cell->axes[2].z = arena->old_cell_pars[8] + arena->cell_vels[8] * lambda;
+	}
+	cell->origin.x = arena->old_cell_pars[9] + arena->cell_vels[9] * lambda;
+	cell->origin.y = arena->old_cell_pars[10] + arena->cell_vels[10] * lambda;
+	cell->origin.z = arena->old_cell_pars[11] + arena->cell_vels[11] * lambda;
+	md_update_cell(arena);
+	md_amend_by_symmetry(arena);
+}
+
+int
+md_minimize_cell_step(MDArena *arena)
+{
+	Double bk, w1, w2, w3, w4, damp;
+	Double low, mid, high, low_energy, mid_energy, high_energy, lambda;
+	Double low_limit, high_limit;
+	Int i, retval;
+	XtalCell *cell;
+	const Double phi = 0.618033988749895;  /*  The golden ratio  */
+	
+	if (arena->minimize_cell == 0 || (cell = arena->mol->cell) == NULL)
+		return 0;
+	
+	w1 = w2 = 0.0;
+	retval = 0;
+	for (i = 0; i < 12; i++) {
+		w3 = arena->cell_forces[i];
+		w1 += w3 * w3;
+		w4 = arena->old_cell_forces[i];
+		w2 += w3 * w4;
+	}
+	
+	arena->cf_len2 = w1;
+	if (arena->old_cf_len2 == 0.0) {
+		/*  New direction  */
+		bk = 0.0;
+	} else {
+		bk = (w1 - w2) / arena->old_cf_len2;
+		if (bk < 0.0)
+			bk = 0.0;  /*  New direction  */
+	}
+	/*  Update the search direction  */
+	arena->old_cf_len2 = arena->cf_len2;
+	damp = 1.0;
+	for (i = 0; i < 12; i++) {
+		w1 = arena->cell_forces[i];
+		w1 = w1 * w1 * damp;
+		if (!isfinite(w1))  /*  Is isfinite() available in other platforms?? */
+			md_panic(arena, "the gradient at cell parameter %d exceeded limit at step %d", i+1, arena->step);
+		if (w1 > 1e4)
+			damp *= 1e4 / w1;
+	}
+	damp = sqrt(damp);
+	w2 = w3 = 0.0;
+	for (i = 0; i < 12; i++) {
+		arena->old_cell_forces[i] = w1 = arena->cell_forces[i];
+		arena->old_cell_pars[i] = cell->tr[i];
+		arena->cell_vels[i] = arena->cell_vels[i] * bk + w1 * damp;
+		w1 *= w1;
+		w2 += w1;
+		if (w1 > w3)
+			w3 = w1;
+	}
+	w3 = sqrt(w3);
+	arena->cell_max_gradient = w3;
+	arena->cv_len2 = w2;
+	if (bk == 0.0 && w3 < arena->gradient_convergence)
+		return 1;  /*  Gradient is sufficiently small  */
+	
+	/*  Proceed along cell_vels[] until the energy increases  */
+	low_limit = arena->coordinate_convergence / arena->max_gradient;
+	high_limit = 0.1 / arena->max_gradient;
+	low = 0.0;
+	low_energy = arena->total_energy;
+	lambda = high_limit;
+	high = lambda;
+	while (1) {
+		s_md_modify_cell_parameters(arena, lambda);
+		calc_force(arena);
+		mid = lambda;
+		mid_energy = arena->total_energy;
+		if (mid_energy < low_energy) {
+			/*  mid is the 'sufficiently large' step to give lower total energy  */
+			if (mid == high) {
+				/*  Higher limit: move by this amount  */
+				retval = 0;
+				goto cleanup;
+			}
+			break;
+		}
+		high = mid;
+		high_energy = mid_energy;
+		lambda *= 0.25;
+		if (lambda < low_limit) {
+			/*  Cannot find point with lower energy than the starting point  */
+			/*  Restore the original position  */
+			s_md_modify_cell_parameters(arena, 0);
+			calc_force(arena);
+			lambda = 0.0;
+			if (bk == 0.0)
+				retval = 2;  /*  Atom movement is sufficiently small  */
+			goto cleanup;
+		}
+	}
+
+	/*  low_energy >= mid_energy < high_energy  */
+	/*  Binary search for minimum  */
+	for (i = 0; i < 10; i++) {
+		if (high - mid > mid - low) {
+			lambda = high - (high - mid) * phi;
+			s_md_modify_cell_parameters(arena, lambda);
+			calc_force(arena);
+			if (arena->total_energy < mid_energy) {
+				low = mid;
+				low_energy = mid_energy;
+				mid = lambda;
+				mid_energy = arena->total_energy;
+			} else {
+				high = lambda;
+				high_energy = arena->total_energy;
+			}
+		} else {
+			lambda = mid - (mid - low) * phi;
+			s_md_modify_cell_parameters(arena, lambda);
+			calc_force(arena);
+			if (arena->total_energy < mid_energy) {
+				high = mid;
+				high_energy = mid_energy;
+				mid = lambda;
+				mid_energy = arena->total_energy;
+			} else {
+				low = lambda;
+				low_energy = arena->total_energy;
+			}
+		}
+		if (bk == 0.0 && (high - low) * arena->max_gradient < arena->coordinate_convergence) {
+			retval = 2;  /*  Atom movement is sufficiently small  */
+			break;
+		}
+	}
+cleanup:
+	printf("Cell minimize: ");
+	for (i = 0; i < 12; i++) {
+		printf(" %.6g", arena->cell_vels[i] * lambda);
+	}
+	printf("\n");
+	
+	return retval;
+}
+#endif
+
+int
+md_minimize_step(MDArena *arena)
+{
+	int n1, n2;
+	n1 = md_minimize_atoms_step(arena);
+	n2 = 0;
+#if MINIMIZE_CELL
+	if (arena->minimize_cell && arena->mol->cell != NULL)
+		n2 = md_minimize_cell_step(arena);
+#endif
+	return (n1 ? n1 : n2);
 }
 
 void
@@ -2846,6 +3030,7 @@ md_main(MDArena *arena, int minimize)
 	}
 	
 	arena->is_running = 1;
+	arena->is_minimizing = minimize;
 	
 	if (setjmp(env) == 0) {
 		arena->setjmp_buf = &env;

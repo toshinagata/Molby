@@ -850,7 +850,6 @@ s_calc_nonbonded_force_sub(MDArena *arena, Double *energies, Double *eenergies, 
 			VecScaleInc(rij, cell->axes[1], vl->symop.dy);
 			VecScaleInc(rij, cell->axes[2], vl->symop.dz);
 		}
-	/*	rij2 = rij; */
 		VecDec(rij, ap1->r);
 		r2 = VecLength2(rij);
 		if (r2 >= elimit)
@@ -928,7 +927,7 @@ s_calc_nonbonded_force_sub(MDArena *arena, Double *energies, Double *eenergies, 
 		}
 		
 #if MINIMIZE_CELL
-		if (arena->minimize_cell && (ap2->symop.alive || vl->symop.alive)) {
+		if (arena->is_minimizing && arena->minimize_cell && (ap2->symop.alive || vl->symop.alive)) {
 			/*  Force for changing cell parameters  */
 			Vector rr;
 			Int j, k;
@@ -977,15 +976,6 @@ s_calc_nonbonded_force(MDArena *arena)
 	Vector *forces = &arena->forces[kVDWIndex * arena->mol->natoms];
 	Vector *eforces = &arena->forces[kElectrostaticIndex * arena->mol->natoms];
 	s_calc_nonbonded_force_sub(arena, energies, eenergies, forces, eforces, NULL, NULL);
-#if MINIMIZE_CELL
-	{	int i;
-		printf("cell_forces = ");
-		for (i = 0; i < 12; i++) {
-			printf("%.6g ", arena->cell_forces[i] / KCAL2INTERNAL);
-		}
-		printf("\n");
-	}
-#endif
 }
 
 static void
