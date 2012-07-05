@@ -2757,11 +2757,11 @@ md_minimize_cell_step(MDArena *arena)
 		}
 	}
 cleanup:
-	printf("Cell minimize: ");
+/*	printf("Cell minimize: ");
 	for (i = 0; i < 12; i++) {
 		printf(" %.6g", arena->cell_vels[i] * lambda);
 	}
-	printf("\n");
+	printf("\n"); */
 	
 	return retval;
 }
