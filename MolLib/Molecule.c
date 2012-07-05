@@ -1191,7 +1191,7 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 					continue;
 				if (buf[0] == '\n')
 					break;
-				if (sscanf(buf, "%lf %lf %f", &dbuf[0], &dbuf[1], &dbuf[2]) < 3) {
+				if (sscanf(buf, "%lf %lf %lf", &dbuf[0], &dbuf[1], &dbuf[2]) < 3) {
 					snprintf(errbuf, errbufsize, "line %d: bad frame_periodic_box format", lineNumber);
 					goto exit;
 				}
@@ -9603,12 +9603,14 @@ MoleculeRemoveFrames(Molecule *mp, IntGroup *inGroup, Vector *outFrame, Vector *
 			} else {
 				free(mp->frame_cells);
 				mp->frame_cells = NULL;
+				mp->nframe_cells = 0;
 			}
 		} else {
 			if (i < mp->natoms)
 				ap->frames = (Vector *)realloc(ap->frames, sizeof(Vector) * s);
 			else {
 				AssignArray(&mp->frame_cells, &mp->nframe_cells, sizeof(Vector) * 4, s - 1, NULL);
+				mp->nframe_cells = s;
 			}
 		}
 	}
