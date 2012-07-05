@@ -2404,6 +2404,14 @@ md_minimize_init(MDArena *arena)
 		arena->mol->atoms[i].v = arena->mol->atoms[i].f = zerov;
 	}
 	arena->conv_flag = 0;
+#if MINIMIZE_CELL
+	arena->minimize_cell = 1;
+	memset(arena->cell_forces, 0, sizeof(Double) * 12);
+	memset(arena->cell_vels, 0, sizeof(Double) * 12);
+	memset(arena->old_cell_forces, 0, sizeof(Double) * 12);
+	memset(arena->old_cell_pars, 0, sizeof(Double) * 12);
+	arena->cf_len2 = arena->old_cf_len2 = arena->cv_len2 = arena->cell_max_gradient = 0.0;
+#endif
 }
 
 int

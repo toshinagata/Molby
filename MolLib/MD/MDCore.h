@@ -27,6 +27,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define MINIMIZE_CELL 1
 	
 #define UNITCHARGE 1.602e-19
 /*  Vacuum permittability in internal units  */
@@ -422,6 +424,18 @@ typedef struct MDArena {
 	Double  v_len2;            /*  Sum of square lengths of "velocity" (= current searching direction)  */
 	Double  max_gradient;      /*  maximum gradient  */
 	Int    conv_flag;         /*  0: not converged, 1: converged by coordinate, 2: converged by gradient  */
+	
+#if MINIMIZE_CELL
+	Byte minimize_cell;
+	Double cell_forces[12];
+	Double cell_vels[12];
+	Double old_cell_forces[12];  /*  The forces in the previous step  */
+	Double old_cell_pars[12];    /*  The cell parameters in the previous step  */
+	Double cf_len2;
+	Double old_cf_len2;
+	Double cv_len2;
+	Double cell_max_gradient;
+#endif
 	
 	/*  Surface potential calculation  */
 	struct SPArena *sp_arena;

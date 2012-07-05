@@ -771,6 +771,10 @@ s_calc_nonbonded_force_sub(MDArena *arena, Double *energies, Double *eenergies, 
 	Atom *atoms = arena->mol->atoms;
 	XtalCell *cell = arena->mol->cell;
 
+#if MINIMIZE_CELL
+	memset(arena->cell_forces, 0, sizeof(Double) * 12);
+#endif
+	
 	/*  Check whether the Verlet list needs update  */
 	if (arena->last_verlet_step >= 0) {
 		i = arena->mol->natoms - 1;
@@ -796,7 +800,7 @@ s_calc_nonbonded_force_sub(MDArena *arena, Double *energies, Double *eenergies, 
 		Double A, B, vofs, k0, k1;
 		MDVdwCache *vp = arena->vdw_cache + vl->index;
 		Atom *ap1, *ap2;
-		Vector rij, fij;
+		Vector rij, fij, rij2, fij2;
 		Double r2, w2, w6, w12;
 		if (group_flags_1 != NULL && group_flags_2 != NULL) {
 			if (!(get_group_flag(group_flags_1, vl->n1) && get_group_flag(group_flags_2, vl->n2))
@@ -846,6 +850,7 @@ s_calc_nonbonded_force_sub(MDArena *arena, Double *energies, Double *eenergies, 
 			VecScaleInc(rij, cell->axes[1], vl->symop.dy);
 			VecScaleInc(rij, cell->axes[2], vl->symop.dz);
 		}
+	/*	rij2 = rij; */
 		VecDec(rij, ap1->r);
 		r2 = VecLength2(rij);
 		if (r2 >= elimit)
@@ -855,7 +860,8 @@ s_calc_nonbonded_force_sub(MDArena *arena, Double *energies, Double *eenergies, 
 			continue;
 		
 		fij.x = fij.y = fij.z = 0.0;
-		
+		fij2 = fij;
+
 		/*  Coulombic force  */
 		w12 = ap1->charge * ap2->charge * dielec_r;
 		if (w12 != 0.0) {
@@ -884,6 +890,7 @@ s_calc_nonbonded_force_sub(MDArena *arena, Double *energies, Double *eenergies, 
 				VecDec(eforces[vl->n1], fij);
 				VecInc(eforces[vl->n2], fij);
 			}
+			fij2 = fij;
 			if (arena->debug_result && arena->debug_output_level > 1) {
 				fprintf(arena->debug_result, "nonbonded(electrostatic) force %d-%d: r=%f, k0=%f, k1=%f, {%f %f %f}\n", vl->n1+1, vl->n2+1, sqrt(r2), k0/KCAL2INTERNAL, k1*sqrt(r2)/KCAL2INTERNAL, fij.x/KCAL2INTERNAL, fij.y/KCAL2INTERNAL, fij.z/KCAL2INTERNAL);
 			}
@@ -912,12 +919,53 @@ s_calc_nonbonded_force_sub(MDArena *arena, Double *energies, Double *eenergies, 
 			VecDec(forces[vl->n1], fij);
 			VecInc(forces[vl->n2], fij);
 		}
+		VecInc(fij2, fij);
 		if (dlambda != 0.0)
 			arena->alchem_energy += k0 * dlambda;
 
 		if (arena->debug_result && arena->debug_output_level > 1) {
 			fprintf(arena->debug_result, "nonbonded(vdw) force %d-%d: r=%f, k0=%f, k1=%f, {%f %f %f}\n", vl->n1+1, vl->n2+1, sqrt(r2), k0/KCAL2INTERNAL, k1*sqrt(r2)/KCAL2INTERNAL, fij.x/KCAL2INTERNAL, fij.y/KCAL2INTERNAL, fij.z/KCAL2INTERNAL);
 		}
+		
+#if MINIMIZE_CELL
+		if (arena->minimize_cell && (ap2->symop.alive || vl->symop.alive)) {
+			/*  Force for changing cell parameters  */
+			Vector rr;
+			Int j, k;
+			Transform da, tr, symtr, symtr2;
+			if (ap2->symop.alive)
+				rij2 = ATOM_AT_INDEX(arena->mol->atoms, ap2->symbase)->r;
+			else rij2 = ap2->r;
+			TransformVec(&rr, cell->rtr, &rij2);
+			memmove(symtr, arena->mol->syms[ap2->symop.sym], sizeof(Transform));
+			symtr[9] += ap2->symop.dx + vl->symop.dx;
+			symtr[10] += ap2->symop.dy + vl->symop.dy;
+			symtr[11] += ap2->symop.dz + vl->symop.dz;
+			TransformMul(symtr2, symtr, cell->rtr);
+			TransformMul(symtr2, cell->tr, symtr2);
+			for (j = 0; j < 12; j++) {
+				Vector rrr;
+				memset(da, 0, sizeof(Transform));
+				da[j] = 1.0;
+				TransformMul(tr, symtr2, da);
+				/*  The translation part should be adjusted, because the derivative matrix
+					has the (3,3) element as 0.0 (instead of 1.0). Thus,
+				    | R v | | R' v' | = | R*R' R*v' |   (instead of R*v'+v)
+				    | 0 1 | | 0  0  |   | 0    0    |
+				    da * symtr does not have this problem, because the derivative matrix is
+				    multipled from the left.  */
+				tr[9] -= symtr2[9];
+				tr[10] -= symtr2[10];
+				tr[11] -= symtr2[11];
+				TransformMul(da, da, symtr);
+				for (k = 0; k < 12; k++)
+					da[k] -= tr[k];
+				TransformVec(&rrr, da, &rr);
+				arena->cell_forces[j] += VecDot(fij2, rrr);
+			}
+		}
+#endif
+		
 	}
 }
 
@@ -929,6 +977,15 @@ s_calc_nonbonded_force(MDArena *arena)
 	Vector *forces = &arena->forces[kVDWIndex * arena->mol->natoms];
 	Vector *eforces = &arena->forces[kElectrostaticIndex * arena->mol->natoms];
 	s_calc_nonbonded_force_sub(arena, energies, eenergies, forces, eforces, NULL, NULL);
+#if MINIMIZE_CELL
+	{	int i;
+		printf("cell_forces = ");
+		for (i = 0; i < 12; i++) {
+			printf("%.6g ", arena->cell_forces[i] / KCAL2INTERNAL);
+		}
+		printf("\n");
+	}
+#endif
 }
 
 static void
