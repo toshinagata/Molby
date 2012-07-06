@@ -2543,7 +2543,7 @@ md_minimize_atoms_step(MDArena *arena)
 /*	printf("Line minimization [%g, %g, %g] (energy [%g, %g, %g]) ", low, mid, high, low_energy, mid_energy, high_energy); */
 	/*  low_energy >= mid_energy < high_energy  */
 	/*  Binary search for minimum  */
-	for (i = 0; i < 10; i++) {
+	for (i = 0; i < 5; i++) {
 		if (high - mid > mid - low) {
 			lambda = high - (high - mid) * phi;
 			for (j = 0, ap = atoms, vp = arena->old_pos, vdr = arena->verlets_dr; j < natoms; j++, ap++, vp++, vdr++) {
@@ -2589,8 +2589,8 @@ md_minimize_atoms_step(MDArena *arena)
 				low_energy = arena->total_energy;
 			}
 		}
-		if (bk == 0.0 && (high - low) * arena->max_gradient < arena->coordinate_convergence) {
-			retval = 2;  /*  Atom movement is sufficiently small  */
+		if ((high - low) * arena->max_gradient < arena->coordinate_convergence) {
+		/*	retval = 2;  *//*  Atom movement is sufficiently small  */
 			break;
 		}
 	}
@@ -2598,6 +2598,265 @@ md_minimize_atoms_step(MDArena *arena)
 /*	printf("Final lambda = %g (%g)\n", lambda, arena->total_energy); */
 	return retval;
 }
+
+#if 0
+
+static inline void
+s_md_modify_atoms_and_cell_parameters(MDArena *arena, Double lambda, Double cell_lambda)
+{
+	Int j, natoms;
+	Atom *ap;
+	Vector r, *vp, *vdr;
+	XtalCell *cell = arena->mol->cell;
+	natoms = arena->mol->natoms;
+	for (j = 0, ap = arena->mol->atoms, vp = arena->old_pos, vdr = arena->verlets_dr; j < natoms; j++, ap++, vp++, vdr++) {
+		if (ap->fix_force < 0)
+			continue;
+		r = ap->r;
+		ap->r.x = vp->x + ap->v.x * lambda;
+		ap->r.y = vp->y + ap->v.y * lambda;
+		ap->r.z = vp->z + ap->v.z * lambda;
+		VecDec(r, ap->r);
+		VecInc(*vdr, r);
+	}
+	if (cell_lambda >= 0.0) {
+		if (arena->periodic_a) {
+			cell->axes[0].x = arena->old_cell_pars[0] + arena->cell_vels[0] * cell_lambda;
+			cell->axes[0].y = arena->old_cell_pars[1] + arena->cell_vels[1] * cell_lambda;
+			cell->axes[0].z = arena->old_cell_pars[2] + arena->cell_vels[2] * cell_lambda;
+		}
+		if (arena->periodic_b) {
+			cell->axes[1].x = arena->old_cell_pars[3] + arena->cell_vels[3] * cell_lambda;
+			cell->axes[1].y = arena->old_cell_pars[4] + arena->cell_vels[4] * cell_lambda;
+			cell->axes[1].z = arena->old_cell_pars[5] + arena->cell_vels[5] * cell_lambda;
+		}
+		if (arena->periodic_c) {
+			cell->axes[2].x = arena->old_cell_pars[6] + arena->cell_vels[6] * cell_lambda;
+			cell->axes[2].y = arena->old_cell_pars[7] + arena->cell_vels[7] * cell_lambda;
+			cell->axes[2].z = arena->old_cell_pars[8] + arena->cell_vels[8] * cell_lambda;
+		}
+		cell->origin.x = arena->old_cell_pars[9] + arena->cell_vels[9] * cell_lambda;
+		cell->origin.y = arena->old_cell_pars[10] + arena->cell_vels[10] * cell_lambda;
+		cell->origin.z = arena->old_cell_pars[11] + arena->cell_vels[11] * cell_lambda;
+		md_update_cell(arena);
+	}
+	md_amend_by_symmetry(arena);
+}
+
+int
+md_minimize_atoms_and_cell_step(MDArena *arena)
+{
+	Double bk, cbk, w1, w2, w3, w4, damp;
+	Double low, mid, high, low_energy, mid_energy, high_energy, lambda;
+	Double low_limit, scale_atom, scale_cell;
+	Int i, retval, natoms_movable, do_cell;
+	Atom *atoms = arena->mol->atoms;
+	Atom *ap;
+	Int natoms = arena->mol->natoms;
+	XtalCell *cell;
+	Vector *vp;
+	const Double phi = 0.618033988749895;  /*  The golden ratio  */
+	
+	if (arena->minimize_cell && arena->mol->cell != NULL) {
+		do_cell = 1;
+		cell = arena->mol->cell;
+	} else {
+		do_cell = 0;
+		cell = NULL;
+	}
+	bk = cbk = 0.0;
+	
+	md_amend_by_symmetry(arena);
+
+	/*  Get weights of atomic forces  */
+	w1 = w2 = 0.0;
+	retval = 0;
+	natoms_movable = 0;
+	for (i = 0, ap = atoms, vp = arena->old_forces; i < natoms; i++, ap++, vp++) {
+		if (ap->fix_force < 0)
+			continue;
+		w1 += VecLength2(ap->f);
+		w2 += VecDot(ap->f, *vp);
+		natoms_movable++;
+	}
+	arena->f_len2 = w1;
+	if (arena->old_f_len2 == 0.0) {
+		/*  New direction  */
+		bk = 0.0;
+	} else {
+		bk = (w1 - w2) / arena->old_f_len2;
+		if (bk < 0.0)
+			bk = 0.0;  /*  New direction  */
+	}
+	
+	/*  Update the search direction (atoms)  */
+	arena->old_f_len2 = arena->f_len2;
+	w2 = w3 = 0.0;
+	damp = 1.0;
+	for (i = 0, ap = atoms; i < natoms; i++, ap++) {
+		if (ap->fix_force < 0)
+			continue;
+		w1 = VecLength2(ap->f) * damp;
+		if (!isfinite(w1))  /*  Is isfinite() available in other platforms?? */
+			md_panic(arena, "the gradient at atom %d exceeded limit at step %d", i+1, arena->step);
+		if (w1 > 1e4)
+			damp *= 1e4 / w1;
+	}
+	damp = sqrt(damp);
+	for (i = 0, ap = atoms, vp = arena->old_forces; i < natoms; i++, ap++, vp++) {
+		if (ap->fix_force < 0)
+			continue;
+		*vp = ap->f;
+		*(vp + natoms) = ap->r;
+		ap->v.x = ap->v.x * bk + ap->f.x * damp;
+		ap->v.y = ap->v.y * bk + ap->f.y * damp;
+		ap->v.z = ap->v.z * bk + ap->f.z * damp;
+		w1 = VecLength2(ap->v);
+		w2 += w1;
+		/*	if (w1 > 1e4 || !isfinite(w1))
+		 md_panic(arena, "the gradient at atom %d exceeded limit at step %d", i+1, arena->step); */
+		if (w1 > w3)
+			w3 = w1;
+	}
+	w3 = sqrt(w3);
+	arena->max_gradient = w3;
+	arena->v_len2 = w2;
+	
+	/*  Get weights of cell forces  */
+	if (do_cell) {
+		w1 = w2 = 0.0;
+		retval = 0;
+		for (i = 0; i < 12; i++) {
+			w3 = arena->cell_forces[i];
+			w1 += w3 * w3;
+			w4 = arena->old_cell_forces[i];
+			w2 += w3 * w4;
+		}
+		arena->cf_len2 = w1;
+		if (arena->old_cf_len2 == 0.0) {
+			/*  New direction  */
+			cbk = 0.0;
+		} else {
+			cbk = (w1 - w2) / arena->old_cf_len2;
+			if (cbk < 0.0)
+				cbk = 0.0;  /*  New direction  */
+		}
+		
+		/*  Update the search direction (cells)  */
+		arena->old_cf_len2 = arena->cf_len2;
+		damp = 1.0;
+		for (i = 0; i < 12; i++) {
+			w1 = arena->cell_forces[i];
+			w1 = w1 * w1 * damp;
+			if (!isfinite(w1))  /*  Is isfinite() available in other platforms?? */
+				md_panic(arena, "the gradient at cell parameter %d exceeded limit at step %d", i+1, arena->step);
+			if (w1 > 1e4)
+				damp *= 1e4 / w1;
+		}
+		damp = sqrt(damp);
+		w2 = w3 = 0.0;
+		for (i = 0; i < 12; i++) {
+			arena->old_cell_forces[i] = w1 = arena->cell_forces[i];
+			arena->old_cell_pars[i] = cell->tr[i];
+			arena->cell_vels[i] = arena->cell_vels[i] * cbk + w1 * damp;
+			w1 *= w1;
+			w2 += w1;
+			if (w1 > w3)
+				w3 = w1;
+		}
+		w3 = sqrt(w3);
+		arena->cell_max_gradient = w3;
+		arena->cv_len2 = w2;
+	} else {
+		cbk = 0.0;
+		arena->cell_max_gradient = 0.0;
+	}
+	
+	if (bk == 0.0 && arena->max_gradient < arena->gradient_convergence && cbk == 0.0 && arena->cell_max_gradient < arena->gradient_convergence)
+		return 1;    /*  Gradient is sufficiently small  */
+	
+	/*  Proceed along ap->v/cell_vels until the energy increases  */
+	w1 = arena->coordinate_convergence / arena->max_gradient;
+	if (do_cell) {
+		w2 = arena->coordinate_convergence / arena->cell_max_gradient;
+		low_limit = (w1 < w2 ? w1 : w2);
+	} else low_limit = w1;
+	scale_atom = 0.1 / arena->max_gradient;
+	if (do_cell)
+		scale_cell = scale_atom;
+	//	scale_cell = 0.1 / arena->cell_max_gradient;
+	else scale_cell = -1.0;
+	low = 0.0;
+	low_energy = arena->total_energy;
+	/*	lambda = 1e-3 * arena->f_len2 / w2; */
+	lambda = 1.0;
+	high = lambda;
+	while (1) {
+		s_md_modify_atoms_and_cell_parameters(arena, lambda * scale_atom, lambda * scale_cell);
+		calc_force(arena);
+		mid = lambda;
+		mid_energy = arena->total_energy;
+		if (mid_energy < low_energy) {
+			/*  mid is the 'sufficiently large' step to give lower total energy  */
+			if (mid == high) {
+				/*  Higher limit: move by this amount  */
+				retval = 0;
+				goto cleanup;
+			}
+			break;
+		}
+		high = mid;
+		high_energy = mid_energy;
+		lambda *= 0.25;
+		if (lambda < low_limit) {
+			/*  Cannot find point with lower energy than the starting point  */
+			/*  Restore the original position  */
+			s_md_modify_atoms_and_cell_parameters(arena, 0, (do_cell ? 0 : -1));
+			calc_force(arena);
+			lambda = 0.0;
+			if (bk == 0.0 && cbk == 0.0)
+				retval = 2;  /*  Movement is sufficiently small  */
+			goto cleanup;
+		}
+	}
+	/*  Binary search for minimum  */
+	for (i = 0; i < 5; i++) {
+		if (high - mid > mid - low) {
+			lambda = high - (high - mid) * phi;
+			s_md_modify_atoms_and_cell_parameters(arena, lambda * scale_atom, lambda * scale_cell);
+			calc_force(arena);
+			if (arena->total_energy < mid_energy) {
+				low = mid;
+				low_energy = mid_energy;
+				mid = lambda;
+				mid_energy = arena->total_energy;
+			} else {
+				high = lambda;
+				high_energy = arena->total_energy;
+			}
+		} else {
+			lambda = mid - (mid - low) * phi;
+			s_md_modify_atoms_and_cell_parameters(arena, lambda * scale_atom, lambda * scale_cell);
+			calc_force(arena);
+			if (arena->total_energy < mid_energy) {
+				high = mid;
+				high_energy = mid_energy;
+				mid = lambda;
+				mid_energy = arena->total_energy;
+			} else {
+				low = lambda;
+				low_energy = arena->total_energy;
+			}
+		}
+		if ((high - low) < low_limit)
+			break;
+	}
+cleanup:
+	/*	printf("Final lambda = %g (%g)\n", lambda, arena->total_energy); */
+	return retval;
+}
+#endif
+
 
 #if MINIMIZE_CELL
 static inline void
@@ -2723,7 +2982,7 @@ md_minimize_cell_step(MDArena *arena)
 
 	/*  low_energy >= mid_energy < high_energy  */
 	/*  Binary search for minimum  */
-	for (i = 0; i < 10; i++) {
+	for (i = 0; i < 5; i++) {
 		if (high - mid > mid - low) {
 			lambda = high - (high - mid) * phi;
 			s_md_modify_cell_parameters(arena, lambda);
@@ -2751,8 +3010,8 @@ md_minimize_cell_step(MDArena *arena)
 				low_energy = arena->total_energy;
 			}
 		}
-		if (bk == 0.0 && (high - low) * arena->max_gradient < arena->coordinate_convergence) {
-			retval = 2;  /*  Atom movement is sufficiently small  */
+		if ((high - low) * arena->cell_max_gradient < arena->coordinate_convergence) {
+		/*	retval = 2; */ /*  Atom movement is sufficiently small  */
 			break;
 		}
 	}
@@ -2777,7 +3036,9 @@ md_minimize_step(MDArena *arena)
 	if (arena->minimize_cell && arena->mol->cell != NULL)
 		n2 = md_minimize_cell_step(arena);
 #endif
-	return (n1 ? n1 : n2);
+	if (n1 > 0 && n2 > 0)
+		return n1;
+	return 0;
 }
 
 void

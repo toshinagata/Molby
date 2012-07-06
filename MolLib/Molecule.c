@@ -3665,7 +3665,7 @@ int
 MoleculeWriteToMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsize)
 {
 	FILE *fp;
-	int i, j, k, n1, n2, n3, n_aniso;
+	int i, j, k, n1, n2, n3, n_aniso, nframes;
 	Atom *ap;
 	char bufs[6][8];
 
@@ -3675,6 +3675,8 @@ MoleculeWriteToMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbu
 		return 1;
 	}
 	errbuf[0] = 0;
+
+	nframes = MoleculeFlushFrames(mp);
 
 	fprintf(fp, "!:atoms\n");
 	fprintf(fp, "! idx seg_name res_seq res_name name type charge weight element atomic_number occupancy temp_factor int_charge\n");
@@ -3743,7 +3745,8 @@ MoleculeWriteToMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbu
 		fprintf(fp, "\n");
 	}
 	
-	if ((n1 = MoleculeGetNumberOfFrames(mp)) > 0)
+	n1 = nframes;
+	if (n1 > 0)
 		n2 = mp->cframe;
 	else
 		n2 = 0;
@@ -9631,22 +9634,25 @@ MoleculeRemoveFrames(Molecule *mp, IntGroup *inGroup, Vector *outFrame, Vector *
 int
 MoleculeSelectFrame(Molecule *mp, int frame, int copyback)
 {
-	int i, cframe, ok;
+	int i, cframe, nframes, modified;
 	Atom *ap;
-	if (mp == NULL || mp->natoms == 0)
-		return -1;
 	cframe = mp->cframe;
-	ok = 0;
+	nframes = MoleculeGetNumberOfFrames(mp);
+	if (frame == -1)
+		frame = mp->cframe;
+	if (mp == NULL || mp->natoms == 0 || frame < 0 || frame >= nframes)
+		return -1;
+	modified = 0;
 	__MoleculeLock(mp);
 	for (i = 0, ap = mp->atoms; i < mp->natoms; i++, ap = ATOM_NEXT(ap)) {
 		if (copyback && cframe >= 0 && cframe < ap->nframes) {
 			/*  Write the current coordinate back to the frame array  */
 			ap->frames[cframe] = ap->r;
 		}
-		if (frame >= 0 && frame < ap->nframes) {
+		if (frame != cframe && frame >= 0 && frame < ap->nframes) {
 			/*  Read the coordinate from the frame array  */
 			ap->r = ap->frames[frame];
-			ok = 1;
+			modified = 1;
 		}
 	}
 
@@ -9660,15 +9666,29 @@ MoleculeSelectFrame(Molecule *mp, int frame, int copyback)
 			vp[3] = mp->cell->origin;
 		}
 		/*  Set the cell from the frame array  */
-		MoleculeSetPeriodicBox(mp, &mp->frame_cells[frame * 4], &mp->frame_cells[frame * 4 + 1], &mp->frame_cells[frame * 4 + 2], &mp->frame_cells[frame * 4 + 3], mp->cell->flags);
+		if (frame != cframe && frame >= 0 && frame < mp->nframe_cells) {
+			MoleculeSetPeriodicBox(mp, &mp->frame_cells[frame * 4], &mp->frame_cells[frame * 4 + 1], &mp->frame_cells[frame * 4 + 2], &mp->frame_cells[frame * 4 + 3], mp->cell->flags);
+			modified = 1;
+			MoleculeAmendBySymmetry(mp, NULL, NULL, NULL);
+		}
 	}
-	mp->needsMDCopyCoordinates = 1;
+	mp->cframe = frame;
+	if (modified)
+		mp->needsMDCopyCoordinates = 1;
 	__MoleculeUnlock(mp);
-	if (ok) {
-		mp->cframe = frame;
-		sMoleculeNotifyChangeAppearance(mp);
-		return frame;
-	} else return -1;
+	sMoleculeNotifyChangeAppearance(mp);
+	return frame;
+}
+
+/*  If molecule is multi-frame, then flush the current information to the frame buffer.
+    Returns the number of frames.  */
+int
+MoleculeFlushFrames(Molecule *mp)
+{
+	int nframes = MoleculeGetNumberOfFrames(mp);
+	if (nframes > 1)
+		MoleculeSelectFrame(mp, mp->cframe, 1);
+	return nframes;
 }
 
 #pragma mark ====== MO calculation ======

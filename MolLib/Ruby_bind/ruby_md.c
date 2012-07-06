@@ -99,8 +99,15 @@ s_MDArena_Run_or_minimize(VALUE self, VALUE arg, int minimize)
 	if (retval == 0 || arena->step > start_step) {
 		int i, natoms = arena->xmol->natoms;
 		Atom *ap;
-		Vector *vp = (Vector *)malloc(sizeof(Vector) * natoms);
+		Vector *vp = (Vector *)malloc(sizeof(Vector) * (natoms > 4 ? natoms : 4));
 		IntGroup *ig = IntGroupNewWithPoints(0, natoms, -1);
+		int copy_cell = 0;
+		if (arena->pressure != NULL && arena->pressure->disabled == 0)
+			copy_cell = 1;
+#if MINIMIZE_CELL
+		if (arena->minimize_cell && minimize)
+			copy_cell = 1;
+#endif
 		if (arena->step > start_step) {
 			/*  Copy coordinates and velocities from mol to xmol */
 			for (i = 0, ap = arena->mol->atoms; i < natoms; i++, ap = ATOM_NEXT(ap))
@@ -109,6 +116,13 @@ s_MDArena_Run_or_minimize(VALUE self, VALUE arg, int minimize)
 			for (i = 0, ap = arena->mol->atoms; i < natoms; i++, ap = ATOM_NEXT(ap))
 				vp[i] = ap->v;
 			MolActionCreateAndPerform(arena->xmol, gMolActionSetAtomVelocities, ig, natoms, vp);
+			if (copy_cell && arena->mol->cell != NULL) {
+				vp[0] = arena->mol->cell->axes[0];
+				vp[1] = arena->mol->cell->axes[1];
+				vp[2] = arena->mol->cell->axes[2];
+				vp[3] = arena->mol->cell->origin;
+				MolActionCreateAndPerform(arena->xmol, gMolActionSetBox, vp, vp + 1, vp + 2, vp + 3, -1);
+			}
 		}
 		/*  Copy forces (this is valid even for "zero-step" run)  */
 		for (i = 0, ap = arena->mol->atoms; i < natoms; i++, ap = ATOM_NEXT(ap))

@@ -508,9 +508,8 @@ int MoleculeIsFragmentRotatable(Molecule *mp, IntGroup *group, int *n1, int *n2,
 int MoleculeGetNumberOfFrames(Molecule *mp);
 int MoleculeInsertFrames(Molecule *mp, IntGroup *group, const Vector *inFrame, const Vector *inFrameCell);
 int MoleculeRemoveFrames(Molecule *mp, IntGroup *group, Vector *outFrame, Vector *outFrameCell);
-/*int MoleculeInsertFrame(Molecule *mp, int index, const Vector *inFrame);
-int MoleculeRemoveFrame(Molecule *mp, int frame, Vector *outFrame); */
 int MoleculeSelectFrame(Molecule *mp, int frame, int copyback);
+int MoleculeFlushFrames(Molecule *mp);
 
 int MoleculeCalcMO(Molecule *mp, Int mono, const Vector *op, const Vector *dxp, const Vector *dyp, const Vector *dzp, Int nx, Int ny, Int nz, int (*callback)(double progress, void *ref), void *ref);
 int MoleculeGetDefaultMOGrid(Molecule *mp, Int npoints, Vector *op, Vector *xp, Vector *yp, Vector *zp, Int *nx, Int *ny, Int *nz);

@@ -6988,7 +6988,7 @@ s_Molecule_GetCoordFromFrame(int argc, VALUE *argv, VALUE self)
 		free(vp);
 		if (RTEST(cval) && mol->cell != NULL && mol->frame_cells != NULL && index < mol->nframe_cells) {
 			vp = mol->frame_cells + index * 4;
-			MolActionCreateAndPerform(mol, gMolActionSetBox, vp, vp + 1, vp + 2, vp + 3, mol->cell->flags);
+			MolActionCreateAndPerform(mol, gMolActionSetBox, vp, vp + 1, vp + 2, vp + 3, -1);
 		}
 		IntGroupIteratorRelease(&iter);
 	}

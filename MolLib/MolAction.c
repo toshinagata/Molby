@@ -1339,7 +1339,7 @@ s_MolActionSetCell(Molecule *mol, MolAction *action, MolAction **actp)
 static int
 s_MolActionSetBox(Molecule *mol, MolAction *action, MolAction **actp)
 {
-	Int n1;
+	Int n1, n2;
 	if (action == NULL) {
 		/*  Clear box  */
 		if (mol->cell == NULL)
@@ -1359,8 +1359,20 @@ s_MolActionSetBox(Molecule *mol, MolAction *action, MolAction **actp)
 		}
 		for (n1 = 0; n1 < 4; n1++)
 			v[n1] = *((Vector *)(action->args[n1].u.arval.ptr));
-		for (n1 = 0; n1 < 3; n1++)
-			flags[n1] = ((action->args[4].u.ival >> (2 - n1)) & 1);
+		n2 = action->args[4].u.ival;
+		if (n2 < 0) {
+			/*  Keep existing flags; if not present, set all flags to 1.  */
+			if (mol->cell == NULL)
+				flags[0] = flags[1] = flags[2] = 1;
+			else {
+				flags[0] = mol->cell->flags[0];
+				flags[1] = mol->cell->flags[1];
+				flags[2] = mol->cell->flags[2];
+			}
+		} else {
+			for (n1 = 0; n1 < 3; n1++)
+				flags[n1] = ((n2 >> (2 - n1)) & 1);
+		}
 		MoleculeSetPeriodicBox(mol, &v[0], &v[1], &v[2], &v[3], flags);
 	}
 	return 0;

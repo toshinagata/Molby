@@ -944,6 +944,12 @@ s_calc_nonbonded_force_sub(MDArena *arena, Double *energies, Double *eenergies, 
 			TransformMul(symtr2, cell->tr, symtr2);
 			for (j = 0; j < 12; j++) {
 				Vector rrr;
+				if (arena->periodic_a == 0 && (j == 0 || j == 1 || j == 2 || j == 3 || j == 6 || j == 9))
+					continue;
+				if (arena->periodic_b == 0 && (j == 1 || j == 3 || j == 4 || j == 5 || j == 7 || j == 10))
+					continue;
+				if (arena->periodic_c == 0 && (j == 2 || j == 5 || j == 6 || j == 7 || j == 8 || j == 11))
+					continue;
 				memset(da, 0, sizeof(Transform));
 				da[j] = 1.0;
 				TransformMul(tr, symtr2, da);
