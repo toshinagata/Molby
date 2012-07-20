@@ -716,6 +716,33 @@ the coordinates are transformed so that the cartesian coordinates remain the sam
 </div>
 
 <div id="method-M000237" class="method-detail">
+<a name="cell_flexibility"></a>
+<div class="method-heading">
+<span class="method-name">cell_flexibility &rarr; bool<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns whether the unit cell is flexible or not.
+</p>
+</div>
+</div>
+
+<div id="method-M000237" class="method-detail">
+<a name="set_cell_flexibility"></a>
+<div class="method-heading">
+<span class="method-name">self.cell_flexibility = bool<br />
+set_cell_flexibility(bool)
+</span>
+</div>
+<div class="method-description">
+<p>
+Set whether the unit cell is flexible or not.
+</p>
+</div>
+</div>
+
+<div id="method-M000237" class="method-detail">
 <a name="M000237"></a>
 <div class="method-heading">
 <span class="method-name">cell_transform &rarr; <a href="Transform.html">Transform</a><br />
@@ -753,6 +780,19 @@ Calculate the center of mass for the given set of atoms. If the argument group i
 Translate the molecule so that the center of mass of the given group is
 located at (0, 0, 0). Equivalent to
 <a href="Molecule.html#M000281">self.translate</a>(<a href="Molecule.html#M000286">self.center_of_mass</a>(group) * -1). This operation is undoable.
+</p>
+</div>
+</div>
+
+<div id="method-M000287" class="method-detail">
+<a name="charge"></a>
+<div class="method-heading">
+<span class="method-name">charge(group = nil)       &rarr; Float<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Calculate the total charge (the sum of the "charge" attributes of atoms). If a group is given, only the atoms in the group are considered.
 </p>
 </div>
 </div>
@@ -1323,6 +1363,20 @@ Copy the coordinates from the specified frame. If group is specified, then only 
 </div>
 </div>
 
+<div id="method-get_view_center" class="method-detail">
+<a name="get_view_center"></a>
+<div class="method-heading">
+<span class="method-name">get_view_center &rarr; <a href="Vector3D.html">Vector3D</a></span>
+</div>
+<div class="method-description">
+<p>
+Get the current center point of the view.
+</p>
+<p>
+<i>See Also:</i> <a href="#set_view_center">Molecule#set_view_center</a>
+</p></div>
+</div>
+
 <div id="method-get_view_rotation" class="method-detail">
 <a name="get_view_rotation"></a>
 <div class="method-heading">
@@ -1348,20 +1402,6 @@ Get the current scale for the view. Scale is expressed with a dimensionless floa
 </p>
 <p>
 <i>See Also:</i> <a href="#set_view_scale">Molecule#set_view_scale</a>
-</p></div>
-</div>
-
-<div id="method-get_view_center" class="method-detail">
-<a name="get_view_center"></a>
-<div class="method-heading">
-<span class="method-name">get_view_center &rarr; <a href="Vector3D.html">Vector3D</a></span>
-</div>
-<div class="method-description">
-<p>
-Get the current center point of the view.
-</p>
-<p>
-<i>See Also:</i> <a href="#set_view_center">Molecule#set_view_center</a>
 </p></div>
 </div>
 
@@ -1480,9 +1520,9 @@ Invert the molecule with the given center. If group is given, only the atoms in 
 </div>
 
 <div id="method-M000284" class="method-detail">
-<a name="is_atom_hidden"></a>
+<a name="is_atom_visible"></a>
 <div class="method-heading">
-<span class="method-name">is_atom_hidden(index)       &rarr; Boolean<br />
+<span class="method-name">is_atom_visible(index)       &rarr; bool<br />
 </span>
 </div>
 <div class="method-description">
@@ -2108,7 +2148,7 @@ format).
 <div id="method-M000227" class="method-detail">
 <a name="M000227"></a>
 <div class="method-heading">
-<span class="method-name">ps_per_step = Float<br />
+<span class="method-name">self.ps_per_step = Float<br />
 </span>
 </div>
 <div class="method-description">
@@ -2608,6 +2648,20 @@ This operation is undoable.
 </div>
 </div>
 
+<div id="method-set_view_center" class="method-detail">
+<a name="set_view_center"></a>
+<div class="method-heading">
+<span class="method-name">set_view_center(vec) &rarr; self</span>
+</div>
+<div class="method-description">
+<p>
+Set the current center point of the view.
+</p>
+<p>
+<i>See Also:</i> <a href="#get_view_center">Molecule#get_view_center</a>
+</p></div>
+</div>
+
 <div id="method-set_view_rotation" class="method-detail">
 <a name="set_view_rotation"></a>
 <div class="method-heading">
@@ -2633,20 +2687,6 @@ Set the current scale for the view. For detailed description of the scale parame
 </p>
 <p>
 <i>See Also:</i> <a href="#get_view_scale">Molecule#get_view_scale</a>
-</p></div>
-</div>
-
-<div id="method-set_view_center" class="method-detail">
-<a name="set_view_center"></a>
-<div class="method-heading">
-<span class="method-name">set_view_center(vec) &rarr; self</span>
-</div>
-<div class="method-description">
-<p>
-Set the current center point of the view.
-</p>
-<p>
-<i>See Also:</i> <a href="#get_view_center">Molecule#get_view_center</a>
 </p></div>
 </div>
 
@@ -2740,14 +2780,28 @@ Set the flag whether to show the hydrogen atoms. If no argument is given, the cu
 </div>
 
 <div id="method-M000309" class="method-detail">
-<a name="M000309"></a>
+<a name="show_periodic_image"></a>
 <div class="method-heading">
-<span class="method-name">self.show_periodic_image = [amin, amax, bmin, bmax, cmin, cmax]<br />
+<span class="method-name">show_periodic_image   &rarr; [amin, amax, bmin, bmax, cmin, cmax]<br />
 </span>
 </div>
 <div class="method-description">
 <p>
-Set the number of periodic images to show along each cell axis. If the unit cell is not defined, the values are set but no visual effects are observed.
+Get the number of periodic images to show along each cell axis.
+</p>
+</div>
+</div>
+
+<div id="method-M000309" class="method-detail">
+<a name="set_show_periodic_image"></a>
+<div class="method-heading">
+<span class="method-name">self.show_periodic_image = [amin, amax, bmin, bmax, cmin, cmax]<br />
+self.show_periodic_image = bool
+</span>
+</div>
+<div class="method-description">
+<p>
+Set the number of periodic images to show along each cell axis. If the unit cell is not defined, the values are set but no visual effects are observed. If the argument is boolean, then the show/hide flag is modifed.
 </p>
 </div>
 </div>
