@@ -485,6 +485,7 @@ end
 
 def cmd_plane
   plane_settings = @plane_settings || Hash.new
+  puts plane_settings.inspect
   mol = self
   h = Dialog.run("Best-Fit Planes", "Close", nil) {
     refresh_proc = proc { |it|
@@ -540,7 +541,7 @@ def cmd_plane
     }
     set_proc = proc { |it|
       n = it[:tag][/\d/].to_i
-      sel = mol.selection
+      sel = mol.selection.dup
       if sel.count > 0
         str = sel.inspect.sub!("IntGroup[", "").sub!("]", "")
         set_value("group#{n}", str)
