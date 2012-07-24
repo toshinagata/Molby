@@ -17,3 +17,4 @@
 
 const char *gVersionString = "v0.6.3";
 const char *gCopyrightString = "Copyright (c) 2008-2011 Toshi Nagata";
+int gRevisionNumber = 0;

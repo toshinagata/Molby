@@ -30,6 +30,12 @@ static int sMoleculeUntitledCount = 0;
 
 Int gSizeOfAtomRecord = sizeof(Atom);
 
+/*  These are the pasteboard data type. Since the internal representation of the
+	pasteboard data includes binary data that may be dependent on the software version,
+    the revision number is appended to these strings on startup (See MyApp::OnInit())  */
+char *gMoleculePasteboardType = "Molecule";
+char *gParameterPasteboardType = "Parameter";
+
 #pragma mark ====== Utility function ======
 
 int

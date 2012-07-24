@@ -42,6 +42,7 @@
 		E43CCDE00EB20F0F00108D2D /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E43CCDD70EB20F0F00108D2D /* OpenGL.framework */; };
 		E43CCDE10EB20F0F00108D2D /* QuickTime.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E43CCDD80EB20F0F00108D2D /* QuickTime.framework */; };
 		E43CCDE20EB20F0F00108D2D /* System.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E43CCDD90EB20F0F00108D2D /* System.framework */; };
+		E441806315BEA63000289B87 /* revisionInfo.txt in Resources */ = {isa = PBXBuildFile; fileRef = E441806215BEA63000289B87 /* revisionInfo.txt */; };
 		E44CEED6100E1E9C0040BD51 /* ProgressFrame.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E44CEED4100E1E9C0040BD51 /* ProgressFrame.cpp */; };
 		E4513F550EED72C0009DF1F7 /* MyListCtrl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E4513F540EED72C0009DF1F7 /* MyListCtrl.cpp */; };
 		E46C904A108F491E000E984D /* MyThread.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E46C9049108F491E000E984D /* MyThread.cpp */; };
@@ -147,6 +148,7 @@
 		E43CCDD70EB20F0F00108D2D /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = /System/Library/Frameworks/OpenGL.framework; sourceTree = "<absolute>"; };
 		E43CCDD80EB20F0F00108D2D /* QuickTime.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuickTime.framework; path = /System/Library/Frameworks/QuickTime.framework; sourceTree = "<absolute>"; };
 		E43CCDD90EB20F0F00108D2D /* System.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = System.framework; path = /System/Library/Frameworks/System.framework; sourceTree = "<absolute>"; };
+		E441806215BEA63000289B87 /* revisionInfo.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = revisionInfo.txt; path = ../revisionInfo.txt; sourceTree = SOURCE_ROOT; };
 		E44CEED4100E1E9C0040BD51 /* ProgressFrame.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ProgressFrame.cpp; path = ../wxSources/ProgressFrame.cpp; sourceTree = SOURCE_ROOT; };
 		E44CEED5100E1E9C0040BD51 /* ProgressFrame.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ProgressFrame.h; path = ../wxSources/ProgressFrame.h; sourceTree = SOURCE_ROOT; };
 		E4513F530EED72C0009DF1F7 /* MyListCtrl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MyListCtrl.h; path = ../wxSources/MyListCtrl.h; sourceTree = SOURCE_ROOT; };
@@ -390,6 +392,7 @@
 				E4A0233F106B652F0094DBF8 /* InfoPlist.strings */,
 				E4A0233B106B651C0094DBF8 /* Info.plist */,
 				E42F28BF13FE1052003FC85E /* buildInfo.txt */,
+				E441806215BEA63000289B87 /* revisionInfo.txt */,
 			);
 			name = Resources;
 			sourceTree = "<group>";
@@ -477,6 +480,7 @@
 				E4A02357106B657D0094DBF8 /* Scripts in Resources */,
 				E4CFBB3B111096CF0081C481 /* amber11 in Resources */,
 				E42F28C013FE1052003FC85E /* buildInfo.txt in Resources */,
+				E441806315BEA63000289B87 /* revisionInfo.txt in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -494,7 +498,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "export TARGET_PLATFORM=MAC\nexport PATH=/usr/local/bin:$PATH\n#if [ \"$BUILD_STYLE\" = \"Release\" ]; then\n#  cd $PROJECT_DIR/..\n#  /usr/bin/ruby \"update_version.rb\"\n#  cd Documents\n#  /usr/bin/ruby \"makedoc.rb\"\n#fi\n(cd $PROJECT_DIR; sh ../record_build_date.sh)\n(cd $PROJECT_DIR; make -f ../Makefile_amber11)\n";
+			shellScript = "export TARGET_PLATFORM=MAC\nexport PATH=/usr/local/bin:$PATH\n#if [ \"$BUILD_STYLE\" = \"Release\" ]; then\n#  cd $PROJECT_DIR/..\n#  /usr/bin/ruby \"update_version.rb\"\n#  cd Documents\n#  /usr/bin/ruby \"makedoc.rb\"\n#fi\n(cd $PROJECT_DIR; sh ../record_build_date.sh --with-svn-status)\n(cd $PROJECT_DIR; make -f ../Makefile_amber11)\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 

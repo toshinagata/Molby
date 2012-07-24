@@ -2786,7 +2786,7 @@ MainView_copy(MainView *mview)
 	|| mol2 == NULL
 	|| (p = MoleculeSerialize(mol2, &len, &time)) == NULL)
 		return 2;
-	result = MoleculeCallback_writeToPasteboard(kMoleculePasteboardType, p, len);
+	result = MoleculeCallback_writeToPasteboard(gMoleculePasteboardType, p, len);
 	if (result != 0)
 		return result;
 	if (mol2 != NULL)
@@ -2828,7 +2828,7 @@ MainView_cut(MainView *mview)
 int
 MainView_isPastable(MainView *mview)
 {
-	if (MoleculeCallback_isDataInPasteboard(kMoleculePasteboardType))
+	if (MoleculeCallback_isDataInPasteboard(gMoleculePasteboardType))
 		return 1;
 	else return 0;
 }
@@ -2847,7 +2847,7 @@ MainView_paste(MainView *mview)
 	}	
 	if (!MainView_isPastable(mview))
 		return 1;
-	if (MoleculeCallback_readFromPasteboard(kMoleculePasteboardType, &p, &len) != 0)
+	if (MoleculeCallback_readFromPasteboard(gMoleculePasteboardType, &p, &len) != 0)
 		return 2;
 	if ((mol2 = MoleculeDeserialize(p, len, &time)) == NULL) {
 		free(p);
@@ -2927,9 +2927,9 @@ MainView_pasteParameters(MainView *mview)
 		return -1;
 	if (mview->mol->par == NULL)
 		mview->mol->par = ParameterNew();
-	if (!MoleculeCallback_isDataInPasteboard(kParameterPasteboardType))
+	if (!MoleculeCallback_isDataInPasteboard(gParameterPasteboardType))
 		return 1;
-	if (MoleculeCallback_readFromPasteboard(kParameterPasteboardType, (void **)&p, &len) != 0)
+	if (MoleculeCallback_readFromPasteboard(gParameterPasteboardType, (void **)&p, &len) != 0)
 		return 2;
 	pp = p;
 	newsel = IntGroupNew();
@@ -3038,7 +3038,7 @@ MainView_copyOrCutParameters(MainView *mview, int flags)
 	IntGroupRelease(ig);
 	
 	if (flags & 2) {
-		n = MoleculeCallback_writeToPasteboard(kParameterPasteboardType, pb_ptr, pb_len);
+		n = MoleculeCallback_writeToPasteboard(gParameterPasteboardType, pb_ptr, pb_len);
 		if (n != 0)
 			return n;
 	}

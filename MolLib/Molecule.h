@@ -518,8 +518,10 @@ int MoleculeLookUpCubeWithMONumber(Molecule *mp, Int mono);
 int MoleculeClearCubeAtIndex(Molecule *mp, Int index);
 int MoleculeOutputCube(Molecule *mp, Int index, const char *fname, const char *comment);
 
-#define kMoleculePasteboardType "Molecule"
-#define kParameterPasteboardType "Parameter"
+/*#define kMoleculePasteboardType "Molecule"
+#define kParameterPasteboardType "Parameter" */
+extern char *gMoleculePasteboardType;
+extern char *gParameterPasteboardType;
 
 STUB int MoleculeCallback_writeToPasteboard(const char *type, const void *data, int length);
 STUB int MoleculeCallback_readFromPasteboard(const char *type, void **dptr, int *length);

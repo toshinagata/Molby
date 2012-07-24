@@ -258,11 +258,12 @@ bool MyApp::OnInit(void)
 	/*	wxString cwd = wxGetCwd(); */
 		wxSetWorkingDirectory(dirname);
 
-		/*  Read build information (for About dialog)  */
+		/*  Read build and revision information (for About dialog)  */
 		{
+			char buf[200];
+			extern int gRevisionNumber;
 			FILE *fp = fopen("../buildInfo.txt", "r");
 			if (fp != NULL) {
-				char buf[200];
 				if (fgets(buf, sizeof(buf), fp) != NULL) {
 					char *p1 = strchr(buf, '\"');
 					char *p2 = strrchr(buf, '\"');
@@ -274,6 +275,16 @@ bool MyApp::OnInit(void)
 				}
 				fclose(fp);
 			}
+			fp = fopen("../revisionInfo.txt", "r");
+			gRevisionNumber = 0;
+			if (fp != NULL) {
+				if (fgets(buf, sizeof(buf), fp) != NULL) {
+					gRevisionNumber = strtol(buf, NULL, 0);
+				}
+				fclose(fp);
+			}
+			asprintf(&gMoleculePasteboardType, "Molecule_%d", gRevisionNumber);
+			asprintf(&gParameterPasteboardType, "Parameter_%d", gRevisionNumber);
 		}
 		
 		/*  Read atom display parameters  */
@@ -1228,9 +1239,14 @@ MyFrame::MyFrame(wxDocManager *manager, wxFrame *frame, const wxString& title,
 void MyFrame::OnAbout(wxCommandEvent& WXUNUSED(event) )
 {
 	extern const char *gVersionString, *gCopyrightString;
+	extern int gRevisionNumber;
 	char *s;
+	char *revisionString;
+	if (gRevisionNumber > 0) {
+		asprintf(&revisionString, ", revision %d", gRevisionNumber);
+	} else revisionString = "";
 	asprintf(&s, 
-			 "Molby %s\n%s\n%s\n"
+			 "Molby %s%s\n%s\n%s\n"
 			 "Including:\n"
 			 "AmberTools 1.3, http://ambermd.org/\n"
 			 "  Copyright (c) Junmei Wang, Ross C. Walker, \n"
@@ -1240,11 +1256,14 @@ void MyFrame::OnAbout(wxCommandEvent& WXUNUSED(event) )
 			 "  wxWidgets team\n"
 			 "  Portions (c) 1996 Artificial Intelligence Applications Institute\n"
 			 "ruby %s\n%s",
-			 gVersionString, gCopyrightString, sLastBuildString,
+			 gVersionString, revisionString, gCopyrightString, sLastBuildString,
 			 wxMAJOR_VERSION, wxMINOR_VERSION, wxRELEASE_NUMBER,
 			 gRubyVersion, gRubyCopyright);
 	wxString str(s, WX_DEFAULT_CONV);
     (void)wxMessageBox(str, _T("Molby"));
+	free(s);
+	if (revisionString[0] != 0)
+		free(revisionString);
 }
 
 MyFrame *GetMainFrame(void)
