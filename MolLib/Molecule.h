@@ -79,7 +79,7 @@ typedef struct Atom {
 	union {
 		Int *ptr;
 		Int data[ATOM_CONNECTS_LIMIT];
-	} connects;  /*  If nconnects >= ATOM_CONNECTS_LIMIT, memory is malloc()'ed; otherwise, data[] is used.  */
+	} connects;  /*  If nconnects > ATOM_CONNECTS_LIMIT, memory is malloc()'ed; otherwise, data[] is used.  */
 /*	Int    connects[ATOMS_MAX_CONNECTS]; */
 	Vector r;  /*  position  */
 	Vector v;  /*  velocity  */
@@ -111,8 +111,8 @@ extern Int gSizeOfAtomRecord;
 #define SYMOP_ALIVE(s) ((s.dx || s.dy || s.dz || s.sym) != 0)
 #define SYMOP_EQUAL(s1, s2) (s1.dx == s2.dx && s1.dy == s2.dy && s1.dz == s2.dz && s1.sym == s2.sym)
 
-/*  atom.connects is a union entry, including direct data for nconnects < ATOM_CONNECTS_LIMIT
-    and malloc()'ed entry for nconnects >= ATOM_CONNECTS_LIMIT. The following functions
+/*  atom.connects is a union entry, including direct data for nconnects <= ATOM_CONNECTS_LIMIT
+    and malloc()'ed entry for nconnects > ATOM_CONNECTS_LIMIT. The following functions
 	automatically take care of the memory allocation/deallocation.  */
 Int *AtomConnects(Atom *ap);
 void AtomResizeConnects(Atom *ap, Int nconnects);

@@ -4936,6 +4936,18 @@ MoleculeDeserialize(const char *data, Int length, Int *timep)
 				memmove(ap->frames, ptr, sizeof(Vector) * ap->nframes);
 				ptr += sizeof(Vector) * ap->nframes;
 			}
+		} else if (strcmp(data, "EXTCON") == 0) {
+			Atom *ap;
+			for (i = 0, ap = mp->atoms; i < mp->natoms; i++, ap = ATOM_NEXT(ap)) {
+				if (ap->nconnects <= ATOM_CONNECTS_LIMIT)
+					continue;
+				n = ap->nconnects;
+				ap->nconnects = 0;
+				ap->connects.ptr = NULL;
+				NewArray(&(ap->connects.ptr), &(ap->nconnects), sizeof(Int), n);
+				memmove(ap->connects.ptr, ptr, sizeof(Int) * n);
+				ptr += sizeof(Int) * n;
+			}
 		} else if (strcmp(data, "BOND") == 0) {
 			n = len / (sizeof(Int) * 2);
 			NewArray(&mp->bonds, &mp->nbonds, sizeof(Int) * 2, n);
@@ -5036,7 +5048,7 @@ char *
 MoleculeSerialize(Molecule *mp, Int *outLength, Int *timep)
 {
 	char *ptr, *p;
-	int len, len_all, i, naniso, nframes;
+	int len, len_all, i, naniso, nframes, nconnects;
 
 	/*  Array of atoms  */
 	len = 8 + sizeof(Int) + gSizeOfAtomRecord * mp->natoms;
@@ -5047,7 +5059,7 @@ MoleculeSerialize(Molecule *mp, Int *outLength, Int *timep)
 	*((Int *)(ptr + 8)) = gSizeOfAtomRecord * mp->natoms;
 	p = ptr + 8 + sizeof(Int);
 	memmove(p, mp->atoms, gSizeOfAtomRecord * mp->natoms);
-	naniso = nframes = 0;
+	naniso = nframes = nconnects = 0;
 	for (i = 0; i < mp->natoms; i++) {
 		Atom *ap = ATOM_AT_INDEX(p, i);
 		if (ap->aniso != NULL) {
@@ -5057,6 +5069,10 @@ MoleculeSerialize(Molecule *mp, Int *outLength, Int *timep)
 		if (ap->frames != NULL) {
 			nframes += ap->nframes;
 			ap->frames = NULL;
+		}
+		if (ap->nconnects > ATOM_CONNECTS_LIMIT) {
+			nconnects += ap->nconnects;
+			ap->connects.ptr = NULL;
 		}
 	}
 	len_all = len;
@@ -5097,6 +5113,26 @@ MoleculeSerialize(Molecule *mp, Int *outLength, Int *timep)
 			if (ap->frames != NULL) {
 				memmove(p, ap->frames, sizeof(Vector) * ap->nframes);
 				p += sizeof(Vector) * ap->nframes;
+			}
+		}
+		len_all += len;
+	}
+	
+	/*  Array of connects  */
+	if (nconnects > 0) {
+		len = 8 + sizeof(Int) + sizeof(Int) * nconnects;
+		ptr = (char *)realloc(ptr, len_all + len);
+		if (ptr == NULL)
+			goto out_of_memory;
+		p = ptr + len_all;
+		memmove(p, "EXTCON\0\0", 8);
+		*((Int *)(p + 8)) = sizeof(Int) * nconnects;
+		p += 8 + sizeof(Int);
+		for (i = 0; i < mp->natoms; i++) {
+			Atom *ap = ATOM_AT_INDEX(mp->atoms, i);
+			if (ap->nconnects > ATOM_CONNECTS_LIMIT) {
+				memmove(p, ap->connects.ptr, sizeof(Int) * ap->nconnects);
+				p += sizeof(Int) * ap->nconnects;
 			}
 		}
 		len_all += len;
