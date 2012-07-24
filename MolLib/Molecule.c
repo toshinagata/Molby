@@ -443,6 +443,7 @@ Molecule *
 MoleculeRetain(Molecule *mp)
 {
 	ObjectIncrRefCount((Object *)mp);
+	MoleculeRetainExternalObj(mp);
 	return mp;
 }
 
@@ -548,10 +549,7 @@ MoleculeRelease(Molecule *mp)
 {
 	if (mp == NULL)
 		return;
-	if (mp->exmolobj != NULL) {
-		MoleculeReleaseExternalHook(mp);
-		mp->exmolobj = NULL;
-	}
+	MoleculeReleaseExternalObj(mp);
 	if (ObjectDecrRefCount((Object *)mp) == 0) {
 		MoleculeClear(mp);
 		ObjectDealloc((Object *)mp, (Object **)&sMoleculeRoot);

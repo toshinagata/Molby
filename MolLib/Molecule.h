@@ -333,6 +333,7 @@ typedef struct Molecule {
 	
 	/*  Ruby pointer (see ruby_bind.c)  */
 	void *exmolobj;
+	Byte exmolobjProtected;
 
 } Molecule;
 
@@ -355,7 +356,6 @@ const char *MoleculeGetPath(Molecule *mol);
 Molecule *MoleculeWithName(const char *name);
 Molecule *MoleculeRetain(Molecule *mp);
 void MoleculeRelease(Molecule *mp);
-extern void MoleculeReleaseExternalHook(Molecule *mol);
 void MoleculeExchange(Molecule *mp1, Molecule *mp2);
 
 int MoleculeAddGaussianOrbitalShell(Molecule *mol, Int sym, Int nprims, Int a_idx);
@@ -522,6 +522,9 @@ int MoleculeOutputCube(Molecule *mp, Int index, const char *fname, const char *c
 #define kParameterPasteboardType "Parameter" */
 extern char *gMoleculePasteboardType;
 extern char *gParameterPasteboardType;
+
+STUB void MoleculeRetainExternalObj(Molecule *mol);
+STUB void MoleculeReleaseExternalObj(Molecule *mol);
 
 STUB int MoleculeCallback_writeToPasteboard(const char *type, const void *data, int length);
 STUB int MoleculeCallback_readFromPasteboard(const char *type, void **dptr, int *length);

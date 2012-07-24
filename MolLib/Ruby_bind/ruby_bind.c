@@ -4154,21 +4154,50 @@ MoleculeFromValue(VALUE val)
 
 static VALUE sMoleculeRetainArray = Qnil;
 
-/*  The hook function to be called from MoleculeRelease()  */
+/*  The function is called from MoleculeRelease()  */
 /*  The Ruby Molecule object is held as mol->exmolobj, and is also protected from */
 /*  GC by registering in the sMoleculeRetainArray. This causes the same Ruby */
 /*  object is always returned for the same Molecule.  */
-/*  When the reference count of the Molecule becomes 1, then the Ruby object becomes */
-/*  unprotected from GC. In this situation, the Molecule is retained only by the */
-/*  currently alive Ruby objects, and when the last Ruby Molecule object is collected */
-/*  by GC, the Molecule structure is properly released. */
+/*  When the reference count of the Molecule becomes 1, then the Ruby object is */
+/*  removed from sMoleculeRetainArray. In this situation, the Molecule is retained  */
+/*  only by the currently alive Ruby containers.  When the Ruby Molecule object is */
+/*  removed from all alive Ruby containers, the Ruby object will be collected by */
+/*  the next GC invocation, and at that time the Molecule structure is properly released. */
+
+/*  Register/unregister the exmolobj Ruby object  */
 void
-MoleculeReleaseExternalHook(Molecule *mol)
+MoleculeReleaseExternalObj(Molecule *mol)
 {
-	if (mol->base.refCount == 2) {
-		/*  The reference count will become 1: remove the Ruby object from sMoleculeRetainArray  */
+	if (mol != NULL && mol->base.refCount <= 2 && mol->exmolobjProtected == 1) {
 		rb_ary_delete(sMoleculeRetainArray, (VALUE)mol->exmolobj);
+		mol->exmolobjProtected = 0;
 	}
+}
+
+void
+MoleculeRetainExternalObj(Molecule *mol)
+{
+	if (mol != NULL && mol->base.refCount >= 2 && mol->exmolobj != NULL && mol->exmolobjProtected == 0) {
+		if (sMoleculeRetainArray == Qnil) {
+			rb_define_readonly_variable("molecules", &sMoleculeRetainArray);
+			sMoleculeRetainArray = rb_ary_new();
+		}
+		
+		rb_ary_push(sMoleculeRetainArray, (VALUE)mol->exmolobj);
+		mol->exmolobjProtected = 1;
+	}
+}
+
+/*  Release hook function for Ruby  */
+void
+MoleculeReleaseHook(Molecule *mol)
+{
+	if (mol->exmolobj != NULL) {
+		/*  No need to remove from sMoleculeRetainArray  */
+		mol->exmolobj = NULL;
+		mol->exmolobjProtected = 0;
+	}
+	MoleculeRelease(mol);
 }
 
 VALUE
@@ -4178,15 +4207,20 @@ ValueFromMolecule(Molecule *mol)
 		return Qnil;
 	if (mol->exmolobj != NULL)
 		return (VALUE)mol->exmolobj;
-	MoleculeRetain(mol);
-	mol->exmolobj = (void *)Data_Wrap_Struct(rb_cMolecule, 0, (void (*)(void *))MoleculeRelease, mol);
-	/*  Register this object to protect from GC  */
-	if (sMoleculeRetainArray == Qnil) {
-		rb_define_readonly_variable("molecules", &sMoleculeRetainArray);
-		sMoleculeRetainArray = rb_ary_new();
-	}
-	rb_ary_push(sMoleculeRetainArray, (VALUE)mol->exmolobj);
+	mol->exmolobj = (void *)Data_Wrap_Struct(rb_cMolecule, 0, (void (*)(void *))MoleculeReleaseHook, mol);
+	MoleculeRetain(mol);  /*  MoleculeRetainExternalObj() is automatically called  */
 	return (VALUE)mol->exmolobj;
+}
+
+/*  Allocator  */
+static VALUE
+s_Molecule_Alloc(VALUE klass)
+{
+	VALUE val;
+	Molecule *mol = MoleculeNew();
+	val = ValueFromMolecule(mol);
+	MoleculeRelease(mol); /*  Only the returned Ruby object retains this molecule  */
+	return val;
 }
 
 static int
@@ -4223,14 +4257,6 @@ s_Molecule_AtomGroupFromValue(VALUE self, VALUE val)
 	Data_Get_Struct(val, IntGroup, ig);
 	IntGroupRetain(ig);
 	return ig;
-}
-
-/*  Allocator  */
-static VALUE
-s_Molecule_Alloc(VALUE klass)
-{
-	Molecule *mol = MoleculeNew();
-    return Data_Wrap_Struct(klass, 0, (void (*)(void *))MoleculeRelease, mol);
 }
 
 /*
