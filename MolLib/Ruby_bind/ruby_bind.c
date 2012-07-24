@@ -4580,6 +4580,7 @@ s_Molecule_Savedcd(VALUE self, VALUE fname)
  *
  *  Write coordinates as an ORTEP file. Returns true if successful.
  */
+/*
 static VALUE
 s_Molecule_Savetep(VALUE self, VALUE fname)
 {
@@ -4592,6 +4593,7 @@ s_Molecule_Savetep(VALUE self, VALUE fname)
 		rb_raise(rb_eMolbyError, errbuf);
 	return Qtrue;
 }
+*/
 
 /*  load([ftype, ] fname, ...)  */
 static VALUE
@@ -9438,7 +9440,7 @@ Init_Molby(void)
     rb_define_alias(rb_cMolecule, "savepsfx", "savepsf");
     rb_define_method(rb_cMolecule, "savepdb", s_Molecule_Savepdb, 1);
     rb_define_method(rb_cMolecule, "savedcd", s_Molecule_Savedcd, 1);
-    rb_define_method(rb_cMolecule, "savetep", s_Molecule_Savetep, 1);
+/*    rb_define_method(rb_cMolecule, "savetep", s_Molecule_Savetep, 1); */
     rb_define_method(rb_cMolecule, "name", s_Molecule_Name, 0);
 	rb_define_method(rb_cMolecule, "set_name", s_Molecule_SetName, 1);
     rb_define_method(rb_cMolecule, "path", s_Molecule_Path, 0);

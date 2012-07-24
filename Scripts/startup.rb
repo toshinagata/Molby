@@ -48,5 +48,6 @@ load "commands.rb"
 load "md.rb"
 load "uff.rb"
 load "gamess.rb"
+load "crystal.rb"
 
 GC.start
