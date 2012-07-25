@@ -541,7 +541,7 @@ def cmd_plane
     }
     set_proc = proc { |it|
       n = it[:tag][/\d/].to_i
-      sel = mol.selection.dup
+      sel = mol.selection
       if sel.count > 0
         str = sel.inspect.sub!("IntGroup[", "").sub!("]", "")
         set_value("group#{n}", str)
@@ -592,6 +592,7 @@ def cmd_plane
     )
     refresh_proc.call(item_with_tag("refresh1"))
     refresh_proc.call(item_with_tag("refresh2"))
+    refresh_proc.call(item_with_tag("refresh3"))
   }
   @plane_settings = plane_settings
 end

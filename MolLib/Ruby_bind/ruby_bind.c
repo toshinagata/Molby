@@ -6575,7 +6575,7 @@ s_Molecule_SetUndoEnabled(VALUE self, VALUE val)
  *  call-seq:
  *     selection       -> IntGroup
  *
- *  Returns the current selection. The returned value is frozen.
+ *  Returns the current selection.
  */
 static VALUE
 s_Molecule_Selection(VALUE self)
@@ -6585,11 +6585,12 @@ s_Molecule_Selection(VALUE self)
 	VALUE val;
     Data_Get_Struct(self, Molecule, mol);
 	if (mol != NULL && (ig = MoleculeGetSelection(mol)) != NULL) {
+		ig = IntGroupNewFromIntGroup(ig);  /*  Duplicate, so that the change from GUI does not affect the value  */
 		val = ValueFromIntGroup(ig);
+		IntGroupRelease(ig);
 	} else {
 		val = IntGroup_Alloc(rb_cIntGroup);
 	}
-	rb_obj_freeze(val);
 	return val;
 }
 

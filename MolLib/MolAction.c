@@ -1088,8 +1088,9 @@ s_MolActionSetSelection(Molecule *mol, MolAction *action, MolAction **actp)
 	ig2 = MoleculeGetSelection(mol);
 	if (ig2 != NULL)
 		IntGroupRetain(ig2);  /*  To avoid releasing during MoleculeSetSelection() */
-	ig = action->args[0].u.igval;
+	ig = IntGroupNewFromIntGroup(action->args[0].u.igval);  /*  Duplicate so that selection change does not affect the original value */
 	MoleculeSetSelection(mol, ig);
+	IntGroupRelease(ig);
 	*actp = MolActionNew(gMolActionSetSelection, ig2);
 	if (ig2 != NULL)
 		IntGroupRelease(ig2);
