@@ -8944,6 +8944,7 @@ MoleculeSetCell(Molecule *mp, Double a, Double b, Double c, Double alpha, Double
 		if (mp->cell != NULL) {
 			memmove(&cmat, &(mp->cell->tr), sizeof(Transform));
 			free(mp->cell);
+			mp->needsMDRebuild = 1;
 		} else {
 			cmat[0] = cmat[4] = cmat[8] = 1.0;
 		}
@@ -8957,6 +8958,7 @@ MoleculeSetCell(Molecule *mp, Double a, Double b, Double c, Double alpha, Double
 				Panic("Low memory during setting cell parameters");
 			mp->cell = cp;
 			cmat[0] = cmat[4] = cmat[8] = 1.0;
+			mp->needsMDRebuild = 1;
 		} else {
 		/*	if (mp->is_xtal_coord)
 				memmove(&cmat, &(cp->tr), sizeof(Transform)); */
@@ -9180,8 +9182,10 @@ MoleculeSetPeriodicBox(Molecule *mp, const Vector *ax, const Vector *ay, const V
 	if (mp == NULL)
 		return 0;
 	if (ax == NULL) {
-		if (mp->cell != NULL)
+		if (mp->cell != NULL) {
 			free(mp->cell);
+			mp->needsMDRebuild = 1;
+		}
 		mp->cell = NULL;
 	/*	mp->is_xtal_coord = 0; */
 		return 0;
@@ -9195,11 +9199,16 @@ MoleculeSetPeriodicBox(Molecule *mp, const Vector *ax, const Vector *ay, const V
 	if (MoleculeCalculateCellFromAxes(&b, 1) < 0)
 		return -1;
 	__MoleculeLock(mp);
-	if (mp->cell != NULL) {
+	if (mp->cell == NULL) {
+		mp->needsMDRebuild = 1;
+	} else {
 		if (mp->cell->has_sigma) {
 			/*  Keep the sigma  */
 			b.has_sigma = 1;
 			memmove(b.cellsigma, mp->cell->cellsigma, sizeof(mp->cell->cellsigma));
+		}
+		if ((b.flags[0] != mp->cell->flags[0]) || (b.flags[1] != mp->cell->flags[1]) || (b.flags[2] != mp->cell->flags[2])) {
+			mp->needsMDRebuild = 1;
 		}
 		free(mp->cell);
 	}
