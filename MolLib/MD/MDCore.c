@@ -2284,9 +2284,9 @@ md_wrap_coordinates(MDArena *arena)
 			/*  Calculate the offset from the position of the center of mass */
 			Vector r = arena->fragment_info[n].pos;
 			TransformVec(&r, arena->mol->cell->rtr, &r);
-			if (ap->symop.alive && ap->symop.sym > 0 && ap->symop.sym <= arena->mol->nsyms) {
+			if (ap->symop.alive && ap->symop.sym > 0 && ap->symop.sym < arena->mol->nsyms) {
 				/*  The translational components of symop are not included  */
-				TransformVec(&r, arena->mol->syms[ap->symop.sym - 1], &r);
+				TransformVec(&r, SYMMETRY_AT_INDEX(arena->mol->syms, ap->symop.sym - 1), &r);
 			}
 			ap->wrap_dx = (arena->periodic_a ? -floor(r.x) : 0);
 			ap->wrap_dy = (arena->periodic_b ? -floor(r.y) : 0);
@@ -2873,7 +2873,7 @@ s_md_modify_cell_parameters(MDArena *arena, Double lambda)
 		cell->axes[1].y = arena->old_cell_pars[4] + arena->cell_vels[4] * lambda;
 		cell->axes[1].z = arena->old_cell_pars[5] + arena->cell_vels[5] * lambda;
 	}
-	if (arena->periodic_b) {
+	if (arena->periodic_c) {
 		cell->axes[2].x = arena->old_cell_pars[6] + arena->cell_vels[6] * lambda;
 		cell->axes[2].y = arena->old_cell_pars[7] + arena->cell_vels[7] * lambda;
 		cell->axes[2].z = arena->old_cell_pars[8] + arena->cell_vels[8] * lambda;
@@ -2945,8 +2945,8 @@ md_minimize_cell_step(MDArena *arena)
 		return 1;  /*  Gradient is sufficiently small  */
 	
 	/*  Proceed along cell_vels[] until the energy increases  */
-	low_limit = arena->coordinate_convergence / arena->max_gradient;
-	high_limit = 0.1 / arena->max_gradient;
+	low_limit = arena->coordinate_convergence / arena->cell_max_gradient;
+	high_limit = 0.1 / arena->cell_max_gradient;
 	low = 0.0;
 	low_energy = arena->total_energy;
 	lambda = high_limit;

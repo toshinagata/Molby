@@ -110,6 +110,7 @@ extern Int gSizeOfAtomRecord;
 #define ATOM_PREV(p)         ((Atom *)((char *)(p) - gSizeOfAtomRecord))
 #define SYMOP_ALIVE(s) ((s.dx || s.dy || s.dz || s.sym) != 0)
 #define SYMOP_EQUAL(s1, s2) (s1.dx == s2.dx && s1.dy == s2.dy && s1.dz == s2.dz && s1.sym == s2.sym)
+#define SYMMETRY_AT_INDEX(p, i) (*((i) == 0 ? &gIdentityTransform : &p[i]))
 
 /*  atom.connects is a union entry, including direct data for nconnects <= ATOM_CONNECTS_LIMIT
     and malloc()'ed entry for nconnects > ATOM_CONNECTS_LIMIT. The following functions

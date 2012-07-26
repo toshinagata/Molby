@@ -123,6 +123,8 @@ void TransformForInversion(Transform dst, const Vector *center);
 int  TransformForReflection(Transform dst, const Vector *axis, const Vector *center);
 int  TransformForRotation(Transform dst, const Vector *axis, Double angle, const Vector *center);
 
+extern Transform gIdentityTransform;
+
 /*  Wrapper struct for CLAPACK routines  */
 typedef struct LAMatrix {
 	__CLPK_integer row, column;

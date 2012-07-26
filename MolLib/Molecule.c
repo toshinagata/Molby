@@ -358,8 +358,7 @@ MoleculeInitWithMolecule(Molecule *mp2, const Molecule *mp)
 		memmove(mp2->cell, mp->cell, sizeof(XtalCell));
 	}
 	if (mp->nsyms > 0) {
-		mp2->nsyms = mp->nsyms;
-		mp2->syms = (Transform *)calloc(sizeof(Transform), mp2->nsyms);
+		NewArray(&(mp2->syms), &(mp2->nsyms), sizeof(Transform), mp->nsyms);
 		memmove(mp2->syms, mp->syms, sizeof(Transform) * mp2->nsyms);
 	}
 	mp2->useFlexibleCell = mp->useFlexibleCell;
@@ -6222,9 +6221,9 @@ MoleculeGetTransformForSymop(Molecule *mp, Symop symop, Transform *tf, int is_ca
 	Transform t;
 	if (mp == NULL || mp->cell == NULL)
 		return -1;
-	if (symop.sym >= mp->nsyms)
+	if (symop.sym >= mp->nsyms && symop.sym != 0)
 		return -2;
-	memmove(*tf, mp->syms[symop.sym], sizeof(Transform));
+	memmove(*tf, SYMMETRY_AT_INDEX(mp->syms, symop.sym), sizeof(Transform));
 	(*tf)[9] += symop.dx;
 	(*tf)[10] += symop.dy;
 	(*tf)[11] += symop.dz;
@@ -6283,17 +6282,17 @@ MoleculeTransformBySymop(Molecule *mp, const Vector *vpin, Vector *vpout, Symop 
 {
 	if (mp == NULL)
 		return 1;
-	if (symop.sym >= mp->nsyms)
+	if (symop.sym >= mp->nsyms && symop.sym != 0)
 		return 2;
 	if (mp->cell != NULL /* && !mp->is_xtal_coord */) {
 		TransformVec(vpout, mp->cell->rtr, vpin);
-		TransformVec(vpout, mp->syms[symop.sym], vpout);
+		TransformVec(vpout, SYMMETRY_AT_INDEX(mp->syms, symop.sym), vpout);
 		vpout->x += symop.dx;
 		vpout->y += symop.dy;
 		vpout->z += symop.dz;
 		TransformVec(vpout, mp->cell->tr, vpout);
 	} else {
-		TransformVec(vpout, mp->syms[symop.sym], vpin);
+		TransformVec(vpout, SYMMETRY_AT_INDEX(mp->syms, symop.sym), vpin);
 		vpout->x += symop.dx;
 		vpout->y += symop.dy;
 		vpout->z += symop.dz;
@@ -9157,7 +9156,7 @@ MoleculeSetAnisoBySymop(Molecule *mp, int idx)
 		memmove(ap->aniso, ap2->aniso, sizeof(Aniso));
 		return;
 	}
-	memmove(t1, mp->syms[ap->symop.sym], sizeof(Transform));
+	memmove(t1, SYMMETRY_AT_INDEX(mp->syms, ap->symop.sym), sizeof(Transform));
 	t1[9] = t1[10] = t1[11] = 0.0;
 	memset(t2, 0, sizeof(Transform));
 	t2[0] = ap2->aniso->bij[0];

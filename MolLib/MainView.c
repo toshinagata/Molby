@@ -1207,7 +1207,7 @@ drawAtom(MainView *mview, int i1, int selected, const Vector *dragOffset, const 
 		ap = ATOM_AT_INDEX(mview->mol->atoms, ep->index);
 		an1 = ap->atomicNumber;
 		r1 = ap->r;
-		trp = &(mview->mol->syms[ep->symop]);
+		trp = &(SYMMETRY_AT_INDEX(mview->mol->syms, ep->symop));
 		if (/* !mview->mol->is_xtal_coord && */ mview->mol->cell != NULL) {
 			TransformVec(&r1, mview->mol->cell->rtr, &r1);
 			TransformVec(&r1, *trp, &r1);
@@ -1346,7 +1346,7 @@ drawBond(MainView *mview, int i1, int i2, int selected, int selected2, int draft
 			ap = ATOM_AT_INDEX(mview->mol->atoms, ep->index);
 			an[i] = ap->atomicNumber;
 			r[i] = ap->r;
-			TransformVec(&r[i], mview->mol->syms[ep->symop], &r[i]);
+			TransformVec(&r[i], SYMMETRY_AT_INDEX(mview->mol->syms, ep->symop), &r[i]);
 			VecInc(r[i], ep->dr);
 		} else {
 			ap = ATOM_AT_INDEX(mview->mol->atoms, in);

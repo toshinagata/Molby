@@ -936,7 +936,7 @@ s_calc_nonbonded_force_sub(MDArena *arena, Double *energies, Double *eenergies, 
 				rij2 = ATOM_AT_INDEX(arena->mol->atoms, ap2->symbase)->r;
 			else rij2 = ap2->r;
 			TransformVec(&rr, cell->rtr, &rij2);
-			memmove(symtr, arena->mol->syms[ap2->symop.sym], sizeof(Transform));
+			memmove(symtr, SYMMETRY_AT_INDEX(arena->mol->syms, ap2->symop.sym), sizeof(Transform));
 			symtr[9] += ap2->symop.dx + vl->symop.dx;
 			symtr[10] += ap2->symop.dy + vl->symop.dy;
 			symtr[11] += ap2->symop.dz + vl->symop.dz;

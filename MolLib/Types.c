@@ -341,6 +341,8 @@ TransformForRotation(Transform dst, const Vector *axis, Double angle, const Vect
 	return 0;
 }
 
+Transform gIdentityTransform = {1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0};
+
 #pragma mark ==== LAMatrix ====
 
 typedef struct LAMatrixTempRecord {
@@ -610,7 +612,9 @@ NewArray(void *base, Int *count, int item_size, int nitems)
 	void **bp = (void *)base;
 	*bp = NULL;
 	*count = 0;
-	return AssignArray(base, count, item_size, nitems - 1, NULL);
+	if (nitems > 0)
+		return AssignArray(base, count, item_size, nitems - 1, NULL);
+	else return NULL;
 }
 
 /*  Insert items to an array.  */
