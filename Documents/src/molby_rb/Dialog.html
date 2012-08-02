@@ -35,7 +35,7 @@
 <a name="description-overview"></a>
 <h4>Overview</h4>
 <p>
-The class <a href="Dialog.html">Dialog</a> is a utility class, which is independent from the rest of the Ruby functionality of Molby. It provides a simple modal dialog on the screen, and let the user to enter information by use of controls, such as text fields, checkboxes, popup menus, etc. The class also provides system-standard open/save dialogs as class methods <a href="#M000097">Dialog#open_panel</a> and <a href="#M000096">Dialog#save_panel</a>.
+The class <a href="Dialog.html">Dialog</a> is a utility class, which is independent from the rest of the Ruby functionality of Molby. It provides a simple dialog on the screen, and let the user to enter information by use of controls, such as text fields, checkboxes, popup menus, etc. The class also provides system-standard open/save dialogs as class methods <a href="#M000097">Dialog#open_panel</a> and <a href="#M000096">Dialog#save_panel</a>.
 </p>
 <h4>How Dialog works</h4>
 <p>
@@ -44,10 +44,10 @@ The steps for using Dialog are as follows:
 <ul>
 <li>Create a Dialog object by <a href="#M000083">Dialog#new</a>. This accepts up to three arguments; the title of the dialog, the title of the "OK" button (optional), the title of the "Cancel" button (optional).</li>
 <li>Create dialog items by <a href="#M000087">Dialog#item</a>. If necessary, use <a href="#M000088">Dialog#layout</a> to place the items in a table-like arrangement.</li>
-<li>Call <a href="#M000086">Dialog#run</a>. The dialog runs modally, and returns a hash containing the values for the "tagged" items. The returned hash also contains an entry with the key <code>:status</code> and the value 0 (OK) or 1 (Cancel).</li>
+<li>Call <a href="#M000086">Dialog#run</a> or <a href="#show">Dialog#show</a>. In <a href="#M000086">Dialog#run</a>, the dialog runs modally, and returns a hash containing the values for the "tagged" items. The returned hash also contains an entry with the key <code>:status</code> and the value 0 (OK) or 1 (Cancel). In <a href="#show">Dialog#show</a>, the dialog becomes modeless, and stays on screen until <a href="#hide">Dialog#hide</a> is invoked.</li>
 </ul>
 <p>
-<a href="Dialog.html">Dialog</a> also implements <a href="#M000082">run</a> as a class method, which performs these three steps in turn. A typical use of <a href="Dialog.html#M000082">Dialog#run</a> is shown below.
+<a href="Dialog.html">Dialog</a> also implements <a href="#M000082">run</a> as a class method, which allows the creation of dialog items within a block. A typical use of <a href="Dialog.html#M000082">Dialog#run</a> is shown below.
 </p>
 <pre>hash = Dialog.run("Sample Dialog", "OK", "Cancel") {
   layout(2,
@@ -84,7 +84,7 @@ Some dialog items perform actions when they are clicked and/or their values are 
 Create a new dialog. Title1, title2, and title3 are the titles for the dialog, the first button, and the second button, respectively. If nil is explicitly given as title2 and/or title3, the corresponding buttons are hidden.
 </p>
 <p>
-If a block is given, it is executed in the context of the created Dialog object (i.e. the Dialog object becomes self in the block).
+If a block is given, it is executed in the context of the created Dialog object (<i>i.e.</i> the Dialog object becomes <code>self</code> in the block).
 </p>
 </div>
 </div>
@@ -165,6 +165,18 @@ Iterate the given block with each <a href="DialogItem.html">DialogItem</a> as th
 <div class="method-description">
 <p>
 End the modal session (started by <a href="#M000086">Dialog#run</a>). The argument n will be available in the hash returned from <a href="#M000086">Dialog#run</a>, as the value for the key <code>:status</code>.
+</p>
+</div>
+</div>
+
+<div id="method-M000085" class="method-detail">
+<a name="hide"></a>
+<div class="method-heading">
+<span class="method-name">hide &rarr; self</span>
+</div>
+<div class="method-description">
+<p>
+Hide the modeless dialog. This is to be used with <a href="#show">Dialog#show</a> in pairs. Mixing Dialog#hide and <a href="#M000086">Dialog#run</a> will lead to unpredictable results, including crash.
 </p>
 </div>
 </div>
@@ -291,6 +303,57 @@ Set the attributes of the dialog item designated by the index or the tag. The at
 <div class="method-description">
 <p>
 Equivalent to set_attr(tag, :value=>value), except that value is returned instead of the <a href="DialogItem.html">DialogItem</a>.
+</p>
+</div>
+</div>
+
+<div id="method-M000085" class="method-detail">
+<a name="show"></a>
+<div class="method-heading">
+<span class="method-name">show &rarr; self</span>
+</div>
+<div class="method-description">
+<p>
+Show the dialog modelessly. This is intended to be used with <a href="#hide">Dialog#hide</a> in pairs.
+</p>
+<p>
+To avoid garbage collection by Ruby interpreter, the dialog being shown is registered in a global variable, and unregistered when it is hidden. 
+</p>
+<p>
+Mixing Dialog#show and <a href="#M000086">Dialog#run</a> will lead to unpredictable results, including crash.
+</p>
+</div>
+</div>
+
+<div id="method-M000085" class="method-detail">
+<a name="start_timer"></a>
+<div class="method-heading">
+<span class="method-name">start_timer(interval, action = nil) &rarr; self</span>
+</div>
+<div class="method-description">
+<p>
+Start dialog-specific interval timer. The timer interval is described in seconds (floating point is allowed, however the resolution is not better than milliseconds on wxWidgets). If the timer is already running, it is stopped before new timer is run.
+</p>
+<p>
+The action is either a symbol (method name) or a Proc object. If no action is given, then the last set value is used.
+</p>
+<p>
+<i>See Also:</i> <a href="#stop_timer">Dialog#stop_timer</a>
+</p>
+</div>
+</div>
+
+<div id="method-M000085" class="method-detail">
+<a name="stop_timer"></a>
+<div class="method-heading">
+<span class="method-name">stop_timer &rarr; self</span>
+</div>
+<div class="method-description">
+<p>
+Stop dialog-specific interval timer. Do nothing if no timer is running.
+</p>
+<p>
+<i>See Also:</i> <a href="#start_timer">Dialog#start_timer</a>
 </p>
 </div>
 </div>
