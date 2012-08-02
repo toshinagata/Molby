@@ -600,10 +600,10 @@ periodic along the axis. If no unit cell is defined, nil is returned.
 <a name="M000239"></a>
 <div class="method-heading">
   <span class="method-name">
-self.box = [avec, bvec, cvec, origin = [0, 0, 0], flags = [1, 1, 1]]<br />
+self.box = [avec, bvec, cvec, origin = [0, 0, 0], flags = [1, 1, 1], convert_coord = nil]<br />
 self.box = [d, origin = [0, 0, 0]]<br />
 self.box = nil<br />
-set_box(avec, bvec, cvec, origin = [0, 0, 0], flags = [1, 1, 1])<br />
+set_box(avec, bvec, cvec, origin = [0, 0, 0], flags = [1, 1, 1], convert_coord = nil)<br />
 set_box(d, origin = [0, 0, 0])<br />
 set_box<br />
 </span>
@@ -615,7 +615,7 @@ bvec, and cvec can be either a <a href="Vector3D.html">Vector3D</a> or a
 number. If it is a number, the x/y/z axis vector is multiplied with the
 given number and used as the cell axis
 vector. Flags, if present, is a 3-member array of Integers defining whether
-the system is periodic along the axis.
+the system is periodic along the axis. If convert_coord is true (neither nil nor false), the coordinates of atoms are converted so that the fractional cooordinates remain the same.
 </p>
 <p>
 In the second form, an isotropic box with cell-length d is set.
@@ -707,7 +707,7 @@ set_cell([a, b, c, alpha, beta, gamma [, sig_a, sig_b, sig_c, sig_alpha, sig_bet
 <div class="method-description">
 <p>
 Set the unit cell parameters. Alpha/beta/gamma are in degree. If the right-hand value (or the first argument) is nil, then clear the current unit cell. If the second argument is given as non-nil, then
-the coordinates are transformed so that the cartesian coordinates remain the same. If the cell parameters are given as an array of 12 floats, then the second half of the array is to represent the sigma value (that are common in crystallographic data). This operation is undoable.
+the coordinates are transformed so that the fractional coordinates remain the same. If the cell parameters are given as an array of 12 floats, then the second half of the array is to represent the sigma value (that are common in crystallographic data). This operation is undoable.
 </p>
 <p>
 <i>See Also:</i> <a href="Molecule.html#M000238">Molecule#box</a>, <a href="Molecule.html#M000239">Molecule#box=</a>, <a href="Molecule.html#M000235">Molecule#cell</a>

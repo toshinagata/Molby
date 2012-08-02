@@ -632,7 +632,7 @@ MoleculeView::SelectTable(int idx)
 		MoleculeLock(mview->mol);
 		MainView_refreshTable(mview);
 		MoleculeUnlock(mview->mol);
-		if (idx == kMainViewParameterTableIndex || idx == kMainViewMOTableIndex) {
+		if (idx >= kMainViewParameterTableIndex) {
 			MainViewCallback_setTableSelection(mview, NULL);
 		}
 	}

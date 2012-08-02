@@ -121,7 +121,7 @@ s_MDArena_Run_or_minimize(VALUE self, VALUE arg, int minimize)
 				vp[1] = arena->mol->cell->axes[1];
 				vp[2] = arena->mol->cell->axes[2];
 				vp[3] = arena->mol->cell->origin;
-				MolActionCreateAndPerform(arena->xmol, gMolActionSetBox, vp, vp + 1, vp + 2, vp + 3, -1);
+				MolActionCreateAndPerform(arena->xmol, gMolActionSetBox, vp, vp + 1, vp + 2, vp + 3, -1, 0);
 			}
 		}
 		/*  Copy forces (this is valid even for "zero-step" run)  */

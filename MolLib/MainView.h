@@ -72,7 +72,8 @@ enum {
 	kMainViewDihedralTableIndex = 3,
 	kMainViewImproperTableIndex = 4,
 	kMainViewParameterTableIndex = 5,
-	kMainViewMOTableIndex = 6
+	kMainViewUnitCellTableIndex = 6,
+	kMainViewMOTableIndex = 7
 };
 
 enum {

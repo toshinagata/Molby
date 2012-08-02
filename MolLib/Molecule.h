@@ -375,7 +375,7 @@ void AtomRefRelease(AtomRef *aref);
 void MoleculeSetCell(Molecule *mp, Double a, Double b, Double c, Double alpha, Double beta, Double gamma, int convertCoordinates);
 void MoleculeSetAniso(Molecule *mp, int n1, int type, Double x11, Double x22, Double x33, Double x12, Double x13, Double x23, const Double *sigmap);
 void MoleculeSetAnisoBySymop(Molecule *mp, int idx);
-int MoleculeSetPeriodicBox(Molecule *mp, const Vector *ax, const Vector *ay, const Vector *az, const Vector *ao, const char *periodic);
+int MoleculeSetPeriodicBox(Molecule *mp, const Vector *ax, const Vector *ay, const Vector *az, const Vector *ao, const char *periodic, int convertCoordinates);
 
 int MoleculeReadCoordinatesFromFile(Molecule *mp, const char *fname, const char *ftype, char *errbuf, int errbufsize);
 int MoleculeReadCoordinatesFromPdbFile(Molecule *mp, const char *fname, char *errbuf, int errbufsize);

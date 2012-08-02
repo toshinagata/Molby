@@ -1163,7 +1163,7 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 				cbuf[0][0] = ibuf[0];
 				cbuf[0][1] = ibuf[1];
 				cbuf[0][2] = ibuf[2];
-				MoleculeSetPeriodicBox(mp, vs, vs + 1, vs + 2, vs + 3, cbuf[0]);
+				MoleculeSetPeriodicBox(mp, vs, vs + 1, vs + 2, vs + 3, cbuf[0], 0);
 				if (has_sigma) {
 					if (ReadLine(buf, sizeof buf, fp, &lineNumber) <= 0) {
 						snprintf(errbuf, errbufsize, "line %d: sigma for cell parameters are missing", lineNumber);
@@ -3526,7 +3526,7 @@ MoleculeReadCoordinatesFromDcdFile(Molecule *mp, const char *fname, char *errbuf
 			vpp[3].x = vpp[3].y = vpp[3].z = 0.0;
 			if (mp->cell == NULL) {
 				/*  Create periodicity if not present  */
-				MolActionCreateAndPerform(mp, gMolActionSetBox, &vpp[0], &vpp[1], &vpp[2], &vpp[3], 7);
+				MolActionCreateAndPerform(mp, gMolActionSetBox, &vpp[0], &vpp[1], &vpp[2], &vpp[3], 7, 0);
 			}
 		}
 	}
@@ -3602,7 +3602,7 @@ MoleculeReadExtendedInfo(Molecule *mp, const char *fname, char *errbuf, int errb
 				vv = mp->cell->origin;
 			else
 				vv.x = vv.y = vv.z = 0.0;
-			MoleculeSetPeriodicBox(mp, &v[0], &v[1], &v[2], &vv, flags);
+			MoleculeSetPeriodicBox(mp, &v[0], &v[1], &v[2], &vv, flags, 0);
 		} else if (strncmp(buf, "Bounding box origin:", 20) == 0) {
 			if (mp->cell != NULL) {
 				v[0] = mp->cell->axes[0];
@@ -3623,7 +3623,7 @@ MoleculeReadExtendedInfo(Molecule *mp, const char *fname, char *errbuf, int errb
 			vv.x = d[0];
 			vv.y = d[1];
 			vv.z = d[2];
-			MoleculeSetPeriodicBox(mp, &v[0], &v[1], &v[2], &vv, flags);
+			MoleculeSetPeriodicBox(mp, &v[0], &v[1], &v[2], &vv, flags, 0);
 		}
 	}
 	fclose(fp);
@@ -8939,16 +8939,16 @@ MoleculeSetCell(Molecule *mp, Double a, Double b, Double c, Double alpha, Double
 		return;
 	__MoleculeLock(mp);
 	memset(&cmat, 0, sizeof(Transform));
+	if (mp->cell != NULL)
+		memmove(&cmat, &(mp->cell->rtr), sizeof(Transform));
+	else
+		memmove(&cmat, &gIdentityTransform, sizeof(Transform));
 	if (a == 0.0) {
 		if (mp->cell != NULL) {
-			memmove(&cmat, &(mp->cell->tr), sizeof(Transform));
 			free(mp->cell);
 			mp->needsMDRebuild = 1;
-		} else {
-			cmat[0] = cmat[4] = cmat[8] = 1.0;
 		}
 		mp->cell = NULL;
-	/*	mp->is_xtal_coord = 0; */
 	} else {
 		cp = mp->cell;
 		if (cp == NULL) {
@@ -8956,13 +8956,8 @@ MoleculeSetCell(Molecule *mp, Double a, Double b, Double c, Double alpha, Double
 			if (cp == NULL)
 				Panic("Low memory during setting cell parameters");
 			mp->cell = cp;
-			cmat[0] = cmat[4] = cmat[8] = 1.0;
 			mp->needsMDRebuild = 1;
-		} else {
-		/*	if (mp->is_xtal_coord)
-				memmove(&cmat, &(cp->tr), sizeof(Transform)); */
 		}
-	/*	mp->is_xtal_coord = 1; */
 		/*  alpha, beta, gamma are in degree  */
 		cp->cell[0] = a;
 		cp->cell[1] = b;
@@ -9006,7 +9001,7 @@ MoleculeSetCell(Molecule *mp, Double a, Double b, Double c, Double alpha, Double
 		cp->origin.x = cp->origin.y = cp->origin.z = 0.0;
 		cp->flags[0] = cp->flags[1] = cp->flags[2] = 1;
 		MoleculeCalculateCellFromAxes(cp, 0);
-		TransformMul(cmat, cp->rtr, cmat);
+		TransformMul(cmat, cp->tr, cmat);
 	}
 	
 	/*  Update the coordinates (if requested)  */
@@ -9172,23 +9167,27 @@ MoleculeSetAnisoBySymop(Molecule *mp, int idx)
 }
 
 int
-MoleculeSetPeriodicBox(Molecule *mp, const Vector *ax, const Vector *ay, const Vector *az, const Vector *ao, const char *periodic)
+MoleculeSetPeriodicBox(Molecule *mp, const Vector *ax, const Vector *ay, const Vector *az, const Vector *ao, const char *periodic, int convertCoordinates)
 {
 	static Vector zeroVec = {0, 0, 0};
-/*	static Transform identityTransform = {1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0}; */
 	XtalCell b;
-	int n;
+	Transform cmat;
+	int i, n;
+	Atom *ap;
 	if (mp == NULL)
 		return 0;
+	if (mp->cell != NULL)
+		memmove(&cmat, &(mp->cell->rtr), sizeof(Transform));
+	else
+		memmove(&cmat, &gIdentityTransform, sizeof(Transform));
 	if (ax == NULL) {
 		if (mp->cell != NULL) {
 			free(mp->cell);
 			mp->needsMDRebuild = 1;
 		}
 		mp->cell = NULL;
-	/*	mp->is_xtal_coord = 0; */
 		return 0;
-	}
+	}	
 	memset(&b, 0, sizeof(b));
 	b.axes[0] = (ax != NULL ? *ax : zeroVec);
 	b.axes[1] = (ay != NULL ? *ay : zeroVec);
@@ -9214,9 +9213,25 @@ MoleculeSetPeriodicBox(Molecule *mp, const Vector *ax, const Vector *ay, const V
 	mp->cell = (XtalCell *)calloc(sizeof(XtalCell), 1);
 	if (mp->cell != NULL) {
 		memmove(mp->cell, &b, sizeof(XtalCell));
+		TransformMul(cmat, b.tr, cmat);
+		/*  Update the coordinates (if requested)  */
+		if (convertCoordinates) {
+			for (i = 0, ap = mp->atoms; i < mp->natoms; i++, ap = ATOM_NEXT(ap)) {
+				TransformVec(&(ap->r), cmat, &(ap->r));
+			}
+		}
+		
+		/*  Update the anisotropic parameters  */
+		for (i = 0, ap = mp->atoms; i < mp->natoms; i++, ap = ATOM_NEXT(ap)) {
+			Aniso *anp = ap->aniso;
+			if (anp != NULL) {
+				MoleculeSetAniso(mp, i, 0, anp->bij[0], anp->bij[1], anp->bij[2], anp->bij[3], anp->bij[4], anp->bij[5], anp->bsig);
+			}
+		}
 		n = 0;
 	} else n = -2;  /*  Out of memory  */
 	__MoleculeUnlock(mp);
+	sMoleculeNotifyChangeAppearance(mp);
 	return n;
 }
 
@@ -9715,7 +9730,7 @@ MoleculeSelectFrame(Molecule *mp, int frame, int copyback)
 		}
 		/*  Set the cell from the frame array  */
 		if (frame != cframe && frame >= 0 && frame < mp->nframe_cells) {
-			MoleculeSetPeriodicBox(mp, &mp->frame_cells[frame * 4], &mp->frame_cells[frame * 4 + 1], &mp->frame_cells[frame * 4 + 2], &mp->frame_cells[frame * 4 + 3], mp->cell->flags);
+			MoleculeSetPeriodicBox(mp, &mp->frame_cells[frame * 4], &mp->frame_cells[frame * 4 + 1], &mp->frame_cells[frame * 4 + 2], &mp->frame_cells[frame * 4 + 3], mp->cell->flags, 0);
 			modified = 1;
 			MoleculeAmendBySymmetry(mp, NULL, NULL, NULL);
 		}

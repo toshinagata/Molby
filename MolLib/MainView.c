@@ -249,7 +249,8 @@ MainView_refreshCachedInfo(MainView *mview)
 				j++;
 			}
 		}
-	} else if (mview->tableIndex == kMainViewParameterTableIndex) {  /* Parameter infos */
+	} else if (mview->tableIndex == kMainViewParameterTableIndex ||  /* Parameter infos */
+			   mview->tableIndex == kMainViewUnitCellTableIndex) {   /* Unit cell infos */
 		/*  Do nothing (tableCache will not be used)  */
 	} else if (mview->tableIndex == kMainViewMOTableIndex) {  /* MO infos  */
 		/*  Really no need to cache info, but create it anyway to simplify code  */
@@ -3081,14 +3082,17 @@ static ColumnInfoRecord sImproperColumns[] = {
 static ColumnInfoRecord sParameterColumns[] = {
 {"class", 5, 0}, {"type", 9, 0}, {"", 6, 0}, {"", 6, 0}, {"", 6, 0}, {"", 6, 0}, {"", 6, 0}, {"", 6, 0}, {"src", 8, 0}, {"comment", 25, 0}, {NULL}
 };
+static ColumnInfoRecord sUnitCellColumns[] = {
+{"name", 6, 0}, {"values", 9, 1}, {"", 9, 1}, {"", 9, 1}, {NULL}
+};
 static ColumnInfoRecord sMOEnergyColumns[] = {
 {"MO", 5, 0}, {"alpha energy", 12, 0}, {"beta energy", 12, 0}, {NULL}
 };
 static ColumnInfoRecord *sColumnInfo[] = {
-sAtomColumns, sBondColumns, sAngleColumns, sDihedralColumns, sImproperColumns, sParameterColumns, sMOEnergyColumns
+sAtomColumns, sBondColumns, sAngleColumns, sDihedralColumns, sImproperColumns, sParameterColumns, sUnitCellColumns, sMOEnergyColumns
 };
 static char *sTableTitles[] = {
-	"atom", "bond", "angle", "dihedral", "improper", "parameter", "MO energy"
+	"atom", "bond", "angle", "dihedral", "improper", "parameter", "unit cell", "MO energy"
 };
 
 void
@@ -3169,6 +3173,8 @@ MainView_numberOfRowsInTable(MainView *mview)
 		return 0;
 	if (mview->tableIndex == kMainViewParameterTableIndex)
 		return ParameterTableNumberOfRows(mview->mol->par);
+	if (mview->tableIndex == kMainViewUnitCellTableIndex)
+		return 13; /* a, b, c, alpha, beta, gamma, a_valid, b_valid, c_valid, av, bv, cv, ov */
 	if (mview->tableCache == NULL)
 		MainView_refreshCachedInfo(mview);
 	return IntGroupGetCount(mview->tableCache);
@@ -3179,7 +3185,7 @@ MainView_indexToTableRow(MainView *mview, int idx)
 {
 	if (mview == NULL)
 		return -1;
-	if (mview->tableIndex == kMainViewParameterTableIndex)
+	if (mview->tableIndex == kMainViewParameterTableIndex || mview->tableIndex == kMainViewUnitCellTableIndex)
 		return -1;  /*  Not supported yet  */
 	return IntGroupLookupPoint(mview->tableCache, idx);
 }
@@ -3189,7 +3195,7 @@ MainView_tableRowToIndex(MainView *mview, int row)
 {
 	if (mview == NULL)
 		return -1;
-	if (mview->tableIndex == kMainViewParameterTableIndex)
+	if (mview->tableIndex == kMainViewParameterTableIndex || mview->tableIndex == kMainViewUnitCellTableIndex)
 		return -1;  /*  Not supported yet  */
 	return IntGroupGetNthPoint(mview->tableCache, row);
 }
@@ -3365,6 +3371,39 @@ MainView_valueForTable(MainView *mview, int column, int row, char *buf, int bufs
 			}
 			default: buf[0] = 0; break;
 		}		
+	} else if (mview->tableIndex == kMainViewUnitCellTableIndex) { /* Unit cell info */
+		buf[0] = 0;
+		if (mview->mol->cell != NULL) {
+			static const char *unitCellRowTitles[] = {"a", "b", "c", "alpha", "beta", "gamma", "a_valid", "b_valid", "c_valid", "a_vec", "b_vec", "c_vec", "origin"};
+			if (column == 0)
+				snprintf(buf, bufsize, "%s", unitCellRowTitles[row]);
+			else {
+				switch(row) {
+					case 0: case 1: case 2:
+						if (column == 1)
+							snprintf(buf, bufsize, "%.5f", mview->mol->cell->cell[row]);
+						else if (column == 2 && mview->mol->cell->has_sigma)
+							snprintf(buf, bufsize, "%.5f", mview->mol->cell->cellsigma[row]);							
+						break;
+					case 3: case 4: case 5:
+						if (column == 1)
+							snprintf(buf, bufsize, "%.4f", mview->mol->cell->cell[row]);
+						else if (column == 2 && mview->mol->cell->has_sigma)
+							snprintf(buf, bufsize, "%.4f", mview->mol->cell->cellsigma[row]);							
+						break;
+					case 6: case 7: case 8:
+						if (column == 1)
+							snprintf(buf, bufsize, "%d", (int)mview->mol->cell->flags[row - 6]);
+						break;
+					case 9: case 10: case 11: case 12: {
+						Vector *vp = (row == 12 ? &mview->mol->cell->origin : &mview->mol->cell->axes[row - 9]);
+						Double dval = (column == 1 ? vp->x : (column == 2 ? vp->y : vp->z));
+						snprintf(buf, bufsize, "%.5f", dval);
+						break;
+					}
+				}
+			}
+		}
 	} else if (mview->tableIndex == kMainViewMOTableIndex) { /* MO energy */
 		BasisSet *bset = mview->mol->bset;
 		idx = row;
@@ -3502,7 +3541,7 @@ MainView_setSelectionFromTable(MainView *mview)
 	IntGroup *ig, *sel;
 	if (mview == NULL || mview->mol == NULL)
 		return;
-	if (mview->tableIndex == kMainViewMOTableIndex || mview->tableIndex == kMainViewParameterTableIndex)
+	if (mview->tableIndex >= kMainViewParameterTableIndex)
 		return;  /*  Do nothing  */
 	ig = MainViewCallback_getTableSelection(mview);
 	sel = IntGroupNew();
@@ -3636,6 +3675,50 @@ MainView_setValueForTable(MainView *mview, int column, int row, const char *buf)
 		MolActionCreateAndPerform(mol, SCRIPT_ACTION("iss"), "set_atom_attr", idx, key, buf);
 	} else if (mview->tableIndex == kMainViewParameterTableIndex) { /* Parameters */
 		sMainView_ParameterTableSetItemText(mview->mol, column, row, buf);
+	} else if (mview->tableIndex == kMainViewUnitCellTableIndex) { /* Unit cell */
+		Double cellPars[12], dval;
+		char flags[3];
+		int n1;
+		Vector vecs[4];
+		if (mol->cell == NULL) {
+			/*  Create a cell  */
+			static const Double sCellPars[] = {1, 1, 1, 90, 90, 90};
+			MolActionCreateAndPerform(mol, gMolActionSetCell, 6, sCellPars, 0);
+		}
+		if (row >= 0 && row < 6) {
+			n1 = 6;
+			memmove(cellPars, mol->cell->cell, sizeof(Double) * 6);
+			if (mol->cell->has_sigma)
+				memmove(cellPars + 6, mol->cell->cellsigma, sizeof(Double) * 6);
+			else memset(cellPars + 6, 0, sizeof(Double) * 6);
+			dval = strtod(buf, NULL);
+			if (column == 1) {
+				if (dval == 0.0)
+					return;
+				cellPars[row] = dval;
+			} else {
+				n1 = 12;
+				cellPars[row + 6] = dval;
+			}
+			MolActionCreateAndPerform(mol, gMolActionSetCell, n1, cellPars, 0);
+		} else {
+			memmove(vecs, mol->cell->axes, sizeof(Vector) * 3);
+			vecs[3] = mol->cell->origin;
+			memmove(flags, mol->cell->flags, 3);
+			if (row >= 6 && row < 9)
+				flags[row - 6] = strtol(buf, NULL, 0);
+			else {
+				Vector *vp = vecs + (row - 9);
+				dval = strtod(buf, NULL);
+				if (column == 1)
+					vp->x = dval;
+				else if (column == 2)
+					vp->y = dval;
+				else vp->z = dval;
+			}
+			MolActionCreateAndPerform(mol, gMolActionSetBox, vecs, vecs + 1, vecs + 2, vecs + 3, (flags[0] != 0) * 4 + (flags[1] != 0) * 2 + (flags[2] != 0), 0);
+		}
+		
 	}
 }
 
@@ -3648,6 +3731,13 @@ MainView_isTableItemEditable(MainView *mview, int column, int row)
 		return 0;
 	if (mview->tableIndex == kMainViewParameterTableIndex)
 		return ParameterTableIsItemEditable(mview->mol->par, column, row);
+	if (mview->tableIndex == kMainViewUnitCellTableIndex) {
+		if ((row >= 0 && row < 6 && column >= 1 && column <= 3) ||
+			(row >= 6 && row < 9 && column == 1) ||
+			(row >= 9 && row < 13 && column >= 1 && column <= 3))
+			return 1;
+		else return 0;
+	}
 	if (mview->tableIndex >= 0 && mview->tableIndex < sizeof(sColumnInfo) / sizeof(sColumnInfo[0]))
 		return sColumnInfo[mview->tableIndex][column].editable != 0;
 	else return 0;

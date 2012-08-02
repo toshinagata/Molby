@@ -56,7 +56,7 @@ const char *gMolActionExpandBySymmetry = "expandSym:Giiii;I";
 const char *gMolActionDeleteSymmetryOperation = "deleteSymop";
 const char *gMolActionAddSymmetryOperation = "addSymop:t";
 const char *gMolActionSetCell         = "setCell:Di";
-const char *gMolActionSetBox          = "setBox:vvvvi";
+const char *gMolActionSetBox          = "setBox:vvvvii";
 const char *gMolActionClearBox        = "clearBox";
 const char *gMolActionSetBoxForFrames = "setBoxForFrames:V";
 const char *gMolActionSetCellFlexibility = "setCellFlexibility:i";
@@ -1308,6 +1308,8 @@ static int
 s_MolActionSetCell(Molecule *mol, MolAction *action, MolAction **actp)
 {
 	double *dp, d[12];
+	Vector vecs[4];
+	Int flags;
 	Int convertCoord, n1, n2;
 	if (mol->cell == NULL) {
 		d[0] = 0.0;
@@ -1319,6 +1321,9 @@ s_MolActionSetCell(Molecule *mol, MolAction *action, MolAction **actp)
 			for (n1 = 6; n1 < 12; n1++)
 				d[n1] = mol->cell->cellsigma[n1 - 6];
 		}
+		memmove(vecs, mol->cell->axes, sizeof(Vector) * 3);
+		vecs[3] = mol->cell->origin;
+		flags = (mol->cell->flags[0] != 0) * 4 + (mol->cell->flags[1] != 0) * 2 + (mol->cell->flags[2] != 0);
 	}
 	convertCoord = action->args[1].u.ival;
 	dp = action->args[0].u.arval.ptr;
@@ -1333,7 +1338,18 @@ s_MolActionSetCell(Molecule *mol, MolAction *action, MolAction **actp)
 				mol->cell->cellsigma[n2 - 6] = dp[n2];
 		} else mol->cell->has_sigma = 0;
 	}
-	*actp = MolActionNew(gMolActionSetCell, n1, (n1 == 0 ? NULL : d), convertCoord);
+	if (n1 == 0)
+		*actp = MolActionNew(gMolActionClearBox);
+	else {
+		*actp = MolActionNew(gMolActionSetBox, &vecs[0], &vecs[1], &vecs[2], &vecs[3], flags, convertCoord);
+		if (n1 > 6) {
+			/*  Two undo actions are needed: first is for restore the cell vectors, and second is for restore the sigmas  */
+			MolAction *act2;
+			act2 = MolActionNew(gMolActionSetCell, n1, d, 0);
+			MolActionCallback_registerUndo(mol, act2);
+			MolActionRelease(act2);
+		}
+	}
 	return 0;
 }
 
@@ -1346,17 +1362,18 @@ s_MolActionSetBox(Molecule *mol, MolAction *action, MolAction **actp)
 		if (mol->cell == NULL)
 			return 0;  /*  Do nothing  */
 		n1 = ((mol->cell->flags[0] != 0) * 4 + (mol->cell->flags[1] != 0) * 2 + (mol->cell->flags[2] != 0));
-		*actp = MolActionNew(gMolActionSetBox, &(mol->cell->axes[0]), &(mol->cell->axes[1]), &(mol->cell->axes[2]), &(mol->cell->origin), n1);
-		MoleculeSetPeriodicBox(mol, NULL, NULL, NULL, NULL, NULL);
+		*actp = MolActionNew(gMolActionSetBox, &(mol->cell->axes[0]), &(mol->cell->axes[1]), &(mol->cell->axes[2]), &(mol->cell->origin), n1, 0);
+		MoleculeSetPeriodicBox(mol, NULL, NULL, NULL, NULL, NULL, 0);
 	} else {
 		/*  Set box  */
 		Vector v[4];
 		char flags[3];
+		int convertCoordinates = action->args[5].u.ival;
 		if (mol->cell == NULL)
 			*actp = MolActionNew(gMolActionClearBox);
 		else {
 			n1 = ((mol->cell->flags[0] != 0) * 4 + (mol->cell->flags[1] != 0) * 2 + (mol->cell->flags[2] != 0));
-			*actp = MolActionNew(gMolActionSetBox, &(mol->cell->axes[0]), &(mol->cell->axes[1]), &(mol->cell->axes[2]), &(mol->cell->origin), n1);
+			*actp = MolActionNew(gMolActionSetBox, &(mol->cell->axes[0]), &(mol->cell->axes[1]), &(mol->cell->axes[2]), &(mol->cell->origin), n1, convertCoordinates);
 		}
 		for (n1 = 0; n1 < 4; n1++)
 			v[n1] = *((Vector *)(action->args[n1].u.arval.ptr));
@@ -1374,7 +1391,7 @@ s_MolActionSetBox(Molecule *mol, MolAction *action, MolAction **actp)
 			for (n1 = 0; n1 < 3; n1++)
 				flags[n1] = ((n2 >> (2 - n1)) & 1);
 		}
-		MoleculeSetPeriodicBox(mol, &v[0], &v[1], &v[2], &v[3], flags);
+		MoleculeSetPeriodicBox(mol, &v[0], &v[1], &v[2], &v[3], flags, convertCoordinates);
 	}
 	return 0;
 }
@@ -1411,7 +1428,7 @@ s_MolActionSetBoxForFrames(Molecule *mol, MolAction *action, MolAction **actp)
 
 	/*  Set the current cell (no change on the periodic flags)  */
 	vp2 = mol->frame_cells + mol->cframe * 4;
-	MoleculeSetPeriodicBox(mol, vp2, vp2 + 1, vp2 + 2, vp2 + 3, mol->cell->flags);
+	MoleculeSetPeriodicBox(mol, vp2, vp2 + 1, vp2 + 2, vp2 + 3, mol->cell->flags, 0);
 	
 	return 0;
 }

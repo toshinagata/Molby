@@ -5543,7 +5543,7 @@ s_Molecule_Cell(VALUE self)
  *  Set the unit cell parameters. If the cell value is nil, then clear the current cell.
     If the given argument has 12 members, then the second half of the parameters represents the sigma values.
     This operation is undoable. If the second argument is given as non-nil, then 
-	the coordinates are transformed so that the cartesian coordinates remain the same.
+	the coordinates are transformed so that the fractional coordinates remain the same.
  */
 static VALUE
 s_Molecule_SetCell(int argc, VALUE *argv, VALUE self)
@@ -5617,7 +5617,7 @@ s_Molecule_Box(VALUE self)
 
 /*
  *  call-seq:
- *     set_box(avec, bvec, cvec, origin = [0, 0, 0], flags = [1, 1, 1])
+ *     set_box(avec, bvec, cvec, origin = [0, 0, 0], flags = [1, 1, 1], convert_coordinates = nil)
  *     set_box(d, origin = [0, 0, 0])
  *     set_box
  *
@@ -5626,6 +5626,7 @@ s_Molecule_Box(VALUE self)
     as the box vector.
     Flags, if present, is a 3-member array of Integers defining whether the system is
     periodic along the axis.
+    If convert_coordinates is true, then the coordinates are converted so that the fractional coordinates remain the same.
     In the second form, an isotropic box with cell-length d is set.
     In the third form, the existing box is cleared.
     Note: the sigma of the cell parameters is not cleared unless the periodic box itself is cleared.
@@ -5634,15 +5635,15 @@ static VALUE
 s_Molecule_SetBox(VALUE self, VALUE aval)
 {
     Molecule *mol;
-	VALUE v[5];
+	VALUE v[6];
 	static Vector ax[3] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
 	Vector vv[3];
 	Vector origin = {0, 0, 0};
 	char flags[3];
 	Double d;
-	int i;
+	int i, convertCoordinates = 0;
     Data_Get_Struct(self, Molecule, mol);
-	for (i = 0; i < 5; i++) {
+	for (i = 0; i < 6; i++) {
 		if (i < RARRAY_LEN(aval))
 			v[i] = (RARRAY_PTR(aval))[i];
 		else v[i] = Qnil;
@@ -5678,8 +5679,10 @@ s_Molecule_SetBox(VALUE self, VALUE aval)
 				flags[i] = (NUM2INT(rb_Integer(val)) != 0);
 			}
 		}
+		if (RTEST(v[5]))
+			convertCoordinates = 1;
 	}
-	MolActionCreateAndPerform(mol, gMolActionSetBox, &(vv[0]), &(vv[1]), &(vv[2]), &origin, (flags[0] * 4 + flags[1] * 2 + flags[2]));
+	MolActionCreateAndPerform(mol, gMolActionSetBox, &(vv[0]), &(vv[1]), &(vv[2]), &origin, (flags[0] * 4 + flags[1] * 2 + flags[2]), convertCoordinates);
 	return self;
 }
 
@@ -7017,7 +7020,7 @@ s_Molecule_GetCoordFromFrame(int argc, VALUE *argv, VALUE self)
 		free(vp);
 		if (RTEST(cval) && mol->cell != NULL && mol->frame_cells != NULL && index < mol->nframe_cells) {
 			vp = mol->frame_cells + index * 4;
-			MolActionCreateAndPerform(mol, gMolActionSetBox, vp, vp + 1, vp + 2, vp + 3, -1);
+			MolActionCreateAndPerform(mol, gMolActionSetBox, vp, vp + 1, vp + 2, vp + 3, -1, 0);
 		}
 		IntGroupIteratorRelease(&iter);
 	}
