@@ -280,8 +280,8 @@ s_check_bonded(Atom *ap, Int *results)
 {
 	Int i, n, *ip;
 	const Int *cp;
-	cp = AtomConnects(ap);
-	for (i = 0; i < ap->nconnects; i++, cp++) {
+	cp = AtomConnectData(&ap->connect);
+	for (i = 0; i < ap->connect.count; i++, cp++) {
 		n = *cp;
 		for (ip = results; *ip >= 0; ip++) {
 			if (n == *ip)
@@ -1129,9 +1129,11 @@ static void
 s_find_fragment_sub(MDArena *arena, Int start_index, Int fragment_index)
 {
 	Atom *atoms = arena->mol->atoms;
-	int i, j;
-	for (i = 0; i < atoms[start_index].nconnects; i++) {
-		AtomConnectEntryAtIndex(ATOM_AT_INDEX(atoms, start_index), i);
+	Atom *ap = ATOM_AT_INDEX(atoms, start_index);
+	Int i, j, *ip;
+	ip = AtomConnectData(&ap->connect);
+	for (i = 0; i < ap->connect.count; i++) {
+		j = ip[i];
 		if (j >= 0 && j < arena->natoms_uniq) {
 			int n = arena->fragment_indices[j];
 			if (n < 0) {
@@ -3648,9 +3650,9 @@ md_arena_release(MDArena *arena)
 		free(arena->fragment_indices);
 	if (arena->fragment_info != NULL)
 		free(arena->fragment_info);
-#warning "TODO: Is arena->exatoms really necessary? "
-	if (arena->exatoms != NULL)
-		free(arena->exatoms);
+/*#warning "TODO: Is arena->exatoms really necessary? "*/
+/*	if (arena->exatoms != NULL)
+		free(arena->exatoms); */
 	if (arena->special_positions != NULL)
 		free(arena->special_positions);
 	if (arena->exlist != NULL)

@@ -1203,19 +1203,19 @@ drawAtom(MainView *mview, int i1, int selected, const Vector *dragOffset, const 
 		an1 = 6;
 		r1 = mview->tempAtomPos[i1 - natoms];
 		label[0] = 0;
-	} else if (i1 < 0) {
+/*	} else if (i1 < 0) {
 		ExAtom *ep = mview->mol->exatoms + (- i1 - 1);
 		ap = ATOM_AT_INDEX(mview->mol->atoms, ep->index);
 		an1 = ap->atomicNumber;
 		r1 = ap->r;
 		trp = &(SYMMETRY_AT_INDEX(mview->mol->syms, ep->symop));
-		if (/* !mview->mol->is_xtal_coord && */ mview->mol->cell != NULL) {
+		if (mview->mol->cell != NULL) {
 			TransformVec(&r1, mview->mol->cell->rtr, &r1);
 			TransformVec(&r1, *trp, &r1);
 			TransformVec(&r1, mview->mol->cell->tr, &r1);
 		} else TransformVec(&r1, *trp, &r1);
 		VecInc(r1, ep->dr);
-		label[0] = 0;
+		label[0] = 0; */
 	} else {
 		ap = ATOM_AT_INDEX(mview->mol->atoms, i1);
 		if (ap == NULL)
@@ -1340,7 +1340,7 @@ drawBond(MainView *mview, int i1, int i2, int selected, int selected2, int draft
 				r[i] = mview->tempAtomPos[in - natoms];
 				an[i] = 6;
 			}
-		} else if (in < 0) {
+/*		} else if (in < 0) {
 			ExAtom *ep = mview->mol->exatoms + (- in - 1);
 			if (!mview->showExpandedAtoms)
 				return;
@@ -1348,7 +1348,7 @@ drawBond(MainView *mview, int i1, int i2, int selected, int selected2, int draft
 			an[i] = ap->atomicNumber;
 			r[i] = ap->r;
 			TransformVec(&r[i], SYMMETRY_AT_INDEX(mview->mol->syms, ep->symop), &r[i]);
-			VecInc(r[i], ep->dr);
+			VecInc(r[i], ep->dr); */
 		} else {
 			ap = ATOM_AT_INDEX(mview->mol->atoms, in);
 			an[i] = ap->atomicNumber;
@@ -1538,17 +1538,17 @@ drawModel(MainView *mview)
 						drawAtom(mview, natoms + 1, 1, &dragOffset, NULL);
 					}
 					/*  Expanded atoms  */
-					if (mview->showExpandedAtoms) {
+				/*	if (mview->showExpandedAtoms) {
 						for (i = 0; i < mview->mol->nexatoms; i++) {
 							if (mview->draggingMode != 0 && i % 50 == 0 && MainViewCallback_mouseCheck(mview)) {
-								/*  Mouse event is detected  */
+								//  Mouse event is detected
 								draft = 1;
 								break;
-							/*	goto cleanup;  */
+							//	goto cleanup;
 							}
 							drawAtom(mview, -i-1, (selectFlags == NULL ? 0 : selectFlags[i]), &dragOffset, (original ? NULL : &periodicOffset));
 						}
-					}
+					} */
 				}
 			}
 		}
@@ -1594,13 +1594,13 @@ skip:
 				}
 				
 				/*  Expanded bonds  */
-				for (i = 0; i < mview->mol->nexbonds; i++) {
+			/*	for (i = 0; i < mview->mol->nexbonds; i++) {
 					int n1, n2;
 					if (draft == 0 && mview->draggingMode != 0 && i % 50 == 0 && MainViewCallback_mouseCheck(mview)) {
-						/*  Mouse event is detected  */
+						//  Mouse event is detected
 						draft = 1;
 						glDisable(GL_LIGHTING);
-					/*	goto cleanup;  */
+					//	goto cleanup;
 					}
 					n1 = mview->mol->exbonds[i * 2];
 					n2 = mview->mol->exbonds[i * 2 + 1];
@@ -1616,7 +1616,7 @@ skip:
 						selected2 = selectFlags[n2];
 					}
 					drawBond(mview, mview->mol->exbonds[i * 2], mview->mol->exbonds[i * 2 + 1], selected, selected2, draft, &dragOffset, (original ? NULL : &periodicOffset));
-				}
+				} */
 			}
 		}
 	}

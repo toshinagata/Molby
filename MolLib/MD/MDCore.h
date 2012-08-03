@@ -370,9 +370,9 @@ typedef struct MDArena {
 	} *fragment_info;     /*  array[nfragments]; internally used  */
 	
 	/*  "Image" atoms for non-bonding calculations under periodic boundary conditions */
-	Int    nexatoms;          /*  May fluctuate during simulation  */
-	Atom  *exatoms;
-	Int    nexatoms_current;  /*  Current number of "image" atoms  */
+/*	Int    nexatoms;         */ /*  May fluctuate during simulation  */
+/*	Atom  *exatoms; */
+/*	Int    nexatoms_current;  *//*  Current number of "image" atoms  */
 	
 	/*  sym_relate[i*nsyms+j] is the index of atom that coincide with atom i transformed by inverse of syms[j] */
 	/*	Int   *sym_relate; */

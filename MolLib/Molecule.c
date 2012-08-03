@@ -71,11 +71,11 @@ s_AtomDuplicate(Atom *dst, const Atom *src, Int copy_frame)
 			dst->nframes = 0;
 		}
 	}
-	if (src->nconnects > ATOM_CONNECTS_LIMIT) {
-		dst->connects.ptr = NULL;
-		dst->nconnects = 0;
-		NewArray(&(dst->connects.ptr), &(dst->nconnects), sizeof(Int), src->nconnects);
-		memmove(dst->connects.ptr, src->connects.ptr, sizeof(Int) * src->nconnects);
+	if (src->connect.count > ATOM_CONNECT_LIMIT) {
+		dst->connect.u.ptr = NULL;
+		dst->connect.count = 0;
+		NewArray(&(dst->connect.u.ptr), &(dst->connect.count), sizeof(Int), src->connect.count);
+		memmove(dst->connect.u.ptr, src->connect.u.ptr, sizeof(Int) * src->connect.count);
 	}
 	return dst;
 }
@@ -104,10 +104,10 @@ AtomClean(Atom *ap)
 		ap->frames = NULL;
 		ap->nframes = 0;
 	}
-	if (ap->nconnects > ATOM_CONNECTS_LIMIT) {
-		ap->nconnects = 0;
-		free(ap->connects.ptr);
-		ap->connects.ptr = NULL;
+	if (ap->connect.count > ATOM_CONNECT_LIMIT) {
+		ap->connect.count = 0;
+		free(ap->connect.u.ptr);
+		ap->connect.u.ptr = NULL;
 	}
 }
 
@@ -152,76 +152,52 @@ BasisSetRelease(BasisSet *bset)
 	free(bset);
 }
 
-#define ATOM_CONNECTS_PTR(ap) ((ap)->nconnects > ATOM_CONNECTS_LIMIT ? (ap)->connects.ptr : (ap)->connects.data)
-
 Int *
-AtomConnects(Atom *ap)
+AtomConnectData(AtomConnect *ac)
 {
-	if (ap == NULL)
+	if (ac == NULL)
 		return NULL;
-	return ATOM_CONNECTS_PTR(ap);
-}
-
-Int
-AtomConnectEntryAtIndex(Atom *ap, Int idx)
-{
-	if (ap != NULL)
-		return -1;
-	if (idx < 0 || idx >= ap->nconnects)
-		return -1;
-	return ATOM_CONNECTS_PTR(ap)[idx];
+	return ATOM_CONNECT_PTR(ac);
 }
 
 void
-AtomResizeConnects(Atom *ap, Int nconnects)
+AtomConnectResize(AtomConnect *ac, Int nconnects)
 {
 	Int *p;
-	if (ap == NULL)
+	if (ac == NULL)
 		return;
-	if (nconnects <= ATOM_CONNECTS_LIMIT) {
-		if (ap->nconnects > ATOM_CONNECTS_LIMIT) {
-			p = ap->connects.ptr;
-			memmove(ap->connects.data, p, sizeof(Int) * nconnects);
+	if (nconnects <= ATOM_CONNECT_LIMIT) {
+		if (ac->count > ATOM_CONNECT_LIMIT) {
+			p = ac->u.ptr;
+			memmove(ac->u.data, p, sizeof(Int) * nconnects);
 			free(p);
 		}
 	} else {
-		if (ap->nconnects <= ATOM_CONNECTS_LIMIT) {
+		if (ac->count <= ATOM_CONNECT_LIMIT) {
 			p = NULL;
-			ap->nconnects = 0;
-			NewArray(&p, &(ap->nconnects), sizeof(Int), nconnects);
-			memmove(p, ap->connects.data, sizeof(Int) * ap->nconnects);
-			ap->connects.ptr = p;
-		} else if (ap->nconnects < nconnects) {
+			ac->count = 0;
+			NewArray(&p, &(ac->count), sizeof(Int), nconnects);
+			memmove(p, ac->u.data, sizeof(Int) * ac->count);
+			ac->u.ptr = p;
+		} else if (ac->count < nconnects) {
 			/*  Reallocate  */
-			AssignArray(&(ap->connects.ptr), &(ap->nconnects), sizeof(Int), nconnects - 1, NULL);
+			AssignArray(&(ac->u.ptr), &(ac->count), sizeof(Int), nconnects - 1, NULL);
 		}
 	}
-	ap->nconnects = nconnects;
+	ac->count = nconnects;
 }
 
 void
-AtomSetConnectEntry(Atom *ap, Int idx, Int connect)
-{
-	if (ap == NULL)
-		return;
-	if (idx >= ap->nconnects) {
-		/*  Insert a new entry at the last  */
-		AtomResizeConnects(ap, idx + 1);
-	}
-	ATOM_CONNECTS_PTR(ap)[idx] = connect;
-}
-
-void
-AtomInsertConnectEntry(Atom *ap, Int idx, Int connect)
+AtomConnectInsertEntry(AtomConnect *ac, Int idx, Int connect)
 {
 	Int n, *p;
-	if (ap == NULL)
+	if (ac == NULL)
 		return;
-	if (idx < 0 || idx >= ap->nconnects)
-		idx = ap->nconnects;
-	AtomResizeConnects(ap, ap->nconnects + 1);
-	n = ap->nconnects - idx - 1;  /*  Number of entries to be moved towards the bottom  */
-	p = ATOM_CONNECTS_PTR(ap);
+	if (idx < 0 || idx >= ac->count)
+		idx = ac->count;
+	AtomConnectResize(ac, ac->count + 1);
+	n = ac->count - idx - 1;  /*  Number of entries to be moved towards the bottom  */
+	p = ATOM_CONNECT_PTR(ac);
 	if (n > 0) {
 		memmove(p + idx + 1, p + idx, sizeof(Int) * n);
 	}
@@ -229,19 +205,19 @@ AtomInsertConnectEntry(Atom *ap, Int idx, Int connect)
 }
 
 void
-AtomDeleteConnectEntry(Atom *ap, Int idx)
+AtomConnectDeleteEntry(AtomConnect *ac, Int idx)
 {
 	Int n, *p;
-	if (ap == NULL)
+	if (ac == NULL)
 		return;
-	if (idx < 0 || idx >= ap->nconnects)
+	if (idx < 0 || idx >= ac->count)
 		return;
-	n = ap->nconnects - idx - 1;  /*  Number of entries to be moved towards the top  */
-	p = ATOM_CONNECTS_PTR(ap);
+	n = ac->count - idx - 1;  /*  Number of entries to be moved towards the top  */
+	p = ATOM_CONNECT_PTR(ac);
 	if (n > 0) {
 		memmove(p + idx, p + idx + 1, sizeof(Int) * n);
 	}
-	AtomResizeConnects(ap, ap->nconnects - 1);
+	AtomConnectResize(ac, ac->count - 1);
 }
 
 #pragma mark ====== Accessor types ======
@@ -509,7 +485,7 @@ MoleculeClear(Molecule *mp)
 		IntGroupRelease(mp->selection);
 		mp->selection = NULL;
 	}
-	if (mp->exatoms != NULL) {
+/*	if (mp->exatoms != NULL) {
 		free(mp->exatoms);
 		mp->exatoms = NULL;
 		mp->nexatoms = 0;
@@ -518,7 +494,7 @@ MoleculeClear(Molecule *mp)
 		free(mp->exbonds);
 		mp->exbonds = NULL;
 		mp->nexbonds = 0;
-	}
+	} */
 	if (mp->frame_cells != NULL) {
 		free(mp->frame_cells);
 		mp->frame_cells = NULL;
@@ -940,17 +916,13 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 					for (k = 0; k < 2; k++) {
 						const Int *cp;
 						ap = ATOM_AT_INDEX(mp->atoms, iibuf[k]);
-						cp = AtomConnects(ap);
-						for (n = 0; n < ap->nconnects; n++, cp++) {
+						cp = AtomConnectData(&ap->connect);
+						for (n = 0; n < ap->connect.count; n++, cp++) {
 							if (*cp == iibuf[1 - k])
 								break;
 						}
-						if (n >= ap->nconnects) {
-						/*	if (ap->nconnects >= ATOMS_MAX_CONNECTS - 1) {
-								snprintf(errbuf, errbufsize, "line %d: too many bonds on atom %d", lineNumber, iibuf[k]);
-								goto exit;
-							} */
-							AtomInsertConnectEntry(ap, ap->nconnects, iibuf[1 - k]);
+						if (n >= ap->connect.count) {
+							AtomConnectInsertEntry(&ap->connect, ap->connect.count, iibuf[1 - k]);
 						}
 					}
 				}
@@ -1710,23 +1682,9 @@ MoleculeLoadPsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsiz
 					*bp++ = b1;
 					*bp++ = b2;
 					ap = ATOM_AT_INDEX(mp->atoms, b1);
-					AtomInsertConnectEntry(ap, ap->nconnects, b2);
-				/*	if (ap->nconnects < ATOMS_MAX_CONNECTS)
-						ap->connects[ap->nconnects++] = b2;
-					else {
-						snprintf(errbuf, errbufsize, "line %d: The atom %d has more than %d bonds", lineNumber, b1+1, ATOMS_MAX_CONNECTS);
-						err = 1;
-						goto exit;
-					} */
+					AtomConnectInsertEntry(&ap->connect, ap->connect.count, b2);
 					ap = ATOM_AT_INDEX(mp->atoms, b2);
-					AtomInsertConnectEntry(ap, ap->nconnects, b1);
-				/*	if (ap->nconnects < ATOMS_MAX_CONNECTS)
-						ap->connects[ap->nconnects++] = b1;
-					else {
-						snprintf(errbuf, errbufsize, "line %d: The atom %d has more than %d bonds", lineNumber, b2+1, ATOMS_MAX_CONNECTS);
-						err = 1;
-						goto exit;
-					} */
+					AtomConnectInsertEntry(&ap->connect, ap->connect.count, b1);
 				}
 			}
 			continue;
@@ -3384,8 +3342,8 @@ MoleculeReadCoordinatesFromPdbFile(Molecule *mp, const char *fname, char *errbuf
 			Int *cp;
 			for (i = 0; i < mp->natoms; i++) {
 				ap = ATOM_AT_INDEX(mp->atoms, i);
-				cp = AtomConnects(ap);
-				for (j = 0; j < ap->nconnects; j++) {
+				cp = AtomConnectData(&ap->connect);
+				for (j = 0; j < ap->connect.count; j++) {
 					cp[j] = old2new[cp[j]];
 				}
 			}
@@ -4142,8 +4100,8 @@ MoleculeWriteToPdbFile(Molecule *mp, const char *fname, char *errbuf, int errbuf
 	for (i = 0; i < mp->natoms; i++) {
 		Int *cp;
 		ap = ATOM_AT_INDEX(mp->atoms, i);
-		cp = AtomConnects(ap);
-		for (j = 0; j < ap->nconnects; j++) {
+		cp = AtomConnectData(&ap->connect);
+		for (j = 0; j < ap->connect.count; j++) {
 			if (j % 4 == 0) {
 				if (j > 0)
 					fprintf(fp, "\n");
@@ -4460,8 +4418,8 @@ sOutputBondInstructions(FILE *fp, int natoms, Atom *atoms, int overlap_correctio
 						continue;
 					VecSub(dr, ap->r, ap2->r);
 					d = VecLength(dr);
-					cp = AtomConnects(ap);
-					for (k = ap->nconnects - 1; k >= 0; k--) {
+					cp = AtomConnectData(&ap->connect);
+					for (k = ap->connect.count - 1; k >= 0; k--) {
 						if (cp[k] == n2)
 							break;
 					}
@@ -4487,8 +4445,8 @@ sOutputBondInstructions(FILE *fp, int natoms, Atom *atoms, int overlap_correctio
 				max_bond = min_nonbond - 0.002;
 				/*  Some bonds may be omitted, so scan all bonds again  */
 				for (n1 = n[i], ap = ATOM_AT_INDEX(atoms, n1); n1 < n[i + 1]; n1++, ap = ATOM_NEXT(ap)) {
-					cp = AtomConnects(ap);
-					for (k = ap->nconnects - 1; k >= 0; k--) {
+					cp = AtomConnectData(&ap->connect);
+					for (k = ap->connect.count - 1; k >= 0; k--) {
 						n2 = cp[k];
 						if (n2 < n[j] || n2 >= n[j + 1])
 							continue;
@@ -4647,8 +4605,8 @@ MoleculeWriteToTepFile(Molecule *mp, const char *fname, char *errbuf, int errbuf
 		AtomDuplicateNoFrame(ap, app[i]);
 	/*	memmove(ap, app[i], gSizeOfAtomRecord); */
 		MoleculeCartesianToXtal(mp, &(ap->v), &(ap->r));
-		cp = AtomConnects(ap);
-		for (j = ap->nconnects - 1; j >= 0; j--) {
+		cp = AtomConnectData(&ap->connect);
+		for (j = ap->connect.count - 1; j >= 0; j--) {
 			cp[j] = ip[cp[j]];
 		}
 		if (SYMOP_ALIVE(ap->symop))
@@ -4762,8 +4720,8 @@ MoleculeDump(Molecule *mol)
 		ap = ATOM_AT_INDEX(mol->atoms, i);
 		snprintf(buf1, sizeof buf1, "%3.4s.%d", ap->resName, ap->resSeq);
 		fprintf(stderr, "%4d %-7s %-4.6s %-4.6s %-2.2s %7.3f %7.3f %7.3f %6.3f [", i, buf1, ap->aname, AtomTypeDecodeToString(ap->type, NULL), ap->element, ap->r.x, ap->r.y, ap->r.z, ap->charge);
-		cp = AtomConnects(ap);
-		for (j = 0; j < ap->nconnects; j++) {
+		cp = AtomConnectData(&ap->connect);
+		for (j = 0; j < ap->connect.count; j++) {
 			fprintf(stderr, "%s%d", (j > 0 ? "," : ""), cp[j]);
 		}
 		fprintf(stderr, "]\n");
@@ -4942,13 +4900,13 @@ MoleculeDeserialize(const char *data, Int length, Int *timep)
 		} else if (strcmp(data, "EXTCON") == 0) {
 			Atom *ap;
 			for (i = 0, ap = mp->atoms; i < mp->natoms; i++, ap = ATOM_NEXT(ap)) {
-				if (ap->nconnects <= ATOM_CONNECTS_LIMIT)
+				if (ap->connect.count <= ATOM_CONNECT_LIMIT)
 					continue;
-				n = ap->nconnects;
-				ap->nconnects = 0;
-				ap->connects.ptr = NULL;
-				NewArray(&(ap->connects.ptr), &(ap->nconnects), sizeof(Int), n);
-				memmove(ap->connects.ptr, ptr, sizeof(Int) * n);
+				n = ap->connect.count;
+				ap->connect.count = 0;
+				ap->connect.u.ptr = NULL;
+				NewArray(&(ap->connect.u.ptr), &(ap->connect.count), sizeof(Int), n);
+				memmove(ap->connect.u.ptr, ptr, sizeof(Int) * n);
 				ptr += sizeof(Int) * n;
 			}
 		} else if (strcmp(data, "BOND") == 0) {
@@ -4980,14 +4938,14 @@ MoleculeDeserialize(const char *data, Int length, Int *timep)
 			n = len / sizeof(Transform);
 			NewArray(&mp->syms, &mp->nsyms, sizeof(Transform), n);
 			memmove(mp->syms, ptr, len);
-		} else if (strcmp(data, "EXATOM") == 0) {
+/*		} else if (strcmp(data, "EXATOM") == 0) {
 			n = len / sizeof(ExAtom);
 			NewArray(&mp->exatoms, &mp->nexatoms, sizeof(ExAtom), n);
-			memmove(mp->exatoms, ptr, len);
-		} else if (strcmp(data, "EXBOND") == 0) {
+			memmove(mp->exatoms, ptr, len); */
+/*		} else if (strcmp(data, "EXBOND") == 0) {
 			n = len / (sizeof(Int) * 2);
 			NewArray(&mp->exbonds, &mp->nexbonds, sizeof(Int) * 2, n);
-			memmove(mp->exbonds, ptr, len);
+			memmove(mp->exbonds, ptr, len); */
 		} else if (strcmp(data, "TIME") == 0) {
 			if (timep != NULL)
 				*timep = *((Int *)ptr);
@@ -5073,9 +5031,9 @@ MoleculeSerialize(Molecule *mp, Int *outLength, Int *timep)
 			nframes += ap->nframes;
 			ap->frames = NULL;
 		}
-		if (ap->nconnects > ATOM_CONNECTS_LIMIT) {
-			nconnects += ap->nconnects;
-			ap->connects.ptr = NULL;
+		if (ap->connect.count > ATOM_CONNECT_LIMIT) {
+			nconnects += ap->connect.count;
+			ap->connect.u.ptr = NULL;
 		}
 	}
 	len_all = len;
@@ -5133,9 +5091,9 @@ MoleculeSerialize(Molecule *mp, Int *outLength, Int *timep)
 		p += 8 + sizeof(Int);
 		for (i = 0; i < mp->natoms; i++) {
 			Atom *ap = ATOM_AT_INDEX(mp->atoms, i);
-			if (ap->nconnects > ATOM_CONNECTS_LIMIT) {
-				memmove(p, ap->connects.ptr, sizeof(Int) * ap->nconnects);
-				p += sizeof(Int) * ap->nconnects;
+			if (ap->connect.count > ATOM_CONNECT_LIMIT) {
+				memmove(p, ap->connect.u.ptr, sizeof(Int) * ap->connect.count);
+				p += sizeof(Int) * ap->connect.count;
 			}
 		}
 		len_all += len;
@@ -5234,7 +5192,7 @@ MoleculeSerialize(Molecule *mp, Int *outLength, Int *timep)
 	}
 	
 	/*  Expanded atoms  */
-	if (mp->nexatoms > 0) {
+/*	if (mp->nexatoms > 0) {
 		len = 8 + sizeof(Int) + sizeof(ExAtom) * mp->nexatoms;
 		ptr = (char *)realloc(ptr, len_all + len);
 		if (ptr == NULL)
@@ -5245,14 +5203,14 @@ MoleculeSerialize(Molecule *mp, Int *outLength, Int *timep)
 		p += 8 + sizeof(Int);
 		memmove(p, mp->exatoms, sizeof(ExAtom) * mp->nexatoms);
 		for (i = 0; i < mp->nexatoms; i++) {
-			/*  Clear label id  */
+			//  Clear label id
 			((ExAtom *)p)[i].labelid = 0;
 		}
 		len_all += len;
-	}
+	} */
 	
 	/*  Expanded bonds  */
-	if (mp->nexbonds > 0) {
+/*	if (mp->nexbonds > 0) {
 		len = 8 + sizeof(Int) + sizeof(Int) * 2 * mp->nexbonds;
 		ptr = (char *)realloc(ptr, len_all + len);
 		if (ptr == NULL)
@@ -5263,7 +5221,7 @@ MoleculeSerialize(Molecule *mp, Int *outLength, Int *timep)
 		p += 8 + sizeof(Int);
 		memmove(p, mp->exbonds, sizeof(Int) * 2 * mp->nexbonds);
 		len_all += len;
-	}
+	} */
 	
 	/*  Parameters  */
 	if (mp->par != NULL) {
@@ -5589,8 +5547,8 @@ MoleculeRebuildTablesFromConnects(Molecule *mp)
 	if (mp->nbonds == 0) {
 		for (i = 0; i < mp->natoms; i++) {
 			ap = ATOM_AT_INDEX(mp->atoms, i);
-			cp = AtomConnects(ap);
-			for (j = 0; j < ap->nconnects; j++) {
+			cp = AtomConnectData(&ap->connect);
+			for (j = 0; j < ap->connect.count; j++) {
 				k = cp[j];
 				if (i >= k)
 					continue;
@@ -5610,9 +5568,9 @@ MoleculeRebuildTablesFromConnects(Molecule *mp)
 	if (mp->nangles == 0) {
 		for (i = 0; i < mp->natoms; i++) {
 			ap = ATOM_AT_INDEX(mp->atoms, i);
-			cp = AtomConnects(ap);
-			for (j = 0; j < ap->nconnects; j++) {
-				for (k = j + 1; k < ap->nconnects; k++) {
+			cp = AtomConnectData(&ap->connect);
+			for (j = 0; j < ap->connect.count; j++) {
+				for (k = j + 1; k < ap->connect.count; k++) {
 					ibuf[0] = cp[j];
 					ibuf[1] = i;
 					ibuf[2] = cp[k];
@@ -5629,8 +5587,8 @@ MoleculeRebuildTablesFromConnects(Molecule *mp)
 	if (mp->ndihedrals == 0) {
 		for (i = 0; i < mp->natoms; i++) {
 			ap = ATOM_AT_INDEX(mp->atoms, i);
-			cp = AtomConnects(ap);
-			for (j = 0; j < ap->nconnects; j++) {
+			cp = AtomConnectData(&ap->connect);
+			for (j = 0; j < ap->connect.count; j++) {
 				int jj, kk, mm, m;
 				Atom *apjj;
 				Int *cpjj;
@@ -5638,12 +5596,12 @@ MoleculeRebuildTablesFromConnects(Molecule *mp)
 				if (i >= jj)
 					continue;
 				apjj = ATOM_AT_INDEX(mp->atoms, jj);
-				cpjj = AtomConnects(apjj);
-				for (k = 0; k < ap->nconnects; k++) {
+				cpjj = AtomConnectData(&apjj->connect);
+				for (k = 0; k < ap->connect.count; k++) {
 					if (k == j)
 						continue;
 					kk = cp[k];
-					for (m = 0; m < apjj->nconnects; m++) {
+					for (m = 0; m < apjj->connect.count; m++) {
 						mm = cpjj[m];
 						if (mm == i || mm == kk)
 							continue;
@@ -5666,12 +5624,12 @@ MoleculeRebuildTablesFromConnects(Molecule *mp)
 		for (i = 0; i < mp->natoms; i++) {
 			int i1, i2, i4, n1, n2, n4;
 			ap = ATOM_AT_INDEX(mp->atoms, i);
-			cp = AtomConnects(ap);
-			for (i1 = 0; i1 < ap->nconnects; i1++) {
+			cp = AtomConnectData(&ap->connect);
+			for (i1 = 0; i1 < ap->connect.count; i1++) {
 				n1 = cp[i1];
-				for (i2 = i1 + 1; i2 < ap->nconnects; i2++) {
+				for (i2 = i1 + 1; i2 < ap->connect.count; i2++) {
 					n2 = cp[i2];
-					for (i4 = i2 + 1; i4 < ap->nconnects; i4++) {
+					for (i4 = i2 + 1; i4 < ap->connect.count; i4++) {
 						n4 = cp[i4];
 						ibuf[0] = n1;
 						ibuf[1] = n2;
@@ -5817,8 +5775,8 @@ MoleculeAreAtomsConnected(Molecule *mp, int n1, int n2)
 	if (mp == NULL || n1 < 0 || n1 >= mp->natoms || n2 < 0 || n2 >= mp->natoms)
 		return 0;
 	ap = ATOM_AT_INDEX(mp->atoms, n1);
-	cp = AtomConnects(ap);
-	for (i = 0; i < ap->nconnects; i++)
+	cp = AtomConnectData(&ap->connect);
+	for (i = 0; i < ap->connect.count; i++)
 		if (cp[i] == n2)
 			return 1;
 	return 0;
@@ -6031,16 +5989,16 @@ sMoleculeCheckEquivalence(Molecule *mol, int i, int j, struct sEqList *list, int
 	list1->next = list;
 	if (i == j || (db[i] != NULL && db[i] == db[j]))
 		return list1;
-	cpi = AtomConnects(api);
-	cpj = AtomConnects(apj);
-	for (ni = 0; ni < api->nconnects; ni++) {
+	cpi = AtomConnectData(&api->connect);
+	cpj = AtomConnectData(&apj->connect);
+	for (ni = 0; ni < api->connect.count; ni++) {
 		ii = cpi[ni];
 		if (ig != NULL && IntGroupLookupPoint(ig, ii) < 0)
 			continue;
 		if (sExistInEqList(ii, 0, list1))
 			continue;
 		list2 = NULL;
-		for (nj = 0; nj < apj->nconnects; nj++) {
+		for (nj = 0; nj < apj->connect.count; nj++) {
 			jj = cpj[nj];
 			if (ig != NULL && IntGroupLookupPoint(ig, jj) < 0)
 				continue;
@@ -6088,10 +6046,10 @@ MoleculeSearchEquivalentAtoms(Molecule *mol, IntGroup *ig)
 
 	/*  Find the equivalent univalent atoms  */
 	for (i = 0, api = mol->atoms; i < mol->natoms; i++, api = ATOM_NEXT(api)) {
-		if (api->nconnects < 2)
+		if (api->connect.count < 2)
 			continue;
-		cpi = AtomConnects(api);
-		for (j = 0; j < api->nconnects; j++) {
+		cpi = AtomConnectData(&api->connect);
+		for (j = 0; j < api->connect.count; j++) {
 			Int n;
 			n = 0;
 			jj = cpi[j];
@@ -6100,15 +6058,15 @@ MoleculeSearchEquivalentAtoms(Molecule *mol, IntGroup *ig)
 			AssignArray(&ibuf, &nibuf, sizeof(Int), n, &jj);
 			n++;
 			apj = ATOM_AT_INDEX(mol->atoms, jj);
-			if (apj->nconnects != 1 || db[jj] != NULL)
+			if (apj->connect.count != 1 || db[jj] != NULL)
 				continue;
-			cpj = AtomConnects(apj);
-			for (k = j + 1; k < api->nconnects; k++) {
+			cpj = AtomConnectData(&apj->connect);
+			for (k = j + 1; k < api->connect.count; k++) {
 				kk = cpj[k];
 				if (ig != NULL && IntGroupLookupPoint(ig, kk) < 0)
 					continue;
 				apk = ATOM_AT_INDEX(mol->atoms, kk);
-				if (apk->nconnects != 1 || db[kk] != NULL)
+				if (apk->connect.count != 1 || db[kk] != NULL)
 					continue;
 				if (apj->atomicNumber == apk->atomicNumber) {
 					AssignArray(&ibuf, &nibuf, sizeof(Int), n, &kk);
@@ -6397,8 +6355,8 @@ MoleculeAddExpandedAtoms(Molecule *mp, Symop symop, IntGroup *group, Int *indice
 		if (b[0] < 0 || b[0] == i)
 			continue;
 		ap = ATOM_AT_INDEX(mp->atoms, i);
-		cp = AtomConnects(ap);
-		for (n = 0; n < ap->nconnects; n++) {
+		cp = AtomConnectData(&ap->connect);
+		for (n = 0; n < ap->connect.count; n++) {
 			b[1] = table[cp[n]];
 			if (b[1] < 0)
 				continue;
@@ -6660,7 +6618,7 @@ MoleculeCreateAnAtom(Molecule *mp, const Atom *ap, int pos)
 		mp->natoms--;
 		goto error;
 	}
-	ap1->nconnects = 0;
+	ap1->connect.count = 0;
 	if (ap1->resSeq >= mp->nresidues)
 		AssignArray(&mp->residues, &mp->nresidues, 4, ap1->resSeq, ap1->resName);
 	if (ap1->resName[0] == 0)
@@ -6672,8 +6630,8 @@ MoleculeCreateAnAtom(Molecule *mp, const Atom *ap, int pos)
 		for (i = 0, api = ATOM_AT_INDEX(mp->atoms, i); i < mp->natoms; i++, api = ATOM_NEXT(api)) {
 			int j;
 			Int *cp;
-			for (j = 0; j < api->nconnects; j++) {
-				cp = AtomConnects(api);
+			for (j = 0; j < api->connect.count; j++) {
+				cp = AtomConnectData(&api->connect);
 				if (cp[j] >= pos)
 					cp[j]++;
 			}
@@ -6800,8 +6758,8 @@ MoleculeMerge(Molecule *dst, Molecule *src, IntGroup *where, int resSeqOffset)
 			if (ap->resSeq != 0)
 				ap->resSeq += resSeqOffset;  /*  Modify residue number  */
 		}
-		cp = AtomConnects(ap);
-		for (j = 0; j < ap->nconnects; j++)
+		cp = AtomConnectData(&ap->connect);
+		for (j = 0; j < ap->connect.count; j++)
 			cp[j] = old2new[cp[j] + n1];
 		if (SYMOP_ALIVE(ap->symop))
 			ap->symbase = old2new[ap->symbase + n1];
@@ -7077,13 +7035,13 @@ sMoleculeUnmergeSub(Molecule *src, Molecule **dstp, IntGroup *where, int resSeqO
 	/*  Renumber the atom indices in connect[]  */
 	if (moveFlag) {
 		for (i = 0, ap = src->atoms; i < src->natoms; i++, ap = ATOM_NEXT(ap)) {
-			cp = AtomConnects(ap);
-			for (j = n1 = 0; j < ap->nconnects; j++) {
+			cp = AtomConnectData(&ap->connect);
+			for (j = n1 = 0; j < ap->connect.count; j++) {
 				n2 = old2new[cp[j]];
 				if (n2 < nsrcnew)
 					cp[n1++] = n2;
 			}
-			AtomResizeConnects(ap, n1);
+			AtomConnectResize(&ap->connect, n1);
 		}
 	}
 	
@@ -7093,13 +7051,13 @@ sMoleculeUnmergeSub(Molecule *src, Molecule **dstp, IntGroup *where, int resSeqO
 			if (ap->resSeq != 0 && ap->resSeq - resSeqOffset >= 0)
 				ap->resSeq -= resSeqOffset;
 			else ap->resSeq = 0;
-			cp = AtomConnects(ap);
-			for (j = n1 = 0; j < ap->nconnects; j++) {
+			cp = AtomConnectData(&ap->connect);
+			for (j = n1 = 0; j < ap->connect.count; j++) {
 				n2 = old2new[cp[j]] - nsrcnew;
 				if (n2 >= 0)
 					cp[n1++] = n2;
 			}
-			AtomResizeConnects(ap, n1);
+			AtomConnectResize(&ap->connect, n1);
 		}
 	}
 
@@ -7389,15 +7347,13 @@ MoleculeAddBonds(Molecule *mp, Int nbonds, const Int *bonds)
 		if (n1 == n2)
 			return -5;
 		ap = ATOM_AT_INDEX(mp->atoms, n1);
-	/*	if (ap->nconnects >= ATOMS_MAX_CONNECTS - 1 || ATOM_AT_INDEX(mp->atoms, n2)->nconnects >= ATOMS_MAX_CONNECTS - 1)
-			return -2;  *//*  Too many bonds  */
 		/*  Check duplicates  */
-		cp = AtomConnects(ap);
-		for (j = 0; j < ap->nconnects; j++) {
+		cp = AtomConnectData(&ap->connect);
+		for (j = 0; j < ap->connect.count; j++) {
 			if (cp[j] == n2)
 				break;
 		}
-		if (j == ap->nconnects) {
+		if (j == ap->connect.count) {
 			bonds_tmp[n * 2] = n1;
 			bonds_tmp[n * 2 + 1] = n2;
 			n++;
@@ -7416,9 +7372,9 @@ MoleculeAddBonds(Molecule *mp, Int nbonds, const Int *bonds)
 		n1 = bonds_tmp[i * 2];
 		n2 = bonds_tmp[i * 2 + 1];
 		ap = ATOM_AT_INDEX(mp->atoms, n1);
-		AtomInsertConnectEntry(ap, ap->nconnects, n2);
+		AtomConnectInsertEntry(&ap->connect, ap->connect.count, n2);
 		ap = ATOM_AT_INDEX(mp->atoms, n2);
-		AtomInsertConnectEntry(ap, ap->nconnects, n1);
+		AtomConnectInsertEntry(&ap->connect, ap->connect.count, n1);
 	}
 	
 	/*  Expand the array and insert  */
@@ -7446,10 +7402,10 @@ MoleculeAddBonds(Molecule *mp, Int nbonds, const Int *bonds)
 			n2 = bonds_tmp[i * 2 + 1];
 			ap1 = ATOM_AT_INDEX(mp->atoms, n1);
 			ap2 = ATOM_AT_INDEX(mp->atoms, n2);
-			cp1 = AtomConnects(ap1);
-			cp2 = AtomConnects(ap2);
+			cp1 = AtomConnectData(&ap1->connect);
+			cp2 = AtomConnectData(&ap2->connect);
 			/*  Angles X-n1-n2  */
-			for (j = 0; j < ap1->nconnects; j++) {
+			for (j = 0; j < ap1->connect.count; j++) {
 				n3 = cp1[j];
 				if (n3 == n2)
 					continue;
@@ -7466,7 +7422,7 @@ MoleculeAddBonds(Molecule *mp, Int nbonds, const Int *bonds)
 						goto panic;
 				}
 				/*  Dihedrals X-n1-n2-X  */
-				for (k = 0; k < ap2->nconnects; k++) {
+				for (k = 0; k < ap2->connect.count; k++) {
 					n4 = cp2[k];
 					if (n4 == n1 || n4 == n3)
 						continue;
@@ -7477,7 +7433,7 @@ MoleculeAddBonds(Molecule *mp, Int nbonds, const Int *bonds)
 				/*  Impropers X-n2-n1-X  */
 			/*	temp[1] = n2;
 				temp[2] = n1;
-				for (k = 0; k < ap1->nconnects; k++) {
+				for (k = 0; k < ap1->connect.count; k++) {
 					n4 = ap1->connects[k];
 					if (n4 == n2 || n4 <= n3)
 						continue;
@@ -7487,7 +7443,7 @@ MoleculeAddBonds(Molecule *mp, Int nbonds, const Int *bonds)
 				} */
 			}
 			/*  Angles X-n2-n1  */
-			for (j = 0; j < ap2->nconnects; j++) {
+			for (j = 0; j < ap2->connect.count; j++) {
 				n3 = cp2[j];
 				if (n3 == n1)
 					continue;
@@ -7554,22 +7510,18 @@ MoleculeDeleteBonds(Molecule *mp, Int nbonds, const Int *bonds)
 		n1 = bonds[i * 2];
 		n2 = bonds[i * 2 + 1];
 		ap = ATOM_AT_INDEX(mp->atoms, n1);
-		cp = AtomConnects(ap);
-		for (j = 0; j < ap->nconnects; j++) {
+		cp = AtomConnectData(&ap->connect);
+		for (j = 0; j < ap->connect.count; j++) {
 			if (cp[j] == n2) {
-			/*	memmove(&ap->connects[j], &ap->connects[j + 1], sizeof(Int) * (ap->nconnects - j - 1));
-				ap->nconnects--; */
-				AtomDeleteConnectEntry(ap, j);
+				AtomConnectDeleteEntry(&ap->connect, j);
 				break;
 			}
 		}
 		ap = ATOM_AT_INDEX(mp->atoms, n2);
-		cp = AtomConnects(ap);
-		for (j = 0; j < ap->nconnects; j++) {
+		cp = AtomConnectData(&ap->connect);
+		for (j = 0; j < ap->connect.count; j++) {
 			if (cp[j] == n1) {
-			/*	memmove(&ap->connects[j], &ap->connects[j + 1], sizeof(Int) * (ap->nconnects - j - 1));
-				ap->nconnects--; */
-				AtomDeleteConnectEntry(ap, j);
+				AtomConnectDeleteEntry(&ap->connect, j);
 				break;
 			}
 		}
@@ -7890,7 +7842,7 @@ MoleculeConvertBondToDummies(Molecule *mp, Int bondIndex, Int *dummyIndices)
 		nap->type = 0;
 		nap->charge = nap->weight = 0.0;
 		nap->atomicNumber = 0;
-		nap->nconnects = 0;
+		nap->connect.count = 0;
 		w = (i == 0 ? 0.4 : -0.4);
 		VecScaleInc(nap->r, dr, w);
 		VecZero(nap->v);
@@ -8023,10 +7975,10 @@ MoleculeFindMissingAngles(Molecule *mol, Int **outAngles)
 	nangles = 0;
 	angles = NULL;
 	for (i = 0, ap = mol->atoms; i < mol->natoms; i++, ap = ATOM_NEXT(ap)) {
-		Int *cp = AtomConnects(ap);
-		for (j = 0; j < ap->nconnects; j++) {
+		Int *cp = AtomConnectData(&ap->connect);
+		for (j = 0; j < ap->connect.count; j++) {
 			Int j0 = cp[j];
-			for (k = j + 1; k < ap->nconnects; k++) {
+			for (k = j + 1; k < ap->connect.count; k++) {
 				Int k0 = cp[k];
 				if (MoleculeLookupAngle(mol, j0, i, k0) < 0) {
 					ip = (Int *)AssignArray(&angles, &nangles, sizeof(Int) * 3, nangles, NULL);
@@ -8061,18 +8013,18 @@ MoleculeFindMissingDihedrals(Molecule *mol, Int **outDihedrals)
 	dihedrals = NULL;
 	for (n2 = 0, ap2 = mol->atoms; n2 < mol->natoms; n2++, ap2 = ATOM_NEXT(ap2)) {
 		Int i1, i3, i4, *ip;
-		cp2 = AtomConnects(ap2);
-		for (i3 = 0; i3 < ap2->nconnects; i3++) {
+		cp2 = AtomConnectData(&ap2->connect);
+		for (i3 = 0; i3 < ap2->connect.count; i3++) {
 			n3 = cp2[i3];
 			if (n2 > n3)
 				continue;
 			ap3 = ATOM_AT_INDEX(mol->atoms, n3);
-			cp3 = AtomConnects(ap3);
-			for (i1 = 0; i1 < ap2->nconnects; i1++) {
+			cp3 = AtomConnectData(&ap3->connect);
+			for (i1 = 0; i1 < ap2->connect.count; i1++) {
 				n1 = cp2[i1];
 				if (n1 == n3)
 					continue;
-				for (i4 = 0; i4 < ap3->nconnects; i4++) {
+				for (i4 = 0; i4 < ap3->connect.count; i4++) {
 					n4 = cp3[i4];
 					if (n2 == n4 || n1 == n4)
 						continue;
@@ -8116,14 +8068,14 @@ MoleculeFindMissingImpropers(Molecule *mol, Int **outImpropers)
 	for (n3 = 0, ap3 = ap; n3 < mol->natoms; n3++, ap3 = ATOM_NEXT(ap3)) {
 		Int i1, i2, i4, found, *ip;
 		t3 = ap3->type;
-		cp = AtomConnects(ap3);
-		for (i1 = 0; i1 < ap3->nconnects; i1++) {
+		cp = AtomConnectData(&ap3->connect);
+		for (i1 = 0; i1 < ap3->connect.count; i1++) {
 			n1 = cp[i1];
 			t1 = ATOM_AT_INDEX(ap, n1)->type;
-			for (i2 = i1 + 1; i2 < ap3->nconnects; i2++) {
+			for (i2 = i1 + 1; i2 < ap3->connect.count; i2++) {
 				n2 = cp[i2];
 				t2 = ATOM_AT_INDEX(ap, n2)->type;
-				for (i4 = i2 + 1; i4 < ap3->nconnects; i4++) {
+				for (i4 = i2 + 1; i4 < ap3->connect.count; i4++) {
 					n4 = cp[i4];
 					t4 = ATOM_AT_INDEX(ap, n4)->type;
 					found = 0;
@@ -8464,8 +8416,8 @@ sMoleculeReorder(Molecule *mp)
 	}
 	for (i = 0; i < mp->natoms; i++) {
 		Int *ip, j;
-		ip = AtomConnects(apArray[i]);
-		for (j = 0; j < apArray[i]->nconnects; j++, ip++)
+		ip = AtomConnectData(&(apArray[i]->connect));
+		for (j = 0; j < apArray[i]->connect.count; j++, ip++)
 			*ip = old2new[*ip];
 	}
 	
@@ -8558,8 +8510,8 @@ MoleculeRenumberAtoms(Molecule *mp, const Int *new2old, Int *old2new_out, Int is
 	}
 	for (i = 0; i < mp->natoms; i++) {
 		Atom *ap = ATOM_AT_INDEX(saveAtoms, i);
-		Int *ip = AtomConnects(ap);
-		for (j = 0; j < ap->nconnects; j++, ip++)
+		Int *ip = AtomConnectData(&ap->connect);
+		for (j = 0; j < ap->connect.count; j++, ip++)
 			*ip = old2new[*ip];
 	}
 	if (mp->par != NULL) {
@@ -9246,8 +9198,8 @@ sMoleculeFragmentSub(Molecule *mp, int idx, IntGroup *result, IntGroup *exatoms)
 		return;
 	IntGroupAdd(result, idx, 1);
 	ap = ATOM_AT_INDEX(mp->atoms, idx);
-	cp = AtomConnects(ap);
-	for (i = 0; i < ap->nconnects; i++) {
+	cp = AtomConnectData(&ap->connect);
+	for (i = 0; i < ap->connect.count; i++) {
 		int idx2 = cp[i];
 		if (IntGroupLookup(result, idx2, NULL))
 			continue;
@@ -9324,8 +9276,8 @@ MoleculeIsFragmentDetachable(Molecule *mp, IntGroup *group, int *n1, int *n2)
 			if (j < 0 || j >= mp->natoms)
 				return 0;  /*  Invalid atom group  */
 			ap = ATOM_AT_INDEX(mp->atoms, j);
-			cp = AtomConnects(ap);
-			for (k = 0; k < ap->nconnects; k++) {
+			cp = AtomConnectData(&ap->connect);
+			for (k = 0; k < ap->connect.count; k++) {
 				if (IntGroupLookup(group, cp[k], NULL) == 0) {
 					bond_count++;
 					nval1 = j;

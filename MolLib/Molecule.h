@@ -25,8 +25,6 @@
 extern "C" {
 #endif
 	
-/* #define ATOMS_MAX_CONNECTS 12 */
-#define ATOM_CONNECTS_LIMIT 6
 #define ATOMS_MAX_SYMMETRY 12
 #define ATOMS_MAX_NUMBER 100000000  /*  Sufficiently large value  */
 
@@ -63,6 +61,18 @@ enum {
 	kAtomHiddenFlag = 1
 };
 
+/*  Atom connection record  */
+/*  If nconnects <= ATOM_CONNECT_LIMIT, data[] field is used. Otherwise,
+    memory is allocated by malloc().  */
+#define ATOM_CONNECT_LIMIT 6
+typedef struct AtomConnect {
+	Int    count;  /*  Number of connections  */
+	union {
+		Int *ptr;
+		Int data[ATOM_CONNECT_LIMIT];
+	} u;
+} AtomConnect;
+
 /*  Atom record  */
 typedef struct Atom {
 	Int    segSeq;
@@ -75,12 +85,7 @@ typedef struct Atom {
 	Double  weight;
 	char   element[4];
 	Int    atomicNumber;
-	Int    nconnects;   /*  Number of connections (= bonds)  */
-	union {
-		Int *ptr;
-		Int data[ATOM_CONNECTS_LIMIT];
-	} connects;  /*  If nconnects > ATOM_CONNECTS_LIMIT, memory is malloc()'ed; otherwise, data[] is used.  */
-/*	Int    connects[ATOMS_MAX_CONNECTS]; */
+	AtomConnect connect;
 	Vector r;  /*  position  */
 	Vector v;  /*  velocity  */
 	Vector f;  /*  force  */
@@ -112,15 +117,15 @@ extern Int gSizeOfAtomRecord;
 #define SYMOP_EQUAL(s1, s2) (s1.dx == s2.dx && s1.dy == s2.dy && s1.dz == s2.dz && s1.sym == s2.sym)
 #define SYMMETRY_AT_INDEX(p, i) (*((i) == 0 ? &gIdentityTransform : &p[i]))
 
-/*  atom.connects is a union entry, including direct data for nconnects <= ATOM_CONNECTS_LIMIT
-    and malloc()'ed entry for nconnects > ATOM_CONNECTS_LIMIT. The following functions
+/*  atom.connects is a union entry, including direct data for nconnects <= ATOM_CONNECT_LIMIT
+    and malloc()'ed entry for nconnects > ATOM_CONNECT_LIMIT. The following functions
 	automatically take care of the memory allocation/deallocation.  */
-Int *AtomConnects(Atom *ap);
-void AtomResizeConnects(Atom *ap, Int nconnects);
-Int AtomConnectEntryAtIndex(Atom *ap, Int idx);
-void AtomSetConnectEntry(Atom *ap, Int idx, Int connect);
-void AtomInsertConnectEntry(Atom *ap, Int idx, Int connect);
-void AtomDeleteConnectEntry(Atom *ap, Int idx);
+Int *AtomConnectData(AtomConnect *ac);
+void AtomConnectResize(AtomConnect *ac, Int nconnects);
+void AtomConnectInsertEntry(AtomConnect *ac, Int idx, Int connect);
+void AtomConnectDeleteEntry(AtomConnect *ac, Int idx);
+
+#define ATOM_CONNECT_PTR(ac) ((ac)->count > ATOM_CONNECT_LIMIT ? (ac)->u.ptr : (ac)->u.data)
 
 /*  Duplicate an atom. If dst is non-NULL, *src is copied to *dst and dst is returned. If dst is NULL, a new atom is allocated by malloc() and that atom is returned. It is the called's responsibility to release the returned memory. */
 extern Atom *AtomDuplicate(Atom *dst, const Atom *src);
@@ -166,17 +171,6 @@ typedef struct XtalCell {
 	Transform rtr;       /*  Cartesian -> crystal coord  */
 	Double  cellsigma[6];  /*  For crystallographic data; sigma for the cell parameters  */
 } XtalCell;
-
-/*  Periodic box parameter  */
-#if 0
-typedef struct PeriodicBox {
-	Vector  axes[3];     /*  Unit vectors along the three axis  */
-	Vector  origin;      /*  Origin of the periodic box  */
-	char    flags[3];    /*  1 for periodic, 0 for non-periodic  */
-	Transform tr;        /*  Internal coord -> cartesian  */
-	Transform rtr;       /*  Cartesian -> internal coord  */	
-} PeriodicBox;
-#endif
 
 /*  Expanded atoms  */
 typedef struct ExAtom {
@@ -269,15 +263,13 @@ typedef struct Molecule {
 	Int    nresidues;    /*  Number of residues; maximum residue number + 1 (because residue 0 is 'undefined residue')  */
 	char   (*residues)[4];
 	XtalCell   *cell;
-/*	char   is_xtal_coord; *//*  True if the coordinates are measured in crystallographic units  */
-	Int    nsyms;        /*  Symmetry operations; syms are always described in crystallographic units (even when is_xtal_coord is false)  */
+	Int    nsyms;        /*  Symmetry operations; syms are always described in crystallographic units (even when the unit cell is not defined)  */
 	Transform *syms;
-/*	PeriodicBox *box;    *//*  Periodic box  */
 	IntGroup *selection;
-	Int    nexatoms;
+/*	Int    nexatoms;
 	ExAtom *exatoms;
 	Int    nexbonds;
-	Int    *exbonds;     /*  The size of array is 2*nbonds; Atom index >= 0 : base atoms, < 0 : expanded atoms at index -exbonds[n]-1  */
+	Int    *exbonds;  */  /*  The size of array is 2*nbonds; Atom index >= 0 : base atoms, < 0 : expanded atoms at index -exbonds[n]-1  */
 	Int    nframes;      /*  The number of frames (>= 1). This is a cached value, and should be
 							 recalculated from the atoms if it is -1  */
 	Int    cframe;       /*  The current frame number  */

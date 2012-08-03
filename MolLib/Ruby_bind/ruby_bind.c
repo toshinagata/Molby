@@ -3318,8 +3318,8 @@ static VALUE s_AtomRef_GetConnects(VALUE self) {
 	Int i, *cp;
 	Atom *ap = s_AtomFromValue(self);
 	retval = rb_ary_new();
-	cp = AtomConnects(ap);
-	for (i = 0; i < ap->nconnects; i++)
+	cp = AtomConnectData(&ap->connect);
+	for (i = 0; i < ap->connect.count; i++)
 		rb_ary_push(retval, INT2NUM(cp[i]));
 	return retval;
 }
@@ -5348,7 +5348,7 @@ s_Molecule_FindAngles(VALUE self)
 	ip = NULL;
 	nip = 0;
 	for (n1 = 0, ap = mol->atoms; n1 < mol->natoms; n1++, ap = ATOM_NEXT(ap)) {
-		nc = ap->nconnects;
+		nc = ap->connect.count;
 		n[1] = n1;
 		for (i = 0; i < nc; i++) {
 			n[0] = ap->connects[i];
@@ -5386,14 +5386,14 @@ s_Molecule_FindDihedrals(VALUE self)
 	ip = NULL;
 	nip = 0;
 	for (n1 = 0, ap1 = mol->atoms; n1 < mol->natoms; n1++, ap1 = ATOM_NEXT(ap1)) {
-		nc1 = ap1->nconnects;
+		nc1 = ap1->connect.count;
 		n[1] = n1;
 		for (i = 0; i < nc1; i++) {
 			n[2] = ap1->connects[i];
 			if (n[1] > n[2])
 				continue;
 			ap2 = ATOM_AT_INDEX(mol->atoms, n[2]);
-			nc2 = ap2->nconnects;
+			nc2 = ap2->connect.count;
 			for (j = 0; j < nc1; j++) {
 				n[0] = ap1->connects[j];
 				if (n[0] == n[2])
@@ -5986,8 +5986,8 @@ s_Molecule_Remove(VALUE self, VALUE group)
 	while ((i = IntGroupIteratorNext(&iter)) >= 0) {
 		Atom *ap = ATOM_AT_INDEX(mol1->atoms, i);
 		Int j, *cp;
-		cp = AtomConnects(ap);
-		for (j = 0; j < ap->nconnects; j++) {
+		cp = AtomConnectData(&ap->connect);
+		for (j = 0; j < ap->connect.count; j++) {
 			int n = cp[j];
 			if (!IntGroupLookup(ig, n, NULL)) {
 				/*  bond i-n, i is in ig and n is not  */
@@ -6094,7 +6094,7 @@ s_Molecule_DuplicateAnAtom(int argc, VALUE *argv, VALUE self)
 		pos = NUM2INT(rb_Integer(ival));
 	else pos = -1;
 	AtomDuplicate(&arec, apsrc);
-	arec.nconnects = 0;
+	arec.connect.count = 0;
 	if (MolActionCreateAndPerform(mol, gMolActionAddAnAtom, &arec, pos, &pos) != 0)
 		retval = Qnil;
 	else {
