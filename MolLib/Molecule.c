@@ -1179,6 +1179,13 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 					i = 0;
 				}
 			}
+			if (mp->cframe < mp->nframe_cells) {
+				/*  mp->cframe should already have been set when positions are read  */
+				Vector *vp = &mp->frame_cells[mp->cframe * 4];
+				static char defaultFlags[] = {1, 1, 1};
+				char *flags = (mp->cell != NULL ? mp->cell->flags : defaultFlags);
+				MoleculeSetPeriodicBox(mp, vp, vp + 1, vp + 2, vp + 3, flags, 0);
+			}
 			continue;
 		} else if (strcmp(buf, "!:md_parameters") == 0) {
 			MDArena *arena;
