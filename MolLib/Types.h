@@ -145,6 +145,7 @@ int LAMatrixInvert(LAMatrix *mat1, const LAMatrix *mat2);
 Double LAMatrixDeterminant(const LAMatrix *mat);
 void LAMatrixTranspose(LAMatrix *mat1, const LAMatrix *mat2);
 int LAMatrixSymDiagonalize(LAMatrix *vec, LAMatrix *mat1, const LAMatrix *mat2);
+int LAMatrixSingularValueDecomposition(LAMatrix *matU, LAMatrix *matW, LAMatrix *matV, const LAMatrix *mat);
 
 /*  Utility functions  */
 void SetPanicFunc(void (*func)(const char *, ...));

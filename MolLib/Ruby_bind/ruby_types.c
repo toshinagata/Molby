@@ -2234,12 +2234,38 @@ s_LAMatrix_Eigenvalues(VALUE self)
 	int info;
 	Data_Get_Struct(self, LAMatrix, mp1);
 	if (mp1->column != mp1->row)
-		rb_raise(rb_eArgError, "cannot get eigenvectors for non-symmetric matrix");
+		rb_raise(rb_eArgError, "cannot get eigenvectors for non-square matrix");
 	mp2 = LAMatrixNew(mp1->row, 1);
 	mp3 = LAMatrixNew(mp1->row, mp1->column);
 	if ((info = LAMatrixSymDiagonalize(mp2, mp3, mp1)) != 0)
 		rb_raise(rb_eArgError, "cannot diagonalize");
 	return rb_ary_new3(2, Data_Wrap_Struct(rb_cLAMatrix, 0, -1, mp2), Data_Wrap_Struct(rb_cLAMatrix, 0, -1, mp3));
+}
+
+/*
+ *  call-seq:
+ *     svd -> [left_matrix, singular_values, right_matrix]
+ *
+ *  Decompose the given (m,n) matrix to a product of three matrices, U, S, V.
+ *  U is a (m,m) orthogonal matrix, S is a (m,n) matrix which is zero except for
+ *  min(m,n) diagonal elements, and V is a (n,n) orthogonal matrix.
+ *  (Usually SVD is defined as M = U*S*transpose(V), but this methods returns
+ *  transpose(V) rather than V.) The singular_values is a min(m,n) dimension
+ *  column vector.
+ */
+static VALUE
+s_LAMatrix_SVD(VALUE self)
+{
+	LAMatrix *mp1, *mp2, *mp3, *mp4;
+	int info, n;
+	Data_Get_Struct(self, LAMatrix, mp1);
+	mp2 = LAMatrixNew(mp1->row, mp1->row);
+	n = (mp1->column > mp1->row ? mp1->row : mp1->column);
+	mp3 = LAMatrixNew(n, 1);
+	mp4 = LAMatrixNew(mp1->column, mp1->column);
+	if ((info = LAMatrixSingularValueDecomposition(mp2, mp3, mp4, mp1)) != 0)
+		rb_raise(rb_eArgError, "cannot perform singular value decomposition");
+	return rb_ary_new3(3, Data_Wrap_Struct(rb_cLAMatrix, 0, -1, mp2), Data_Wrap_Struct(rb_cLAMatrix, 0, -1, mp3), Data_Wrap_Struct(rb_cLAMatrix, 0, -1, mp4));
 }
 
 /*
@@ -2901,6 +2927,7 @@ Init_MolbyTypes(void)
 	rb_define_method(rb_cLAMatrix, "column_size", s_LAMatrix_ColumnSize, 0);
 	rb_define_method(rb_cLAMatrix, "row_size", s_LAMatrix_RowSize, 0);
 	rb_define_method(rb_cLAMatrix, "eigenvalues", s_LAMatrix_Eigenvalues, 0);
+	rb_define_method(rb_cLAMatrix, "svd", s_LAMatrix_SVD, 0);
 	rb_define_method(rb_cLAMatrix, "to_a", s_LAMatrix_ToArray, 0);
 	rb_define_method(rb_cLAMatrix, "inspect", s_LAMatrix_Inspect, 0);
 	rb_define_alias(rb_cLAMatrix, "to_s", "inspect");

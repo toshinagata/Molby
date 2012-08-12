@@ -576,6 +576,41 @@ LAMatrixSymDiagonalize(LAMatrix *eigenValues, LAMatrix *eigenVectors, const LAMa
 	return info;
 }
 
+/*  Singular value decomposition  */
+/*  M = U W Vt, M: (m, n) Matrix, U: (m, m) orthogonal matrix, W: min(m, n) column vector, Vt: (n, n) orthogonal matrix (not V)  */
+int
+LAMatrixSingularValueDecomposition(LAMatrix *matU, LAMatrix *matW, LAMatrix *matV, const LAMatrix *mat)
+{
+	__CLPK_integer m, n, lda, num, *iwork, lwork, info;
+	__CLPK_doublereal workSize, *work, *matData;
+	m = mat->row;
+	n = mat->column;
+	lda = m;
+	num = (m < n ? m : n);
+	LAMatrixResize(matW, num, 1);
+	LAMatrixResize(matU, m, m);
+	LAMatrixResize(matV, n, n);
+	matData = (__CLPK_doublereal *)malloc(sizeof(__CLPK_doublereal) * n * m);
+	memmove(matData, mat->data, sizeof(__CLPK_doublereal) * n * m);
+	iwork = (__CLPK_integer *)malloc(sizeof(__CLPK_integer) * num);
+	lwork = -1;
+	info = 0;
+	dgesdd_("A", &m, &n, matData, &lda, matW->data, matU->data, &m, matV->data, &n, &workSize, &lwork, iwork, &info);
+	
+	if (info != 0) {
+		free(matData);
+		free(iwork);
+		return info;
+	}
+	lwork = workSize;
+	work = (__CLPK_doublereal *)malloc(sizeof(__CLPK_doublereal) * lwork);
+	dgesdd_("A", &m, &n, matData, &lda, matW->data, matU->data, &m, matV->data, &n, work, &lwork, iwork, &info);
+	free(work);
+	free(iwork);
+	free(matData);
+	return info;
+}
+
 #pragma mark ==== Array ====
 
 /*  Assign a value to an array. An array is represented by two fields; count and base,
