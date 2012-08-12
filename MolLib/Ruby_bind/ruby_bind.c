@@ -8697,7 +8697,7 @@ s_Molecule_CreateGraphic(int argc, VALUE *argv, VALUE self)
 		g.points[i * 3 + 1] = v.y;
 		g.points[i * 3 + 2] = v.z;
 	}
-	if (g.kind == kMainViewGraphicEllipsoid && ni == 2) {
+	if (g.kind == kMainViewGraphicEllipsoid && ni == 1) {
 		/*  Sphere  */
 		AssignArray(&g.points, &g.npoints, sizeof(GLfloat) * 3, 4, NULL);
 		g.points[6] = g.points[8] = g.points[9] = g.points[10] = 0;
