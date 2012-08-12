@@ -1196,26 +1196,12 @@ drawAtom(MainView *mview, int i1, int selected, const Vector *dragOffset, const 
 		/*  Extra 2 atoms for the bond being newly created  */
 		if (mview->draggingMode != kMainViewCreatingBond)
 			return;
-	/*	printf("mview->tempAtoms[%d] = %d\n", i - natoms, mview->tempAtoms[i - natoms]); */
 		if (mview->tempAtoms[i1 - natoms] >= 0)
 			return;  /*  Already drawn  */
 		ap = NULL;
 		an1 = 6;
 		r1 = mview->tempAtomPos[i1 - natoms];
 		label[0] = 0;
-/*	} else if (i1 < 0) {
-		ExAtom *ep = mview->mol->exatoms + (- i1 - 1);
-		ap = ATOM_AT_INDEX(mview->mol->atoms, ep->index);
-		an1 = ap->atomicNumber;
-		r1 = ap->r;
-		trp = &(SYMMETRY_AT_INDEX(mview->mol->syms, ep->symop));
-		if (mview->mol->cell != NULL) {
-			TransformVec(&r1, mview->mol->cell->rtr, &r1);
-			TransformVec(&r1, *trp, &r1);
-			TransformVec(&r1, mview->mol->cell->tr, &r1);
-		} else TransformVec(&r1, *trp, &r1);
-		VecInc(r1, ep->dr);
-		label[0] = 0; */
 	} else {
 		ap = ATOM_AT_INDEX(mview->mol->atoms, i1);
 		if (ap == NULL)
@@ -1251,8 +1237,6 @@ drawAtom(MainView *mview, int i1, int selected, const Vector *dragOffset, const 
 	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, rgba);
 	if (periodicOffset != NULL)
 		VecInc(r1, *periodicOffset);
-/*	if (mview->mol->is_xtal_coord)
-		TransformVec(&r1, mview->mol->cell->tr, &r1); */
 	p[0] = r1.x; p[1] = r1.y; p[2] = r1.z;
 	if (mview->draggingMode == kMainViewDraggingSelectedAtoms && selected) {
 		p[0] += dragOffset->x;
@@ -1261,8 +1245,6 @@ drawAtom(MainView *mview, int i1, int selected, const Vector *dragOffset, const 
 	}
 	if (mview->showEllipsoids) {
 		if (ap != NULL && ap->aniso != NULL) {
-		/*	Double xp[3][3]; */
-		/*	int i, j; */
 			GLfloat elip[9];
 			Mat33 pmat2;
 			int i;
@@ -1276,22 +1258,6 @@ drawAtom(MainView *mview, int i1, int selected, const Vector *dragOffset, const 
 				for (i = 0; i < 9; i++)
 					elip[i] = ap->aniso->pmat[i] * mview->probabilityScale;
 			}
-		/*	for (i = 0; i < 3; i++) {
-				Double w = ap->aniso->val[i];
-				Vector vv = ap->aniso->axis[i];
-				if (w <= 0.0)
-					w = 0.001;
-				if (trp != NULL) {
-					TransformVec(&vv, mview->mol->cell->rtr, &vv);
-					MatrixVec(&vv, *((Mat33 *)trp), &vv);
-					TransformVec(&vv, mview->mol->cell->tr, &vv);
-				}
-				w *= mview->probabilityScale;
-				xp[i][0] = w * vv.x;
-				xp[i][1] = w * vv.y;
-				xp[i][2] = w * vv.z;
-			} */
-			
 			drawEllipsoid(p, elip, elip+3, elip+6, 15);
 		} else {
 			Double rad;
@@ -1340,15 +1306,6 @@ drawBond(MainView *mview, int i1, int i2, int selected, int selected2, int draft
 				r[i] = mview->tempAtomPos[in - natoms];
 				an[i] = 6;
 			}
-/*		} else if (in < 0) {
-			ExAtom *ep = mview->mol->exatoms + (- in - 1);
-			if (!mview->showExpandedAtoms)
-				return;
-			ap = ATOM_AT_INDEX(mview->mol->atoms, ep->index);
-			an[i] = ap->atomicNumber;
-			r[i] = ap->r;
-			TransformVec(&r[i], SYMMETRY_AT_INDEX(mview->mol->syms, ep->symop), &r[i]);
-			VecInc(r[i], ep->dr); */
 		} else {
 			ap = ATOM_AT_INDEX(mview->mol->atoms, in);
 			an[i] = ap->atomicNumber;
@@ -1370,10 +1327,6 @@ drawBond(MainView *mview, int i1, int i2, int selected, int selected2, int draft
 		VecInc(r[0], *periodicOffset);
 		VecInc(r[1], *periodicOffset);
 	}
-/*	if (mview->mol->is_xtal_coord) {
-		TransformVec(&r[0], mview->mol->cell->tr, &r[0]);
-		TransformVec(&r[1], mview->mol->cell->tr, &r[1]);
-	} */
 
 	dp = &(gElementParameters[an[0]]);
 	if (dp == NULL)

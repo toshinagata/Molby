@@ -3650,9 +3650,6 @@ md_arena_release(MDArena *arena)
 		free(arena->fragment_indices);
 	if (arena->fragment_info != NULL)
 		free(arena->fragment_info);
-/*#warning "TODO: Is arena->exatoms really necessary? "*/
-/*	if (arena->exatoms != NULL)
-		free(arena->exatoms); */
 	if (arena->special_positions != NULL)
 		free(arena->special_positions);
 	if (arena->exlist != NULL)

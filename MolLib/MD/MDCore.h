@@ -215,7 +215,6 @@ typedef struct MDArena {
 	Double probe_radius;  /*  The probe radius for surface area calculation  */
 	Double surface_tension; /*  The microscopic surface tension for SASA potential  */
 	Int surface_potential_freq;
-//	Int sphere_points;   /*  The number of sphere points  */
 	
 	/*  Attempt to handle _extremely_ distorted structures. */
 	Double anbond_thres;  /* The bond with initial length >= (1+anbond_thres)*r0 is an abnormal bond */
@@ -242,20 +241,6 @@ typedef struct MDArena {
 	Byte minimize_cell;
 #endif
 	
-	/*  Fix atoms  */
-	/*	Int nfix_atoms;
-	 fix_atom_record *fix_atoms; */
-	
-	/*  Switch the bond potential from harmonic to linear at r >= (1 + bond_switch) * r0  */
-	/*	Double bond_switch; */
-	/*	Double bond_switch_thres; *//* Bond switch is ON only for those bonds whose initial length >= (1 + bond_switch_thres) * r0  */
-	
-	/*  Artificial, quadratic potential centered at a certain atom - OBSOLETE  */
-	/*	Double  centric_potential_force;
-	 Int    centric_potential_center;
-	 Double  centric_potential_inner_limit;  *//*  potential = 0 for r < inner_limit  */
-	/*	Double  centric_potential_outer_limit;  *//*  Switch the potential to linear at r > outer_limit  */
-	
 	/*  Spherical boundary condition  */
 	Double  spherical_bc_force;
 	Vector spherical_bc_center;
@@ -277,11 +262,6 @@ typedef struct MDArena {
 
 	/*  Velocity limit  */
 	Double  velocity_limit;  /*  Default = 100  */
-	
-	/*  TCL interface  */
-//	void *tcl_interp;       /*  TCL interpreter; the type is actually (Tcl_Interp *) */
-//	void *tcl_retval;       /*  The return value from the callback procedure; set only by md_abort. */
-//	const char *callback;   /*  TCL callback procedure  */
 	
 	/*  Runtime fields  */
 	
@@ -334,21 +314,12 @@ typedef struct MDArena {
 	Double  average_temperature;
 
 	/*  Temporary storage for pair interaction calculations  */
-	/*	char   *group_flags; */
-//	void *group_flags_1, *group_flags_2;  /*  hold the TCL objects  */
 	Double   pair_energies[2];  /* [0]: vdw, [1]: electrostatic */
 	Vector *pair_forces;
 	
 	/*  Symmetry operation  */
-//	Int    nsyms;
-//	Transform  *syms;
 	Int ncellsyms;
 	Transform  *cellsyms;  /*  celltr * syms[i] * rcelltr  */
-	
-	/*  Unit cell vectors  */
-//	Vector cella, cellb, cellc, cello;
-//	Transform celltr;  /*  fractional coordinate -> cartesian  */
-//	Transform rcelltr; /*  cartesian -> fractional coordinate  */
 	
 	/*  Use periodic boundary conditions along a/b/c axes?  */
 	Int    periodic_a, periodic_b, periodic_c;
@@ -369,28 +340,8 @@ typedef struct MDArena {
 		Double  mass;
 	} *fragment_info;     /*  array[nfragments]; internally used  */
 	
-	/*  "Image" atoms for non-bonding calculations under periodic boundary conditions */
-/*	Int    nexatoms;         */ /*  May fluctuate during simulation  */
-/*	Atom  *exatoms; */
-/*	Int    nexatoms_current;  *//*  Current number of "image" atoms  */
-	
-	/*  sym_relate[i*nsyms+j] is the index of atom that coincide with atom i transformed by inverse of syms[j] */
-	/*	Int   *sym_relate; */
-	
 	/*  The tolerance (in angstrom) to find symmetry-equivalent atoms. Default = 5e-3  */
 	Double sym_tolerance;
-	
-	/*  Multiplicity of each atom implied by symmetry operation  */
-	/*	Int   *sym_mult; */
-	
-	/*  The following 4 arrays are allocated as a contiguous chunk. Call free() for the first one only. */
-	/*  Meaning of the value (v) in sym_****_uniq (**** = bond, angle, dihedral, improper):
-	 v < 0: the **** is unique and its multiplicity is -v.
-	 v >= 0: the **** is not unique and equivalent to v-th ****.  */
-	/*	Int   *sym_bond_uniq;
-	 Int   *sym_angle_uniq;
-	 Int   *sym_dihedral_uniq;
-	 Int   *sym_improper_uniq; */
 	
 	/*  Information for special positions  */
 	Int    nspecial_positions;

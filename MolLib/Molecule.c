@@ -485,16 +485,6 @@ MoleculeClear(Molecule *mp)
 		IntGroupRelease(mp->selection);
 		mp->selection = NULL;
 	}
-/*	if (mp->exatoms != NULL) {
-		free(mp->exatoms);
-		mp->exatoms = NULL;
-		mp->nexatoms = 0;
-	}
-	if (mp->exbonds != NULL) {
-		free(mp->exbonds);
-		mp->exbonds = NULL;
-		mp->nexbonds = 0;
-	} */
 	if (mp->frame_cells != NULL) {
 		free(mp->frame_cells);
 		mp->frame_cells = NULL;
@@ -4945,14 +4935,6 @@ MoleculeDeserialize(const char *data, Int length, Int *timep)
 			n = len / sizeof(Transform);
 			NewArray(&mp->syms, &mp->nsyms, sizeof(Transform), n);
 			memmove(mp->syms, ptr, len);
-/*		} else if (strcmp(data, "EXATOM") == 0) {
-			n = len / sizeof(ExAtom);
-			NewArray(&mp->exatoms, &mp->nexatoms, sizeof(ExAtom), n);
-			memmove(mp->exatoms, ptr, len); */
-/*		} else if (strcmp(data, "EXBOND") == 0) {
-			n = len / (sizeof(Int) * 2);
-			NewArray(&mp->exbonds, &mp->nexbonds, sizeof(Int) * 2, n);
-			memmove(mp->exbonds, ptr, len); */
 		} else if (strcmp(data, "TIME") == 0) {
 			if (timep != NULL)
 				*timep = *((Int *)ptr);
@@ -5197,38 +5179,6 @@ MoleculeSerialize(Molecule *mp, Int *outLength, Int *timep)
 		memmove(p, mp->syms, sizeof(Transform) * mp->nsyms);
 		len_all += len;
 	}
-	
-	/*  Expanded atoms  */
-/*	if (mp->nexatoms > 0) {
-		len = 8 + sizeof(Int) + sizeof(ExAtom) * mp->nexatoms;
-		ptr = (char *)realloc(ptr, len_all + len);
-		if (ptr == NULL)
-			goto out_of_memory;
-		p = ptr + len_all;
-		memmove(p, "EXATOM\0\0", 8);
-		*((Int *)(p + 8)) = sizeof(ExAtom) * mp->nexatoms;
-		p += 8 + sizeof(Int);
-		memmove(p, mp->exatoms, sizeof(ExAtom) * mp->nexatoms);
-		for (i = 0; i < mp->nexatoms; i++) {
-			//  Clear label id
-			((ExAtom *)p)[i].labelid = 0;
-		}
-		len_all += len;
-	} */
-	
-	/*  Expanded bonds  */
-/*	if (mp->nexbonds > 0) {
-		len = 8 + sizeof(Int) + sizeof(Int) * 2 * mp->nexbonds;
-		ptr = (char *)realloc(ptr, len_all + len);
-		if (ptr == NULL)
-			goto out_of_memory;
-		p = ptr + len_all;
-		memmove(p, "EXBOND\0\0", 8);
-		*((Int *)(p + 8)) = sizeof(Int) * 2 * mp->nexbonds;
-		p += 8 + sizeof(Int);
-		memmove(p, mp->exbonds, sizeof(Int) * 2 * mp->nexbonds);
-		len_all += len;
-	} */
 	
 	/*  Parameters  */
 	if (mp->par != NULL) {

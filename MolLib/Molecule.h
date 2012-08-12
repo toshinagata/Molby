@@ -266,10 +266,6 @@ typedef struct Molecule {
 	Int    nsyms;        /*  Symmetry operations; syms are always described in crystallographic units (even when the unit cell is not defined)  */
 	Transform *syms;
 	IntGroup *selection;
-/*	Int    nexatoms;
-	ExAtom *exatoms;
-	Int    nexbonds;
-	Int    *exbonds;  */  /*  The size of array is 2*nbonds; Atom index >= 0 : base atoms, < 0 : expanded atoms at index -exbonds[n]-1  */
 	Int    nframes;      /*  The number of frames (>= 1). This is a cached value, and should be
 							 recalculated from the atoms if it is -1  */
 	Int    cframe;       /*  The current frame number  */
