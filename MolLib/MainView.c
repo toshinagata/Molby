@@ -1107,7 +1107,7 @@ drawGraphite(MainView *mview)
 		origin.x = origin.y = origin.z = 0.0;
 		xaxis.x = yaxis.y = zaxis.z = 1.0;
 		xaxis.y = xaxis.z = yaxis.x = yaxis.z = zaxis.x = zaxis.y = 0.0;
-		R = 1.23;
+		R = 1.42;
 	}
 	i0 = -(mview->showGraphite / 2) - 1;
 	i1 = i0 + mview->showGraphite + 1;
