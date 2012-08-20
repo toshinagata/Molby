@@ -262,6 +262,15 @@ typedef struct MDArena {
 
 	/*  Velocity limit  */
 	Double  velocity_limit;  /*  Default = 100  */
+
+	/*  Wrap the coordinates to the unit cell. This affects only the output (not internal coordinates)  */
+	Int    wrap_coordinates;
+	
+	/*  Pressure control  */
+	Int    pressure_freq;
+	
+	/*  The tolerance (in angstrom) to find symmetry-equivalent atoms. Default = 5e-3  */
+	Double sym_tolerance;
 	
 	/*  Runtime fields  */
 	
@@ -324,13 +333,6 @@ typedef struct MDArena {
 	/*  Use periodic boundary conditions along a/b/c axes?  */
 	Int    periodic_a, periodic_b, periodic_c;
 	
-	/*  Wrap the coordinates to the unit cell. This affects only the output (not internal coordinates)  */
-	Int    wrap_coordinates;
-	
-	/*  Pressure control  */
-	Int    pressure_freq;
-	struct MDPressureArena *pressure;
-	
 	/*  Fragment informations  */
 	/*  Fragment is a cluster of symmetry-unique atoms that are connected by bonds */
 	Int    nfragments;        /*  Number of fragments  */
@@ -339,9 +341,6 @@ typedef struct MDArena {
 		Vector pos;
 		Double  mass;
 	} *fragment_info;     /*  array[nfragments]; internally used  */
-	
-	/*  The tolerance (in angstrom) to find symmetry-equivalent atoms. Default = 5e-3  */
-	Double sym_tolerance;
 	
 	/*  Information for special positions  */
 	Int    nspecial_positions;
@@ -394,12 +393,13 @@ typedef struct MDArena {
 	
 	/*  Surface potential calculation  */
 	struct SPArena *sp_arena;
-//	Double  surface_potential; /*  The surface potential  */
-//	Vector *sp_grad;          /*  The gradient of the surface potential for each atom coordinates */
 	
 	/*  Graphite calculation  */
 	struct MDGraphiteArena *graphite;
 	
+	/*  Pressure control  */
+	struct MDPressureArena *pressure;
+
 } MDArena;
 
 Double md_rand(void);

@@ -3686,47 +3686,82 @@ md_arena_init_from_arena(MDArena *arena, MDArena *another_arena)
 	if (arena == NULL || another_arena == NULL)
 		return;
 
-	arena->timestep = another_arena->timestep;
+#define COPY_FIELD(f) arena->f = another_arena->f
+#define COPY_STR_FIELD(s) do { if (another_arena->s != NULL) arena->s = strdup(another_arena->s); } while (0)
+#define COPY_ARY_FIELD(n, a, size) do { if (another_arena->n != 0) { NewArray(&arena->a, &arena->n, (size), another_arena->n); memmove(arena->a, another_arena->a, (size) * another_arena->n); } } while (0)
 	
-	arena->coord_output_freq = another_arena->coord_output_freq;
-	arena->energy_output_freq = another_arena->energy_output_freq;
-	arena->cutoff = another_arena->cutoff;
-	arena->electro_cutoff = another_arena->electro_cutoff;
-	arena->pairlist_distance = another_arena->pairlist_distance;
-	arena->use_xplor_shift = another_arena->use_xplor_shift;
-	arena->scale14_vdw = another_arena->scale14_vdw;
-	arena->scale14_elect = another_arena->scale14_elect;
-	arena->temperature = another_arena->temperature;
-	arena->rescale_temp_freq = another_arena->rescale_temp_freq;
-	arena->reinit_temp_freq = another_arena->reinit_temp_freq;
-	arena->velocities_read = another_arena->velocities_read;
-	arena->dielectric = another_arena->dielectric;
-	arena->probe_radius = another_arena->probe_radius;
-	arena->surface_tension = another_arena->surface_tension;
-	arena->surface_potential_freq = another_arena->surface_potential_freq;
-	arena->anbond_thres = another_arena->anbond_thres;
-	arena->anbond_anneal_rate = another_arena->anbond_anneal_rate;
-	arena->velocity_limit = another_arena->velocity_limit;
-	arena->sym_tolerance = another_arena->sym_tolerance;
-	arena->gradient_convergence = another_arena->gradient_convergence;
-	arena->coordinate_convergence = another_arena->coordinate_convergence;
-	arena->relocate_center = another_arena->relocate_center;
-	arena->andersen_thermo_freq = another_arena->andersen_thermo_freq;
-	arena->andersen_thermo_coupling = another_arena->andersen_thermo_coupling;
-	arena->pressure_freq = another_arena->pressure_freq;
-}
+	COPY_STR_FIELD(log_result_name);
+	COPY_STR_FIELD(coord_result_name);
+	COPY_STR_FIELD(vel_result_name);
+	COPY_STR_FIELD(force_result_name);
+	COPY_STR_FIELD(extend_result_name);
+	COPY_STR_FIELD(debug_result_name);
+	COPY_FIELD(debug_output_level);
+	
+	COPY_FIELD(step);
+	COPY_FIELD(start_step);
+	COPY_FIELD(end_step);
+	COPY_FIELD(coord_output_freq);
+	COPY_FIELD(coord_output_freq);
+	COPY_FIELD(coord_result_frame);
+	COPY_FIELD(timestep);
+	COPY_FIELD(cutoff);
+	COPY_FIELD(electro_cutoff);
+	COPY_FIELD(pairlist_distance);
+	COPY_FIELD(temperature);
+	COPY_FIELD(rescale_temp_freq);
+	COPY_FIELD(reinit_temp_freq);
+	COPY_FIELD(velocities_read);
+	COPY_FIELD(random_seed);
+	COPY_FIELD(dielectric);
+	COPY_FIELD(gradient_convergence);
+	COPY_FIELD(coordinate_convergence);
+	COPY_FIELD(use_xplor_shift);
+	
+	COPY_FIELD(scale14_vdw);
+	COPY_FIELD(scale14_elect);
+	
+	COPY_FIELD(relocate_center);
+	COPY_FIELD(quench_translational_momentum);
+	COPY_FIELD(quench_angular_momentum);
+	COPY_FIELD(output_expanded_atoms);
+	
+	COPY_FIELD(andersen_thermo_freq);
+	COPY_FIELD(andersen_thermo_coupling);
 
-/*
-PROGRAM
-{
-	call force(f)
-	do loop=1,nstep
-	  v = v + (dt/2) * (f/m)
-	  r = r + dt*v;
-	  call rattle_coodinate
-	  call force(f)
-	  v = v + (dt/2) * (f/m)
-	  call rattle_velocity
-    enddo
+	COPY_FIELD(probe_radius);
+	COPY_FIELD(surface_tension);
+	COPY_FIELD(surface_potential_freq);
+
+	COPY_FIELD(anbond_thres);
+	COPY_FIELD(anbond_anneal_rate);
+
+	COPY_ARY_FIELD(nalchem_flags, alchem_flags, sizeof(char));
+	COPY_FIELD(alchem_lambda);
+	COPY_FIELD(alchem_dlambda);
+	COPY_FIELD(alchem_energy);
+	
+#if MINIMIZE_CELL
+	COPY_FIELD(minimize_cell);
+#endif
+	
+	COPY_FIELD(spherical_bc_force);
+	COPY_FIELD(spherical_bc_center);
+	COPY_FIELD(spherical_bc_inner_limit);
+	COPY_FIELD(spherical_bc_outer_limit);
+
+	COPY_FIELD(box_potential_xsize);
+	COPY_FIELD(box_potential_ysize);
+	COPY_FIELD(box_potential_zsize);
+	COPY_FIELD(box_potential_force);
+	
+	COPY_FIELD(use_graphite);
+	
+	COPY_ARY_FIELD(nexforces, exforces, sizeof(Vector));
+	
+	COPY_FIELD(velocity_limit);
+	
+	COPY_FIELD(wrap_coordinates);
+	COPY_FIELD(pressure_freq);
+	COPY_FIELD(sym_tolerance);
 }
-*/
