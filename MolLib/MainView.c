@@ -1582,6 +1582,34 @@ skip:
 }
 
 static void
+drawPiAtoms(MainView *mview)
+{
+	Int i, j, *cp;
+	Vector cen;
+	PiAtom *pp;
+	Double rad;
+	GLfloat fval[12];
+	static GLfloat sLightGreenColor[] = {0, 1, 0.75, 1};
+	for (i = 0, pp = mview->mol->piatoms; i < mview->mol->npiatoms; i++, pp++) {
+		VecZero(cen);
+		cp = AtomConnectData(&pp->connect);
+		for (j = 0; j < pp->connect.count; j++) {
+			Vector r = ATOM_AT_INDEX(mview->mol->atoms, cp[j])->r;
+			Double d = (j < pp->ncoeffs ? pp->coeffs[j] : 0.0);
+			VecScaleInc(cen, r, d);
+		}
+		rad = 0.1;
+		fval[0] = cen.x;
+		fval[1] = cen.y;
+		fval[2] = cen.z;
+		fval[3] = fval[7] = fval[11] = rad;
+		fval[4] = fval[5] = fval[6] = fval[8] = fval[9] = fval[10] = 0.0;
+		glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, sLightGreenColor);
+		drawEllipsoid(fval, fval + 3, fval + 6, fval + 9, 8);
+	}
+}
+
+static void
 drawGraphics(MainView *mview)
 {
 	int i, j;
@@ -1908,6 +1936,7 @@ MainView_drawModel(MainView *mview)
 	
 	MainViewCallback_clearLabels(mview);
     drawModel(mview);
+	drawPiAtoms(mview);
 	drawUnitCell(mview);
 	drawRotationCenter(mview);
 	drawGraphics(mview);

@@ -172,13 +172,15 @@ typedef struct XtalCell {
 	Double  cellsigma[6];  /*  For crystallographic data; sigma for the cell parameters  */
 } XtalCell;
 
-/*  Expanded atoms  */
-typedef struct ExAtom {
-	Int    index;        /*  Base atom index  */
-	Vector dr;           /*  Translational offset  */
-	Int    symop;        /*  Symmetry operation  */
-	Int    labelid;      /*  Label ID; 0 for no label  */
-} ExAtom;
+
+/*  Dummy atoms to represent metal-pi bonds  */
+typedef struct PiAtom {
+	char aname[4];
+	UInt type;
+	AtomConnect connect;
+	Int  ncoeffs;
+	Double *coeffs;  /*  The piatom position is given by sum(i, atoms[connect.data[i]] * coeffs[i]) */
+} PiAtom;
 
 /*  3-Dimensional distribution  */
 typedef struct Cube {
@@ -265,6 +267,17 @@ typedef struct Molecule {
 	XtalCell   *cell;
 	Int    nsyms;        /*  Symmetry operations; syms are always described in crystallographic units (even when the unit cell is not defined)  */
 	Transform *syms;
+	Int    npiatoms;     /*  Number of "dummy" atoms to represent pi-metal bonds  */
+	PiAtom *piatoms;
+	Int    npibonds;
+	Int    *pibonds;     /*  Array to represent bond/angle/dihedral including piatoms. */
+                         /* [n1, n2, -1, -1]: bonds,
+							[n1, n2, n3, -1]: angle,
+						    [n1, n2, n3, n4]: dihedral,
+						    where n# is atom index if it is <ATOMS_MAX_NUMBER and
+						    is piatom index + ATOMS_MAX_NUMBER otherwise.
+						    The size of array is 4*npibonds.  */
+	
 	IntGroup *selection;
 	Int    nframes;      /*  The number of frames (>= 1). This is a cached value, and should be
 							 recalculated from the atoms if it is -1  */
