@@ -149,7 +149,8 @@ typedef struct MainView {
 	float dragEndPos[3];    /* dragEndPos[2] is always == dragStartpos[2]  */
 	Vector tempAtomPos[2];  /* The positions of the atoms forming the temporary bond */
 	int tempAtoms[2];       /* The atoms forming the temporary bond */
-
+	Vector dragOffset;      /* Offset during dragging; recalculated in drawModel()  */
+	
 	Int pasteCount;         /* Used to offset the pasted fragment when the same fragment is pasted multiple times */
 	Int pasteTimeStamp;     /* A time stamp for the last cut/copied/pasted fragment */
 

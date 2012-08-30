@@ -1411,7 +1411,6 @@ drawModel(MainView *mview)
 	int amin, amax, bmin, bmax, cmin, cmax, da, db, dc;
 	Byte original;
 	Double atomRadius, bondRadius;
-	Vector dragOffset;
 	Vector periodicOffset;
 	Vector *axes;
 	int selected, selected2;
@@ -1432,8 +1431,8 @@ drawModel(MainView *mview)
 	else selectFlags = NULL;
 	
 	if (mview->draggingMode == kMainViewDraggingSelectedAtoms)
-		calcDragOffset(mview, &dragOffset);
-	else dragOffset.x = dragOffset.y = dragOffset.z = 0;
+		calcDragOffset(mview, &mview->dragOffset);
+	else mview->dragOffset.x = mview->dragOffset.y = mview->dragOffset.z = 0;
 	
 	if (mview->showGraphite > 0 && mview->showGraphiteFlag) {
 		drawGraphite(mview);
@@ -1480,15 +1479,15 @@ drawModel(MainView *mview)
 							selected = selectFlags[i];
 						else
 							selected = MoleculeIsAtomSelected(mview->mol, i);
-						drawAtom(mview, i, selected, &dragOffset, (original ? NULL : &periodicOffset));
+						drawAtom(mview, i, selected, &mview->dragOffset, (original ? NULL : &periodicOffset));
 					}
 				}
 	
 				if (draft == 0) {
 					if (original) {
 						/*  Extra atoms  */
-						drawAtom(mview, natoms, 1, &dragOffset, NULL);
-						drawAtom(mview, natoms + 1, 1, &dragOffset, NULL);
+						drawAtom(mview, natoms, 1, &mview->dragOffset, NULL);
+						drawAtom(mview, natoms + 1, 1, &mview->dragOffset, NULL);
 					}
 					/*  Expanded atoms  */
 				/*	if (mview->showExpandedAtoms) {
@@ -1538,12 +1537,12 @@ skip:
 						selected = selectFlags[n1];
 						selected2 = selectFlags[n2];
 					}
-					drawBond(mview, n1, n2, selected, selected2, draft, &dragOffset, (original ? NULL : &periodicOffset));
+					drawBond(mview, n1, n2, selected, selected2, draft, &mview->dragOffset, (original ? NULL : &periodicOffset));
 				}
 				
 				/*  Extra bond  */
 				if (original && mview->draggingMode == kMainViewCreatingBond) {
-					drawBond(mview, natoms, natoms + 1, 1, 1, draft, &dragOffset, NULL);
+					drawBond(mview, natoms, natoms + 1, 1, 1, draft, &mview->dragOffset, NULL);
 				}
 				
 				/*  Expanded bonds  */
@@ -1584,29 +1583,67 @@ skip:
 static void
 drawPiAtoms(MainView *mview)
 {
-	Int i, j, *cp;
+	Int i, j, *cp, nrp;
 	Vector cen;
 	PiAtom *pp;
 	Double rad;
 	GLfloat fval[12];
-	static GLfloat sLightGreenColor[] = {0, 1, 0.75, 1};
-	for (i = 0, pp = mview->mol->piatoms; i < mview->mol->npiatoms; i++, pp++) {
+	Vector r, *vp, *rp;
+	Double d;
+//	static GLfloat sLightGreenColor[] = {0, 1, 0.50, 1};
+	static GLfloat sLightGreenTransColor[] = {0, 1, 0.50, 0.75};
+	Molecule *mol = mview->mol;
+	vp = (Vector *)malloc(sizeof(Vector) * mol->npiatoms);
+	nrp = 0;
+	rp = NULL;
+	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, sLightGreenTransColor);
+	for (i = 0, pp = mol->piatoms; i < mol->npiatoms; i++, pp++) {
 		VecZero(cen);
 		cp = AtomConnectData(&pp->connect);
+		AssignArray(&rp, &nrp, sizeof(Vector), pp->connect.count - 1, NULL);
 		for (j = 0; j < pp->connect.count; j++) {
-			Vector r = ATOM_AT_INDEX(mview->mol->atoms, cp[j])->r;
-			Double d = (j < pp->ncoeffs ? pp->coeffs[j] : 0.0);
+			r = ATOM_AT_INDEX(mol->atoms, cp[j])->r;
+			if (mview->draggingMode == kMainViewDraggingSelectedAtoms) {
+				if (MoleculeIsAtomSelected(mol, cp[j]))
+					VecInc(r, mview->dragOffset);
+			}
+			d = (j < pp->ncoeffs ? pp->coeffs[j] : 0.0);
 			VecScaleInc(cen, r, d);
+			rp[j] = r;
 		}
+		vp[i] = cen;  /*  Used later for drawing pi bonds  */
 		rad = 0.1;
 		fval[0] = cen.x;
 		fval[1] = cen.y;
 		fval[2] = cen.z;
 		fval[3] = fval[7] = fval[11] = rad;
 		fval[4] = fval[5] = fval[6] = fval[8] = fval[9] = fval[10] = 0.0;
-		glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, sLightGreenColor);
 		drawEllipsoid(fval, fval + 3, fval + 6, fval + 9, 8);
+		for (j = 0; j < pp->connect.count; j++) {
+			fval[3] = rp[j].x;
+			fval[4] = rp[j].y;
+			fval[5] = rp[j].z;
+			drawCylinder(fval, fval + 3, 0.05, 6, 0);
+		}
 	}
+	for (i = 0, cp = mol->pibonds; i < mol->npibonds; i++, cp += 4) {
+		if (cp[2] >= 0)
+			continue;  /*  Angle or dihedral  */
+		for (j = 0; j < 2; j++) {
+			if (cp[j] >= 0 && cp[j] < mol->natoms) {
+				r = ATOM_AT_INDEX(mol->atoms, cp[j])->r;
+			} else if (cp[j] >= ATOMS_MAX_NUMBER && cp[j] < ATOMS_MAX_NUMBER + mol->npiatoms) {
+				r = vp[cp[j] - ATOMS_MAX_NUMBER];
+			} else break;
+			fval[j * 3] = r.x;
+			fval[j * 3 + 1] = r.y;
+			fval[j * 3 + 2] = r.z;
+		}
+		if (j == 2)
+			drawCylinder(fval, fval + 3, 0.05, 6, 0);
+	}
+	free(vp);
+	free(rp);
 }
 
 static void
