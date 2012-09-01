@@ -884,6 +884,69 @@ Returns the index of the newly created graphic.
 </p></div>
 </div>
 
+<div id="method-M000242" class="method-detail">
+<a name="create_pi_anchor"></a>
+<div class="method-heading">
+<span class="method-name">create_pi_anchor(name, type, group [, weights]) &rarr; index<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Same as <code>insert_pi_anchor(-1, name, type, group [, weight])</code>.
+</p>
+<p>
+<i>See Also:</i> <a href="Molecule.html#insert_pi_anchor">Molecule#insert_pi_anchor</a>
+</p>
+</div>
+</div>
+
+<div id="method-M000242" class="method-detail">
+<a name="create_pi_anchor_construct"></a>
+<div class="method-heading">
+<span class="method-name">create_pi_anchor_construct(n1, n2, n3 = nil, n4 = nil) &rarr; Integer
+</span>
+</div>
+<div class="method-description">
+<p>
+Create a bond, angle, or dihedral including one or more pi anchor points.
+The arguments can either be an atom representation (atom index, atom name, res_seq:name)
+or a pi-anchor representation (pi-anchor index, pi-anchor name).
+The pi-anchor index is represented by a negative integer -N, which corresponds to the (N-1)-th pi anchor.
+Returns the index for the newly created construct.
+This operation is undoable.
+</p>
+</div>
+</div>
+
+<div id="method-M000242" class="method-detail">
+<a name="count_pi_anchors"></a>
+<div class="method-heading">
+<span class="method-name">count_pi_anchors &rarr; Integer
+</span>
+</div>
+<div class="method-description">
+<p>
+Return the number of currently defined pi anchors.
+</p>
+<p>
+<i>See Also:</i> <a href="Molecule.html#insert_pi_anchor">Molecule#insert_pi_anchor</a>
+</p>
+</div>
+</div>
+
+<div id="method-M000242" class="method-detail">
+<a name="count_pi_anchor_constructs"></a>
+<div class="method-heading">
+<span class="method-name">count_pi_anchor_constructs(IntGroup) &rarr; Integer
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns the number of defined pi-anchor constructs.
+</p>
+</div>
+</div>
+
 <div id="method-M000318" class="method-detail">
 <a name="M000318"></a>
 <div class="method-heading">
@@ -1486,6 +1549,25 @@ first argument is nil, a new frame is inserted at the last. If non-nil
 coordinates is given, it should be an array of arrays of Vector3Ds, and
 those coordinates are set to the new frame. Otherwise, the current coordinates are copied to the new frame. Returns an <a href="IntGroup.html">IntGroup</a> representing
 the inserted frames if successful, nil if not.
+</p>
+</div>
+</div>
+
+<div id="method-M000242" class="method-detail">
+<a name="insert_pi_anchor"></a>
+<div class="method-heading">
+<span class="method-name">insert_pi_anchor(index, name, type, group [, weights]) &rarr; index<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Create a "pi anchor", which is an anchor point to define a metal-pi bond, and insert at the given index.
+If index is negative or no less than the current number of pi anchors, the new anchor is placed at the end of the anchor list.
+Name and type are Strings, and are similar to those in atoms.
+Group is a group of atoms to define a pi system to be bound to the metal.
+Weights (optional) is an Array of Floats, which determine the significance
+of the component atoms. If not given, then 1.0/N (N is the number of atoms
+in the group) is assumed for all atoms. This operation is undoable.
 </p>
 </div>
 </div>
@@ -2128,6 +2210,35 @@ If the molecule has no associated document, then returns nil.
 </div>
 </div>
 
+<div id="method-M000242" class="method-detail">
+<a name="pi_anchor"></a>
+<div class="method-heading">
+<span class="method-name">pi_anchor(index) &rarr; nil or [name, type, group, weights]<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Return the attributes of the idx-th pi anchor if present, otherwise nil.
+</p>
+<p>
+<i>See Also:</i> <a href="Molecule.html#insert_pi_anchor">Molecule#insert_pi_anchor</a>
+</p>
+</div>
+</div>
+
+<div id="method-M000242" class="method-detail">
+<a name="pi_anchor_construct"></a>
+<div class="method-heading">
+<span class="method-name">pi_anchor_construct(index) &rarr; Array of Integers
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns the elements representing the index-th pi anchor constructs.
+</p>
+</div>
+</div>
+
 <div id="method-M000226" class="method-detail">
 <a name="M000226"></a>
 <div class="method-heading">
@@ -2305,6 +2416,37 @@ This operation is undoable.
 </div>
 </div>
 
+<div id="method-M000242" class="method-detail">
+<a name="remove_pi_anchor"></a>
+<div class="method-heading">
+<span class="method-name">remove_pi_anchor(index) &rarr; self<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Remove an existing "pi anchor". The bonds, angles, and dihedrals containing the pi anchor are also remove. This operation is undoable.
+</p>
+<p>
+<i>See Also:</i> <a href="Molecule.html#insert_pi_anchor">Molecule#insert_pi_anchor</a>
+</p>
+</div>
+</div>
+
+<div id="method-M000242" class="method-detail">
+<a name="remove_pi_anchor_constructs"></a>
+<div class="method-heading">
+<span class="method-name">remove_pi_anchor_constructs(IntGroup) &rarr; self <br />
+remove_pi_anchor_construct(IntGroup)
+</span>
+</div>
+<div class="method-description">
+<p>
+Remove pi anchor constructs (bond, angle, dihedral) with indices specified in IntGroup.
+This operation is undoable.
+</p>
+</div>
+</div>
+
 <div id="method-M000243" class="method-detail">
 <a name="M000243"></a>
 <div class="method-heading">
@@ -2332,6 +2474,19 @@ Change the order of atoms so that the atoms specified in the array argument
 appear in this order from the top of the molecule. The atoms that are not included in array are
 placed after these atoms, and these atoms are returned as an intGroup. This
 operation is undoable.
+</p>
+</div>
+</div>
+
+<div id="method-M000242" class="method-detail">
+<a name="replace_pi_anchor"></a>
+<div class="method-heading">
+<span class="method-name">replace_pi_anchor(index, name, type, group [, weights]) &rarr; index<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Replace an existing "pi anchor", which is an anchor point to define a metal-pi bond, with the given parameters. For the meaning of the parameters, see the description in <a href="Molecule.html#insert_pi_anchor">Molecule#insert_pi_anchor</a>. This operation is undoable.
 </p>
 </div>
 </div>

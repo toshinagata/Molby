@@ -66,9 +66,9 @@ extern const char *gMolActionDeleteParameters;
 extern const char *gMolActionAmendBySymmetry;
 extern const char *gMolActionInsertOnePiAtom;
 extern const char *gMolActionReplaceOnePiAtom;
-extern const char *gMolActionDeleteOnePiAtom;
+extern const char *gMolActionRemoveOnePiAtom;
 extern const char *gMolActionInsertPiBonds;
-extern const char *gMolActionDeletePiBonds;
+extern const char *gMolActionRemovePiBonds;
 	
 /*  Special action signatures to invoke the Ruby script. Used as follows:
  *  MolActionCreateAndPerform(mol, SCRIPT_ACTION("vd"), "rotate", vec, angle);

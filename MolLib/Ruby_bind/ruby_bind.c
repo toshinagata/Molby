@@ -9436,19 +9436,19 @@ s_Molecule_ReplacePiAnchor(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     delete_pi_anchor(idx)       -> Molecule
+ *     remove_pi_anchor(idx)       -> Molecule
  *
- *  Delete the pi-anchor at the given index.
+ *  Remove the pi-anchor at the given index.
  */
 static VALUE
-s_Molecule_DeletePiAnchor(VALUE self, VALUE ival)
+s_Molecule_RemovePiAnchor(VALUE self, VALUE ival)
 {
 	Molecule *mol;
 	Int idx = NUM2INT(rb_Integer(ival));
 	Data_Get_Struct(self, Molecule, mol);
 	if (idx < 0 || idx >= mol->npiatoms)
 		rb_raise(rb_eMolbyError, "pi-anchor index (%d) is out of range (should be 0 <= index < %d)", idx, mol->npiatoms);
-	MolActionCreateAndPerform(mol, gMolActionDeleteOnePiAtom, idx);
+	MolActionCreateAndPerform(mol, gMolActionRemoveOnePiAtom, idx);
 	return self;
 }
 
@@ -9506,6 +9506,8 @@ s_Molecule_CountPiAnchors(VALUE self)
  *  Create a bond, angle, or dihedral including one or more pi anchor points.
  *  The arguments can either be an atom representation (atom index, atom name, res_seq:name)
  *  or a pi-anchor representation (pi-anchor index, pi-anchor name).
+ *  The pi-anchor index is represented by a negative integer -N, which corresponds to
+ *  the (N-1)-th pi anchor.
  *  Returns the index for the newly created construct.
  *  This operation is undoable.
  */
@@ -9537,26 +9539,26 @@ s_Molecule_CreatePiAnchorConstruct(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     delete_pi_anchor_constructs(IntGroup)       -> self
+ *     remove_pi_anchor_constructs(IntGroup)       -> self
  *
  *  Remove pi anchor constructs (bond, angle, dihedral) with indices specified in IntGroup.
  *  This operation is undoable.
  */
 static VALUE
-s_Molecule_DeletePiAnchorConstructs(VALUE self, VALUE igval)
+s_Molecule_RemovePiAnchorConstructs(VALUE self, VALUE igval)
 {
     Molecule *mol;
 	IntGroup *ig;
     Data_Get_Struct(self, Molecule, mol);
 	ig = IntGroupFromValue(igval);
-	MolActionCreateAndPerform(mol, gMolActionDeletePiBonds, ig);
+	MolActionCreateAndPerform(mol, gMolActionRemovePiBonds, ig);
 	IntGroupRelease(ig);
 	return self;
 }
 
 /*
  *  call-seq:
- *     count_pi_anchor_constructs(IntGroup)       -> Integer
+ *     count_pi_anchor_constructs       -> Integer
  *
  *  Returns the number of pi anchor constructs.
  */
@@ -9570,9 +9572,9 @@ s_Molecule_CountPiAnchorConstructs(VALUE self)
 
 /*
  *  call-seq:
- *     pi_anchor_construct(IntGroup)       -> Array of Integers
+ *     pi_anchor_construct(index)       -> Array of Integers
  *
- *  Returns the number of pi anchor constructs.
+ *  Returns the elements representing the index-th pi anchor constructs.
  */
 static VALUE
 s_Molecule_PiAnchorConstructAtIndex(VALUE self, VALUE ival)
@@ -9927,12 +9929,12 @@ Init_Molby(void)
 	rb_define_method(rb_cMolecule, "create_pi_anchor", s_Molecule_CreatePiAnchor, -1);
 	rb_define_method(rb_cMolecule, "replace_pi_anchor", s_Molecule_ReplacePiAnchor, -1);
 	rb_define_method(rb_cMolecule, "insert_pi_anchor", s_Molecule_InsertPiAnchor, -1);
-	rb_define_method(rb_cMolecule, "delete_pi_anchor", s_Molecule_DeletePiAnchor, 1);
+	rb_define_method(rb_cMolecule, "remove_pi_anchor", s_Molecule_RemovePiAnchor, 1);
 	rb_define_method(rb_cMolecule, "pi_anchor", s_Molecule_PiAnchorAtIndex, 1);
 	rb_define_method(rb_cMolecule, "count_pi_anchors", s_Molecule_CountPiAnchors, 0);
 	rb_define_method(rb_cMolecule, "create_pi_anchor_construct", s_Molecule_CreatePiAnchorConstruct, -1);
-	rb_define_method(rb_cMolecule, "delete_pi_anchor_constructs", s_Molecule_DeletePiAnchorConstructs, 1);
-	rb_define_alias(rb_cMolecule, "delete_pi_anchor_construct", "delete_pi_anchor_constructs");
+	rb_define_method(rb_cMolecule, "remove_pi_anchor_constructs", s_Molecule_RemovePiAnchorConstructs, 1);
+	rb_define_alias(rb_cMolecule, "remove_pi_anchor_construct", "remove_pi_anchor_constructs");
 	rb_define_method(rb_cMolecule, "count_pi_anchor_constructs", s_Molecule_CountPiAnchorConstructs, 0);
 	rb_define_method(rb_cMolecule, "pi_anchor_construct", s_Molecule_PiAnchorConstructAtIndex, 1);
 	
