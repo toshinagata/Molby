@@ -3058,18 +3058,23 @@ MainView_refreshTable(MainView *mview)
 	/*  Reload data  */
 	if (mview != NULL && mview->mol != NULL) {
 		MainView_refreshCachedInfo(mview);
-		if (mview->mol->arena == NULL) {
+		if (mview->tableIndex == kMainViewBondTableIndex || 
+			mview->tableIndex == kMainViewAngleTableIndex || 
+			mview->tableIndex == kMainViewDihedralTableIndex || 
+			mview->tableIndex == kMainViewImproperTableIndex || 
+			mview->tableIndex == kMainViewParameterTableIndex) {
+			/*  Check the parameter table  */
+			if (mview->mol->arena == NULL)
+				md_arena_new(mview->mol);
 			if (mview->tableIndex == kMainViewParameterTableIndex) {
+				/*  MoleculePrepareMDArena may modify the table (especially impropers)
+				    for MM calculation.  */
 				MoleculePrepareMDArena(mview->mol, 1, NULL);
-			}
-		} else {
-			if (mview->mol->needsMDRebuild &&
-				(mview->tableIndex == kMainViewBondTableIndex || 
-				 mview->tableIndex == kMainViewAngleTableIndex || 
-				 mview->tableIndex == kMainViewDihedralTableIndex || 
-				 mview->tableIndex == kMainViewImproperTableIndex || 
-				 mview->tableIndex == kMainViewParameterTableIndex)) {
-					md_prepare(mview->mol->arena, 1);
+			} else {
+				/*  It is not desirable that just opening bond/angle/dihedral/improper tables
+				    causes modification of the molecule. In this case, direct call to md_prepare
+				    is better.  */
+				md_prepare(mview->mol->arena, 1);
 			}
 		}
 	}
