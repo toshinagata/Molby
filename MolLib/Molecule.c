@@ -299,6 +299,8 @@ MoleculeNew(void)
 		Panic("Cannot allocate new molecule record");
 	snprintf(name, sizeof name, "Untitled %d", sMoleculeUntitledCount++);
 	ObjectInit((Object *)mp, (Object **)&sMoleculeRoot, name);
+	mp->mview = MainView_new();
+	mp->mview->mol = mp;
 	return mp;
 }
 
@@ -568,6 +570,8 @@ MoleculeRelease(Molecule *mp)
 	MoleculeReleaseExternalObj(mp);
 	if (ObjectDecrRefCount((Object *)mp) == 0) {
 		MoleculeClear(mp);
+		mp->mview->mol = NULL;
+		MainView_release(mp->mview);
 		ObjectDealloc((Object *)mp, (Object **)&sMoleculeRoot);
 	}
 }

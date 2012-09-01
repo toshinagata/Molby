@@ -37,6 +37,13 @@ MainViewCallback_setNeedsDisplay(MainView *mview, int flag)
 {
 }
 
+/*
+void
+MainViewCallback_moleculeReplaced(MainView *mview, struct Molecule *mol)
+{
+}
+*/
+
 void
 MyAppCallback_beginUndoGrouping(void)
 {
@@ -260,28 +267,6 @@ MainView_resizeToFit(MainView *mview)
 void
 MolActionCallback_registerUndo(Molecule *mol, MolAction *action)
 {
-}
-
-void
-MainView_setBackgroundColor(MainView *mview, float red, float green, float blue)
-{
-}
-
-void
-MainView_getBackgroundColor(const MainView *mview, float *rgb)
-{
-}
-
-int
-MainView_insertGraphic(MainView *mview, int index, const MainViewGraphic *graphic)
-{
-	return 0;
-}
-
-int
-MainView_removeGraphic(MainView *mview, int index)
-{
-	return 0;
 }
 
 int

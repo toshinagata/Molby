@@ -97,12 +97,43 @@ typedef struct MainViewGraphic {
 
 typedef struct MainView {
 	struct Molecule *mol;
-	void *ref;  /*  A platform-dependent pointer to the main view object (or the main window **controller** object)  */
+	struct Trackball *track;
+	float background_color[4];
+	Int ngraphics;
+	MainViewGraphic *graphics;
+	
+	void *ref;  /*  A platform-dependent pointer to the main view object 
+				   (or the main window **controller** object)
+				    If NULL, then this is a dummy MainView object just for store parameters  */
+
+	Byte showUnitCell;
+	Byte showPeriodicBox;
+	Byte showExpandedAtoms;
+	Byte showEllipsoids;
+	Byte showHydrogens;
+	Byte showDummyAtoms;
+	Byte showRotationCenter;
+	
+	Byte showGraphiteFlag;
+	Int  showGraphite;
+	Byte showPeriodicImageFlag;
+	Int  showPeriodicImage[6];  /* amin, amax, bmin, bmax, cmin, cmax  */
+	
+	Byte lineMode;     /*  Draw the model with lines  */
+	
+	float atomRadius; /* Scale the vdW radius by this value */
+	float bondRadius; /* in angstrom */
+	float probabilityScale;
+	Byte  freezeScreen;
+	float dimension;
+	
+#if !defined(__CMDMAC__)
+	/*  The following members are used in GUI version only  */
+	
 	void *tableRef;  /*  The table view object  */
 
 	unsigned char isInitialized;
 	int mode;
-	struct Trackball *track;
     GLdouble modelview_matrix[16];
     GLdouble projection_matrix[16];
     GLdouble perspective_vector[4];
@@ -113,34 +144,10 @@ typedef struct MainView {
 	Vector lookto;  /*  The direction from the camera to the screen center; this is easily derived by normalizing (lookat - camera), but provided for convenience  */
 	Vector up;      /*  The direction up in the screen  */
 
-	float atomRadius; /* Scale the vdW radius by this value */
-	float bondRadius; /* in angstrom */
-	float probabilityScale;
-	float dimension;
-	
-	float background_color[4];
-	Int ngraphics;
-	MainViewGraphic *graphics;
-	
-	Byte showUnitCell;
-	Byte showPeriodicBox;
-	Byte showExpandedAtoms;
-	Byte showEllipsoids;
-	Byte showHydrogens;
-	Byte showDummyAtoms;
-	Byte showRotationCenter;
-
-	Byte showGraphiteFlag;
-	Int  showGraphite;
-	Byte showPeriodicImageFlag;
-	Int  showPeriodicImage[6];  /* amin, amax, bmin, bmax, cmin, cmax  */
-
 	Byte *visibleFlags;     /*  This is used only as internal cache;
 	                            The attribute of "hidden" atom is set as (ap->exflags & kAtomHiddenFlag).  */
 	Int countHidden;
-	Byte freezeScreen;
 	
-	unsigned char lineMode;     /*  Draw the model with lines  */
 	unsigned char draggingMode; /*  MainViewDraggingMode  */
 	unsigned char isDragging;   /*  Becomes true if mouse moved by a certain amount  */
 	int clickedAtoms[2]; /*  The object under the mouse on mouseDown event. [-1,-1]: nothing, [n,-1]: atom n, [n,m]: bond between atoms n and m  */
@@ -173,10 +180,21 @@ typedef struct MainView {
 	struct IntGroup *tableCache;     /* Indices of atoms etc. that are shown in the table */
 	struct IntGroup *tableSelection; /* Selected rows in the table  */
 
+#endif
+
 } MainView;
 
 /*  Public functions  */
-MainView *MainView_newMainView(void *ref);
+
+/*  "Common" functions, used both in GUI and CMD versions. Defined in MainViewCommon.c  */
+MainView *MainView_new(void);
+void MainView_setBackgroundColor(MainView *mview, float red, float green, float blue);
+void MainView_getBackgroundColor(const MainView *mview, float *rgb);
+int MainView_insertGraphic(MainView *mview, int index, const MainViewGraphic *graphic);
+int MainView_removeGraphic(MainView *mview, int index);
+
+/*  GUI-only functions  */
+void MainView_setViewObject(MainView *mview, void *ref);
 void MainView_initializeOpenGLView(MainView *mview);
 void MainView_release(MainView *mview);
 void MainView_setMolecule(MainView *mview, struct Molecule *mol);
@@ -193,11 +211,6 @@ void MainView_mouseMoved(MainView *view, const float *p, int eventMask);
 
 void MainView_setMode(MainView *mview, int mode);
 int MainView_getMode(const MainView *mview);
-
-void MainView_setBackgroundColor(MainView *mview, float red, float green, float blue);
-void MainView_getBackgroundColor(const MainView *mview, float *rgb);
-int MainView_insertGraphic(MainView *mview, int index, const MainViewGraphic *graphic);
-int MainView_removeGraphic(MainView *mview, int index);
 
 void MainView_attachLabelToAtom(MainView *mview, int index);
 void MainView_detachLabelFromAtom(MainView *mview, int index);
@@ -252,7 +265,7 @@ STUB MainView *MainViewCallback_activeView(void);
 STUB MainView *MainViewCallback_newFromFile(const char *fname);
 STUB int MainViewCallback_importFromFile(MainView *mview, const char *fname);
 STUB void MainViewCallback_getFilename(MainView *mview, char *buf, int bufsize);
-STUB void MainViewCallback_moleculeReplaced(MainView *mview, struct Molecule *mol);
+//STUB void MainViewCallback_moleculeReplaced(MainView *mview, struct Molecule *mol);
 
 STUB struct Label *MainViewCallback_newLabel(MainView *mview, const char *message, float fontsize, const float *forecolor, const float *backcolor); /* colors are rgba */
 STUB void MainViewCallback_releaseLabel(struct Label *label);

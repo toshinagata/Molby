@@ -80,6 +80,8 @@ public:
 
 	void OnActivate(wxActivateEvent &event);
 	
+	void OnMoleculeReplaced();  /*  Called when Molecule is replaced within MyDocument  */
+	
 	/*  MyListCtrlDataSource functions  */
 	virtual int GetItemCount(MyListCtrl *ctrl);
 	virtual wxString GetItemText(MyListCtrl *ctrl, long row, long column) const;

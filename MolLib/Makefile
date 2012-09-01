@@ -5,7 +5,7 @@ DESTDIR = .
 OBJDIR = .
 endif
 
-OBJECTS = IntGroup.o MainView.o MolAction.o Molecule.o \
+OBJECTS = IntGroup.o MainView.o MainViewCommon.o MolAction.o Molecule.o \
   Object.o Dcd.o Parameter.o Trackball.o Types.o Missing.o
 MD_OBJECTS = MDCore.o MDForce.o MDGraphite.o MDPressure.o MDSurface.o
 

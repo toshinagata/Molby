@@ -30,7 +30,8 @@ static VALUE
 	sAlignSymbol, sRightSymbol, sCenterSymbol,
 	sVerticalAlignSymbol, sBottomSymbol, 
 	sMarginSymbol, sPaddingSymbol, sSubItemsSymbol,
-	sHFillSymbol, sVFillSymbol;
+	sHFillSymbol, sVFillSymbol,
+	sIsProcessingActionSymbol;
 
 VALUE rb_cDialog = Qfalse;
 VALUE rb_cDialogItem = Qfalse;
@@ -919,6 +920,9 @@ s_RubyDialog_Item(int argc, VALUE *argv, VALUE self)
 	/*  Set attributes  */
 	s_RubyDialog_SetAttr(self, val, hash);
 	
+	/*  Set internal attributes  */
+	rb_ivar_set(new_item, SYM2ID(sIsProcessingActionSymbol), Qfalse);
+	
 	/*  Type-specific attributes  */
 	if (type == sLineSymbol) {
 		if (rect.size.width > rect.size.height && rect.size.width == 2)
@@ -1287,6 +1291,7 @@ s_RubyDialog_doItemAction(VALUE val)
 	int i, j, n;
 	void **vp = (void **)val;
 	VALUE self = (VALUE)vp[0];
+	VALUE flag;
 	RDItem *ip = (RDItem *)vp[1];
 	RDItem *ip2;
 	VALUE ival, itval, actval;
@@ -1298,7 +1303,12 @@ s_RubyDialog_doItemAction(VALUE val)
 		return Qnil;
 	ival = INT2NUM(idx);
 	itval = s_RubyDialog_ItemAtIndex(self, ival);
-	
+	flag = rb_ivar_get(itval, SYM2ID(sIsProcessingActionSymbol));
+	if (flag == Qtrue)
+		return Qnil;  /*  Avoid recursive calling action proc for the same item  */
+
+	rb_ivar_set(itval, SYM2ID(sIsProcessingActionSymbol), Qtrue);
+
 	/*  Handle radio group  */
 	if (s_RubyDialogItem_Attr(itval, sTypeSymbol) == sRadioSymbol) {
 		VALUE gval = s_RubyDialogItem_Attr(itval, sRadioGroupSymbol);
@@ -1339,9 +1349,14 @@ s_RubyDialog_doItemAction(VALUE val)
 		rb_funcall(itval, SYM2ID(sActionSymbol), 0);
 	} else {
 		/*  Default action (only for default buttons)  */
-		if (idx == 0 || idx == 1)
+		if (idx == 0 || idx == 1) {
+			rb_ivar_set(itval, SYM2ID(sIsProcessingActionSymbol), Qfalse);
 			s_RubyDialog_EndModal(1, &itval, self);
+		}
 	}
+
+	rb_ivar_set(itval, SYM2ID(sIsProcessingActionSymbol), Qfalse);
+	
 	return Qnil;
 }
 
@@ -1423,8 +1438,8 @@ RubyDialogInitClass(void)
 	rb_define_alias(rb_cDialogItem, "set_attr", "[]=");
 	rb_define_alias(rb_cDialogItem, "attr", "[]");
 	{
-		static VALUE *sTable1[] = { &sTextSymbol, &sTextFieldSymbol, &sRadioSymbol, &sButtonSymbol, &sCheckBoxSymbol, &sPopUpSymbol, &sTextViewSymbol, &sViewSymbol, &sDialogSymbol, &sIndexSymbol, &sLineSymbol, &sTagSymbol, &sTypeSymbol, &sTitleSymbol, &sXSymbol, &sYSymbol, &sWidthSymbol, &sHeightSymbol, &sOriginSymbol, &sSizeSymbol, &sFrameSymbol, &sEnabledSymbol, &sEditableSymbol, &sHiddenSymbol, &sValueSymbol, &sRadioGroupSymbol, &sBlockSymbol, &sRangeSymbol, &sActionSymbol, &sAlignSymbol, &sRightSymbol, &sCenterSymbol, &sVerticalAlignSymbol, &sBottomSymbol, &sMarginSymbol, &sPaddingSymbol, &sSubItemsSymbol, &sHFillSymbol, &sVFillSymbol };
-		static const char *sTable2[] = { "text", "textfield", "radio", "button", "checkbox", "popup", "textview", "view", "dialog", "index", "line", "tag", "type", "title", "x", "y", "width", "height", "origin", "size", "frame", "enabled", "editable", "hidden", "value", "radio_group", "block", "range", "action", "align", "right", "center", "vertical_align", "bottom", "margin", "padding", "subitems", "hfill", "vfill" };
+		static VALUE *sTable1[] = { &sTextSymbol, &sTextFieldSymbol, &sRadioSymbol, &sButtonSymbol, &sCheckBoxSymbol, &sPopUpSymbol, &sTextViewSymbol, &sViewSymbol, &sDialogSymbol, &sIndexSymbol, &sLineSymbol, &sTagSymbol, &sTypeSymbol, &sTitleSymbol, &sXSymbol, &sYSymbol, &sWidthSymbol, &sHeightSymbol, &sOriginSymbol, &sSizeSymbol, &sFrameSymbol, &sEnabledSymbol, &sEditableSymbol, &sHiddenSymbol, &sValueSymbol, &sRadioGroupSymbol, &sBlockSymbol, &sRangeSymbol, &sActionSymbol, &sAlignSymbol, &sRightSymbol, &sCenterSymbol, &sVerticalAlignSymbol, &sBottomSymbol, &sMarginSymbol, &sPaddingSymbol, &sSubItemsSymbol, &sHFillSymbol, &sVFillSymbol, &sIsProcessingActionSymbol };
+		static const char *sTable2[] = { "text", "textfield", "radio", "button", "checkbox", "popup", "textview", "view", "dialog", "index", "line", "tag", "type", "title", "x", "y", "width", "height", "origin", "size", "frame", "enabled", "editable", "hidden", "value", "radio_group", "block", "range", "action", "align", "right", "center", "vertical_align", "bottom", "margin", "padding", "subitems", "hfill", "vfill", "is_processing_action" };
 		int i;
 		for (i = 0; i < sizeof(sTable1) / sizeof(sTable1[0]); i++)
 			*(sTable1[i]) = ID2SYM(rb_intern(sTable2[i]));

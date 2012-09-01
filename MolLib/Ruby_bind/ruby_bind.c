@@ -9373,7 +9373,9 @@ s_Molecule_CreateOrReplacePiAnchor(int func, int argc, VALUE *argv, VALUE self)
 	} else {
 		rb_scan_args(argc, argv, "41", &ival, &nval, &tval, &gval, &wval);
 		idx = NUM2INT(rb_Integer(ival));
-		if (idx < 0 || idx > mol->npiatoms || (func == 2 && idx == mol->npiatoms))
+		if (idx < 0)
+			idx = mol->npiatoms;
+		if (idx > mol->npiatoms || (func == 2 && idx == mol->npiatoms))
 			rb_raise(rb_eMolbyError, "pi anchor index out of range");
 	}
 	np = StringValuePtr(nval);
@@ -9885,6 +9887,8 @@ Init_Molby(void)
 	rb_define_method(rb_cMolecule, "show_periodic_image=", s_Molecule_ShowPeriodicImage, -1);
 	rb_define_method(rb_cMolecule, "show_periodic_image?", s_Molecule_ShowPeriodicImageFlag, 0);
 	rb_define_alias(rb_cMolecule, "show_unitcell=", "show_unitcell");
+	rb_define_alias(rb_cMolecule, "show_unit_cell", "show_unitcell");
+	rb_define_alias(rb_cMolecule, "show_unit_cell=", "show_unitcell");
 	rb_define_alias(rb_cMolecule, "show_hydrogens=", "show_hydrogens");
 	rb_define_alias(rb_cMolecule, "show_dummy_atoms=", "show_dummy_atoms");
 	rb_define_alias(rb_cMolecule, "show_expanded=", "show_expanded");
@@ -9894,7 +9898,7 @@ Init_Molby(void)
 	rb_define_method(rb_cMolecule, "line_mode", s_Molecule_LineMode, -1);
 	rb_define_alias(rb_cMolecule, "line_mode=", "line_mode");
 	rb_define_method(rb_cMolecule, "resize_to_fit", s_Molecule_ResizeToFit, 0);
-#if !defined(__CMDMAC__)
+#if 1 || !defined(__CMDMAC__)
 	rb_define_method(rb_cMolecule, "get_view_rotation", s_Molecule_GetViewRotation, 0);
 	rb_define_method(rb_cMolecule, "get_view_scale", s_Molecule_GetViewScale, 0);
 	rb_define_method(rb_cMolecule, "get_view_center", s_Molecule_GetViewCenter, 0);

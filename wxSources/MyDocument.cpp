@@ -129,14 +129,23 @@ MyDocument::MyDocument()
 
 MyDocument::~MyDocument()
 {
-  int i;
-  if (mol != NULL)
-    MoleculeRelease(mol);
-  if (undoStack != NULL) {
-	for (i = 0; i < countUndoStack; i++)
-	  MolActionRelease(undoStack[i]);
-	free(undoStack);
-  }
+	int i;
+	Molecule *mol2 = mol;
+	mol = NULL;
+
+	/*  May be unnecessary?  */
+	MoleculeView *view = (MoleculeView *)GetFirstView();
+	if (view != NULL) {
+		view->OnMoleculeReplaced();
+	}
+
+	if (mol2 != NULL)
+		MoleculeRelease(mol2);
+	if (undoStack != NULL) {
+		for (i = 0; i < countUndoStack; i++)
+			MolActionRelease(undoStack[i]);
+		free(undoStack);
+	}
 }
 
 /*
@@ -153,20 +162,19 @@ MyDocument::GetMainView()
 void
 MyDocument::SetMolecule(Molecule *aMolecule)
 {
+	Molecule *mol2 = mol;
 	if (mol == aMolecule)
 		return;
-	if (mol != NULL)
-		MoleculeRelease(mol);
 	mol = aMolecule;
 	if (aMolecule != NULL)
 		MoleculeRetain(aMolecule);
 
 	MoleculeView *view = (MoleculeView *)GetFirstView();
 	if (view != NULL) {
-		MainView_setMolecule(view->mview, aMolecule);
-	/*	if (aMolecule->natoms >= 1000)
-			view->mview->lineMode = 1; */
+		view->OnMoleculeReplaced();
 	}
+	if (mol2 != NULL)
+		MoleculeRelease(mol2);
 }
 
 bool

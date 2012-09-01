@@ -1586,9 +1586,11 @@ s_MolActionInsertOnePiAtom(Molecule *mol, MolAction *action, MolAction **actp, i
 	memmove(AtomConnectData(&pp->connect), connects, sizeof(Int) * nconnects);
 	NewArray(&pp->coeffs, &pp->ncoeffs, sizeof(Double), nconnects);
 	memmove(pp->coeffs, coeffs, sizeof(Double) * nconnects);
-	for (i = 0; i < mol->npibonds * 4; i++) {
-		if (mol->pibonds[i] >= ATOMS_MAX_NUMBER + idx)
-			mol->pibonds[i]++;
+	if (!willReplace) {
+		for (i = 0; i < mol->npibonds * 4; i++) {
+			if (mol->pibonds[i] >= ATOMS_MAX_NUMBER + idx)
+				mol->pibonds[i]++;
+		}
 	}
 	return 0;
 }
@@ -1620,6 +1622,10 @@ s_MolActionRemoveOnePiAtom(Molecule *mol, MolAction *action, MolAction **actp)
 	*actp = MolActionNew(gMolActionInsertOnePiAtom, idx, 4, pp->aname, pp->type, nconnects, ip, pp->ncoeffs, pp->coeffs);
 	PiAtomClean(pp);
 	DeleteArray(&mol->piatoms, &mol->npiatoms, sizeof(PiAtom), idx, 1, NULL);
+	for (i = 0; i < mol->npibonds * 4; i++) {
+		if (mol->pibonds[i] > ATOMS_MAX_NUMBER + idx)
+			mol->pibonds[i]--;
+	}	
 	return 0;
 }
 

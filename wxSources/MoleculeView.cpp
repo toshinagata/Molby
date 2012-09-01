@@ -114,6 +114,12 @@ MoleculeView::OnCreate(wxDocument *doc, long WXUNUSED(flags) )
 	frameText = NULL;
 	isRebuildingTable = false;
 	
+	Molecule *mol = ((MyDocument *)doc)->GetMolecule();
+	if (mol != NULL) {
+		mview = mol->mview;
+		MainView_setViewObject(mview, this);
+	}
+
 	wxMenuBar *menu_bar = wxGetApp().CreateMenuBar(1, &file_history_menu, &edit_menu);
 	
 	// Associate the menu bar with the frame
@@ -121,8 +127,6 @@ MoleculeView::OnCreate(wxDocument *doc, long WXUNUSED(flags) )
 
 	// Associate the edit menu with the command processor
 	doc->GetCommandProcessor()->SetEditMenu(edit_menu);
-	
-    mview = MainView_newMainView(this);
 	
 	// Create the window content
 	
@@ -314,10 +318,7 @@ MoleculeView::OnCreate(wxDocument *doc, long WXUNUSED(flags) )
 
 	mainsizer->Layout();
 	splitter->SetSashPosition(240, true);
-	
-	//  Associate the molecule with the main view
-	MainView_setMolecule(mview, ((MyDocument *)doc)->GetMolecule());
-	
+
 	//  Initialize table view
 	MainView_createColumnsForTableAtIndex(mview, 0);
 
@@ -343,6 +344,9 @@ MoleculeView::OnCreate(wxDocument *doc, long WXUNUSED(flags) )
 
 	//  Intercept the double-click handler of MyListCtrl
 	listctrl->Connect(wxEVT_LEFT_DCLICK, wxMouseEventHandler(MoleculeView::OnLeftDClickInListCtrl), NULL, this);
+
+	//  Set data source for the list control
+	listctrl->SetDataSource(this);
 					
     return true;
 }
@@ -379,10 +383,8 @@ MoleculeView::OnClose(bool deleteWindow)
 	if (!GetDocument()->Close())
 		return false;
 
-	//  Dispose relationship between MainView and Molecule
-	MainView_setMolecule(mview, NULL);
-	//  Release the MainView object
-	MainView_release(mview);
+	//  Dispose relationship between this and Molecule (MainView)
+	MainView_setViewObject(mview, NULL);
 	mview = NULL;
 
 	//  Dispose Connection between DocManager and file history menu
@@ -390,25 +392,9 @@ MoleculeView::OnClose(bool deleteWindow)
 
 	wxGetApp().Disconnect(MyDocumentEvent_scriptMenuModified, MyDocumentEvent, wxCommandEventHandler(MoleculeView::OnScriptMenuModified), NULL, this);
 
-	// Clear the canvas in case we're in single-window mode,
-	// and the canvas stays.
-/*	canvas->ClearBackground();
-	canvas->view = NULL;
-	canvas = NULL;
-
-	wxString s(wxTheApp->GetAppName());
-	if (frame)
-		frame->SetTitle(s);
-
-	SetFrame(NULL);
-
-	Activate(false); */
-
-	if (deleteWindow) {
+	if (deleteWindow)
 		frame->Destroy();
-	//	delete frame;
-		return true;
-	}
+
 	return true;
 }
 
@@ -687,6 +673,20 @@ MoleculeView::OnActivate(wxActivateEvent &event)
 		listctrl->EndEditText(true);
 	}
 	event.Skip();
+}
+
+void
+MoleculeView::OnMoleculeReplaced()
+{
+	Molecule *mol = ((MyDocument *)GetDocument())->GetMolecule();
+	if ((mol == NULL && mview == NULL) || mol->mview == mview)
+		return;
+	if (mview != NULL)
+		MainView_setViewObject(mview, NULL);
+	if (mol != NULL) {
+		mview = mol->mview;
+		MainView_setViewObject(mview, this);
+	}
 }
 
 #pragma mark ====== MyListCtrl data source ======
@@ -1006,6 +1006,7 @@ MainViewCallback_getFilename(MainView *mview, char *buf, int bufsize)
   }
 }
 
+/*
 void
 MainViewCallback_moleculeReplaced(MainView *mview, struct Molecule *mol)
 {
@@ -1018,6 +1019,7 @@ MainViewCallback_moleculeReplaced(MainView *mview, struct Molecule *mol)
 			listctrl->SetDataSource((MoleculeView *)(mview->ref));
 	}
 }
+*/
 
 typedef struct Label {
   //	StringTexture *tex;

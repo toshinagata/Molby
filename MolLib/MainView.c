@@ -30,78 +30,26 @@ const Double kInvalidValue = -10000000.0;
 
 #pragma mark ==== MainView public methods ====
 
-MainView *
-MainView_newMainView(void *ref)
+void
+MainView_setViewObject(MainView *mview, void *ref)
 {
 	static GLdouble sIdentity[16] = {
 		1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1
 	};
-	MainView *mview = (MainView *)malloc(sizeof(MainView));
 	if (mview != NULL) {
-		memset(mview, 0, sizeof(MainView));
-		mview->ref = ref;
-		mview->track = TrackballNew();
-		mview->mode = kTrackballRotateMode;
-		mview->tempAtoms[0] = mview->tempAtoms[1] = -1;
-		memmove(mview->modelview_matrix, sIdentity, sizeof(sIdentity));
-		memmove(mview->projection_matrix, sIdentity, sizeof(sIdentity));
-		mview->atomRadius = 0.4;
-		mview->bondRadius = 0.1;
-		mview->probabilityScale = 1.5382;
-		mview->dimension = 10.0;
-	/*	MainView_resizeToFit(mview); */
-		mview->showHydrogens = mview->showDummyAtoms = mview->showExpandedAtoms = 1;
-		mview->showPeriodicBox = 1;
-		mview->showGraphite = 5;
-		mview->tableCache = IntGroupNew();
-		mview->tableSelection = IntGroupNew();
-	}
-	return mview;
-}
-
-void
-MainView_release(MainView *mview)
-{
-	int i;
-	if (mview != NULL) {
-		MainView_setMolecule(mview, NULL);
-		TrackballRelease(mview->track);
-		IntGroupRelease(mview->tableCache);
-		IntGroupRelease(mview->tableSelection);
-		if (mview->nlabels > 0) {
-			for (i = 0; i < mview->nlabels; i++) {
-				MainViewCallback_releaseLabel(mview->labels[i].label);
-			}
-			free(mview->labels);
-			free(mview->sortedLabels);
+		if (mview->ref == NULL) {
+			/*  Initialize GUI-only members  */
+			mview->mode = kTrackballRotateMode;
+			mview->tempAtoms[0] = mview->tempAtoms[1] = -1;
+			memmove(mview->modelview_matrix, sIdentity, sizeof(sIdentity));
+			memmove(mview->projection_matrix, sIdentity, sizeof(sIdentity));
+			mview->tableCache = IntGroupNew();
+			mview->tableSelection = IntGroupNew();
 		}
-		if (mview->rotateFragment != NULL)
-			IntGroupRelease(mview->rotateFragment);
-		if (mview->rotateFragmentOldPos != NULL)
-			free(mview->rotateFragmentOldPos);
-		if (mview->visibleFlags != NULL)
-			free(mview->visibleFlags);
-	}
-	free(mview);
-}
-
-void
-MainView_setMolecule(MainView *mview, struct Molecule *mol)
-{
-	if (mview == NULL || mview->mol == mol)
-		return;
-	if (mview->mol != NULL) {
-		mview->mol->mview = NULL;  /*  No need to release  */
-		MoleculeRelease(mview->mol);
-	}
-	mview->mol = mol;
-	if (mol != NULL) {
-		MoleculeRetain(mol);
-		mol->mview = mview;  /*  No retain  */
-		MainViewCallback_moleculeReplaced(mview, mol);
-	/*	MainView_resizeToFit(mview); */
-		MoleculeCallback_notifyModification(mol, 0);
-	/*	MainViewCallback_setNeedsDisplay(mview, 1); */
+		mview->ref = ref;  /*  No retain  */
+		IntGroupClear(mview->tableCache);
+		IntGroupClear(mview->tableSelection);
+		MoleculeCallback_notifyModification(mview->mol, 0);
 	}
 }
 
@@ -2150,57 +2098,6 @@ MainView_getMode(const MainView *mview)
 	if (mview != NULL)
 		return mview->mode;
 	else return 0;
-}
-
-#pragma mark ====== Drawing Settings ======
-
-void
-MainView_setBackgroundColor(MainView *mview, float red, float green, float blue)
-{
-	if (mview != NULL) {
-		mview->background_color[0] = red;
-		mview->background_color[1] = green;
-		mview->background_color[2] = blue;
-		MoleculeCallback_notifyModification(mview->mol, 0);
-	}
-}
-
-void
-MainView_getBackgroundColor(const MainView *mview, float *rgb)
-{
-	if (mview != NULL) {
-		rgb[0] = mview->background_color[0];
-		rgb[1] = mview->background_color[1];
-		rgb[2] = mview->background_color[2];
-	}
-}
-
-#pragma mark ====== Graphics ======
-
-int
-MainView_insertGraphic(MainView *mview, int index, const MainViewGraphic *graphic)
-{
-	if (index < 0 || index >= mview->ngraphics)
-		index = mview->ngraphics;
-	InsertArray(&mview->graphics, &mview->ngraphics, sizeof(MainViewGraphic), index, 1, graphic);
-	MoleculeCallback_notifyModification(mview->mol, 0);
-	return index;
-}
-
-int
-MainView_removeGraphic(MainView *mview, int index)
-{
-	MainViewGraphic *g;
-	if (index < 0 || index >= mview->ngraphics)
-		return -1;
-	g = &mview->graphics[index];
-	if (g->points != NULL)
-		free(g->points);
-	if (g->normals != NULL)
-		free(g->normals);
-	DeleteArray(&mview->graphics, &mview->ngraphics, sizeof(MainViewGraphic), index, 1, NULL);
-	MoleculeCallback_notifyModification(mview->mol, 0);
-	return index;
 }
 
 #pragma mark ====== Mouse operations ======
