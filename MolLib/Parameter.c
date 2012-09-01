@@ -15,6 +15,7 @@
  */
 
 #include "MolLib.h"
+#include "MD/MDCore.h"
 #include <string.h>
 #include <ctype.h>
 #include <stdarg.h>
@@ -287,14 +288,21 @@ UnionPar *
 ParameterRefGetPar(ParameterRef *pref)
 {
 	Parameter *par;
+	int idx = pref->idx;
 	if (pref == NULL)
 		return NULL;
-	if (pref->mol != NULL)
-		par = pref->mol->par;
+	if (pref->mol != NULL) {
+		if (idx >= 0)
+			par = pref->mol->par;
+		else if (pref->mol->arena != NULL) {
+			idx = -idx - 1;
+			par = pref->mol->arena->par;
+		} else par = NULL;
+	}
 	else par = gBuiltinParameters;
 	if (par == NULL)
 		return NULL;
-	return ParameterGetUnionParFromTypeAndIndex(par, pref->parType, pref->idx);
+	return ParameterGetUnionParFromTypeAndIndex(par, pref->parType, idx);
 }
 
 #pragma mark ====== Insert/Delete (for MolAction) ======

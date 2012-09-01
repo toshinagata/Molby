@@ -294,6 +294,7 @@ typedef struct MDArena {
 	Int    nsuspicious;     /*  This can be non-zero, but attention should be paid  */
 	
 	/*  Indices to the parameter records  */
+	/*  May be negative, in which case no parameter is assigned (and no calculation is done)  */
 	Int    *bond_par_i;  /*  The index of the bond parameter record: Int[nbonds]  */
 	Int    *angle_par_i; /*  The index of the angle parameter record: Int[nangles]  */
 	Int    *dihedral_par_i;  /*  The index of the dihedral parameter record: Int[ndihedrals]  */

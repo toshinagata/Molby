@@ -620,6 +620,11 @@ MoleculeView::SelectTable(int idx)
 		MoleculeUnlock(mview->mol);
 		if (idx >= kMainViewParameterTableIndex) {
 			MainViewCallback_setTableSelection(mview, NULL);
+			if (idx == kMainViewParameterTableIndex) {
+				/*  Not sure whether it is appropriate rebuilding MDArena 
+				    *every time* the parameter table is opened...  */
+				MoleculePrepareMDArena(mview->mol, 1, NULL);
+			}
 		}
 	}
 }

@@ -756,8 +756,12 @@ s_UnionParFromValue(VALUE self, Int *typep, Int checkEditable)
 		up = (UnionPar *)&gElementParameters[pref->idx];
 	} else {
 		up = ParameterRefGetPar(pref);
-		if (checkEditable && up->bond.src != 0 && up->bond.src != -1)
-			rb_raise(rb_eMolbyError, "Cannot modify parameter because it is not molecule-local");
+		if (checkEditable) {
+			if (pref->idx < 0)
+				rb_raise(rb_eMolbyError, "Cannot modify parameter because it is internally cached in the MDArena");
+			if (up->bond.src != 0 && up->bond.src != -1)
+				rb_raise(rb_eMolbyError, "Cannot modify parameter because it is not molecule-local");
+		}
 	}
 	return up;
 }
@@ -5098,12 +5102,19 @@ s_Molecule_Nresidues(VALUE self)
 	return INT2NUM(mol->nresidues);
 }
 
+static VALUE
+s_Molecule_BondParIsObsolete(VALUE self, VALUE val)
+{
+	rb_raise(rb_eMolbyError, "Molecule#bond_par, angle_par, dihedral_par, improper_par, vdw_par are now obsolete. You can use MDArena#bond_par, angle_par, dihedral_par, improper_par, vdw_par instead, and probably these are what you really want.");
+}
+
 /*
  *  call-seq:
  *     bond_par(idx)    -> ParameterRef
  *
  *  Returns the MD parameter for the idx-th bond.
  */
+/*
 static VALUE
 s_Molecule_BondPar(VALUE self, VALUE val)
 {
@@ -5128,6 +5139,7 @@ s_Molecule_BondPar(VALUE self, VALUE val)
 		return Qnil;
 	return ValueFromMoleculeWithParameterTypeAndIndex(mol, kBondParType, bp - mol->par->bondPars);
 }
+*/
 
 /*
  *  call-seq:
@@ -5135,6 +5147,7 @@ s_Molecule_BondPar(VALUE self, VALUE val)
  *
  *  Returns the MD parameter for the idx-th angle.
  */
+/*
 static VALUE
 s_Molecule_AnglePar(VALUE self, VALUE val)
 {
@@ -5161,13 +5174,14 @@ s_Molecule_AnglePar(VALUE self, VALUE val)
 		return Qnil;
 	return ValueFromMoleculeWithParameterTypeAndIndex(mol, kAngleParType, ap - mol->par->anglePars);
 }
-
+*/
 /*
  *  call-seq:
  *     dihedral_par(idx)    -> ParameterRef
  *
  *  Returns the MD parameter for the idx-th dihedral.
  */
+/*
 static VALUE
 s_Molecule_DihedralPar(VALUE self, VALUE val)
 {
@@ -5196,13 +5210,14 @@ s_Molecule_DihedralPar(VALUE self, VALUE val)
 		return Qnil;
 	return ValueFromMoleculeWithParameterTypeAndIndex(mol, kDihedralParType, tp - mol->par->dihedralPars);
 }
-
+*/
 /*
  *  call-seq:
  *     improper_par(idx)    -> ParameterRef
  *
  *  Returns the MD parameter for the idx-th improper.
  */
+/*
 static VALUE
 s_Molecule_ImproperPar(VALUE self, VALUE val)
 {
@@ -5231,13 +5246,14 @@ s_Molecule_ImproperPar(VALUE self, VALUE val)
 		return Qnil;
 	return ValueFromMoleculeWithParameterTypeAndIndex(mol, kImproperParType, tp - mol->par->improperPars);
 }
-
+*/
 /*
  *  call-seq:
  *     vdw_par(idx)    -> ParameterRef
  *
  *  Returns the vdw parameter for the idx-th atom.
  */
+/*
 static VALUE
 s_Molecule_VdwPar(VALUE self, VALUE val)
 {
@@ -5258,6 +5274,7 @@ s_Molecule_VdwPar(VALUE self, VALUE val)
 		return Qnil;
 	return ValueFromMoleculeWithParameterTypeAndIndex(mol, kVdwParType, vp - mol->par->vdwPars);
 }
+*/
 
 /*
  *  call-seq:
@@ -9764,11 +9781,11 @@ Init_Molby(void)
 	rb_define_method(rb_cMolecule, "ndihedrals", s_Molecule_Ndihedrals, 0);
 	rb_define_method(rb_cMolecule, "nimpropers", s_Molecule_Nimpropers, 0);
 
-	rb_define_method(rb_cMolecule, "bond_par", s_Molecule_BondPar, 1);
-	rb_define_method(rb_cMolecule, "angle_par", s_Molecule_AnglePar, 1);
-	rb_define_method(rb_cMolecule, "dihedral_par", s_Molecule_DihedralPar, 1);
-	rb_define_method(rb_cMolecule, "improper_par", s_Molecule_ImproperPar, 1);
-	rb_define_method(rb_cMolecule, "vdw_par", s_Molecule_VdwPar, 1);
+	rb_define_method(rb_cMolecule, "bond_par", s_Molecule_BondParIsObsolete, 1);
+	rb_define_method(rb_cMolecule, "angle_par", s_Molecule_BondParIsObsolete, 1);
+	rb_define_method(rb_cMolecule, "dihedral_par", s_Molecule_BondParIsObsolete, 1);
+	rb_define_method(rb_cMolecule, "improper_par", s_Molecule_BondParIsObsolete, 1);
+	rb_define_method(rb_cMolecule, "vdw_par", s_Molecule_BondParIsObsolete, 1);
 
 	rb_define_method(rb_cMolecule, "start_step", s_Molecule_StartStep, 0);
 	rb_define_method(rb_cMolecule, "start_step=", s_Molecule_SetStartStep, 1);

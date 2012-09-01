@@ -3066,14 +3066,11 @@ MainView_refreshTable(MainView *mview)
 			/*  Check the parameter table  */
 			if (mview->mol->arena == NULL)
 				md_arena_new(mview->mol);
-			if (mview->tableIndex == kMainViewParameterTableIndex) {
-				/*  MoleculePrepareMDArena may modify the table (especially impropers)
-				    for MM calculation.  */
-				MoleculePrepareMDArena(mview->mol, 1, NULL);
-			} else {
-				/*  It is not desirable that just opening bond/angle/dihedral/improper tables
-				    causes modification of the molecule. In this case, direct call to md_prepare
-				    is better.  */
+			if (mview->mol->needsMDRebuild || mview->mol->arena->par == NULL) {
+				/*  Here we do not call MoleculePrepareMDArena(), because we do not want
+					to modify Molecule by just redrawing tables.
+				    (But MoleculePrepareMDArena() *is* called when the parameter
+					table is selected.  */
 				md_prepare(mview->mol->arena, 1);
 			}
 		}

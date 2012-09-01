@@ -870,6 +870,126 @@ s_MDArena_PrintSurfaceArea(VALUE self)
 	return self;
 }
 
+/*
+ *  call-seq:
+ *     bond_par(idx) -> ParameterRef
+ *
+ *  Returns a parameter that is used for the idx-th bond.
+ */
+static VALUE
+s_MDArena_BondPar(VALUE self, VALUE val)
+{
+	MDArena *arena;
+	Int i, j;
+	Data_Get_Struct(self, MDArena, arena);
+	i = NUM2INT(rb_Integer(val));
+	if (arena->xmol->needsMDRebuild || arena->par == NULL)
+		md_prepare(arena, 1);
+	if (i < 0 || i >= arena->xmol->nbonds) {
+		rb_raise(rb_eMolbyError, "bond index (%d) out of range (0...%d)", i, arena->xmol->nbonds);
+	}
+	j = arena->bond_par_i[i];
+	if (j < 0 || j >= arena->par->nbondPars)
+		return Qnil;  /*  No parameter assigned  */
+	return ValueFromMoleculeWithParameterTypeAndIndex(arena->xmol, kBondParType, -j - 1);
+}
+
+/*
+ *  call-seq:
+ *     angle_par(idx) -> ParameterRef
+ *
+ *  Returns a parameter that is used for the idx-th angle.
+ */
+static VALUE
+s_MDArena_AnglePar(VALUE self, VALUE val)
+{
+	MDArena *arena;
+	Int i, j;
+	Data_Get_Struct(self, MDArena, arena);
+	i = NUM2INT(rb_Integer(val));
+	if (arena->xmol->needsMDRebuild || arena->par == NULL)
+		md_prepare(arena, 1);
+	if (i < 0 || i >= arena->xmol->nangles) {
+		rb_raise(rb_eMolbyError, "angle index (%d) out of range (0...%d)", i, arena->xmol->nangles);
+	}
+	j = arena->angle_par_i[i];
+	if (j < 0 || j >= arena->par->nanglePars)
+		return Qnil;  /*  No parameter assigned  */
+	return ValueFromMoleculeWithParameterTypeAndIndex(arena->xmol, kAngleParType, -j - 1);
+}
+
+/*
+ *  call-seq:
+ *     dihedral_par(idx) -> ParameterRef
+ *
+ *  Returns a parameter that is used for the idx-th dihedral.
+ */
+static VALUE
+s_MDArena_DihedralPar(VALUE self, VALUE val)
+{
+	MDArena *arena;
+	Int i, j;
+	Data_Get_Struct(self, MDArena, arena);
+	i = NUM2INT(rb_Integer(val));
+	if (arena->xmol->needsMDRebuild || arena->par == NULL)
+		md_prepare(arena, 1);
+	if (i < 0 || i >= arena->xmol->ndihedrals) {
+		rb_raise(rb_eMolbyError, "dihedral index (%d) out of range (0...%d)", i, arena->xmol->ndihedrals);
+	}
+	j = arena->dihedral_par_i[i];
+	if (j < 0 || j >= arena->par->ndihedralPars)
+		return Qnil;  /*  No parameter assigned  */
+	return ValueFromMoleculeWithParameterTypeAndIndex(arena->xmol, kDihedralParType, -j - 1);
+}
+
+/*
+ *  call-seq:
+ *     improper_par(idx) -> ParameterRef
+ *
+ *  Returns a parameter that is used for the idx-th improper.
+ */
+static VALUE
+s_MDArena_ImproperPar(VALUE self, VALUE val)
+{
+	MDArena *arena;
+	Int i, j;
+	Data_Get_Struct(self, MDArena, arena);
+	i = NUM2INT(rb_Integer(val));
+	if (arena->xmol->needsMDRebuild || arena->par == NULL)
+		md_prepare(arena, 1);
+	if (i < 0 || i >= arena->xmol->nimpropers) {
+		rb_raise(rb_eMolbyError, "improper index (%d) out of range (0...%d)", i, arena->xmol->nimpropers);
+	}
+	j = arena->improper_par_i[i];
+	if (j < 0 || j >= arena->par->nimproperPars)
+		return Qnil;  /*  No parameter assigned  */
+	return ValueFromMoleculeWithParameterTypeAndIndex(arena->xmol, kImproperParType, -j - 1);
+}
+
+/*
+ *  call-seq:
+ *     vdw_par(idx) -> ParameterRef
+ *
+ *  Returns a vdw parameter that is used for the idx-th atom.
+ */
+static VALUE
+s_MDArena_VdwPar(VALUE self, VALUE val)
+{
+	MDArena *arena;
+	Int i, j;
+	Data_Get_Struct(self, MDArena, arena);
+	i = NUM2INT(rb_Integer(val));
+	if (arena->xmol->needsMDRebuild || arena->par == NULL)
+		md_prepare(arena, 1);
+	if (i < 0 || i >= arena->xmol->natoms) {
+		rb_raise(rb_eMolbyError, "atom index (%d) out of range (0...%d)", i, arena->xmol->natoms);
+	}
+	j = arena->vdw_par_i[i];
+	if (j < 0 || j >= arena->par->nvdwPars)
+		return Qnil;  /*  No parameter assigned  */
+	return ValueFromMoleculeWithParameterTypeAndIndex(arena->xmol, kVdwParType, -j - 1);
+}
+
 void
 Init_MolbyMDTypes(void)
 {
@@ -896,6 +1016,12 @@ Init_MolbyMDTypes(void)
 	rb_define_method(rb_cMDArena, "init_velocities", s_MDArena_InitVelocities, -1);
 	rb_define_method(rb_cMDArena, "scale_velocities", s_MDArena_ScaleVelocities, -1);
 	rb_define_method(rb_cMDArena, "print_surface_area", s_MDArena_PrintSurfaceArea, 0);
+
+	rb_define_method(rb_cMDArena, "bond_par", s_MDArena_BondPar, 1);
+	rb_define_method(rb_cMDArena, "angle_par", s_MDArena_AnglePar, 1);
+	rb_define_method(rb_cMDArena, "dihedral_par", s_MDArena_DihedralPar, 1);
+	rb_define_method(rb_cMDArena, "improper_par", s_MDArena_ImproperPar, 1);
+	rb_define_method(rb_cMDArena, "vdw_par", s_MDArena_VdwPar, 1);
 
 	/*  All setter and getter are handled with the same C function (attribute name is taken
 	    from ruby_frame)  */

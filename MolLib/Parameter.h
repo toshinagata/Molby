@@ -168,7 +168,7 @@ typedef struct Parameter {
 typedef struct ParameterRef {
 	struct Molecule *mol;  /*  If non-NULL, points to mol->par; otherwise, points to gBuiltinParameters  */
 	Int parType;
-	Int idx;
+	Int idx;   /*  If negative (-N), points to the (N-1)th parameters in mol->arena->par  */
 } ParameterRef;
 
 /*  For return value for parameter pointer  */
