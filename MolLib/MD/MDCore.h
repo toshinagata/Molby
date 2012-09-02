@@ -308,6 +308,9 @@ typedef struct MDArena {
 	Int    *vdw_par_i;
 	MDVdwCache *vdw_cache;
 	
+	/*  The cached parameters for the pi-bonds  */
+	UnionPar *pi_pars;
+	
 	Double  *anbond_r0;   /*  The r0 parameters for abnormal bonds  */
 	
 	/*  Energies and partial forces  */

@@ -545,6 +545,42 @@ s_search_improper(MDArena *arena, int n1, int n2, int n3, int n4)
 	return -1;
 }
 
+#define SWAP_INT(_i, _j) do { Int _k; _k = _i; _i = _j; _j = _k; } while (0)
+
+/*  Check whether i1-i2 is included in the pi-bond list  */
+static int
+s_check_pi_bond(MDArena *arena, Int i1, Int i2)
+{
+	Molecule *mol = arena->mol;
+	PiAtom *pp;
+	Int i, j, n1, n2, *cp;
+	for (i = 0; i < mol->npibonds; i++) {
+		if (mol->pibonds[i * 4 + 2] >= 0)
+			continue;  /*  Not a bond  */
+		n1 = mol->pibonds[i * 4];
+		n2 = mol->pibonds[i * 4 + 1];
+		if (n2 == i1) {
+			SWAP_INT(n1, n2);
+		} else if (n2 == i2) {
+			SWAP_INT(n1, n2);
+			SWAP_INT(i1, i2);
+		} else if (n1 == i2) {
+			SWAP_INT(i1, i2);
+		} else if (n1 != i1)
+			continue;  /*  No match with this bond  */
+		/*  Now n1 == i1, so check whether pi-atom "n2" includes i2  */
+		if (n2 < ATOMS_MAX_NUMBER)
+			continue;
+		pp = mol->piatoms + (n2 - ATOMS_MAX_NUMBER);
+		cp = AtomConnectData(&pp->connect);
+		for (j = pp->connect.count - 1; j >= 0; j--) {
+			if (cp[j] == i2)
+				return 1;
+		}
+	}
+	return 0;
+}
+
 /*  Find vdw parameters and build the in-use list */
 static int
 s_find_vdw_parameters(MDArena *arena)
@@ -783,6 +819,11 @@ s_find_bond_parameters(MDArena *arena)
 			Atom *ap1, *ap2;
 			i1 = mol->bonds[i * 2];
 			i2 = mol->bonds[i * 2 + 1];
+			if (s_check_pi_bond(arena, i1, i2)) {
+				/*  Skip this bond  */
+				arena->bond_par_i[i] = -1;
+				continue;
+			}
 			ap1 = ATOM_AT_INDEX(mol->atoms, i1);
 			ap2 = ATOM_AT_INDEX(mol->atoms, i2);
 			type1 = ap1->type;
@@ -837,7 +878,7 @@ s_find_bond_parameters(MDArena *arena)
 			idx = arena->bond_par_i[i];
 			fprintf(arena->debug_result, "%5d %5d %5d ", i+1, mol->bonds[i*2]+1, mol->bonds[i*2+1]+1);
 			if (idx < 0) {
-				fprintf(arena->debug_result, "<< missing >>\n");
+				fprintf(arena->debug_result, "<< Excluded >>\n");
 				continue;
 			}
 			fprintf(arena->debug_result, " %-4s  %-4s %7.3f %7.3f\n", AtomTypeDecodeToString(par->bondPars[idx].type1, s1), AtomTypeDecodeToString(par->bondPars[idx].type2, s2), par->bondPars[idx].r0, par->bondPars[idx].k*INTERNAL2KCAL);
@@ -870,6 +911,11 @@ s_find_angle_parameters(MDArena *arena)
 			i1 = mol->angles[i * 3];
 			i2 = mol->angles[i * 3 + 1];
 			i3 = mol->angles[i * 3 + 2];
+			if (s_check_pi_bond(arena, i1, i2) || s_check_pi_bond(arena, i2, i3)) {
+				/*  Skip this angle  */
+				arena->angle_par_i[i] = -1;
+				continue;
+			}
 			type1 = ATOM_AT_INDEX(mol->atoms, i1)->type;
 			type2 = ATOM_AT_INDEX(mol->atoms, i2)->type;
 			type3 = ATOM_AT_INDEX(mol->atoms, i3)->type;
@@ -924,7 +970,7 @@ s_find_angle_parameters(MDArena *arena)
 			idx = arena->angle_par_i[i];
 			fprintf(arena->debug_result, "%5d %5d %5d %5d ", i+1, mol->angles[i*3]+1, mol->angles[i*3+1]+1, mol->angles[i*3+2]+1);
 			if (idx < 0) {
-				fprintf(arena->debug_result, "<< missing >>\n");
+				fprintf(arena->debug_result, "<< Excluded >>\n");
 				continue;
 			}
 			fprintf(arena->debug_result, " %-4s  %-4s  %-4s %7.3f %7.3f\n",  AtomTypeDecodeToString(par->anglePars[idx].type1, s1), AtomTypeDecodeToString(par->anglePars[idx].type2, s2), AtomTypeDecodeToString(par->anglePars[idx].type3, s3), par->anglePars[idx].a0 * 180.0 / 3.1415927, par->anglePars[idx].k*INTERNAL2KCAL);
@@ -958,6 +1004,11 @@ s_find_dihedral_parameters(MDArena *arena)
 			i2 = mol->dihedrals[i * 4 + 1];
 			i3 = mol->dihedrals[i * 4 + 2];
 			i4 = mol->dihedrals[i * 4 + 3];
+			if (s_check_pi_bond(arena, i1, i2) || s_check_pi_bond(arena, i2, i3) || s_check_pi_bond(arena, i3, i4)) {
+				/*  Skip this dihedral  */
+				arena->dihedral_par_i[i] = -1;
+				continue;
+			}
 			type1 = ATOM_AT_INDEX(mol->atoms, i1)->type;
 			type2 = ATOM_AT_INDEX(mol->atoms, i2)->type;
 			type3 = ATOM_AT_INDEX(mol->atoms, i3)->type;
@@ -1015,7 +1066,7 @@ s_find_dihedral_parameters(MDArena *arena)
 			idx = arena->dihedral_par_i[i];
 			fprintf(arena->debug_result, "%5d %5d %5d %5d %5d ", i+1, mol->dihedrals[i*4]+1, mol->dihedrals[i*4+1]+1, mol->dihedrals[i*4+2]+1, mol->dihedrals[i*4+3]+1);
 			if (idx < 0) {
-				fprintf(arena->debug_result, "<< missing >>\n");
+				fprintf(arena->debug_result, "<< Excluded >>\n");
 				continue;
 			}
 			fprintf(arena->debug_result, "%-4s  %-4s  %-4s  %-4s  %2d ", AtomTypeDecodeToString(par->dihedralPars[idx].type1, s1), AtomTypeDecodeToString(par->dihedralPars[idx].type2, s2), AtomTypeDecodeToString(par->dihedralPars[idx].type3, s3), AtomTypeDecodeToString(par->dihedralPars[idx].type4, s4), par->dihedralPars[idx].mult);
@@ -1120,6 +1171,112 @@ s_find_improper_parameters(MDArena *arena)
 			fprintf(arena->debug_result, "\n");
 		}
 	}	
+	arena->nmissing += nmissing;
+	return nmissing;
+}
+
+/*  Find pi-bond parameters  */
+static int
+s_find_pibond_parameters(MDArena *arena)
+{
+	Int i, j, ii, types[4], idx[4], ptype, psize, nmissing = 0;
+	Molecule *mol = arena->mol;
+	UnionPar upar, *up;
+	
+	if (mol->npibonds == 0)
+		return 0;
+	
+	for (i = 0; i < mol->npibonds; i++) {
+		ptype = kDihedralParType;
+		memset(&upar, 0, sizeof(UnionPar));
+		for (j = 0; j < 4; j++) {
+			ii = mol->pibonds[i * 4 + j];
+			if (ii < 0) {
+				if (j < 2)
+					ptype = -1;
+				else if (j == 2)
+					ptype = kBondParType;
+				else
+					ptype = kAngleParType;
+				break;
+			}
+			if (ii >= ATOMS_MAX_NUMBER) {
+				ii -= ATOMS_MAX_NUMBER;
+				idx[j] = -1;
+				if (ii < mol->npiatoms) {
+					types[j] = -1;
+					ptype = -1;
+					break;
+				} else
+					types[j] = mol->piatoms[j].type;
+			} else if (ii < mol->natoms) {
+				idx[j] = ii;
+				types[j] = ATOM_AT_INDEX(mol->atoms, ii)->type;
+			} else {
+				ptype = -1;
+				break;
+			}
+		}
+		if (ptype == kBondParType) {
+			up = (UnionPar *)ParameterLookupBondPar(mol->par, types[0], types[1], idx[0], idx[1], 0);
+			if (up == NULL)
+				up = (UnionPar *)ParameterLookupBondPar(gBuiltinParameters, types[0], types[1], idx[0], idx[1], 0);
+			psize = sizeof(BondPar);
+		} else if (ptype == kAngleParType) {
+			up = (UnionPar *)ParameterLookupAnglePar(mol->par, types[0], types[1], types[2], idx[0], idx[1], idx[2], 0);
+			if (up == NULL)
+				up = (UnionPar *)ParameterLookupAnglePar(gBuiltinParameters, types[0], types[1], types[2], idx[0], idx[1], idx[2], 0);
+			psize = sizeof(AnglePar);
+		} else if (ptype == kDihedralParType) {
+			up = (UnionPar *)ParameterLookupDihedralPar(mol->par, types[0], types[1], types[2], types[3], idx[0], idx[1], idx[2], idx[3], 0);
+			if (up == NULL)
+				up = (UnionPar *)ParameterLookupDihedralPar(gBuiltinParameters, types[0], types[1], types[2], types[3], idx[0], idx[1], idx[2], idx[3], 0);
+			psize = sizeof(TorsionPar);
+		} else {
+			up = NULL;
+			psize = 0;
+		}
+		if (up != NULL)
+			memmove(&upar, up, psize);
+		else {
+			upar.bond.src = -1;
+			nmissing++;
+		}
+
+		if (arena->debug_result != NULL && arena->debug_output_level > 0) {
+			char s1[8];
+			if (i == 0) {
+				fprintf(arena->debug_result, "\n  Pi anchor parameters\n");
+				fprintf(arena->debug_result, "  No. atom1 atom2 atom3 atom4 type1  type2  type3  type4  mult r0/a0/phi0 k   per\n");
+			}
+			fprintf(arena->debug_result, "%5d ", i + 1);
+			for (j = 0; j < 4; j++) {
+				ii = mol->pibonds[i * 4 + j];
+				if (ii >= 0) {
+					fprintf(arena->debug_result, "%5d ", (ii >= ATOMS_MAX_NUMBER ? -(ii - ATOMS_MAX_NUMBER) - 1 : ii));
+				} else {
+					fprintf(arena->debug_result, "----- ");
+				}
+			}
+			for (j = 0; j < 4; j++) {
+				if (types[j] != -1)
+					AtomTypeDecodeToString(types[j], s1);
+				else
+					strcpy(s1, "-----");
+				fprintf(arena->debug_result, "%-6s ", s1);
+			}
+			if (ptype == kBondParType)
+				fprintf(arena->debug_result, "     %7.3f %7.3f", upar.bond.r0, upar.bond.k*INTERNAL2KCAL);
+			else if (ptype == kAngleParType)
+				fprintf(arena->debug_result, "     %7.3f %7.3f", upar.angle.a0*180/PI, upar.angle.k*INTERNAL2KCAL);
+			else if (ptype == kDihedralParType)
+				fprintf(arena->debug_result, "%4d %7.3f %7.3f %1d", upar.torsion.mult, upar.torsion.phi0[0]*180/PI, upar.torsion.k[0]*INTERNAL2KCAL, upar.torsion.period[0]);
+			fprintf(arena->debug_result, "\n");
+		}
+
+		memmove(arena->pi_pars + i, &upar, sizeof(UnionPar));
+	}
+	
 	arena->nmissing += nmissing;
 	return nmissing;
 }
@@ -1524,7 +1681,7 @@ md_prepare(MDArena *arena, int check_only)
 	if (arena->debug_result != NULL) {
 		time_t loc_time;
 		time(&loc_time);
-		fprintf(arena->debug_result, "---- LWMD Started at %s", ctime(&loc_time));
+		fprintf(arena->debug_result, "---- MDArena prepared at %s", ctime(&loc_time));
 	}
 
 	/*  Recalc angle/dihedral/improper tables from the bond table and parameters  */
@@ -1537,7 +1694,10 @@ md_prepare(MDArena *arena, int check_only)
 		   "Number of bonds = %d\n"
 		   "Number of angles = %d\n"
 		   "Number of dihedrals = %d\n"
-		   "Number of impropers = %d\n", mol->nbonds, mol->nangles, mol->ndihedrals, mol->nimpropers);
+		   "Number of impropers = %d\n"
+		   "Number of pi anchors = %d\n"
+		   "Number of pi anchor constructs = %d\n",
+		   mol->nbonds, mol->nangles, mol->ndihedrals, mol->nimpropers, mol->npiatoms, mol->npibonds);
 	
 	t1 = t2 = t3 = 0;
 	for (i = 0; i < mol->natoms; i++) {
@@ -1571,6 +1731,12 @@ md_prepare(MDArena *arena, int check_only)
 	if (arena->par != NULL)
 		ParameterRelease(arena->par);
 	arena->par = ParameterNew();
+	if (arena->pi_pars != NULL)
+		free(arena->pi_pars);
+	if (arena->mol->npibonds > 0)
+		arena->pi_pars = (UnionPar *)malloc(sizeof(UnionPar) * arena->mol->npibonds);
+	else arena->pi_pars = NULL;
+
 	arena->nmissing = arena->nsuspicious = 0;
 	s_find_vdw_parameters(arena);
 	s_find_bond_parameters(arena);
@@ -3545,16 +3711,18 @@ md_arena_set_molecule(MDArena *arena, Molecule *xmol)
 		memmove(mol->impropers, xmol->impropers, sizeof(Int) * 4 * xmol->nimpropers);
 		NewArray(&mol->syms, &mol->nsyms, sizeof(Transform), xmol->nsyms);
 		memmove(mol->syms, xmol->syms, sizeof(Transform) * xmol->nsyms);
+		NewArray(&mol->piatoms, &mol->npiatoms, sizeof(PiAtom), xmol->npiatoms);
+		for (i = 0; i < xmol->npiatoms; i++) {
+			PiAtomDuplicate(mol->piatoms + i, xmol->piatoms + i);
+		}
+		NewArray(&mol->pibonds, &mol->npibonds, sizeof(Int) * 4, xmol->npibonds);
+		memmove(mol->pibonds, xmol->pibonds, sizeof(Int) * 4 * xmol->npibonds);
 		if (xmol->cell != NULL) {
 			mol->cell = (XtalCell *)malloc(sizeof(XtalCell));
 			memmove(mol->cell, xmol->cell, sizeof(XtalCell));
 		}
 		if (xmol->path != NULL)
 			mol->path = strdup(xmol->path);
-/*		if (xmol->box != NULL) {
-			mol->box = (PeriodicBox *)malloc(sizeof(PeriodicBox));
-			memmove(mol->box, xmol->box, sizeof(PeriodicBox));
-		} */
 		mol->arena = arena;
 		mol->par = xmol->par;
 		if (mol->par != NULL)
