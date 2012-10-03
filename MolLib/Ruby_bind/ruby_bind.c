@@ -8580,7 +8580,7 @@ s_Molecule_SetViewRotation(VALUE self, VALUE aval, VALUE angval)
 	f[1] = v.x;
 	f[2] = v.y;
 	f[3] = v.z;
-	f[0] = NUM2DBL(rb_Float(angval));
+	f[0] = -NUM2DBL(rb_Float(angval));
 	TrackballSetRotate(mol->mview->track, f);
 	MainViewCallback_setNeedsDisplay(mol->mview, 1);
 	return self;

@@ -47,6 +47,9 @@ def export_ortep(fp)
 
   #  Cell parameters
   cp = self.cell
+  if cp == nil
+    cp = [1, 1, 1, 90, 90, 90]
+  end
   fp.printf "%9.3f%9.3f%9.3f%9.3f%9.3f%9.3f\n", cp[0], cp[1], cp[2], cp[3], cp[4], cp[5]
   
   #  Symmetry operations
@@ -79,11 +82,16 @@ def export_ortep(fp)
 
   #  Special points to specify cartesian axes
   axis, angle = self.get_view_rotation
-  tr = Transform.rotation(axis, angle)
+  tr = Transform.rotation(axis, -angle)
   org = self.get_view_center
   x = org + tr.column(0)
   y = org + tr.column(1)
-  tr = self.cell_transform.inverse
+  tr = self.cell_transform
+  if tr != nil
+    tr = tr.inverse
+  else
+    tr = Transform.identity
+  end
   org = tr * org
   x = tr * x
   y = tr * y
