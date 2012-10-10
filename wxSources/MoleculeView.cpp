@@ -684,7 +684,7 @@ void
 MoleculeView::OnMoleculeReplaced()
 {
 	Molecule *mol = ((MyDocument *)GetDocument())->GetMolecule();
-	if ((mol == NULL && mview == NULL) || mol->mview == mview)
+	if ((mol == NULL && mview == NULL) || (mol != NULL && mol->mview == mview))
 		return;
 	if (mview != NULL)
 		MainView_setViewObject(mview, NULL);
