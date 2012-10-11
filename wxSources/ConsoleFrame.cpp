@@ -62,7 +62,7 @@ ConsoleFrame::OnCreate()
 	textCtrl = new wxTextCtrl(this, wxID_ANY, _T(""), wxPoint(0, 0), wxSize(100, 100), wxTE_MULTILINE | wxTE_RICH);
 
 	wxBoxSizer *consoleSizer = new wxBoxSizer(wxHORIZONTAL);
-	consoleSizer->Add(textCtrl, 1, wxEXPAND | wxALL, 2);
+	consoleSizer->Add(textCtrl, 1, wxEXPAND);
 	this->SetSizer(consoleSizer);
 	consoleSizer->SetSizeHints(this);
 	
@@ -308,8 +308,9 @@ ConsoleFrame::OnKeyDown(wxKeyEvent &event)
 }
 
 void
-ConsoleFrame::EmptyBuffer()
+ConsoleFrame::EmptyBuffer(bool showRubyPrompt)
 {
 	textCtrl->Clear();
-	MyAppCallback_showRubyPrompt();
+	if (showRubyPrompt)
+		MyAppCallback_showRubyPrompt();
 }

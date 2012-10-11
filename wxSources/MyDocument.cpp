@@ -262,6 +262,18 @@ MyDocument::DoOpenDocument(const wxString& file)
 	return true;
 }
 
+/*  Override to intercept view creation for running script  */
+bool
+MyDocument::OnCreate(const wxString& path, long flags)
+{
+	if (path.EndsWith(wxT(".rb")) || path.EndsWith(wxT(".mrb"))) {
+		wxGetApp().OnOpenFiles(path);
+		return false;  /*  This document will be deleted  */
+	} else {
+		return wxDocument::OnCreate(path, flags);
+	}
+}
+
 void
 MyDocument::OnImport(wxCommandEvent& event)
 {

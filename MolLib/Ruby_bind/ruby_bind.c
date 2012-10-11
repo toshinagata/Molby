@@ -684,6 +684,31 @@ s_Kernel_CallSubProcess(VALUE self, VALUE cmd, VALUE procname)
 	return INT2NUM(n);
 }
 
+/*
+ *  call-seq:
+ *     enable_filter_mode -> Integer
+ *
+ *  Switch to a filter mode. Should be invoked from within a script file.
+ *  Returns true when successfully switched, false when already in filter mode.
+ *  No Molecule should be open as a view; otherwise, an exception is raised.
+ */
+static VALUE
+s_Kernel_EnableFilterMode(VALUE self)
+{
+	int n = MyAppCallback_switchToFilterMode();
+	if (n == 0)
+		return Qtrue;
+	else if (n == 1)
+		return Qfalse;
+	else if (n == -1)
+		rb_raise(rb_eMolbyError, "To switch to filter mode, all molecule should be closed");
+	else if (n == -2)
+		rb_raise(rb_eMolbyError, "No script file is specified for filter mode");
+	else
+		rb_raise(rb_eMolbyError, "Cannot switch to filter mode");
+	return Qnil;  /*  Dummy to keep compiler happy  */
+}
+
 #pragma mark ====== User defaults ======
 
 /*
@@ -4241,6 +4266,7 @@ s_Molecule_AtomOrPiAtomIndexFromValue(Molecule *mol, VALUE val)
 		else if (n < 0 && -n - 1 < mol->npiatoms)
 			return ATOMS_MAX_NUMBER + (-n - 1);  /*  PiAtom  */
 		n = -1; /*  No such atom  */
+		val = rb_inspect(val);
 	} else {
 		n = MoleculeAtomIndexFromString(mol, StringValuePtr(val));
 	}
@@ -4265,8 +4291,8 @@ s_Molecule_AtomIndexFromValue(Molecule *mol, VALUE val)
 {
 	int n = s_Molecule_AtomOrPiAtomIndexFromValue(mol, val);
 	if (n >= ATOMS_MAX_NUMBER) {
-		char *p = StringValuePtr(val);
-		rb_raise(rb_eMolbyError, "no such atom: %s", p);
+		val = rb_inspect(val);
+		rb_raise(rb_eMolbyError, "no such atom: %s", StringValuePtr(val));
 	}
 	return n;
 }
@@ -9508,6 +9534,46 @@ s_Molecule_PiAnchorAtIndex(VALUE self, VALUE ival)
 
 /*
  *  call-seq:
+ *     pi_anchor_r(idx) -> Vector3D
+ *
+ *  Calculate the cartesian coordinate of the idx-th pi anchor if present.
+ */
+static VALUE
+s_Molecule_PiAnchorR(VALUE self, VALUE ival)
+{
+	Molecule *mol;
+	Vector v;
+	Int idx = NUM2INT(rb_Integer(ival));
+    Data_Get_Struct(self, Molecule, mol);
+	if (idx < 0 || idx >= mol->npiatoms)
+		rb_raise(rb_eMolbyError, "no pi anchor present: %d", idx);
+	MoleculeCalculatePiAtomPosition(mol, idx, &v);
+	return ValueFromVector(&v);
+}
+
+/*
+ *  call-seq:
+ *     pi_anchor_fract_r(idx) -> Vector3D
+ *
+ *  Calculate the fractional coordinate of the idx-th pi anchor if present.
+ */
+static VALUE
+s_Molecule_PiAnchorFractR(VALUE self, VALUE ival)
+{
+	Molecule *mol;
+	Vector v;
+	Int idx = NUM2INT(rb_Integer(ival));
+    Data_Get_Struct(self, Molecule, mol);
+	if (idx < 0 || idx >= mol->npiatoms)
+		rb_raise(rb_eMolbyError, "no pi anchor present: %d", idx);
+	MoleculeCalculatePiAtomPosition(mol, idx, &v);
+	if (mol->cell != NULL)
+		TransformVec(&v, mol->cell->rtr, &v);
+	return ValueFromVector(&v);
+}
+
+/*
+ *  call-seq:
  *     count_pi_anchors -> Integer
  *
  *  Return the number of defined pi anchors.
@@ -9954,6 +10020,8 @@ Init_Molby(void)
 	rb_define_method(rb_cMolecule, "insert_pi_anchor", s_Molecule_InsertPiAnchor, -1);
 	rb_define_method(rb_cMolecule, "remove_pi_anchor", s_Molecule_RemovePiAnchor, 1);
 	rb_define_method(rb_cMolecule, "pi_anchor", s_Molecule_PiAnchorAtIndex, 1);
+	rb_define_method(rb_cMolecule, "pi_anchor_r", s_Molecule_PiAnchorR, 1);
+	rb_define_method(rb_cMolecule, "pi_anchor_fract_r", s_Molecule_PiAnchorFractR, 1);
 	rb_define_method(rb_cMolecule, "count_pi_anchors", s_Molecule_CountPiAnchors, 0);
 	rb_define_method(rb_cMolecule, "create_pi_anchor_construct", s_Molecule_CreatePiAnchorConstruct, -1);
 	rb_define_method(rb_cMolecule, "remove_pi_anchor_constructs", s_Molecule_RemovePiAnchorConstructs, 1);
@@ -10079,6 +10147,7 @@ Init_Molby(void)
 	rb_define_method(rb_mKernel, "call_subprocess", s_Kernel_CallSubProcess, 2);
 	rb_define_method(rb_mKernel, "message_box", s_Kernel_MessageBox, -1);
 	rb_define_method(rb_mKernel, "error_message_box", s_Kernel_ErrorMessageBox, 1);
+	rb_define_method(rb_mKernel, "enable_filter_mode", s_Kernel_EnableFilterMode, 0);
 	
 	s_ID_equal = rb_intern("==");
 }

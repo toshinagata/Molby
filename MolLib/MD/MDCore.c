@@ -1203,7 +1203,7 @@ s_find_pibond_parameters(MDArena *arena)
 			if (ii >= ATOMS_MAX_NUMBER) {
 				ii -= ATOMS_MAX_NUMBER;
 				idx[j] = -1;
-				if (ii < mol->npiatoms) {
+				if (ii >= mol->npiatoms) {
 					types[j] = -1;
 					ptype = -1;
 					break;
@@ -1743,6 +1743,7 @@ md_prepare(MDArena *arena, int check_only)
 	s_find_angle_parameters(arena);
 	s_find_dihedral_parameters(arena);
 	s_find_improper_parameters(arena);
+	s_find_pibond_parameters(arena);
 	
 	if (arena->nmissing > 0) {
 	/*	for (i = 0; i < nmissing; i++) {
@@ -3804,6 +3805,8 @@ md_arena_release(MDArena *arena)
 		free(arena->vdw_par_i);
 	if (arena->vdw_cache != NULL)
 		free(arena->vdw_cache);
+	if (arena->pi_pars != NULL)
+		free(arena->pi_pars);
 	if (arena->energies != NULL)
 		free(arena->energies);
 	if (arena->forces != NULL)

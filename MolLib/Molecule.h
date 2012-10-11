@@ -513,6 +513,8 @@ int MoleculeRemoveFrames(Molecule *mp, IntGroup *group, Vector *outFrame, Vector
 int MoleculeSelectFrame(Molecule *mp, int frame, int copyback);
 int MoleculeFlushFrames(Molecule *mp);
 
+int MoleculeCalculatePiAtomPosition(Molecule *mol, int idx, Vector *vp);
+
 int MoleculeCalcMO(Molecule *mp, Int mono, const Vector *op, const Vector *dxp, const Vector *dyp, const Vector *dzp, Int nx, Int ny, Int nz, int (*callback)(double progress, void *ref), void *ref);
 int MoleculeGetDefaultMOGrid(Molecule *mp, Int npoints, Vector *op, Vector *xp, Vector *yp, Vector *zp, Int *nx, Int *ny, Int *nz);
 const Cube *MoleculeGetCubeAtIndex(Molecule *mp, Int index);

@@ -96,6 +96,66 @@ s_calc_bond_force(MDArena *arena)
 	}
 }
 
+static inline int
+s_calc_angle_force_one(const Vector *r1, const Vector *r2, const Vector *r3, const AnglePar *anp, Double *angle, Double *energy, Double *k1out, Vector *force1, Vector *force2, Vector *force3)
+{
+	Vector r21, r23, f1, f2, v1;
+	Double w1, w2, w3, cost, sint, t, k0, k1;
+	VecSub(r21, *r1, *r2);
+	VecSub(r23, *r3, *r2);
+	w1 = 1.0 / VecLength(r21);
+	w2 = 1.0 / VecLength(r23);
+	VecScaleSelf(r21, w1);
+	VecScaleSelf(r23, w2);
+	cost = VecDot(r21, r23);
+	if (cost > 0.999999 || cost < -0.999999) {
+		/*	printf("Cannot handle linear angle %d-%d-%d: skipped.\n", angles[0]+1, angles[1]+1, angles[2]+1); */
+		return -1;  /*  Cannot handle linear angle  */
+	}
+	sint = sqrt(1.0 - cost * cost);
+	/*	if (sint < 1e-5 && sint > -1e-5)
+	 continue;  *//*  Cannot handle linear angle  */
+	t = atan2(sint, cost) - anp->a0;
+	k0 = anp->k * t * t;
+	
+	if (sint < 0.1 && sint > -0.1) {
+		/* ---- Method 1 ---- */
+		/* This is slower than method 2, but it is safer when sint is close to 0 */
+		k1 = -2 * anp->k * t;
+		VecCross(v1, r21, r23);
+		VecCross(f1, r21, v1);
+		w3 = w1 * k1 / VecLength(f1);
+		if (!isfinite(w3))
+			return -1;
+		VecScaleSelf(f1, w3);
+		VecCross(f2, v1, r23);
+		w3 = w2 * k1 / VecLength(f2);
+		if (!isfinite(w3))
+			return -1;
+		VecScaleSelf(f2, w3);
+	} else {
+		/* ---- Method 2 ---- */
+		k1 = -2 * anp->k * t / sint;
+		VecScale(f1, r21, cost);
+		VecDec(f1, r23);
+		w3 = w1 * k1;
+		VecScaleSelf(f1, w3);
+		VecScale(f2, r23, cost);
+		VecDec(f2, r21);
+		w3 = w2 * k1;
+		VecScaleSelf(f2, w3);
+	}
+	
+	*energy = k0;
+	*force1 = f1;
+	*force3 = f2;
+	*angle = t + anp->a0;
+	*k1out = k1;
+	VecInc(f1, f2);
+	VecScale(*force2, f1, -1);
+	return 0;
+}
+
 static void
 s_calc_angle_force(MDArena *arena)
 {
@@ -109,15 +169,18 @@ s_calc_angle_force(MDArena *arena)
 	Vector *forces = &arena->forces[kAngleIndex * arena->mol->natoms];
 	int i;
 	for (i = 0; i < nangles; i++, angles += 3, angle_par_i++) {
-		Vector r21, r23, f1, f2, v1;
-		Double k0, k1, w1, w2, w3;
-		Double cost, sint, t;
+		Atom *ap1, *ap2, *ap3;
 		AnglePar *anp;
+		Double en, ang, k1;
+		Vector f1, f2, f3;
 		if (*angle_par_i < 0)
 			continue;  /*  Ignore this entry  */
+		ap1 = ATOM_AT_INDEX(ap, angles[0]);
+		ap2 = ATOM_AT_INDEX(ap, angles[1]);
+		ap3 = ATOM_AT_INDEX(ap, angles[2]);
 	/*	if (angle_uniq != NULL && angle_uniq[i] >= 0)
 			continue; */ /*  Non-unique angle  */
-		if (ap[angles[0]].mm_exclude || ap[angles[1]].mm_exclude || ap[angles[2]].mm_exclude)
+		if (ap1->mm_exclude || ap2->mm_exclude || ap3->mm_exclude)
 			continue;  /*  Skip non-occupied atoms  */
 		if (arena->nalchem_flags > 0) {
 			if (angles[0] < arena->nalchem_flags && angles[1] < arena->nalchem_flags
@@ -126,62 +189,124 @@ s_calc_angle_force(MDArena *arena)
 				continue;  /*  Interaction between vanishing and appearing groups is ignored  */
 		}
 		anp = angle_pars + *angle_par_i;
-		VecSub(r21, ap[angles[0]].r, ap[angles[1]].r);
-		VecSub(r23, ap[angles[2]].r, ap[angles[1]].r);
-		w1 = 1.0 / VecLength(r21);
-		w2 = 1.0 / VecLength(r23);
-		VecScaleSelf(r21, w1);
-		VecScaleSelf(r23, w2);
-		cost = VecDot(r21, r23);
-		if (cost > 0.999999 || cost < -0.999999) {
-		/*	printf("Cannot handle linear angle %d-%d-%d: skipped.\n", angles[0]+1, angles[1]+1, angles[2]+1); */
-			continue;  /*  Cannot handle linear angle  */
-		}
-		sint = sqrt(1.0 - cost * cost);
-	/*	if (sint < 1e-5 && sint > -1e-5)
-			continue;  *//*  Cannot handle linear angle  */
-		t = atan2(sint, cost) - anp->a0;
-		k0 = anp->k * t * t;
-	
-		if (sint < 0.1 && sint > -0.1) {
-			/* ---- Method 1 ---- */
-			/* This is slower than method 2, but it is safer when sint is close to 0 */
-			k1 = -2 * anp->k * t;
-			VecCross(v1, r21, r23);
-			VecCross(f1, r21, v1);
-			w3 = w1 * k1 / VecLength(f1);
-			if (!isfinite(w3))
-				continue;
-			VecScaleSelf(f1, w3);
-			VecCross(f2, v1, r23);
-			w3 = w2 * k1 / VecLength(f2);
-			if (!isfinite(w3))
-				continue;
-			VecScaleSelf(f2, w3);
-		} else {
-			/* ---- Method 2 ---- */
-			k1 = -2 * anp->k * t / sint;
-			VecScale(f1, r21, cost);
-			VecDec(f1, r23);
-			w3 = w1 * k1;
-			VecScaleSelf(f1, w3);
-			VecScale(f2, r23, cost);
-			VecDec(f2, r21);
-			w3 = w2 * k1;
-			VecScaleSelf(f2, w3);
-		}
-
-		*energies += k0;
+		if (s_calc_angle_force_one(&(ap1->r), &(ap2->r), &(ap3->r), angle_pars + *angle_par_i, &ang, &en, &k1, &f1, &f2, &f3) != 0)
+			continue;
+		*energies += en;
 		VecInc(forces[angles[0]], f1);
-		VecInc(forces[angles[2]], f2);
-		VecInc(f1, f2);
-		VecDec(forces[angles[1]], f1);
-
+		VecInc(forces[angles[1]], f2);
+		VecInc(forces[angles[2]], f3);
 		if (arena->debug_result && arena->debug_output_level > 1) {
-			fprintf(arena->debug_result, "angle force %d-%d-%d: a=%f, a0=%f, k1=%f, {%f %f %f}, {%f %f %f}\n", angles[0]+1, angles[1]+1, angles[2]+1, (t+anp->a0)*180/PI, anp->a0*180/PI, k1, f1.x, f1.y, f1.z, f2.x, f2.y, f2.z);
+			fprintf(arena->debug_result, "angle force %d-%d-%d: a=%f, a0=%f, k1=%f, {%f %f %f}, {%f %f %f}\n", angles[0]+1, angles[1]+1, angles[2]+1, ang*180/PI, anp->a0*180/PI, k1, -f2.x, -f2.y, -f2.z, f3.x, f3.y, f3.z);
 		}
-
 	}
+}
+
+static inline int
+s_calc_dihedral_force_one(const Vector *r1, const Vector *r2, const Vector *r3, const Vector *r4, const TorsionPar *tp, Double *phi, Double *energy, Double *k1out, Vector *force1, Vector *force2, Vector *force3, Vector *force4)
+{
+	Vector r21, r32, r43;
+	Vector v1, v2, v3;
+	Double w1, w2, w3, k0, k1;
+	Double cosphi, sinphi;
+	Vector f1, f2, f3;
+	Int n;
+	VecSub(r21, *r1, *r2);
+	VecSub(r32, *r2, *r3);
+	VecSub(r43, *r3, *r4);
+	VecCross(v1, r21, r32);
+	VecCross(v2, r32, r43);
+	VecCross(v3, r32, v1);
+	w1 = VecLength(v1);
+	w2 = VecLength(v2);
+	w3 = VecLength(v3);
+	if (w1 < 1e-5 || w2 < 1e-5 || w3 < 1e-5)
+		return -1;  /*  The dihedral cannot be defined  */
+	w1 = 1.0/w1;
+	w2 = 1.0/w2;
+	w3 = 1.0/w3;
+	VecScaleSelf(v1, w1);
+	VecScaleSelf(v2, w2);
+	VecScaleSelf(v3, w3);
+	
+	/*  The dihedral angle value  */
+	cosphi = VecDot(v1, v2);
+	sinphi = VecDot(v3, v2);
+	*phi = -atan2(sinphi, cosphi);
+	
+	/*  Repeat for multiple dihedral terms  */
+	k0 = k1 = 0.0;
+	for (n = 0; n < tp->mult; n++) {
+		Double k = tp->k[n];
+		Double phi0 = tp->phi0[n];
+		Int period = tp->period[n];
+		if (period > 0) {
+			k0 += k * (1 + cos(period * *phi + phi0));
+			k1 -= period * k * sin(period * *phi + phi0);
+		} else {
+			/*  A simple quadratic term  */
+			phi0 = *phi - phi0;
+			if (phi0 < -PI)
+				phi0 += 2 * PI;
+			else if (phi0 > PI)
+				phi0 -= 2 * PI;
+			k0 += k * phi0 * phi0;
+			k1 += 2 * k * phi0;
+		}
+	}
+	
+	if (sinphi < -0.1 || sinphi > 0.1) {
+		/*  The sin form  */
+		Vector v4, v5, vw0;
+		VecScale(v4, v1, cosphi);
+		VecDec(v4, v2);
+		VecScaleSelf(v4, w1);
+		VecScale(v5, v2, cosphi);
+		VecDec(v5, v1);
+		VecScaleSelf(v5, w2);
+		k1 /= sinphi;
+		VecCross(f1, r32, v4);
+		VecCross(f3, v5, r32);
+		VecCross(f2, v4, r21);
+		VecCross(vw0, r43, v5);
+		VecInc(f2, vw0);
+		VecScaleSelf(f1, k1);
+		VecScaleSelf(f2, k1);
+		VecScaleSelf(f3, k1);
+	} else {
+		/*  The cos form  */
+		Vector v6, v7, vw1, vw2;
+		VecScale(v6, v3, sinphi);
+		VecDec(v6, v2);
+		VecScaleSelf(v6, w3);
+		VecScale(v7, v2, sinphi);
+		VecDec(v7, v3);
+		VecScaleSelf(v7, w2);
+		k1 = -k1 / cosphi;
+		VecCross(vw1, v6, r32);
+		VecCross(f1, r32, vw1);
+		VecCross(f3, v7, r32);
+		VecCross(f2, r43, v7);
+		VecCross(vw1, r32, r21);
+		VecCross(vw2, v6, vw1);
+		VecInc(f2, vw2);
+		VecCross(vw1, r32, v6);
+		VecCross(vw2, r21, vw1);
+		VecInc(f2, vw2);
+		VecScaleSelf(f1, k1);
+		VecScaleSelf(f2, k1);
+		VecScaleSelf(f3, k1);
+	}
+	/*	if (dihedral_uniq != NULL)
+	 k0 *= -dihedral_uniq[i]; */
+	*energy = k0;
+	*k1out = k1;
+	*force1 = f1;
+	VecDec(f1, f2);
+	VecScale(*force2, f1, -1);
+	VecDec(f2, f3);
+	VecScale(*force3, f2, -1);
+	VecScale(*force4, f3, -1);
+	return 0;
 }
 
 static void
@@ -191,19 +316,20 @@ s_calc_dihedral_force_sub(MDArena *arena, Atom *ap, Int ndihedrals, Int *dihedra
 	if (arena->mol->nsyms == 0)
 		dihedral_uniq = NULL;  /*  Ignore the symmetry info  */
 	for (i = 0; i < ndihedrals; i++, dihedrals += 4, dihedral_par_i++) {
-		Vector r21, r32, r43;
-		Vector v1, v2, v3;
-		Double w1, w2, w3, k0, k1;
-		Double cosphi, sinphi, phi;
-		Vector f1, f2, f3;
+		Atom *ap1, *ap2, *ap3, *ap4;
+		Double phi, en, k1;
+		Vector f1, f2, f3, f4;
 		TorsionPar *tp;
-		int n;
 
 		if (*dihedral_par_i < 0)
 			continue;  /*  Ignore this entry  */
 	/*	if (dihedral_uniq != NULL && dihedral_uniq[i] >= 0)
 			continue;  *//*  Non-unique dihedral  */
-		if (ap[dihedrals[0]].mm_exclude || ap[dihedrals[1]].mm_exclude || ap[dihedrals[2]].mm_exclude || ap[dihedrals[3]].mm_exclude)
+		ap1 = ATOM_AT_INDEX(ap, dihedrals[0]);
+		ap2 = ATOM_AT_INDEX(ap, dihedrals[1]);
+		ap3 = ATOM_AT_INDEX(ap, dihedrals[2]);
+		ap4 = ATOM_AT_INDEX(ap, dihedrals[3]);
+		if (ap1->mm_exclude || ap2->mm_exclude || ap3->mm_exclude || ap4->mm_exclude)
 			continue;  /*  Skip non-occupied atoms  */
 		if (arena->nalchem_flags > 0) {
 			if (dihedrals[0] < arena->nalchem_flags && dihedrals[1] < arena->nalchem_flags
@@ -213,6 +339,10 @@ s_calc_dihedral_force_sub(MDArena *arena, Atom *ap, Int ndihedrals, Int *dihedra
 				continue;  /*  Interaction between vanishing and appearing groups is ignored  */
 		}
 		tp = dihedral_pars + *dihedral_par_i;
+		if (s_calc_dihedral_force_one(&(ap1->r), &(ap2->r), &(ap3->r), &(ap4->r), tp, &phi, &en, &k1, &f1, &f2, &f3, &f4) != 0)
+			continue;
+		
+		/*
 		VecSub(r21, ap[dihedrals[0]].r, ap[dihedrals[1]].r);
 		VecSub(r32, ap[dihedrals[1]].r, ap[dihedrals[2]].r);
 		VecSub(r43, ap[dihedrals[2]].r, ap[dihedrals[3]].r);
@@ -223,7 +353,7 @@ s_calc_dihedral_force_sub(MDArena *arena, Atom *ap, Int ndihedrals, Int *dihedra
 		w2 = VecLength(v2);
 		w3 = VecLength(v3);
 		if (w1 < 1e-5 || w2 < 1e-5 || w3 < 1e-5)
-			continue;  /*  The dihedral cannot be defined  */
+			continue;  //  The dihedral cannot be defined 
 		w1 = 1.0/w1;
 		w2 = 1.0/w2;
 		w3 = 1.0/w3;
@@ -231,12 +361,12 @@ s_calc_dihedral_force_sub(MDArena *arena, Atom *ap, Int ndihedrals, Int *dihedra
 		VecScaleSelf(v2, w2);
 		VecScaleSelf(v3, w3);
 		
-		/*  The dihedral angle value  */
+		//  The dihedral angle value
 		cosphi = VecDot(v1, v2);
 		sinphi = VecDot(v3, v2);
 		phi = -atan2(sinphi, cosphi);
 		
-		/*  Repeat for multiple dihedral terms  */
+		//  Repeat for multiple dihedral terms
 		k0 = k1 = 0.0;
 		for (n = 0; n < tp->mult; n++) {
 			Double k = tp->k[n];
@@ -246,7 +376,7 @@ s_calc_dihedral_force_sub(MDArena *arena, Atom *ap, Int ndihedrals, Int *dihedra
 				k0 += k * (1 + cos(period * phi + phi0));
 				k1 -= period * k * sin(period * phi + phi0);
 			} else {
-				/*  A simple quadratic term  */
+				//  A simple quadratic term
 				phi -= phi0;
 				if (phi < -PI)
 					phi += 2 * PI;
@@ -258,7 +388,7 @@ s_calc_dihedral_force_sub(MDArena *arena, Atom *ap, Int ndihedrals, Int *dihedra
 		}
 		
 		if (sinphi < -0.1 || sinphi > 0.1) {
-			/*  The sin form  */
+			//  The sin form
 			Vector v4, v5, vw0;
 			VecScale(v4, v1, cosphi);
 			VecDec(v4, v2);
@@ -276,7 +406,7 @@ s_calc_dihedral_force_sub(MDArena *arena, Atom *ap, Int ndihedrals, Int *dihedra
 			VecScaleSelf(f2, k1);
 			VecScaleSelf(f3, k1);
 		} else {
-			/*  The cos form  */
+			//  The cos form
 			Vector v6, v7, vw1, vw2;
 			VecScale(v6, v3, sinphi);
 			VecDec(v6, v2);
@@ -299,8 +429,6 @@ s_calc_dihedral_force_sub(MDArena *arena, Atom *ap, Int ndihedrals, Int *dihedra
 			VecScaleSelf(f2, k1);
 			VecScaleSelf(f3, k1);
 		}
-	/*	if (dihedral_uniq != NULL)
-			k0 *= -dihedral_uniq[i]; */
 		*energies += k0;
 		VecInc(forces[dihedrals[0]], f1);
 		VecDec(f1, f2);
@@ -308,7 +436,12 @@ s_calc_dihedral_force_sub(MDArena *arena, Atom *ap, Int ndihedrals, Int *dihedra
 		VecDec(f2, f3);
 		VecDec(forces[dihedrals[2]], f2);
 		VecDec(forces[dihedrals[3]], f3);
-
+*/
+		*energies += en;
+		VecInc(forces[dihedrals[0]], f1);
+		VecInc(forces[dihedrals[1]], f2);
+		VecInc(forces[dihedrals[2]], f3);
+		VecInc(forces[dihedrals[3]], f4);
 		if (arena->debug_result && arena->debug_output_level > 1) {
 			fprintf(arena->debug_result, "dihedral(improper) force %d-%d-%d-%d: phi=%f, k1=%f, {%f %f %f}, {%f %f %f}, {%f %f %f}\n", dihedrals[0]+1, dihedrals[1]+1, dihedrals[2]+1, dihedrals[3]+1, phi*180/PI, k1, f1.x, f1.y, f1.z, f2.x, f2.y, f2.z, f3.x, f3.y, f3.z);
 		}
@@ -333,6 +466,67 @@ s_calc_improper_force(MDArena *arena)
 	Double *energies = &arena->energies[kImproperIndex];
 	Vector *forces = &arena->forces[kImproperIndex * arena->mol->natoms];
 	s_calc_dihedral_force_sub(arena, mol->atoms, mol->nimpropers, mol->impropers, arena->improper_par_i, par->improperPars, NULL/*arena->sym_improper_uniq*/, energies, forces);
+}
+
+static void
+s_calc_pibond_force(MDArena *arena)
+{
+	Atom *ap = arena->mol->atoms;
+	Int npibonds = arena->mol->npibonds;
+	Int *pibonds = arena->mol->pibonds;
+	UnionPar *pars = arena->pi_pars;
+	Double energy, val, valk1;
+//	Double *energies = &arena->energies[kAngleIndex];
+//	Vector *forces = &arena->forces[kAngleIndex * arena->mol->natoms];
+	Int i;
+	for (i = 0; i < npibonds; i++, pibonds += 4, pars++) {
+		Vector r[4];
+		Vector f[4];
+		PiAtom *pp[4];
+		Int j, n;
+		for (j = 0; j < 4; j++) {
+			n = pibonds[j];
+			if (n < 0)
+				break;
+			else if (n < ATOMS_MAX_NUMBER) {
+				r[j] = ATOM_AT_INDEX(ap, n)->r;
+				pp[j] = NULL;
+			} else {
+				n -= ATOMS_MAX_NUMBER;
+				MoleculeCalculatePiAtomPosition(arena->mol, n, &r[j]);
+				pp[j] = arena->mol->piatoms + n;
+			}
+		}
+		if (j == 2) {  /*  Bond  */
+			Vector r12;
+			Double w1, w2, k0, k1;
+			VecSub(r12, r[1], r[0]);
+			w1 = VecLength(r12);
+			w2 = w1 - pars->bond.r0;
+			k0 = pars->bond.k * w2 * w2;         /*  Energy  */
+			k1 = -2.0 * pars->bond.k * w2 / w1;  /*  Force / r  */
+			VecScaleSelf(r12, k1);
+			energy = k0;
+			VecScale(f[0], r12, -1);
+			f[1] = r12;
+			if (arena->debug_result && arena->debug_output_level > 1) {
+				fprintf(arena->debug_result, "pi bond force %d-%d: r=%f, r0=%f, k1=%f, {%f %f %f}\n", pibonds[0]+1, pibonds[1]+1, w1, pars->bond.r0, k1, r12.x, r12.y, r12.z);
+			}
+		} else if (j == 3) {  /*  Angle  */
+			if (s_calc_angle_force_one(&r[0], &r[1], &r[2], &pars->angle, &val, &energy, &valk1, &f[0], &f[1], &f[2]) != 0)
+				continue;
+			if (arena->debug_result && arena->debug_output_level > 1) {
+				fprintf(arena->debug_result, "pi angle force %d-%d-%d: a=%f, a0=%f, k1=%f, {%f %f %f}, {%f %f %f}\n", pibonds[0]+1, pibonds[1]+1, pibonds[2]+1, val*180/PI, pars->angle.a0*180/PI, energy, f[0].x, f[0].y, f[0].z, f[1].x, f[1].y, f[1].z);
+			}
+		} else if (j == 4) {  /*  Dihedral  */
+			if (s_calc_dihedral_force_one(&r[0], &r[1], &r[2], &r[3], &pars->torsion, &val, &energy, &valk1, &f[0], &f[1], &f[2], &f[3]) != 0)
+				continue;
+			if (arena->debug_result && arena->debug_output_level > 1) {
+				fprintf(arena->debug_result, "pi dihedral force %d-%d-%d-%d: phi=%f, k1=%f, {%f %f %f}, {%f %f %f}, {%f %f %f}\n", pibonds[0]+1, pibonds[1]+1, pibonds[2]+1, pibonds[3]+1, val*180/PI, energy, f[0].x, f[0].y, f[0].z, f[1].x, f[1].y, f[1].z, f[2].x, f[2].y, f[2].z);
+			}
+		} else continue;
+	}
+	
 }
 
 /*  ==================================================================== */

@@ -48,7 +48,7 @@ public:
 	void OnCopy(wxCommandEvent &event);
 	void OnPaste(wxCommandEvent &event);
 	void OnClear(wxCommandEvent &event);
-	void EmptyBuffer();
+	void EmptyBuffer(bool showRubyPrompt = true);
 
 private:
 	DECLARE_EVENT_TABLE()

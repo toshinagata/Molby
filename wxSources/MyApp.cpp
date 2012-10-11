@@ -74,6 +74,8 @@
 
 static char *sLastBuildString = "";
 
+static const char *sExecutingRubyScriptPath = NULL;
+
 MyFrame *frame = (MyFrame *) NULL;
 
 IMPLEMENT_APP(MyApp)
@@ -658,7 +660,8 @@ MyApp::MacHandleAEODoc(const WXEVENTREF event, WXEVENTREF WXUNUSED(reply))
 
 #endif
 
-int MyApp::OnExit(void)
+int
+MyApp::OnExit(void)
 {
 	SaveDefaultSettings();
     delete m_docManager;
@@ -667,6 +670,111 @@ int MyApp::OnExit(void)
 	delete m_server;
 #endif
     return 0;
+}
+
+static void
+sModifyMenuForFilterMode(wxMenuBar *mbar)
+{
+	int idx, i, n, id;
+	wxMenu *menu;
+	wxMenuItem *item;
+	idx = mbar->FindMenu(wxT("Show"));
+	if (idx != wxNOT_FOUND)
+		delete mbar->Remove(idx);
+	idx = mbar->FindMenu(wxT("MM/MD"));
+	if (idx != wxNOT_FOUND)
+		delete mbar->Remove(idx);
+	idx = mbar->FindMenu(wxT("QChem"));
+	if (idx != wxNOT_FOUND)
+		delete mbar->Remove(idx);
+	idx = mbar->FindMenu(wxT("Script"));
+	if (idx != wxNOT_FOUND) {
+		menu = mbar->GetMenu(idx);
+		n = menu->GetMenuItemCount();
+		for (i = n - 1; i >= 0; i--) {
+			item = menu->FindItemByPosition(i);
+			id = item->GetId();
+			if (id != myMenuID_OpenConsoleWindow && id != myMenuID_EmptyConsoleWindow && id != myMenuID_ExecuteScript) {
+				menu->Remove(item);
+				delete item;
+			}
+		}
+	}
+	
+	idx = mbar->FindMenu(wxT("Edit"));
+	if (idx != wxNOT_FOUND) {
+		menu = mbar->GetMenu(idx);
+		n = menu->GetMenuItemCount();
+		for (i = n - 1; i >= 0; i--) {
+			item = menu->FindItemByPosition(i);
+			id = item->GetId();
+			if (id == wxID_SELECTALL)
+				break;
+			menu->Remove(item);
+			delete item;
+		}
+	}
+	
+	idx = mbar->FindMenu(wxT("File"));
+	if (idx != wxNOT_FOUND) {
+		menu = mbar->GetMenu(idx);
+		n = menu->GetMenuItemCount();
+		for (i = n - 1; i >= 0; i--) {
+			item = menu->FindItemByPosition(i);
+			id = item->GetId();
+			if (id != wxID_OPEN && id != wxID_EXIT) {
+				menu->Remove(item);
+				delete item;
+			}
+		}
+	}
+	
+}
+
+int
+MyApp::SwitchToFilterMode(const char *filterScriptName)
+{
+	if (IsFilterMode())
+		return 1;   /*  Already filter mode  */
+	if (m_docManager->GetCurrentView() != NULL)
+		return -1;  /*  Molecule is open: cannot switch  */
+
+	/*  Remove menu items except for absolutely necessary  */
+	sModifyMenuForFilterMode(GetMainFrame()->GetMenuBar());
+	sModifyMenuForFilterMode(consoleFrame->GetMenuBar());
+	
+	/*  Record the name of the filter script  */
+	char *p;
+	m_filterScriptName = strdup(filterScriptName);
+	p = strrchr(m_filterScriptName, '/');
+#if defined(__WXMSW__)
+	if (p == NULL)
+		p = strrchr(m_filterScriptName, '\\');
+#endif
+	if (p == NULL)
+		p = m_filterScriptName;
+	else p++;
+	m_filterScriptBaseName = strdup(p);
+
+	/*  Resize the console window and show startup message  */
+	int width, height;
+	consoleFrame->GetClientSize(&width, &height);
+	if (width < 640)
+		width = 640;
+	if (height < 480)
+		height = 480;
+	consoleFrame->EmptyBuffer(false);
+	consoleFrame->SetClientSize(width, height);
+	MyAppCallback_setConsoleColor(3);
+	MyAppCallback_showScriptMessage("***********************************************************\n");
+	MyAppCallback_showScriptMessage(" Molby is now running in the filter mode.\n");
+	MyAppCallback_showScriptMessage(" When you open files, they will be processed by\n");
+	MyAppCallback_showScriptMessage(" the script '%s'.\n", m_filterScriptBaseName);
+	MyAppCallback_showScriptMessage(" You can process any file, not necessarily molecular files.\n");
+	MyAppCallback_showScriptMessage("***********************************************************\n");
+	MyAppCallback_setConsoleColor(0);
+	
+	return 0;
 }
 
 int
@@ -1159,7 +1267,7 @@ MyApp::OnOpenFilesByIPC(wxCommandEvent& event)
 }
 
 bool
-MyApp::OnOpenFiles(wxString &files)
+MyApp::OnOpenFiles(const wxString &files)
 {
 	Int start, end;
 	Int nargs = 0;
@@ -1188,9 +1296,10 @@ MyApp::OnOpenFiles(wxString &files)
 						Molby_showError(status);
 					return false;
 				}
+			} else {
+				if (NULL == wxGetApp().DocManager()->CreateDocument(file, wxDOC_SILENT))
+					success = false;
 			}
-			if (NULL == wxGetApp().DocManager()->CreateDocument(file, wxDOC_SILENT))
-				success = false;
 		}
 		if (end == wxString::npos)
 			break;
@@ -1769,6 +1878,7 @@ RubyValue
 MyAppCallback_executeScriptFromFile(const char *cpath, int *status)
 {
 	RubyValue retval;
+	const char *old_cpath;
 	wxString cwd = wxFileName::GetCwd();
 	wxString path(cpath, wxConvFile);
 	char *p = strdup(cpath);
@@ -1844,7 +1954,11 @@ MyAppCallback_executeScriptFromFile(const char *cpath, int *status)
 		}
 	}
 	
+	old_cpath = sExecutingRubyScriptPath;
+	sExecutingRubyScriptPath = cpath;
 	retval = Molby_evalRubyScriptOnMolecule(script, MoleculeCallback_currentMolecule(), pp, status);
+	sExecutingRubyScriptPath = old_cpath;
+	
 	free(script);
 	free(p);
 	wxFileName::SetCwd(cwd);
@@ -1872,4 +1986,11 @@ void MyAppCallback_endUndoGrouping(void)
 int MyAppCallback_callSubProcess(const char *cmdline, const char *procname)
 {
 	return wxGetApp().CallSubProcess(cmdline, procname);
+}
+
+int MyAppCallback_switchToFilterMode(void)
+{
+	if (sExecutingRubyScriptPath == NULL)
+		return -2;  /*  Not invoked from file  */
+	return wxGetApp().SwitchToFilterMode(sExecutingRubyScriptPath);
 }

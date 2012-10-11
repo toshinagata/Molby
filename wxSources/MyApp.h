@@ -180,8 +180,9 @@ class MyApp: public wxApp
 	void RequestOpenFilesByIPC(wxString& files);
 	void OnOpenFilesByIPC(wxCommandEvent& event);
 	
-	bool OnOpenFiles(wxString &files);
+	bool OnOpenFiles(const wxString &files);
 
+	int SwitchToFilterMode(const char *filterScriptName);
 	bool IsFilterMode() { return (m_filterScriptName != NULL); }
 	const char *FilterScriptBaseName() { return m_filterScriptBaseName; }
 
@@ -218,9 +219,9 @@ protected:
 
 	wxString *m_pendingFilesToOpen;  /*  Files to be processed by OnOpenFilesByIPC()  */
 
-	char *m_filterScriptName;         /*  Ruby script when invoked as a filter mode  */
-	char *m_filterScriptBaseName;     /*  The file name (without directories) of the filter script  */
-
+	char *m_filterScriptName;        /*  Ruby script when invoked as a filter mode  */
+	char *m_filterScriptBaseName;    /*  The file name (without directories) of the filter script  */
+	
 #if defined(__WXMSW__)
 public:
 	wxSingleInstanceChecker *m_checker;

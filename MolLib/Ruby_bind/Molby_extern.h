@@ -62,7 +62,8 @@ STUB RubyValue MyAppCallback_executeScriptFromFile(const char *path, int *status
 STUB int MyAppCallback_callSubProcess(const char *cmdline, const char *procname);
 STUB void MyAppCallback_beginUndoGrouping(void);
 STUB void MyAppCallback_endUndoGrouping(void);
-
+STUB int MyAppCallback_switchToFilterMode(void);
+	
 #ifdef __cplusplus
 }
 #endif

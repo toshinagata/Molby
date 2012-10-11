@@ -10050,6 +10050,25 @@ MoleculeFlushFrames(Molecule *mp)
 	return nframes;
 }
 
+#pragma mark ====== Pi Atoms ======
+
+int
+MoleculeCalculatePiAtomPosition(Molecule *mol, int idx, Vector *vp)
+{
+	PiAtom *pp;
+	Int i, *cp;
+	if (mol == NULL || idx < 0 || idx >= mol->npiatoms)
+		return -1;
+	pp = mol->piatoms + idx;
+	cp = AtomConnectData(&pp->connect);
+	VecZero(*vp);
+	for (i = pp->connect.count - 1; i >= 0; i--) {
+		Vector r = ATOM_AT_INDEX(mol->atoms, cp[i])->r;
+		VecScaleInc(*vp, r, pp->coeffs[i]);
+	}
+	return idx;
+}
+
 #pragma mark ====== MO calculation ======
 
 /*  Calculate an MO value for a single point.  */

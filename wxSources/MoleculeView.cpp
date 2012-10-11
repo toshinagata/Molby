@@ -95,6 +95,7 @@ MoleculeView::OnCreate(wxDocument *doc, long WXUNUSED(flags) )
 {
 	int i;
 
+	
 	// Make a document frame
 	frame = new wxDocMDIChildFrame(doc, this, GetMainFrame(), wxID_ANY, _T("New Molby Document"),
 						   wxPoint(10, 24), wxSize(680, 400),
