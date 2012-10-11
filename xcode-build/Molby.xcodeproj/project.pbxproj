@@ -81,6 +81,7 @@
 		E4D5ADA611808A2C00B1D8A4 /* cmdtool_stubs.c in Sources */ = {isa = PBXBuildFile; fileRef = E4D5ADA511808A2C00B1D8A4 /* cmdtool_stubs.c */; };
 		E4E2D5C510A249820007644A /* GlobalParameterFrame.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E4E2D5C410A249820007644A /* GlobalParameterFrame.cpp */; };
 		E4E470C910AE6F8600F72B68 /* GlobalParameterFilesFrame.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E4E470C810AE6F8600F72B68 /* GlobalParameterFilesFrame.cpp */; };
+		E4ED76E516256FC5006A1820 /* MyIPCSupport.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E4ED76E316256FC5006A1820 /* MyIPCSupport.cpp */; };
 		E4FFA9050EE960650045EDF9 /* RubyDialogFrame.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E4FFA9040EE960650045EDF9 /* RubyDialogFrame.cpp */; };
 		E4FFA95E0EEAADCA0045EDF9 /* ruby_dialog.c in Sources */ = {isa = PBXBuildFile; fileRef = E433CE770EC7099B00675985 /* ruby_dialog.c */; };
 /* End PBXBuildFile section */
@@ -183,6 +184,8 @@
 		E4E2D5C410A249820007644A /* GlobalParameterFrame.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = GlobalParameterFrame.cpp; path = ../wxSources/GlobalParameterFrame.cpp; sourceTree = SOURCE_ROOT; wrapsLines = 1; };
 		E4E470C710AE6F8600F72B68 /* GlobalParameterFilesFrame.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = GlobalParameterFilesFrame.h; path = ../wxSources/GlobalParameterFilesFrame.h; sourceTree = SOURCE_ROOT; };
 		E4E470C810AE6F8600F72B68 /* GlobalParameterFilesFrame.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = GlobalParameterFilesFrame.cpp; path = ../wxSources/GlobalParameterFilesFrame.cpp; sourceTree = SOURCE_ROOT; wrapsLines = 1; };
+		E4ED76E316256FC5006A1820 /* MyIPCSupport.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = MyIPCSupport.cpp; path = ../wxSources/MyIPCSupport.cpp; sourceTree = SOURCE_ROOT; };
+		E4ED76E416256FC5006A1820 /* MyIPCSupport.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MyIPCSupport.h; path = ../wxSources/MyIPCSupport.h; sourceTree = SOURCE_ROOT; };
 		E4FFA9030EE960650045EDF9 /* RubyDialogFrame.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RubyDialogFrame.h; path = ../wxSources/RubyDialogFrame.h; sourceTree = SOURCE_ROOT; };
 		E4FFA9040EE960650045EDF9 /* RubyDialogFrame.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = RubyDialogFrame.cpp; path = ../wxSources/RubyDialogFrame.cpp; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
@@ -380,6 +383,8 @@
 				E496A76E0EDD392F00499646 /* MyClipboardData.cpp */,
 				E44CEED5100E1E9C0040BD51 /* ProgressFrame.h */,
 				E44CEED4100E1E9C0040BD51 /* ProgressFrame.cpp */,
+				E4ED76E316256FC5006A1820 /* MyIPCSupport.cpp */,
+				E4ED76E416256FC5006A1820 /* MyIPCSupport.h */,
 				E472B7C41087F63200F931F3 /* MyVersion.c */,
 				E4A1802711897F8600B394E7 /* wxKillAddition.cpp */,
 				E43CCD8E0EB20BC800108D2D /* MolLib */,
@@ -550,6 +555,7 @@
 				E4A1802811897F8600B394E7 /* wxKillAddition.cpp in Sources */,
 				9E12580F119EC42E00E95DC3 /* docview.cpp in Sources */,
 				E445145415F1DA5B0050171E /* MainViewCommon.c in Sources */,
+				E4ED76E516256FC5006A1820 /* MyIPCSupport.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

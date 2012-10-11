@@ -1496,10 +1496,17 @@ MyDocumentFromMolecule(Molecule *mp)
 Molecule *
 MoleculeCallback_openNewMolecule(const char *fname)
 {
-  MainView *mview = MainViewCallback_newFromFile(fname);
-  if (mview != NULL)
-    return mview->mol;
-  else return NULL;
+	wxDocument *doc;
+	MyDocManager *manager = wxGetApp().DocManager();
+	if (fname == NULL || *fname == 0) {
+		doc = manager->CreateDocument(wxT(""), wxDOC_NEW);
+	} else {
+		wxString fnamestr(fname, wxConvFile);
+		doc = manager->CreateDocument(fnamestr, wxDOC_SILENT);
+	}
+	if (doc == NULL)
+		return NULL;
+	else return ((MyDocument *)doc)->GetMolecule();
 }
 
 void

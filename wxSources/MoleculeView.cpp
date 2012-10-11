@@ -675,7 +675,8 @@ void
 MoleculeView::OnActivate(wxActivateEvent &event)
 {
 	if (!event.GetActive()) {
-		listctrl->EndEditText(true);
+		if (listctrl != NULL)
+			listctrl->EndEditText(true);
 	}
 	event.Skip();
 }
@@ -970,6 +971,7 @@ MainViewCallback_activeView(void)
   //	return MainViewCallback_viewWithTag(sLastMainViewTag);
 }
 
+/*
 MainView *
 MainViewCallback_newFromFile(const char *fname)
 {
@@ -983,6 +985,7 @@ MainViewCallback_newFromFile(const char *fname)
   }
   return MainViewCallback_activeView();
 }
+*/
 
 int
 MainViewCallback_importFromFile(MainView *mview, const char *fname)

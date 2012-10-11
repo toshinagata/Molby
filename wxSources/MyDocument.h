@@ -31,7 +31,8 @@ enum {
 	MyDocumentEvent_scriptMenuModified,
 	MyDocumentEvent_updateDisplay,
 	MyDocumentEvent_insertFrameFromMD,
-	MyDocumentEvent_threadTerminated
+	MyDocumentEvent_threadTerminated,
+	MyDocumentEvent_openFilesByIPC
 };
 
 class MyDocument: public wxDocument

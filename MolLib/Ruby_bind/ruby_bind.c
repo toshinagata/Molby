@@ -646,6 +646,8 @@ s_Kernel_ExecuteScript(VALUE self, VALUE fname)
 {
 	int status;
 	VALUE retval = (VALUE)MyAppCallback_executeScriptFromFile(StringValuePtr(fname), &status);
+	if (retval == (VALUE)6 && status == -1)
+		rb_raise(rb_eMolbyError, "Cannot open script file: %s", StringValuePtr(fname));
 	if (status != 0)
 		rb_jump_tag(status);
 	return retval;
@@ -10279,4 +10281,16 @@ Molby_startup(const char *script, const char *dir)
 		else
 			MyAppCallback_showScriptMessage("Done.\n");
 	}
+}
+
+void
+Molby_buildARGV(int argc, const char **argv)
+{
+	int i;
+    rb_ary_clear(rb_argv);
+    for (i = 0; i < argc; i++) {
+		VALUE arg = rb_tainted_str_new2(argv[i]);
+		OBJ_FREEZE(arg);
+		rb_ary_push(rb_argv, arg);
+    }
 }

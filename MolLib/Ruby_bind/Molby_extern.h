@@ -36,7 +36,8 @@ extern RubyValue Molby_evalRubyScriptOnMolecule(const char *script, Molecule *mo
 extern RubyValue Molby_evalRubyScriptOnActiveMoleculeWithInterrupt(const char *script, int *status); */
 extern void Molby_showRubyValue(RubyValue value);
 extern int Ruby_methodType(const char *className, const char *methodName);
-
+extern void Molby_buildARGV(int argc, const char **argv);
+	
 STUB char *MyAppCallback_getGlobalSettings(const char *key);
 STUB void MyAppCallback_setGlobalSettings(const char *key, const char *value);
 STUB int MyAppCallback_getGlobalSettingsWithType(const char *key, int type, void *ptr);

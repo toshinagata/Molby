@@ -15,10 +15,14 @@
  GNU General Public License for more details.
  */
 
+#include "wx/filedlg.h"
 #include "MyDocManager.h"
 #include "MyMBConv.h"
+#include "MyApp.h"
+#include "../MolLib/Ruby_bind/Molby_extern.h"
 
 BEGIN_EVENT_TABLE(MyDocManager, wxDocManager)
+EVT_MENU(wxID_OPEN, MyDocManager::OnFileOpen)
 EVT_MENU(wxID_SAVE, MyDocManager::OnFileSave)
 EVT_MENU(wxID_SAVEAS, MyDocManager::OnFileSaveAs)
 END_EVENT_TABLE()
@@ -42,6 +46,42 @@ MyDocManager::SetDocumentTypesEnabled(const char **extensions, bool flag)
 				break;
 			}
 		}
+	}
+}
+
+/*
+wxDocument*
+MyDocManager::CreateDocument(const wxString& path, long flags)
+{
+	return wxDocManager::CreateDocument(path, flags);
+}
+*/
+
+void
+MyDocManager::OnFileOpen(wxCommandEvent& event)
+{
+	if (wxGetApp().IsFilterMode()) {
+		/*  Select files to give to the script  */
+		int result = 0;
+		wxString tstr(wxT("Choose File(s) to be processed by "));
+		wxString files;
+		tstr.Append(wxString(wxGetApp().FilterScriptBaseName(), wxConvFile));
+		wxFileDialog *dialog = new wxFileDialog(NULL, tstr, wxT(""), wxT(""), wxT("All files (*.*)|*.*"), wxFD_OPEN | wxFD_MULTIPLE);
+		if (dialog->ShowModal() == wxID_OK) {
+			int i, n;
+			wxArrayString paths;
+			dialog->GetPaths(paths);
+			n = paths.GetCount();
+			for (i = 0; i < n; i++) {
+				files.Append(paths[i]);
+				files.Append(wxT("\n"));
+			}
+			result = 1;
+		}
+		dialog->Destroy();
+		wxGetApp().OnOpenFiles(files);
+	} else {
+		wxDocManager::OnFileOpen(event);
 	}
 }
 

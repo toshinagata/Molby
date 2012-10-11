@@ -262,7 +262,7 @@ STUB void MainViewCallback_selectMatrixCellForMode(MainView *mview, int mode);
 //STUB int MainViewCallback_getTag(MainView *mview);
 STUB MainView *MainViewCallback_viewWithTag(int tag);
 STUB MainView *MainViewCallback_activeView(void);
-STUB MainView *MainViewCallback_newFromFile(const char *fname);
+//STUB MainView *MainViewCallback_newFromFile(const char *fname);
 STUB int MainViewCallback_importFromFile(MainView *mview, const char *fname);
 STUB void MainViewCallback_getFilename(MainView *mview, char *buf, int bufsize);
 //STUB void MainViewCallback_moleculeReplaced(MainView *mview, struct Molecule *mol);

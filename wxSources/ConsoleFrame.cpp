@@ -15,11 +15,18 @@
  GNU General Public License for more details.
  */
 
+#include "wx/wxprec.h"
+
+#ifndef WX_PRECOMP
+#include "wx/wx.h"
+#endif
+
 #include "ConsoleFrame.h"
 
 #include "wx/menu.h"
 #include "wx/regex.h"
 #include "wx/colour.h"
+#include "wx/sizer.h"
 
 #include "MyApp.h"
 #include "../MolLib/Ruby_bind/Molby_extern.h"
@@ -49,10 +56,15 @@ void
 ConsoleFrame::OnCreate()
 {
 	//  Make a text view
-#warning "TODO: Set the sizer for the text control properly"
 	int width, height;
+
 	GetClientSize(&width, &height);
-	textCtrl = new wxTextCtrl(this, wxID_ANY, _T(""), wxPoint(0, 0), wxSize(width, height), wxTE_MULTILINE | wxTE_RICH);
+	textCtrl = new wxTextCtrl(this, wxID_ANY, _T(""), wxPoint(0, 0), wxSize(100, 100), wxTE_MULTILINE | wxTE_RICH);
+
+	wxBoxSizer *consoleSizer = new wxBoxSizer(wxHORIZONTAL);
+	consoleSizer->Add(textCtrl, 1, wxEXPAND | wxALL, 2);
+	this->SetSizer(consoleSizer);
+	consoleSizer->SetSizeHints(this);
 	
 	//  Connect "OnKeyDown" event handler
 	textCtrl->Connect(-1, wxEVT_KEY_DOWN, wxKeyEventHandler(ConsoleFrame::OnKeyDown), NULL, this);
@@ -73,9 +85,20 @@ ConsoleFrame::CreateConsoleFrame(wxMDIParentFrame *parent)
 	wxPoint origin(10, 24);
 	wxSize size(640, 200);
 #endif
-	ConsoleFrame *frame = new ConsoleFrame(parent, _T("Console"), origin, size, wxDEFAULT_FRAME_STYLE | wxNO_FULL_REPAINT_ON_RESIZE);
-	
+	ConsoleFrame *frame = new ConsoleFrame(parent, _T("Console"), origin, wxDefaultSize, wxDEFAULT_FRAME_STYLE | wxNO_FULL_REPAINT_ON_RESIZE);
+
 	frame->OnCreate();
+
+	if (wxGetApp().IsFilterMode()) {
+#if defined(__WXMSW__)
+		frame->Maximize();
+#else
+		frame->SetSize(800, 480);
+#endif
+	} else {
+		frame->SetSize(640, 200);
+	}
+		
 	return frame;
 }
 

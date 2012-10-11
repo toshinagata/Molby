@@ -25,13 +25,19 @@
 #include "wx/hashmap.h"
 #include "wx/process.h"
 
-#if __WXMSW__
+#if defined(__WXMSW__)
 #include "wx/snglinst.h"
 #endif
 
 #include "MyDocManager.h"
 
 class MyDocManager;
+
+#if defined(__WXMSW__)
+class MyServer;
+class MyClient;
+#endif
+
 class wxMenuBar;
 class wxMenu;
 class wxProgressDialog;
@@ -171,9 +177,20 @@ class MyApp: public wxApp
 
 	void OnActivate(wxActivateEvent &event);
 
+	void RequestOpenFilesByIPC(wxString& files);
+	void OnOpenFilesByIPC(wxCommandEvent& event);
+	
+	bool OnOpenFiles(wxString &files);
+
+	bool IsFilterMode() { return (m_filterScriptName != NULL); }
+	const char *FilterScriptBaseName() { return m_filterScriptBaseName; }
+
 	MyListCtrl *GetGlobalParameterListCtrl();
-#if __WXMAC__
+	
+#if defined(__WXMAC__)
 	virtual void MacNewFile();
+	virtual void MacOpenFile(const wxString &fileName);
+	virtual short MacHandleAEODoc(const WXEVENTREF event, WXEVENTREF WXUNUSED(reply));
 #endif
 	
 protected:
@@ -198,9 +215,18 @@ protected:
 
 	int m_CountNamedFragments;
 	char **m_NamedFragments;
-	
-#if __WXMSW__
+
+	wxString *m_pendingFilesToOpen;  /*  Files to be processed by OnOpenFilesByIPC()  */
+
+	char *m_filterScriptName;         /*  Ruby script when invoked as a filter mode  */
+	char *m_filterScriptBaseName;     /*  The file name (without directories) of the filter script  */
+
+#if defined(__WXMSW__)
+public:
 	wxSingleInstanceChecker *m_checker;
+	wxString *m_ipcServiceName;
+	MyServer *m_server;
+	MyClient *m_client;
 #endif
 	
 private:
