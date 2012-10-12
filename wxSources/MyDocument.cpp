@@ -1393,7 +1393,7 @@ MyDocument::OnUpdateUI(wxUpdateUIEvent& event)
 		case wxID_PASTE:
 		case wxID_DELETE:
 			event.Enable(true);
-			return;
+			return;			
 		case myMenuID_Import:
 			event.Enable(true);
 			return;

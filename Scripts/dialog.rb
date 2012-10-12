@@ -36,5 +36,29 @@ class Dialog
     set_attr(tag, :value=>value)
 	value
   end
+
+  def self.filter_kit(title, description, &block)
+    Dialog.new(title, nil, nil) {
+      def write(s)  #  Override standard output
+        item_with_tag("text").append_string(s)
+      end
+      button_action = proc {
+        names = Dialog.open_panel("Select file(s) to process", nil, nil, false, true)
+        if names
+          stdout_save = $stdout
+          $stdout = self
+          block.call(names)
+          $stdout = stdout_save
+        end
+      }
+      layout(1,
+        item(:text, :title=>description),
+        item(:button, :title=>"Select Files...", :action=>button_action),
+        item(:textview, :width=>320, :height=>200, :editable=>false, :tag=>"text", :font=>[:fixed, 10]),
+        item(:button, :title=>"Exit", :action=>proc { hide }, :align=>:center))
+      show
+    }
+    nil
+  end
   
 end

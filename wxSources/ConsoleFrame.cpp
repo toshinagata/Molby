@@ -33,13 +33,15 @@
 #include "MyMBConv.h"
 
 BEGIN_EVENT_TABLE(ConsoleFrame, wxMDIChildFrame)
-	EVT_UPDATE_UI(wxID_CLOSE, ConsoleFrame::OnUpdateUI)
+	EVT_UPDATE_UI(-1, ConsoleFrame::OnUpdateUI)
 	EVT_CLOSE(ConsoleFrame::OnCloseWindow)
 	EVT_MENU(wxID_CLOSE, ConsoleFrame::OnClose)
-	EVT_MENU(wxID_CUT, ConsoleFrame::OnCut)
+/*	EVT_MENU(wxID_CUT, ConsoleFrame::OnCut)
 	EVT_MENU(wxID_COPY, ConsoleFrame::OnCopy)
 	EVT_MENU(wxID_PASTE, ConsoleFrame::OnPaste)
-	EVT_MENU(wxID_CLEAR, ConsoleFrame::OnClear)
+	EVT_MENU(wxID_CLEAR, ConsoleFrame::OnClear) */
+	EVT_MENU(wxID_UNDO, ConsoleFrame::OnUndo)
+	EVT_MENU(wxID_REDO, ConsoleFrame::OnRedo)
 END_EVENT_TABLE()
 
 ConsoleFrame::ConsoleFrame(wxMDIParentFrame *parent, const wxString& title, const wxPoint& pos, const wxSize& size, long type):
@@ -65,6 +67,16 @@ ConsoleFrame::OnCreate()
 	consoleSizer->Add(textCtrl, 1, wxEXPAND);
 	this->SetSizer(consoleSizer);
 	consoleSizer->SetSizeHints(this);
+	
+	//  Set the default font (fixed-pitch)
+	wxTextAttr attr;
+#if defined(__WXMSW__)
+	wxFont font = wxSystemSettings::GetFont(wxSYS_ANSI_FIXED_FONT);
+#else
+	wxFont font(11, wxFONTFAMILY_MODERN, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL);
+#endif
+	attr.SetFont(font);
+	textCtrl->SetDefaultStyle(attr);
 	
 	//  Connect "OnKeyDown" event handler
 	textCtrl->Connect(-1, wxEVT_KEY_DOWN, wxKeyEventHandler(ConsoleFrame::OnKeyDown), NULL, this);
@@ -156,37 +168,39 @@ ConsoleFrame::OnClose(wxCommandEvent &event)
 	this->Close();
 }
 
+//  I do not understand why these functions should be written...
+//  Certainly there should be better way to implement these.
 void
-ConsoleFrame::OnCut(wxCommandEvent &event)
+ConsoleFrame::OnUndo(wxCommandEvent &event)
 {
-	textCtrl->Cut();
+	if (wxWindow::FindFocus() == textCtrl)
+		textCtrl->Undo();
+	else event.Skip();
 }
 
 void
-ConsoleFrame::OnCopy(wxCommandEvent &event)
+ConsoleFrame::OnRedo(wxCommandEvent &event)
 {
-	textCtrl->Copy();
-}
-
-void
-ConsoleFrame::OnPaste(wxCommandEvent &event)
-{
-	textCtrl->Paste();
-}
-
-void
-ConsoleFrame::OnClear(wxCommandEvent &event)
-{
-	textCtrl->Clear();
+	if (wxWindow::FindFocus() == textCtrl)
+		textCtrl->Redo();
+	else event.Skip();
 }
 
 void
 ConsoleFrame::OnUpdateUI(wxUpdateUIEvent& event)
 {
-	//  Why this is not automatically done??
 	int uid = event.GetId();
 	if (uid == wxID_CLOSE)
+		//  Why this is not automatically done??
 		event.Enable(true);
+	else if (uid == wxID_UNDO || uid == wxID_REDO) {
+		if (wxWindow::FindFocus() == textCtrl) {
+			if (uid == wxID_UNDO)
+				event.Enable(textCtrl->CanUndo());
+			else
+				event.Enable(textCtrl->CanRedo());
+		} else event.Skip();
+	} else event.Skip();
 }
 
 void

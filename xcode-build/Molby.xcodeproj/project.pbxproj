@@ -109,7 +109,7 @@
 		E433CE740EC7099B00675985 /* Molby_extern.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Molby_extern.h; path = ../MolLib/Ruby_bind/Molby_extern.h; sourceTree = SOURCE_ROOT; };
 		E433CE750EC7099B00675985 /* Molby.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Molby.h; path = ../MolLib/Ruby_bind/Molby.h; sourceTree = SOURCE_ROOT; };
 		E433CE760EC7099B00675985 /* ruby_bind.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ruby_bind.c; path = ../MolLib/Ruby_bind/ruby_bind.c; sourceTree = SOURCE_ROOT; wrapsLines = 1; };
-		E433CE770EC7099B00675985 /* ruby_dialog.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ruby_dialog.c; path = ../MolLib/Ruby_bind/ruby_dialog.c; sourceTree = SOURCE_ROOT; };
+		E433CE770EC7099B00675985 /* ruby_dialog.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ruby_dialog.c; path = ../MolLib/Ruby_bind/ruby_dialog.c; sourceTree = SOURCE_ROOT; wrapsLines = 1; };
 		E433CE780EC7099B00675985 /* ruby_dialog.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ruby_dialog.h; path = ../MolLib/Ruby_bind/ruby_dialog.h; sourceTree = SOURCE_ROOT; };
 		E433CE7C0EC709BD00675985 /* IntGroup.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = IntGroup.c; path = ../MolLib/IntGroup.c; sourceTree = SOURCE_ROOT; };
 		E433CE7D0EC709BD00675985 /* IntGroup.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = IntGroup.h; path = ../MolLib/IntGroup.h; sourceTree = SOURCE_ROOT; };

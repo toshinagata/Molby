@@ -44,10 +44,8 @@ public:
 	void OnClose(wxCommandEvent &event);
 	void OnUpdateUI(wxUpdateUIEvent& event);
 
-	void OnCut(wxCommandEvent &event);
-	void OnCopy(wxCommandEvent &event);
-	void OnPaste(wxCommandEvent &event);
-	void OnClear(wxCommandEvent &event);
+	void OnUndo(wxCommandEvent &event);
+	void OnRedo(wxCommandEvent &event);
 	void EmptyBuffer(bool showRubyPrompt = true);
 
 private:

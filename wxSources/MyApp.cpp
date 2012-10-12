@@ -784,6 +784,7 @@ MyApp::AppendConsoleMessage(const char *mes)
 	if (consoleFrame != NULL && (textCtrl = consoleFrame->textCtrl) != NULL) {
 		wxString string(mes, WX_DEFAULT_CONV);
 		textCtrl->AppendText(string);
+		textCtrl->DiscardEdits();  /*  Disable undo for this operation  */
 		return string.Len();
 	} else return 0;
 }

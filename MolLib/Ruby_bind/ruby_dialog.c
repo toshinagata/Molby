@@ -31,7 +31,11 @@ static VALUE
 	sVerticalAlignSymbol, sBottomSymbol, 
 	sMarginSymbol, sPaddingSymbol, sSubItemsSymbol,
 	sHFillSymbol, sVFillSymbol,
-	sIsProcessingActionSymbol;
+	sIsProcessingActionSymbol,
+	sFontSymbol,
+	sDefaultSymbol, sRomanSymbol, sSwissSymbol, sFixedSymbol,
+	sNormalSymbol, sSlantSymbol, sItalicSymbol,
+	sMediumSymbol, sBoldSymbol, sLightSymbol;
 
 VALUE rb_cDialog = Qfalse;
 VALUE rb_cDialogItem = Qfalse;
@@ -211,6 +215,40 @@ s_RubyDialogItem_SetAttr(VALUE self, VALUE key, VALUE val)
 		frame.size.width = NUM2DBL(rb_Float(Ruby_ObjectAtIndex(val, 2)));
 		frame.size.height = NUM2DBL(rb_Float(Ruby_ObjectAtIndex(val, 3)));
 		RubyDialogCallback_setFrameOfItem(view, frame);
+	} else if (key == sFontSymbol) {
+		int size, family, style, weight, i;
+		size = family = style = weight = 0;
+		val = rb_ary_to_ary(val);
+		for (i = 0; i < RARRAY_LEN(val); i++) {
+			VALUE vali = RARRAY_PTR(val)[i];
+			if (rb_obj_is_kind_of(vali, rb_cNumeric)) {
+				size = NUM2INT(rb_Integer(vali));
+			} else if (vali == sDefaultSymbol) {
+				family = 1;
+			} else if (vali == sRomanSymbol) {
+				family = 2;
+			} else if (vali == sSwissSymbol) {
+				family = 3;
+			} else if (vali == sFixedSymbol) {
+				family = 4;
+			} else if (vali == sNormalSymbol) {
+				style = 1;
+			} else if (vali == sSlantSymbol) {
+				style = 2;
+			} else if (vali == sItalicSymbol) {
+				style = 3;
+			} else if (vali == sMediumSymbol) {
+				weight = 1;
+			} else if (vali == sBoldSymbol) {
+				weight = 2;
+			} else if (vali == sLightSymbol) {
+				weight = 3;
+			} else if (vali != Qnil) {
+				vali = rb_inspect(vali);
+				rb_raise(rb_eMolbyError, "unknown font specification (%s)", StringValuePtr(vali));
+			}
+		}
+		RubyDialogCallback_setFontForItem(view, size, family, style, weight);
 	} else {
 		if (key == sTagSymbol && rb_obj_is_kind_of(val, rb_cInteger))
 			rb_raise(rb_eMolbyError, "the dialog item tag must not be integers");				
@@ -339,11 +377,57 @@ s_RubyDialogItem_Attr(VALUE self, VALUE key)
 		RDRect frame = RubyDialogCallback_frameOfItem(view);
 		val = rb_ary_new3(4, rb_float_new(frame.origin.x), rb_float_new(frame.origin.y), rb_float_new(frame.size.width), rb_float_new(frame.size.height));
 		rb_obj_freeze(val);
+	} else if (key == sFontSymbol) {
+		int size, family, style, weight;
+		VALUE fval, sval, wval;
+		if (RubyDialogCallback_getFontForItem(view, &size, &family, &style, &weight) == 0)
+			rb_raise(rb_eMolbyError, "Cannot get font for dialog item");
+		fval = (family == 1 ? sDefaultSymbol :
+				(family == 2 ? sRomanSymbol :
+				 (family == 3 ? sSwissSymbol :
+				  (family == 4 ? sFixedSymbol :
+				   Qnil))));
+		sval = (style == 1 ? sNormalSymbol :
+				(style == 2 ? sSlantSymbol :
+				 (style == 3 ? sItalicSymbol :
+				  Qnil)));
+		wval = (weight == 1 ? sMediumSymbol :
+				(weight == 2 ? sBoldSymbol :
+				 (weight == 3 ? sLightSymbol :
+				  Qnil)));
+		val = rb_ary_new3(4, INT2NUM(size), fval, sval, wval);
+		rb_obj_freeze(val);
 	} else {
 		val = rb_ivar_get(self, key_id);
 	}
 	
 	return val;
+}
+
+/*
+ *  call-seq:
+ *     append_string(val) -> self
+ *
+ *  Append the given string to the end. Only usable for the text control.
+ */
+static VALUE
+s_RubyDialogItem_AppendString(VALUE self, VALUE val)
+{
+	VALUE dialog_val, index_val;
+	int itag;
+	RubyDialog *dref;
+	RDItem *view;
+	
+	dialog_val = rb_ivar_get(self, SYM2ID(sDialogSymbol));
+	index_val = rb_ivar_get(self, SYM2ID(sIndexSymbol));
+	itag = NUM2INT(index_val);
+	if (dialog_val == Qnil || (dref = s_RubyDialog_GetController(dialog_val)) == NULL)
+		rb_raise(rb_eStandardError, "The dialog item does not belong to any dialog (internal error?)");
+	view = RubyDialogCallback_dialogItemAtIndex(dref, itag);	
+	val = rb_str_to_str(val);
+	if (RubyDialogCallback_appendString(view, StringValuePtr(val)) == 0)
+		rb_raise(rb_eMolbyError, "Cannot append string to the dialog item");
+	return self;
 }
 
 #pragma mark ====== Dialog methods ======
@@ -1231,16 +1315,20 @@ s_RubyDialog_OpenPanel(int argc, VALUE *argv, VALUE klass)
 	n = RubyDialogCallback_openPanel(mp, dp, wp, &ary, for_directories, multiple_selection);
 	Ruby_SetInterruptFlag(iflag);
 	if (n > 0) {
+		VALUE retval;
 		if (multiple_selection) {
 			int i;
-			VALUE retval = rb_ary_new();
+			retval = rb_ary_new();
 			for (i = 0; i < n; i++) {
 				rb_ary_push(retval, Ruby_NewFileStringValue(ary[i]));
 				free(ary[i]);
 			}
-			free(ary);
-			return retval;
-		} else return Ruby_NewFileStringValue(ary[0]);
+		} else {
+			retval = Ruby_NewFileStringValue(ary[0]);
+			free(ary[0]);
+		}
+		free(ary);
+		return retval;
 	} else return Qnil;
 }
 
@@ -1437,9 +1525,39 @@ RubyDialogInitClass(void)
 	rb_define_method(rb_cDialogItem, "[]", s_RubyDialogItem_Attr, 1);
 	rb_define_alias(rb_cDialogItem, "set_attr", "[]=");
 	rb_define_alias(rb_cDialogItem, "attr", "[]");
+	rb_define_method(rb_cDialogItem, "append_string", s_RubyDialogItem_AppendString, 1);
+	
 	{
-		static VALUE *sTable1[] = { &sTextSymbol, &sTextFieldSymbol, &sRadioSymbol, &sButtonSymbol, &sCheckBoxSymbol, &sPopUpSymbol, &sTextViewSymbol, &sViewSymbol, &sDialogSymbol, &sIndexSymbol, &sLineSymbol, &sTagSymbol, &sTypeSymbol, &sTitleSymbol, &sXSymbol, &sYSymbol, &sWidthSymbol, &sHeightSymbol, &sOriginSymbol, &sSizeSymbol, &sFrameSymbol, &sEnabledSymbol, &sEditableSymbol, &sHiddenSymbol, &sValueSymbol, &sRadioGroupSymbol, &sBlockSymbol, &sRangeSymbol, &sActionSymbol, &sAlignSymbol, &sRightSymbol, &sCenterSymbol, &sVerticalAlignSymbol, &sBottomSymbol, &sMarginSymbol, &sPaddingSymbol, &sSubItemsSymbol, &sHFillSymbol, &sVFillSymbol, &sIsProcessingActionSymbol };
-		static const char *sTable2[] = { "text", "textfield", "radio", "button", "checkbox", "popup", "textview", "view", "dialog", "index", "line", "tag", "type", "title", "x", "y", "width", "height", "origin", "size", "frame", "enabled", "editable", "hidden", "value", "radio_group", "block", "range", "action", "align", "right", "center", "vertical_align", "bottom", "margin", "padding", "subitems", "hfill", "vfill", "is_processing_action" };
+		static VALUE *sTable1[] = {
+			&sTextSymbol, &sTextFieldSymbol, &sRadioSymbol, &sButtonSymbol,
+			&sCheckBoxSymbol, &sPopUpSymbol, &sTextViewSymbol, &sViewSymbol,
+			&sDialogSymbol, &sIndexSymbol, &sLineSymbol, &sTagSymbol,
+			&sTypeSymbol, &sTitleSymbol, &sXSymbol, &sYSymbol,
+			&sWidthSymbol, &sHeightSymbol, &sOriginSymbol, &sSizeSymbol,
+			&sFrameSymbol, &sEnabledSymbol, &sEditableSymbol, &sHiddenSymbol,
+			&sValueSymbol, &sRadioGroupSymbol, &sBlockSymbol, &sRangeSymbol,
+			&sActionSymbol, &sAlignSymbol, &sRightSymbol, &sCenterSymbol,
+			&sVerticalAlignSymbol, &sBottomSymbol, &sMarginSymbol, &sPaddingSymbol,
+			&sSubItemsSymbol, &sHFillSymbol, &sVFillSymbol, &sIsProcessingActionSymbol,
+			&sFontSymbol, &sDefaultSymbol, &sRomanSymbol, &sSwissSymbol,
+			&sFixedSymbol, &sNormalSymbol, &sSlantSymbol, &sItalicSymbol,
+			&sMediumSymbol, &sBoldSymbol, &sLightSymbol
+		};
+		static const char *sTable2[] = {
+			"text", "textfield", "radio", "button",
+			"checkbox", "popup", "textview", "view",
+			"dialog", "index", "line", "tag",
+			"type", "title", "x", "y",
+			"width", "height", "origin", "size",
+			"frame", "enabled", "editable", "hidden",
+			"value", "radio_group", "block", "range",
+			"action", "align", "right", "center",
+			"vertical_align", "bottom", "margin", "padding",
+			"subitems", "hfill", "vfill", "is_processing_action",
+			"font", "default", "roman", "swiss",
+			"fixed", "normal", "slant", "italic",
+			"medium", "bold", "light"
+		};
 		int i;
 		for (i = 0; i < sizeof(sTable1) / sizeof(sTable1[0]); i++)
 			*(sTable1[i]) = ID2SYM(rb_intern(sTable2[i]));

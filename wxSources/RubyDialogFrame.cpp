@@ -26,6 +26,7 @@
 #include "wx/checkbox.h"
 #include "wx/radiobut.h"
 #include "wx/statline.h"
+#include "wx/settings.h"
 
 #include "RubyDialogFrame.h"
 #include "MyApp.h"
@@ -262,6 +263,7 @@ void
 RubyDialogCallback_show(RubyDialog *dref)
 {
 	((RubyDialogFrame *)dref)->Show(true);
+	((RubyDialogFrame *)dref)->Raise();
 }
 
 void
@@ -381,7 +383,7 @@ RubyDialogCallback_createItem(RubyDialog *dref, const char *type, const char *ti
 		tc->Connect(-1, wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler(RubyDialogFrame::OnDialogItemAction), NULL, parent);
 	} else if (strcmp(type, "textview") == 0) {
 		/*  Text view  */
-		wxTextCtrl *tc = new wxTextCtrl(parent, -1, tstr, rect.GetPosition(), rect.GetSize(), wxTE_MULTILINE);
+		wxTextCtrl *tc = new wxTextCtrl(parent, -1, tstr, rect.GetPosition(), rect.GetSize(), wxTE_MULTILINE | wxTE_RICH);
 		control = tc;
 		tc->Connect(-1, wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler(RubyDialogFrame::OnDialogItemAction), NULL, parent);
 	} else if (strcmp(type, "view") == 0) {
@@ -428,6 +430,13 @@ RubyDialogCallback_createItem(RubyDialog *dref, const char *type, const char *ti
 		size.SetWidth(size.GetWidth() + offset.width);
 		size.SetHeight(size.GetHeight() + offset.height);
 		control->SetSize(size);
+	}
+	
+	if (wxDynamicCast(control, wxTextCtrl) != NULL) {
+		/*  Set default font  */
+		wxTextAttr attr;
+		attr.SetFont(wxSystemSettings::GetFont(wxSYS_SYSTEM_FONT));
+		((wxTextCtrl *)control)->SetDefaultStyle(attr);
 	}
 
 	((RubyDialogFrame *)dref)->AddDialogItem((RDItem *)control);
@@ -614,6 +623,89 @@ RubyDialogCallback_isItemHidden(RDItem *item)
 }
 
 void
+RubyDialogCallback_setFontForItem(RDItem *item, int size, int family, int style, int weight)
+{
+	wxTextCtrl *ctrl;
+	if ((ctrl = wxDynamicCast((wxWindow *)item, wxTextCtrl)) != NULL) {
+		wxTextAttr attr = ctrl->GetDefaultStyle();
+		wxFont font = attr.GetFont();
+		if (size == 0)
+			size = font.GetPointSize();
+		if (family == 0)
+			family = font.GetFamily();
+		else {
+			family = (family == 2 ? wxFONTFAMILY_ROMAN :
+					  (family == 3 ? wxFONTFAMILY_SWISS :
+					   (family == 4 ? wxFONTFAMILY_MODERN :
+						wxFONTFAMILY_DEFAULT)));
+		}
+		if (style == 0)
+			style = font.GetStyle();
+		else {
+			style = (style == 2 ? wxFONTSTYLE_SLANT :
+					 (style == 3 ? wxFONTSTYLE_ITALIC :
+					  wxFONTSTYLE_NORMAL));
+		}
+		if (weight == 0)
+			weight = font.GetWeight();
+		else {
+			weight = (weight == 2 ? wxFONTWEIGHT_BOLD :
+					  (weight == 3 ? wxFONTWEIGHT_LIGHT :
+					   wxFONTWEIGHT_NORMAL));
+		}
+		wxTextAttr newAttr;
+		newAttr.SetFont(wxFont(size, family, style, weight));
+		ctrl->SetDefaultStyle(newAttr);
+	}
+}
+
+int
+RubyDialogCallback_getFontForItem(RDItem *item, int *size, int *family, int *style, int *weight)
+{
+	int n;
+	wxTextCtrl *ctrl;
+	if ((ctrl = wxDynamicCast((wxWindow *)item, wxTextCtrl)) != NULL) {
+		wxTextAttr attr = ctrl->GetDefaultStyle();
+		wxFont font = attr.GetFont();
+		if (size != NULL)
+			*size = font.GetPointSize();
+		if (family != NULL) {
+			n = font.GetFamily();
+			*family = (n == wxFONTFAMILY_DEFAULT ? 1 :
+					   (n == wxFONTFAMILY_ROMAN ? 2 :
+						(n == wxFONTFAMILY_SWISS ? 3 :
+						 (n == wxFONTFAMILY_MODERN ? 4 :
+						  0))));
+		}
+		if (style != NULL) {
+			n = font.GetStyle();
+			*style = (n == wxFONTSTYLE_NORMAL ? 1 :
+					  (n == wxFONTSTYLE_SLANT ? 2 :
+					   (n == wxFONTSTYLE_ITALIC ? 3 :
+						0)));
+		}
+		if (weight != NULL) {
+			n = font.GetWeight();
+			*weight = (n == wxFONTWEIGHT_NORMAL ? 1 :
+					   (n == wxFONTWEIGHT_BOLD ? 2 :
+						(n == wxFONTWEIGHT_LIGHT ? 3 :
+						 0)));
+		}
+		return 1;
+	} else return 0;
+}
+
+int
+RubyDialogCallback_appendString(RDItem *item, const char *str)
+{
+	wxTextCtrl *ctrl;
+	if ((ctrl = wxDynamicCast((wxWindow *)item, wxTextCtrl)) != NULL) {
+		ctrl->AppendText(wxString(str, WX_DEFAULT_CONV));
+		return 1;
+	} else return 0;
+}
+
+void
 RubyDialogCallback_setNeedsDisplay(RDItem *item, int flag)
 {
 	if (flag)
@@ -728,6 +820,7 @@ RubyDialogCallback_savePanel(const char *title, const char *dirname, const char 
 	wxString tstr((title ? title : "Choose a file"), WX_DEFAULT_CONV);
 	wxString fstr(buf, WX_DEFAULT_CONV);
 	wxString wstr((wildcard ? wildcard : "All files (*.*)|*.*"), WX_DEFAULT_CONV);
+	wxWindow *old_focus = wxWindow::FindFocus();
 	wxFileDialog *dialog = new wxFileDialog(NULL, tstr, pstr, fstr, wstr, wxFD_SAVE | wxFD_OVERWRITE_PROMPT);
 	if (dialog->ShowModal() == wxID_OK) {
 		strncpy(buf, dialog->GetPath().mb_str(wxConvFile), bufsize - 1);
@@ -738,6 +831,8 @@ RubyDialogCallback_savePanel(const char *title, const char *dirname, const char 
 		result = 0;
 	}
 	dialog->Destroy();
+	if (old_focus != NULL)
+		old_focus->SetFocus();
 	return result;
 }
 
@@ -748,6 +843,7 @@ RubyDialogCallback_openPanel(const char *title, const char *dirname, const char 
 	wxString pstr((dirname ? dirname : ""), WX_DEFAULT_CONV);
 	wxString wstr((wildcard ? wildcard : "All files (*.*)|*.*"), WX_DEFAULT_CONV);
 	int style = wxFD_OPEN | (multiple_selection ? wxFD_MULTIPLE : 0);
+	wxWindow *old_focus = wxWindow::FindFocus();
 	if (for_directories) {
 		wxString tstr((title ? title : "Choose a directory"), WX_DEFAULT_CONV);
 		wxDirDialog *dialog = new wxDirDialog(NULL, tstr, pstr);
@@ -761,11 +857,25 @@ RubyDialogCallback_openPanel(const char *title, const char *dirname, const char 
 		wxString tstr((title ? title : "Choose a file"), WX_DEFAULT_CONV);
 		wxFileDialog *dialog = new wxFileDialog(NULL, tstr, pstr, _T(""), wstr, style);
 		if (dialog->ShowModal() == wxID_OK) {
-			*array = (char **)malloc(sizeof(char *));
-			(*array)[0] = strdup(dialog->GetPath().mb_str(wxConvFile));
-			result = 1;			
+			if (multiple_selection) {
+				int i, n;
+				wxArrayString paths;
+				dialog->GetPaths(paths);
+				n = paths.GetCount();
+				*array = (char **)malloc(sizeof(char *) * n);
+				for (i = 0; i < n; i++) {
+					(*array)[i] = strdup(paths[i].mb_str(wxConvFile));
+				}
+				result = n;
+			} else {
+				*array = (char **)malloc(sizeof(char *));
+				(*array)[0] = strdup(dialog->GetPath().mb_str(wxConvFile));
+				result = 1;
+			}
 		}
 		dialog->Destroy();
 	}
+	if (old_focus != NULL)
+		old_focus->SetFocus();
 	return result;
 }

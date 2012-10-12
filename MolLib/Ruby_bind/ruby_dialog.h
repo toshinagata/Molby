@@ -87,6 +87,9 @@ STUB int RubyDialogCallback_getStateForItem(RDItem *item);
 STUB void RubyDialogCallback_setHiddenForItem(RDItem *item, int flag);
 STUB int RubyDialogCallback_isItemHidden(RDItem *item);
 STUB void RubyDialogCallback_setNeedsDisplay(RDItem *item, int flag);
+STUB void RubyDialogCallback_setFontForItem(RDItem *item, int size, int family, int style, int weight);
+STUB int RubyDialogCallback_getFontForItem(RDItem *item, int *size, int *family, int *style, int *weight);
+STUB int RubyDialogCallback_appendString(RDItem *item, const char *str);
 
 STUB int RubyDialogCallback_countSubItems(RDItem *item);
 STUB int RubyDialogCallback_appendSubItem(RDItem *item, const char *s);
