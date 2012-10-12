@@ -39,6 +39,10 @@ def backtrace
   end
 end
 
+def exit(val = nil)
+  throw(:molby_top, val)
+end
+
 load "transform.rb"
 load "molecule.rb"
 load "loadsave.rb"

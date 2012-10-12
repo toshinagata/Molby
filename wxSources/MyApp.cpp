@@ -74,8 +74,6 @@
 
 static char *sLastBuildString = "";
 
-static const char *sExecutingRubyScriptPath = NULL;
-
 MyFrame *frame = (MyFrame *) NULL;
 
 IMPLEMENT_APP(MyApp)
@@ -172,8 +170,6 @@ MyApp::MyApp(void)
 	m_CountNamedFragments = 0;
 	m_NamedFragments = (char **)(-1);  /*  Will be set to NULL after Ruby interpreter is initialized  */
 	m_pendingFilesToOpen = NULL;
-	m_filterScriptName = NULL;
-	m_filterScriptBaseName = NULL;
 #if defined(__WXMSW__)
 	m_checker = NULL;
 	m_ipcServiceName = NULL;
@@ -189,32 +185,11 @@ bool MyApp::OnInit(void)
 	wxSystemOptions::SetOption(wxT("mac.listctrl.always_use_generic"), 1);
 #endif
 
-	//  Check if invoked as a filter mode
-	if (argc > 2) {
-		wxString arg1(argv[1]);
-		wxString arg2(argv[2]);
-		if (arg1 == wxT("--filter") && (arg2.EndsWith(wxT(".rb")) || arg2.EndsWith(wxT(".mrb")))) {
-			char *p;
-			m_filterScriptName = strdup(arg2.mb_str(wxConvFile));
-			p = strrchr(m_filterScriptName, '/');
-#if defined(__WXMSW__)
-			if (p == NULL)
-				p = strrchr(m_filterScriptName, '\\');
-#endif
-			if (p == NULL)
-				p = m_filterScriptName;
-			m_filterScriptBaseName = strdup(p);
-		}
-	}
-	
 #if __WXMSW__
 	{
 		//  Check if the same application is already running
 		char *buf, *p;
-		if (m_filterScriptBaseName != NULL) {
-			p = m_filterScriptBaseName;
-		} else p = "";
-		asprintf(&buf, "Molby%s-%s", p, (const char *)wxGetUserId().mb_str(WX_DEFAULT_CONV));
+		asprintf(&buf, "Molby-%s", (const char *)wxGetUserId().mb_str(WX_DEFAULT_CONV));
 		wxString name(buf, WX_DEFAULT_CONV);
 		m_ipcServiceName = new wxString(name);
 		m_ipcServiceName->Prepend(wxT("IPC-"));
@@ -224,11 +199,6 @@ bool MyApp::OnInit(void)
 			//  Make a connection with the other instance and ask for opening the file(s)
 			wxString files;
 			wxConnectionBase *connection;
-			if (m_filterScriptName != NULL) {
-				//  Skip the "--filter" option and the script name
-				argc -= 2;
-				argv += 2;
-			}
 			while (argc > 1) {
 				files.append(argv[1]);
 				files.append(wxT("\n"));
@@ -379,16 +349,7 @@ bool MyApp::OnInit(void)
 			wxSetWorkingDirectory(docHome);
 			
 		}
-		if (IsFilterMode()) {
-			MyAppCallback_setConsoleColor(3);
-			MyAppCallback_showScriptMessage("***********************************************************\n");
-			MyAppCallback_showScriptMessage(" Molby is now running in the filter mode.\n");
-			MyAppCallback_showScriptMessage(" When you open files, they will be processed by\n");
-			MyAppCallback_showScriptMessage(" the script '%s'.\n", m_filterScriptBaseName);
-			MyAppCallback_showScriptMessage(" You can process any file, not necessarily molecular files.\n");
-			MyAppCallback_showScriptMessage("***********************************************************\n");
-			MyAppCallback_setConsoleColor(0);
-		}
+
 		MyAppCallback_showScriptMessage("%% ");
 		
 		/*  Build the predefined fragments menu  */
@@ -399,14 +360,9 @@ bool MyApp::OnInit(void)
 	}
 	
 	/*  Open given files: Ruby script is executed, other files are opened as a document  */
-	if (IsFilterMode()) {
-		argc -= 2;
-		argv += 2;
-	}
 	if (argc == 1) {
 #if defined(__WXMSW__)
-		if (!IsFilterMode())
-			m_docManager->CreateDocument(wxEmptyString, wxDOC_NEW);
+		m_docManager->CreateDocument(wxEmptyString, wxDOC_NEW);
 #endif
 	} else {
 		int i;
@@ -433,7 +389,6 @@ MyApp::CreateMenuBar(int kind, wxMenu **out_file_history_menu, wxMenu **out_edit
 	
 	//// Make a menubar
 	wxMenu *file_menu = new wxMenu;
-	bool filter_mode = IsFilterMode();
 
 	file_menu->Append(wxID_NEW, _T("&New...\tCtrl-N"));
 	file_menu->Append(wxID_OPEN, _T("&Open...\tCtrl-O"));
@@ -444,24 +399,22 @@ MyApp::CreateMenuBar(int kind, wxMenu **out_file_history_menu, wxMenu **out_edit
 		m_docManager->FileHistoryUseMenu(*out_file_history_menu);  //  Should be removed when menu is discarded
 	}
 	/*  Build "Open Predefined"  */
-	if (!filter_mode) {
-		wxMenu *predefined_menu = new wxMenu;
-		file_menu->Append(myMenuID_PredefinedFragment, _T("Open Predefined"), predefined_menu);
+	wxMenu *predefined_menu = new wxMenu;
+	file_menu->Append(myMenuID_PredefinedFragment, _T("Open Predefined"), predefined_menu);
+
+	file_menu->AppendSeparator();
+	file_menu->Append(wxID_CLOSE, _T("&Close\tCtrl-W"));
+	file_menu->Append(wxID_SAVE, _T("&Save\tCtrl-S"));
+	file_menu->Append(wxID_SAVEAS, _T("Save &As..."));	
 	
-		file_menu->AppendSeparator();
-		file_menu->Append(wxID_CLOSE, _T("&Close\tCtrl-W"));
-		file_menu->Append(wxID_SAVE, _T("&Save\tCtrl-S"));
-		file_menu->Append(wxID_SAVEAS, _T("Save &As..."));	
-		
-		file_menu->AppendSeparator();
-		file_menu->Append(myMenuID_Import, _T("Import..."));	
-		file_menu->Append(myMenuID_Export, _T("Export..."));	
-		
-		file_menu->AppendSeparator();
-		file_menu->Append(wxID_PRINT, _T("&Print...\tCtrl-P"));
-		file_menu->Append(wxID_PRINT_SETUP, _T("Print &Setup..."));
-		file_menu->Append(wxID_PREVIEW, _T("Print Pre&view"));
-	}
+	file_menu->AppendSeparator();
+	file_menu->Append(myMenuID_Import, _T("Import..."));	
+	file_menu->Append(myMenuID_Export, _T("Export..."));	
+	
+	file_menu->AppendSeparator();
+	file_menu->Append(wxID_PRINT, _T("&Print...\tCtrl-P"));
+	file_menu->Append(wxID_PRINT_SETUP, _T("Print &Setup..."));
+	file_menu->Append(wxID_PREVIEW, _T("Print Pre&view"));
 	
 	file_menu->AppendSeparator();
 #if defined(__WXMAC__)
@@ -480,98 +433,86 @@ MyApp::CreateMenuBar(int kind, wxMenu **out_file_history_menu, wxMenu **out_edit
 	edit_menu->Append(wxID_CLEAR, _T("Clear"));
 	edit_menu->AppendSeparator();
 	edit_menu->Append(wxID_SELECTALL, _T("Select All\tCtrl-A"));
-	if (!filter_mode) {
-		edit_menu->Append(myMenuID_SelectFragment, _T("Select Fragment\tCtrl-F"));
-		edit_menu->Append(myMenuID_SelectReverse, _T("Select Reverse"));
-		edit_menu->AppendSeparator();
-		wxMenu *create_parameter_menu = new wxMenu;
-		create_parameter_menu->Append(myMenuID_CreateNewVdwParameter, _T("Vdw"));
-		create_parameter_menu->Append(myMenuID_CreateNewBondParameter, _T("Bond"));
-		create_parameter_menu->Append(myMenuID_CreateNewAngleParameter, _T("Angle"));
-		create_parameter_menu->Append(myMenuID_CreateNewDihedralParameter, _T("Dihedral"));
-		create_parameter_menu->Append(myMenuID_CreateNewImproperParameter, _T("Improper"));
-		create_parameter_menu->Append(myMenuID_CreateNewVdwPairParameter, _T("Vdw Pair"));
-		create_parameter_menu->Append(myMenuID_CreateNewVdwCutoffParameter, _T("Vdw Cutoff"));
-		edit_menu->Append(myMenuID_CreateNewAtom, _T("Create New Atom\tCtrl-I"));
-		edit_menu->Append(myMenuID_CreateNewParameter, _T("Create New Parameter"), create_parameter_menu);
-		edit_menu->AppendSeparator();
-		wxMenu *add_hydrogen_menu = new wxMenu;
-		add_hydrogen_menu->Append(myMenuID_AddHydrogenSp3, _T("Tetrahedral sp3"));
-		add_hydrogen_menu->Append(myMenuID_AddHydrogenSp2, _T("Trigonal sp2"));
-		add_hydrogen_menu->Append(myMenuID_AddHydrogenLinear, _T("Linear sp"));
-		add_hydrogen_menu->Append(myMenuID_AddHydrogenPyramidal, _T("Pyramidal (like NH2)"));
-		add_hydrogen_menu->Append(myMenuID_AddHydrogenBent, _T("Bent (like OH)"));
-		edit_menu->Append(myMenuID_AddHydrogen, _T("Add Hydrogen"), add_hydrogen_menu);
-	}
+	edit_menu->Append(myMenuID_SelectFragment, _T("Select Fragment\tCtrl-F"));
+	edit_menu->Append(myMenuID_SelectReverse, _T("Select Reverse"));
+	edit_menu->AppendSeparator();
+	wxMenu *create_parameter_menu = new wxMenu;
+	create_parameter_menu->Append(myMenuID_CreateNewVdwParameter, _T("Vdw"));
+	create_parameter_menu->Append(myMenuID_CreateNewBondParameter, _T("Bond"));
+	create_parameter_menu->Append(myMenuID_CreateNewAngleParameter, _T("Angle"));
+	create_parameter_menu->Append(myMenuID_CreateNewDihedralParameter, _T("Dihedral"));
+	create_parameter_menu->Append(myMenuID_CreateNewImproperParameter, _T("Improper"));
+	create_parameter_menu->Append(myMenuID_CreateNewVdwPairParameter, _T("Vdw Pair"));
+	create_parameter_menu->Append(myMenuID_CreateNewVdwCutoffParameter, _T("Vdw Cutoff"));
+	edit_menu->Append(myMenuID_CreateNewAtom, _T("Create New Atom\tCtrl-I"));
+	edit_menu->Append(myMenuID_CreateNewParameter, _T("Create New Parameter"), create_parameter_menu);
+	edit_menu->AppendSeparator();
+	wxMenu *add_hydrogen_menu = new wxMenu;
+	add_hydrogen_menu->Append(myMenuID_AddHydrogenSp3, _T("Tetrahedral sp3"));
+	add_hydrogen_menu->Append(myMenuID_AddHydrogenSp2, _T("Trigonal sp2"));
+	add_hydrogen_menu->Append(myMenuID_AddHydrogenLinear, _T("Linear sp"));
+	add_hydrogen_menu->Append(myMenuID_AddHydrogenPyramidal, _T("Pyramidal (like NH2)"));
+	add_hydrogen_menu->Append(myMenuID_AddHydrogenBent, _T("Bent (like OH)"));
+	edit_menu->Append(myMenuID_AddHydrogen, _T("Add Hydrogen"), add_hydrogen_menu);
 	
 	if (out_edit_menu != NULL)
 		*out_edit_menu = edit_menu;	// Should be associated with the command processor if available
 	
 	wxMenu *show_menu = new wxMenu;
-	if (!filter_mode) {
-		show_menu->Append(myMenuID_FitToScreen, _T("Fit To Screen\tCtrl-T"));
-		show_menu->Append(myMenuID_CenterSelection, _T("Center Selection"));
-		show_menu->AppendSeparator();
-		show_menu->Append(myMenuID_ShowUnitCell, _T("Show Unit Cell"), _T(""), wxITEM_CHECK);
-	/*	show_menu->Append(myMenuID_ShowPeriodicBox, _T("Show Periodic Box"), _T(""), wxITEM_CHECK); */
-		show_menu->Append(myMenuID_ShowHydrogens, _T("Show Hydrogen Atoms"), _T(""), wxITEM_CHECK);
-		show_menu->Append(myMenuID_ShowDummyAtoms, _T("Show Dummy Atoms"), _T(""), wxITEM_CHECK);
-		show_menu->Append(myMenuID_ShowExpandedAtoms, _T("Show Expanded Atoms"), _T(""), wxITEM_CHECK);
-		show_menu->Append(myMenuID_ShowEllipsoids, _T("Show Ellipsoids"), _T(""), wxITEM_CHECK);
-		show_menu->Append(myMenuID_ShowRotationCenter, _T("Show Rotation Center"), _T(""), wxITEM_CHECK);
-		show_menu->AppendSeparator();
-		show_menu->Append(myMenuID_HideSelected, _T("Hide Selected"), _T(""));
-		show_menu->Append(myMenuID_HideUnselected, _T("Hide Unselected"), _T(""));
-		show_menu->Append(myMenuID_HideReverse, _T("Hide Reverse"), _T(""));
-		show_menu->Append(myMenuID_ShowAllAtoms, _T("Show All Atoms"), _T(""));
-		show_menu->AppendSeparator();
-		show_menu->Append(myMenuID_ShowGraphite, _T("Show Graphite..."));
-		show_menu->AppendSeparator();
-		show_menu->Append(myMenuID_LineMode, _T("Line Mode"), _T(""), wxITEM_CHECK);
-	}
+	show_menu->Append(myMenuID_FitToScreen, _T("Fit To Screen\tCtrl-T"));
+	show_menu->Append(myMenuID_CenterSelection, _T("Center Selection"));
+	show_menu->AppendSeparator();
+	show_menu->Append(myMenuID_ShowUnitCell, _T("Show Unit Cell"), _T(""), wxITEM_CHECK);
+/*	show_menu->Append(myMenuID_ShowPeriodicBox, _T("Show Periodic Box"), _T(""), wxITEM_CHECK); */
+	show_menu->Append(myMenuID_ShowHydrogens, _T("Show Hydrogen Atoms"), _T(""), wxITEM_CHECK);
+	show_menu->Append(myMenuID_ShowDummyAtoms, _T("Show Dummy Atoms"), _T(""), wxITEM_CHECK);
+	show_menu->Append(myMenuID_ShowExpandedAtoms, _T("Show Expanded Atoms"), _T(""), wxITEM_CHECK);
+	show_menu->Append(myMenuID_ShowEllipsoids, _T("Show Ellipsoids"), _T(""), wxITEM_CHECK);
+	show_menu->Append(myMenuID_ShowRotationCenter, _T("Show Rotation Center"), _T(""), wxITEM_CHECK);
+	show_menu->AppendSeparator();
+	show_menu->Append(myMenuID_HideSelected, _T("Hide Selected"), _T(""));
+	show_menu->Append(myMenuID_HideUnselected, _T("Hide Unselected"), _T(""));
+	show_menu->Append(myMenuID_HideReverse, _T("Hide Reverse"), _T(""));
+	show_menu->Append(myMenuID_ShowAllAtoms, _T("Show All Atoms"), _T(""));
+	show_menu->AppendSeparator();
+	show_menu->Append(myMenuID_ShowGraphite, _T("Show Graphite..."));
+	show_menu->AppendSeparator();
+	show_menu->Append(myMenuID_LineMode, _T("Line Mode"), _T(""), wxITEM_CHECK);
 
 	wxMenu *md_menu = new wxMenu;
-	if (!filter_mode) {
-		md_menu->Append(myMenuID_MolecularDynamics, _T("Molecular Dynamics..."));
-		md_menu->Append(myMenuID_Minimize, _T("Minimize..."));
-		md_menu->Append(myMenuID_StopMDRun, _T("Stop\tCtrl-."));
-		md_menu->AppendSeparator();
-	//	md_menu->Append(myMenuID_ReadParameters, _T("Read Parameters..."));	
-		md_menu->Append(myMenuID_ViewGlobalParameters, _T("View Global Parameters..."));
-		md_menu->Append(myMenuID_ViewParameterFilesList, _T("Load/Unload Global Parameters..."));
-		md_menu->AppendSeparator();
-		md_menu->Append(myMenuID_DefinePeriodicBox, _T("Define Unit Cell..."));
-		md_menu->Append(myMenuID_ShowPeriodicImage, _T("Show Periodic Image..."));
-	/*	md_menu->Append(myMenuID_PressureControl, _T("Pressure Control...")); */
-	/*	md_menu->Append(myMenuID_DefineSymmetry, _T("Define Symmetry Operations..."));
-		md_menu->Append(myMenuID_ExpandBySymmetry, _T("Expand by Symmetry...")); */
-		md_menu->AppendSeparator();
-	}
+	md_menu->Append(myMenuID_MolecularDynamics, _T("Molecular Dynamics..."));
+	md_menu->Append(myMenuID_Minimize, _T("Minimize..."));
+	md_menu->Append(myMenuID_StopMDRun, _T("Stop\tCtrl-."));
+	md_menu->AppendSeparator();
+//	md_menu->Append(myMenuID_ReadParameters, _T("Read Parameters..."));	
+	md_menu->Append(myMenuID_ViewGlobalParameters, _T("View Global Parameters..."));
+	md_menu->Append(myMenuID_ViewParameterFilesList, _T("Load/Unload Global Parameters..."));
+	md_menu->AppendSeparator();
+	md_menu->Append(myMenuID_DefinePeriodicBox, _T("Define Unit Cell..."));
+	md_menu->Append(myMenuID_ShowPeriodicImage, _T("Show Periodic Image..."));
+/*	md_menu->Append(myMenuID_PressureControl, _T("Pressure Control...")); */
+/*	md_menu->Append(myMenuID_DefineSymmetry, _T("Define Symmetry Operations..."));
+	md_menu->Append(myMenuID_ExpandBySymmetry, _T("Expand by Symmetry...")); */
+	md_menu->AppendSeparator();
 	
 	wxMenu *md_tools_menu = new wxMenu;
-	if (!filter_mode) {
-		md_tools_menu->Append(myMenuID_RunAntechamber, _T("Antechamber/parmchk..."));
-		md_tools_menu->Append(myMenuID_RunResp, _T("GAMESS/RESP..."));
-		md_tools_menu->Append(myMenuID_CreateSanderInput, _T("Create SANDER input..."));
-		md_tools_menu->Append(myMenuID_ImportAmberLib, _T("Import AMBER Lib..."));
-		md_tools_menu->Append(myMenuID_ImportAmberFrcmod, _T("Import AMBER Frcmod..."));
-		md_menu->Append(myMenuID_MDTools, _T("Tools"), md_tools_menu);
-	}
+	md_tools_menu->Append(myMenuID_RunAntechamber, _T("Antechamber/parmchk..."));
+	md_tools_menu->Append(myMenuID_RunResp, _T("GAMESS/RESP..."));
+	md_tools_menu->Append(myMenuID_CreateSanderInput, _T("Create SANDER input..."));
+	md_tools_menu->Append(myMenuID_ImportAmberLib, _T("Import AMBER Lib..."));
+	md_tools_menu->Append(myMenuID_ImportAmberFrcmod, _T("Import AMBER Frcmod..."));
+	md_menu->Append(myMenuID_MDTools, _T("Tools"), md_tools_menu);
 
 	wxMenu *qc_menu = new wxMenu;
-	if (!filter_mode) {
-		qc_menu->Append(myMenuID_CreateGamessInput, _T("Create GAMESS input..."));
-		qc_menu->Append(myMenuID_CreateMOCube, _T("Create MO cube..."));
-	}
+	qc_menu->Append(myMenuID_CreateGamessInput, _T("Create GAMESS input..."));
+	qc_menu->Append(myMenuID_CreateMOCube, _T("Create MO cube..."));
 	
 	wxMenu *script_menu = new wxMenu;
-	if (!filter_mode) {
-		script_menu->Append(myMenuID_ExecuteScript, _T("Execute Script..."));
-		script_menu->Append(myMenuID_OpenConsoleWindow, _T("Open Console Window..."));
-		script_menu->Append(myMenuID_EmptyConsoleWindow, _T("Empty Console Window"));
-		script_menu->AppendSeparator();
-		countNonCustomScriptMenu = script_menu->GetMenuItemCount();
-	}
+	script_menu->Append(myMenuID_ExecuteScript, _T("Execute Script..."));
+	script_menu->Append(myMenuID_OpenConsoleWindow, _T("Open Console Window..."));
+	script_menu->Append(myMenuID_EmptyConsoleWindow, _T("Empty Console Window"));
+	script_menu->AppendSeparator();
+	countNonCustomScriptMenu = script_menu->GetMenuItemCount();
 
 	wxMenu *help_menu = new wxMenu;
 	help_menu->Append(wxID_ABOUT, _T("&About...\tF1"));
@@ -580,12 +521,10 @@ MyApp::CreateMenuBar(int kind, wxMenu **out_file_history_menu, wxMenu **out_edit
 	
 	menu_bar->Append(file_menu, _T("&File"));
 	menu_bar->Append(edit_menu, _T("&Edit"));
-	if (!filter_mode) {
-		menu_bar->Append(show_menu, _T("Show"));
-		menu_bar->Append(md_menu, _T("MM/MD"));
-		menu_bar->Append(qc_menu, _T("QChem"));
-		menu_bar->Append(script_menu, _T("&Script"));
-	}
+	menu_bar->Append(show_menu, _T("Show"));
+	menu_bar->Append(md_menu, _T("MM/MD"));
+	menu_bar->Append(qc_menu, _T("QChem"));
+	menu_bar->Append(script_menu, _T("&Script"));
 	menu_bar->Append(help_menu, _T("&Help"));
 	
 	UpdateScriptMenu(menu_bar);
@@ -602,9 +541,7 @@ MyApp::CreateMenuBar(int kind, wxMenu **out_file_history_menu, wxMenu **out_edit
 void
 MyApp::MacNewFile()
 {
-	/*  Do nothing in filter mode  */
-	if (!IsFilterMode())
-		m_docManager->CreateDocument(_T(""), wxDOC_NEW);
+	m_docManager->CreateDocument(_T(""), wxDOC_NEW);
 }
 
 void
@@ -732,59 +669,12 @@ sModifyMenuForFilterMode(wxMenuBar *mbar)
 }
 
 int
-MyApp::SwitchToFilterMode(const char *filterScriptName)
-{
-	if (IsFilterMode())
-		return 1;   /*  Already filter mode  */
-	if (m_docManager->GetCurrentView() != NULL)
-		return -1;  /*  Molecule is open: cannot switch  */
-
-	/*  Remove menu items except for absolutely necessary  */
-	sModifyMenuForFilterMode(GetMainFrame()->GetMenuBar());
-	sModifyMenuForFilterMode(consoleFrame->GetMenuBar());
-	
-	/*  Record the name of the filter script  */
-	char *p;
-	m_filterScriptName = strdup(filterScriptName);
-	p = strrchr(m_filterScriptName, '/');
-#if defined(__WXMSW__)
-	if (p == NULL)
-		p = strrchr(m_filterScriptName, '\\');
-#endif
-	if (p == NULL)
-		p = m_filterScriptName;
-	else p++;
-	m_filterScriptBaseName = strdup(p);
-
-	/*  Resize the console window and show startup message  */
-	int width, height;
-	consoleFrame->GetClientSize(&width, &height);
-	if (width < 640)
-		width = 640;
-	if (height < 480)
-		height = 480;
-	consoleFrame->EmptyBuffer(false);
-	consoleFrame->SetClientSize(width, height);
-	MyAppCallback_setConsoleColor(3);
-	MyAppCallback_showScriptMessage("***********************************************************\n");
-	MyAppCallback_showScriptMessage(" Molby is now running in the filter mode.\n");
-	MyAppCallback_showScriptMessage(" When you open files, they will be processed by\n");
-	MyAppCallback_showScriptMessage(" the script '%s'.\n", m_filterScriptBaseName);
-	MyAppCallback_showScriptMessage(" You can process any file, not necessarily molecular files.\n");
-	MyAppCallback_showScriptMessage("***********************************************************\n");
-	MyAppCallback_setConsoleColor(0);
-	
-	return 0;
-}
-
-int
 MyApp::AppendConsoleMessage(const char *mes)
 {
 	wxTextCtrl *textCtrl;
 	if (consoleFrame != NULL && (textCtrl = consoleFrame->textCtrl) != NULL) {
 		wxString string(mes, WX_DEFAULT_CONV);
 		textCtrl->AppendText(string);
-		textCtrl->DiscardEdits();  /*  Disable undo for this operation  */
 		return string.Len();
 	} else return 0;
 }
@@ -1271,8 +1161,6 @@ bool
 MyApp::OnOpenFiles(const wxString &files)
 {
 	Int start, end;
-	Int nargs = 0;
-	const char **args = NULL;
 	bool success = true;
 	int status;
 	RubyValue retval;
@@ -1282,43 +1170,23 @@ MyApp::OnOpenFiles(const wxString &files)
 		wxString file = files.Mid(start, (end == wxString::npos ? wxString::npos : end - start));
 		if (file.Len() == 0)
 			break;
-		if (IsFilterMode()) {
-			/*  Filter mode: build ARGV and call the given script (later)  */
-			AssignArray(&args, &nargs, sizeof(char *), nargs, NULL);
-			args[nargs - 1] = strdup(file.mb_str(wxConvFile));
-		} else {
-			if (file.EndsWith(wxT(".rb")) || file.EndsWith(wxT(".mrb"))) {
-				/*  Execute the file as a Ruby script  */
-				retval = MyAppCallback_executeScriptFromFile((const char *)file.mb_str(wxConvFile), &status);
-				if (status != 0) {
-					if (retval == (RubyValue)6 && status == -1)
-						MyAppCallback_errorMessageBox("Cannot open Ruby script: %s", (const char *)file.mb_str(wxConvFile));
-					else
-						Molby_showError(status);
-					return false;
-				}
-			} else {
-				if (NULL == wxGetApp().DocManager()->CreateDocument(file, wxDOC_SILENT))
-					success = false;
+		if (file.EndsWith(wxT(".rb")) || file.EndsWith(wxT(".mrb"))) {
+			/*  Execute the file as a Ruby script  */
+			retval = MyAppCallback_executeScriptFromFile((const char *)file.mb_str(wxConvFile), &status);
+			if (status != 0) {
+				if (retval == (RubyValue)6 && status == -1)
+					MyAppCallback_errorMessageBox("Cannot open Ruby script: %s", (const char *)file.mb_str(wxConvFile));
+				else
+					Molby_showError(status);
+				return false;
 			}
+		} else {
+			if (NULL == wxGetApp().DocManager()->CreateDocument(file, wxDOC_SILENT))
+				success = false;
 		}
 		if (end == wxString::npos)
 			break;
 		start = end + 1;
-	}
-	if (IsFilterMode()) {
-		Molby_buildARGV(nargs, args);
-		for (start = 0; start < nargs; start++)
-			free((void *)args[start]);
-		
-		retval = MyAppCallback_executeScriptFromFile(m_filterScriptName, &status);
-		if (status != 0) {
-			if (retval == (RubyValue)6 && status == -1)
-				MyAppCallback_errorMessageBox("Cannot open Ruby script: %s", m_filterScriptName);
-			else
-				Molby_showError(status);
-			return false;
-		}
 	}
 	return success;
 }
@@ -1879,7 +1747,6 @@ RubyValue
 MyAppCallback_executeScriptFromFile(const char *cpath, int *status)
 {
 	RubyValue retval;
-	const char *old_cpath;
 	wxString cwd = wxFileName::GetCwd();
 	wxString path(cpath, wxConvFile);
 	char *p = strdup(cpath);
@@ -1955,10 +1822,7 @@ MyAppCallback_executeScriptFromFile(const char *cpath, int *status)
 		}
 	}
 	
-	old_cpath = sExecutingRubyScriptPath;
-	sExecutingRubyScriptPath = cpath;
 	retval = Molby_evalRubyScriptOnMolecule(script, MoleculeCallback_currentMolecule(), pp, status);
-	sExecutingRubyScriptPath = old_cpath;
 	
 	free(script);
 	free(p);
@@ -1987,11 +1851,4 @@ void MyAppCallback_endUndoGrouping(void)
 int MyAppCallback_callSubProcess(const char *cmdline, const char *procname)
 {
 	return wxGetApp().CallSubProcess(cmdline, procname);
-}
-
-int MyAppCallback_switchToFilterMode(void)
-{
-	if (sExecutingRubyScriptPath == NULL)
-		return -2;  /*  Not invoked from file  */
-	return wxGetApp().SwitchToFilterMode(sExecutingRubyScriptPath);
 }

@@ -71,7 +71,8 @@ ConsoleFrame::OnCreate()
 	//  Set the default font (fixed-pitch)
 	wxTextAttr attr;
 #if defined(__WXMSW__)
-	wxFont font = wxSystemSettings::GetFont(wxSYS_ANSI_FIXED_FONT);
+//	wxFont font = wxSystemSettings::GetFont(wxSYS_ANSI_FIXED_FONT);
+	wxFont font(10, wxFONTFAMILY_MODERN, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL);
 #else
 	wxFont font(11, wxFONTFAMILY_MODERN, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL);
 #endif
@@ -100,17 +101,8 @@ ConsoleFrame::CreateConsoleFrame(wxMDIParentFrame *parent)
 	ConsoleFrame *frame = new ConsoleFrame(parent, _T("Console"), origin, wxDefaultSize, wxDEFAULT_FRAME_STYLE | wxNO_FULL_REPAINT_ON_RESIZE);
 
 	frame->OnCreate();
-
-	if (wxGetApp().IsFilterMode()) {
-#if defined(__WXMSW__)
-		frame->Maximize();
-#else
-		frame->SetSize(800, 480);
-#endif
-	} else {
-		frame->SetSize(640, 200);
-	}
-		
+	frame->SetClientSize(size);
+	
 	return frame;
 }
 

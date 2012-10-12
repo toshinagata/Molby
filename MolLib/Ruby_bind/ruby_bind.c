@@ -684,31 +684,6 @@ s_Kernel_CallSubProcess(VALUE self, VALUE cmd, VALUE procname)
 	return INT2NUM(n);
 }
 
-/*
- *  call-seq:
- *     enable_filter_mode -> Integer
- *
- *  Switch to a filter mode. Should be invoked from within a script file.
- *  Returns true when successfully switched, false when already in filter mode.
- *  No Molecule should be open as a view; otherwise, an exception is raised.
- */
-static VALUE
-s_Kernel_EnableFilterMode(VALUE self)
-{
-	int n = MyAppCallback_switchToFilterMode();
-	if (n == 0)
-		return Qtrue;
-	else if (n == 1)
-		return Qfalse;
-	else if (n == -1)
-		rb_raise(rb_eMolbyError, "To switch to filter mode, all molecule should be closed");
-	else if (n == -2)
-		rb_raise(rb_eMolbyError, "No script file is specified for filter mode");
-	else
-		rb_raise(rb_eMolbyError, "Cannot switch to filter mode");
-	return Qnil;  /*  Dummy to keep compiler happy  */
-}
-
 #pragma mark ====== User defaults ======
 
 /*
@@ -10147,7 +10122,6 @@ Init_Molby(void)
 	rb_define_method(rb_mKernel, "call_subprocess", s_Kernel_CallSubProcess, 2);
 	rb_define_method(rb_mKernel, "message_box", s_Kernel_MessageBox, -1);
 	rb_define_method(rb_mKernel, "error_message_box", s_Kernel_ErrorMessageBox, 1);
-	rb_define_method(rb_mKernel, "enable_filter_mode", s_Kernel_EnableFilterMode, 0);
 	
 	s_ID_equal = rb_intern("==");
 }
@@ -10157,7 +10131,7 @@ Init_Molby(void)
 static VALUE s_ruby_top_self = Qfalse;
 
 static VALUE
-s_evalRubyScriptOnMoleculeSub(VALUE val)
+s_evalRubyScriptOnMoleculeSubSub(VALUE tagval, VALUE val)
 {
 	void **ptr = (void **)val;
 	Molecule *mol = (Molecule *)ptr[1];
@@ -10182,6 +10156,12 @@ s_evalRubyScriptOnMoleculeSub(VALUE val)
 			return rb_funcall(mval, rb_intern("instance_eval"), 1, sval);
 		else return rb_funcall(mval, rb_intern("instance_eval"), 3, sval, fnval, INT2FIX(1));
 	}
+}
+
+static VALUE
+s_evalRubyScriptOnMoleculeSub(VALUE val)
+{
+	return rb_catch("molby_top", s_evalRubyScriptOnMoleculeSubSub, val);
 }
 
 RubyValue

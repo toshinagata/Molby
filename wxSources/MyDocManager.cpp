@@ -49,42 +49,6 @@ MyDocManager::SetDocumentTypesEnabled(const char **extensions, bool flag)
 	}
 }
 
-/*
-wxDocument*
-MyDocManager::CreateDocument(const wxString& path, long flags)
-{
-	return wxDocManager::CreateDocument(path, flags);
-}
-*/
-
-void
-MyDocManager::OnFileOpen(wxCommandEvent& event)
-{
-	if (wxGetApp().IsFilterMode()) {
-		/*  Select files to give to the script  */
-		int result = 0;
-		wxString tstr(wxT("Choose File(s) to be processed by "));
-		wxString files;
-		tstr.Append(wxString(wxGetApp().FilterScriptBaseName(), wxConvFile));
-		wxFileDialog *dialog = new wxFileDialog(NULL, tstr, wxT(""), wxT(""), wxT("All files (*.*)|*.*"), wxFD_OPEN | wxFD_MULTIPLE);
-		if (dialog->ShowModal() == wxID_OK) {
-			int i, n;
-			wxArrayString paths;
-			dialog->GetPaths(paths);
-			n = paths.GetCount();
-			for (i = 0; i < n; i++) {
-				files.Append(paths[i]);
-				files.Append(wxT("\n"));
-			}
-			result = 1;
-		}
-		dialog->Destroy();
-		wxGetApp().OnOpenFiles(files);
-	} else {
-		wxDocManager::OnFileOpen(event);
-	}
-}
-
 void
 MyDocManager::OnFileSave(wxCommandEvent& event)
 {

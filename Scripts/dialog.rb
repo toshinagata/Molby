@@ -39,16 +39,21 @@ class Dialog
 
   def self.filter_kit(title, description, &block)
     Dialog.new(title, nil, nil) {
-      def write(s)  #  Override standard output
+      def self.write(s)  #  Override standard output
         item_with_tag("text").append_string(s)
       end
       button_action = proc {
         names = Dialog.open_panel("Select file(s) to process", nil, nil, false, true)
         if names
-          stdout_save = $stdout
-          $stdout = self
-          block.call(names)
-          $stdout = stdout_save
+		  begin
+            stdout_save = $stdout
+            $stdout = self
+		    catch(:exit) {
+              block.call(names)
+	        }
+		  ensure
+            $stdout = stdout_save
+		  end
         end
       }
       layout(1,

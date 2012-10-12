@@ -23,7 +23,7 @@
 class MyDocManager: public wxDocManager {
 public:
 //	wxDocument* CreateDocument(const wxString& path, long flags);
-	void OnFileOpen(wxCommandEvent& event);
+//	void OnFileOpen(wxCommandEvent& event);
 	void OnFileSave(wxCommandEvent& event);
 	void OnFileSaveAs(wxCommandEvent& event);
 	void SetDocumentTypesEnabled(const char **extensions, bool flag);
