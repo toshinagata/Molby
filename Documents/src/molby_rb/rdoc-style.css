@@ -21,8 +21,14 @@ h1 { font-size: 150%; }
 h2,h3,h4 { margin-top: 1em; }
 
 tt {
-    font-family: Courier;
+    font-family: monospace;
     font-size: 90%;
+}
+
+code {
+    font-family: monospace;
+    color: #007;
+    background: #cfd;
 }
 
 a { background: #eef; color: #039; text-decoration: none; }

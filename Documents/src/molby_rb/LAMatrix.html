@@ -90,7 +90,7 @@ diagonal(size, element) &rarr; (new) LAMatrix<br />
 </div>
 <div class="method-description">
 <p>
-Create a diagonal matrix. In the first form, the diagonal elements are taken from the array argument. In the second form, a diagonal matrix of the specified size with all the diagonal component <tt>element</tt>.
+Create a diagonal matrix. In the first form, the diagonal elements are taken from the array argument. In the second form, a diagonal matrix of the specified size with all the diagonal component <code>element</code>.
 </p>
 </div>
 </div>
@@ -103,7 +103,7 @@ Create a diagonal matrix. In the first form, the diagonal elements are taken fro
 </div>
 <div class="method-description">
 <p>
-Create a new <a href="LAMatrix.html">LAMatrix</a> built from column vectors. This is equivalent to <tt><a href="LAMatrix.html#create">LAMatrix.new</a>([c1, ...])</tt>.
+Create a new <a href="LAMatrix.html">LAMatrix</a> built from column vectors. This is equivalent to <code><a href="LAMatrix.html#create">LAMatrix.new</a>([c1, ...])</code>.
 </p>
 </div>
 </div>
@@ -129,7 +129,7 @@ Create a new <a href="LAMatrix.html">LAMatrix</a> built from row vectors.
 </div>
 <div class="method-description">
 <p>
-Create an identity transform of size <tt>size</tt>.
+Create an identity transform of size <code>size</code>.
 </p>
 </div>
 </div>
@@ -162,7 +162,7 @@ Create a new LAMatrix object.
 <ul>
 <li>In the first form, a zero LAMatrix of given size is returned. Note the order of the arguments; they are opposite to the mathematical convention.</li>
 <li>In the second form, the array must be either of an array (the column vector), or an array of arrays (a set of column vectors).</li>
-<li>In the third form, a new transform is built from a matrix. The argument <tt>matrix</tt> must respond to a method call <tt>matrix[col, row]</tt>, <tt>row_size</tt> and <tt>column_size</tt>.</li>
+<li>In the third form, a new transform is built from a matrix. The argument <code>matrix</code> must respond to a method call <code>matrix[col, row]</code>, <code>row_size</code> and <code>column_size</code>.</li>
 </ul>
 </div>
 </div>
@@ -233,7 +233,7 @@ self / matrix  &rarr; (new) LAMatrix<br />
 <div class="method-description">
 <p>
 Perform the matrix multiplication. In the first form, a new matrix with scaled elements is
-returned. In the second, <tt>self * matrix.inverse</tt> is returned.
+returned. In the second, <code>self * matrix.inverse</code> is returned.
 </p>
 </div>
 </div>
@@ -246,7 +246,7 @@ returned. In the second, <tt>self * matrix.inverse</tt> is returned.
 </div>
 <div class="method-description">
 <p>
-Returns <tt>true</tt> if and only if the dimensions are the same and all the corresponding elements of both arguments are equal. Usual caution about the comparison of floating-point numbers should be paid.
+Returns <code>true</code> if and only if the dimensions are the same and all the corresponding elements of both arguments are equal. Usual caution about the comparison of floating-point numbers should be paid.
 </p>
 </div>
 </div>
@@ -259,7 +259,7 @@ Returns <tt>true</tt> if and only if the dimensions are the same and all the cor
 </div>
 <div class="method-description">
 <p>
-Get the element (<tt>i</tt>,<tt>j</tt>) of the matrix, i.e. column <tt>i</tt>, row <tt>j</tt>. Be careful about the order of the arguments. It follows convention of multi-dimensional arrays rather than mathematical notation.
+Get the element (<code>i</code>,<code>j</code>) of the matrix, i.e. column <code>i</code>, row <code>j</code>. Be careful about the order of the arguments. It follows convention of multi-dimensional arrays rather than mathematical notation.
 </p>
 </div>
 </div>
@@ -272,7 +272,7 @@ Get the element (<tt>i</tt>,<tt>j</tt>) of the matrix, i.e. column <tt>i</tt>, r
 </div>
 <div class="method-description">
 <p>
-Set the element (<tt>i</tt>,<tt>j</tt>) of the matrix, i.e. column <tt>i</tt>, row <tt>j</tt>. Be careful about the order of the arguments. It follows convention of multi-dimensional arrays rather than mathematical notation.
+Set the element (<code>i</code>,<code>j</code>) of the matrix, i.e. column <code>i</code>, row <code>j</code>. Be careful about the order of the arguments. It follows convention of multi-dimensional arrays rather than mathematical notation.
 </p>
 </div>
 </div>
@@ -299,6 +299,19 @@ Add a value to self.
 <div class="method-description">
 <p>
 Returns the index-th column as a (n,1) matrix.
+</p>
+</div>
+</div>
+
+<div id="method-M000062" class="method-detail">
+<a name="column_size"></a>
+<div class="method-heading">
+<span class="method-name">column_size &rarr; Integer<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns the column size.
 </p>
 </div>
 </div>
@@ -339,7 +352,7 @@ fnorm2 &rarr; Float<br />
 </div>
 <div class="method-description">
 <p>
-Calculate the Frobenius norm (the Hilbert–Schmidt norm). <tt>fnorm2</tt> returns the square of the norm.
+Calculate the Frobenius norm (the Hilbert–Schmidt norm). <code>fnorm2</code> returns the square of the norm.
 </p>
 </div>
 </div>
@@ -368,7 +381,7 @@ inverse!  &rarr; self<br />
 </div>
 <div class="method-description">
 <p>
-Calculate the inverse matrix as a new object. If the matrix is not regular, an exception is raised. <tt>inverse!</tt> changes the object destructively and returns self.
+Calculate the inverse matrix as a new object. If the matrix is not regular, an exception is raised. <code>inverse!</code> changes the object destructively and returns self.
 </p>
 </div>
 </div>
@@ -384,12 +397,38 @@ Calculate the inverse matrix as a new object. If the matrix is not regular, an e
 Multiply the arguments to self.
 </p>
 <ul>
-<li>If <tt>argN</tt> is a string "t", then the subsequent matrix is transposed (the object is not modified; it is just transposed during calculation).</li>
-<li>If <tt>argN</tt> is a string "i", then the subsequent matrix is inverted (the object is not modified).</li>
+<li>If <code>argN</code> is a string "t", then the subsequent matrix is transposed (the object is not modified; it is just transposed during calculation).</li>
+<li>If <code>argN</code> is a string "i", then the subsequent matrix is inverted (the object is not modified).</li>
 <li>The "t" and "i" can be combined as "ti" or "it".</li>
-<li>If <tt>argN</tt> is a number, then scalar multiplication is performed.</li>
-<li>Otherwise, <tt>argN</tt> must be a matrix, which has the same row-size as the column-size of the last result.</li>
+<li>If <code>argN</code> is a number, then scalar multiplication is performed.</li>
+<li>Otherwise, <code>argN</code> must be a matrix, which has the same row-size as the column-size of the last result.</li>
 </ul>
+</div>
+</div>
+
+<div id="method-M000062" class="method-detail">
+<a name="row"></a>
+<div class="method-heading">
+<span class="method-name">row(index) &rarr; (new) LAMatrix<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns the index-th row vector as a (1, N) matrix.
+</p>
+</div>
+</div>
+
+<div id="method-M000062" class="method-detail">
+<a name="row_size"></a>
+<div class="method-heading">
+<span class="method-name">row_size &rarr; Integer<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns the row size.
+</p>
 </div>
 </div>
 
@@ -415,7 +454,21 @@ submatrix(column_pos, row_pos, column_size, row_size) &rarr; (new) LAMatrix
 </div>
 <div class="method-description">
 <p>
-Extract a submatrix beginning from <tt>(row_pos, column_pos)</tt> and size <tt>(row_size, column_size)</tt>. If <tt>row_size</tt> or <tt>column_size</tt> are given as -1, then all the elements to the end of the row/column are used. Note the order of the arguments; they are opposite to the mathematical convention.
+Extract a submatrix beginning from <code>(row_pos, column_pos)</code> and size <code>(row_size, column_size)</code>. If <code>row_size</code> or <code>column_size</code> are given as -1, then all the elements to the end of the row/column are used. Note the order of the arguments; they are opposite to the mathematical convention.
+</p>
+</div>
+</div>
+
+<div id="method-svd" class="method-detail">
+<a name="svd"></a>
+<div class="method-heading">
+<span class="method-name">
+svd &rarr; [left_matrix, singular_values, right_matrix]
+</span>
+</div>
+<div class="method-description">
+<p>
+Perform the singular value decomposition (SVD) of the given matrix. Decompose the given <code>(m,n)</code> matrix to a product of three matrices, <code>U</code>, <code>S</code>, <code>V</code>. <code>U</code> is a <code>(m,m)</code> orthogonal matrix, <code>S</code> is a <code>(m,n)</code> matrix which is zero except for <code>min(m,n)</code> diagonal elements, and <code>V</code> is a <code>(n,n)</code> orthogonal matrix. (Usually SVD is defined as <code>M = U*S*transpose(V)</code>, but this methods returns <code>transpose(V)</code> rather than <code>V</code>.) The singular_values is a <code>min(m,n)</code> dimension column vector.
 </p>
 </div>
 </div>
@@ -468,7 +521,7 @@ transpose! &rarr; self<br />
 </div>
 <div class="method-description">
 <p>
-Calculate the transpose matrix. <tt>transpose!</tt> changes the object destructively and returns self.
+Calculate the transpose matrix. <code>transpose!</code> changes the object destructively and returns self.
 </p>
 </div>
 </div>

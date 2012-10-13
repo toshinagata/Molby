@@ -151,6 +151,11 @@ span.comment {
     color: #aa00aa;
 }
 
+span.linenumber {
+	color: #000044;
+    background-color: #ffddaa;
+}
+	
 code {
     font-family: monospace;
     background-color: #ddeecc;

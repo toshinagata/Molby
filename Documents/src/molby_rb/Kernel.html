@@ -121,12 +121,28 @@ Show an error message box.
 <div id="method-M000380" class="method-detail">
 <a name="M000380"></a>
 <div class="method-heading">
-<span class="method-name">execute_script_file(fname)<br />
+<span class="method-name">execute_script(fname)<br />
 </span>
 </div>
 <div class="method-description">
 <p>
 Execute the script in the given file. If a molecule is active, then the script is evaluated as <a href="Molecule.html#M000322">Molecule.current</a>.instance_eval(script). Before entering the script, the current directory is set to the parent directory of the script.
+</p>
+</div>
+</div>
+
+<div id="method-M000380" class="method-detail">
+<a name="exit"></a>
+<div class="method-heading">
+<span class="method-name">exit(arg = nil)<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Stop the execution of the script and return to the Molby application. Only usable when the script is invoked from the file or from the Console. Internally, this method is equivalent to <code>throw :molby_top, arg</code>. When a script is executed from file and from console, it is internally wrapped by <code>catch(:molby_top) { ... }</code>.
+</p>
+<p>
+Standard implementation of <code>exit</code> (stop execution and quit) is not available, because it does not make much sense to stop execution of Molby application from inside the script.
 </p>
 </div>
 </div>
@@ -167,6 +183,18 @@ Get the current interrupt flag. If interrupt is enabled, true is returned. Other
 Hide the progress panel. If the panel is not yet shown or already dismissed, do nothing.
 </p>
 <p><i>See Also:</i> <a href="#show_progress_panel">show_progress_panel</a>
+</div>
+</div>
+
+<div id="method-M000378" class="method-detail">
+<a name="lookup_menu"></a>
+<div class="method-heading">
+<span class="method-name">lookup_menu(title) &rarr; Integer</span>
+</div>
+<div class="method-description">
+<p>
+Look up the title from the Script menu. If found, returns a non-negative integer. If not found, returns -1.
+</p>
 </div>
 </div>
 

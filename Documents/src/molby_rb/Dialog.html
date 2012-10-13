@@ -92,12 +92,12 @@ If a block is given, it is executed in the context of the created Dialog object 
 <div id="method-M000097" class="method-detail">
 <a name="M000097"></a>
 <div class="method-heading">
-<span class="method-name">open_panel(message = nil, directory = nil, wildcard = nil, for_directories = false, multiple_selection = false) &rarr; String<br />
+<span class="method-name">open_panel(message = nil, directory = nil, wildcard = nil, for_directories = false, multiple_selection = false) &rarr; String or Array<br />
 </span>
 </div>
 <div class="method-description">
 <p>
-Display the &quot;open&quot; dialog and returns the fullpath filename.
+Display the &quot;open&quot; dialog and returns the fullpath filename (if <code>multiple_selection</code> is false) or an array of the fullpath filenames (if <code>multiple_selection</code> is true). Note: <code>multiple_selection</code> can only be specified when <code>for_directories</code> is false.
 </p>
 </div>
 </div>

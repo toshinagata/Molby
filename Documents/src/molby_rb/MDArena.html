@@ -99,6 +99,45 @@ Get/set the attribute value. The attribute values also can be accessed by <code>
 </div>
 
 <div id="method-M000047" class="method-detail">
+<a name="angle_par"></a>
+<div class="method-heading">
+<span class="method-name">angle_par(idx) &rarr; <a href="ParameterRef.html">ParameterRef</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns a MM/MD parameter record that is used for the idx-th angle.
+</p>
+</div>
+</div>
+
+<div id="method-M000047" class="method-detail">
+<a name="bond_par"></a>
+<div class="method-heading">
+<span class="method-name">bond_par(idx) &rarr; <a href="ParameterRef.html">ParameterRef</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns a MM/MD parameter record that is used for the idx-th bond.
+</p>
+</div>
+</div>
+
+<div id="method-M000047" class="method-detail">
+<a name="dihedral_par"></a>
+<div class="method-heading">
+<span class="method-name">dihedral_par(idx) &rarr; <a href="ParameterRef.html">ParameterRef</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns a MM/MD parameter record that is used for the idx-th dihedral.
+</p>
+</div>
+</div>
+
+<div id="method-M000047" class="method-detail">
 <a name="M000047"></a>
 <div class="method-heading">
 <span class="method-name">energies &rarr; [total, bond, angle, dihedral, improper, vdw, electrostatic, auxiliary, surface, kinetic, net]<br />
@@ -119,6 +158,19 @@ Get the <a href="MDArena.html#M000047">energies</a> at the last step of the MM/M
 <div class="method-description">
 <p>
 Get the current external force for the atom. If the external force is not set, nil is returned.
+</p>
+</div>
+</div>
+
+<div id="method-M000047" class="method-detail">
+<a name="improper_par"></a>
+<div class="method-heading">
+<span class="method-name">improper_par(idx) &rarr; <a href="ParameterRef.html">ParameterRef</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns a MM/MD parameter record that is used for the idx-th improper torsion.
 </p>
 </div>
 </div>
@@ -227,6 +279,19 @@ Set external forces. Array should be an array of objects that can be converted t
 <div class="method-description">
 <p>
 Returns a (frozen) hash that contains the current values of all attributes.
+</p>
+</div>
+</div>
+
+<div id="method-M000047" class="method-detail">
+<a name="vdw_par"></a>
+<div class="method-heading">
+<span class="method-name">vdw_par(idx) &rarr; <a href="ParameterRef.html">ParameterRef</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns a MM/MD parameter record that is used for the van der Waals parameter of the idx-th atom.
 </p>
 </div>
 </div>

@@ -38,6 +38,9 @@ class Dialog
   end
 
   def self.filter_kit(title, description, &block)
+    if block == nil
+	  raise "a block is required for filter_kit"
+	end
     Dialog.new(title, nil, nil) {
       def self.write(s)  #  Override standard output
         item_with_tag("text").append_string(s)
@@ -48,7 +51,7 @@ class Dialog
 		  begin
             stdout_save = $stdout
             $stdout = self
-		    catch(:exit) {
+		    catch(:molby_top) {  #  Intercept 'exit' before going to Molby toplevel
               block.call(names)
 	        }
 		  ensure

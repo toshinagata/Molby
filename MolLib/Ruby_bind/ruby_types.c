@@ -2195,7 +2195,7 @@ s_LAMatrix_Row(VALUE self, VALUE val)
 
 /*
  *  call-seq:
- *     column_size -> LAMatrix
+ *     column_size -> Integer
  *
  *  Returns the column size.
  */
@@ -2209,7 +2209,7 @@ s_LAMatrix_ColumnSize(VALUE self)
 
 /*
  *  call-seq:
- *     row_size -> LAMatrix
+ *     row_size -> Integer
  *
  *  Returns the row size.
  */

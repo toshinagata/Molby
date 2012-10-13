@@ -394,17 +394,23 @@ Replace the symmetry-expanded atoms so that the positions are correctly related 
 <a name="angle_par"></a>
 <div class="method-heading">
   <span class="method-name">angle_par(idx)       &rarr; <a href="ParameterRef.html">ParameterRef</a><br />
+  <span class="method-name">bond_par(idx)       &rarr; <a href="ParameterRef.html">ParameterRef</a><br />
+  <span class="method-name">dihedral_par(idx)       &rarr; <a href="ParameterRef.html">ParameterRef</a><br />
+  <span class="method-name">improper_par(idx)       &rarr; <a href="ParameterRef.html">ParameterRef</a><br />
+  <span class="method-name">vdw_par(idx)       &rarr; <a href="ParameterRef.html">ParameterRef</a><br />
 </span>
 </div>
 <div class="method-description">
 <p>
-Returns a <a href="ParameterRef.html">ParameterRef</a> object (of type "angle") representing the MD parameter for the specified angle. If the MD parameters are not initialized yet, tries to initialize them by self.<a href="#M000313">md_arena</a>.<a href="MDArena.html#M000046">prepare</a>(true), which may throw exception.
+These methods are now obsolete. Use the <a href="MDArena.html">MDArena</a> methods with the same name.
 </p>
 <p>
-<i>See Also:</i> <a href="Molecule.html#bond_par">Molecule#bond_par</a>, 
-<a href="Molecule.html#dihedral_par">Molecule#dihedral_par</a>, 
-<a href="Molecule.html#improper_par">Molecule#improper_par</a>, 
-<a href="Molecule.html#vdw_par">Molecule#vdw_par</a>
+<i>See Also:</i> 
+<a href="MDArena.html#angle_par">MDArena#angle_par</a>, 
+<a href="MDArena.html#bond_par">MDArena#bond_par</a>, 
+<a href="MDArena.html#dihedral_par">MDArena#dihedral_par</a>, 
+<a href="MDArena.html#improper_par">MDArena#improper_par</a>, 
+<a href="MDArena.html#vdw_par">MDArena#vdw_par</a>
 </p>
 </div>
 </div>
@@ -503,25 +509,6 @@ representing the array of atoms.
 </p>
 <p>
 <i>See Also:</i> <a href="Molecule.html#M000217">Molecule#natoms</a>
-</p>
-</div>
-</div>
-
-<div id="method-bond-par" class="method-detail">
-<a name="bond_par"></a>
-<div class="method-heading">
-  <span class="method-name">bond_par(idx)       &rarr; <a href="ParameterRef.html">ParameterRef</a><br />
-</span>
-</div>
-<div class="method-description">
-<p>
-Returns a <a href="ParameterRef.html">ParameterRef</a> object (of type "bond") representing the MD parameter for the specified bond. If the MD parameters are not initialized yet, tries to initialize them by self.<a href="#M000313">md_arena</a>.<a href="MDArena.html#M000046">prepare</a>(true), which may throw exception.
-</p>
-<p>
-<i>See Also:</i> <a href="Molecule.html#angle_par">Molecule#angle_par</a>, 
-<a href="Molecule.html#dihedral_par">Molecule#dihedral_par</a>, 
-<a href="Molecule.html#improper_par">Molecule#improper_par</a>, 
-<a href="Molecule.html#vdw_par">Molecule#vdw_par</a>
 </p>
 </div>
 </div>
@@ -992,26 +979,6 @@ Check whether the group is detachable, i.e. the group is
 bound to the rest of the molecule via only one bond. If it is, then the
 indices of the atoms belonging to the
 bond is returned; n1 is the atom belonging to the group, and n2 is the atom not belonging to the group and bound to n1. If the above conditions are not met, nil is returned.
-</p>
-</div>
-</div>
-
-<div id="method-dihedral-par" class="method-detail">
-<a name="dihedral_par"></a>
-<div class="method-heading">
-  <span class="method-name">dihedral_par(idx)       &rarr; <a href="ParameterRef.html">ParameterRef</a><br />
-</span>
-</div>
-<div class="method-description">
-<p>
-Returns a <a href="ParameterRef.html">ParameterRef</a> object (of type "dihedral") representing the MD parameter for the specified dihedral. If the MD parameters are not initialized yet, tries to initialize them by self.<a href="#M000313">md_arena</a>.<a href="MDArena.html#M000046">prepare</a>(true), which may throw exception.
-</p>
-<p>
-<i>See Also:</i>
-<a href="Molecule.html#angle_par">Molecule#angle_par</a>, 
-<a href="Molecule.html#bond_par">Molecule#bond_par</a>, 
-<a href="Molecule.html#improper_par">Molecule#improper_par</a>, 
-<a href="Molecule.html#vdw_par">Molecule#vdw_par</a>
 </p>
 </div>
 </div>
@@ -1493,26 +1460,6 @@ Unset the visibility flag of the graphic_index-th graphic object.
 <p>
 <i>See Also:</i> <a href="#show_graphic">Molecule#show_graphic</a>
 </p></div>
-</div>
-
-<div id="method-improper-par" class="method-detail">
-<a name="improper_par"></a>
-<div class="method-heading">
-  <span class="method-name">improper_par(idx)       &rarr; <a href="ParameterRef.html">ParameterRef</a><br />
-</span>
-</div>
-<div class="method-description">
-<p>
-Returns a <a href="ParameterRef.html">ParameterRef</a> object (of type "improper") representing the MD parameter for the specified improper torsion. If the MD parameters are not initialized yet, tries to initialize them by self.<a href="#M000313">md_arena</a>.<a href="MDArena.html#M000046">prepare</a>(true), which may throw exception.
-</p>
-<p>
-<i>See Also:</i>
-<a href="Molecule.html#angle_par">Molecule#angle_par</a>, 
-<a href="Molecule.html#bond_par">Molecule#bond_par</a>, 
-<a href="Molecule.html#dihedral_par">Molecule#dihedral_par</a>, 
-<a href="Molecule.html#vdw_par">Molecule#vdw_par</a>
-</p>
-</div>
 </div>
 
 <div id="method-M000215" class="method-detail">
@@ -3197,26 +3144,6 @@ screen.
 <div class="method-description">
 <p>
 Returns true if screen update is enabled; otherwise no.
-</p>
-</div>
-</div>
-
-<div id="method-vdw-par" class="method-detail">
-<a name="vdw_par"></a>
-<div class="method-heading">
-  <span class="method-name">vdw_par(idx)       &rarr; <a href="ParameterRef.html">ParameterRef</a><br />
-</span>
-</div>
-<div class="method-description">
-<p>
-Returns a <a href="ParameterRef.html">ParameterRef</a> object (of type "vdw") representing the vdw MD parameter for the specified atom. If the MD parameters are not initialized yet, tries to initialize them by self.<a href="#M000313">md_arena</a>.<a href="MDArena.html#M000046">prepare</a>(true), which may throw exception.
-</p>
-<p>
-<i>See Also:</i>
-<a href="Molecule.html#angle_par">Molecule#angle_par</a>, 
-<a href="Molecule.html#bond_par">Molecule#bond_par</a>, 
-<a href="Molecule.html#dihedral_par">Molecule#dihedral_par</a>, 
-<a href="Molecule.html#improper_par">Molecule#improper_par</a>
 </p>
 </div>
 </div>

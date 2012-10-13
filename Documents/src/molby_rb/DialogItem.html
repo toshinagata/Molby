@@ -74,6 +74,7 @@ Dialog items have various attributes. Some attributes are common to all items, a
 For the popup, the value is an integer indicating the selected item (0-based).<br />
 For the checkbox and radio, the value is 0/1 for off/on state.</td></tr>
 <tr><td>x, y,<br />width, height,<br />origin, size,<br />frame</td><td>all</td><td>The item position and size. The values are represented in the local coordinates of the dialog (or the superview if the item is a child of another view) in pixel unit. The frame is represented as [origin_x, origin_y, size_width, size_height]. The origin of the coordinate system is the top-left position of the dialog (or the superview).</td></tr>
+<tr><td>font</td><td>textfield, textview</td><td>[size, family, style, weight]. Size is the font size in points. Other elements are symbols. Family is one of <code>:default,</code> <code>:roman</code> (a serif font), <code>:swiss</code> (a sans-serif font), <code>fixed</code> (a fixed-pitch font). Style is one of <code>:normal</code>, <code>:slanted</code>, <code>:italic</code>. Weight is one of <code>:medium</code>, <code>:bold</code>, <code>:light</code>.<br />On setting, these items can appear in an arbitrary order. If any attribute is missing, then the missing attribute will not change.</td></tr>
 </table>
 <a name="actions"></a>
 <h4>Actions</h4>
@@ -88,6 +89,19 @@ If the <a href="Dialog.html">Dialog</a> is to be closed as a result of the actio
 <div id="methods">
 
 <h3 class="section-bar">Public Instance methods</h3>
+
+<div id="method-M000089" class="method-detail">
+<a name="append_string"></a>
+<div class="method-heading">
+<span class="method-name">append_string(string) &rarr; self<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Only usable for <code>:textview</code> items. Append the given string at the end.
+</p>
+</div>
+</div>
 
 <div id="method-M000089" class="method-detail">
 <a name="attr"></a>
