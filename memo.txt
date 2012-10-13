@@ -431,3 +431,93 @@ ChangeLog
 - Document was written for the collaboration with other quantum chemistry softwares.
 - .log and .out are both accepted as the extension of the Gaussian and GAMESS log files.
 - update_version.rb is improved.
+
+2012.10.13.
+
+Version 0.6.4
+
+リリースノート
+- bond/angle/dihedral/improper の属性テーブルを開くと、分子力学パラメータを検索するようにした（ただし、結合情報から angle/dihedral テーブルの再構成はやらない。これは MM/MD ウィンドウを開いたときに起きる）
+- 属性テーブルに単位格子を表示できるようにした。
+- "Show Graphite" コマンドが間違った C-C 結合距離を使っていたので修正。正しくは 1.42Å。
+- 最適平面計算を実装（Script メニューの Best-fit Plane）
+- リビジョン番号を About ダイアログに表示するようにした。
+- 単位格子の最適化機能を実装（まだ実験的）
+- 原子当たりの結合数の上限 (12) を撤廃した。
+- Ruby: Dialog#filter_kit を実装。使い方がドキュメントの付録に書かれている。
+- Ruby: LAMatrix#svd (singular value decomposition) を実装。
+- Ruby: bond_par, angle_par, dihedral_par, improper_par, vdw_par メソッドを Molecule から MDArena に移した。
+- その他多くのバグ修正（ChangeLog 参照）
+
+Release Note
+- Opening bond/angle/dihedral/improper table now triggers searching MD parameters (but not rebuilding angle/dihedral/improper tables).
+- Property table can now list the unit cell parameters.
+- "Show Graphite" command was using _very_ wrong C-C bond length. Now it uses correct length (1.42 angstrom).
+- Best-fit plane calculations are implemented.
+- The revision number is displayed in the about dialog.
+- Cell parameter minimization is implemented (still experimental).
+- The restriction on the number of bonds (12) is removed.
+- Ruby: Dialog#filter_kit is implemented. The how-to is described in the document (appendix).
+- Ruby: LAMatrix#svd (singular value decomposition) was implemented.
+- Ruby: The methods bond_par, angle_par, dihedral_par, improper_par, vdw_par are moved from Molecule to MDArena.
+- Bug fixes (see the ChangeLog)
+
+ChangeLog
+- Ruby: Dialog#filter_kit is implemented.
+- Crash when loading a new molecule was fixed.
+- ORTEP export did not generate the same orientation as in the screen. Fixed.
+- Ruby: Molecule#bond_par, angle_par, dihedral_par, improper_par, vdw_par are made obsolete, and instead MDArena#bond_par, angle_par, dihedral_par, improper_par, vdw_par are implemented. These methods returns the 'cached' parameters in the MDArena. The ParameterRef record for these parameters have a negative index, which represents the parameter belongs to the MDArena instead of the molecule.
+- Opening bond/angle/dihedral/improper table now triggers search of MD parameters (but not rebuilding angle/dihedral/improper tables from bond information)
+- Handling of view-related attributes of Molecule is improved (specifically, methods like Molecule#show_periodic_image= now work).
+- Best-fit plane dialog is not working in Windows; fixed.
+- Some fields in md_arena were not properly copied when a molecule is duplicated. Fixed.
+- 'Show Graphite' command was using wrong C-C bond length. Fixed.
+- Some unused fields of Molecule were removed.
+- LAMatrix#svd (singular value decomposition) was implemented.
+- Ruby: create_graphic was not working correctly when :ellipsoid is given with a single radius.
+- Loading multiple-frame mbsf sometimes fails to load the cell parameter for the last frame. Fixed.
+- Property table can now list the unit cell parameters.
+- Documents for Dialog#show, Dialog#hide are written. (These were somehow missing)
+- Cell minimization was not working correctly when no symmetry operations are defined. Fixed.
+- MDArena#prepare was not working correctly when unit cell is added/created after initialization of MDArena. Fixed.
+- Handling of selection from Ruby script was partially broken. Fixed.
+- Best fit plane dialog was behaving strangely  Fixed.
+- Handling of Molecule object was not consistent. Hopefully fixed...
+- Export ORTEP (improved) and best-fit plane calculations are implemented in Scripts/crystal.rb.
+- The revision number is displayed in the about dialog (and is used for labeling clipboard contents)
+- Copy/paste of molecules was broken when it had atoms with more than ATOMS_CONNECTS_LIMIT bonds. Fixed.
+- Documents for some missing Ruby methods are written.
+- Cell minimization is improved (hopefully...)
+- Remove printf() for debugging cell minimization
+- Implemented minimization of cell parameters. Looks like working...
+- Handling of flexible cells were still inconsistent.
+- Molecule#cell_flexibility and set_cell_flexibility are implemented, and enable/disable_cell_flexibility are removed.
+- Figures for the Ruby tutorial are added to the repository.
+- Handling of periodic box during MD is being reworked.
+- Ruby: Molecule#box= was not working as expected. Fixed.
+- Memory leak bugs are examined and removed.
+- amend_by_symmetry in MD was still broken. Hopefully fixed.
+- Tutorial for the Ruby interpreter was (finally) written.
+- amend_by_symmetry during MD run was causing crash. Fixed.
+- Graphite potential calculation is further modified (hope this is complete now!)
+- When no molecule is open, Ruby scripts are evaluated in the context of 'main' (the toplevel object)
+- Graphite potential calculation is improved.
+- The current working directory is set to the document home on startup.
+- The anisotropic parameters for the symmetry expanded atoms are now correctly handled.
+- Pressure control and surface potential are removed from the GUI; they are not well tested and should be used with great care.
+- The load commands can now include error messages in Ruby exception.
+- MD minimize was not working properly (especially for the second run with the same molecule). Fixed.
+- Symmetry expansion in CIF import is improved. (May not be complete yet)
+- Molecule#expand_by_symmetry now returns an array of atom indices instead of IntGroup.
+- Molecule#symop_for_transform and transform_for_symop are implemented. The symmetry expansion of CIF import is being reworked, but still incomplete.
+- Molecule#is_atom_hidden and AtomRef#hidden, hidden= are implemented, and Molecule#hidden_atoms and hidden_atoms= are made obsolete.
+- Molecule#set/get_view_rotation: the sign of the angle is made opposite (left-hand screw in respect to the axis), so that it is consistent with Transform#rotation. This is opposite to the convention of the OpenGL rotator.
+- The restriction on the number of bonds (12) is removed (modified so heavily, that it is likely that there is still some bugs left...)
+- Include periodicity flags in the 'define unit cell' dialog
+- Problem on guessing UFF angle parameter was fixed.
+- Fixed a very stupid bug in drawing unit cell.
+- Handling of frame-specific cell parameters was very inconsistent. Hopefully fixed, but may be still incomplete.
+- Graphite potential in MM/MD gets recalculated much less frequently now.
+- Building verlet list was reworked to implement complete search of the periodic lattice points. Still in progress.
+- Symmetry operations from the CIF file were not read correctly for hexagonal system. Fixed.
+- Mac (only 10.6?): when the graphite display is on, the lighting of the molecule model looks strange. Fixed.
