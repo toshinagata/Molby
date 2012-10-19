@@ -332,6 +332,7 @@ Molecule *
 MoleculeInitWithMolecule(Molecule *mp2, const Molecule *mp)
 {
 	int i;
+	MoleculeFlushFrames(mp);
 	MoleculeInitWithAtoms(mp2, mp->atoms, mp->natoms);
 	if (mp->nbonds > 0) {
 		if (NewArray(&mp2->bonds, &mp2->nbonds, sizeof(Int)*2, mp->nbonds) == NULL)
@@ -376,7 +377,7 @@ MoleculeInitWithMolecule(Molecule *mp2, const Molecule *mp)
 		memmove(mp2->pibonds, mp->pibonds, sizeof(Int) * 4 * mp->npibonds);
 	}
 	
-	mp2->useFlexibleCell = mp->useFlexibleCell;
+/*	mp2->useFlexibleCell = mp->useFlexibleCell; */
 	if (mp->nframe_cells > 0) {
 		if (NewArray(&mp2->frame_cells, &mp2->nframe_cells, sizeof(Vector) * 4, mp->nframe_cells) == NULL)
 			goto error;
@@ -1266,7 +1267,7 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 		} else if (strcmp(buf, "!:frame_periodic_boxes") == 0) {
 			Vector vs[5];
 			i = 0;
-			mp->useFlexibleCell = 1;  /*  The presence of this block causes asserting this flag  */
+		/*	mp->useFlexibleCell = 1;  *//*  The presence of this block causes asserting this flag  */
 			while (ReadLine(buf, sizeof buf, fp, &lineNumber) > 0) {
 				if (buf[0] == '!')
 					continue;
@@ -3901,7 +3902,7 @@ MoleculeWriteToMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbu
 		fprintf(fp, "\n");
 	}
 	
-	if (mp->useFlexibleCell != 0) {
+	if (mp->nframe_cells > 0) {
 		fprintf(fp, "!:frame_periodic_boxes\n");
 		fprintf(fp, "! ax ay az; bx by bz; cx cy cz; ox oy oz\n");
 		for (i = 0; i < mp->nframe_cells * 4; i++) {
@@ -9747,8 +9748,8 @@ MoleculeInsertFrames(Molecule *mp, IntGroup *group, const Vector *inFrame, const
 			vp[j] = ap->r;
 		ap->frames = vp;
 	}
-	if (mp->cell != NULL && (mp->useFlexibleCell || inFrameCell != NULL)) {
-		mp->useFlexibleCell = 1;
+	if (mp->cell != NULL && inFrameCell != NULL) {
+	/*	mp->useFlexibleCell = 1; */
 		vp = mp->frame_cells;
 		AssignArray(&mp->frame_cells, &mp->nframe_cells, sizeof(Vector) * 4, n_new - 1, NULL);
 		if (vp == NULL) {

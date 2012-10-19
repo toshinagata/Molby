@@ -3227,7 +3227,7 @@ md_update_cell(MDArena *arena)
 void
 md_set_cell(MDArena *arena)
 {
-	Molecule *mol = arena->mol;
+	Molecule *mol = arena->xmol;
 	if (mol == NULL)
 		return;
 	if (mol->cell != NULL) {

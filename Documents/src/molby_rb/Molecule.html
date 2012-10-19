@@ -688,13 +688,12 @@ Returns the unit cell parameters. If a unit cell is not set, returns nil. Alpha/
 <a name="M000236"></a>
 <div class="method-heading">
 <span class="method-name">cell = [a, b, c, alpha, beta, gamma [, sig_a, sig_b, sig_c, sig_alpha, sig_beta, sig_gamma]]<br />
-set_cell([a, b, c, alpha, beta, gamma [, sig_a, sig_b, sig_c, sig_alpha, sig_beta, sig_gamma]], flag = nil)<br />
+set_cell([a, b, c, alpha, beta, gamma[, sig_a, sig_b, sig_c, sig_alpha, sig_beta, sig_gamma]], convert_coord = nil)<br />
 </span>
 </div>
 <div class="method-description">
 <p>
-Set the unit cell parameters. Alpha/beta/gamma are in degree. If the right-hand value (or the first argument) is nil, then clear the current unit cell. If the second argument is given as non-nil, then
-the coordinates are transformed so that the fractional coordinates remain the same. If the cell parameters are given as an array of 12 floats, then the second half of the array is to represent the sigma value (that are common in crystallographic data). This operation is undoable.
+Set the unit cell parameters. Alpha/beta/gamma are in degree. If the right-hand value (or the first argument) is nil, then clear the current unit cell. If the cell parameters are given as an array of 12 floats, then the second half of the array is to represent the sigma value (that are common in crystallographic data). Convert_coord is a flag to specify that the coordinates should be transformed so that the fractional coordinates remain the same. This operation is undoable.
 </p>
 <p>
 <i>See Also:</i> <a href="Molecule.html#M000238">Molecule#box</a>, <a href="Molecule.html#M000239">Molecule#box=</a>, <a href="Molecule.html#M000235">Molecule#cell</a>
@@ -710,7 +709,7 @@ the coordinates are transformed so that the fractional coordinates remain the sa
 </div>
 <div class="method-description">
 <p>
-Returns whether the unit cell is flexible or not.
+Obsolete. Now the unit cell is always flexible (i.e. different frames can have different unit cell)
 </p>
 </div>
 </div>
@@ -724,7 +723,36 @@ set_cell_flexibility(bool)
 </div>
 <div class="method-description">
 <p>
-Set whether the unit cell is flexible or not.
+Obsolete. Now the unit cell is always flexible (i.e. different frames can have different unit cell)
+</p>
+</div>
+</div>
+
+<div id="method-M000237" class="method-detail">
+<a name="cell_periodicity"></a>
+<div class="method-heading">
+<span class="method-name">cell_periodicity &rarr; [n1, n2, n3] or nil<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get flags denoting whether the cell is periodic along the a/b/c axes. If the cell is not defined, nil is returned.
+</p>
+</div>
+</div>
+
+<div id="method-M000237" class="method-detail">
+<a name="set_cell_periodicity"></a>
+<div class="method-heading">
+<span class="method-name">self.cell_periodicity = [n1, n2, n3] or Integer or nil<br />
+set_cell_periodicity([n1, n2, n3] or Integer or nil)
+</span>
+</div>
+<div class="method-description">
+<p>
+Set whether the cell is periodic along the a/b/c axes. If an integer is given as an argument, its bits 2/1/0 (from the lowest) correspond to the a/b/c axes. Nil is equivalent to [0, 0, 0].
+If cell is not defined, exception is raised.
+This operation is undoable.
 </p>
 </div>
 </div>

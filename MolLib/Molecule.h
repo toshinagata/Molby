@@ -283,7 +283,7 @@ typedef struct Molecule {
 							 recalculated from the atoms if it is -1  */
 	Int    cframe;       /*  The current frame number  */
 
-	Byte   useFlexibleCell;
+/*	Byte   useFlexibleCell;  *//*  Obsolete (since 0.6.5; unit cell is frame dependent in all cases)  */
 	Int    nframe_cells;
 	Vector *frame_cells; /*  The cell vectors for frames; (nframe_cells*4) array of Vectors  */
 

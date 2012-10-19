@@ -5576,55 +5576,39 @@ s_Molecule_Cell(VALUE self)
 /*
  *  call-seq:
  *     cell = [a, b, c, alpha, beta, gamma [, sig_a, sig_b, sig_c, sig_alpha, sig_beta, sig_gamma]]
- *     set_cell([a, b, c, alpha, beta, gamma[, sig_a, sig_b, sig_c, sig_alpha, sig_beta, sig_gamma]], flag = nil)
+ *     set_cell([a, b, c, alpha, beta, gamma[, sig_a, sig_b, sig_c, sig_alpha, sig_beta, sig_gamma]], convert_coord = nil)
  *
  *  Set the unit cell parameters. If the cell value is nil, then clear the current cell.
-    If the given argument has 12 members, then the second half of the parameters represents the sigma values.
-    This operation is undoable. If the second argument is given as non-nil, then 
-	the coordinates are transformed so that the fractional coordinates remain the same.
+    If the given argument has 12 or more members, then the second half of the parameters represents the sigma values.
+    This operation is undoable.
+    Convert_coord is a flag to specify that the coordinates should be transformed so that the fractional coordinates remain the same.
  */
 static VALUE
 s_Molecule_SetCell(int argc, VALUE *argv, VALUE self)
 {
     Molecule *mol;
-	VALUE val, fval;
-	int i, flag, n;
+	VALUE val, cval;
+	int i, convert_coord, n;
 	double d[12];
     Data_Get_Struct(self, Molecule, mol);
-	rb_scan_args(argc, argv, "11", &val, &fval);
-	flag = RTEST(fval);
+	rb_scan_args(argc, argv, "11", &val, &cval);
 	if (val == Qnil) {
-		MolActionCreateAndPerform(mol, gMolActionSetCell, 0, d, flag);
-	//	MoleculeSetCell(mol, 1, 1, 1, 90, 90, 90);
-		return Qnil;
+		n = 0;
+	} else {
+		int len;
+		val = rb_ary_to_ary(val);
+		len = RARRAY_LEN(val);
+		if (len >= 12) {
+			n = 12;
+		} else if (len >= 6) {
+			n = 6;
+		} else rb_raise(rb_eMolbyError, "too few members for cell parameters (6 or 12 required)");
+		for (i = 0; i < n; i++)
+			d[i] = NUM2DBL(rb_Float((RARRAY_PTR(val))[i]));
 	}
-	val = rb_ary_to_ary(val);
-	if (RARRAY_LEN(val) >= 12) {
-		n = 12;
-	} else if (RARRAY_LEN(val) >= 6) {
-		n = 6;
-	} else rb_raise(rb_eMolbyError, "too few members for cell parameters (6 or 12 required)");
-	for (i = 0; i < n; i++)
-		d[i] = NUM2DBL(rb_Float((RARRAY_PTR(val))[i]));
-	MolActionCreateAndPerform(mol, gMolActionSetCell, n, d, flag);
+	convert_coord = (RTEST(cval) ? 1 : 0);
+	MolActionCreateAndPerform(mol, gMolActionSetCell, n, d, convert_coord);
 	return val;
-}
-
-/*
- *  call-seq:
- *     cell_transform -> Transform
- *
- *  Get the transform matrix that converts internal coordinates to cartesian coordinates.
- *  If cell is not defined, nil is returned.
- */
-static VALUE
-s_Molecule_CellTransform(VALUE self)
-{
-    Molecule *mol;
-    Data_Get_Struct(self, Molecule, mol);
-	if (mol == NULL || mol->cell == NULL)
-		return Qnil;
-	return ValueFromTransform(&(mol->cell->tr));
 }
 
 /*
@@ -5660,14 +5644,14 @@ s_Molecule_Box(VALUE self)
  *     set_box
  *
  *  Set the unit cell parameters. Avec, bvec, and cvec can be either a Vector3D or a number.
-    If it is a number, the x/y/z axis vector is multiplied with the given number and used
-    as the box vector.
-    Flags, if present, is a 3-member array of Integers defining whether the system is
-    periodic along the axis.
-    If convert_coordinates is true, then the coordinates are converted so that the fractional coordinates remain the same.
-    In the second form, an isotropic box with cell-length d is set.
-    In the third form, the existing box is cleared.
-    Note: the sigma of the cell parameters is not cleared unless the periodic box itself is cleared.
+ If it is a number, the x/y/z axis vector is multiplied with the given number and used
+ as the box vector.
+ Flags, if present, is a 3-member array of Integers defining whether the system is
+ periodic along the axis.
+ If convert_coordinates is true, then the coordinates are converted so that the fractional coordinates remain the same.
+ In the second form, an isotropic box with cell-length d is set.
+ In the third form, the existing box is cleared.
+ Note: the sigma of the cell parameters is not cleared unless the periodic box itself is cleared.
  */
 static VALUE
 s_Molecule_SetBox(VALUE self, VALUE aval)
@@ -5681,6 +5665,11 @@ s_Molecule_SetBox(VALUE self, VALUE aval)
 	Double d;
 	int i, convertCoordinates = 0;
     Data_Get_Struct(self, Molecule, mol);
+	if (aval == Qnil) {
+		MolActionCreateAndPerform(mol, gMolActionClearBox);
+		return self;
+	}
+	aval = rb_ary_to_ary(aval);
 	for (i = 0; i < 6; i++) {
 		if (i < RARRAY_LEN(aval))
 			v[i] = (RARRAY_PTR(aval))[i];
@@ -5726,6 +5715,59 @@ s_Molecule_SetBox(VALUE self, VALUE aval)
 
 /*
  *  call-seq:
+ *     cell_periodicity -> [n1, n2, n3]
+ *
+ *  Get flags denoting whether the cell is periodic along the a/b/c axes. If the cell is not defined
+ *  nil is returned.
+ */
+static VALUE
+s_Molecule_CellPeriodicity(VALUE self)
+{
+    Molecule *mol;
+    Data_Get_Struct(self, Molecule, mol);
+	if (mol->cell == NULL)
+		return Qnil;
+	return rb_ary_new3(3, INT2FIX((int)mol->cell->flags[0]), INT2FIX((int)mol->cell->flags[1]), INT2FIX((int)mol->cell->flags[2]));
+}
+
+/*
+ *  call-seq:
+ *     self.cell_periodicity = [n1, n2, n3] or Integer or nil
+ *     set_cell_periodicity = [n1, n2, n3] or Integer or nil
+ *
+ *  Set whether the cell is periodic along the a/b/c axes. If an integer is given as an argument,
+ *  its bits 2/1/0 (from the lowest) correspond to the a/b/c axes. Nil is equivalent to [0, 0, 0].
+ *  If cell is not defined, exception is raised.
+ *  This operation is undoable.
+ */
+static VALUE
+s_Molecule_SetCellPeriodicity(VALUE self, VALUE arg)
+{
+    Molecule *mol;
+	Int flag;
+    Data_Get_Struct(self, Molecule, mol);
+	if (mol->cell == NULL)
+		rb_raise(rb_eMolbyError, "periodic cell is not defined");
+	if (arg == Qnil)
+		flag = 0;
+	else if (rb_obj_is_kind_of(arg, rb_cNumeric))
+		flag = NUM2INT(rb_Integer(arg));
+	else {
+		Int i;
+		VALUE arg0;
+		arg = rb_ary_to_ary(arg);
+		for (i = 0; i < 3 && i < RARRAY_LEN(arg); i++) {
+			arg0 = RARRAY_PTR(arg)[i];
+			if (arg0 != Qnil && arg0 != Qfalse && arg0 != INT2FIX(0))
+				flag |= (1 << (2 - i));
+		}
+	}
+	MolActionCreateAndPerform(mol, gMolActionSetCellPeriodicity, flag);
+	return arg;
+}
+
+/*
+ *  call-seq:
  *     cell_flexibility -> bool
  *
  *  Returns the unit cell is flexible or not
@@ -5733,13 +5775,15 @@ s_Molecule_SetBox(VALUE self, VALUE aval)
 static VALUE
 s_Molecule_CellFlexibility(VALUE self)
 {
-    Molecule *mol;
+	rb_warn("cell_flexibility is obsolete (unit cell is always frame dependent)");
+	return Qtrue;
+/*    Molecule *mol;
     Data_Get_Struct(self, Molecule, mol);
 	if (mol->cell == NULL)
 		return Qfalse;
 	if (mol->useFlexibleCell)
 		return Qtrue;
-	else return Qfalse;
+	else return Qfalse; */
 }
 
 /*
@@ -5752,10 +5796,29 @@ s_Molecule_CellFlexibility(VALUE self)
 static VALUE
 s_Molecule_SetCellFlexibility(VALUE self, VALUE arg)
 {
-    Molecule *mol;
+	rb_warn("set_cell_flexibility is obsolete (unit cell is always frame dependent)");
+	return self;
+/*    Molecule *mol;
     Data_Get_Struct(self, Molecule, mol);
 	MolActionCreateAndPerform(mol, gMolActionSetCellFlexibility, RTEST(arg) != 0);
-	return self;
+	return self; */
+}
+
+/*
+ *  call-seq:
+ *     cell_transform -> Transform
+ *
+ *  Get the transform matrix that converts internal coordinates to cartesian coordinates.
+ *  If cell is not defined, nil is returned.
+ */
+static VALUE
+s_Molecule_CellTransform(VALUE self)
+{
+    Molecule *mol;
+    Data_Get_Struct(self, Molecule, mol);
+	if (mol == NULL || mol->cell == NULL)
+		return Qnil;
+	return ValueFromTransform(&(mol->cell->tr));
 }
 
 /*
@@ -9845,10 +9908,13 @@ Init_Molby(void)
 	rb_define_method(rb_cMolecule, "cell", s_Molecule_Cell, 0);
 	rb_define_method(rb_cMolecule, "cell=", s_Molecule_SetCell, -1);
 	rb_define_alias(rb_cMolecule, "set_cell", "cell=");
-	rb_define_method(rb_cMolecule, "cell_transform", s_Molecule_CellTransform, 0);
 	rb_define_method(rb_cMolecule, "box", s_Molecule_Box, 0);
 	rb_define_method(rb_cMolecule, "box=", s_Molecule_SetBox, 1);
 	rb_define_method(rb_cMolecule, "set_box", s_Molecule_SetBox, -2);
+	rb_define_method(rb_cMolecule, "cell_transform", s_Molecule_CellTransform, 0);
+	rb_define_method(rb_cMolecule, "cell_periodicity", s_Molecule_CellPeriodicity, 0);
+	rb_define_method(rb_cMolecule, "cell_periodicity=", s_Molecule_SetCellPeriodicity, 1);
+	rb_define_alias(rb_cMolecule, "set_cell_periodicity", "cell_periodicity=");
 	rb_define_method(rb_cMolecule, "cell_flexibility", s_Molecule_CellFlexibility, 0);
 	rb_define_method(rb_cMolecule, "cell_flexibility=", s_Molecule_SetCellFlexibility, 1);
 	rb_define_alias(rb_cMolecule, "set_cell_flexibility", "cell_flexibility=");

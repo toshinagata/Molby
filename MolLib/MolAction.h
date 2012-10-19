@@ -57,10 +57,11 @@ extern const char *gMolActionExpandBySymmetry;
 extern const char *gMolActionDeleteSymmetryOperation;
 extern const char *gMolActionAddSymmetryOperation;
 extern const char *gMolActionSetCell;
+extern const char *gMolActionSetCellPeriodicity;
 extern const char *gMolActionSetBox;
 extern const char *gMolActionClearBox;
-extern const char *gMolActionSetBoxForFrames;
-extern const char *gMolActionSetCellFlexibility;
+/*extern const char *gMolActionSetBoxForFrames; */
+/*extern const char *gMolActionSetCellFlexibility; */
 extern const char *gMolActionAddParameters;
 extern const char *gMolActionDeleteParameters;
 extern const char *gMolActionAmendBySymmetry;
