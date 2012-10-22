@@ -10303,14 +10303,116 @@ Molby_showError(int status)
 	gMolbyRunLevel--;
 }
 
+char *
+Molby_getDescription(void)
+{
+	extern const char *gVersionString, *gCopyrightString;
+	extern int gRevisionNumber;
+	extern char *gLastBuildString;
+	char *s;
+	char *revisionString;
+	if (gRevisionNumber > 0) {
+		asprintf(&revisionString, ", revision %d", gRevisionNumber);
+	} else revisionString = "";
+	asprintf(&s, 
+			 "Molby %s%s\n%s\n%s"
+#if !defined(__CMDMAC__)
+			 "\nIncluding:\n"
+			 "%s"
+#else
+			 "Including "
+#endif
+			 "ruby %s\n%s",
+			 gVersionString, revisionString, gCopyrightString, gLastBuildString,
+#if !defined(__CMDMAC__)
+			 MyAppCallback_getGUIDescriptionString(),
+#endif
+			 gRubyVersion, gRubyCopyright);
+	if (revisionString[0] != 0)
+		free(revisionString);
+	return s;
+}
+
 void
 Molby_startup(const char *script, const char *dir)
 {
 	VALUE val;
 	int status;
 	char *libpath;
-	char *respath, *p;
+	char *respath, *p, *wbuf;
 
+	/*  Get version/copyright string from Ruby interpreter  */
+	{
+		gRubyVersion = strdup(ruby_version);
+		asprintf(&gRubyCopyright, "%sCopyright (C) %d-%d %s",
+#if defined(__CMDMAC__)
+				 "",
+#else
+				 "  ",  /*  Indent for displaying in About dialog  */
+#endif
+				 RUBY_BIRTH_YEAR, RUBY_RELEASE_YEAR, RUBY_AUTHOR);
+	}
+	
+	/*  Read build and revision information for Molby  */
+	{
+		char buf[200];
+		extern int gRevisionNumber;
+		extern char *gLastBuildString;
+		FILE *fp = fopen("../buildInfo.txt", "r");
+		gLastBuildString = "";
+		if (fp != NULL) {
+			if (fgets(buf, sizeof(buf), fp) != NULL) {
+				char *p1 = strchr(buf, '\"');
+				char *p2 = strrchr(buf, '\"');
+				if (p1 != NULL && p2 != NULL && p2 - p1 > 1) {
+					memmove(buf, p1 + 1, p2 - p1 - 1);
+					buf[p2 - p1 - 1] = 0;
+					asprintf(&gLastBuildString, "Last compile: %s\n", buf);
+				}
+			}
+			fclose(fp);
+		}
+		fp = fopen("../revisionInfo.txt", "r");
+		gRevisionNumber = 0;
+		if (fp != NULL) {
+			if (fgets(buf, sizeof(buf), fp) != NULL) {
+				gRevisionNumber = strtol(buf, NULL, 0);
+			}
+			fclose(fp);
+		}
+		
+#if defined(__CMDMAC__)
+		wbuf = Molby_getDescription();
+		printf("%s\n", wbuf);
+		free(wbuf);
+#endif
+	}
+	
+	/*  Read atom display parameters  */
+	if (ElementParameterInitialize("element.par", &wbuf) != 0) {
+#if defined(__CMDMAC__)
+		fprintf(stderr, "%s\n", wbuf);
+#else
+		MyAppCallback_setConsoleColor(1);
+		MyAppCallback_showScriptMessage("%s", wbuf);
+		MyAppCallback_setConsoleColor(0);
+#endif
+		free(wbuf);
+	}
+	
+	/*  Read default parameters  */
+	ParameterReadFromFile(gBuiltinParameters, "default.par", &wbuf, NULL);
+	if (wbuf != NULL) {
+#if defined(__CMDMAC__)
+		fprintf(stderr, "%s\n", wbuf);
+#else
+		MyAppCallback_setConsoleColor(1);
+		MyAppCallback_showScriptMessage("%s", wbuf);
+		MyAppCallback_setConsoleColor(0);
+#endif
+		free(wbuf);
+	}
+		
 	/*  Initialize Ruby interpreter  */
 	ruby_init();
 	
@@ -10346,6 +10448,12 @@ Molby_startup(const char *script, const char *dir)
 	rb_define_const(rb_mMolby, "MbsfPath", val);	
 	free(p);
 	
+#if defined(__CMDMAC__)
+	rb_define_const(rb_mMolby, "HasGUI", Qfalse);
+#else
+	rb_define_const(rb_mMolby, "HasGUI", Qtrue);
+#endif
+
 #if !__CMDMAC__
 	
 	/*  Create objects for stdout and stderr  */
@@ -10372,13 +10480,6 @@ Molby_startup(const char *script, const char *dir)
 	/*  Register interrupt check code  */
 	rb_add_event_hook(s_Event_Callback, RUBY_EVENT_ALL);
 #endif
-	
-	/*  Get version/copyright string from Ruby interpreter  */
-	{
-		gRubyVersion = strdup(ruby_version);
-		asprintf(&gRubyCopyright, "  Copyright (C) %d-%d %s",
-				 RUBY_BIRTH_YEAR, RUBY_RELEASE_YEAR, RUBY_AUTHOR);
-	}
 	
 #if !__CMDMAC__
 	/*  Start interval timer (for periodic polling of interrupt); firing every 50 msec  */

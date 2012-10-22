@@ -18,3 +18,4 @@
 const char *gVersionString = "v0.6.4";
 const char *gCopyrightString = "Copyright (c) 2008-2011 Toshi Nagata";
 int gRevisionNumber = 0;
+char *gLastBuildString = (char *)0;

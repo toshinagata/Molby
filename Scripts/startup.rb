@@ -39,8 +39,10 @@ def backtrace
   end
 end
 
-def exit(val = nil)
-  throw(:molby_top, val)
+if Molby::HasGUI
+  def exit(val = nil)
+    throw(:molby_top, val)
+  end
 end
 
 load "transform.rb"

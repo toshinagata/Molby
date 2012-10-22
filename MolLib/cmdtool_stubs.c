@@ -273,7 +273,6 @@ int
 main(int argc, const char **argv)
 {
 	int fd;
-	char *wbuf;
 	char *scriptdir;
 	static const char fname[] = "startup.rb";
 	char *molbydir = getenv("MOLBYDIR");
@@ -284,19 +283,6 @@ main(int argc, const char **argv)
 	asprintf(&scriptdir, "%s%cScripts", molbydir, PATH_SEPARATOR);
 	fd = open(".", O_RDONLY);
 	chdir(scriptdir);
-	
-	/*  Read atom display parameters  */
-	if (ElementParameterInitialize("element.par", &wbuf) != 0) {
-		fprintf(stderr, "%s\n", wbuf);
-		free(wbuf);
-	}
-	
-	/*  Read default parameters  */
-	ParameterReadFromFile(gBuiltinParameters, "default.par", &wbuf, NULL);
-	if (wbuf != NULL) {
-		fprintf(stderr, "%s\n", wbuf);
-		free(wbuf);
-	}
 	
 	Molby_startup(fname, scriptdir);
 

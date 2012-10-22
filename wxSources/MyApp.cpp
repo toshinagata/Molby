@@ -72,8 +72,6 @@
 
 #pragma mark ====== MyApp ======
 
-static char *sLastBuildString = "";
-
 MyFrame *frame = (MyFrame *) NULL;
 
 IMPLEMENT_APP(MyApp)
@@ -286,60 +284,14 @@ bool MyApp::OnInit(void)
 	/*  Initialize Ruby interpreter with the startup script  */
 	/*  (Also read startup information)  */
 	{
+		extern int gRevisionNumber;
 		static const char fname[] = "startup.rb";
 		wxString dirname = FindResourcePath();
-		char *wbuf;
 	
 		dirname += wxFILE_SEP_PATH;
 		dirname += wxT("Scripts");
 	/*	wxString cwd = wxGetCwd(); */
 		wxSetWorkingDirectory(dirname);
-
-		/*  Read build and revision information (for About dialog)  */
-		{
-			char buf[200];
-			extern int gRevisionNumber;
-			FILE *fp = fopen("../buildInfo.txt", "r");
-			if (fp != NULL) {
-				if (fgets(buf, sizeof(buf), fp) != NULL) {
-					char *p1 = strchr(buf, '\"');
-					char *p2 = strrchr(buf, '\"');
-					if (p1 != NULL && p2 != NULL && p2 - p1 > 1) {
-						memmove(buf, p1 + 1, p2 - p1 - 1);
-						buf[p2 - p1 - 1] = 0;
-						asprintf(&sLastBuildString, "Last compile: %s\n", buf);
-					}
-				}
-				fclose(fp);
-			}
-			fp = fopen("../revisionInfo.txt", "r");
-			gRevisionNumber = 0;
-			if (fp != NULL) {
-				if (fgets(buf, sizeof(buf), fp) != NULL) {
-					gRevisionNumber = strtol(buf, NULL, 0);
-				}
-				fclose(fp);
-			}
-			asprintf(&gMoleculePasteboardType, "Molecule_%d", gRevisionNumber);
-			asprintf(&gParameterPasteboardType, "Parameter_%d", gRevisionNumber);
-		}
-		
-		/*  Read atom display parameters  */
-		if (ElementParameterInitialize("element.par", &wbuf) != 0) {
-			SetConsoleColor(1);
-			AppendConsoleMessage(wbuf);
-			SetConsoleColor(0);
-			free(wbuf);
-		}
-		
-		/*  Read default parameters  */
-		ParameterReadFromFile(gBuiltinParameters, "default.par", &wbuf, NULL);
-		if (wbuf != NULL) {
-			SetConsoleColor(1);
-			AppendConsoleMessage(wbuf);
-			SetConsoleColor(0);
-			free(wbuf);
-		}
 
 		wxString fnamestr(fname, wxConvFile);
 		Molby_startup(wxFileExists(fnamestr) ? fname : NULL, (const char *)dirname.mb_str(wxConvFile));
@@ -349,6 +301,10 @@ bool MyApp::OnInit(void)
 			wxSetWorkingDirectory(docHome);
 			
 		}
+
+		/*  Pasteboard type strings (includes the revision number)  */
+		asprintf(&gMoleculePasteboardType, "Molecule_%d", gRevisionNumber);
+		asprintf(&gParameterPasteboardType, "Parameter_%d", gRevisionNumber);
 
 		MyAppCallback_showScriptMessage("%% ");
 		
@@ -1450,32 +1406,11 @@ MyFrame::MyFrame(wxDocManager *manager, wxFrame *frame, const wxString& title,
 
 void MyFrame::OnAbout(wxCommandEvent& WXUNUSED(event) )
 {
-	extern const char *gVersionString, *gCopyrightString;
-	extern int gRevisionNumber;
 	char *s;
-	char *revisionString;
-	if (gRevisionNumber > 0) {
-		asprintf(&revisionString, ", revision %d", gRevisionNumber);
-	} else revisionString = "";
-	asprintf(&s, 
-			 "Molby %s%s\n%s\n%s\n"
-			 "Including:\n"
-			 "AmberTools 1.3, http://ambermd.org/\n"
-			 "  Copyright (c) Junmei Wang, Ross C. Walker, \n"
-			 "  Michael F. Crowley, Scott Brozell and David A. Case\n"
-			 "wxWidgets %d.%d.%d, Copyright (c) 1992-2008 Julian Smart, \n"
-			 "  Robert Roebling, Vadim Zeitlin and other members of the \n"
-			 "  wxWidgets team\n"
-			 "  Portions (c) 1996 Artificial Intelligence Applications Institute\n"
-			 "ruby %s\n%s",
-			 gVersionString, revisionString, gCopyrightString, sLastBuildString,
-			 wxMAJOR_VERSION, wxMINOR_VERSION, wxRELEASE_NUMBER,
-			 gRubyVersion, gRubyCopyright);
+	s = Molby_getDescription();
 	wxString str(s, WX_DEFAULT_CONV);
     (void)wxMessageBox(str, _T("Molby"));
 	free(s);
-	if (revisionString[0] != 0)
-		free(revisionString);
 }
 
 MyFrame *GetMainFrame(void)
@@ -1484,6 +1419,24 @@ MyFrame *GetMainFrame(void)
 }
 
 #pragma mark ====== Plain-C interface ======
+
+char *
+MyAppCallback_getGUIDescriptionString(void)
+{
+	static char *desc = NULL;
+	if (desc == NULL) {
+		asprintf(&desc,
+			"AmberTools 1.3, http://ambermd.org/\n"
+			"  Copyright (c) Junmei Wang, Ross C. Walker, \n"
+			"  Michael F. Crowley, Scott Brozell and David A. Case\n"
+			"wxWidgets %d.%d.%d, Copyright (c) 1992-2008 Julian Smart, \n"
+			"  Robert Roebling, Vadim Zeitlin and other members of the \n"
+			"  wxWidgets team\n"
+			"  Portions (c) 1996 Artificial Intelligence Applications Institute\n",
+			wxMAJOR_VERSION, wxMINOR_VERSION, wxRELEASE_NUMBER);
+	}
+	return desc;
+}
 
 void
 MyAppCallback_loadGlobalSettings(void)
