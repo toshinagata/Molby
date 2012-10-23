@@ -507,7 +507,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "export TARGET_PLATFORM=MAC\nexport PATH=/usr/local/bin:$PATH\n#if [ \"$BUILD_STYLE\" = \"Release\" ]; then\n#  cd $PROJECT_DIR/..\n#  /usr/bin/ruby \"update_version.rb\"\n#  cd Documents\n#  /usr/bin/ruby \"makedoc.rb\"\n#fi\n(cd $PROJECT_DIR; sh ../record_build_date.sh --with-svn-status)\n(cd $PROJECT_DIR; make -f ../Makefile_amber11)\n";
+			shellScript = "export TARGET_PLATFORM=MAC\nexport PATH=/usr/local/bin:$PATH\n(cd $PROJECT_DIR; sh ../record_build_date.sh --with-svn-status)\nif [ \"$BUILD_STYLE\" = \"Release\" ]; then\n  (cd $PROJECT_DIR/..; /usr/bin/ruby \"update_version.rb\")\n  (cd $PROJECT_DIR/../Documents; /usr/bin/ruby \"makedoc.rb\")\nfi\n(cd $PROJECT_DIR; make -f ../Makefile_amber11)\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 

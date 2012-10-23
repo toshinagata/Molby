@@ -28,9 +28,9 @@ def modify_file(name, &block)
   ary = IO.readlines(name) rescue return
   modified = false
   ary.each_with_index { |s, i|
-    s = block.call(s)
-    if s
-      ary[i] = s
+    s1 = block.call(s.dup)
+    if s1 && s1 != s
+      ary[i] = s1
       modified = true
     end
   }
@@ -80,6 +80,8 @@ modify_file("msw-build/molby.iss") { |s|
 #  Modify MyVersion.c
 modify_file("wxSources/MyVersion.c") { |s|
   if s =~ /Version/ && s.sub!(/\".*\"/, "\"#{verstr}\"")
+    s
+  elsif s =~ /Copyright/ && s =~ /Toshi Nagata/ && s.sub!(/\d\d\d\d(-\d\d\d\d)?/, yrange)
     s
   else
     nil

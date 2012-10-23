@@ -3,7 +3,7 @@
  *  Molby
  *
  *  Created by Toshi Nagata on 09/10/16.
- *  Copyright 2008 Toshi Nagata. All rights reserved.
+ *  Copyright 2008-2012 Toshi Nagata. All rights reserved.
  *
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -16,6 +16,6 @@
  */
 
 const char *gVersionString = "v0.6.4";
-const char *gCopyrightString = "Copyright (c) 2008-2011 Toshi Nagata";
+const char *gCopyrightString = "Copyright (c) 2008-2012 Toshi Nagata";
 int gRevisionNumber = 0;
 char *gLastBuildString = (char *)0;

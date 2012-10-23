@@ -295,11 +295,9 @@ body.each_element_with_attribute('file') { |ef|
 	system("cd #{base_dir}/#{lang}; sed 's!/>! />!g' _#{file} >#{file}; rm _#{file}")
   end
 }
-target_dir = "../doc"
+
 system("cp -r -p etc #{base_dir}; rm -rf #{base_dir}/etc/CVS #{base_dir}/etc/.svn #{base_dir}/etc/.DS_Store") 
 system("cp -r -p src/molby_rb #{base_dir}/en; rm -rf #{base_dir}/en/molby_rb/CVS #{base_dir}/en/molby_rb/.svn")
 system("cp -r -p #{base_dir}/en/molby_rb #{base_dir}/ja")
-system("rm -rf #{target_dir}/*")
-system("mv #{base_dir}/* #{target_dir}")
-system("rmdir #{base_dir}")
-print "Documents were successfully created in #{target_dir}/{en,ja}.\n"
+print "Documents were successfully created in #{base_dir}/{en,ja}.\n"
+exit 0
