@@ -94,17 +94,21 @@ $(DESTPREFIX)/Ruby_bind.a : ../MolLib/Ruby_bind/*.[ch]
 ALL_OBJECTS = $(OBJECTS) $(EXTRA_OBJECTS) $(LIBS) $(RESOURCE)
 DESTOBJECTS = $(addprefix $(DESTPREFIX)/,$(ALL_OBJECTS))
 $(DESTPREFIX)/$(EXECUTABLE) : $(DESTOBJECTS)
-	$(CC) -o $@ $(DESTOBJECTS) $(CFLAGS) $(LDFLAGS)
+ifeq ($(TARGET_PLATFORM),MAC)
+	sh ../record_build_date.sh --with-svn-status
+endif
+ifeq ($(TARGET_PLATFORM),MSW)
+	sh ../record_build_date.sh
+endif
+	$(CC) -c $(DESTPREFIX)/buildInfo.c -o $(DESTPREFIX)/buildInfo.o
+	$(CC) -o $@ $(DESTOBJECTS) $(DESTPREFIX)/buildInfo.o $(CFLAGS) $(LDFLAGS)
 
 $(DESTPREFIX)/$(PRODUCT) : $(DESTPREFIX)/$(EXECUTABLE) ../Scripts/*.rb amber11
 ifeq ($(TARGET_PLATFORM),MAC)
-	sh ../record_build_date.sh --with-svn-status
 	rm -rf $(DESTPREFIX)/$(PRODUCT)
 	mkdir -p $(DESTPREFIX)/$(PRODUCT)/Contents/MacOS
 	mkdir -p $(DESTPREFIX)/$(PRODUCT)/Contents/Resources
 	cp -f Info.plist $(DESTPREFIX)/$(PRODUCT)/Contents
-	cp -f buildInfo.txt $(DESTPREFIX)/$(PRODUCT)/Contents/Resources
-	cp -f ../revisionInfo.txt $(DESTPREFIX)/$(PRODUCT)/Contents/Resources
 	echo -n "APPL????" > $(DESTPREFIX)/$(PRODUCT)/Contents/PkgInfo
 	cp -r ../Scripts $(DESTPREFIX)/$(PRODUCT)/Contents/Resources
 	cp -r amber11 $(DESTPREFIX)/$(PRODUCT)/Contents/Resources
@@ -113,13 +117,10 @@ ifeq ($(TARGET_PLATFORM),MAC)
 	cp $(DESTPREFIX)/$(EXECUTABLE) $(DESTPREFIX)/$(PRODUCT)/Contents/MacOS
 endif
 ifeq ($(TARGET_PLATFORM),MSW)
-	sh ../record_build_date.sh
 	rm -rf $(DESTPREFIX)/$(PRODUCT_DIR)
 	mkdir -p $(DESTPREFIX)/$(PRODUCT_DIR)
 	cp $(DESTPREFIX)/$(EXECUTABLE) $(DESTPREFIX)/$(PRODUCT_DIR)/$(FINAL_EXECUTABLE)
 	cp `which mingwm10.dll` $(DESTPREFIX)/$(PRODUCT_DIR)
-	cp -f buildInfo.txt $(DESTPREFIX)/$(PRODUCT_DIR)
-	if [ -e ../revisionInfo.txt ]; then cp -f ../revisionInfo.txt $(DESTPREFIX)/$(PRODUCT_DIR); fi
 	cp -r ../Scripts $(DESTPREFIX)/$(PRODUCT_DIR)
 	cp -r amber11 $(DESTPREFIX)/$(PRODUCT_DIR)
 	mkdir -p $(DESTPREFIX)/$(PRODUCT_DIR)/Scripts/lib

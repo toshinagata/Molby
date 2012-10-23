@@ -10316,7 +10316,7 @@ Molby_getDescription(void)
 		asprintf(&revisionString, ", revision %d", gRevisionNumber);
 	} else revisionString = "";
 	asprintf(&s, 
-			 "Molby %s%s\n%s\n%s"
+			 "Molby %s%s\n%s\nLast compile: %s\n"
 #if !defined(__CMDMAC__)
 			 "\nIncluding:\n"
 			 "%s"
@@ -10355,7 +10355,7 @@ Molby_startup(const char *script, const char *dir)
 	}
 	
 	/*  Read build and revision information for Molby  */
-	{
+/*	{
 		char buf[200];
 		extern int gRevisionNumber;
 		extern char *gLastBuildString;
@@ -10381,13 +10381,13 @@ Molby_startup(const char *script, const char *dir)
 			}
 			fclose(fp);
 		}
-		
+    } */
+
 #if defined(__CMDMAC__)
-		wbuf = Molby_getDescription();
-		printf("%s\n", wbuf);
-		free(wbuf);
+	wbuf = Molby_getDescription();
+	printf("%s\n", wbuf);
+	free(wbuf);
 #endif
-	}
 	
 	/*  Read atom display parameters  */
 	if (ElementParameterInitialize("element.par", &wbuf) != 0) {

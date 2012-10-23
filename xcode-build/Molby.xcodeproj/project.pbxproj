@@ -15,7 +15,6 @@
 		E42D8AFA1030193F00C20247 /* MDForce.c in Sources */ = {isa = PBXBuildFile; fileRef = E42D8AF31030193F00C20247 /* MDForce.c */; };
 		E42D8AFB1030193F00C20247 /* MDPressure.c in Sources */ = {isa = PBXBuildFile; fileRef = E42D8AF61030193F00C20247 /* MDPressure.c */; };
 		E42D8BB31031BB2900C20247 /* ruby_md.c in Sources */ = {isa = PBXBuildFile; fileRef = E42D8BB21031BB2900C20247 /* ruby_md.c */; };
-		E42F28C013FE1052003FC85E /* buildInfo.txt in Resources */ = {isa = PBXBuildFile; fileRef = E42F28BF13FE1052003FC85E /* buildInfo.txt */; };
 		E43226E30ECE8681004963D7 /* MySlider.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E43226E20ECE8681004963D7 /* MySlider.cpp */; };
 		E433CE790EC7099B00675985 /* ruby_bind.c in Sources */ = {isa = PBXBuildFile; fileRef = E433CE760EC7099B00675985 /* ruby_bind.c */; };
 		E433CE900EC709BD00675985 /* IntGroup.c in Sources */ = {isa = PBXBuildFile; fileRef = E433CE7C0EC709BD00675985 /* IntGroup.c */; };
@@ -42,7 +41,6 @@
 		E43CCDE00EB20F0F00108D2D /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E43CCDD70EB20F0F00108D2D /* OpenGL.framework */; };
 		E43CCDE10EB20F0F00108D2D /* QuickTime.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E43CCDD80EB20F0F00108D2D /* QuickTime.framework */; };
 		E43CCDE20EB20F0F00108D2D /* System.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E43CCDD90EB20F0F00108D2D /* System.framework */; };
-		E441806315BEA63000289B87 /* revisionInfo.txt in Resources */ = {isa = PBXBuildFile; fileRef = E441806215BEA63000289B87 /* revisionInfo.txt */; };
 		E445145315F1DA5B0050171E /* MainViewCommon.c in Sources */ = {isa = PBXBuildFile; fileRef = E445145215F1DA5B0050171E /* MainViewCommon.c */; };
 		E445145415F1DA5B0050171E /* MainViewCommon.c in Sources */ = {isa = PBXBuildFile; fileRef = E445145215F1DA5B0050171E /* MainViewCommon.c */; };
 		E44CEED6100E1E9C0040BD51 /* ProgressFrame.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E44CEED4100E1E9C0040BD51 /* ProgressFrame.cpp */; };
@@ -56,6 +54,8 @@
 		E4A02357106B657D0094DBF8 /* Scripts in Resources */ = {isa = PBXBuildFile; fileRef = E4A0234A106B657D0094DBF8 /* Scripts */; };
 		E4A1802811897F8600B394E7 /* wxKillAddition.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E4A1802711897F8600B394E7 /* wxKillAddition.cpp */; };
 		E4A4667610C15B4300E40A9D /* listctrl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E4A4667410C15B4300E40A9D /* listctrl.cpp */; };
+		E4A66F0F16365653003EE03A /* buildInfo.c in Sources */ = {isa = PBXBuildFile; fileRef = E4A66F0E16365653003EE03A /* buildInfo.c */; };
+		E4A66F1016365653003EE03A /* buildInfo.c in Sources */ = {isa = PBXBuildFile; fileRef = E4A66F0E16365653003EE03A /* buildInfo.c */; };
 		E4C0C4960F25734B00161EC2 /* Dcd.c in Sources */ = {isa = PBXBuildFile; fileRef = E4C0C4950F25734B00161EC2 /* Dcd.c */; };
 		E4C8CBDF10B83060006C4692 /* MyDocManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E4C8CBDE10B83060006C4692 /* MyDocManager.cpp */; };
 		E4CFBB3B111096CF0081C481 /* amber11 in Resources */ = {isa = PBXBuildFile; fileRef = E4CFBB16111096CF0081C481 /* amber11 */; };
@@ -103,7 +103,6 @@
 		E42D8AF61030193F00C20247 /* MDPressure.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = MDPressure.c; sourceTree = "<group>"; };
 		E42D8AF71030193F00C20247 /* MDPressure.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MDPressure.h; sourceTree = "<group>"; };
 		E42D8BB21031BB2900C20247 /* ruby_md.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ruby_md.c; sourceTree = "<group>"; };
-		E42F28BF13FE1052003FC85E /* buildInfo.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = buildInfo.txt; sourceTree = "<group>"; };
 		E43226E10ECE8681004963D7 /* MySlider.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MySlider.h; path = ../wxSources/MySlider.h; sourceTree = SOURCE_ROOT; };
 		E43226E20ECE8681004963D7 /* MySlider.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = MySlider.cpp; path = ../wxSources/MySlider.cpp; sourceTree = SOURCE_ROOT; };
 		E433CE740EC7099B00675985 /* Molby_extern.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Molby_extern.h; path = ../MolLib/Ruby_bind/Molby_extern.h; sourceTree = SOURCE_ROOT; };
@@ -151,7 +150,6 @@
 		E43CCDD70EB20F0F00108D2D /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = /System/Library/Frameworks/OpenGL.framework; sourceTree = "<absolute>"; };
 		E43CCDD80EB20F0F00108D2D /* QuickTime.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuickTime.framework; path = /System/Library/Frameworks/QuickTime.framework; sourceTree = "<absolute>"; };
 		E43CCDD90EB20F0F00108D2D /* System.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = System.framework; path = /System/Library/Frameworks/System.framework; sourceTree = "<absolute>"; };
-		E441806215BEA63000289B87 /* revisionInfo.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = revisionInfo.txt; path = ../revisionInfo.txt; sourceTree = SOURCE_ROOT; };
 		E445145215F1DA5B0050171E /* MainViewCommon.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = MainViewCommon.c; sourceTree = "<group>"; };
 		E44CEED4100E1E9C0040BD51 /* ProgressFrame.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ProgressFrame.cpp; path = ../wxSources/ProgressFrame.cpp; sourceTree = SOURCE_ROOT; };
 		E44CEED5100E1E9C0040BD51 /* ProgressFrame.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ProgressFrame.h; path = ../wxSources/ProgressFrame.h; sourceTree = SOURCE_ROOT; };
@@ -170,6 +168,7 @@
 		E4A0234A106B657D0094DBF8 /* Scripts */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Scripts; path = ../Scripts; sourceTree = SOURCE_ROOT; };
 		E4A1802711897F8600B394E7 /* wxKillAddition.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = wxKillAddition.cpp; path = ../wxSources/wxKillAddition.cpp; sourceTree = SOURCE_ROOT; };
 		E4A4667410C15B4300E40A9D /* listctrl.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = listctrl.cpp; path = ../wxSources/listctrl.cpp; sourceTree = SOURCE_ROOT; };
+		E4A66F0E16365653003EE03A /* buildInfo.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = buildInfo.c; path = build/buildInfo.c; sourceTree = "<group>"; };
 		E4C0C4940F25734B00161EC2 /* Dcd.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Dcd.h; sourceTree = "<group>"; };
 		E4C0C4950F25734B00161EC2 /* Dcd.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = Dcd.c; sourceTree = "<group>"; };
 		E4C8CBDD10B83060006C4692 /* MyDocManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MyDocManager.h; path = ../wxSources/MyDocManager.h; sourceTree = SOURCE_ROOT; };
@@ -254,6 +253,7 @@
 			isa = PBXGroup;
 			children = (
 				E43CCF150EB3229800108D2D /* wxSources */,
+				E4A66F0E16365653003EE03A /* buildInfo.c */,
 			);
 			name = Sources;
 			sourceTree = "<group>";
@@ -400,8 +400,6 @@
 				E4CFBB16111096CF0081C481 /* amber11 */,
 				E4A0233F106B652F0094DBF8 /* InfoPlist.strings */,
 				E4A0233B106B651C0094DBF8 /* Info.plist */,
-				E42F28BF13FE1052003FC85E /* buildInfo.txt */,
-				E441806215BEA63000289B87 /* revisionInfo.txt */,
 			);
 			name = Resources;
 			sourceTree = "<group>";
@@ -488,8 +486,6 @@
 				E4A02347106B65640094DBF8 /* molby_icon.icns in Resources */,
 				E4A02357106B657D0094DBF8 /* Scripts in Resources */,
 				E4CFBB3B111096CF0081C481 /* amber11 in Resources */,
-				E42F28C013FE1052003FC85E /* buildInfo.txt in Resources */,
-				E441806315BEA63000289B87 /* revisionInfo.txt in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -556,6 +552,7 @@
 				9E12580F119EC42E00E95DC3 /* docview.cpp in Sources */,
 				E445145415F1DA5B0050171E /* MainViewCommon.c in Sources */,
 				E4ED76E516256FC5006A1820 /* MyIPCSupport.cpp in Sources */,
+				E4A66F0F16365653003EE03A /* buildInfo.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -583,6 +580,7 @@
 				E4D5ADA611808A2C00B1D8A4 /* cmdtool_stubs.c in Sources */,
 				9ECE828311A191A2001B435E /* Trackball.c in Sources */,
 				E445145315F1DA5B0050171E /* MainViewCommon.c in Sources */,
+				E4A66F1016365653003EE03A /* buildInfo.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
