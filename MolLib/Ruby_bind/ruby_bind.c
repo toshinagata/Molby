@@ -7082,14 +7082,16 @@ static VALUE
 s_Molecule_GetCoordFromFrame(int argc, VALUE *argv, VALUE self)
 {
 	Molecule *mol;
-	VALUE ival, gval;
+	VALUE ival, gval, cval;
 	Int index, i, j, n, nn;
 	IntGroup *ig;
 	IntGroupIterator iter;
 	Atom *ap;
 	Vector *vp;
     Data_Get_Struct(self, Molecule, mol);
-	rb_scan_args(argc, argv, "11", &ival, &gval);
+	rb_scan_args(argc, argv, "12", &ival, &gval, &cval);
+	if (argc == 3)
+		rb_warn("The 3rd argument to get_coord_from_frame() is now obsolete");
 	index = NUM2INT(rb_Integer(ival));
 	if (index < 0 || index >= (n = MoleculeGetNumberOfFrames(mol))) {
 		if (n == 0)
