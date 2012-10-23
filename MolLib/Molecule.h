@@ -350,7 +350,7 @@ int MoleculeLoadGaussianFchkFile(Molecule *mp, const char *fname, char *errbuf, 
 int MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsize);
 Molecule *MoleculeNewWithName(const char *name);
 Molecule *MoleculeInitWithAtoms(Molecule *mp, const Atom *atoms, int natoms);
-Molecule *MoleculeInitWithMolecule(Molecule *mp2, const Molecule *mp);
+Molecule *MoleculeInitWithMolecule(Molecule *mp2, Molecule *mp);
 void MoleculeSetName(Molecule *par, const char *name);
 const char *MoleculeGetName(Molecule *mp);
 void MoleculeSetPath(Molecule *mol, const char *fname);

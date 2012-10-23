@@ -7072,23 +7072,24 @@ s_Molecule_GetAtomAttr(VALUE self, VALUE idx, VALUE key)
 
 /*
  *  call-seq:
- *     get_coord_from_frame(index, group = nil, cflag = nil)
+ *     get_coord_from_frame(index, group = nil)
  *
  *  Copy the coordinates from the indicated frame. If group is specified, only the specified atoms
- *  are modified. If cflag is true, the cell parameter is also copied (if present).
+ *  are modified. Third argument (cflag) is now obsolete (it used to specify whether the cell parameters are to be
+ *  copied; now they are always copied)
  */
 static VALUE
 s_Molecule_GetCoordFromFrame(int argc, VALUE *argv, VALUE self)
 {
 	Molecule *mol;
-	VALUE ival, gval, cval;
+	VALUE ival, gval;
 	Int index, i, j, n, nn;
 	IntGroup *ig;
 	IntGroupIterator iter;
 	Atom *ap;
 	Vector *vp;
     Data_Get_Struct(self, Molecule, mol);
-	rb_scan_args(argc, argv, "12", &ival, &gval, &cval);
+	rb_scan_args(argc, argv, "11", &ival, &gval);
 	index = NUM2INT(rb_Integer(ival));
 	if (index < 0 || index >= (n = MoleculeGetNumberOfFrames(mol))) {
 		if (n == 0)
@@ -7120,7 +7121,7 @@ s_Molecule_GetCoordFromFrame(int argc, VALUE *argv, VALUE self)
 		if (nn > 0)
 			MolActionCreateAndPerform(mol, gMolActionSetAtomPositions, ig, n, vp);
 		free(vp);
-		if (RTEST(cval) && mol->cell != NULL && mol->frame_cells != NULL && index < mol->nframe_cells) {
+		if (mol->cell != NULL && mol->frame_cells != NULL && index < mol->nframe_cells) {
 			vp = mol->frame_cells + index * 4;
 			MolActionCreateAndPerform(mol, gMolActionSetBox, vp, vp + 1, vp + 2, vp + 3, -1, 0);
 		}

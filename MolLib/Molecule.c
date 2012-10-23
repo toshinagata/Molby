@@ -329,7 +329,7 @@ MoleculeInitWithAtoms(Molecule *mp, const Atom *atoms, int natoms)
 }
 
 Molecule *
-MoleculeInitWithMolecule(Molecule *mp2, const Molecule *mp)
+MoleculeInitWithMolecule(Molecule *mp2, Molecule *mp)
 {
 	int i;
 	MoleculeFlushFrames(mp);
@@ -9748,16 +9748,15 @@ MoleculeInsertFrames(Molecule *mp, IntGroup *group, const Vector *inFrame, const
 			vp[j] = ap->r;
 		ap->frames = vp;
 	}
-	if (mp->cell != NULL && inFrameCell != NULL) {
-	/*	mp->useFlexibleCell = 1; */
-		vp = mp->frame_cells;
+	if (mp->cell != NULL) {
+		j = mp->nframe_cells;
 		AssignArray(&mp->frame_cells, &mp->nframe_cells, sizeof(Vector) * 4, n_new - 1, NULL);
-		if (vp == NULL) {
-			/*  Set the first cell parameters  */
-			mp->frame_cells[0] = mp->cell->axes[0];
-			mp->frame_cells[1] = mp->cell->axes[1];
-			mp->frame_cells[2] = mp->cell->axes[2];
-			mp->frame_cells[3] = mp->cell->origin;
+		for (i = j; i < n_new; i++) {
+			/*  Set the current cell parameters to the expanded frames  */
+			mp->frame_cells[i * 4] = mp->cell->axes[0];
+			mp->frame_cells[i * 4 + 1] = mp->cell->axes[1];
+			mp->frame_cells[i * 4 + 2] = mp->cell->axes[2];
+			mp->frame_cells[i * 4 + 3] = mp->cell->origin;
 		}
 	}
 	
