@@ -476,14 +476,15 @@ s_calc_pibond_force(MDArena *arena)
 	Int *pibonds = arena->mol->pibonds;
 	UnionPar *pars = arena->pi_pars;
 	Double energy, val, valk1;
+	Int idx;
 //	Double *energies = &arena->energies[kAngleIndex];
 //	Vector *forces = &arena->forces[kAngleIndex * arena->mol->natoms];
 	Int i;
 	for (i = 0; i < npibonds; i++, pibonds += 4, pars++) {
 		Vector r[4];
-		Vector f[4];
+		Vector f[4], *forces;
 		PiAtom *pp[4];
-		Int j, n;
+		Int j, k, n;
 		for (j = 0; j < 4; j++) {
 			n = pibonds[j];
 			if (n < 0)
@@ -512,21 +513,41 @@ s_calc_pibond_force(MDArena *arena)
 			if (arena->debug_result && arena->debug_output_level > 1) {
 				fprintf(arena->debug_result, "pi bond force %d-%d: r=%f, r0=%f, k1=%f, {%f %f %f}\n", pibonds[0]+1, pibonds[1]+1, w1, pars->bond.r0, k1, r12.x, r12.y, r12.z);
 			}
+			idx = kBondIndex;
 		} else if (j == 3) {  /*  Angle  */
 			if (s_calc_angle_force_one(&r[0], &r[1], &r[2], &pars->angle, &val, &energy, &valk1, &f[0], &f[1], &f[2]) != 0)
 				continue;
 			if (arena->debug_result && arena->debug_output_level > 1) {
 				fprintf(arena->debug_result, "pi angle force %d-%d-%d: a=%f, a0=%f, k1=%f, {%f %f %f}, {%f %f %f}\n", pibonds[0]+1, pibonds[1]+1, pibonds[2]+1, val*180/PI, pars->angle.a0*180/PI, energy, f[0].x, f[0].y, f[0].z, f[1].x, f[1].y, f[1].z);
 			}
+			idx = kAngleIndex;
 		} else if (j == 4) {  /*  Dihedral  */
 			if (s_calc_dihedral_force_one(&r[0], &r[1], &r[2], &r[3], &pars->torsion, &val, &energy, &valk1, &f[0], &f[1], &f[2], &f[3]) != 0)
 				continue;
 			if (arena->debug_result && arena->debug_output_level > 1) {
 				fprintf(arena->debug_result, "pi dihedral force %d-%d-%d-%d: phi=%f, k1=%f, {%f %f %f}, {%f %f %f}, {%f %f %f}\n", pibonds[0]+1, pibonds[1]+1, pibonds[2]+1, pibonds[3]+1, val*180/PI, energy, f[0].x, f[0].y, f[0].z, f[1].x, f[1].y, f[1].z, f[2].x, f[2].y, f[2].z);
 			}
-		} else continue;
+			idx = kDihedralIndex;
+		} else continue; /*  j == 0 or 1? (Cannot happen)  */
+		arena->energies[idx] += energy;
+		forces = &arena->forces[idx * arena->mol->natoms];
+		for (k = 0; k < j; k++) {
+			n = pibonds[k];
+			if (n < 0)
+				break;  /*  Cannot happen  */
+			else if (n < ATOMS_MAX_NUMBER) {
+				VecInc(forces[n], f[k]);
+			} else {
+				Int *ip = AtomConnectData(&pp[k]->connect);
+				Int kk;
+				for (kk = pp[k]->connect.count - 1; kk >= 0; kk--) {
+					Int an = ip[kk];  /*  Index of the ring atom  */
+					Double co = pp[k]->coeffs[kk];
+					VecScaleInc(forces[an], f[k], co);
+				}
+			}
+		}
 	}
-	
 }
 
 /*  ==================================================================== */
