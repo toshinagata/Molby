@@ -1379,6 +1379,7 @@ calc_force(MDArena *arena)
 	s_calc_angle_force(arena);
 	s_calc_dihedral_force(arena);
 	s_calc_improper_force(arena);
+	s_calc_pibond_force(arena);
 	s_calc_nonbonded_force(arena);
 	s_calc_auxiliary_force(arena);
 

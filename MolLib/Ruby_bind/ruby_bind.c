@@ -4249,7 +4249,7 @@ s_Molecule_AtomOrPiAtomIndexFromValue(Molecule *mol, VALUE val)
 		return n;
 	p = StringValuePtr(val);
 	for (i = 0; i < mol->npiatoms; i++) {
-		if (strcmp(p, mol->piatoms->aname) == 0)
+		if (strcmp(p, mol->piatoms[i].aname) == 0)
 			return ATOMS_MAX_NUMBER + i;  /*  PiAtom; should be looked up after normal atoms  */
 	}
 	if (n == -1)

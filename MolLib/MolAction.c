@@ -1547,6 +1547,7 @@ s_MolActionInsertPiBonds(Molecule *mol, MolAction *action, MolAction **actp)
 		InsertArray(&mol->pibonds, &mol->npibonds, sizeof(Int) * 4, j, 1, ip1 + i * 4);
 	}
 	*actp = MolActionNew(gMolActionRemovePiBonds, ig);
+	MoleculeInvalidatePiConnectionTable(mol);
 	return 0;
 }
 
@@ -1565,6 +1566,7 @@ s_MolActionRemovePiBonds(Molecule *mol, MolAction *action, MolAction **actp)
 	}
 	*actp = MolActionNew(gMolActionInsertPiBonds, ig, n * 4, ip1);
 	free(ip1);
+	MoleculeInvalidatePiConnectionTable(mol);
 	return 0;
 }
 
@@ -1612,6 +1614,7 @@ s_MolActionInsertOnePiAtom(Molecule *mol, MolAction *action, MolAction **actp, i
 				mol->pibonds[i]++;
 		}
 	}
+	MoleculeInvalidatePiConnectionTable(mol);
 	return 0;
 }
 
@@ -1646,6 +1649,7 @@ s_MolActionRemoveOnePiAtom(Molecule *mol, MolAction *action, MolAction **actp)
 		if (mol->pibonds[i] > ATOMS_MAX_NUMBER + idx)
 			mol->pibonds[i]--;
 	}	
+	MoleculeInvalidatePiConnectionTable(mol);
 	return 0;
 }
 

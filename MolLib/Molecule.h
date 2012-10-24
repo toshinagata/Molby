@@ -277,7 +277,12 @@ typedef struct Molecule {
 						    where n# is atom index if it is <ATOMS_MAX_NUMBER and
 						    is piatom index + ATOMS_MAX_NUMBER otherwise.
 						    The size of array is 4*npibonds.  */
-	
+	Int    npiconnects;  /*  Connection table for pi-metal bonds  */
+	Int    *piconnects;  /*  The first (natoms + 1) entries are for lookup table, and
+						     the connection data (indices of connected atoms) follow.
+						     The connected atoms (only by pi-bonds) for atom i are listed in
+						     piconnects[piconnects[i]]...piconnects[piconnects[i+1]]  */
+
 	IntGroup *selection;
 	Int    nframes;      /*  The number of frames (>= 1). This is a cached value, and should be
 							 recalculated from the atoms if it is -1  */
@@ -514,7 +519,9 @@ int MoleculeSelectFrame(Molecule *mp, int frame, int copyback);
 int MoleculeFlushFrames(Molecule *mp);
 
 int MoleculeCalculatePiAtomPosition(Molecule *mol, int idx, Vector *vp);
-
+int MoleculeValidatePiConnectionTable(Molecule *mol);
+void MoleculeInvalidatePiConnectionTable(Molecule *mol);
+	
 int MoleculeCalcMO(Molecule *mp, Int mono, const Vector *op, const Vector *dxp, const Vector *dyp, const Vector *dzp, Int nx, Int ny, Int nz, int (*callback)(double progress, void *ref), void *ref);
 int MoleculeGetDefaultMOGrid(Molecule *mp, Int npoints, Vector *op, Vector *xp, Vector *yp, Vector *zp, Int *nx, Int *ny, Int *nz);
 const Cube *MoleculeGetCubeAtIndex(Molecule *mp, Int index);

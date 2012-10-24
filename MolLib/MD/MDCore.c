@@ -276,10 +276,11 @@ s_register_missing_parameters(Int **missing, Int *nmissing, Int type, Int t1, In
 /*  Check the bonded atoms and append to results if not already present */
 /*  results[] is terminated by -1, hence must be at least (natom+1) size  */
 static int
-s_check_bonded(Atom *ap, Int *results)
+s_check_bonded(Molecule *mol, Int idx, Int *results)
 {
 	Int i, n, *ip;
 	const Int *cp;
+	Atom *ap = ATOM_AT_INDEX(mol->atoms, idx);
 	cp = AtomConnectData(&ap->connect);
 	for (i = 0; i < ap->connect.count; i++, cp++) {
 		n = *cp;
@@ -292,6 +293,19 @@ s_check_bonded(Atom *ap, Int *results)
 			*ip = -1;
 		}
 	}
+	if (mol->piconnects != NULL) {
+		for (i = mol->piconnects[idx]; i < mol->piconnects[idx + 1]; i++) {
+			n = mol->piconnects[i];
+			for (ip = results; *ip >= 0; ip++) {
+				if (n == *ip)
+					break;
+			}
+			if (*ip < 0) {
+				*ip++ = n;
+				*ip = -1;
+			}
+		}
+	}
 	for (ip = results; *ip >= 0; ip++)
 		;
 	return ip - results;
@@ -302,7 +316,6 @@ s_make_exclusion_list(MDArena *arena)
 {
 	Int *results;
 	Int natoms = arena->mol->natoms;
-	Atom *atoms = arena->mol->atoms;
 	MDExclusion *exinfo;
 	int next_index, i, j;
 
@@ -332,15 +345,15 @@ s_make_exclusion_list(MDArena *arena)
 		results[1] = -1;
 		exinfo[i].index1 = 1;
 		/*  1-2 exclusion (directly bonded)  */
-		exinfo[i].index2 = s_check_bonded(&atoms[i], results);
+		exinfo[i].index2 = s_check_bonded(arena->mol, i, results);
 		n = exinfo[i].index2;
 		/*  1-3 exclusion: atoms bonded to 1-2 exclusions  */
 		for (j = exinfo[i].index1; j < exinfo[i].index2; j++)
-			n = s_check_bonded(&atoms[results[j]], results);
+			n = s_check_bonded(arena->mol, results[j], results);
 		exinfo[i].index3 = n;
 		/*  1-4 exclusion: atoms bonded to 1-3 exclusions  */
 		for (j = exinfo[i].index2; j < exinfo[i].index3; j++)
-			n = s_check_bonded(&atoms[results[j]], results);
+			n = s_check_bonded(arena->mol, results[j], results);
 		AssignArray(&arena->exlist, &arena->nexlist, sizeof(Int), next_index + n, NULL);
 		memcpy(arena->exlist + next_index, results, n * sizeof(Int));
 		exinfo[i].index0 += next_index;
@@ -1208,7 +1221,7 @@ s_find_pibond_parameters(MDArena *arena)
 					ptype = -1;
 					break;
 				} else
-					types[j] = mol->piatoms[j].type;
+					types[j] = mol->piatoms[ii].type;
 			} else if (ii < mol->natoms) {
 				idx[j] = ii;
 				types[j] = ATOM_AT_INDEX(mol->atoms, ii)->type;
