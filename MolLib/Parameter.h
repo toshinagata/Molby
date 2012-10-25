@@ -221,6 +221,8 @@ void ParameterCopyOneWithType(UnionPar *dst, const UnionPar *src, int type);
 
 int ParameterGetAtomTypes(Int type, const UnionPar *up, UInt *outTypes);
 int ParameterRenumberAtoms(Int type, UnionPar *up, Int oldnatoms, const Int *old2new);
+void ParameterItemToString(Int type, const UnionPar *up, Int item, char *buf, size_t bufsize);
+
 int ParameterDoesContainAtom(Int type, const UnionPar *up, UInt atom_type, Int options);
 int ParameterIsRelevantToAtomGroup(Int type, const UnionPar *up, const struct Atom *ap, struct IntGroup *ig);
 

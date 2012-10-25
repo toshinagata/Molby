@@ -2810,12 +2810,19 @@ s_IntGroup_Create(int argc, VALUE *argv, VALUE klass)
 static VALUE
 s_IntGroup_Inspect(VALUE self)
 {
-	int i, sp, ep;
+	char *s;
+	IntGroup *ig;
+	VALUE retval;
+	Data_Get_Struct(self, IntGroup, ig);
+	s = IntGroupInspect(ig);
+	if (s == NULL)
+		rb_raise(rb_eMolbyError, "internal error during IntGroup#inspect");
+	retval = rb_str_new2(s);
+	free(s);
+	return retval;
+/*	int i, sp, ep;
 	IntGroup *ig;
 	char buf[64];
-/*	VALUE klass = CLASS_OF(self);
-	VALUE val = rb_funcall(klass, rb_intern("name"), 0); */
-/*	rb_str_cat(val, "[", 1); */
 	VALUE val = rb_str_new2("IntGroup[");
 	Data_Get_Struct(self, IntGroup, ig);
 	for (i = 0; (sp = IntGroupGetStartPoint(ig, i)) >= 0; i++) {
@@ -2829,7 +2836,7 @@ s_IntGroup_Inspect(VALUE self)
 		rb_str_cat(val, buf, strlen(buf));
 	}
 	rb_str_cat(val, "]", 1);
-	return val;
+	return val; */
 }
 
 void

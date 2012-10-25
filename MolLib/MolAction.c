@@ -28,7 +28,9 @@ const char *gMolActionNone            = "none";
 const char *gMolActionAddAnAtom       = "addAtom:Ai;i";
 const char *gMolActionDeleteAnAtom    = "deleteAtom:i";
 const char *gMolActionMergeMolecule   = "mergeMol:MG";
+const char *gMolActionMergeMoleculeForUndo = "mergeMolForUndo:MG";
 const char *gMolActionUnmergeMolecule = "unmergeMol:G";
+const char *gMolActionUnmergeMoleculeForUndo = "unmergeMolForUndo:G";
 const char *gMolActionAddBonds        = "addBonds:I";
 const char *gMolActionDeleteBonds     = "deleteBonds:I";
 const char *gMolActionAddAngles       = "addAngles:IG";
@@ -552,6 +554,106 @@ s_MolActionPerformRubyScript(Molecule *mol, MolAction *action)
 	return (result == 0 ? 0 : -1);
 }
 
+static int
+s_MolActionLog(Molecule *mol, MolAction *action, FILE *fp)
+{
+	/*  (Simple types)  i: Int, d: double, s: string, v: Vector, t: Transform, u: UnionPar
+	 (Array types)   I: array of Int, D: array of double, V: array of Vector, C: array of char, T: array of Transform, U: array of UnionPars
+	 (Complex types) M: Molecule, G: IntGroup, A: Atom
+	 (Ruby value)    b: Ruby boolean, r: Ruby object, R: an array of Ruby object (a Ruby array)
+	 (Return value)  i, d, s, v, t, r, G + 0x80 */
+	
+	int i, j, k, lastIval = 0;
+	char buf[80];
+	MolActionArg *argp;
+	fprintf(fp, "MolAction: %s", action->name);
+	for (i = 0; i < action->nargs; i++) {
+		argp = action->args + i;
+		if (argp->type >= 0x80)
+			break;
+		fprintf(fp, " ");
+		switch (argp->type) {
+			case 'i': lastIval = argp->u.ival; fprintf(fp, " %d", lastIval); break;
+			case 'd': fprintf(fp, " %g", argp->u.dval); break;
+			case 's':
+			case 'C': fprintf(fp, " %.*s", argp->u.arval.nitems, argp->u.arval.ptr); break;
+			case 'v': case 't': case 'u': case 'I': case 'D': case 'V': case 'T': case 'U': {
+				char *pp = (char *)argp->u.arval.ptr;
+				int n = argp->u.arval.nitems;
+				if (argp->type == 'v' || argp->type == 't' || argp->type == 'u')
+					n = 1;
+				else fprintf(fp, "[");
+				for (j = 0; j < n; j++) {
+					switch (argp->type) {
+						case 'I':
+							fprintf(fp, "%d", *((Int *)pp));
+							pp += sizeof(Int);
+							break;
+						case 'D':
+							fprintf(fp, "%g", *((Double *)pp));
+							pp += sizeof(Double);
+							break;
+						case 'v': case 'V':
+							fprintf(fp, "Vector3d[%g,%g,%g]", ((Double *)pp)[0], ((Double *)pp)[1], ((Double *)pp)[2]);
+							pp += sizeof(Double) * 3;
+							break;
+						case 't': case 'T':
+							fprintf(fp, "Transform[");
+							for (k = 0; k < 12; k++)
+								fprintf(fp, "%g%c", ((Double *)pp)[k], (k == 11 ? ']' : ','));
+							pp += sizeof(Double) * 12;
+							break;
+						case 'u': case 'U':
+							fprintf(fp, "Parameter[");
+							for (k = 0; k < 8; k++) {
+								ParameterItemToString(lastIval, (UnionPar *)pp, k, buf, sizeof buf);
+								if (buf[0] == 0)
+									break;
+								fprintf(fp, "%s%s", (k == 0 ? "" : ","), buf);
+							}
+							fprintf(fp, "]");
+							pp += sizeof(UnionPar);
+							break;
+					}
+					if (j < n - 1)
+						fprintf(fp, ",");
+				}
+				if (argp->type == 'v' || argp->type == 't' || argp->type == 'u')
+					n = 1;
+				else fprintf(fp, "]");
+				break;
+			}
+			case 'r': {
+				VALUE val = rb_inspect(argp->u.vval);
+				fprintf(fp, "%s", StringValuePtr(val));
+				break;
+			}
+			case 'M':
+				MoleculeCallback_displayName(argp->u.mval, buf, sizeof buf);
+				if (buf[0] == 0) {
+					/*  No associated document  */
+					snprintf(buf, sizeof buf, "#<Molecule:0x%lx>", argp->u.mval);
+				}
+				fprintf(fp, "%s", buf);
+				break;
+			case 'G': {
+				char *s = IntGroupInspect(argp->u.igval);
+				fprintf(fp, "%s", s);
+				free(s);
+				break;
+			}
+			case 'A':
+				fprintf(fp, "%d:%.4s", argp->u.aval->resSeq, argp->u.aval->aname);
+				break;
+			default:
+				fprintf(fp, "\?\?\?\?");
+				break;
+		}
+	}
+	fprintf(fp, "\n");
+	return 0;
+}
+
 static void
 s_UpdateSelection(Molecule *mol, const IntGroup *ig, int is_insert)
 {
@@ -621,6 +723,13 @@ s_MolActionMergeMolecule(Molecule *mol, MolAction *action, MolAction **actp)
 	Atom *ap;
 	IntGroup *ig, *ig2;
 	Molecule *mol2;
+	Int nUndoActions;
+	MolAction **undoActions;
+	Int forUndo = 0;
+
+	if (strcmp(action->name, gMolActionMergeMoleculeForUndo) == 0)
+		forUndo = 1;
+
 	ig = action->args[1].u.igval;
 	mol2 = action->args[0].u.mval;
 	if (ig != NULL) {
@@ -650,23 +759,36 @@ s_MolActionMergeMolecule(Molecule *mol, MolAction *action, MolAction **actp)
 		n1 = maxreg - minreg + 1;
 	else n1 = 0;
 
-	if ((result = MoleculeMerge(mol, mol2, ig, n1)) != 0)
+	nUndoActions = 0;
+	undoActions = NULL;
+	if ((result = MoleculeMerge(mol, mol2, ig, n1, &nUndoActions, &undoActions, forUndo)) != 0)
 		return result;
 	
 	s_UpdateSelection(mol, ig, 1);
 	
-	*actp = MolActionNew(gMolActionUnmergeMolecule, ig2);
+	/*  Register undo actions after registering unmerge action  */
+	*actp = MolActionNew(gMolActionUnmergeMoleculeForUndo, ig2);
 	IntGroupRelease(ig2);
+	for (n1 = 0; n1 < nUndoActions; n1++) {
+		MolActionCallback_registerUndo(mol, *actp);
+		MolActionRelease(*actp);
+		*actp = undoActions[n1];
+	}
+	/*  The last MolAction entry will be returned in *actp  */
+	free(undoActions);
+	
 	return 0;
 }
 
 static int
 s_MolActionDeleteAtoms(Molecule *mol, MolAction *action, MolAction **actp)
 {
-	Int n1, result, *ip;
-	IntGroup *bg, *ig, *pg;
-	UnionPar *up;
+	Int result, *ip, forUndo = 0;
+	IntGroup *ig;
 	Molecule *mol2;
+	Int nUndoActions;
+	MolAction **undoActions;
+
 	if (strcmp(action->name, gMolActionDeleteAnAtom) == 0) {
 		ig = IntGroupNew();
 		if (ig == NULL || IntGroupAdd(ig, action->args[0].u.ival, 1) != 0)
@@ -674,60 +796,14 @@ s_MolActionDeleteAtoms(Molecule *mol, MolAction *action, MolAction **actp)
 	} else {
 		ig = action->args[0].u.igval;
 		IntGroupRetain(ig);
+		if (strcmp(action->name, gMolActionUnmergeMoleculeForUndo) == 0)
+			forUndo = 1;
 	}
-	/*  Search bonds crossing the molecule border  */
-	bg = MoleculeSearchBondsAcrossAtomGroup(mol, ig);
-	ip = NULL;
-	if (bg != NULL) {
-		n1 = IntGroupGetCount(bg);
-		if (n1 > 0) {
-			IntGroupIterator iter;
-			Int i, idx;
-			ip = (Int *)calloc(sizeof(Int), n1 * 2 + 1);
-			if (ip == NULL) {
-				IntGroupRelease(bg);
-				IntGroupRelease(ig);
-				return -1;
-			}
-			IntGroupIteratorInit(bg, &iter);
-			idx = 0;
-			while ((i = IntGroupIteratorNext(&iter)) >= 0) {
-				/*  The atoms at the border  */
-				ip[idx++] = mol->bonds[i * 2];
-				ip[idx++] = mol->bonds[i * 2 + 1];
-			}
-			IntGroupIteratorRelease(&iter);
-		}
-		IntGroupRelease(bg);
-	}
-	/*  Search parameters that may disappear after unmerging  */
-	pg = NULL;
-	up = NULL;
-	if (mol->par != NULL) {
-		Int i, j, n;
-		IntGroup *rg = IntGroupNewWithPoints(0, mol->natoms, -1);
-		IntGroupRemoveIntGroup(rg, ig);  /*  Remaining atoms  */
-		pg = IntGroupNew();
-		for (j = kFirstParType; j <= kLastParType; j++) {
-			n = ParameterGetCountForType(mol->par, j);
-			for (i = 0; i < n; i++) {
-				UnionPar *up1 = ParameterGetUnionParFromTypeAndIndex(mol->par, j, i);
-				if (!ParameterIsRelevantToAtomGroup(j, up1, mol->atoms, ig) && !ParameterIsRelevantToAtomGroup(j, up1, mol->atoms, rg)) {
-					IntGroupAdd(pg, i + (j - kFirstParType) * kParameterIndexOffset, 1);
-				}
-			}
-		}
-		n = IntGroupGetCount(pg);
-		if (n > 0) {
-			up = (UnionPar *)calloc(sizeof(UnionPar), n);
-			ParameterCopy(mol->par, kFirstParType, up, pg);
-		} else {
-			IntGroupRelease(pg);
-			pg = NULL;
-		}
-	}
+	
 	/*  Unmerge molecule  */
-	if ((result = MoleculeUnmerge(mol, &mol2, ig, 0)) != 0) {
+	nUndoActions = 0;
+	undoActions = NULL;
+	if ((result = MoleculeUnmerge(mol, &mol2, ig, 0, &nUndoActions, &undoActions, forUndo)) != 0) {
 		if (ip != NULL)
 			free(ip);
 		return result;
@@ -738,24 +814,14 @@ s_MolActionDeleteAtoms(Molecule *mol, MolAction *action, MolAction **actp)
 	if (mol2 == NULL)
 		*actp = NULL;
 	else {
-		MolAction *act2;
-		/*  If there exist bonds crossing the molecule border, then register
-		 an undo action to restore them  */
-		if (ip != NULL) {
-			act2 = MolActionNew(gMolActionAddBonds, n1 * 2, ip);
-			MolActionCallback_registerUndo(mol, act2);
-			MolActionRelease(act2);
-			free(ip);
+		/*  Register undo actions created by MoleculeUnmerge()  */
+		int i;
+		for (i = 0; i < nUndoActions; i++) {
+			MolActionCallback_registerUndo(mol, undoActions[i]);
+			MolActionRelease(undoActions[i]);
 		}
-		/*  Register an undo action to restore the disappearing parameters  */
-		if (up != NULL) {
-			act2 = MolActionNew(gMolActionAddParameters, kFirstParType, pg, IntGroupGetCount(pg), up);
-			MolActionCallback_registerUndo(mol, act2);
-			MolActionRelease(act2);
-			IntGroupRelease(pg);
-			free(up);
-		}
-		*actp = MolActionNew(gMolActionMergeMolecule, mol2, ig);
+		free(undoActions);
+		*actp = MolActionNew(gMolActionMergeMoleculeForUndo, mol2, ig);
 		MoleculeRelease(mol2);
 	}
 	IntGroupRelease(ig);
@@ -1542,7 +1608,7 @@ s_MolActionInsertPiBonds(Molecule *mol, MolAction *action, MolAction **actp)
 	ip1 = action->args[1].u.arval.ptr;
 	if (ig == NULL || (n = IntGroupGetCount(ig)) == 0)
 		return 0;
-	for (i = n - 1; i >= 0; i--) {
+	for (i = 0; i < n; i++) {
 		j = IntGroupGetNthPoint(ig, i);
 		InsertArray(&mol->pibonds, &mol->npibonds, sizeof(Int) * 4, j, 1, ip1 + i * 4);
 	}
@@ -1665,6 +1731,14 @@ MolActionPerform(Molecule *mol, MolAction *action)
 	if (action == NULL)
 		return -1;
 	
+	{  /*  For debug  */
+		int status;
+		VALUE val = rb_eval_string_protect("$log_molby_actions ? true : false", &status);
+		if (status == 0 && val != Qfalse) {
+			s_MolActionLog(mol, action, stderr);
+		}
+	}
+	
 	if (action->frame >= 0 && mol->cframe != action->frame)
 		MoleculeSelectFrame(mol, action->frame, 1);
 
@@ -1680,11 +1754,11 @@ MolActionPerform(Molecule *mol, MolAction *action)
 		if ((result = s_MolActionAddAnAtom(mol, action, &act2)) != 0)
 			return result;
 		needsRebuildMDArena = 1;
-	} else if (strcmp(action->name, gMolActionMergeMolecule) == 0) {
+	} else if (strcmp(action->name, gMolActionMergeMolecule) == 0 || strcmp(action->name, gMolActionMergeMoleculeForUndo) == 0) {
 		if ((result = s_MolActionMergeMolecule(mol, action, &act2)) != 0)
 			return result;
 		needsRebuildMDArena = 1;
-	} else if (strcmp(action->name, gMolActionDeleteAnAtom) == 0 || strcmp(action->name, gMolActionUnmergeMolecule) == 0) {
+	} else if (strcmp(action->name, gMolActionDeleteAnAtom) == 0 || strcmp(action->name, gMolActionUnmergeMolecule) == 0 || strcmp(action->name, gMolActionUnmergeMoleculeForUndo) == 0) {
 		if ((result = s_MolActionDeleteAtoms(mol, action, &act2)) != 0)
 			return result;
 		needsRebuildMDArena = 1;

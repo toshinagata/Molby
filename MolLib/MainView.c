@@ -2796,7 +2796,7 @@ MainView_paste(MainView *mview)
 			}
 		}
 		if (IntGroupGetCount(sel) > 0)
-			MoleculeUnmerge(mol2, NULL, sel, 0);
+			MoleculeUnmerge(mol2, NULL, sel, 0, NULL, NULL, 0);
 		IntGroupRelease(sel);
 	}
 	

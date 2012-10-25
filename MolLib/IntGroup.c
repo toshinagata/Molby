@@ -901,6 +901,41 @@ IntGroupOffset(IntGroup *psRef, int offset)
 #pragma mark ====== Debugging ======
 #endif
 
+char *
+IntGroupInspect(const IntGroup *pset)
+{
+	int i, sp, ep, len, len2, size;
+	char buf[64], *s;
+	if (pset == NULL)
+		return strdup("(null)");
+	size = 64;
+	s = (char *)malloc(size);
+	strcpy(s, "IntGroup[");
+	if (pset->num == 0) {
+		strcat(s, "]");
+		return s;
+	}
+	len = strlen(s);
+	for (i = 0; i < pset->num; i++) {
+		const char *sep = (i == pset->num - 1 ? "]" : ", ");
+		sp = pset->entries[i * 2];
+		ep = pset->entries[i * 2 + 1];
+		if (ep > sp + 1)
+			snprintf(buf, sizeof buf, "%d..%d%s", sp, ep - 1, sep);
+		else
+			snprintf(buf, sizeof buf, "%d%s", sp, sep);
+		len2 = strlen(buf);
+		if (len + len2 >= size - 1) {
+			size += 64;
+			s = (char *)realloc(s, size);
+			if (s == NULL)
+				return NULL;  /*  Out of memory  */
+		}
+		strcat(s, buf);
+	}
+	return s;  /*  The caller needs to free the return value  */
+}
+
 /* --------------------------------------
 	･ IntGroupDump
    -------------------------------------- */

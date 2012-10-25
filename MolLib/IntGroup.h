@@ -119,6 +119,7 @@ IntGroupStatus	IntGroupNegate(const IntGroup *psRef1, IntGroup *psRef2);
 IntGroupStatus  IntGroupOffset(IntGroup *psRef, int offset);
 
 /*  Debug  */
+char *IntGroupInspect(const IntGroup *pset);
 void		IntGroupDump(const IntGroup *pset);
 
 /*  Iterator support  */

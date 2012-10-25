@@ -6866,13 +6866,19 @@ error:
 
 /*  Merge two molecules. We use this procedure for all add-atom operations.  */
 /*  resSeqOffset is an offset to add to the (non-zero) residue numbers in src. */
+/*  If nactions and actions are non-NULL, then the corresponding undo actions are created and returned. */
+/*  If forUndo is non-zero, then only the atoms are inserted; other information should be inserted
+    separately by other undo actions.  */
 int
-MoleculeMerge(Molecule *dst, Molecule *src, IntGroup *where, int resSeqOffset)
+MoleculeMerge(Molecule *dst, Molecule *src, IntGroup *where, Int resSeqOffset, Int *nactions, MolAction ***actions, Int forUndo)
 {
 	Int nsrc, ndst;
 	Int i, j, n1, n2, n3, n4, *cp;
 	Int *new2old, *old2new;
+	IntGroup *ig;
 	Atom *ap;
+	MolAction *act;
+	
 	if (dst == NULL || src == NULL || src->natoms == 0 || (where != NULL && IntGroupGetIntervalCount(where) == 0))
 		return 0;  /*  Do nothing  */
 
@@ -6881,6 +6887,12 @@ MoleculeMerge(Molecule *dst, Molecule *src, IntGroup *where, int resSeqOffset)
 
 	if (where != NULL && IntGroupGetCount(where) != src->natoms)
 		return 1;  /*  Bad parameter  */
+
+	if (nactions != NULL)
+		*nactions = 0;
+	if (actions != NULL)
+		*actions = NULL;
+	act = NULL;
 
 	__MoleculeLock(dst);
 	MoleculeInvalidatePiConnectionTable(dst);
@@ -6930,18 +6942,23 @@ MoleculeMerge(Molecule *dst, Molecule *src, IntGroup *where, int resSeqOffset)
 	if (where == NULL) {
 		/*  Duplicate atoms to the end of the destination array  */
 		for (i = 0; i < nsrc; i++) {
-			if (AtomDuplicate(ATOM_AT_INDEX(dst->atoms, ndst + i), ATOM_AT_INDEX(src->atoms, i)) == NULL)
+			ap = ATOM_AT_INDEX(dst->atoms, ndst + i);
+			if (AtomDuplicate(ap, ATOM_AT_INDEX(src->atoms, i)) == NULL)
 				goto panic;
+			if (forUndo)  /*  For undo action, all bonds come from another undo action, so connection info are cleared */
+				AtomConnectResize(&ap->connect, 0);
 		}
-	//	memmove(ATOM_AT_INDEX(dst->atoms, ndst), src->atoms, gSizeOfAtomRecord * nsrc);
 	} else {
 		/*  Duplicate to a temporary storage and then insert  */
 		Atom *tempatoms = (Atom *)malloc(gSizeOfAtomRecord * nsrc);
 		if (tempatoms == NULL)
 			goto panic;
 		for (i = 0; i < nsrc; i++) {
-			if (AtomDuplicate(ATOM_AT_INDEX(tempatoms, i), ATOM_AT_INDEX(src->atoms, i)) == NULL)
+			ap = ATOM_AT_INDEX(tempatoms, i);
+			if (AtomDuplicate(ap, ATOM_AT_INDEX(src->atoms, i)) == NULL)
 				goto panic;
+			if (forUndo)  /*  See above  */
+				AtomConnectResize(&ap->connect, 0);				
 		}
 		if (sInsertElementsToArrayAtPositions(dst->atoms, ndst, tempatoms, nsrc, gSizeOfAtomRecord, where) != 0)
 			goto panic;
@@ -6984,27 +7001,61 @@ MoleculeMerge(Molecule *dst, Molecule *src, IntGroup *where, int resSeqOffset)
 		}
 		nitems_src = (Int *)((char *)src + ((char *)nitems - (char *)dst));
 		items_src = (Int **)((char *)src + ((char *)items - (char *)dst));
-		/*  Keep the old number of entries in dst, because it is updated by AssignArray()  */
-		n1 = *nitems;
-		/*  Also keep the old number of entries in src, in case src and dst point the same molecule  */
-		n2 = *nitems_src;
-		/*  Expand the array  */
-		if (AssignArray(items, nitems, sizeof(Int) * nsize, *nitems + *nitems_src - 1, NULL) == NULL)
-			goto panic;
-		/*  Copy the items  */
-		memmove(*items + n1 * nsize, *items_src, sizeof(Int) * nsize * n2);
+		if (forUndo) {
+			/*  During undo, no bonds etc. are copied from src; they will be taken care later
+			    by undo actions  */
+			n1 = *nitems;
+			n2 = 0;
+		} else {
+			/*  Keep the old number of entries in dst, because it is updated by AssignArray()  */
+			n1 = *nitems;
+			/*  Also keep the old number of entries in src, in case src and dst point the same molecule  */
+			n2 = *nitems_src;
+			/*  Expand the array  */
+			if (AssignArray(items, nitems, sizeof(Int) * nsize, *nitems + *nitems_src - 1, NULL) == NULL)
+				goto panic;
+			/*  Copy the items  */
+			memmove(*items + n1 * nsize, *items_src, sizeof(Int) * nsize * n2);
+		}
 		/*  Renumber  */
 		for (j = 0; j < n1 * nsize; j++)
 			(*items)[j] = old2new[(*items)[j]];
 		for (j = n1 * nsize; j < (n1 + n2) * nsize; j++)
 			(*items)[j] = old2new[(*items)[j] + ndst];
+		if (forUndo == 0 && actions != NULL) {
+			if (i == 0) {
+				act = MolActionNew(gMolActionDeleteBonds, n2 * 2, dst->bonds + n1 * 2);
+			} else {
+				ig = IntGroupNewWithPoints(n1, n2, -1);
+				switch (i) {
+					case 1: act = MolActionNew(gMolActionDeleteAngles, ig); break;
+					case 2: act = MolActionNew(gMolActionDeleteDihedrals, ig); break;
+					case 3: act = MolActionNew(gMolActionDeleteImpropers, ig); break;
+				}
+				IntGroupRelease(ig);
+			}
+			AssignArray(actions, nactions, sizeof(MolAction *), *nactions, &act);
+			act = NULL;
+		}
 	}
 	
-	/*  Merge parameters  */
-	if (src->par != NULL) {
+	/*  Renumber existing parameters  */
+	if (dst->par != NULL) {
+		int type;
+		for (type = kFirstParType; type <= kLastParType; type++) {
+			UnionPar *up1;
+			n1 = ParameterGetCountForType(dst->par, type);
+			for (i = 0; i < n1; i++) {
+				up1 = ParameterGetUnionParFromTypeAndIndex(dst->par, type, i);
+				ParameterRenumberAtoms(type, up1, ndst, old2new);
+			}
+		}
+	}
+
+	/*  Merge parameters from src  */
+	if (src->par != NULL && forUndo == 0) {
 		UnionPar *up1, *up2;
 		int type;
-		IntGroup *ig;
 		if (dst->par == NULL)
 			dst->par = ParameterNew();
 		else {
@@ -7053,18 +7104,24 @@ MoleculeMerge(Molecule *dst, Molecule *src, IntGroup *where, int resSeqOffset)
 			if (up1 == NULL)
 				goto panic;
 			/*  Copy parameters and renumber indices if necessary  */
-			for (i = 0; i < n1; i++) {
+			for (i = j = 0; i < n1; i++) {
 				up2 = ParameterGetUnionParFromTypeAndIndex(src->par, type, IntGroupGetNthPoint(ig, i));
 				if (up2 == NULL)
 					continue;
-				up1[i] = *up2;
-				ParameterRenumberAtoms(type, up1 + i, nsrc, old2new + ndst);
+				up1[j] = *up2;
+				ParameterRenumberAtoms(type, up1 + j, nsrc, old2new + ndst);
+				j++;
 			}
 			/*  Merge parameters  */
 			IntGroupClear(ig);
-			IntGroupAdd(ig, n2, n1);
-			if (ParameterInsert(dst->par, type, up1, ig) < n1)
+			IntGroupAdd(ig, n2, j);
+			if (ParameterInsert(dst->par, type, up1, ig) < j)
 				goto panic;
+			if (actions != NULL) {
+				act = MolActionNew(gMolActionDeleteParameters, type, ig);
+				AssignArray(actions, nactions, sizeof(MolAction *), *nactions, &act);
+				act = NULL;
+			}
 			IntGroupClear(ig);
 			free(up1);
 		}
@@ -7075,18 +7132,49 @@ MoleculeMerge(Molecule *dst, Molecule *src, IntGroup *where, int resSeqOffset)
 	/*  src[1..src->nresidues-1] should become dst[1+resSeqOffset..src->nresidues+resSeqOffset-1];
 	    However, 1+resSeqOffset should not overwrite the existing residue in dst;
 		i.e. if 1+resSeqOffset is less than dst->nresidues, copy should start from src[dst->nresidues-resSeqOffset] instead of src[1].  */
-	n1 = dst->nresidues;
-	if (1 + resSeqOffset < n1) {
-		n2 = n1;
-	} else n2 = 1 + resSeqOffset; /* n2 is the start index of residues from src[] */
-	if (src->nresidues > 1 && n1 < src->nresidues + resSeqOffset) {
-		if (AssignArray(&dst->residues, &dst->nresidues, sizeof(dst->residues[0]), src->nresidues + resSeqOffset - 1, NULL) == NULL)
-			goto panic;
-		memmove(dst->residues + n2, src->residues + n2 - resSeqOffset, sizeof(dst->residues[0]) * (src->nresidues - (n2 - resSeqOffset)));
+	if (forUndo == 0) {
+		n1 = dst->nresidues;
+		if (1 + resSeqOffset < n1) {
+			n2 = n1;
+		} else n2 = 1 + resSeqOffset; /* n2 is the start index of residues from src[] */
+		if (src->nresidues > 1 && n1 < src->nresidues + resSeqOffset) {
+			if (AssignArray(&dst->residues, &dst->nresidues, sizeof(dst->residues[0]), src->nresidues + resSeqOffset - 1, NULL) == NULL)
+				goto panic;
+			memmove(dst->residues + n2, src->residues + n2 - resSeqOffset, sizeof(dst->residues[0]) * (src->nresidues - (n2 - resSeqOffset)));
+			if (nactions != NULL) {
+				act = MolActionNew(gMolActionChangeNumberOfResidues, n1);
+				AssignArray(actions, nactions, sizeof(MolAction *), *nactions, &act);
+				act = NULL;
+			}
+		}
 	}
 
+	/*  Renumber the existing pi-atoms  */
+	if (dst->npiatoms > 0) {
+		for (i = 0; i < dst->npiatoms; i++) {
+			PiAtom *pp;
+			pp = &dst->piatoms[i];
+			cp = AtomConnectData(&pp->connect);
+			for (j = 0; j < pp->connect.count; j++) {
+				cp[j] = old2new[cp[j]];
+			}
+		}
+		if (dst->npibonds > 0) {
+			cp = dst->pibonds;
+			for (i = 0; i < dst->npibonds * 4; i++) {
+				if (cp[i] < 0)
+					continue;
+				else if (cp[i] >= ATOMS_MAX_NUMBER)
+					continue;
+				else {
+					cp[i] = old2new[cp[i]];
+				}
+			}
+		}
+	}
+	
 	/*  Copy the pi-atoms  */
-	if (src->npiatoms > 0) {
+	if (src->npiatoms > 0 && forUndo == 0) {
 		int nsrcp, ndstp;
 		nsrcp = src->npiatoms;
 		ndstp = dst->npiatoms;
@@ -7100,6 +7188,13 @@ MoleculeMerge(Molecule *dst, Molecule *src, IntGroup *where, int resSeqOffset)
 			for (j = 0; j < pp->connect.count; j++) {
 				cp[j] = old2new[ndst + cp[j]];
 			}
+			if (nactions != NULL) {
+				/*  This is very inefficient, yet should not cause big problems
+				    because the number of piatoms in the molecule is usually limited.  */
+				act = MolActionNew(gMolActionRemoveOnePiAtom, ndstp + i);
+				AssignArray(actions, nactions, sizeof(MolAction *), *nactions, &act);
+				act = NULL;
+			}
 		}
 		if (src->npibonds > 0) {
 			n1 = src->npibonds;
@@ -7107,7 +7202,7 @@ MoleculeMerge(Molecule *dst, Molecule *src, IntGroup *where, int resSeqOffset)
 			if (AssignArray(&dst->pibonds, &dst->npibonds, sizeof(Int) * 4, n1 + n2 - 1, NULL) == NULL)
 				goto panic;
 			cp = &dst->pibonds[n2 * 4];
-			memmove(cp, src->pibonds, sizeof(Int) * 4 + n1);
+			memmove(cp, src->pibonds, sizeof(Int) * 4 * n1);
 			for (i = 0; i < 4 * n1; i++) {
 				/*  Renumber the pi-atom constructs  */
 				if (cp[i] < 0)
@@ -7116,6 +7211,13 @@ MoleculeMerge(Molecule *dst, Molecule *src, IntGroup *where, int resSeqOffset)
 					cp[i] = old2new[ndst + cp[i]];  /*  Ordinary atoms  */
 				else
 					cp[i] += ndstp;  /*  pi-atoms  */
+			}
+			if (nactions != NULL) {
+				ig = IntGroupNewWithPoints(n2, n1, -1);
+				act = MolActionNew(gMolActionRemovePiBonds, ig);
+				AssignArray(actions, nactions, sizeof(MolAction *), *nactions, &act);
+				act = NULL;
+				IntGroupRelease(ig);
 			}
 		}
 	}
@@ -7137,7 +7239,7 @@ MoleculeMerge(Molecule *dst, Molecule *src, IntGroup *where, int resSeqOffset)
 }
 
 static int
-sMoleculeUnmergeSub(Molecule *src, Molecule **dstp, IntGroup *where, int resSeqOffset, int moveFlag)
+sMoleculeUnmergeSub(Molecule *src, Molecule **dstp, IntGroup *where, int resSeqOffset, int moveFlag, Int *nactions, MolAction ***actions, Int forUndo)
 {
 	Int nsrc, ndst, nsrcnew;
 	Int i, j, n1, n2, n3, n4, *cp;
@@ -7146,7 +7248,8 @@ sMoleculeUnmergeSub(Molecule *src, Molecule **dstp, IntGroup *where, int resSeqO
 	Molecule *dst;
 	Atom *ap, *dst_ap;
 	UnionPar *up;
-	
+	MolAction *act;
+
 	if (src == NULL || src->natoms == 0 || where == NULL || IntGroupGetIntervalCount(where) == 0) {
 		/*  Do nothing  */
 		if (dstp != NULL)
@@ -7162,6 +7265,12 @@ sMoleculeUnmergeSub(Molecule *src, Molecule **dstp, IntGroup *where, int resSeqO
 
 	__MoleculeLock(src);
 	MoleculeInvalidatePiConnectionTable(src);
+	
+	if (nactions != NULL)
+		*nactions = 0;
+	if (actions != NULL)
+		*actions = NULL;
+	act = NULL;
 	
 	nsrc = src->natoms;
 	nsrcnew = nsrc - ndst;
@@ -7302,14 +7411,14 @@ sMoleculeUnmergeSub(Molecule *src, Molecule **dstp, IntGroup *where, int resSeqO
 	/*  Separate the bonds, angles, dihedrals, impropers  */
 	/*  TODO: Improper torsions should also be copied!  */
 	move_g = IntGroupNew();
-	del_g = IntGroupNew();
-	if (move_g == NULL || del_g == NULL)
+	if (move_g == NULL)
 		goto panic;
 	for (i = 0; i < 4; i++) {
 		Int *nitems, *nitems_dst;
 		Int **items, **items_dst;
 		Int nsize;  /*  Number of Ints in one element  */
 		unsigned char *counts;
+		del_g = IntGroupNew();
 		switch (i) {
 			case 0:
 				nitems = &src->nbonds; items = &src->bonds; nsize = 2; break;
@@ -7336,15 +7445,6 @@ sMoleculeUnmergeSub(Molecule *src, Molecule **dstp, IntGroup *where, int resSeqO
 			n1 = old2new[(*items)[j]];
 			if (n1 >= nsrcnew)
 				counts[j / nsize]++; /* Count the atom belonging to dst */ 
-		/*	if (n1 >= nsrcnew) {
-				n1 -= nsrcnew;
-				if (j % nsize == 0) {
-					if (IntGroupAdd(sep, j / nsize, 1) != 0)
-						goto panic;
-					n2++;
-				}
-			}
-			(*items)[j] = n1; */
 		}
 		for (j = n2 = n3 = 0; j < *nitems; j++) {
 			if (counts[j] > 0) {
@@ -7369,7 +7469,28 @@ sMoleculeUnmergeSub(Molecule *src, Molecule **dstp, IntGroup *where, int resSeqO
 					goto panic;
 			}
 			/*  Remove from src  */
-			if (moveFlag) {
+			if (moveFlag && forUndo == 0) {
+				if (nactions != NULL) {
+					Int k, *ip;
+					ip = (Int *)malloc(sizeof(Int) * nsize * n2);
+					for (j = 0; (k = IntGroupGetNthPoint(del_g, j)) >= 0; j++)
+						memmove(ip + j * nsize, *items + k * nsize, sizeof(Int) * nsize);
+					switch (i) {
+						case 0:
+							act = MolActionNew(gMolActionAddBonds, n2 * nsize, ip); break;
+						case 1:
+							act = MolActionNew(gMolActionAddAngles, n2 * nsize, ip, del_g); break;
+						case 2:
+							act = MolActionNew(gMolActionAddDihedrals, n2 * nsize, ip, del_g); break;
+						case 3:
+							act = MolActionNew(gMolActionAddImpropers, n2 * nsize, ip, del_g); break;
+					}
+					if (act != NULL) {
+						AssignArray(actions, nactions, sizeof(MolAction *), *nactions, &act);
+						act = NULL;
+					}
+					free(ip);
+				}
 				if (sRemoveElementsFromArrayAtPositions(*items, *nitems, NULL, sizeof(Int) * nsize, del_g) != 0)
 					goto panic;
 				(*nitems) -= n2;
@@ -7388,10 +7509,9 @@ sMoleculeUnmergeSub(Molecule *src, Molecule **dstp, IntGroup *where, int resSeqO
 		}
 		free(counts);
 		IntGroupClear(move_g);
-		IntGroupClear(del_g);
+		IntGroupRelease(del_g);
 	}
 	IntGroupRelease(move_g);
-	IntGroupRelease(del_g);
 	
 	/*  Copy the residues  */
 	if (dst != NULL) {
@@ -7443,8 +7563,15 @@ sMoleculeUnmergeSub(Molecule *src, Molecule **dstp, IntGroup *where, int resSeqO
 
 	/*  Remove the unused parameter. Note: the parameters that are in remove_par_g and not in 
 	    dst_par_g will disappear. To support undo, these parameters should be taken care separately.  */
-	if (remove_par_g != NULL && (n2 = IntGroupGetCount(remove_par_g)) > 0) {
-		ParameterDelete(src->par, kFirstParType, NULL, remove_par_g);
+	if (forUndo == 0 && remove_par_g != NULL && (n2 = IntGroupGetCount(remove_par_g)) > 0) {
+		UnionPar *up = (UnionPar *)malloc(sizeof(UnionPar) * n2);
+		ParameterDelete(src->par, kFirstParType, up, remove_par_g);
+		if (nactions != NULL) {
+			act = MolActionNew(gMolActionAddParameters, kFirstParType, remove_par_g, n2, up);
+			AssignArray(actions, nactions, sizeof(MolAction *), *nactions, &act);
+			act = NULL;
+		}
+		free(up);
 	}
 	IntGroupRelease(remove_par_g);
 	
@@ -7511,8 +7638,11 @@ sMoleculeUnmergeSub(Molecule *src, Molecule **dstp, IntGroup *where, int resSeqO
 			}
 		}
 		if (moveFlag) {
+			Int npibonds_to_go, *pibonds_to_go;
+			IntGroup *pibonds_group;
+
 			/*  Remove the piatom entries containing non-remaining atoms. Note: the piatom
-			    entries that do not remain in src and not copied to dst will disappear.  */
+			 entries that do not remain in src and not copied to dst will disappear.  */
 			n2 = 0;
 			for (i = 0; i < src->npiatoms; i++) {
 				/*  Is this entry to be removed?  */
@@ -7524,13 +7654,11 @@ sMoleculeUnmergeSub(Molecule *src, Molecule **dstp, IntGroup *where, int resSeqO
 				}
 				patoms_old2new[i] = (j < 0 ? n2++ : -1);
 			}
-			for (i = src->npiatoms - 1; i >= 0; i--) {
-				/*  Remove the entries  */
-				if (patoms_old2new[i] < 0) {
-					PiAtomClean(&src->piatoms[i]);
-					DeleteArray(&src->piatoms, &src->npiatoms, sizeof(PiAtom), i, 1, NULL);
-				}
-			}
+
+			/*  Remove pibonds first (necessary for undo)  */
+			npibonds_to_go = 0;
+			pibonds_to_go = NULL;
+			pibonds_group = NULL;
 			for (i = src->npibonds - 1; i >= 0; i--) {
 				for (j = 0; j < 4; j++) {
 					n3 = src->pibonds[i * 4 + j];
@@ -7544,6 +7672,14 @@ sMoleculeUnmergeSub(Molecule *src, Molecule **dstp, IntGroup *where, int resSeqO
 				}
 				if (j < 4) {
 					/*  Remove  */
+					if (nactions != NULL) {
+						/*  Since we are scanning pibonds[] from the end, the new entry should be inserted
+						    at the top of the pibonds_to_go[] array.  */
+						InsertArray(&pibonds_to_go, &npibonds_to_go, sizeof(Int) * 4, 0, 1, src->pibonds + i * 4);
+						if (pibonds_group == NULL)
+							pibonds_group = IntGroupNew();
+						IntGroupAdd(pibonds_group, i, 1);
+					}
 					DeleteArray(&src->pibonds, &src->npibonds, sizeof(Int) * 4, i, 1, NULL);
 				} else {
 					/*  Renumber  */
@@ -7557,7 +7693,38 @@ sMoleculeUnmergeSub(Molecule *src, Molecule **dstp, IntGroup *where, int resSeqO
 					}
 				}
 			}
+			if (nactions != NULL && pibonds_to_go != NULL) {
+				act = MolActionNew(gMolActionInsertPiBonds, pibonds_group, npibonds_to_go * 4, pibonds_to_go);
+				AssignArray(actions, nactions, sizeof(MolAction *), *nactions, &act);
+				act = NULL;
+				free(pibonds_to_go);
+			}
+			if (pibonds_group != NULL)
+				IntGroupRelease(pibonds_group);
+
+			for (i = src->npiatoms - 1; i >= 0; i--) {
+				pp1 = &src->piatoms[i];
+				if (patoms_old2new[i] < 0) {
+					/*  Remove the entries  */
+					/*  (If forUndo is true, these entries should already have been removed.)  */
+					if (nactions != NULL) {
+						act = MolActionNew(gMolActionInsertOnePiAtom, i, 4, pp1->aname, pp1->type, pp1->connect.count, AtomConnectData(&pp1->connect), pp1->ncoeffs, pp1->coeffs);
+						AssignArray(actions, nactions, sizeof(MolAction *), *nactions, &act);
+						act = NULL;
+					}
+					PiAtomClean(pp1);
+					DeleteArray(&src->piatoms, &src->npiatoms, sizeof(PiAtom), i, 1, NULL);
+				} else {
+					/*  Renumber  */
+					cp = AtomConnectData(&pp1->connect);
+					for (j = 0; j < pp1->connect.count; j++) {
+						cp[j] = old2new[cp[j]];
+					}
+				}
+			}
 		}
+		
+		free(patoms_old2new);
 	}
 	
 	/*  Clean up  */
@@ -7591,9 +7758,9 @@ sMoleculeUnmergeSub(Molecule *src, Molecule **dstp, IntGroup *where, int resSeqO
     from src to a new molecule, which is returned as *dstp. Dstp can be NULL, 
 	in which case the moved atoms are discarded.  */
 int
-MoleculeUnmerge(Molecule *src, Molecule **dstp, IntGroup *where, int resSeqOffset)
+MoleculeUnmerge(Molecule *src, Molecule **dstp, IntGroup *where, int resSeqOffset, Int *nactions, MolAction ***actions, Int forUndo)
 {
-	return sMoleculeUnmergeSub(src, dstp, where, resSeqOffset, 1);
+	return sMoleculeUnmergeSub(src, dstp, where, resSeqOffset, 1, nactions, actions, forUndo);
 }
 
 /*  Extract atoms from a given molecule into two parts. The atoms specified by 
@@ -7608,7 +7775,7 @@ MoleculeExtract(Molecule *src, Molecule **dstp, IntGroup *where, int dummyFlag)
 	int retval;
 
 	/*  Extract the fragment  */
-	retval = sMoleculeUnmergeSub(src, dstp, where, 0, 0);
+	retval = sMoleculeUnmergeSub(src, dstp, where, 0, 0, NULL, NULL, 0);
 	if (retval != 0)
 		return retval;
 

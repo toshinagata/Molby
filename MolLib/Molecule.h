@@ -411,9 +411,10 @@ int MoleculeChangeResidueNames(Molecule *mp, int argc, Int *resSeqs, char *names
 int MoleculeMaximumResidueNumber(Molecule *mp, IntGroup *group);
 int MoleculeMinimumResidueNumber(Molecule *mp, IntGroup *group);
 
+struct MolAction;
 int MoleculeCreateAnAtom(Molecule *mp, const Atom *ap, int pos);
-int MoleculeMerge(Molecule *dst, Molecule *src, IntGroup *where, int resSeqOffset);
-int MoleculeUnmerge(Molecule *src, Molecule **dstp, IntGroup *where, int resSeqOffset);
+int MoleculeMerge(Molecule *dst, Molecule *src, IntGroup *where, int resSeqOffset, Int *nactions, struct MolAction ***actions, Int forUndo);
+int MoleculeUnmerge(Molecule *src, Molecule **dstp, IntGroup *where, int resSeqOffset, Int *nactions, struct MolAction ***actions, Int forUndo);
 int MoleculeExtract(Molecule *src, Molecule **dstp, IntGroup *where, int dummyFlag);
 int MoleculeAddBonds(Molecule *mp, Int nbonds, const Int *bonds);
 int MoleculeDeleteBonds(Molecule *mp, Int nbonds, const Int *bonds);

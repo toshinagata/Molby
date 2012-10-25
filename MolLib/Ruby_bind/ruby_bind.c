@@ -3122,7 +3122,7 @@ s_ParEnumerable_Insert(int argc, VALUE *argv, VALUE self)
 		u.bond.src = 0;
 	} else {
 		memset(&u, 0, sizeof(u));
-		u.bond.src = -1;
+		u.bond.src = 0;
 	}
 	ig = IntGroupNewWithPoints(n, 1, -1);
 	ParameterInsert(pen->mol->par, pen->parType, &u, ig);

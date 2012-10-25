@@ -445,6 +445,187 @@ ParameterRenumberAtoms(Int type, UnionPar *up, Int oldnatoms, const Int *old2new
 	}
 }
 
+void
+ParameterItemToString(Int type, const UnionPar *up, Int item, char *buf, size_t bufsize)
+{
+	static char *sBondParTitles[] = {"", "Bonds", "k", "r0"};
+	static char *sAngleParTitles[] = {"", "Angles", "k", "a0"};
+	static char *sDihedralParTitles[] = {"", "Dihedrals", "k", "period", "phi0"};
+	static char *sImproperParTitles[] = {"", "Impropers", "k", "period", "phi0"};
+	static char *sVdwParTitles[] = {"", "VDWs", "eps", "r", "eps14", "r14", "atomNo", "weight"};
+	static char *sVdwPairParTitles[] = {"", "VDW Pairs", "eps", "r", "eps14", "r14"};
+	char types[4][8];
+	buf[0] = 0;
+	switch (type) {
+		case kVdwParType: {
+			const VdwPar *vp = (const VdwPar *)up;
+			if (vp == NULL) {
+				if (item >= 0 && item < 8)
+					snprintf(buf, bufsize, "%s", sVdwParTitles[item]);
+				return;
+			}
+			switch (item) {
+				case 0: snprintf(buf, bufsize, "vdw"); break;
+				case 1:
+					AtomTypeDecodeToString(vp->type1, types[0]);
+					snprintf(buf, bufsize, "%s", types[0]);
+					break;
+				case 2:
+					snprintf(buf, bufsize, "%.5f", vp->eps * INTERNAL2KCAL);
+					break;
+				case 3:
+					snprintf(buf, bufsize, "%.5f", vp->r_eq);
+					break;
+				case 4:
+					snprintf(buf, bufsize, "%.5f", vp->eps14 * INTERNAL2KCAL);
+					break;
+				case 5:
+					snprintf(buf, bufsize, "%.5f", vp->r_eq14);
+					break;
+				case 6:
+					snprintf(buf, bufsize, "%d", vp->atomicNumber);
+					break;
+				case 7:
+					snprintf(buf, bufsize, "%.3f", vp->weight);
+					break;
+			}
+			break;
+		}
+		case kBondParType: {
+			const BondPar *bp = (const BondPar *)up;
+			if (bp == NULL) {
+				if (item >= 0 && item < 4)
+					snprintf(buf, bufsize, "%s", sBondParTitles[item]);
+				return;
+			}
+			switch (item) {
+				case 0: snprintf(buf, bufsize, "bond"); break;
+				case 1:
+					AtomTypeDecodeToString(bp->type1, types[0]);
+					AtomTypeDecodeToString(bp->type2, types[1]);
+					snprintf(buf, bufsize, "%s-%s", types[0], types[1]);
+					break;
+				case 2:
+				case 3:
+					snprintf(buf, bufsize, "%.3f", (item == 2 ? bp->k * INTERNAL2KCAL : bp->r0));
+					break;
+			}
+			break;
+		}
+		case kAngleParType: {
+			const AnglePar *ap = (const AnglePar *)up;
+			if (ap == NULL) {
+				if (item >= 0 && item < 4)
+					snprintf(buf, bufsize, "%s", sAngleParTitles[item]);
+				return;
+			}
+			switch (item) {
+				case 0: snprintf(buf, bufsize, "angle"); break;
+				case 1:
+					AtomTypeDecodeToString(ap->type1, types[0]);
+					AtomTypeDecodeToString(ap->type2, types[1]);
+					AtomTypeDecodeToString(ap->type3, types[2]);
+					snprintf(buf, bufsize, "%s-%s-%s", types[0], types[1], types[2]);
+					break;
+				case 2:
+				case 3:
+					snprintf(buf, bufsize, "%.3f", (item == 2 ? ap->k * INTERNAL2KCAL : ap->a0 * kRad2Deg));
+					break;
+			}
+			break;
+		}
+		case kDihedralParType: {
+			const TorsionPar *tp = (const TorsionPar *)up;
+			if (tp == NULL) {
+				if (item >= 0 && item < 5)
+					snprintf(buf, bufsize, "%s", sDihedralParTitles[item]);
+				return;
+			}
+			switch (item) {
+				case 0: snprintf(buf, bufsize, "dihe"); break;
+				case 1:
+					AtomTypeDecodeToString(tp->type1, types[0]);
+					AtomTypeDecodeToString(tp->type2, types[1]);
+					AtomTypeDecodeToString(tp->type3, types[2]);
+					AtomTypeDecodeToString(tp->type4, types[3]);
+					snprintf(buf, bufsize, "%s-%s-%s-%s", types[0], types[1], types[2], types[3]);
+					break;
+				case 3:
+					snprintf(buf, bufsize, "%d", tp->period[0]);
+					break;
+				case 2:
+				case 4:
+					snprintf(buf, bufsize, "%.3f", (item == 2 ? tp->k[0] * INTERNAL2KCAL : tp->phi0[0] * kRad2Deg));
+					break;
+			}
+			break;
+		}
+		case kImproperParType: {
+			const TorsionPar *tp = (const TorsionPar *)up;
+			if (tp == NULL) {
+				if (item >= 0 && item < 5)
+					snprintf(buf, bufsize, "%s", sImproperParTitles[item]);
+				return;
+			}		
+			switch (item) {
+				case 0: snprintf(buf, bufsize, "impr"); break;
+				case 1:
+					AtomTypeDecodeToString(tp->type1, types[0]);
+					AtomTypeDecodeToString(tp->type2, types[1]);
+					AtomTypeDecodeToString(tp->type3, types[2]);
+					AtomTypeDecodeToString(tp->type4, types[3]);
+					snprintf(buf, bufsize, "%s-%s-%s-%s", types[0], types[1], types[2], types[3]);
+					break;
+				case 3:
+					snprintf(buf, bufsize, "%d", tp->period[0]);
+					break;
+				case 2:
+				case 4:
+					snprintf(buf, bufsize, "%.3f", (item == 2 ? tp->k[0] * INTERNAL2KCAL : tp->phi0[0] * kRad2Deg));
+					break;
+			}
+			break;
+		}
+		case kVdwPairParType: {
+			const VdwPairPar *vp = (const VdwPairPar *)up;
+			if (vp == NULL) {
+				if (item >= 0 && item < 6)
+					snprintf(buf, bufsize, "%s", sVdwPairParTitles[item]);
+				return;
+			}
+			switch (item) {
+				case 0: snprintf(buf, bufsize, "pvdw"); break;
+				case 1:
+					AtomTypeDecodeToString(vp->type1, types[0]);
+					AtomTypeDecodeToString(vp->type2, types[1]);
+					snprintf(buf, bufsize, "%s-%s", types[0], types[1]);
+					break;
+				case 2:
+					snprintf(buf, bufsize, "%.6f", vp->eps * INTERNAL2KCAL);
+					break;
+				case 3:
+					snprintf(buf, bufsize, "%.6f", vp->r_eq);
+					break;
+				case 4:
+					snprintf(buf, bufsize, "%.6f", (vp->A14 == 0.0 ? 0.0 : vp->B14 * vp->B14 / vp->A14 * 0.25 * INTERNAL2KCAL));
+					break;
+				case 5:
+					snprintf(buf, bufsize, "%.6f", vp->eps14 * INTERNAL2KCAL);
+					break;
+			}
+			break;
+		}
+		default: return;
+	}
+	if (up != NULL && (item == 8 || item == 9)) {
+		const char *p;
+		if (item == 8 && ((const BondPar *)up)->src == -1)
+			snprintf(buf, bufsize, "!NONE!");
+		else if ((p = ParameterGetComment(item == 8 ? ((const BondPar *)up)->src : ((const BondPar *)up)->com)) != NULL)
+			snprintf(buf, bufsize, "%s", p);
+	}
+}
+
 #pragma mark ====== Load from Files ======
 
 static int
@@ -1321,17 +1502,13 @@ ParameterGetAtomTypes(Int type, const UnionPar *up, UInt *outTypes)
 	}
 }
 
-/*  Returns non-zero if the parameter is relevant to the atom group, i.e. the parameter contains atom type or atom index
-    that is included in the atom group.
-    This function does _not_ check whether bond, angle, and dihedrals of the designated type is really present
-    in the molecule; it only checks the existence of the atom type/index.  */
+/*  Returns non-zero if the parameter is relevant to the atom group, i.e. the parameter contains explicit atom index
+    that is included in the atom group. */
 int
 ParameterIsRelevantToAtomGroup(Int type, const UnionPar *up, const struct Atom *ap, struct IntGroup *ig)
 {
-	IntGroupIterator iter;
-	int i, j, n, retval;
+	int j, n, retval;
 	UInt types[4];
-	const struct Atom *api;
 
 	if (ig == NULL)
 		return 0;
@@ -1346,6 +1523,8 @@ ParameterIsRelevantToAtomGroup(Int type, const UnionPar *up, const struct Atom *
 			return 0; /*  All explicit atom indices must be included in ig  */
 		retval++;
 	}
+	return 1;  /*  All explicit atom specifications are included in ig  */
+#if 0
 	if (retval == n)
 		return 1;  /*  Explicit atom specification only  */
 	IntGroupIteratorInit(ig, &iter);
@@ -1365,6 +1544,7 @@ ParameterIsRelevantToAtomGroup(Int type, const UnionPar *up, const struct Atom *
 	}
 	IntGroupIteratorRelease(&iter);
 	return retval;
+#endif
 }
 
 BondPar *
@@ -1643,207 +1823,12 @@ ParameterTableGetItemPtr(Parameter *par, int row, int *type)
 void
 ParameterTableGetItemText(Parameter *par, int column, int row, char *buf, int bufsize)
 {
-	static char *sBondParTitles[] = {"", "Bonds", "k", "r0"};
-	static char *sAngleParTitles[] = {"", "Angles", "k", "a0"};
-	static char *sDihedralParTitles[] = {"", "Dihedrals", "k", "period", "phi0"};
-	static char *sImproperParTitles[] = {"", "Impropers", "k", "period", "phi0"};
-	static char *sVdwParTitles[] = {"", "VDWs", "eps", "r", "eps14", "r14", "atomNo", "weight"};
-	static char *sVdwPairParTitles[] = {"", "VDW Pairs", "eps", "r", "eps14", "r14"};
-/*	static char *sAtomParTitles[] = {"", "Atom Display", "atomNo", "radius", "red", "green", "blue", "weight"}; */
-	const char *p;
 	int type;
 	UnionPar *up = NULL;
-	char types[4][8];
-	buf[0] = 0;
 	if (par == NULL || row < 0)
 		return;
 	up = ParameterTableGetItemPtr(par, row, &type);
-	switch (type) {
-		case kVdwParType: {
-			VdwPar *vp = (VdwPar *)up;
-			if (vp == NULL) {
-				if (column >= 0 && column < 8)
-					snprintf(buf, bufsize, "%s", sVdwParTitles[column]);
-				return;
-			}
-			switch (column) {
-				case 0: snprintf(buf, bufsize, "vdw"); break;
-				case 1:
-					AtomTypeDecodeToString(vp->type1, types[0]);
-					snprintf(buf, bufsize, "%s", types[0]);
-					break;
-				case 2:
-					snprintf(buf, bufsize, "%.5f", vp->eps * INTERNAL2KCAL);
-					break;
-				case 3:
-					snprintf(buf, bufsize, "%.5f", vp->r_eq);
-					break;
-				case 4:
-					snprintf(buf, bufsize, "%.5f", vp->eps14 * INTERNAL2KCAL);
-					break;
-				case 5:
-					snprintf(buf, bufsize, "%.5f", vp->r_eq14);
-					break;
-				case 6:
-					snprintf(buf, bufsize, "%d", vp->atomicNumber);
-					break;
-				case 7:
-					snprintf(buf, bufsize, "%.3f", vp->weight);
-					break;
-			}
-			break;
-		}
-		case kBondParType: {
-			BondPar *bp = (BondPar *)up;
-			if (bp == NULL) {
-				if (column >= 0 && column < 4)
-					snprintf(buf, bufsize, "%s", sBondParTitles[column]);
-				return;
-			}
-			switch (column) {
-				case 0: snprintf(buf, bufsize, "bond"); break;
-				case 1:
-					AtomTypeDecodeToString(bp->type1, types[0]);
-					AtomTypeDecodeToString(bp->type2, types[1]);
-					snprintf(buf, bufsize, "%s-%s", types[0], types[1]);
-					break;
-				case 2:
-				case 3:
-					snprintf(buf, bufsize, "%.3f", (column == 2 ? bp->k * INTERNAL2KCAL : bp->r0));
-					break;
-			}
-			break;
-		}
-		case kAngleParType: {
-			AnglePar *ap = (AnglePar *)up;
-			if (ap == NULL) {
-				if (column >= 0 && column < 4)
-					snprintf(buf, bufsize, "%s", sAngleParTitles[column]);
-				return;
-			}
-			switch (column) {
-				case 0: snprintf(buf, bufsize, "angle"); break;
-				case 1:
-					AtomTypeDecodeToString(ap->type1, types[0]);
-					AtomTypeDecodeToString(ap->type2, types[1]);
-					AtomTypeDecodeToString(ap->type3, types[2]);
-					snprintf(buf, bufsize, "%s-%s-%s", types[0], types[1], types[2]);
-					break;
-				case 2:
-				case 3:
-					snprintf(buf, bufsize, "%.3f", (column == 2 ? ap->k * INTERNAL2KCAL : ap->a0 * kRad2Deg));
-					break;
-			}
-			break;
-		}
-		case kDihedralParType: {
-			TorsionPar *tp = (TorsionPar *)up;
-			if (tp == NULL) {
-				if (column >= 0 && column < 5)
-					snprintf(buf, bufsize, "%s", sDihedralParTitles[column]);
-				return;
-			}
-			switch (column) {
-				case 0: snprintf(buf, bufsize, "dihe"); break;
-				case 1:
-					AtomTypeDecodeToString(tp->type1, types[0]);
-					AtomTypeDecodeToString(tp->type2, types[1]);
-					AtomTypeDecodeToString(tp->type3, types[2]);
-					AtomTypeDecodeToString(tp->type4, types[3]);
-					snprintf(buf, bufsize, "%s-%s-%s-%s", types[0], types[1], types[2], types[3]);
-					break;
-				case 3:
-					snprintf(buf, bufsize, "%d", tp->period[0]);
-					break;
-				case 2:
-				case 4:
-					snprintf(buf, bufsize, "%.3f", (column == 2 ? tp->k[0] * INTERNAL2KCAL : tp->phi0[0] * kRad2Deg));
-					break;
-			}
-			break;
-		}
-		case kImproperParType: {
-			TorsionPar *tp = (TorsionPar *)up;
-			if (tp == NULL) {
-				if (column >= 0 && column < 5)
-					snprintf(buf, bufsize, "%s", sImproperParTitles[column]);
-				return;
-			}		
-			switch (column) {
-				case 0: snprintf(buf, bufsize, "impr"); break;
-				case 1:
-					AtomTypeDecodeToString(tp->type1, types[0]);
-					AtomTypeDecodeToString(tp->type2, types[1]);
-					AtomTypeDecodeToString(tp->type3, types[2]);
-					AtomTypeDecodeToString(tp->type4, types[3]);
-					snprintf(buf, bufsize, "%s-%s-%s-%s", types[0], types[1], types[2], types[3]);
-					break;
-				case 3:
-					snprintf(buf, bufsize, "%d", tp->period[0]);
-					break;
-				case 2:
-				case 4:
-					snprintf(buf, bufsize, "%.3f", (column == 2 ? tp->k[0] * INTERNAL2KCAL : tp->phi0[0] * kRad2Deg));
-					break;
-			}
-			break;
-		}
-		case kVdwPairParType: {
-			VdwPairPar *vp = (VdwPairPar *)up;
-			if (vp == NULL) {
-				if (column >= 0 && column < 6)
-					snprintf(buf, bufsize, "%s", sVdwPairParTitles[column]);
-				return;
-			}
-			switch (column) {
-				case 0: snprintf(buf, bufsize, "pvdw"); break;
-				case 1:
-					AtomTypeDecodeToString(vp->type1, types[0]);
-					AtomTypeDecodeToString(vp->type2, types[1]);
-					snprintf(buf, bufsize, "%s-%s", types[0], types[1]);
-					break;
-				case 2:
-					snprintf(buf, bufsize, "%.6f", vp->eps * INTERNAL2KCAL);
-					break;
-				case 3:
-					snprintf(buf, bufsize, "%.6f", vp->r_eq);
-					break;
-				case 4:
-					snprintf(buf, bufsize, "%.6f", (vp->A14 == 0.0 ? 0.0 : vp->B14 * vp->B14 / vp->A14 * 0.25 * INTERNAL2KCAL));
-					break;
-				case 5:
-					snprintf(buf, bufsize, "%.6f", vp->eps14 * INTERNAL2KCAL);
-					break;
-			}
-			break;
-		}
-/*		case kElementParType: {
-			ElementPar *ap = (ElementPar *)up;
-			if (ap == NULL) {
-				if (column >= 0 && column < 8)
-					snprintf(buf, bufsize, "%s", sAtomParTitles[column]);
-				return;
-			}
-			switch (column) {
-				case 0: snprintf(buf, bufsize, "disp"); break;
-				case 1: snprintf(buf, bufsize, "%.4s", ap->name); break;
-				case 2: snprintf(buf, bufsize, "%d", ap->number); break;
-				case 3: snprintf(buf, bufsize, "%.2f", ap->radius); break;
-				case 4: snprintf(buf, bufsize, "%.3f", ap->r); break;
-				case 5: snprintf(buf, bufsize, "%.3f", ap->g); break;
-				case 6: snprintf(buf, bufsize, "%.3f", ap->b); break;
-				case 7: snprintf(buf, bufsize, "%.3f", ap->weight); break;
-			}
-			break;
-		} */
-		default: return;
-	}
-	if (up != NULL && (column == 8 || column == 9)) {
-		if (column == 8 && ((BondPar *)up)->src == -1)
-			snprintf(buf, bufsize, "!NONE!");
-		else if ((p = ParameterGetComment(column == 8 ? ((BondPar *)up)->src : ((BondPar *)up)->com)) != NULL)
-			snprintf(buf, bufsize, "%s", p);
-	}
+	ParameterItemToString(type, up, column, buf, bufsize);
 }
 
 /*  Return values:
