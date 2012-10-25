@@ -9588,7 +9588,8 @@ s_Molecule_PiAnchorR(VALUE self, VALUE ival)
     Data_Get_Struct(self, Molecule, mol);
 	if (idx < 0 || idx >= mol->npiatoms)
 		rb_raise(rb_eMolbyError, "no pi anchor present: %d", idx);
-	MoleculeCalculatePiAtomPosition(mol, idx, &v);
+	MoleculeCalculatePiAtomPosition(mol, idx);
+	v = mol->piatoms[idx].r;
 	return ValueFromVector(&v);
 }
 
@@ -9607,7 +9608,8 @@ s_Molecule_PiAnchorFractR(VALUE self, VALUE ival)
     Data_Get_Struct(self, Molecule, mol);
 	if (idx < 0 || idx >= mol->npiatoms)
 		rb_raise(rb_eMolbyError, "no pi anchor present: %d", idx);
-	MoleculeCalculatePiAtomPosition(mol, idx, &v);
+	MoleculeCalculatePiAtomPosition(mol, idx);
+	v = mol->piatoms[idx].r;
 	if (mol->cell != NULL)
 		TransformVec(&v, mol->cell->rtr, &v);
 	return ValueFromVector(&v);

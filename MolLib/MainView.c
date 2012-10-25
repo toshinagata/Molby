@@ -1536,16 +1536,18 @@ drawPiAtoms(MainView *mview)
 	PiAtom *pp;
 	Double rad;
 	GLfloat fval[12];
-	Vector r, *vp, *rp;
+	Vector r, *rp;
 	Double d;
 //	static GLfloat sLightGreenColor[] = {0, 1, 0.50, 1};
 	static GLfloat sLightGreenTransColor[] = {0, 1, 0.50, 0.75};
 	Molecule *mol = mview->mol;
-	vp = (Vector *)malloc(sizeof(Vector) * mol->npiatoms);
+//	Vector *vp = (Vector *)malloc(sizeof(Vector) * mol->npiatoms);
 	nrp = 0;
 	rp = NULL;
 	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, sLightGreenTransColor);
 	for (i = 0, pp = mol->piatoms; i < mol->npiatoms; i++, pp++) {
+		/*  The pi atom position should be explicitly calculated
+		    (because the base atom(s) may be dragged)  */
 		VecZero(cen);
 		cp = AtomConnectData(&pp->connect);
 		AssignArray(&rp, &nrp, sizeof(Vector), pp->connect.count - 1, NULL);
@@ -1559,7 +1561,7 @@ drawPiAtoms(MainView *mview)
 			VecScaleInc(cen, r, d);
 			rp[j] = r;
 		}
-		vp[i] = cen;  /*  Used later for drawing pi bonds  */
+		pp->r = cen;
 		rad = 0.1;
 		fval[0] = cen.x;
 		fval[1] = cen.y;
@@ -1580,8 +1582,12 @@ drawPiAtoms(MainView *mview)
 		for (j = 0; j < 2; j++) {
 			if (cp[j] >= 0 && cp[j] < mol->natoms) {
 				r = ATOM_AT_INDEX(mol->atoms, cp[j])->r;
+				if (mview->draggingMode == kMainViewDraggingSelectedAtoms) {
+					if (MoleculeIsAtomSelected(mol, cp[j]))
+						VecInc(r, mview->dragOffset);
+				}
 			} else if (cp[j] >= ATOMS_MAX_NUMBER && cp[j] < ATOMS_MAX_NUMBER + mol->npiatoms) {
-				r = vp[cp[j] - ATOMS_MAX_NUMBER];
+				r = mol->piatoms[cp[j] - ATOMS_MAX_NUMBER].r;
 			} else break;
 			fval[j * 3] = r.x;
 			fval[j * 3 + 1] = r.y;
@@ -1590,7 +1596,7 @@ drawPiAtoms(MainView *mview)
 		if (j == 2)
 			drawCylinder(fval, fval + 3, 0.05, 6, 0);
 	}
-	free(vp);
+//	free(vp);
 	free(rp);
 }
 

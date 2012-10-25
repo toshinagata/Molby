@@ -480,6 +480,9 @@ s_calc_pibond_force(MDArena *arena)
 //	Double *energies = &arena->energies[kAngleIndex];
 //	Vector *forces = &arena->forces[kAngleIndex * arena->mol->natoms];
 	Int i;
+	for (i = 0; i < arena->mol->npiatoms; i++) {
+		MoleculeCalculatePiAtomPosition(arena->mol, i);
+	}
 	for (i = 0; i < npibonds; i++, pibonds += 4, pars++) {
 		Vector r[4];
 		Vector f[4], *forces;
@@ -494,8 +497,8 @@ s_calc_pibond_force(MDArena *arena)
 				pp[j] = NULL;
 			} else {
 				n -= ATOMS_MAX_NUMBER;
-				MoleculeCalculatePiAtomPosition(arena->mol, n, &r[j]);
 				pp[j] = arena->mol->piatoms + n;
+				r[j] = pp[j]->r;
 			}
 		}
 		if (j == 2) {  /*  Bond  */

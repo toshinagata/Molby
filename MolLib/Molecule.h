@@ -180,6 +180,7 @@ typedef struct PiAtom {
 	AtomConnect connect;
 	Int  ncoeffs;
 	Double *coeffs;  /*  The piatom position is given by sum(i, atoms[connect.data[i]] * coeffs[i]) */
+	Vector r;        /*  Current position (cache)  */
 } PiAtom;
 
 /*  3-Dimensional distribution  */
@@ -519,7 +520,7 @@ int MoleculeRemoveFrames(Molecule *mp, IntGroup *group, Vector *outFrame, Vector
 int MoleculeSelectFrame(Molecule *mp, int frame, int copyback);
 int MoleculeFlushFrames(Molecule *mp);
 
-int MoleculeCalculatePiAtomPosition(Molecule *mol, int idx, Vector *vp);
+int MoleculeCalculatePiAtomPosition(Molecule *mol, int idx);
 int MoleculeValidatePiConnectionTable(Molecule *mol);
 void MoleculeInvalidatePiConnectionTable(Molecule *mol);
 	

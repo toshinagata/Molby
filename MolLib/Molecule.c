@@ -10261,7 +10261,7 @@ MoleculeFlushFrames(Molecule *mp)
 #pragma mark ====== Pi Atoms ======
 
 int
-MoleculeCalculatePiAtomPosition(Molecule *mol, int idx, Vector *vp)
+MoleculeCalculatePiAtomPosition(Molecule *mol, int idx)
 {
 	PiAtom *pp;
 	Int i, *cp;
@@ -10269,10 +10269,10 @@ MoleculeCalculatePiAtomPosition(Molecule *mol, int idx, Vector *vp)
 		return -1;
 	pp = mol->piatoms + idx;
 	cp = AtomConnectData(&pp->connect);
-	VecZero(*vp);
+	VecZero(pp->r);
 	for (i = pp->connect.count - 1; i >= 0; i--) {
-		Vector r = ATOM_AT_INDEX(mol->atoms, cp[i])->r;
-		VecScaleInc(*vp, r, pp->coeffs[i]);
+		Vector rr = ATOM_AT_INDEX(mol->atoms, cp[i])->r;
+		VecScaleInc(pp->r, rr, pp->coeffs[i]);
 	}
 	return idx;
 }
