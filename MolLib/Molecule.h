@@ -73,6 +73,12 @@ typedef struct AtomConnect {
 	} u;
 } AtomConnect;
 
+typedef struct PiAnchor {
+	AtomConnect connect;
+	Int ncoeffs;
+	Double *coeffs;
+} PiAnchor;
+
 /*  Atom record  */
 typedef struct Atom {
 	Int    segSeq;
@@ -100,6 +106,7 @@ typedef struct Atom {
 	Vector *frames;
 	Symop  symop;    /*  For symmetry-expanded atom  */
 	Int    symbase;  /*  The index of original atom for symmetry-expansion  */
+	PiAnchor *anchor;  /*  Non-NULL if this atom is a pi-anchor  */
 	Int    labelid;  /*  The label ID; 0 for no label  */
 	short  wrap_dx, wrap_dy, wrap_dz; /*  Calculated by md_wrap_coordinates; used only in wrapped output.  */
 	Double fix_force; /*  0: no fix, >0: fix at fix_pos with harmonic potential, <0: fix at fix_pos without force  */
@@ -172,7 +179,7 @@ typedef struct XtalCell {
 	Double  cellsigma[6];  /*  For crystallographic data; sigma for the cell parameters  */
 } XtalCell;
 
-
+#if PIATOM
 /*  Dummy atoms to represent metal-pi bonds  */
 typedef struct PiAtom {
 	char aname[4];
@@ -182,6 +189,7 @@ typedef struct PiAtom {
 	Double *coeffs;  /*  The piatom position is given by sum(i, atoms[connect.data[i]] * coeffs[i]) */
 	Vector r;        /*  Current position (cache)  */
 } PiAtom;
+#endif
 
 /*  3-Dimensional distribution  */
 typedef struct Cube {
@@ -268,6 +276,8 @@ typedef struct Molecule {
 	XtalCell   *cell;
 	Int    nsyms;        /*  Symmetry operations; syms are always described in crystallographic units (even when the unit cell is not defined)  */
 	Transform *syms;
+
+#if PIATOM
 	Int    npiatoms;     /*  Number of "dummy" atoms to represent pi-metal bonds  */
 	PiAtom *piatoms;
 	Int    npibonds;
@@ -283,7 +293,8 @@ typedef struct Molecule {
 						     the connection data (indices of connected atoms) follow.
 						     The connected atoms (only by pi-bonds) for atom i are listed in
 						     piconnects[piconnects[i]]...piconnects[piconnects[i+1]]  */
-
+#endif
+	
 	IntGroup *selection;
 	Int    nframes;      /*  The number of frames (>= 1). This is a cached value, and should be
 							 recalculated from the atoms if it is -1  */
@@ -520,9 +531,11 @@ int MoleculeRemoveFrames(Molecule *mp, IntGroup *group, Vector *outFrame, Vector
 int MoleculeSelectFrame(Molecule *mp, int frame, int copyback);
 int MoleculeFlushFrames(Molecule *mp);
 
+#if PIATOM
 int MoleculeCalculatePiAtomPosition(Molecule *mol, int idx);
 int MoleculeValidatePiConnectionTable(Molecule *mol);
 void MoleculeInvalidatePiConnectionTable(Molecule *mol);
+#endif
 	
 int MoleculeCalcMO(Molecule *mp, Int mono, const Vector *op, const Vector *dxp, const Vector *dyp, const Vector *dzp, Int nx, Int ny, Int nz, int (*callback)(double progress, void *ref), void *ref);
 int MoleculeGetDefaultMOGrid(Molecule *mp, Int npoints, Vector *op, Vector *xp, Vector *yp, Vector *zp, Int *nx, Int *ny, Int *nz);

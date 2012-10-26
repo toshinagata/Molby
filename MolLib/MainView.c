@@ -1528,6 +1528,7 @@ skip:
 		free(selectFlags);
 }
 
+#if PIATOM
 static void
 drawPiAtoms(MainView *mview)
 {
@@ -1599,6 +1600,7 @@ drawPiAtoms(MainView *mview)
 //	free(vp);
 	free(rp);
 }
+#endif
 
 static void
 drawGraphics(MainView *mview)
@@ -1927,7 +1929,9 @@ MainView_drawModel(MainView *mview)
 	
 	MainViewCallback_clearLabels(mview);
     drawModel(mview);
+#if PIATOM
 	drawPiAtoms(mview);
+#endif
 	drawUnitCell(mview);
 	drawRotationCenter(mview);
 	drawGraphics(mview);

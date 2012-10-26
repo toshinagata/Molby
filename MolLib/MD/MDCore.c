@@ -293,6 +293,7 @@ s_check_bonded(Molecule *mol, Int idx, Int *results)
 			*ip = -1;
 		}
 	}
+#if PIATOM
 	if (mol->piconnects != NULL) {
 		for (i = mol->piconnects[idx]; i < mol->piconnects[idx + 1]; i++) {
 			n = mol->piconnects[i];
@@ -306,6 +307,7 @@ s_check_bonded(Molecule *mol, Int idx, Int *results)
 			}
 		}
 	}
+#endif
 	for (ip = results; *ip >= 0; ip++)
 		;
 	return ip - results;
@@ -560,6 +562,7 @@ s_search_improper(MDArena *arena, int n1, int n2, int n3, int n4)
 
 #define SWAP_INT(_i, _j) do { Int _k; _k = _i; _i = _j; _j = _k; } while (0)
 
+#if PIATOM
 /*  Check whether i1-i2 is included in the pi-bond list  */
 static int
 s_check_pi_bond(MDArena *arena, Int i1, Int i2)
@@ -593,6 +596,7 @@ s_check_pi_bond(MDArena *arena, Int i1, Int i2)
 	}
 	return 0;
 }
+#endif
 
 /*  Find vdw parameters and build the in-use list */
 static int
@@ -832,11 +836,13 @@ s_find_bond_parameters(MDArena *arena)
 			Atom *ap1, *ap2;
 			i1 = mol->bonds[i * 2];
 			i2 = mol->bonds[i * 2 + 1];
+#if PIATOM
 			if (s_check_pi_bond(arena, i1, i2)) {
 				/*  Skip this bond  */
 				arena->bond_par_i[i] = -1;
 				continue;
 			}
+#endif
 			ap1 = ATOM_AT_INDEX(mol->atoms, i1);
 			ap2 = ATOM_AT_INDEX(mol->atoms, i2);
 			type1 = ap1->type;
@@ -924,11 +930,13 @@ s_find_angle_parameters(MDArena *arena)
 			i1 = mol->angles[i * 3];
 			i2 = mol->angles[i * 3 + 1];
 			i3 = mol->angles[i * 3 + 2];
+#if PIATOM
 			if (s_check_pi_bond(arena, i1, i2) || s_check_pi_bond(arena, i2, i3)) {
 				/*  Skip this angle  */
 				arena->angle_par_i[i] = -1;
 				continue;
 			}
+#endif
 			type1 = ATOM_AT_INDEX(mol->atoms, i1)->type;
 			type2 = ATOM_AT_INDEX(mol->atoms, i2)->type;
 			type3 = ATOM_AT_INDEX(mol->atoms, i3)->type;
@@ -1017,11 +1025,13 @@ s_find_dihedral_parameters(MDArena *arena)
 			i2 = mol->dihedrals[i * 4 + 1];
 			i3 = mol->dihedrals[i * 4 + 2];
 			i4 = mol->dihedrals[i * 4 + 3];
+#if PIATOM
 			if (s_check_pi_bond(arena, i1, i2) || s_check_pi_bond(arena, i2, i3) || s_check_pi_bond(arena, i3, i4)) {
 				/*  Skip this dihedral  */
 				arena->dihedral_par_i[i] = -1;
 				continue;
 			}
+#endif
 			type1 = ATOM_AT_INDEX(mol->atoms, i1)->type;
 			type2 = ATOM_AT_INDEX(mol->atoms, i2)->type;
 			type3 = ATOM_AT_INDEX(mol->atoms, i3)->type;
@@ -1188,6 +1198,7 @@ s_find_improper_parameters(MDArena *arena)
 	return nmissing;
 }
 
+#if PIATOM
 /*  Find pi-bond parameters  */
 static int
 s_find_pibond_parameters(MDArena *arena)
@@ -1293,6 +1304,7 @@ s_find_pibond_parameters(MDArena *arena)
 	arena->nmissing += nmissing;
 	return nmissing;
 }
+#endif
 
 /*  Find one fragment, starting from start_index  */
 static void
@@ -1707,10 +1719,8 @@ md_prepare(MDArena *arena, int check_only)
 		   "Number of bonds = %d\n"
 		   "Number of angles = %d\n"
 		   "Number of dihedrals = %d\n"
-		   "Number of impropers = %d\n"
-		   "Number of pi anchors = %d\n"
-		   "Number of pi anchor constructs = %d\n",
-		   mol->nbonds, mol->nangles, mol->ndihedrals, mol->nimpropers, mol->npiatoms, mol->npibonds);
+		   "Number of impropers = %d\n",
+		   mol->nbonds, mol->nangles, mol->ndihedrals, mol->nimpropers);
 	
 	t1 = t2 = t3 = 0;
 	for (i = 0; i < mol->natoms; i++) {
@@ -1744,19 +1754,24 @@ md_prepare(MDArena *arena, int check_only)
 	if (arena->par != NULL)
 		ParameterRelease(arena->par);
 	arena->par = ParameterNew();
+
+#if PIATOM
 	if (arena->pi_pars != NULL)
 		free(arena->pi_pars);
 	if (arena->mol->npibonds > 0)
 		arena->pi_pars = (UnionPar *)malloc(sizeof(UnionPar) * arena->mol->npibonds);
 	else arena->pi_pars = NULL;
-
+#endif
+	
 	arena->nmissing = arena->nsuspicious = 0;
 	s_find_vdw_parameters(arena);
 	s_find_bond_parameters(arena);
 	s_find_angle_parameters(arena);
 	s_find_dihedral_parameters(arena);
 	s_find_improper_parameters(arena);
+#if PIATOM
 	s_find_pibond_parameters(arena);
+#endif
 	
 	if (arena->nmissing > 0) {
 	/*	for (i = 0; i < nmissing; i++) {
@@ -3725,12 +3740,14 @@ md_arena_set_molecule(MDArena *arena, Molecule *xmol)
 		memmove(mol->impropers, xmol->impropers, sizeof(Int) * 4 * xmol->nimpropers);
 		NewArray(&mol->syms, &mol->nsyms, sizeof(Transform), xmol->nsyms);
 		memmove(mol->syms, xmol->syms, sizeof(Transform) * xmol->nsyms);
+#if PIATOM
 		NewArray(&mol->piatoms, &mol->npiatoms, sizeof(PiAtom), xmol->npiatoms);
 		for (i = 0; i < xmol->npiatoms; i++) {
 			PiAtomDuplicate(mol->piatoms + i, xmol->piatoms + i);
 		}
 		NewArray(&mol->pibonds, &mol->npibonds, sizeof(Int) * 4, xmol->npibonds);
 		memmove(mol->pibonds, xmol->pibonds, sizeof(Int) * 4 * xmol->npibonds);
+#endif
 		if (xmol->cell != NULL) {
 			mol->cell = (XtalCell *)malloc(sizeof(XtalCell));
 			memmove(mol->cell, xmol->cell, sizeof(XtalCell));

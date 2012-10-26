@@ -468,6 +468,7 @@ s_calc_improper_force(MDArena *arena)
 	s_calc_dihedral_force_sub(arena, mol->atoms, mol->nimpropers, mol->impropers, arena->improper_par_i, par->improperPars, NULL/*arena->sym_improper_uniq*/, energies, forces);
 }
 
+#if PIATOM
 static void
 s_calc_pibond_force(MDArena *arena)
 {
@@ -552,6 +553,7 @@ s_calc_pibond_force(MDArena *arena)
 		}
 	}
 }
+#endif  /*  PIATOM  */
 
 /*  ==================================================================== */
 /*  md_check_verlet_list: only for debugging the verlet list generation  */
@@ -1382,7 +1384,9 @@ calc_force(MDArena *arena)
 	s_calc_angle_force(arena);
 	s_calc_dihedral_force(arena);
 	s_calc_improper_force(arena);
+#if PIATOM
 	s_calc_pibond_force(arena);
+#endif
 	s_calc_nonbonded_force(arena);
 	s_calc_auxiliary_force(arena);
 

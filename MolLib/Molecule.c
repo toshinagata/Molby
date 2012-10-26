@@ -220,6 +220,7 @@ AtomConnectDeleteEntry(AtomConnect *ac, Int idx)
 	AtomConnectResize(ac, ac->count - 1);
 }
 
+#if PIATOM
 void
 PiAtomDuplicate(PiAtom *pa, const PiAtom *cpa)
 {
@@ -245,6 +246,7 @@ PiAtomClean(PiAtom *pa)
 		pa->coeffs = NULL;
 	}
 }
+#endif
 
 #pragma mark ====== Accessor types ======
 
@@ -367,6 +369,7 @@ MoleculeInitWithMolecule(Molecule *mp2, Molecule *mp)
 		NewArray(&(mp2->syms), &(mp2->nsyms), sizeof(Transform), mp->nsyms);
 		memmove(mp2->syms, mp->syms, sizeof(Transform) * mp2->nsyms);
 	}
+#if PIATOM
 	if (mp->npiatoms > 0) {
 		NewArray(&(mp2->piatoms), &(mp2->npiatoms), sizeof(PiAtom), mp->npiatoms);
 		for (i = 0; i < mp->npiatoms; i++)
@@ -380,6 +383,7 @@ MoleculeInitWithMolecule(Molecule *mp2, Molecule *mp)
 		NewArray(&(mp2->piconnects), &(mp2->npiconnects), sizeof(Int), mp->npiconnects);
 		memmove(mp2->piconnects, mp->piconnects, sizeof(Int) * mp->npiconnects);
 	}
+#endif
 	
 /*	mp2->useFlexibleCell = mp->useFlexibleCell; */
 	if (mp->nframe_cells > 0) {
@@ -526,6 +530,7 @@ MoleculeClear(Molecule *mp)
 		mp->syms = NULL;
 		mp->nsyms = 0;
 	}
+#if PIATOM
 	if (mp->piatoms != NULL) {
 		for (i = 0; i < mp->npiatoms; i++) {
 			PiAtomClean(mp->piatoms + i);
@@ -544,6 +549,7 @@ MoleculeClear(Molecule *mp)
 		mp->piconnects = NULL;
 		mp->npiconnects = 0;
 	}
+#endif
 	if (mp->selection != NULL) {
 		IntGroupRelease(mp->selection);
 		mp->selection = NULL;
@@ -1118,6 +1124,7 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 				}
 			}
 			continue;
+#if PIATOM
 		} else if (strcmp(buf, "!:pi_atoms") == 0) {
 			PiAtom *pp;
 			while (ReadLine(buf, sizeof buf, fp, &lineNumber) > 0) {
@@ -1179,6 +1186,7 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 		pi_atom_constructs_bad_format:
 			snprintf(errbuf, errbufsize, "line %d: bad format in pi_atom_constructs", lineNumber);
 			goto exit;
+#endif  /*  PIATOM  */
 		} else if (strcmp(buf, "!:anisotropic_thermal_parameters") == 0) {
 			i = 0;
 			while (ReadLine(buf, sizeof buf, fp, &lineNumber) > 0) {
@@ -3932,6 +3940,7 @@ MoleculeWriteToMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbu
 		fprintf(fp, "\n");
 	}
 	
+#if PIATOM
 	if (mp->npiatoms > 0) {
 		PiAtom *pp;
 		fprintf(fp, "!:pi_atoms\n");
@@ -3969,7 +3978,8 @@ MoleculeWriteToMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbu
 		}
 		fprintf(fp, "\n");
 	}
-	
+#endif  /*  PIATOM  */
+
 	if (n_aniso > 0) {
 		fprintf(fp, "!:anisotropic_thermal_parameters\n");
 		fprintf(fp, "! b11 b22 b33 b12 b13 b23 [sigma; sb11 sb22 sb33 sb12 sb13 sb23]\n");
@@ -5099,6 +5109,7 @@ MoleculeDeserialize(const char *data, Int length, Int *timep)
 			n = len / sizeof(Transform);
 			NewArray(&mp->syms, &mp->nsyms, sizeof(Transform), n);
 			memmove(mp->syms, ptr, len);
+#if PIATOM
 		} else if (strcmp(data, "PIATOM") == 0) {
 			const char *ptr2 = ptr + len;
 			mp->piatoms = NULL;
@@ -5127,6 +5138,7 @@ MoleculeDeserialize(const char *data, Int length, Int *timep)
 			n = len / (sizeof(Int) * 4);
 			NewArray(&mp->pibonds, &mp->npibonds, sizeof(Int) * 4, n);
 			memmove(mp->pibonds, ptr, len);
+#endif  /*  PIATOM  */
 		} else if (strcmp(data, "TIME") == 0) {
 			if (timep != NULL)
 				*timep = *((Int *)ptr);
@@ -5372,6 +5384,7 @@ MoleculeSerialize(Molecule *mp, Int *outLength, Int *timep)
 		len_all += len;
 	}
 	
+#if PIATOM
 	/*  Pi-atoms  */
 	if (mp->npiatoms > 0) {
 		/*  Estimate the necessary storage first  */
@@ -5421,7 +5434,8 @@ MoleculeSerialize(Molecule *mp, Int *outLength, Int *timep)
 		memmove(p, mp->pibonds, sizeof(Int) * 4 * mp->npibonds);
 		len_all += len;
 	}
-	
+#endif  /*  PIATOM  */
+
 	/*  Parameters  */
 	if (mp->par != NULL) {
 		int type;
@@ -6476,7 +6490,9 @@ MoleculeAddExpandedAtoms(Molecule *mp, Symop symop, IntGroup *group, Int *indice
 		return -2;
 
 	/*  Create atoms, with avoiding duplicates  */
+#if PIATOM
 	MoleculeInvalidatePiConnectionTable(mp);
+#endif
 	n0 = n1 = mp->natoms;
 	table = (int *)malloc(sizeof(int) * n0);
 	if (table == NULL)
@@ -6852,7 +6868,9 @@ MoleculeCreateAnAtom(Molecule *mp, const Atom *ap, int pos)
 			if (mp->impropers[i] >= pos)
 				mp->impropers[i]++;
 		}
+#if PIATOM
 		MoleculeInvalidatePiConnectionTable(mp);
+#endif
 	}
 	mp->nframes = -1;  /*  Should be recalculated later  */
 	MoleculeIncrementModifyCount(mp);
@@ -6895,7 +6913,9 @@ MoleculeMerge(Molecule *dst, Molecule *src, IntGroup *where, Int resSeqOffset, I
 	act = NULL;
 
 	__MoleculeLock(dst);
+#if PIATOM
 	MoleculeInvalidatePiConnectionTable(dst);
+#endif
 	nsrc = src->natoms;
 	ndst = dst->natoms;
 	if (resSeqOffset < 0)
@@ -7149,6 +7169,7 @@ MoleculeMerge(Molecule *dst, Molecule *src, IntGroup *where, Int resSeqOffset, I
 		}
 	}
 
+#if PIATOM
 	/*  Renumber the existing pi-atoms  */
 	if (dst->npiatoms > 0) {
 		for (i = 0; i < dst->npiatoms; i++) {
@@ -7221,7 +7242,8 @@ MoleculeMerge(Molecule *dst, Molecule *src, IntGroup *where, Int resSeqOffset, I
 			}
 		}
 	}
-	
+#endif  /*  PIATOM  */
+
 	MoleculeCleanUpResidueTable(dst);
 	
 	free(new2old);
@@ -7264,7 +7286,9 @@ sMoleculeUnmergeSub(Molecule *src, Molecule **dstp, IntGroup *where, int resSeqO
 		return 1;  /*  Bad parameter  */
 
 	__MoleculeLock(src);
+#if PIATOM
 	MoleculeInvalidatePiConnectionTable(src);
+#endif
 	
 	if (nactions != NULL)
 		*nactions = 0;
@@ -7585,7 +7609,8 @@ sMoleculeUnmergeSub(Molecule *src, Molecule **dstp, IntGroup *where, int resSeqO
 			}
 		}
 	}
-	
+
+#if PIATOM
 	/*  Copy the pi-atoms  */
 	if (src->npiatoms > 0) {
 		PiAtom *pp1, *pp2;
@@ -7726,6 +7751,7 @@ sMoleculeUnmergeSub(Molecule *src, Molecule **dstp, IntGroup *where, int resSeqO
 		
 		free(patoms_old2new);
 	}
+#endif  /*  PIATOM  */
 	
 	/*  Clean up  */
 	IntGroupRelease(remain_g);
@@ -7829,7 +7855,7 @@ MoleculeExtract(Molecule *src, Molecule **dstp, IntGroup *where, int dummyFlag)
 }
 
 int
-MoleculeAddBonds(Molecule *mp, Int nbonds, const Int *bonds)
+MoleculeAddBonds(Molecule *mp, Int nbonds, const Int *bonds, IntGroup *where, Int autoGenerate)
 {
 	int i, j, n1, n2, n;
 	Atom *ap;
@@ -7840,39 +7866,17 @@ MoleculeAddBonds(Molecule *mp, Int nbonds, const Int *bonds)
 	if (mp->noModifyTopology)
 		return -4;  /*  Prohibited operation  */
 
-	/*  Check the bonds  */
-	bonds_tmp = (Int *)malloc(sizeof(Int) * nbonds * 2);
-	if (bonds_tmp == NULL)
-		return -4;  /*  Out of memory  */
-	n = 0;
-	for (i = 0; i < nbonds; i++) {
-		n1 = bonds[i * 2];
-		n2 = bonds[i * 2 + 1];
-		if (n1 < 0 || n1 >= mp->natoms || n2 < 0 || n2 >= mp->natoms)
-			return -1;  /*  Bad bond specification  */
-		if (n1 == n2)
-			return -5;
-		ap = ATOM_AT_INDEX(mp->atoms, n1);
-		/*  Check duplicates  */
-		cp = AtomConnectData(&ap->connect);
-		for (j = 0; j < ap->connect.count; j++) {
-			if (cp[j] == n2)
-				break;
-		}
-		if (j == ap->connect.count) {
-			bonds_tmp[n * 2] = n1;
-			bonds_tmp[n * 2 + 1] = n2;
-			n++;
-		}
-	}
-	if (n == 0) {
-		/*  No bonds to add  */
-		free(bonds_tmp);
-		return 0;
-	}
-	
+	/*  Note: Duplicates and validity are not checked (the caller must do that)  */
+
 	__MoleculeLock(mp);
 
+	n1 = mp->nbonds;
+	if (AssignArray(&(mp->bonds), &(mp->nbonds), sizeof(Int) * 2, n1 + nbonds - 1, NULL) == NULL
+		|| sInsertElementsToArrayAtPositions(mp->bonds, n1, bonds, nbonds, sizeof(Int) * 2, where) != 0) {
+		__MoleculeUnlock(mp);
+		return -4;  /*  Out of memory  */
+	}
+	
 	/*  Add connects[]  */
 	for (i = 0; i < n; i++) {
 		n1 = bonds_tmp[i * 2];
@@ -7883,106 +7887,96 @@ MoleculeAddBonds(Molecule *mp, Int nbonds, const Int *bonds)
 		AtomConnectInsertEntry(&ap->connect, ap->connect.count, n1);
 	}
 	
-	/*  Expand the array and insert  */
-	n1 = mp->nbonds;
-/*	if (AssignArray(&(mp->bonds), &(mp->nbonds), sizeof(Int) * 2, mp->nbonds + nb - 1, NULL) == NULL
-	|| sInsertElementsToArrayAtPositions(mp->bonds, n1, bonds, nb, sizeof(Int) * 2, where) != 0) */
-	if (AssignArray(&(mp->bonds), &(mp->nbonds), sizeof(Int) * 2, mp->nbonds + n - 1, NULL) == NULL)
-		goto panic;
-	memmove(mp->bonds + n1 * 2, bonds_tmp, sizeof(Int) * 2 * n);
-
 	/*  Add angles, dihedrals, impropers  */
-	{
-		Int nangles, ndihedrals, nimpropers;
-		Int *angles, *dihedrals, *impropers;
-		Int k, n3, n4;
+	if (autoGenerate) {
+		Int nangles, ndihedrals;
+		Int *angles, *dihedrals;
+		Int k, n3, n4, c1, c2;
 		Int *ip, *cp1, *cp2;
 		Int temp[4];
-		Atom *ap1, *ap2;
+		Atom *ap1, *ap2, *ap3;
 
-		angles = dihedrals = impropers = NULL;
-		nangles = ndihedrals = nimpropers = 0;
+		angles = dihedrals = NULL;
+		nangles = ndihedrals = 0;
 
 		for (i = 0; i < n; i++) {
+			AtomConnect *ac1, *ac2;
 			n1 = bonds_tmp[i * 2];
 			n2 = bonds_tmp[i * 2 + 1];
 			ap1 = ATOM_AT_INDEX(mp->atoms, n1);
 			ap2 = ATOM_AT_INDEX(mp->atoms, n2);
-			cp1 = AtomConnectData(&ap1->connect);
-			cp2 = AtomConnectData(&ap2->connect);
-			/*  Angles X-n1-n2  */
-			for (j = 0; j < ap1->connect.count; j++) {
-				n3 = cp1[j];
-				if (n3 == n2)
-					continue;
-				temp[0] = n3;
-				temp[1] = n1;
-				temp[2] = n2;
-				for (k = 0; k < nangles; k++) {
-					ip = angles + k * 3;
-					if (ip[1] == n1 && ((ip[0] == n3 && ip[2] == n2) || (ip[0] == n2 && ip[2] == n3)))
-						break;
+			if (ap1->anchor == NULL || ap2->anchor == NULL) {
+				/*  N1-N2-{XY} or N2-N1-{XY} angles (X: connected atom, Y: constitute atom of pi-anchor)  */
+				for (j = 0; j < 4; j++) {
+					switch (j) {
+						case 0: temp[0] = n1; temp[1] = n2; ac1 = &ap2->connect; break;  /* N1-N2-X */
+						case 1: if (ap2->anchor == NULL) continue; else ac1 = &ap2->anchor->connect; break; /* N1-N2-Y */
+						case 2: temp[0] = n2; temp[1] = n1; ac1 = &ap1->connect; break;  /* N2-N1-X */
+						case 3: if (ap1->anchor == NULL) continue; else ac1 = &ap1->anchor->connect; break; /* N2-N1-Y */
+					}
+					cp1 = AtomConnectData(ac1);
+					for (k = 0; k < ac1->count; k++) {
+						temp[2] = cp1[k];
+						if (temp[2] == temp[0])
+							continue;
+						if (AssignArray(&angles, &nangles, sizeof(Int) * 3, nangles, temp) == NULL)
+							goto panic;
+						/*  Dihedrals N1-N2-X-X or N2-N1-X-X  */
+						if (j == 1 || j == 3)
+							continue;
+						ap3 = ATOM_AT_INDEX(mp->atoms, temp[2]);
+						cp2 = AtomConnectData(&ap3->connect);
+						for (kk = 0; kk < ap3->connect.count; kk++) {
+							temp[3] = cp2[kk];
+							if (temp[3] == temp[0] || temp[3] == temp[1])
+								continue;
+							if (AssignArray(&dihedrals, &ndihedrals, sizeof(Int) * 4, ndihedrals, temp) == NULL)
+								goto panic;
+						}
+					}
 				}
-				if (k == nangles) {
-					if (AssignArray(&angles, &nangles, sizeof(Int) * 3, nangles, temp) == NULL)
-						goto panic;
-				}
-				/*  Dihedrals X-n1-n2-X  */
-				for (k = 0; k < ap2->connect.count; k++) {
-					n4 = cp2[k];
-					if (n4 == n1 || n4 == n3)
-						continue;
-					temp[3] = n4;
-					if (AssignArray(&dihedrals, &ndihedrals, sizeof(Int) * 4, ndihedrals, temp) == NULL)
-						goto panic;
-				}
-				/*  Impropers X-n2-n1-X  */
-			/*	temp[1] = n2;
-				temp[2] = n1;
-				for (k = 0; k < ap1->connect.count; k++) {
-					n4 = ap1->connects[k];
-					if (n4 == n2 || n4 <= n3)
-						continue;
-					temp[3] = n4;
-					if (AssignArray(&impropers, &nimpropers, sizeof(Int) * 4, nimpropers, temp) == NULL)
-						goto panic;
-				} */
 			}
-			/*  Angles X-n2-n1  */
-			for (j = 0; j < ap2->connect.count; j++) {
-				n3 = cp2[j];
-				if (n3 == n1)
+			/*  X-N1-N2-X angles  */
+			if (ap1->anchor == NULL)
+				ac1 = &ap1->connect;
+			else ac1 = &ap1->anchor->connect;
+			if (ap2->anchor == NULL)
+				ac2 = &ap2->connect;
+			else ac2 = &ap2->anchor->connect;
+			temp[1] = n1;
+			temp[2] = n2;
+			cp1 = AtomConnectData(ac1);
+			cp2 = AtomConnectData(ac2);
+			for (j = 0; j < ac1->count; j++) {
+				temp[0] = cp1[j];
+				if (temp[0] == temp[2])
 					continue;
-				temp[0] = n1;
-				temp[1] = n2;
-				temp[2] = n3;
-				for (k = 0; k < nangles; k++) {
-					ip = angles + k * 3;
-					if (ip[1] == n2 && ((ip[0] == n3 && ip[2] == n1) || (ip[0] == n1 && ip[2] == n3)))
-						break;
-				}
-				if (k == nangles) {
-					if (AssignArray(&angles, &nangles, sizeof(Int) * 3, nangles, temp) == NULL)
+				if (ATOM_AT_INDEX(mp->atoms, temp[0])->anchor != NULL)
+					continue;
+				for (k = 0; k < ac2->count; k++) {
+					temp[3] = cp2[k];
+					if (temp[3] == temp[0] || temp[3] == temp[1])
+						continue;
+					if (ATOM_AT_INDEX(mp->atoms, temp[3])->anchor != NULL)
+						continue;
+					if (AssignArray(&dihedrals, &ndihedrals, sizeof(Int) * 4, ndihedrals, temp) == NULL)
 						goto panic;
 				}
 			}
 		}
-		temp[0] = kInvalidIndex;
-		if (AssignArray(&angles, &nangles, sizeof(Int) * 3, nangles, temp) == NULL)
-			goto panic;
-		if (AssignArray(&dihedrals, &ndihedrals, sizeof(Int) * 4, ndihedrals, temp) == NULL)
-			goto panic;
-		if (AssignArray(&impropers, &nimpropers, sizeof(Int) * 4, nimpropers, temp) == NULL)
-			goto panic;
-		MoleculeAddAngles(mp, angles, NULL);
-		MoleculeAddDihedrals(mp, dihedrals, NULL);
-		MoleculeAddImpropers(mp, impropers, NULL);
-		if (angles != NULL)
+		temp[0] = kInvalidIndex;  /*  For termination  */
+		if (angles != NULL) {
+			if (AssignArray(&angles, &nangles, sizeof(Int) * 3, nangles, temp) == NULL)
+				goto panic;
+			MoleculeAddAngles(mp, angles, NULL);
 			free(angles);
-		if (dihedrals != NULL)
+		}
+		if (dihedrals != NULL) {
+			if (AssignArray(&dihedrals, &ndihedrals, sizeof(Int) * 4, ndihedrals, temp) == NULL)
+				goto panic;
+			MoleculeAddDihedrals(mp, dihedrals, NULL);
 			free(dihedrals);
-		if (impropers != NULL)
-			free(impropers);
+		}
 	}
 	
 	MoleculeIncrementModifyCount(mp);
@@ -7996,10 +7990,11 @@ MoleculeAddBonds(Molecule *mp, Int nbonds, const Int *bonds)
 	__MoleculeUnlock(mp);
 	Panic("Low memory while adding bonds");
 	return -1;  /*  Not reached  */
+#endif
 }
 
 int
-MoleculeDeleteBonds(Molecule *mp, Int nbonds, const Int *bonds)
+MoleculeDeleteBonds(Molecule *mp, IntGroup *where, Int **outAutoRemoval, IntGroup **outWhere)
 {
 	Int i, j, n1, n2, *cp;
 	Atom *ap;
@@ -8482,10 +8477,16 @@ MoleculeFindMissingAngles(Molecule *mol, Int **outAngles)
 	angles = NULL;
 	for (i = 0, ap = mol->atoms; i < mol->natoms; i++, ap = ATOM_NEXT(ap)) {
 		Int *cp = AtomConnectData(&ap->connect);
+		if (ap->anchor != NULL)
+			continue;
 		for (j = 0; j < ap->connect.count; j++) {
 			Int j0 = cp[j];
+			if (ATOM_AT_INDEX(mol->atoms, j0)->anchor != NULL)
+				continue;
 			for (k = j + 1; k < ap->connect.count; k++) {
 				Int k0 = cp[k];
+				if (ATOM_AT_INDEX(mol->atoms, k0)->anchor != NULL)
+					continue;
 				if (MoleculeLookupAngle(mol, j0, i, k0) < 0) {
 					ip = (Int *)AssignArray(&angles, &nangles, sizeof(Int) * 3, nangles, NULL);
 					ip[0] = j0;
@@ -8519,20 +8520,28 @@ MoleculeFindMissingDihedrals(Molecule *mol, Int **outDihedrals)
 	dihedrals = NULL;
 	for (n2 = 0, ap2 = mol->atoms; n2 < mol->natoms; n2++, ap2 = ATOM_NEXT(ap2)) {
 		Int i1, i3, i4, *ip;
+		if (ap2->anchor != NULL)
+			continue;
 		cp2 = AtomConnectData(&ap2->connect);
 		for (i3 = 0; i3 < ap2->connect.count; i3++) {
 			n3 = cp2[i3];
 			if (n2 > n3)
 				continue;
 			ap3 = ATOM_AT_INDEX(mol->atoms, n3);
+			if (ap3->anchor != NULL)
+				continue;
 			cp3 = AtomConnectData(&ap3->connect);
 			for (i1 = 0; i1 < ap2->connect.count; i1++) {
 				n1 = cp2[i1];
 				if (n1 == n3)
 					continue;
+				if (ATOM_AT_INDEX(mol->atoms, n1)->anchor != NULL)
+					continue;
 				for (i4 = 0; i4 < ap3->connect.count; i4++) {
 					n4 = cp3[i4];
 					if (n2 == n4 || n1 == n4)
+						continue;
+					if (ATOM_AT_INDEX(mol->atoms, n4)->anchor != NULL)
 						continue;
 					if (MoleculeLookupDihedral(mol, n1, n2, n3, n4) < 0) {
 						ip = (Int *)AssignArray(&dihedrals, &ndihedrals, sizeof(Int) * 4, ndihedrals, NULL);
@@ -8954,8 +8963,9 @@ sMoleculeReorder(Molecule *mp)
 	free(old2new);
 	free(apArray);
 	
+#if PIATOM
 	MoleculeInvalidatePiConnectionTable(mp);
-
+#endif
 }
 
 /*  Renumber atoms  */
@@ -9035,6 +9045,7 @@ MoleculeRenumberAtoms(Molecule *mp, const Int *new2old, Int *old2new_out, Int is
 		}
 	}
 	
+#if PIATOM
 	if (mp->npiatoms) {
 		/*  Renumber the pi-atoms  */
 		for (i = 0; i < mp->npiatoms; i++) {
@@ -9053,14 +9064,16 @@ MoleculeRenumberAtoms(Molecule *mp, const Int *new2old, Int *old2new_out, Int is
 				mp->pibonds[i] = old2new[j];
 		}
 	}
-	
+#endif  /*  PIATOM  */
+
 	/*  Renumber the atoms  */
 	for (i = 0; i < mp->natoms; i++)
 		memmove(ATOM_AT_INDEX(mp->atoms, old2new[i]), ATOM_AT_INDEX(saveAtoms, i), gSizeOfAtomRecord);
 	retval = 0;
 	
+#if PIATOM
 	MoleculeInvalidatePiConnectionTable(mp);
-
+#endif
 	MoleculeIncrementModifyCount(mp);
 	mp->needsMDRebuild = 1;
 
@@ -9734,6 +9747,7 @@ sMoleculeFragmentSub(Molecule *mp, int idx, IntGroup *result, IntGroup *exatoms)
 			continue;
 		sMoleculeFragmentSub(mp, idx2, result, exatoms);
 	}
+#if PIATOM
 	if (mp->piconnects != NULL) {
 		for (i = mp->piconnects[idx]; i < mp->piconnects[idx + 1]; i++) {
 			idx2 = mp->piconnects[i];
@@ -9742,6 +9756,7 @@ sMoleculeFragmentSub(Molecule *mp, int idx, IntGroup *result, IntGroup *exatoms)
 			sMoleculeFragmentSub(mp, idx2, result, exatoms);
 		}
 	}
+#endif
 }
 
 /*  The molecular fragment (= interconnected atoms) containing the atom n1 and
@@ -9753,7 +9768,9 @@ MoleculeFragmentExcludingAtomGroup(Molecule *mp, int n1, IntGroup *exatoms)
 	if (mp == NULL || mp->natoms == 0 || n1 < 0 || n1 >= mp->natoms)
 		return NULL;
 	result = IntGroupNew();
+#if PIATOM
 	MoleculeValidatePiConnectionTable(mp);
+#endif
 	sMoleculeFragmentSub(mp, n1, result, exatoms);
 	return result;
 }
@@ -9771,7 +9788,9 @@ MoleculeFragmentExcludingAtoms(Molecule *mp, int n1, int argc, int *argv)
 	for (i = 0; i < argc; i++)
 		IntGroupAdd(exatoms, argv[i], 1);
 	result = IntGroupNew();
+#if PIATOM
 	MoleculeValidatePiConnectionTable(mp);
+#endif
 	sMoleculeFragmentSub(mp, n1, result, exatoms);
 	IntGroupRelease(exatoms);
 	return result;
@@ -9789,7 +9808,9 @@ MoleculeFragmentWithAtomGroups(Molecule *mp, IntGroup *inatoms, IntGroup *exatom
 		return NULL;
 	IntGroupIteratorInit(inatoms, &iter);
 	result = IntGroupNew();
+#if PIATOM
 	MoleculeValidatePiConnectionTable(mp);
+#endif
 	while ((i = IntGroupIteratorNext(&iter)) >= 0) {
 		sMoleculeFragmentSub(mp, i, result, exatoms);
 	}
@@ -9809,7 +9830,9 @@ MoleculeIsFragmentDetachable(Molecule *mp, IntGroup *group, int *n1, int *n2)
 	Atom *ap;
 	if (mp == NULL || mp->natoms == 0 || group == NULL)
 		return 0;  /*  Invalid arguments  */
+#if PIATOM
 	MoleculeValidatePiConnectionTable(mp);
+#endif
 	bond_count = 0;
 	for (i = 0; (i1 = IntGroupGetStartPoint(group, i)) >= 0; i++) {
 		i2 = IntGroupGetEndPoint(group, i);
@@ -9827,6 +9850,7 @@ MoleculeIsFragmentDetachable(Molecule *mp, IntGroup *group, int *n1, int *n2)
 						return 0;  /*  Too many bonds  */
 				}
 			}
+#if PIATOM
 			if (mp->piconnects != NULL) {
 				for (k = mp->piconnects[j]; k < mp->piconnects[j + 1]; k++) {
 					k2 = mp->piconnects[k];
@@ -9839,6 +9863,7 @@ MoleculeIsFragmentDetachable(Molecule *mp, IntGroup *group, int *n1, int *n2)
 					}
 				}
 			}
+#endif
 		}
 	}
 	if (bond_count == 1) {
@@ -10260,6 +10285,7 @@ MoleculeFlushFrames(Molecule *mp)
 
 #pragma mark ====== Pi Atoms ======
 
+#if PIATOM
 int
 MoleculeCalculatePiAtomPosition(Molecule *mol, int idx)
 {
@@ -10365,6 +10391,7 @@ MoleculeInvalidatePiConnectionTable(Molecule *mol)
 	}
 	mol->npiconnects = 0;
 }
+#endif  /*  PIATOM  */
 
 #pragma mark ====== MO calculation ======
 

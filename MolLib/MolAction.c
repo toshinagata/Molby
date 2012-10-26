@@ -66,11 +66,13 @@ const char *gMolActionClearBox        = "clearBox";
 const char *gMolActionAddParameters   = "addParameters:iGU";
 const char *gMolActionDeleteParameters = "deleteParameters:iG";
 const char *gMolActionAmendBySymmetry = "amendBySymmetry:G;G";
+#if PIATOM
 const char *gMolActionInsertOnePiAtom = "insertOnePiAtom:iCiID";
 const char *gMolActionReplaceOnePiAtom = "replaceOnePiAtom:iCiID";
 const char *gMolActionRemoveOnePiAtom = "removeOnePiAtom:i";
 const char *gMolActionInsertPiBonds   = "insertPiBonds:GI";
 const char *gMolActionRemovePiBonds   = "removePiBonds:G";
+#endif
 
 /*  A Ruby array to retain objects used in MolActionArg  */
 static VALUE sMolActionArgValues = Qfalse;
@@ -1599,6 +1601,7 @@ s_MolActionDeleteParameters(Molecule *mol, MolAction *action, MolAction **actp)
 	return 0;
 }
 
+#if PIATOM
 static int
 s_MolActionInsertPiBonds(Molecule *mol, MolAction *action, MolAction **actp)
 {
@@ -1718,6 +1721,7 @@ s_MolActionRemoveOnePiAtom(Molecule *mol, MolAction *action, MolAction **actp)
 	MoleculeInvalidatePiConnectionTable(mol);
 	return 0;
 }
+#endif  /*  PIATOM  */
 
 int
 MolActionPerform(Molecule *mol, MolAction *action)
@@ -1901,6 +1905,7 @@ MolActionPerform(Molecule *mol, MolAction *action)
 		if ((result = s_MolActionDeleteParameters(mol, action, &act2)) != 0)
 			return result;
 		needsRebuildMDArena = 1;
+#if PIATOM 
 	} else if (strcmp(action->name, gMolActionInsertOnePiAtom) == 0) {
 		if ((result = s_MolActionInsertOnePiAtom(mol, action, &act2, 0)) != 0)
 			return result;
@@ -1921,6 +1926,7 @@ MolActionPerform(Molecule *mol, MolAction *action)
 		if ((result = s_MolActionRemovePiBonds(mol, action, &act2)) != 0)
 			return result;
 		needsRebuildMDArena = 1;
+#endif  /*  PIATOM  */
 	} else if (strcmp(action->name, gMolActionNone) == 0) {
 		/*  Do nothing  */
 	} else {

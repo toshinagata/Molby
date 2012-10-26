@@ -4229,6 +4229,7 @@ s_Molecule_Alloc(VALUE klass)
 	return val;
 }
 
+#if PIATOM
 static int
 s_Molecule_AtomOrPiAtomIndexFromValue(Molecule *mol, VALUE val)
 {
@@ -4271,6 +4272,32 @@ s_Molecule_AtomIndexFromValue(Molecule *mol, VALUE val)
 	}
 	return n;
 }
+#else
+static int
+s_Molecule_AtomIndexFromValue(Molecule *mol, VALUE val)
+{
+	int n, i;
+	char *p;
+	if (FIXNUM_P(val)) {
+		n = FIX2INT(val);
+		if (n >= 0 && n < mol->natoms)
+			return n;
+		n = -1; /*  No such atom  */
+		val = rb_inspect(val);
+	} else {
+		n = MoleculeAtomIndexFromString(mol, StringValuePtr(val));
+	}
+	if (n >= 0 && n < mol->natoms)
+		return n;
+	if (n == -1)
+		rb_raise(rb_eMolbyError, "no such atom: %s", p);
+	else if (n == -2)
+		rb_raise(rb_eMolbyError, "bad format of atom specification: %s", p);
+	else
+		rb_raise(rb_eMolbyError, "error in converting value to atom index: %s", p);
+	return 0; /* Not reached */
+}
+#endif  /*  _not_ PIATOM  */
 
 static IntGroup *
 s_Molecule_AtomGroupFromValue(VALUE self, VALUE val)
@@ -9428,6 +9455,7 @@ s_Molecule_SearchEquivalentAtoms(int argc, VALUE *argv, VALUE self)
 	return val;
 }
 
+#if PIATOM
 /*
  *  call-seq:
  *     create_pi_anchor(name, type, group [, weights]) -> index
@@ -9726,6 +9754,7 @@ s_Molecule_PiAnchorConstructAtIndex(VALUE self, VALUE ival)
 	}
 	return rb_ary_new4(i, vals);
 }
+#endif  /*  PIATOM  */
 
 /*
  *  call-seq:
@@ -10061,6 +10090,7 @@ Init_Molby(void)
 	rb_define_method(rb_cMolecule, "allocate_basis_set_record", s_Molecule_AllocateBasisSetRecord, 3);
 	rb_define_method(rb_cMolecule, "search_equivalent_atoms", s_Molecule_SearchEquivalentAtoms, -1);
 	
+#if PIATOM
 	rb_define_method(rb_cMolecule, "create_pi_anchor", s_Molecule_CreatePiAnchor, -1);
 	rb_define_method(rb_cMolecule, "replace_pi_anchor", s_Molecule_ReplacePiAnchor, -1);
 	rb_define_method(rb_cMolecule, "insert_pi_anchor", s_Molecule_InsertPiAnchor, -1);
@@ -10074,7 +10104,8 @@ Init_Molby(void)
 	rb_define_alias(rb_cMolecule, "remove_pi_anchor_construct", "remove_pi_anchor_constructs");
 	rb_define_method(rb_cMolecule, "count_pi_anchor_constructs", s_Molecule_CountPiAnchorConstructs, 0);
 	rb_define_method(rb_cMolecule, "pi_anchor_construct", s_Molecule_PiAnchorConstructAtIndex, 1);
-	
+#endif
+
 	rb_define_singleton_method(rb_cMolecule, "current", s_Molecule_Current, 0);
 	rb_define_singleton_method(rb_cMolecule, "[]", s_Molecule_MoleculeAtIndex, -1);
 	rb_define_singleton_method(rb_cMolecule, "open", s_Molecule_Open, -1);
