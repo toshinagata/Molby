@@ -514,6 +514,7 @@ class Molecule
 	  end
 	end
 	fp.close
+	guess_bonds
 #	self.undo_enabled = save_undo_enabled
 	return true
   end

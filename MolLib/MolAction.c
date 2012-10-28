@@ -31,8 +31,9 @@ const char *gMolActionMergeMolecule   = "mergeMol:MG";
 const char *gMolActionMergeMoleculeForUndo = "mergeMolForUndo:MG";
 const char *gMolActionUnmergeMolecule = "unmergeMol:G";
 const char *gMolActionUnmergeMoleculeForUndo = "unmergeMolForUndo:G";
-const char *gMolActionAddBonds        = "addBonds:I";
-const char *gMolActionDeleteBonds     = "deleteBonds:I";
+const char *gMolActionAddBonds        = "addBonds:IG";
+const char *gMolActionAddBondsForUndo = "addBondsForUndo:IG";
+const char *gMolActionDeleteBonds     = "deleteBonds:G";
 const char *gMolActionAddAngles       = "addAngles:IG";
 const char *gMolActionDeleteAngles    = "deleteAngles:G";
 const char *gMolActionAddDihedrals    = "addDihedrals:IG";
@@ -721,7 +722,7 @@ s_MolActionAddAnAtom(Molecule *mol, MolAction *action, MolAction **actp)
 static int
 s_MolActionMergeMolecule(Molecule *mol, MolAction *action, MolAction **actp)
 {
-	int n1, result, minreg, maxreg;
+	int n1, result, regOffset;
 	Atom *ap;
 	IntGroup *ig, *ig2;
 	Molecule *mol2;
@@ -742,28 +743,32 @@ s_MolActionMergeMolecule(Molecule *mol, MolAction *action, MolAction **actp)
 		IntGroupAdd(ig2, mol->natoms, mol2->natoms);
 	}
 
-	/*  Calculate the offset for the residue number  */
-	maxreg = -1;
-	for (n1 = 0, ap = mol->atoms; n1 < mol->natoms; n1++, ap = ATOM_NEXT(ap)) {
-		if (ap->resSeq > maxreg)
-			maxreg = ap->resSeq;
-	}
-	minreg = ATOMS_MAX_NUMBER;
-	for (n1 = 0, ap = mol2->atoms; n1 < mol2->natoms; n1++, ap = ATOM_NEXT(ap)) {
-		if (ap->resSeq < minreg)
-			minreg = ap->resSeq;
-	}
-	if (maxreg < 0)
-		maxreg = 0;
-	if (minreg == ATOMS_MAX_NUMBER)
-		minreg = 0;
-	if (maxreg >= minreg)
-		n1 = maxreg - minreg + 1;
-	else n1 = 0;
+	if (forUndo == 0) {
+		int minreg, maxreg;
+		/*  Calculate the offset for the residue number  */
+		maxreg = -1;
+		for (n1 = 0, ap = mol->atoms; n1 < mol->natoms; n1++, ap = ATOM_NEXT(ap)) {
+			if (ap->resSeq > maxreg)
+				maxreg = ap->resSeq;
+		}
+		minreg = ATOMS_MAX_NUMBER;
+		for (n1 = 0, ap = mol2->atoms; n1 < mol2->natoms; n1++, ap = ATOM_NEXT(ap)) {
+			if (ap->resSeq < minreg)
+				minreg = ap->resSeq;
+		}
+		if (maxreg < 0)
+			maxreg = 0;
+		if (minreg == ATOMS_MAX_NUMBER)
+			minreg = 0;
+		if (maxreg >= minreg)
+			n1 = maxreg - minreg + 1;
+		else n1 = 0;
+		regOffset = n1;
+	} else regOffset = 0;
 
 	nUndoActions = 0;
 	undoActions = NULL;
-	if ((result = MoleculeMerge(mol, mol2, ig, n1, &nUndoActions, &undoActions, forUndo)) != 0)
+	if ((result = MoleculeMerge(mol, mol2, ig, regOffset, &nUndoActions, &undoActions, forUndo)) != 0)
 		return result;
 	
 	s_UpdateSelection(mol, ig, 1);
@@ -778,6 +783,9 @@ s_MolActionMergeMolecule(Molecule *mol, MolAction *action, MolAction **actp)
 	}
 	/*  The last MolAction entry will be returned in *actp  */
 	free(undoActions);
+	
+	/*  Sanity check (for debug)  */
+	MoleculeCheckSanity(mol);
 	
 	return 0;
 }
@@ -827,27 +835,53 @@ s_MolActionDeleteAtoms(Molecule *mol, MolAction *action, MolAction **actp)
 		MoleculeRelease(mol2);
 	}
 	IntGroupRelease(ig);
+
+	/*  Sanity check (for debug)  */
+	MoleculeCheckSanity(mol);
+	
 	return 0;
 }
 
 static int
 s_MolActionAddStructuralElements(Molecule *mol, MolAction *action, MolAction **actp, int type)
 {
-	Int *ip, n1, result;
+	Int *ip, n1, n2, result;
 	IntGroup *ig;
 	
 	ip = (Int *)action->args[0].u.arval.ptr;
 
-	if (type == 0) {  /*  bond  */
+	if (type == 0 || type == 100) {  /*  bond  */
+		Int na, nd;
+		IntGroup *ig2;
+		MolAction *act2;
 		n1 = action->args[0].u.arval.nitems / 2;
-		if ((result = MoleculeAddBonds(mol, n1, ip)) <= 0)
+		ig = action->args[1].u.igval;
+		n2 = mol->nbonds;
+		na = mol->nangles;
+		nd = mol->ndihedrals;
+		if ((result = MoleculeAddBonds(mol, n1, ip, ig, (type == 0))) <= 0)
 			return result;
-		ip = (Int *)malloc(sizeof(Int) * 2 * result);
-		if (ip == NULL)
-			return -4;
-		memmove(ip, mol->bonds + (mol->nbonds - result) * 2, sizeof(Int) * 2 * result);
-		*actp = MolActionNew(gMolActionDeleteBonds, result * 2, ip);
-		free(ip);
+		if (ig == NULL)
+			ig = IntGroupNewWithPoints(n2, mol->nbonds - n2, -1);
+		else
+			IntGroupRetain(ig);
+		/*  Register undo for creation of angle and dihedral  */
+		if (mol->nangles > na) {
+			ig2 = IntGroupNewWithPoints(na, mol->nangles - na, -1);
+			act2 = MolActionNew(gMolActionDeleteAngles, ig2);
+			MolActionCallback_registerUndo(mol, act2);
+			MolActionRelease(act2);
+			free(ig2);
+		}
+		if (mol->ndihedrals > nd) {
+			ig2 = IntGroupNewWithPoints(na, mol->ndihedrals - nd, -1);
+			act2 = MolActionNew(gMolActionDeleteDihedrals, ig2);
+			MolActionCallback_registerUndo(mol, act2);
+			MolActionRelease(act2);
+			IntGroupRelease(ig2);
+		}
+		*actp = MolActionNew(gMolActionDeleteBonds, ig);
+		IntGroupRelease(ig);
 	} else if (type == 1) {  /*  angle  */
 		n1 = action->args[0].u.arval.nitems / 3;
 		ig = action->args[1].u.igval;
@@ -888,20 +922,79 @@ s_MolActionAddStructuralElements(Molecule *mol, MolAction *action, MolAction **a
 		*actp = MolActionNew(gMolActionDeleteImpropers, ig);
 		IntGroupRelease(ig);
 	}
+	
+	/*  Sanity check (for debug)  */
+	MoleculeCheckSanity(mol);
+		
 	return 0;
 }
 
 static int
 s_MolActionDeleteStructuralElements(Molecule *mol, MolAction *action, MolAction **actp, int type)
 {
-	Int *ip, n1, result;
-	IntGroup *ig;
+	Int *ip, *ip2, n1, n2, result;
+	IntGroup *ig, *ig2;
+	MolAction *act2;
 	if (type == 0) {  /*  bond  */
-		ip = (Int *)action->args[0].u.arval.ptr;
-		n1 = action->args[0].u.arval.nitems / 2;
-		if ((result = MoleculeDeleteBonds(mol, n1, ip)) < 0)
-			return result;
-		*actp = MolActionNew(gMolActionAddBonds, n1 * 2, ip);
+		ig = action->args[0].u.igval;
+		n1 = IntGroupGetCount(ig);
+		if (n1 == 0)
+			return 0;
+		ip = (Int *)malloc(sizeof(Int) * n1 * 2);
+		if ((n2 = MoleculeDeleteBonds(mol, ip, ig, &ip2, &ig2)) < 0) {
+			free(ip);
+			return n2;
+		}
+		if (n2 > 0) {
+			/*  Register undo for restoring angles, dihedrals and impropers  */
+			IntGroup *ig3, *ig4;
+			Int *ip3 = ip2;
+			/*  Angles  */
+			ig3 = IntGroupNewFromIntGroup(ig2);
+			ig4 = IntGroupNewWithPoints(ATOMS_MAX_NUMBER, ATOMS_MAX_NUMBER * 2, -1);
+			IntGroupRemoveIntGroup(ig3, ig4);
+			n2 = IntGroupGetCount(ig3);
+			if (n2 > 0) {
+				act2 = MolActionNew(gMolActionAddAngles, n2 * 3, ip3, ig3);
+				MolActionCallback_registerUndo(mol, act2);
+				MolActionRelease(act2);
+				ip3 += n2 * 3;
+			}
+			IntGroupRelease(ig3);
+			/*  Dihedrals  */
+			ig3 = IntGroupNewFromIntGroup(ig2);
+			IntGroupClear(ig4);
+			IntGroupAdd(ig4, 0, ATOMS_MAX_NUMBER);
+			IntGroupAdd(ig4, ATOMS_MAX_NUMBER * 2, ATOMS_MAX_NUMBER);
+			IntGroupRemoveIntGroup(ig3, ig4);
+			IntGroupOffset(ig3, -ATOMS_MAX_NUMBER);
+			n2 = IntGroupGetCount(ig3);
+			if (n2 > 0) {
+				act2 = MolActionNew(gMolActionAddDihedrals, n2 * 4, ip3, ig3);
+				MolActionCallback_registerUndo(mol, act2);
+				MolActionRelease(act2);
+				ip3 += n2 * 4;
+			}
+			IntGroupRelease(ig3);
+			/*  Dihedrals  */
+			ig3 = IntGroupNewFromIntGroup(ig2);
+			IntGroupClear(ig4);
+			IntGroupAdd(ig4, 0, ATOMS_MAX_NUMBER * 2);
+			IntGroupRemoveIntGroup(ig3, ig4);
+			IntGroupOffset(ig3, -ATOMS_MAX_NUMBER * 2);
+			n2 = IntGroupGetCount(ig3);
+			if (n2 > 0) {
+				act2 = MolActionNew(gMolActionAddImpropers, n2 * 4, ip3, ig3);
+				MolActionCallback_registerUndo(mol, act2);
+				MolActionRelease(act2);
+				ip3 += n2 * 4;
+			}
+			IntGroupRelease(ig3);
+			IntGroupRelease(ig4);
+			free(ip2);
+		}
+		*actp = MolActionNew(gMolActionAddBondsForUndo, n1 * 2, ip, ig);
+		free(ip);
 	} else if (type == 1) {  /*  angle  */
 		ig = action->args[0].u.igval;
 		n1 = IntGroupGetCount(ig) * 3;
@@ -933,6 +1026,10 @@ s_MolActionDeleteStructuralElements(Molecule *mol, MolAction *action, MolAction 
 		*actp = MolActionNew(gMolActionAddImpropers, n1, ip, ig);
 		free(ip);
 	}
+
+	/*  Sanity check (for debug)  */
+	MoleculeCheckSanity(mol);
+	
 	return 0;
 }
 
@@ -1768,6 +1865,10 @@ MolActionPerform(Molecule *mol, MolAction *action)
 		needsRebuildMDArena = 1;
 	} else if (strcmp(action->name, gMolActionAddBonds) == 0) {
 		if ((result = s_MolActionAddStructuralElements(mol, action, &act2, 0)) != 0)
+			return result;
+		needsRebuildMDArena = 1;
+	} else if (strcmp(action->name, gMolActionAddBondsForUndo) == 0) {
+		if ((result = s_MolActionAddStructuralElements(mol, action, &act2, 100)) != 0)
 			return result;
 		needsRebuildMDArena = 1;
 	} else if (strcmp(action->name, gMolActionDeleteBonds) == 0) {

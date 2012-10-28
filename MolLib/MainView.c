@@ -2437,10 +2437,14 @@ MainView_mouseUp(MainView *mview, const float *mousePos, int flags, int clickCou
 				MolActionCreateAndPerform(mview->mol, gMolActionDeleteAnAtom, (Int)n1);
 				
 			} else {
-				Int nn[2];
-				nn[0] = n1;
-				nn[1] = n2;
-				MolActionCreateAndPerform(mview->mol, gMolActionDeleteBonds, 2, nn);
+				Int bn = MoleculeLookupBond(mview->mol, n1, n2);
+				if (bn >= 0) {
+					IntGroup *ig = IntGroupNewWithPoints(bn, 1, -1);
+					MolActionCreateAndPerform(mview->mol, gMolActionDeleteBonds, ig);
+					IntGroupRelease(ig);
+				} else {
+					fprintf(stderr, "Internal error %s:%d: bond to delete is not found", __FILE__, __LINE__);
+				}
 			}
 		}
 		goto exit;
@@ -2518,7 +2522,7 @@ MainView_mouseUp(MainView *mview, const float *mousePos, int flags, int clickCou
 				b[0] = n1;
 				b[1] = n2;
 				b[2] = kInvalidIndex;
-				MolActionCreateAndPerform(mview->mol, gMolActionAddBonds, 2, b);
+				MolActionCreateAndPerform(mview->mol, gMolActionAddBonds, 2, b, NULL);
 			/*	MoleculeAddBonds(mview->mol, b, NULL); */
 			}
 			break;

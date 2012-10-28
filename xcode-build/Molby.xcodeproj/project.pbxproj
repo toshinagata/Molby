@@ -627,6 +627,7 @@
 					"-D_FILE_OFFSET_BITS=64",
 					"-D_LARGE_FILES",
 					"-D__WXMAC__",
+					"-DDEBUG",
 				);
 				OTHER_LDFLAGS = (
 					"-lwx_macu_html-2.8",

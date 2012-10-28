@@ -979,12 +979,19 @@ MyApp::OnFragmentMenuSelected(wxCommandEvent& event)
 	if (index < 0 || index >= m_CountNamedFragments)
 		return;
 	//  Open a predefined fragment as a new file
-	char errbuf[1024];
+	char *errbuf;
 	Molecule *mol = MoleculeNew();
 	char *fullname;
+	int result;
+
 	asprintf(&fullname, "%s/Scripts/mbsf/%s", (const char *)(FindResourcePath().mb_str(wxConvFile)), m_NamedFragments[index * 2 + 1]);
-	if (MoleculeLoadMbsfFile(mol, fullname, errbuf, sizeof(errbuf)) != 0) {
-		MyAppCallback_errorMessageBox("Cannot open named fragment %s: %s", m_NamedFragments[index * 2], errbuf);
+	result = MoleculeLoadMbsfFile(mol, fullname, &errbuf);
+	if (errbuf != NULL) {
+		MyAppCallback_showScriptMessage("On loading %s:\n%s", m_NamedFragments[index * 2 + 1], errbuf);
+		free(errbuf);
+	}
+	if (result != 0) {
+		MyAppCallback_errorMessageBox("Cannot open named fragment %s\n(See console for detailed message)", m_NamedFragments[index * 2]);
 		free(fullname);
 		return;
 	}

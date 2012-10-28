@@ -15,10 +15,10 @@ month = t.month
 day = t.day
 d = sprintf("%04d%02d%02d", year, month, day)
 # exit 0 if date == d
-File.open("Version", "w") { |fp|
-  fp.print "version = \"#{version}\"\n"
-  fp.print "date = \"#{d}\"\n"
-}
+#File.open("Version", "w") { |fp|
+#  fp.print "version = \"#{version}\"\n"
+#  fp.print "date = \"#{d}\"\n"
+#}
 build = "build " + d
 # verstr = "v#{ver} #{build}"
 verstr = "v#{ver}"

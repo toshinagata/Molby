@@ -161,7 +161,7 @@ s_sanity_check_sphere_records(MDArena *arena)
 	for (i = 0; i < natoms; i++) {
 		start = sarena->sphere_idx[i*2];
 		if (end != start)
-			warning("Sanity check: sphere_idx[%d*2] != sphere_idx[%d*2-1]", i+1, i+1);
+			md_warning(arena, "Sanity check: sphere_idx[%d*2] != sphere_idx[%d*2-1]", i+1, i+1);
 		end = sarena->sphere_idx[i*2+1];
 		for (j = start; j < end; j++) {
 			/*  Check the partner record  */
@@ -173,7 +173,7 @@ s_sanity_check_sphere_records(MDArena *arena)
 					break;
 			}
 			if (k == jend)
-				warning("Sanity check: (%d,%d) cross but (%d,%d) do not", i+1, j+1, j+1, i+1);
+				md_warning(arena, "Sanity check: (%d,%d) cross but (%d,%d) do not", i+1, j+1, j+1, i+1);
 		}
 	}
 }
@@ -1442,8 +1442,8 @@ s_calc_surface_area(MDArena *arena)
 
 		#if DEBUG
 			if (VecLength2(pw1) > 1.0 || VecLength2(pw2) > 1.0) {
-				warning("Warning: The surface force becomes very large. Maybe something is wrong?");
-				warning("Warning: STEP %d, (i,j,k,id)=(%d,%d,%d,%d), pw1={%f,%f,%f}, pw2={%f,%f,%f}", arena->step, ir1->i+1, ir1->j+1, ir1->k+1, ir1->point_id, pw1.x, pw1.y, pw1.z, pw2.x, pw2.y, pw2.z);
+				md_warning(arena, "Warning: The surface force becomes very large. Maybe something is wrong?");
+				md_warning(arena, "Warning: STEP %d, (i,j,k,id)=(%d,%d,%d,%d), pw1={%f,%f,%f}, pw2={%f,%f,%f}", arena->step, ir1->i+1, ir1->j+1, ir1->k+1, ir1->point_id, pw1.x, pw1.y, pw1.z, pw2.x, pw2.y, pw2.z);
 			}
 		#endif
 		

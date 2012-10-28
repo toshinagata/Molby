@@ -193,10 +193,19 @@ AtomConnectInsertEntry(AtomConnect *ac, Int idx, Int connect)
 	Int n, *p;
 	if (ac == NULL)
 		return;
-	if (idx < 0 || idx >= ac->count)
+	if (idx > ac->count)
 		idx = ac->count;
+	else if (idx < 0) {
+		/*  Insert after the last component that is smaller than connect
+		    (i.e. keep them sorted)  */
+		p = ATOM_CONNECT_PTR(ac);
+		for (idx = 0; idx < ac->count; idx++) {
+			if (p[idx] >= connect)
+				break;
+		}
+	}
 	AtomConnectResize(ac, ac->count + 1);
-	n = ac->count - idx - 1;  /*  Number of entries to be moved towards the bottom  */
+	n = ac->count - idx - 1;  /*  Number of entries to be moved towards the end  */
 	p = ATOM_CONNECT_PTR(ac);
 	if (n > 0) {
 		memmove(p + idx + 1, p + idx, sizeof(Int) * n);
@@ -218,6 +227,20 @@ AtomConnectDeleteEntry(AtomConnect *ac, Int idx)
 		memmove(p + idx, p + idx + 1, sizeof(Int) * n);
 	}
 	AtomConnectResize(ac, ac->count - 1);
+}
+
+int
+AtomConnectHasEntry(AtomConnect *ac, Int ent)
+{
+	Int n, *p;
+	if (ac == NULL)
+		return 0;
+	p = ATOM_CONNECT_PTR(ac);
+	for (n = 0; n < ac->count; n++) {
+		if (ent == p[n])
+			return 1;
+	}
+	return 0;
 }
 
 #if PIATOM
@@ -333,7 +356,6 @@ MoleculeInitWithAtoms(Molecule *mp, const Atom *atoms, int natoms)
 Molecule *
 MoleculeInitWithMolecule(Molecule *mp2, Molecule *mp)
 {
-	int i;
 	MoleculeFlushFrames(mp);
 	MoleculeInitWithAtoms(mp2, mp->atoms, mp->natoms);
 	if (mp->nbonds > 0) {
@@ -473,7 +495,6 @@ MoleculeRetain(Molecule *mp)
 void
 MoleculeClear(Molecule *mp)
 {
-	int i;
 	if (mp == NULL)
 		return;
 	if (mp->arena != NULL) {
@@ -723,8 +744,31 @@ sReadLineWithInterrupt(char *buf, int size, FILE *stream, int *lineNumber)
 	return ReadLine(buf, size, stream, lineNumber);
 }
 
+static int
+s_append_asprintf(char **buf, const char *fmt, ...)
+{
+	int len;
+	char *s;
+	va_list va;
+	va_start(va, fmt);
+	vasprintf(&s, fmt, va);
+	len = (*buf == NULL ? 0 : strlen(*buf));
+	if (s == NULL)
+		return len;
+	len += strlen(s);
+	if (*buf == NULL) {
+		*buf = malloc(len + 1);
+		**buf = 0;
+	} else {
+		*buf = realloc(*buf, len + 1);
+	}
+	strcat(*buf, s);
+	free(s);
+	return len;
+}
+
 int
-MoleculeLoadFile(Molecule *mp, const char *fname, const char *ftype, char *errbuf, int errbufsize)
+MoleculeLoadFile(Molecule *mp, const char *fname, const char *ftype, char **errbuf)
 {
 	int retval;
 	if (ftype == NULL || *ftype == 0) {
@@ -739,17 +783,17 @@ MoleculeLoadFile(Molecule *mp, const char *fname, const char *ftype, char *errbu
 		}
 	}
 	if (strcasecmp(ftype, "psf") == 0) {
-		retval = MoleculeLoadPsfFile(mp, fname, errbuf, errbufsize);
+		retval = MoleculeLoadPsfFile(mp, fname, errbuf);
 	} else if (strcasecmp(ftype, "pdb") == 0) {
-		retval = MoleculeReadCoordinatesFromPdbFile(mp, fname, errbuf, errbufsize);
+		retval = MoleculeReadCoordinatesFromPdbFile(mp, fname, errbuf);
 	} else if (strcasecmp(ftype, "tep") == 0) {
-		retval = MoleculeLoadTepFile(mp, fname, errbuf, errbufsize);
+		retval = MoleculeLoadTepFile(mp, fname, errbuf);
 	} else if (strcasecmp(ftype, "res") == 0 || strcasecmp(ftype, "ins") == 0) {
-		retval = MoleculeLoadShelxFile(mp, fname, errbuf, errbufsize);
+		retval = MoleculeLoadShelxFile(mp, fname, errbuf);
 	} else if (strcasecmp(ftype, "fchk") == 0 || strcasecmp(ftype, "fch") == 0) {
-		retval = MoleculeLoadGaussianFchkFile(mp, fname, errbuf, errbufsize);
+		retval = MoleculeLoadGaussianFchkFile(mp, fname, errbuf);
 	} else {
-		snprintf(errbuf, errbufsize, "Unknown format %s", ftype);
+		s_append_asprintf(errbuf, "Unknown format %s", ftype);
 		return 1;
 	}
 /*	if (retval != 0) {
@@ -761,11 +805,11 @@ MoleculeLoadFile(Molecule *mp, const char *fname, const char *ftype, char *errbu
 }
 
 int
-MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsize)
+MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 {
 	FILE *fp;
 	char buf[1024];
-	int i, j, k, n, err, fn, nframes;
+	int i, j, k, err, fn, nframes, nwarnings;
 	int lineNumber;
 	int ibuf[12];
 	Int iibuf[4];
@@ -781,18 +825,15 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 	Atom *ap;
 	const int kUndefined = -10000000;
 	err = 0;
-	if (errbuf == NULL) {
-		errbuf = buf;
-		errbufsize = 1024;
-	}
-	errbuf[0] = 0;
+	*errbuf = NULL;
+	nwarnings = 0;
 	if (mp->natoms != 0 || mp->par != NULL || mp->arena != NULL) {
-		snprintf(errbuf, errbufsize, "The molecule must be empty");
+		s_append_asprintf(errbuf, "The molecule must be empty");
 		return 1;
 	}
 	fp = fopen(fname, "rb");
 	if (fp == NULL) {
-		snprintf(errbuf, errbufsize, "Cannot open file");
+		s_append_asprintf(errbuf, "Cannot open file");
 		return 1;
 	}
 	for (i = 0; i < 8; i++)
@@ -816,8 +857,8 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 					break;
 				/* idx seg_name res_seq res_name name type charge weight element atomic_number occupancy temp_factor int_charge */
 				if (sscanf(buf, "%d %6s %d %6s %6s %6s %lf %lf %6s %d %lf %lf %d", &ibuf[0], cbuf[0], &ibuf[1], cbuf[1], cbuf[2], cbuf[3], &dbuf[0], &dbuf[1], cbuf[4], &ibuf[2], &dbuf[2], &dbuf[3], &ibuf[3]) < 13) {
-					snprintf(errbuf, errbufsize, "line %d: coordinates cannot be read for atom %d", lineNumber, mp->natoms + 1);
-					goto exit;
+					s_append_asprintf(errbuf, "line %d: coordinates cannot be read for atom %d", lineNumber, mp->natoms + 1);
+					goto err_exit;
 				}
 				ap = AssignArray(&mp->atoms, &mp->natoms, gSizeOfAtomRecord, mp->natoms, NULL);
 				strncpy(ap->segName, cbuf[0], 4);
@@ -843,12 +884,12 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 					break;
 				/* idx symop symbase */
 				if (sscanf(buf, "%d %d %d", &ibuf[0], &ibuf[1], &ibuf[2]) < 3) {
-					snprintf(errbuf, errbufsize, "line %d: symmetry operations cannot be read for atom %d", lineNumber, i + 1);
-					goto exit;
+					s_append_asprintf(errbuf, "line %d: symmetry operations cannot be read for atom %d", lineNumber, i + 1);
+					goto err_exit;
 				}
 				if (i >= mp->natoms) {
-					snprintf(errbuf, errbufsize, "line %d: too many atomic symmetry info\n", lineNumber);
-					goto exit;
+					s_append_asprintf(errbuf, "line %d: too many atomic symmetry info\n", lineNumber);
+					goto err_exit;
 				}
 				ap = ATOM_AT_INDEX(mp->atoms, i);
 				ap->symop.sym = ibuf[1] / 1000000;
@@ -868,12 +909,12 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 					break;
 				/* idx fix_force fix_pos */
 				if (sscanf(buf, "%d %lf %lf %lf %lf", &ibuf[0], &dbuf[0], &dbuf[1], &dbuf[2], &dbuf[3]) < 5) {
-					snprintf(errbuf, errbufsize, "line %d: fix atom info cannot be read for atom %d", lineNumber, i + 1);
-					goto exit;
+					s_append_asprintf(errbuf, "line %d: fix atom info cannot be read for atom %d", lineNumber, i + 1);
+					goto err_exit;
 				}
 				if (i >= mp->natoms) {
-					snprintf(errbuf, errbufsize, "line %d: too many fix atom info\n", lineNumber);
-					goto exit;
+					s_append_asprintf(errbuf, "line %d: too many fix atom info\n", lineNumber);
+					goto err_exit;
 				}
 				ap = ATOM_AT_INDEX(mp->atoms, i);
 				ap->fix_force = dbuf[0];
@@ -892,12 +933,12 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 					break;
 				/* idx mm_exclude periodic_exclude */
 				if (sscanf(buf, "%d %d %d", &ibuf[0], &ibuf[1], &ibuf[2]) < 3) {
-					snprintf(errbuf, errbufsize, "line %d: mm_exclude flags cannot be read for atom %d", lineNumber, i + 1);
-					goto exit;
+					s_append_asprintf(errbuf, "line %d: mm_exclude flags cannot be read for atom %d", lineNumber, i + 1);
+					goto err_exit;
 				}
 				if (i >= mp->natoms) {
-					snprintf(errbuf, errbufsize, "line %d: too many mm_exclude flags\n", lineNumber);
-					goto exit;
+					s_append_asprintf(errbuf, "line %d: too many mm_exclude flags\n", lineNumber);
+					goto err_exit;
 				}
 				ap = ATOM_AT_INDEX(mp->atoms, i);
 				ap->mm_exclude = (ibuf[1] != 0);
@@ -914,20 +955,20 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 					break;
 				/* idx x y z */
 				if ((j = sscanf(buf, "%d %lf %lf %lf %lf %lf %lf", &ibuf[0], &dbuf[0], &dbuf[1], &dbuf[2], &dbuf[3], &dbuf[4], &dbuf[5])) < 4) {
-					snprintf(errbuf, errbufsize, "line %d: atom position cannot be read for atom %d frame %d", lineNumber, i + 1, nframes);
-					goto exit;
+					s_append_asprintf(errbuf, "line %d: atom position cannot be read for atom %d frame %d", lineNumber, i + 1, nframes);
+					goto err_exit;
 				}
 				if (j > 4 && nframes != 0) {
-					snprintf(errbuf, errbufsize, "line %d: atom position sigma can only be given for frame 0", lineNumber);
-					goto exit;
+					s_append_asprintf(errbuf, "line %d: atom position sigma can only be given for frame 0", lineNumber);
+					goto err_exit;
 				}
 				if (j > 4 && j != 7) {
-					snprintf(errbuf, errbufsize, "line %d: atom position sigma cannot be read for atom %d frame %d", lineNumber, i + 1, nframes);
-					goto exit;
+					s_append_asprintf(errbuf, "line %d: atom position sigma cannot be read for atom %d frame %d", lineNumber, i + 1, nframes);
+					goto err_exit;
 				}
 				if (i >= mp->natoms) {
-					snprintf(errbuf, errbufsize, "line %d: too many atom position records\n", lineNumber);
-					goto exit;
+					s_append_asprintf(errbuf, "line %d: too many atom position records\n", lineNumber);
+					goto err_exit;
 				}
 				v.x = dbuf[0];
 				v.y = dbuf[1];
@@ -963,28 +1004,22 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 				/* from1 to1 from2 to2 from3 to3 from4 to4 */ 
 				i = sscanf(buf, "%d %d %d %d %d %d %d %d", &ibuf[0], &ibuf[1], &ibuf[2], &ibuf[3], &ibuf[4], &ibuf[5], &ibuf[6], &ibuf[7]);
 				if (i < 2 || i % 2 != 0) {
-					snprintf(errbuf, errbufsize, "line %d: bad bond format", lineNumber);
-					goto exit;
+					s_append_asprintf(errbuf, "line %d: bad bond format", lineNumber);
+					goto err_exit;
 				}
 				for (j = 0; j < i; j += 2) {
 					iibuf[0] = ibuf[j];
 					iibuf[1] = ibuf[j + 1];
 					if (iibuf[0] < 0 || iibuf[0] >= mp->natoms || iibuf[1] < 0 || iibuf[1] >= mp->natoms || iibuf[0] == iibuf[1]) {
-						snprintf(errbuf, errbufsize, "line %d: bad bond format", lineNumber);
-						goto exit;
-					}
-					AssignArray(&mp->bonds, &mp->nbonds, sizeof(Int) * 2, mp->nbonds, iibuf);
-					for (k = 0; k < 2; k++) {
-						const Int *cp;
-						ap = ATOM_AT_INDEX(mp->atoms, iibuf[k]);
-						cp = AtomConnectData(&ap->connect);
-						for (n = 0; n < ap->connect.count; n++, cp++) {
-							if (*cp == iibuf[1 - k])
-								break;
-						}
-						if (n >= ap->connect.count) {
-							AtomConnectInsertEntry(&ap->connect, ap->connect.count, iibuf[1 - k]);
-						}
+						s_append_asprintf(errbuf, "line %d: warning: bad bond specification (%d-%d) - skipped\n", lineNumber, iibuf[0], iibuf[1]);
+						nwarnings++;
+					} else if (AtomConnectHasEntry(&(ATOM_AT_INDEX(mp->atoms, iibuf[0])->connect), iibuf[1])) {
+						s_append_asprintf(errbuf, "line %d: warning: bond %d-%d is already present - skipped\n", lineNumber, iibuf[0], iibuf[1]);
+						nwarnings++;
+					} else {
+						AssignArray(&mp->bonds, &mp->nbonds, sizeof(Int) * 2, mp->nbonds, iibuf);
+						AtomConnectInsertEntry(&(ATOM_AT_INDEX(mp->atoms, iibuf[0])->connect), -1, iibuf[1]);
+						AtomConnectInsertEntry(&(ATOM_AT_INDEX(mp->atoms, iibuf[1])->connect), -1, iibuf[0]);
 					}
 				}
 			}
@@ -998,18 +1033,25 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 				/* a1 b1 c1 a2 b2 c2 a3 b3 c3 */ 
 				i = sscanf(buf, "%d %d %d %d %d %d %d %d %d", &ibuf[0], &ibuf[1], &ibuf[2], &ibuf[3], &ibuf[4], &ibuf[5], &ibuf[6], &ibuf[7], &ibuf[8]);
 				if (i == 0 || i % 3 != 0) {
-					snprintf(errbuf, errbufsize, "line %d: bad angle format", lineNumber);
-					goto exit;
+					s_append_asprintf(errbuf, "line %d: bad angle format", lineNumber);
+					goto err_exit;
 				}
 				for (j = 0; j < i; j += 3) {
 					iibuf[0] = ibuf[j];
 					iibuf[1] = ibuf[j + 1];
 					iibuf[2] = ibuf[j + 2];
 					if (iibuf[0] < 0 || iibuf[0] >= mp->natoms || iibuf[1] < 0 || iibuf[1] >= mp->natoms || iibuf[2] < 0 || iibuf[2] >= mp->natoms || iibuf[0] == iibuf[1] || iibuf[1] == iibuf[2]) {
-						snprintf(errbuf, errbufsize, "line %d: bad angle format", lineNumber);
-						goto exit;
+						s_append_asprintf(errbuf, "line %d: warning: bad angle specification (%d-%d-%d) - skipped\n", lineNumber, iibuf[0], iibuf[1], iibuf[2]);
+						nwarnings++;
+					} else if (MoleculeLookupBond(mp, iibuf[0], iibuf[1]) < 0 || MoleculeLookupBond(mp, iibuf[1], iibuf[2]) < 0) {
+						s_append_asprintf(errbuf, "line %d: warning: angle with non-bonded atoms (%d-%d-%d) - skipped\n", lineNumber, iibuf[0], iibuf[1], iibuf[2]);
+						nwarnings++;						
+					} else if (MoleculeLookupAngle(mp, iibuf[0], iibuf[1], iibuf[2]) >= 0) {
+						s_append_asprintf(errbuf, "line %d: warning: angle %d-%d-%d is already present - skipped\n", lineNumber, iibuf[0], iibuf[1], iibuf[2]);
+						nwarnings++;
+					} else {
+						AssignArray(&mp->angles, &mp->nangles, sizeof(Int) * 3, mp->nangles, iibuf);
 					}
-					AssignArray(&mp->angles, &mp->nangles, sizeof(Int) * 3, mp->nangles, iibuf);
 				}
 			}
 			continue;
@@ -1022,8 +1064,8 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 				/* a1 b1 c1 d1 a2 b2 c2 d2 */ 
 				i = sscanf(buf, "%d %d %d %d %d %d %d %d", &ibuf[0], &ibuf[1], &ibuf[2], &ibuf[3], &ibuf[4], &ibuf[5], &ibuf[6], &ibuf[7]);
 				if (i == 0 || i % 4 != 0) {
-					snprintf(errbuf, errbufsize, "line %d: bad dihedral format", lineNumber);
-					goto exit;
+					s_append_asprintf(errbuf, "line %d: bad dihedral format", lineNumber);
+					goto err_exit;
 				}
 				for (j = 0; j < i; j += 4) {
 					iibuf[0] = ibuf[j];
@@ -1031,10 +1073,17 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 					iibuf[2] = ibuf[j + 2];
 					iibuf[3] = ibuf[j + 3];
 					if (iibuf[0] < 0 || iibuf[0] >= mp->natoms || iibuf[1] < 0 || iibuf[1] >= mp->natoms || iibuf[2] < 0 || iibuf[2] >= mp->natoms || iibuf[3] < 0 || iibuf[3] >= mp->natoms || iibuf[0] == iibuf[1] || iibuf[1] == iibuf[2] || iibuf[2] == iibuf[3] || iibuf[0] == iibuf[2] || iibuf[1] == iibuf[3] || iibuf[0] == iibuf[3]) {
-						snprintf(errbuf, errbufsize, "line %d: bad dihedral format", lineNumber);
-						goto exit;
+						s_append_asprintf(errbuf, "line %d: warning: bad dihedral specification (%d-%d-%d-%d) - skipped\n", lineNumber, iibuf[0], iibuf[1], iibuf[2], iibuf[3]);
+						nwarnings++;
+					} else if (MoleculeLookupBond(mp, iibuf[0], iibuf[1]) < 0 || MoleculeLookupBond(mp, iibuf[1], iibuf[2]) < 0 || MoleculeLookupBond(mp, iibuf[2], iibuf[3]) < 0) {
+						s_append_asprintf(errbuf, "line %d: warning: dihedral with non-bonded atoms (%d-%d-%d-%d) - skipped\n", lineNumber, iibuf[0], iibuf[1], iibuf[2], iibuf[3]);
+						nwarnings++;						
+					} else if (MoleculeLookupDihedral(mp, iibuf[0], iibuf[1], iibuf[2], iibuf[3]) >= 0) {
+						s_append_asprintf(errbuf, "line %d: warning: dihedral %d-%d-%d-%d is already present - skipped\n", lineNumber, iibuf[0], iibuf[1], iibuf[2], iibuf[3]);
+						nwarnings++;
+					} else {
+						AssignArray(&mp->dihedrals, &mp->ndihedrals, sizeof(Int) * 4, mp->ndihedrals, iibuf);
 					}
-					AssignArray(&mp->dihedrals, &mp->ndihedrals, sizeof(Int) * 4, mp->ndihedrals, iibuf);
 				}
 			}
 			continue;
@@ -1047,8 +1096,8 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 				/* a1 b1 c1 d1 a2 b2 c2 d2 */ 
 				i = sscanf(buf, "%d %d %d %d %d %d %d %d", &ibuf[0], &ibuf[1], &ibuf[2], &ibuf[3], &ibuf[4], &ibuf[5], &ibuf[6], &ibuf[7]);
 				if (i == 0 || i % 4 != 0) {
-					snprintf(errbuf, errbufsize, "line %d: bad improper format", lineNumber);
-					goto exit;
+					s_append_asprintf(errbuf, "line %d: bad improper format", lineNumber);
+					goto err_exit;
 				}
 				for (j = 0; j < i; j += 4) {
 					iibuf[0] = ibuf[j];
@@ -1056,10 +1105,17 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 					iibuf[2] = ibuf[j + 2];
 					iibuf[3] = ibuf[j + 3];
 					if (iibuf[0] < 0 || iibuf[0] >= mp->natoms || iibuf[1] < 0 || iibuf[1] >= mp->natoms || iibuf[2] < 0 || iibuf[2] >= mp->natoms || iibuf[3] < 0 || iibuf[3] >= mp->natoms || iibuf[0] == iibuf[1] || iibuf[1] == iibuf[2] || iibuf[2] == iibuf[3] || iibuf[0] == iibuf[2] || iibuf[1] == iibuf[3] || iibuf[0] == iibuf[3]) {
-						snprintf(errbuf, errbufsize, "line %d: bad improper format", lineNumber);
-						goto exit;
+						s_append_asprintf(errbuf, "line %d: warning: bad improper specification (%d-%d-%d-%d) - skipped\n", lineNumber, iibuf[0], iibuf[1], iibuf[2], iibuf[3]);
+						nwarnings++;
+					} else if (MoleculeLookupBond(mp, iibuf[0], iibuf[2]) < 0 || MoleculeLookupBond(mp, iibuf[1], iibuf[2]) < 0 || MoleculeLookupBond(mp, iibuf[2], iibuf[3]) < 0) {
+						s_append_asprintf(errbuf, "line %d: warning: improper with non-bonded atoms (%d-%d-%d-%d) - skipped\n", lineNumber, iibuf[0], iibuf[1], iibuf[2], iibuf[3]);
+						nwarnings++;						
+					} else if (MoleculeLookupImproper(mp, iibuf[0], iibuf[1], iibuf[2], iibuf[3]) >= 0) {
+						s_append_asprintf(errbuf, "line %d: warning: improper %d-%d-%d-%d is already present - skipped\n", lineNumber, iibuf[0], iibuf[1], iibuf[2], iibuf[3]);
+						nwarnings++;
+					} else {
+						AssignArray(&mp->impropers, &mp->nimpropers, sizeof(Int) * 4, mp->nimpropers, iibuf);
 					}
-					AssignArray(&mp->impropers, &mp->nimpropers, sizeof(Int) * 4, mp->nimpropers, iibuf);
 				}
 			}
 			continue;
@@ -1071,18 +1127,18 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 					break;
 				/* a b c alpha beta gamma [sigmaflag] */ 
 				if ((j = sscanf(buf, "%lf %lf %lf %lf %lf %lf %d", &dbuf[0], &dbuf[1], &dbuf[2], &dbuf[3], &dbuf[4], &dbuf[5], &ibuf[0])) < 6) {
-					snprintf(errbuf, errbufsize, "line %d: bad xtalcell format", lineNumber);
-					goto exit;
+					s_append_asprintf(errbuf, "line %d: bad xtalcell format", lineNumber);
+					goto err_exit;
 				}
 				MoleculeSetCell(mp, dbuf[0], dbuf[1], dbuf[2], dbuf[3], dbuf[4], dbuf[5], 0);
 				if (j == 7 && ibuf[0] != 0) {
 					if (ReadLine(buf, sizeof buf, fp, &lineNumber) <= 0) {
-						snprintf(errbuf, errbufsize, "line %d: sigma for xtalcell are missing", lineNumber);
-						goto exit;
+						s_append_asprintf(errbuf, "line %d: sigma for xtalcell are missing", lineNumber);
+						goto err_exit;
 					}
 					if (sscanf(buf, "%lf %lf %lf %lf %lf %lf", &dbuf[0], &dbuf[1], &dbuf[2], &dbuf[3], &dbuf[4], &dbuf[5]) < 6) {
-						snprintf(errbuf, errbufsize, "line %d: bad xtalcell sigma format", lineNumber);
-						goto exit;
+						s_append_asprintf(errbuf,"line %d: bad xtalcell sigma format", lineNumber);
+						goto err_exit;
 					}
 					if (mp->cell != NULL) {
 						mp->cell->has_sigma = 1;
@@ -1090,7 +1146,7 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 							mp->cell->cellsigma[i] = dbuf[i];
 						}
 					} else {
-						snprintf(errbuf, errbufsize, "line %d: cell sigma are given while cell is not given", lineNumber);
+						s_append_asprintf(errbuf, "line %d: cell sigma are given while cell is not given", lineNumber);
 					}
 				}
 			}
@@ -1105,8 +1161,8 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 					break;
 				/* a11 a12 a13; a21 a22 a23; a31 a32 a33; t1 t2 t3 */
 				if (sscanf(buf, "%lf %lf %lf", &dbuf[0], &dbuf[1], &dbuf[2]) < 3) {
-					snprintf(errbuf, errbufsize, "line %d: bad symmetry_operation format", lineNumber);
-					goto exit;
+					s_append_asprintf(errbuf, "line %d: bad symmetry_operation format", lineNumber);
+					goto err_exit;
 				}
 				if (i < 3) {
 					tr[i] = dbuf[0];
@@ -1133,8 +1189,8 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 				if (buf[0] == '\n')
 					break;
 				if (sscanf(buf, "%6s %6s %d", cbuf[0], cbuf[1], &ibuf[0]) < 3) {
-					snprintf(errbuf, errbufsize, "line %d: pi atoms info cannot be read", lineNumber);
-					goto exit;
+					s_append_asprintf(errbuf, "line %d: pi atoms info cannot be read", lineNumber);
+					goto err_exit;
 				}
 				pp = (PiAtom *)AssignArray(&mp->piatoms, &mp->npiatoms, sizeof(PiAtom), mp->npiatoms, NULL);
 				memset(pp, 0, sizeof(PiAtom));
@@ -1147,12 +1203,12 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 				NewArray(&pp->coeffs, &pp->ncoeffs, sizeof(Double), ibuf[0]);
 				for (i = 0; i < ibuf[0]; i++) {
 					if (ReadLine(buf, sizeof buf, fp, &lineNumber) <= 0) {
-						snprintf(errbuf, errbufsize, "line %d: unexpected end of file during reading pi atoms info", lineNumber);
-						goto exit;
+						s_append_asprintf(errbuf, "line %d: unexpected end of file during reading pi atoms info", lineNumber);
+						goto err_exit;
 					}
 					if (sscanf(buf, "%d %lf", &ibuf[1], &dbuf[0]) < 2) {
-						snprintf(errbuf, errbufsize, "line %d: bad format during pi atoms info", lineNumber);
-						goto exit;
+						s_append_asprintf(errbuf, "line %d: bad format during pi atoms info", lineNumber);
+						goto err_exit;
 					}
 					ip[i] = ibuf[1];
 					pp->coeffs[i] = dbuf[0];
@@ -1184,8 +1240,8 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 			}
 			continue;
 		pi_atom_constructs_bad_format:
-			snprintf(errbuf, errbufsize, "line %d: bad format in pi_atom_constructs", lineNumber);
-			goto exit;
+			s_append_asprintf(errbuf, "line %d: bad format in pi_atom_constructs", lineNumber);
+			goto err_exit;
 #endif  /*  PIATOM  */
 		} else if (strcmp(buf, "!:anisotropic_thermal_parameters") == 0) {
 			i = 0;
@@ -1196,12 +1252,12 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 					break;
 				/* b11 b22 b33 b12 b13 b23 [has_sigma] */
 				if ((j = sscanf(buf, "%lf %lf %lf %lf %lf %lf %d", &dbuf[0], &dbuf[1], &dbuf[2], &dbuf[3], &dbuf[4], &dbuf[5], &ibuf[0])) < 6) {
-					snprintf(errbuf, errbufsize, "line %d: anisotropic thermal parameters cannot be read for atom %d", lineNumber, i + 1);
-					goto exit;
+					s_append_asprintf(errbuf, "line %d: anisotropic thermal parameters cannot be read for atom %d", lineNumber, i + 1);
+					goto err_exit;
 				}
 				if (i >= mp->natoms) {
-					snprintf(errbuf, errbufsize, "line %d: too many anisotropic thermal parameters\n", lineNumber);
-					goto exit;
+					s_append_asprintf(errbuf, "line %d: too many anisotropic thermal parameters\n", lineNumber);
+					goto err_exit;
 				}
 				if (dbuf[0] == 0.0 && dbuf[1] == 0.0 && dbuf[2] == 0.0 && dbuf[3] == 0.0 && dbuf[4] == 0.0 && dbuf[5] == 0.0) {
 					/*  Skip it  */
@@ -1210,17 +1266,17 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 				}
 				if (j == 7 && ibuf[0] != 0) {
 					if (ReadLine(buf, sizeof buf, fp, &lineNumber) <= 0) {
-						snprintf(errbuf, errbufsize, "line %d: anisotropic thermal parameters sigma missing", lineNumber);
-						goto exit;
+						s_append_asprintf(errbuf, "line %d: anisotropic thermal parameters sigma missing", lineNumber);
+						goto err_exit;
 					}
 					if (sscanf(buf, "%lf %lf %lf %lf %lf %lf", &dbuf[0], &dbuf[1], &dbuf[2], &dbuf[3], &dbuf[4], &dbuf[5]) < 6) {
-						snprintf(errbuf, errbufsize, "line %d: anisotropic thermal parameters sigma cannot be read for atom %d", lineNumber, i + 1);
-						goto exit;
+						s_append_asprintf(errbuf, "line %d: anisotropic thermal parameters sigma cannot be read for atom %d", lineNumber, i + 1);
+						goto err_exit;
 					}
 					ap = ATOM_AT_INDEX(mp->atoms, i);
 					if (ap->aniso == NULL) {
-						snprintf(errbuf, errbufsize, "line %d: anisotropic thermal parameters sigma are given while the parameters are not given", lineNumber);
-						goto exit;
+						s_append_asprintf(errbuf, "line %d: anisotropic thermal parameters sigma are given while the parameters are not given", lineNumber);
+						goto err_exit;
 					}
 					ap->aniso->has_bsig = 1;
 					for (j = 0; j < 6; j++)
@@ -1241,8 +1297,8 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 				/* ax ay az; bx by bz; cx cy cz; ox oy oz; fx fy fz [sigma; sa sb sc s_alpha s_beta s_gamma] */
 				if (i < 4) {
 					if (sscanf(buf, "%lf %lf %lf", &dbuf[0], &dbuf[1], &dbuf[2]) < 3) {
-						snprintf(errbuf, errbufsize, "line %d: bad periodic_box format", lineNumber);
-						goto exit;
+						s_append_asprintf(errbuf, "line %d: bad periodic_box format", lineNumber);
+						goto err_exit;
 					}
 					vs[i].x = dbuf[0];
 					vs[i].y = dbuf[1];
@@ -1251,8 +1307,8 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 					continue;
 				}
 				if ((j = sscanf(buf, "%d %d %d %d", &ibuf[0], &ibuf[1], &ibuf[2], &ibuf[3])) < 3) {
-					snprintf(errbuf, errbufsize, "line %d: bad periodic_box format", lineNumber);
-					goto exit;
+					s_append_asprintf(errbuf, "line %d: bad periodic_box format", lineNumber);
+					goto err_exit;
 				}
 				if (j == 4 && ibuf[3] != 0)
 					has_sigma = 1;
@@ -1262,12 +1318,12 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 				MoleculeSetPeriodicBox(mp, vs, vs + 1, vs + 2, vs + 3, cbuf[0], 0);
 				if (has_sigma) {
 					if (ReadLine(buf, sizeof buf, fp, &lineNumber) <= 0) {
-						snprintf(errbuf, errbufsize, "line %d: sigma for cell parameters are missing", lineNumber);
-						goto exit;
+						s_append_asprintf(errbuf, "line %d: sigma for cell parameters are missing", lineNumber);
+						goto err_exit;
 					}
 					if (sscanf(buf, "%lf %lf %lf %lf %lf %lf", &dbuf[0], &dbuf[1], &dbuf[2], &dbuf[3], &dbuf[4], &dbuf[5]) < 6) {
-						snprintf(errbuf, errbufsize, "line %d: bad periodic_box sigma format", lineNumber);
-						goto exit;
+						s_append_asprintf(errbuf, "line %d: bad periodic_box sigma format", lineNumber);
+						goto err_exit;
 					}
 					if (mp->cell != NULL) {
 						mp->cell->has_sigma = 1;
@@ -1275,7 +1331,7 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 							mp->cell->cellsigma[i] = dbuf[i];
 						}
 					} else {
-						snprintf(errbuf, errbufsize, "line %d: cell sigma are given while cell is not given", lineNumber);
+						s_append_asprintf(errbuf, "line %d: cell sigma are given while cell is not given", lineNumber);
 					}
 				}
 				break;
@@ -1291,8 +1347,8 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 				if (buf[0] == '\n')
 					break;
 				if (sscanf(buf, "%lf %lf %lf", &dbuf[0], &dbuf[1], &dbuf[2]) < 3) {
-					snprintf(errbuf, errbufsize, "line %d: bad frame_periodic_box format", lineNumber);
-					goto exit;
+					s_append_asprintf(errbuf, "line %d: bad frame_periodic_box format", lineNumber);
+					goto err_exit;
 				}
 				vs[i].x = dbuf[0];
 				vs[i].y = dbuf[1];
@@ -1336,24 +1392,24 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 						while ((k = fgetc(fp)) >= 0) {
 							ungetc(k, fp);
 							if (k < '0' || k > '9') {
-								snprintf(errbuf, errbufsize, "line %d: too few flags in alchem_flags block", lineNumber + 1);
+								s_append_asprintf(errbuf, "line %d: too few flags in alchem_flags block", lineNumber + 1);
 								free(valp);
-								goto exit;
+								goto err_exit;
 							}
 							ReadLine(buf, sizeof buf, fp, &lineNumber);
 							bufp = buf;
 							while (*bufp != 0) {
 								if (*bufp >= '0' && *bufp <= '2') {
 									if (i >= j) {
-										snprintf(errbuf, errbufsize, "line %d: too many flags in alchem_flags block", lineNumber);
+										s_append_asprintf(errbuf, "line %d: too many flags in alchem_flags block", lineNumber);
 										free(valp);
-										goto exit;
+										goto err_exit;
 									}
 									valp[i++] = *bufp - '0';
 								} else if (*bufp != ' ' && *bufp != '\t' && *bufp != '\n') {
-									snprintf(errbuf, errbufsize, "line %d: strange character (0x%02x) in alchem_flags block", lineNumber, (int)*bufp);
+									s_append_asprintf(errbuf, "line %d: strange character (0x%02x) in alchem_flags block", lineNumber, (int)*bufp);
 									free(valp);
-									goto exit;
+									goto err_exit;
 								}
 								bufp++;
 							}
@@ -1433,15 +1489,15 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 				} else valp = NULL;
 				if (strcmp(comp, "pressure") == 0) {
 					if (sscanf(valp, "%lf %lf %lf %lf %lf %lf %lf %lf %lf", &dbuf[0], &dbuf[1], &dbuf[2], &dbuf[3], &dbuf[4], &dbuf[5], &dbuf[6], &dbuf[7], &dbuf[8]) < 9) {
-						snprintf(errbuf, errbufsize, "line %d: bad format", lineNumber);
-						goto exit;
+						s_append_asprintf(errbuf, "line %d: bad format", lineNumber);
+						goto err_exit;
 					}
 					for (i = 0; i < 9; i++)
 						pressure->apply[i] = dbuf[i];
 				} else if (strcmp(comp, "pressure_cell_flexibility") == 0) {
 					if (sscanf(valp, "%lf %lf %lf %lf %lf %lf %lf %lf", &dbuf[0], &dbuf[1], &dbuf[2], &dbuf[3], &dbuf[4], &dbuf[5], &dbuf[6], &dbuf[7]) < 8) {
-						snprintf(errbuf, errbufsize, "line %d: bad format", lineNumber);
-						goto exit;
+						s_append_asprintf(errbuf, "line %d: bad format", lineNumber);
+						goto err_exit;
 					}
 					for (i = 0; i < 8; i++)
 						pressure->cell_flexibility[i] = dbuf[i];
@@ -1463,12 +1519,12 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 					break;
 				/* idx vx vy vz */
 				if (sscanf(buf, "%d %lf %lf %lf", &ibuf[0], &dbuf[0], &dbuf[1], &dbuf[2]) < 4) {
-					snprintf(errbuf, errbufsize, "line %d: atom velocity cannot be read for atom %d", lineNumber, i + 1);
-					goto exit;
+					s_append_asprintf(errbuf, "line %d: atom velocity cannot be read for atom %d", lineNumber, i + 1);
+					goto err_exit;
 				}
 				if (i >= mp->natoms) {
-					snprintf(errbuf, errbufsize, "line %d: too many atom velocity records\n", lineNumber);
-					goto exit;
+					s_append_asprintf(errbuf, "line %d: too many atom velocity records\n", lineNumber);
+					goto err_exit;
 				}
 				ap = ATOM_AT_INDEX(mp->atoms, i);
 				ap->v.x = dbuf[0];
@@ -1486,12 +1542,12 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 					break;
 				/* idx fx fy fz */
 				if (sscanf(buf, "%d %lf %lf %lf", &ibuf[0], &dbuf[0], &dbuf[1], &dbuf[2]) < 4) {
-					snprintf(errbuf, errbufsize, "line %d: atom force cannot be read for atom %d", lineNumber, i + 1);
-					goto exit;
+					s_append_asprintf(errbuf, "line %d: atom force cannot be read for atom %d", lineNumber, i + 1);
+					goto err_exit;
 				}
 				if (i >= mp->natoms) {
-					snprintf(errbuf, errbufsize, "line %d: too many atom force records\n", lineNumber);
-					goto exit;
+					s_append_asprintf(errbuf, "line %d: too many atom force records\n", lineNumber);
+					goto err_exit;
 				}
 				ap = ATOM_AT_INDEX(mp->atoms, i);
 				ap->f.x = dbuf[0];
@@ -1515,8 +1571,8 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 					break;
 				j = ParameterReadFromString(par, buf, &bufp, fname, lineNumber, 0);
 				if (j < 0) {
-					snprintf(errbuf, errbufsize, "%s", bufp);
-					goto exit;
+					s_append_asprintf(errbuf, "%s", bufp);
+					goto err_exit;
 				}
 				i += j;
 			}
@@ -1540,8 +1596,8 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 										 &mview_fbuf[1], &mview_fbuf[2], &mview_fbuf[3]) < 3)
 					|| (i == 2 && sscanf(buf, "%f %f %f %f",
 										 &mview_fbuf[4], &mview_fbuf[5], &mview_fbuf[6], &mview_fbuf[7]) < 4)) {
-					snprintf(errbuf, errbufsize, "line %d: bad trackball format", lineNumber);
-					goto exit;
+					s_append_asprintf(errbuf, "line %d: bad trackball format", lineNumber);
+					goto err_exit;
 				}
 				i++;
 			}
@@ -1586,54 +1642,53 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsi
 	if (mp->arena != NULL)
 		md_arena_set_molecule(mp->arena, mp);
 
-exit:
 	fclose(fp);
-	if (errbuf[0] != 0) {
-		/*  The content of mp may be broken, so make it empty  */
-		MoleculeClear(mp);
-		return -1;
-	} else {
-		MainView *mview = mp->mview;
-		if (mview != NULL) {
-			if (mview_ibuf[0] != kUndefined)
-				mview->showUnitCell = mview_ibuf[0];
-			if (mview_ibuf[1] != kUndefined)
-				mview->showPeriodicBox = mview_ibuf[1];
-			if (mview_ibuf[2] != kUndefined)
-				mview->showExpandedAtoms = mview_ibuf[2];
-			if (mview_ibuf[3] != kUndefined)
-				mview->showEllipsoids = mview_ibuf[3];
-			if (mview_ibuf[4] != kUndefined)
-				mview->showHydrogens = mview_ibuf[4];
-			if (mview_ibuf[5] != kUndefined)
-				mview->showDummyAtoms = mview_ibuf[5];
-			if (mview_ibuf[6] != kUndefined)
-				mview->showRotationCenter = mview_ibuf[6];
-			if (mview_ibuf[7] != kUndefined)
-				mview->showGraphiteFlag = mview_ibuf[7];
-			if (mview_ibuf[8] != kUndefined)
-				mview->showPeriodicImageFlag = mview_ibuf[8];
-			if (mview_ibuf[9] != kUndefined)
-				mview->showGraphite = mview_ibuf[9];
-			for (i = 0; i < 6; i++) {
-				if (mview_ibuf[10 + i] != kUndefined)
-					mview->showPeriodicImage[i] = mview_ibuf[10 + i];
-			}
-			if (mview->track != NULL) {
-				if (mview_fbuf[0] != kUndefined)
-					TrackballSetScale(mview->track, mview_fbuf[0]);
-				if (mview_fbuf[1] != kUndefined)
-					TrackballSetTranslate(mview->track, mview_fbuf + 1);
-				if (mview_fbuf[4] != kUndefined)
-					TrackballSetRotate(mview->track, mview_fbuf + 4);
-			}
+	if (mp->mview != NULL) {
+		if (mview_ibuf[0] != kUndefined)
+			mp->mview->showUnitCell = mview_ibuf[0];
+		if (mview_ibuf[1] != kUndefined)
+			mp->mview->showPeriodicBox = mview_ibuf[1];
+		if (mview_ibuf[2] != kUndefined)
+			mp->mview->showExpandedAtoms = mview_ibuf[2];
+		if (mview_ibuf[3] != kUndefined)
+			mp->mview->showEllipsoids = mview_ibuf[3];
+		if (mview_ibuf[4] != kUndefined)
+			mp->mview->showHydrogens = mview_ibuf[4];
+		if (mview_ibuf[5] != kUndefined)
+			mp->mview->showDummyAtoms = mview_ibuf[5];
+		if (mview_ibuf[6] != kUndefined)
+			mp->mview->showRotationCenter = mview_ibuf[6];
+		if (mview_ibuf[7] != kUndefined)
+			mp->mview->showGraphiteFlag = mview_ibuf[7];
+		if (mview_ibuf[8] != kUndefined)
+			mp->mview->showPeriodicImageFlag = mview_ibuf[8];
+		if (mview_ibuf[9] != kUndefined)
+			mp->mview->showGraphite = mview_ibuf[9];
+		for (i = 0; i < 6; i++) {
+			if (mview_ibuf[10 + i] != kUndefined)
+				mp->mview->showPeriodicImage[i] = mview_ibuf[10 + i];
+		}
+		if (mp->mview->track != NULL) {
+			if (mview_fbuf[0] != kUndefined)
+				TrackballSetScale(mp->mview->track, mview_fbuf[0]);
+			if (mview_fbuf[1] != kUndefined)
+				TrackballSetTranslate(mp->mview->track, mview_fbuf + 1);
+			if (mview_fbuf[4] != kUndefined)
+				TrackballSetRotate(mp->mview->track, mview_fbuf + 4);
 		}
 	}
+
 	return 0;
+
+err_exit:
+	fclose(fp);
+	/*  The content of mp may be broken, so make it empty  */
+	MoleculeClear(mp);
+	return -1;	
 }
 
 int
-MoleculeLoadPsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsize)
+MoleculeLoadPsfFile(Molecule *mp, const char *fname, char **errbuf)
 {
 	FILE *fp;
 	char buf[1024];
@@ -1645,16 +1700,13 @@ MoleculeLoadPsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsiz
 	Vector *frames = NULL;
 	Atom *ap;
 	err = 0;
-	if (errbuf == NULL) {
-		errbuf = buf;
-		errbufsize = 1024;
-	}
-	errbuf[0] = 0;
+	*errbuf = NULL;
 	if (mp == NULL)
 		mp = MoleculeNew();
+	else MoleculeClear(mp);
 	fp = fopen(fname, "rb");
 	if (fp == NULL) {
-		snprintf(errbuf, errbufsize, "Cannot open file");
+		s_append_asprintf(errbuf, "Cannot open file");
 		return 1;
 	}
 /*	flockfile(fp); */
@@ -1700,12 +1752,12 @@ MoleculeLoadPsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsiz
 				Vector r;
 				if (ReadLine(buf, sizeof buf, fp, &lineNumber) <= 0) {
 					err = 1;
-					snprintf(errbuf, errbufsize, "line %d: premature end of file while reading coordinates (frame %d)", lineNumber, fn);
+					s_append_asprintf(errbuf, "line %d: premature end of file while reading coordinates (frame %d)", lineNumber, fn);
 					goto exit;
 				}
 				if (sscanf(buf, "%lg %lg %lg", dval, dval + 1, dval + 2) != 3) {
 					err = 1;
-					snprintf(errbuf, errbufsize, "line %d: coordinates cannot be read for atom %d", lineNumber, i + 1);
+					s_append_asprintf(errbuf, "line %d: coordinates cannot be read for atom %d", lineNumber, i + 1);
 					goto exit;
 				}
 				r.x = dval[0];
@@ -1724,8 +1776,8 @@ MoleculeLoadPsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsiz
 			/*  Atoms  */
 			Int natoms;
 			ReadFormat(buf, "I8", &natoms);
-			if (mp->atoms != NULL)
-				free(mp->atoms);
+			if (natoms == 0)
+				continue;
 			if (NewArray(&mp->atoms, &mp->natoms, gSizeOfAtomRecord, natoms) == NULL)
 				goto panic;
 			mp->nresidues = 0;
@@ -1738,7 +1790,7 @@ MoleculeLoadPsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsiz
 				ap = ATOM_AT_INDEX(mp->atoms, i);
 				if (ReadLine(buf, sizeof buf, fp, &lineNumber) <= 0) {
 					err = 1;
-					snprintf(errbuf, errbufsize, "line %d: premature end of file while reading atoms", lineNumber);
+					s_append_asprintf(errbuf, "line %d: premature end of file while reading atoms", lineNumber);
 					goto exit;
 				}
 				ReadFormat(buf, "I8 x1 S4 I5 x1 S3 x2 S4 x1 S4 F16 F10",
@@ -1787,14 +1839,14 @@ MoleculeLoadPsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsiz
 			Int nbonds;
 			Int *bp;
 			ReadFormat(buf, "I8", &nbonds);
-			if (mp->bonds != NULL)
-				free(mp->bonds);
+			if (nbonds == 0)
+				continue;
 			if (NewArray(&mp->bonds, &mp->nbonds, sizeof(Int) * 2, nbonds) == NULL)
 				goto panic;
 			bp = mp->bonds;
 			for (i = 0; i < nbonds; i += 4) {
 				if (ReadLine(buf, sizeof buf, fp, &lineNumber) <= 0) {
-					snprintf(errbuf, errbufsize, "line %d: premature end of file while reading bonds", lineNumber);
+					s_append_asprintf(errbuf, "line %d: premature end of file while reading bonds", lineNumber);
 					err = 1;
 					goto exit;
 				}
@@ -1806,16 +1858,16 @@ MoleculeLoadPsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsiz
 					b1 = ibuf[j * 2] - 1;    /* Internal atom number is 0-based */
 					b2 = ibuf[j * 2 + 1] - 1;
 					if (b1 < 0 || b1 >= mp->natoms || b2 < 0 || b2 >= mp->natoms) {
-						snprintf(errbuf, errbufsize, "line %d: The bond %d-%d includes non-existent atom", lineNumber, b1+1, b2+1);
+						s_append_asprintf(errbuf, "line %d: The bond %d-%d includes non-existent atom", lineNumber, b1+1, b2+1);
 						err = 1;
 						goto exit;
 					}
 					*bp++ = b1;
 					*bp++ = b2;
 					ap = ATOM_AT_INDEX(mp->atoms, b1);
-					AtomConnectInsertEntry(&ap->connect, ap->connect.count, b2);
+					AtomConnectInsertEntry(&ap->connect, -1, b2);
 					ap = ATOM_AT_INDEX(mp->atoms, b2);
-					AtomConnectInsertEntry(&ap->connect, ap->connect.count, b1);
+					AtomConnectInsertEntry(&ap->connect, -1, b1);
 				}
 			}
 			continue;
@@ -1824,14 +1876,14 @@ MoleculeLoadPsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsiz
 			Int nangles;
 			Int *gp;
 			ReadFormat(buf, "I8", &nangles);
-			if (mp->angles != NULL)
-				free(mp->angles);
+			if (nangles == 0)
+				continue;
 			if (NewArray(&mp->angles, &mp->nangles, sizeof(Int) * 3, nangles) == NULL)
 				goto panic;
 			gp = mp->angles;
 			for (i = 0; i < nangles; i += 3) {
 				if (ReadLine(buf, sizeof buf, fp, &lineNumber) <= 0) {
-					snprintf(errbuf, errbufsize, "line %d: premature end of file while reading angles", lineNumber);
+					s_append_asprintf(errbuf, "line %d: premature end of file while reading angles", lineNumber);
 					err = 1;
 					goto exit;
 				}
@@ -1843,7 +1895,7 @@ MoleculeLoadPsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsiz
 					a2 = ibuf[j * 3 + 1] - 1;
 					a3 = ibuf[j * 3 + 2] - 1;
 					if (a1 < 0 || a1 >= mp->natoms || a2 < 0 || a2 >= mp->natoms || a3 < 0 || a3 >= mp->natoms) {
-						snprintf(errbuf, errbufsize, "line %d: The angle %d-%d-%d includes non-existent atom", lineNumber, a1+1, a2+1, a3+1);
+						s_append_asprintf(errbuf, "line %d: The angle %d-%d-%d includes non-existent atom", lineNumber, a1+1, a2+1, a3+1);
 						err = 1;
 						goto exit;
 					}
@@ -1858,6 +1910,8 @@ MoleculeLoadPsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsiz
 			Int ndihedrals;
 			Int *dp;
 			ReadFormat(buf, "I8", &ndihedrals);
+			if (ndihedrals == 0)
+				continue;
 			if (section == 5) {
 				if (NewArray(&mp->dihedrals, &mp->ndihedrals, sizeof(Int) * 4, ndihedrals) == NULL)
 					goto panic;
@@ -1870,7 +1924,7 @@ MoleculeLoadPsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsiz
 			for (i = 0; i < ndihedrals; i += 2) {
 				if (ReadLine(buf, sizeof buf, fp, &lineNumber) <= 0) {
 					fclose(fp);
-					snprintf(errbuf, errbufsize, "line %d: premature end of file while reading %s", lineNumber, (section == 5 ? "dihedral" : "improper"));
+					s_append_asprintf(errbuf, "line %d: premature end of file while reading %s", lineNumber, (section == 5 ? "dihedral" : "improper"));
 					err = 1;
 					goto exit;
 				}
@@ -1882,7 +1936,7 @@ MoleculeLoadPsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsiz
 					d3 = ibuf[j * 4 + 2] - 1;
 					d4 = ibuf[j * 4 + 3] - 1;
 					if (d1 < 0 || d1 >= mp->natoms || d2 < 0 || d2 >= mp->natoms || d3 < 0 || d3 >= mp->natoms || d4 < 0 || d4 >= mp->natoms) {
-						snprintf(errbuf, errbufsize, "line %d: The %s %d-%d-%d-%d angle includes non-existent atom", lineNumber, (section == 5 ? "dihedral" : "improper"), d1+1, d2+1, d3+1, d4+1);
+						s_append_asprintf(errbuf, "line %d: The %s %d-%d-%d-%d angle includes non-existent atom", lineNumber, (section == 5 ? "dihedral" : "improper"), d1+1, d2+1, d3+1, d4+1);
 						err = 1;
 						goto exit;
 					}
@@ -2011,7 +2065,7 @@ sChomp(char *buf)
 }
 
 int
-MoleculeLoadTepFile(Molecule *mp, const char *fname, char *errbuf, int errbufsize)
+MoleculeLoadTepFile(Molecule *mp, const char *fname, char **errbuf)
 {
 	FILE *fp;
 	char buf[1024];
@@ -2021,16 +2075,12 @@ MoleculeLoadTepFile(Molecule *mp, const char *fname, char *errbuf, int errbufsiz
 	Int ibuf[12];
 	Double fbuf[12];
 	Int *bonds, nbonds;
-	if (errbuf == NULL) {
-		errbuf = buf;
-		errbufsize = 1024;
-	}
-	errbuf[0] = 0;
+	*errbuf = NULL;
 	if (mp == NULL)
 		mp = MoleculeNew();
 	fp = fopen(fname, "rb");
 	if (fp == NULL) {
-		snprintf(errbuf, errbufsize, "Cannot open file");
+		s_append_asprintf(errbuf, "Cannot open file");
 		return 1;
 	}
 	lineNumber = 0;
@@ -2074,7 +2124,7 @@ MoleculeLoadTepFile(Molecule *mp, const char *fname, char *errbuf, int errbufsiz
 				symops[1] = strtok_r(NULL, ", ", &brks);
 				symops[2] = strtok_r(NULL, ", ", &brks);
 				if (sMoleculeSymopStringsToTransform(symops, tr)) {
-					snprintf(errbuf, errbufsize, "line %d: bad symmetry specification", lineNumber);
+					s_append_asprintf(errbuf, "line %d: bad symmetry specification", lineNumber);
 					return 1;
 				}
 			}
@@ -2103,7 +2153,7 @@ MoleculeLoadTepFile(Molecule *mp, const char *fname, char *errbuf, int errbufsiz
 			guessElement(ap);
 			atomType = fbuf[3];
 			if (ReadLine(buf, sizeof buf, fp, &lineNumber) <= 0) {
-				snprintf(errbuf, errbufsize, "unexpected end of file");
+				s_append_asprintf(errbuf, "unexpected end of file");
 				return 1;
 			}
 			ReadFormat(buf, "I1F8F9F9F9F9F9F9", ibuf, fbuf, fbuf+1, fbuf+2, fbuf+3, fbuf+4, fbuf+5, fbuf+6);
@@ -2120,7 +2170,7 @@ MoleculeLoadTepFile(Molecule *mp, const char *fname, char *errbuf, int errbufsiz
 	fclose(fp);
 	MoleculeGuessBonds(mp, 1.2, &nbonds, &bonds);
 	if (nbonds > 0) {
-		MoleculeAddBonds(mp, nbonds, bonds);
+		MoleculeAddBonds(mp, nbonds, bonds, NULL, 1);
 		free(bonds);
 	}
 	mp->nframes = -1;  /*  Should be recalculated later  */
@@ -2131,7 +2181,7 @@ MoleculeLoadTepFile(Molecule *mp, const char *fname, char *errbuf, int errbufsiz
 }
 
 int
-MoleculeLoadShelxFile(Molecule *mp, const char *fname, char *errbuf, int errbufsize)
+MoleculeLoadShelxFile(Molecule *mp, const char *fname, char **errbuf)
 {
 	FILE *fp;
 	char buf[1024];
@@ -2149,17 +2199,13 @@ MoleculeLoadShelxFile(Molecule *mp, const char *fname, char *errbuf, int errbufs
 	Int nbonds, *bonds;
 	char (*sfacs)[4] = NULL;
 
-	if (errbuf == NULL) {
-		errbuf = buf;
-		errbufsize = 1024;
-	}
-	errbuf[0] = 0;
+	*errbuf = NULL;
 	if (mp == NULL)
 		mp = MoleculeNew();
 	currentResName[0] = 0;
 	fp = fopen(fname, "rb");
 	if (fp == NULL) {
-		snprintf(errbuf, errbufsize, "Cannot open file");
+		s_append_asprintf(errbuf, "Cannot open file");
 		return 1;
 	}
 	lineNumber = 0;
@@ -2195,7 +2241,7 @@ MoleculeLoadShelxFile(Molecule *mp, const char *fname, char *errbuf, int errbufs
 			symops[1] = strtok_r(NULL, ",", &brks);
 			symops[2] = strtok_r(NULL, ",", &brks);
 			if (sMoleculeSymopStringsToTransform(symops, tr)) {
-				snprintf(errbuf, errbufsize, "line %d: bad symmetry specification", lineNumber);
+				s_append_asprintf(errbuf, "line %d: bad symmetry specification", lineNumber);
 				return 1;
 			}
 			if (AssignArray(&mp->syms, &mp->nsyms, sizeof(Transform), mp->nsyms, tr) == 0)
@@ -2230,7 +2276,7 @@ MoleculeLoadShelxFile(Molecule *mp, const char *fname, char *errbuf, int errbufs
 				n = sscanf(p1, " %d %f %f %f %f %f %f %2s", ibuf, fbuf, fbuf+1, fbuf+2, fbuf+3, fbuf+4, fbuf+5, cont);
 				if (n == 8 && strcmp(cont, "=") == 0) {
 					if (ReadLine(buf, sizeof buf, fp, &lineNumber) <= 0) {
-						snprintf(errbuf, errbufsize, "line %d: unexpected end of file within the atom cards", lineNumber);
+						s_append_asprintf(errbuf, "line %d: unexpected end of file within the atom cards", lineNumber);
 						return 1;
 					}
 					sscanf(buf, " %f %f %f %f", fbuf+6, fbuf+7, fbuf+8, fbuf+9);
@@ -2322,7 +2368,7 @@ MoleculeLoadShelxFile(Molecule *mp, const char *fname, char *errbuf, int errbufs
 	
 	MoleculeGuessBonds(mp, 1.2, &nbonds, &bonds);
 	if (nbonds > 0) {
-		MoleculeAddBonds(mp, nbonds, bonds);
+		MoleculeAddBonds(mp, nbonds, bonds, NULL, 1);
 		free(bonds);
 	}
 	mp->nframes = -1;  /*  Should be recalculated later  */
@@ -2604,7 +2650,7 @@ sSetupGaussianCoefficients(BasisSet *bset)
 }
 
 int
-MoleculeLoadGaussianFchkFile(Molecule *mp, const char *fname, char *errbuf, int errbufsize)
+MoleculeLoadGaussianFchkFile(Molecule *mp, const char *fname, char **errbuf)
 {
 	FILE *fp;
 	char buf[1024];
@@ -2620,11 +2666,7 @@ MoleculeLoadGaussianFchkFile(Molecule *mp, const char *fname, char *errbuf, int 
 	Vector *vp;
 	Double w;
 
-	if (errbuf == NULL) {
-		errbuf = buf;
-		errbufsize = 1024;
-	}
-	errbuf[0] = 0;
+	*errbuf = NULL;
 	if (mp == NULL)
 		mp = MoleculeNew();
 	bset = (BasisSet *)calloc(sizeof(BasisSet), 1);
@@ -2633,7 +2675,7 @@ MoleculeLoadGaussianFchkFile(Molecule *mp, const char *fname, char *errbuf, int 
 	mp->bset = bset;
 	fp = fopen(fname, "rb");
 	if (fp == NULL) {
-		snprintf(errbuf, errbufsize, "Cannot open file");
+		s_append_asprintf(errbuf, "Cannot open file");
 		return 1;
 	}
 	lineNumber = 0;
@@ -2663,7 +2705,7 @@ MoleculeLoadGaussianFchkFile(Molecule *mp, const char *fname, char *errbuf, int 
 		sSeparateTokens(buf + 42, tokens, 16);
 		if (strcmp(buf, "Number of atoms") == 0) {
 			if (tokens[1] == NULL || (natoms = atoi(tokens[1])) <= 0) {
-				snprintf(errbuf, errbufsize, "Line %d: strange number of atoms: %s", lineNumber, tokens[1]);
+				s_append_asprintf(errbuf, "Line %d: strange number of atoms: %s", lineNumber, tokens[1]);
 				retval = 2;
 				goto cleanup;
 			}
@@ -2675,44 +2717,44 @@ MoleculeLoadGaussianFchkFile(Molecule *mp, const char *fname, char *errbuf, int 
 			bset->nuccharges = (Double *)calloc(sizeof(Double), natoms);
 		} else if (strcmp(buf, "Number of electrons") == 0) {
 			if (tokens[1] == NULL || (i = atoi(tokens[1])) < 0) {
-				snprintf(errbuf, errbufsize, "Line %d: strange number of electrons: %s", lineNumber, tokens[1]);
+				s_append_asprintf(errbuf, "Line %d: strange number of electrons: %s", lineNumber, tokens[1]);
 				retval = 2;
 				goto cleanup;
 			}
 			nelec = i;
 		} else if (strcmp(buf, "Number of alpha electrons") == 0) {
 			if (tokens[1] == NULL || (i = atoi(tokens[1])) < 0) {
-				snprintf(errbuf, errbufsize, "Line %d: strange number of alpha electrons: %s", lineNumber, tokens[1]);
+				s_append_asprintf(errbuf, "Line %d: strange number of alpha electrons: %s", lineNumber, tokens[1]);
 				retval = 2;
 				goto cleanup;
 			}
 			bset->ne_alpha = i;
 		} else if (strcmp(buf, "Number of beta electrons") == 0) {
 			if (tokens[1] == NULL || (i = atoi(tokens[1])) < 0) {
-				snprintf(errbuf, errbufsize, "Line %d: strange number of beta electrons: %s", lineNumber, tokens[1]);
+				s_append_asprintf(errbuf, "Line %d: strange number of beta electrons: %s", lineNumber, tokens[1]);
 				retval = 2;
 				goto cleanup;
 			}
 			bset->ne_beta = i;
 			if (bset->ne_alpha + bset->ne_beta != nelec) {
-				snprintf(errbuf, errbufsize, "Line %d: sum of alpha (%d) and beta (%d) electrons does not match the number of electrons (%d)", lineNumber, (int)bset->ne_alpha, (int)bset->ne_beta, (int)nelec);
+				s_append_asprintf(errbuf, "Line %d: sum of alpha (%d) and beta (%d) electrons does not match the number of electrons (%d)", lineNumber, (int)bset->ne_alpha, (int)bset->ne_beta, (int)nelec);
 				retval = 2;
 				goto cleanup;
 			}
 		} else if (strcmp(buf, "Number of basis functions") == 0) {
 			if (tokens[1] == NULL || (nbasis = atoi(tokens[1])) <= 0) {
-				snprintf(errbuf, errbufsize, "Line %d: strange number of basis functions: %s", lineNumber, tokens[1]);
+				s_append_asprintf(errbuf, "Line %d: strange number of basis functions: %s", lineNumber, tokens[1]);
 				retval = 2;
 				goto cleanup;
 			}
 		} else if (strcmp(buf, "Atomic numbers") == 0) {
 			if (tokens[2] == NULL || (i = atoi(tokens[2])) <= 0 || i != natoms) {
-				snprintf(errbuf, errbufsize, "Line %d: wrong or inconsistent number of atoms: %s", lineNumber, tokens[2]);
+				s_append_asprintf(errbuf, "Line %d: wrong or inconsistent number of atoms: %s", lineNumber, tokens[2]);
 				retval = 2;
 				goto cleanup;
 			}
 			if (sReadNumberArray(&iary, &nary, sizeof(Int), natoms, fp, &lineNumber) != 0) {
-				snprintf(errbuf, errbufsize, "Line %d: cannot read atomic numbers", lineNumber);
+				s_append_asprintf(errbuf, "Line %d: cannot read atomic numbers", lineNumber);
 				retval = 2;
 				goto cleanup;
 			}
@@ -2728,12 +2770,12 @@ MoleculeLoadGaussianFchkFile(Molecule *mp, const char *fname, char *errbuf, int 
 			iary = NULL;
 		} else if (strcmp(buf, "Nuclear charges") == 0) {
 			if (tokens[2] == NULL || (i = atoi(tokens[2])) <= 0 || i != natoms) {
-				snprintf(errbuf, errbufsize, "Line %d: wrong or inconsistent number of atoms: %s", lineNumber, tokens[2]);
+				s_append_asprintf(errbuf, "Line %d: wrong or inconsistent number of atoms: %s", lineNumber, tokens[2]);
 				retval = 2;
 				goto cleanup;
 			}
 			if (sReadNumberArray(&dary, &nary, sizeof(Double), natoms, fp, &lineNumber) != 0) {
-				snprintf(errbuf, errbufsize, "Line %d: cannot read nuclear charges", lineNumber);
+				s_append_asprintf(errbuf, "Line %d: cannot read nuclear charges", lineNumber);
 				retval = 2;
 				goto cleanup;
 			}
@@ -2744,12 +2786,12 @@ MoleculeLoadGaussianFchkFile(Molecule *mp, const char *fname, char *errbuf, int 
 			iary = NULL;
 		} else if (strcmp(buf, "Current cartesian coordinates") == 0) {
 			if (tokens[2] == NULL || (i = atoi(tokens[2])) <= 0 || i != natoms * 3) {
-				snprintf(errbuf, errbufsize, "Line %d: wrong or inconsistent number of cartesian coordinates: %s", lineNumber, tokens[2]);
+				s_append_asprintf(errbuf, "Line %d: wrong or inconsistent number of cartesian coordinates: %s", lineNumber, tokens[2]);
 				retval = 2;
 				goto cleanup;
 			}
 			if (sReadNumberArray(&dary, &nary, sizeof(Double), natoms * 3, fp, &lineNumber) != 0) {
-				snprintf(errbuf, errbufsize, "Line %d: cannot read cartesian coordinates", lineNumber);
+				s_append_asprintf(errbuf, "Line %d: cannot read cartesian coordinates", lineNumber);
 				retval = 2;
 				goto cleanup;
 			}
@@ -2765,19 +2807,19 @@ MoleculeLoadGaussianFchkFile(Molecule *mp, const char *fname, char *errbuf, int 
 			dary = NULL;
 		} else if (strcmp(buf, "MxBond") == 0) {
 			if (tokens[1] == NULL || (mxbond = atoi(tokens[1])) <= 0) {
-				snprintf(errbuf, errbufsize, "Line %d: strange number of bonds per atom: %s", lineNumber, tokens[1]);
+				s_append_asprintf(errbuf, "Line %d: strange number of bonds per atom: %s", lineNumber, tokens[1]);
 				retval = 2;
 				goto cleanup;
 			}
 		} else if (strcmp(buf, "IBond") == 0) {
 			Int *bonds;
 			if (tokens[2] == NULL || (i = atoi(tokens[2])) <= 0 || i != natoms * mxbond) {
-				snprintf(errbuf, errbufsize, "Line %d: wrong or inconsistent number of bonds: %s", lineNumber, tokens[2]);
+				s_append_asprintf(errbuf, "Line %d: wrong or inconsistent number of bonds: %s", lineNumber, tokens[2]);
 				retval = 2;
 				goto cleanup;
 			}
 			if (sReadNumberArray(&iary, &nary, sizeof(Int), natoms * mxbond, fp, &lineNumber) != 0) {
-				snprintf(errbuf, errbufsize, "Line %d: cannot read bond information", lineNumber);
+				s_append_asprintf(errbuf, "Line %d: cannot read bond information", lineNumber);
 				retval = 2;
 				goto cleanup;
 			}
@@ -2793,7 +2835,7 @@ MoleculeLoadGaussianFchkFile(Molecule *mp, const char *fname, char *errbuf, int 
 				}
 				if (k > 0) {
 					bonds[k] = kInvalidIndex;
-					MoleculeAddBonds(mp, k / 2, bonds);
+					MoleculeAddBonds(mp, k / 2, bonds, NULL, 1);
 				}
 			}
 			free(iary);
@@ -2801,12 +2843,12 @@ MoleculeLoadGaussianFchkFile(Molecule *mp, const char *fname, char *errbuf, int 
 			iary = NULL;
 		} else if (strcmp(buf, "Shell types") == 0) {
 			if (tokens[2] == NULL || (i = atoi(tokens[2])) <= 0) {
-				snprintf(errbuf, errbufsize, "Line %d: wrong number of shell types: %s", lineNumber, tokens[2]);
+				s_append_asprintf(errbuf, "Line %d: wrong number of shell types: %s", lineNumber, tokens[2]);
 				retval = 2;
 				goto cleanup;
 			}
 			if (sReadNumberArray(&iary, &nary, sizeof(Int), i, fp, &lineNumber) != 0) {
-				snprintf(errbuf, errbufsize, "Line %d: cannot read shell types", lineNumber);
+				s_append_asprintf(errbuf, "Line %d: cannot read shell types", lineNumber);
 				retval = 2;
 				goto cleanup;
 			}
@@ -2823,7 +2865,7 @@ MoleculeLoadGaussianFchkFile(Molecule *mp, const char *fname, char *errbuf, int 
 						/*	case 3: sp->sym = kGTOtype_F;  sp->ncomp = 10; break;
 						 case -3: sp->sym = kGTOType_F7; sp->ncomp = 7; break; */
 					default:
-						snprintf(errbuf, errbufsize, "Line %d: unsupported shell type %d", lineNumber, iary[i]);
+						s_append_asprintf(errbuf, "Line %d: unsupported shell type %d", lineNumber, iary[i]);
 						retval = 2;
 						goto cleanup;
 				}
@@ -2835,12 +2877,12 @@ MoleculeLoadGaussianFchkFile(Molecule *mp, const char *fname, char *errbuf, int 
 			iary = NULL;
 		} else if (strcmp(buf, "Number of primitives per shell") == 0) {
 			if (tokens[2] == NULL || (i = atoi(tokens[2])) <= 0 || i != bset->nshells) {
-				snprintf(errbuf, errbufsize, "Line %d: wrong size of the primitive table: %s", lineNumber, tokens[2]);
+				s_append_asprintf(errbuf, "Line %d: wrong size of the primitive table: %s", lineNumber, tokens[2]);
 				retval = 2;
 				goto cleanup;
 			}
 			if (sReadNumberArray(&iary, &nary, sizeof(Int), i, fp, &lineNumber) != 0) {
-				snprintf(errbuf, errbufsize, "Line %d: cannot read primitive table", lineNumber);
+				s_append_asprintf(errbuf, "Line %d: cannot read primitive table", lineNumber);
 				retval = 2;
 				goto cleanup;
 			}
@@ -2854,12 +2896,12 @@ MoleculeLoadGaussianFchkFile(Molecule *mp, const char *fname, char *errbuf, int 
 			iary = NULL;
 		} else if (strcmp(buf, "Shell to atom map") == 0) {
 			if (tokens[2] == NULL || (i = atoi(tokens[2])) <= 0 || i != bset->nshells) {
-				snprintf(errbuf, errbufsize, "Line %d: wrong size of the shell-to-atom map: %s", lineNumber, tokens[2]);
+				s_append_asprintf(errbuf, "Line %d: wrong size of the shell-to-atom map: %s", lineNumber, tokens[2]);
 				retval = 2;
 				goto cleanup;
 			}
 			if (sReadNumberArray(&iary, &nary, sizeof(Int), i, fp, &lineNumber) != 0) {
-				snprintf(errbuf, errbufsize, "Line %d: cannot read shell-to-atom table", lineNumber);
+				s_append_asprintf(errbuf, "Line %d: cannot read shell-to-atom table", lineNumber);
 				retval = 2;
 				goto cleanup;
 			}
@@ -2870,12 +2912,12 @@ MoleculeLoadGaussianFchkFile(Molecule *mp, const char *fname, char *errbuf, int 
 			iary = NULL;
 		} else if (strcmp(buf, "Primitive exponents") == 0) {
 			if (tokens[2] == NULL || (i = atoi(tokens[2])) <= 0 || i != nprims) {
-				snprintf(errbuf, errbufsize, "Line %d: wrong number of primitive exponents: %s", lineNumber, tokens[2]);
+				s_append_asprintf(errbuf, "Line %d: wrong number of primitive exponents: %s", lineNumber, tokens[2]);
 				retval = 2;
 				goto cleanup;
 			}
 			if (sReadNumberArray(&dary, &nary, sizeof(Double), i, fp, &lineNumber) != 0) {
-				snprintf(errbuf, errbufsize, "Line %d: cannot read primitive exponents", lineNumber);
+				s_append_asprintf(errbuf, "Line %d: cannot read primitive exponents", lineNumber);
 				retval = 2;
 				goto cleanup;
 			}
@@ -2888,12 +2930,12 @@ MoleculeLoadGaussianFchkFile(Molecule *mp, const char *fname, char *errbuf, int 
 			dary = NULL;
 		} else if (strcmp(buf, "Contraction coefficients") == 0) {
 			if (tokens[2] == NULL || (i = atoi(tokens[2])) <= 0 || i != bset->npriminfos) {
-				snprintf(errbuf, errbufsize, "Line %d: wrong number of contraction coefficients: %s", lineNumber, tokens[2]);
+				s_append_asprintf(errbuf, "Line %d: wrong number of contraction coefficients: %s", lineNumber, tokens[2]);
 				retval = 2;
 				goto cleanup;
 			}
 			if (sReadNumberArray(&dary, &nary, sizeof(Double), i, fp, &lineNumber) != 0) {
-				snprintf(errbuf, errbufsize, "Line %d: cannot read contraction coefficients", lineNumber);
+				s_append_asprintf(errbuf, "Line %d: cannot read contraction coefficients", lineNumber);
 				retval = 2;
 				goto cleanup;
 			}
@@ -2904,12 +2946,12 @@ MoleculeLoadGaussianFchkFile(Molecule *mp, const char *fname, char *errbuf, int 
 			dary = NULL;
 		} else if (strcmp(buf, "P(S=P) Contraction coefficients") == 0) {
 			if (tokens[2] == NULL || (i = atoi(tokens[2])) <= 0 || i != bset->npriminfos) {
-				snprintf(errbuf, errbufsize, "Line %d: wrong number of P(S=P) contraction coefficients: %s", lineNumber, tokens[2]);
+				s_append_asprintf(errbuf, "Line %d: wrong number of P(S=P) contraction coefficients: %s", lineNumber, tokens[2]);
 				retval = 2;
 				goto cleanup;
 			}
 			if (sReadNumberArray(&dary, &nary, sizeof(Double), i, fp, &lineNumber) != 0) {
-				snprintf(errbuf, errbufsize, "Line %d: cannot read P(S=P) contraction coefficients", lineNumber);
+				s_append_asprintf(errbuf, "Line %d: cannot read P(S=P) contraction coefficients", lineNumber);
 				retval = 2;
 				goto cleanup;
 			}
@@ -2920,34 +2962,34 @@ MoleculeLoadGaussianFchkFile(Molecule *mp, const char *fname, char *errbuf, int 
 			dary = NULL;
 		} else if (strcmp(buf, "Alpha Orbital Energies") == 0) {
 			if (tokens[2] == NULL || (i = atoi(tokens[2])) <= 0 || i != ncomps) {
-				snprintf(errbuf, errbufsize, "Line %d: wrong or inconsistent number of alpha orbitals: %s", lineNumber, tokens[2]);
+				s_append_asprintf(errbuf, "Line %d: wrong or inconsistent number of alpha orbitals: %s", lineNumber, tokens[2]);
 				retval = 2;
 				goto cleanup;
 			}
 			if (sReadNumberArray(&bset->moenergies, &bset->nmos, sizeof(Double), i, fp, &lineNumber) != 0) {
-				snprintf(errbuf, errbufsize, "Line %d: cannot read alpha orbital energies", lineNumber);
+				s_append_asprintf(errbuf, "Line %d: cannot read alpha orbital energies", lineNumber);
 				retval = 2;
 				goto cleanup;
 			}
 		} else if (strcmp(buf, "Alpha MO coefficients") == 0) {
 			if (tokens[2] == NULL || (i = atoi(tokens[2])) <= 0 || i != ncomps * ncomps) {
-				snprintf(errbuf, errbufsize, "Line %d: wrong or inconsistent number of alpha MO coefficients: %s", lineNumber, tokens[2]);
+				s_append_asprintf(errbuf, "Line %d: wrong or inconsistent number of alpha MO coefficients: %s", lineNumber, tokens[2]);
 				retval = 2;
 				goto cleanup;
 			}
 			if (sReadNumberArray(&bset->mo, &nary, sizeof(Double), i, fp, &lineNumber) != 0) {
-				snprintf(errbuf, errbufsize, "Line %d: cannot read MO coefficients", lineNumber);
+				s_append_asprintf(errbuf, "Line %d: cannot read MO coefficients", lineNumber);
 				retval = 2;
 				goto cleanup;
 			}
 		} else if (strcmp(buf, "Beta Orbital Energies") == 0) {
 			if (tokens[2] == NULL || (i = atoi(tokens[2])) <= 0 || i != ncomps) {
-				snprintf(errbuf, errbufsize, "Line %d: wrong or inconsistent number of beta orbitals: %s", lineNumber, tokens[2]);
+				s_append_asprintf(errbuf, "Line %d: wrong or inconsistent number of beta orbitals: %s", lineNumber, tokens[2]);
 				retval = 2;
 				goto cleanup;
 			}
 			if (sReadNumberArray(&dary, &nary, sizeof(Double), i, fp, &lineNumber) != 0) {
-				snprintf(errbuf, errbufsize, "Line %d: cannot read beta orbital energies", lineNumber);
+				s_append_asprintf(errbuf, "Line %d: cannot read beta orbital energies", lineNumber);
 				retval = 2;
 				goto cleanup;
 			}
@@ -2960,12 +3002,12 @@ MoleculeLoadGaussianFchkFile(Molecule *mp, const char *fname, char *errbuf, int 
 			dary = NULL;
 		} else if (strcmp(buf, "Beta MO coefficients") == 0) {
 			if (tokens[2] == NULL || (i = atoi(tokens[2])) <= 0 || i != ncomps * ncomps) {
-				snprintf(errbuf, errbufsize, "Line %d: wrong or inconsistent number of beta MO coefficients: %s", lineNumber, tokens[2]);
+				s_append_asprintf(errbuf, "Line %d: wrong or inconsistent number of beta MO coefficients: %s", lineNumber, tokens[2]);
 				retval = 2;
 				goto cleanup;
 			}
 			if (sReadNumberArray(&dary, &nary, sizeof(Double), i, fp, &lineNumber) != 0) {
-				snprintf(errbuf, errbufsize, "Line %d: cannot read alpha MO coefficients", lineNumber);
+				s_append_asprintf(errbuf, "Line %d: cannot read alpha MO coefficients", lineNumber);
 				retval = 2;
 				goto cleanup;
 			}
@@ -2975,34 +3017,34 @@ MoleculeLoadGaussianFchkFile(Molecule *mp, const char *fname, char *errbuf, int 
 			dary = NULL;
 		} else if (strcmp(buf, "Total SCF Density") == 0) {
 			if (tokens[2] == NULL || (i = atoi(tokens[2])) <= 0 || i != ncomps * (ncomps + 1) / 2) {
-				snprintf(errbuf, errbufsize, "Line %d: wrong or inconsistent number of SCF densities: %s", lineNumber, tokens[2]);
+				s_append_asprintf(errbuf, "Line %d: wrong or inconsistent number of SCF densities: %s", lineNumber, tokens[2]);
 				retval = 2;
 				goto cleanup;
 			}
 			if (sReadNumberArray(&bset->scfdensities, &nary, sizeof(Double), i, fp, &lineNumber) != 0) {
-				snprintf(errbuf, errbufsize, "Line %d: cannot read SCF densities", lineNumber);
+				s_append_asprintf(errbuf, "Line %d: cannot read SCF densities", lineNumber);
 				retval = 2;
 				goto cleanup;
 			}
 		}
 	}
 	if (mp->natoms == 0) {
-		snprintf(errbuf, errbufsize, "Atom information is missing");
+		s_append_asprintf(errbuf, "Atom information is missing");
 		retval = 2;
 		goto cleanup;
 	}
 	if (bset->shells == NULL || bset->priminfos == NULL) {
-		snprintf(errbuf, errbufsize, "Gaussian primitive information is missing");
+		s_append_asprintf(errbuf, "Gaussian primitive information is missing");
 		retval = 2;
 		goto cleanup;
 	}
 	if (bset->mo == NULL) {
-		snprintf(errbuf, errbufsize, "MO coefficients were not found");
+		s_append_asprintf(errbuf, "MO coefficients were not found");
 		retval = 2;
 		goto cleanup;
 	}
 	if (sSetupGaussianCoefficients(bset) != 0) {
-		snprintf(errbuf, errbufsize, "Internal error during setup MO calculation");
+		s_append_asprintf(errbuf, "Internal error during setup MO calculation");
 		retval = 2;
 		goto cleanup;
 	}
@@ -3027,7 +3069,7 @@ panic:
 }
 
 int
-MoleculeLoadGamessDatFile(Molecule *mol, const char *fname, char *errbuf, int errbufsize)
+MoleculeLoadGamessDatFile(Molecule *mol, const char *fname, char **errbuf)
 {
 	FILE *fp;
 	int newmol = 0;
@@ -3035,18 +3077,15 @@ MoleculeLoadGamessDatFile(Molecule *mol, const char *fname, char *errbuf, int er
 	int lineNumber, i, j, k, len, natoms = 0;
 	int nframes = 0;
 	int n1;
+	int retval = 0;
 	int ival[8];
 	double dval[8];
 	char sval[16];
 	Vector *vbuf = NULL;
 	IntGroup *ig;
 	int optimizing = 0, status = 0;
-
-	if (errbuf == NULL) {
-		errbuf = buf;
-		errbufsize = 1024;
-	}
-	errbuf[0] = 0;
+	
+	*errbuf = NULL;
 	if (mol == NULL) {
 		mol = MoleculeNew();
 	}
@@ -3055,7 +3094,7 @@ MoleculeLoadGamessDatFile(Molecule *mol, const char *fname, char *errbuf, int er
 
 	fp = fopen(fname, "rb");
 	if (fp == NULL) {
-		snprintf(errbuf, errbufsize, "Cannot open file");
+		s_append_asprintf(errbuf, "Cannot open file");
 		return 1;
 	}
 	
@@ -3082,8 +3121,9 @@ MoleculeLoadGamessDatFile(Molecule *mol, const char *fname, char *errbuf, int er
 				if (strncmp(buf, " $END", 5) == 0)
 					break;
 				if (sscanf(buf, "%12s %lf %lf %lf %lf", sval, &dval[0], &dval[1], &dval[2], &dval[3]) < 5) {
-					snprintf(errbuf, errbufsize, "Line %d: bad format in $DATA section", lineNumber);
-					return 2;
+					s_append_asprintf(errbuf, "Line %d: bad format in $DATA section", lineNumber);
+					retval = 2;
+					goto exit_loop;
 				}
 				if (newmol) {
 					Atom a;
@@ -3100,12 +3140,14 @@ MoleculeLoadGamessDatFile(Molecule *mol, const char *fname, char *errbuf, int er
 				} else {
 					Atom *ap;
 					if (i >= mol->natoms) {
-						snprintf(errbuf, errbufsize, "Line %d: too many atoms", lineNumber);
-						return 3;
+						s_append_asprintf(errbuf, "Line %d: too many atoms", lineNumber);
+						retval = 3;
+						goto exit_loop;
 					}
 					if ((ap = ATOM_AT_INDEX(mol->atoms, i))->atomicNumber != dval[0]) {
-						snprintf(errbuf, errbufsize, "Line %d: atomic number does not match", lineNumber);
-						return 4;
+						s_append_asprintf(errbuf, "Line %d: atomic number does not match", lineNumber);
+						retval = 4;
+						goto exit_loop;
 					}
 					vbuf[i].x = dval[1];
 					vbuf[i].y = dval[2];
@@ -3124,8 +3166,9 @@ MoleculeLoadGamessDatFile(Molecule *mol, const char *fname, char *errbuf, int er
 				/*  Set atom positions  */
 				IntGroup *ig;
 				if (natoms < mol->natoms) {
-					snprintf(errbuf, errbufsize, "Line %d: too few atoms", lineNumber);
-					return 5;
+					s_append_asprintf(errbuf, "Line %d: too few atoms", lineNumber);
+					retval = 5;
+					goto exit_loop;
 				}
 				ig = IntGroupNewWithPoints(0, natoms, -1);
 				MolActionCreateAndPerform(mol, gMolActionSetAtomPositions, ig, natoms, vbuf);
@@ -3142,19 +3185,22 @@ MoleculeLoadGamessDatFile(Molecule *mol, const char *fname, char *errbuf, int er
 			i = 0;
 			do {
 				if (i++ >= 4) {
-					snprintf(errbuf, errbufsize, "Line %d: the separator line at the top of the coordinates is not found: bad format?", lineNumber);
-					return 6;
+					s_append_asprintf(errbuf, "Line %d: the separator line at the top of the coordinates is not found: bad format?", lineNumber);
+					retval = 6;
+					goto exit_loop;
 				}
 				ReadLine(buf, sizeof buf, fp, &lineNumber);
 			} while (strstr(buf, "----------------------------") == NULL);
 			for (i = 0; i < natoms; i++) {
 				if (ReadLine(buf, sizeof buf, fp, &lineNumber) <= 0) {
-					snprintf(errbuf, errbufsize, "Unexpected end of file in reading NSERCH data");
-					return 6;
+					s_append_asprintf(errbuf, "Unexpected end of file in reading NSERCH data");
+					retval = 6;
+					goto exit_loop;
 				}
 				if (sscanf(buf, "%12s %lf %lf %lf %lf", sval, &dval[0], &dval[1], &dval[2], &dval[3]) < 5) {
-					snprintf(errbuf, errbufsize, "Line %d: bad format in NSERCH coordinate data", lineNumber);
-					return 7;
+					s_append_asprintf(errbuf, "Line %d: bad format in NSERCH coordinate data", lineNumber);
+					retval = 6;
+					goto exit_loop;
 				}
 				vbuf[i].x = dval[1];
 				vbuf[i].y = dval[2];
@@ -3173,8 +3219,9 @@ MoleculeLoadGamessDatFile(Molecule *mol, const char *fname, char *errbuf, int er
 			if (mol->bset == NULL) {
 				i = MoleculeAllocateBasisSetRecord(mol, n1, 0, 0);
 				if (i != 0) {
-					snprintf(errbuf, errbufsize, "Line %d: cannot allocate basis set internal buffer", lineNumber);
-					return 8;
+					s_append_asprintf(errbuf, "Line %d: cannot allocate basis set internal buffer", lineNumber);
+					retval = 8;
+					goto exit_loop;
 				}
 			}
 		} else if (strncmp(buf, " $VEC", 5) == 0) {
@@ -3186,8 +3233,9 @@ MoleculeLoadGamessDatFile(Molecule *mol, const char *fname, char *errbuf, int er
 				continue;  /*  Ignore VEC group during optimization  */
 			coeffs = (Double *)calloc(sizeof(Double), mol->bset->ncomps);
 			if (coeffs == NULL) {
-				snprintf(errbuf, errbufsize, "Line %d: low memory during $VEC", lineNumber);
-				return 9;
+				s_append_asprintf(errbuf, "Line %d: low memory during $VEC", lineNumber);
+				retval = 9;
+				goto exit_loop;
 			}
 			i = k = 0;
 			while ((status = sReadLineWithInterrupt(buf, sizeof buf, fp, &lineNumber)) > 0) {
@@ -3206,9 +3254,10 @@ MoleculeLoadGamessDatFile(Molecule *mol, const char *fname, char *errbuf, int er
 					continue;
 				j = MoleculeSetMOCoefficients(mol, i, -1000000, k, coeffs);
 				if (j != 0) {
-					snprintf(errbuf, errbufsize, "Line %d: cannot set coefficients for MO %d", lineNumber, i + 1);
+					s_append_asprintf(errbuf, "Line %d: cannot set coefficients for MO %d", lineNumber, i + 1);
 					free(coeffs);
-					return 10;
+					retval = 10;
+					goto exit_loop;
 				}
 				i++;
 				k = 0;
@@ -3237,17 +3286,20 @@ MoleculeLoadGamessDatFile(Molecule *mol, const char *fname, char *errbuf, int er
 		}  /*  TODO: read MOLPLT info if present  */
 	}
 	if (status < 0) {
-		snprintf(errbuf, errbufsize, "User interrupt at line %d", lineNumber);
-		return 11;
+		s_append_asprintf(errbuf, "User interrupt at line %d", lineNumber);
+		retval = 11;
 	}
+exit_loop:
 	if (vbuf != NULL)
 		free(vbuf);
+	if (mol->natoms > 0)
+		retval = 0;  /*  Return the partially constructed molecule  */
 	if (newmol && mol->nbonds == 0) {
 		/*  Guess bonds  */
 		Int nbonds, *bonds;
 		MoleculeGuessBonds(mol, 1.2, &nbonds, &bonds);
 		if (nbonds > 0) {
-			MolActionCreateAndPerform(mol, gMolActionAddBonds, nbonds * 2, bonds);
+			MolActionCreateAndPerform(mol, gMolActionAddBonds, nbonds * 2, bonds, NULL);
 			free(bonds);
 		}
 	}
@@ -3255,7 +3307,7 @@ MoleculeLoadGamessDatFile(Molecule *mol, const char *fname, char *errbuf, int er
 }
 
 int
-MoleculeReadCoordinatesFromFile(Molecule *mp, const char *fname, const char *ftype, char *errbuf, int errbufsize)
+MoleculeReadCoordinatesFromFile(Molecule *mp, const char *fname, const char *ftype, char **errbuf)
 {
 	int retval;
 	if (ftype == NULL || *ftype == 0) {
@@ -3270,17 +3322,17 @@ MoleculeReadCoordinatesFromFile(Molecule *mp, const char *fname, const char *fty
 		}
 	}
 	if (strcasecmp(ftype, "pdb") == 0) {
-		retval = MoleculeReadCoordinatesFromPdbFile(mp, fname, errbuf, errbufsize);
+		retval = MoleculeReadCoordinatesFromPdbFile(mp, fname, errbuf);
 	}
 	if (retval != 0) {
 		/*  Try all formats once again  */
-		retval = MoleculeReadCoordinatesFromPdbFile(mp, fname, errbuf, errbufsize);
+		retval = MoleculeReadCoordinatesFromPdbFile(mp, fname, errbuf);
 	}
 	return retval;
 }
 
 int
-MoleculeReadCoordinatesFromPdbFile(Molecule *mp, const char *fname, char *errbuf, int errbufsize)
+MoleculeReadCoordinatesFromPdbFile(Molecule *mp, const char *fname, char **errbuf)
 {
 	FILE *fp;
 	char buf[1024];
@@ -3293,14 +3345,10 @@ MoleculeReadCoordinatesFromPdbFile(Molecule *mp, const char *fname, char *errbuf
 	Int ibuf[12];
 	Int entries = 0;
 	retval = 0;
-	if (errbuf == NULL) {
-		errbuf = buf;
-		errbufsize = 1024;
-	}
-	errbuf[0] = 0;
+	*errbuf = NULL;
 	fp = fopen(fname, "rb");
 	if (fp == NULL) {
-		snprintf(errbuf, errbufsize, "Cannot open file");
+		s_append_asprintf(errbuf, "Cannot open file");
 		return -1;
 	}
 /*	flockfile(fp); */
@@ -3359,7 +3407,7 @@ MoleculeReadCoordinatesFromPdbFile(Molecule *mp, const char *fname, char *errbuf
 			else
 				w.occ = atof(w.occStr);
 			if (w.serial <= 0) {
-				snprintf(errbuf, errbufsize, "line %d: non-positive atom number %d", lineNumber, w.serial);
+				s_append_asprintf(errbuf, "line %d: non-positive atom number %d", lineNumber, w.serial);
 				retval = 1;
 				goto abort;
 			}
@@ -3369,7 +3417,7 @@ MoleculeReadCoordinatesFromPdbFile(Molecule *mp, const char *fname, char *errbuf
 					/*  Create a new atom entry  */
 					ap = AssignArray(&mp->atoms, &mp->natoms, gSizeOfAtomRecord, w.serial, NULL);
 				} else {
-					snprintf(errbuf, errbufsize, "line %d: the atom number %d does not exist in the structure file", lineNumber, w.serial+1);
+					s_append_asprintf(errbuf, "line %d: the atom number %d does not exist in the structure file", lineNumber, w.serial+1);
 					retval = 1;
 					goto abort;
 				}
@@ -3386,6 +3434,10 @@ MoleculeReadCoordinatesFromPdbFile(Molecule *mp, const char *fname, char *errbuf
 				strncpy(ap->resName, w.resName, 4);
 				strncpy(ap->aname, w.atomName, 4);
 				strncpy(ap->element, w.element, 2);
+				ap->element[2] = 0;
+				ap->atomicNumber = ElementToInt(ap->element);
+				ap->type = AtomTypeEncodeToUInt(ap->element);
+				ap->weight = WeightForAtomicNumber(ap->atomicNumber);
 				ap->intCharge = w.intCharge;
 				if (ap->resSeq > 0) {
 					if (ap->resSeq < mp->nresidues) {
@@ -3419,7 +3471,7 @@ MoleculeReadCoordinatesFromPdbFile(Molecule *mp, const char *fname, char *errbuf
 				int bi;
 				for (j = 0; j < i; j++) {
 					if (ibuf[j] < 0 || ibuf[j] > mp->natoms) {
-						snprintf(errbuf, errbufsize, "line %d: The CONECT record contains non-existent atom %d", lineNumber, ibuf[j]);
+						s_append_asprintf(errbuf, "line %d: The CONECT record contains non-existent atom %d", lineNumber, ibuf[j]);
 						retval = 1;
 						goto abort;
 					} else if (ibuf[j] == 0)
@@ -3430,17 +3482,21 @@ MoleculeReadCoordinatesFromPdbFile(Molecule *mp, const char *fname, char *errbuf
 					continue;
 				for (j = 1, bi = 0; j < i; j++) {
 					if (ibuf[0] < ibuf[j]) {
-						bbuf[bi * 2] = ibuf[0] - 1;
-						bbuf[bi * 2 + 1] = ibuf[j] - 1;
-						bi++;
+						if (MoleculeLookupBond(mp, ibuf[0], ibuf[j]) >= 0) {
+							s_append_asprintf(errbuf, "line %d: warning: duplicate bond %d-%d\n", lineNumber, ibuf[0], ibuf[j]);
+						} else {
+							bbuf[bi * 2] = ibuf[0] - 1;
+							bbuf[bi * 2 + 1] = ibuf[j] - 1;
+							bi++;
+						}
 					}
 				}
 				if (bi == 0)
 					continue;
 				bbuf[bi * 2] = -1;
-				retval = MoleculeAddBonds(mp, bi, bbuf);
+				retval = MoleculeAddBonds(mp, bi, bbuf, NULL, 1);
 				if (retval < 0) {
-					snprintf(errbuf, errbufsize, "line %d: bad bond specification", lineNumber);
+					s_append_asprintf(errbuf, "line %d: bad bond specification", lineNumber);
 					retval = 1;
 					goto abort;
 				}
@@ -3454,7 +3510,7 @@ MoleculeReadCoordinatesFromPdbFile(Molecule *mp, const char *fname, char *errbuf
 		int *old2new, oldidx, newidx;
 		old2new = (int *)calloc(sizeof(int), mp->natoms);
 		if (old2new == NULL) {
-			snprintf(errbuf, errbufsize, "Out of memory");
+			s_append_asprintf(errbuf, "Out of memory");
 			retval = 1;
 			goto abort;
 		}
@@ -3485,7 +3541,7 @@ MoleculeReadCoordinatesFromPdbFile(Molecule *mp, const char *fname, char *errbuf
 		retval = MoleculeRebuildTablesFromConnects(mp);
 		if (retval != 0) {
 			/*  This error may not happen  */
-			snprintf(errbuf, errbufsize, "Cannot build angle/dihedral/improper tables");
+			s_append_asprintf(errbuf, "Cannot build angle/dihedral/improper tables");
 			retval = 1;
 			goto abort;
 		}
@@ -3524,37 +3580,41 @@ MoleculeReadCoordinatesFromPdbFile(Molecule *mp, const char *fname, char *errbuf
 }
 
 int
-MoleculeReadCoordinatesFromDcdFile(Molecule *mp, const char *fname, char *errbuf, int errbufsize)
+MoleculeReadCoordinatesFromDcdFile(Molecule *mp, const char *fname, char **errbuf)
 {
 	DcdRecord dcd;
 	SFloat32 *xp, *yp, *zp;
 	Vector *vp, *cp;
 	IntGroup *ig;
-	int n;
-	errbuf[0] = 0;
+	int n, errcount = 0;
+	*errbuf = NULL;
 	if (mp == NULL || mp->natoms == 0) {
-		snprintf(errbuf, errbufsize, "Molecule is empty");
+		s_append_asprintf(errbuf, "Molecule is empty");
 		return 1;
 	}
 	n = DcdOpen(fname, &dcd);
 	if (n != 0) {
 		switch (n) {
-			case -2: snprintf(errbuf, errbufsize, "Cannot open file"); break;
-			case 1:  snprintf(errbuf, errbufsize, "Premature EOF encountered"); break;
-			case 2:  snprintf(errbuf, errbufsize, "Bad block length of the first section"); break;
-			case 3:  snprintf(errbuf, errbufsize, "\"CORD\" signature is missing"); break;
-			case 4:  snprintf(errbuf, errbufsize, "Bad termination of the first section"); break;
-			case 5:  snprintf(errbuf, errbufsize, "The title section is not correct"); break;
-			case 6:  snprintf(errbuf, errbufsize, "The atom number section is not correct"); break;
-			default: snprintf(errbuf, errbufsize, "Read error in dcd file"); break;
+			case -2: s_append_asprintf(errbuf, "Cannot open file"); break;
+			case 1:  s_append_asprintf(errbuf, "Premature EOF encountered"); break;
+			case 2:  s_append_asprintf(errbuf, "Bad block length of the first section"); break;
+			case 3:  s_append_asprintf(errbuf, "\"CORD\" signature is missing"); break;
+			case 4:  s_append_asprintf(errbuf, "Bad termination of the first section"); break;
+			case 5:  s_append_asprintf(errbuf, "The title section is not correct"); break;
+			case 6:  s_append_asprintf(errbuf, "The atom number section is not correct"); break;
+			default: s_append_asprintf(errbuf, "Read error in dcd file"); break;
 		}
+		errcount++;
 	} else {
-		if (dcd.natoms == 0)
-			snprintf(errbuf, errbufsize, "No atoms were found in the dcd file");
-		else if (dcd.nframes == 0)
-			snprintf(errbuf, errbufsize, "No frames were found in the dcd file");
+		if (dcd.natoms == 0) {
+			s_append_asprintf(errbuf, "No atoms were found in the dcd file");
+			errcount++;
+		} else if (dcd.nframes == 0) {
+			s_append_asprintf(errbuf, "No frames were found in the dcd file");
+			errcount++;
+		}
 	}
-	if (errbuf[0] != 0) {
+	if (errcount > 0) {
 		if (n == 0)
 			DcdClose(&dcd);
 		return 1;
@@ -3569,7 +3629,7 @@ MoleculeReadCoordinatesFromDcdFile(Molecule *mp, const char *fname, char *errbuf
 	zp = (SFloat32 *)malloc(sizeof(SFloat32) * dcd.natoms);
 	ig = IntGroupNewWithPoints(MoleculeGetNumberOfFrames(mp), dcd.nframes, -1);
 	if (vp == NULL || xp == NULL || yp == NULL || zp == NULL || ig == NULL) {
-		snprintf(errbuf, errbufsize, "Cannot allocate memory");
+		s_append_asprintf(errbuf, "Cannot allocate memory");
 		if (vp) free(vp);
 		if (cp) free(cp);
 		if (xp) free(xp);
@@ -3583,7 +3643,7 @@ MoleculeReadCoordinatesFromDcdFile(Molecule *mp, const char *fname, char *errbuf
 		Vector *vpp;
 		SFloat32 dcdcell[6];
 		if (DcdReadFrame(&dcd, n, xp, yp, zp, dcdcell)) {
-			snprintf(errbuf, errbufsize, "Read error in dcd file");
+			s_append_asprintf(errbuf, "Read error in dcd file");
 			goto exit;
 		}
 		for (i = 0, vpp = &vp[n * mp->natoms]; i < dcd.natoms && i < mp->natoms; i++, vpp++) {
@@ -3620,7 +3680,7 @@ MoleculeReadCoordinatesFromDcdFile(Molecule *mp, const char *fname, char *errbuf
 		}
 	}
 	if (MolActionCreateAndPerform(mp, gMolActionInsertFrames, ig, mp->natoms * dcd.nframes, vp, (cp == NULL ? 0 : dcd.nframes * 4), cp) != 0)
-		snprintf(errbuf, errbufsize, "Cannot insert frames");
+		s_append_asprintf(errbuf, "Cannot insert frames");
 	mp->startStep = dcd.nstart;
 	mp->stepsPerFrame = dcd.ninterval;
 	mp->psPerStep = dcd.delta;
@@ -3633,13 +3693,13 @@ exit:
 	free(yp);
 	free(zp);
 	IntGroupRelease(ig);
-	if (errbuf[0] == 0)
+	if (errcount == 0)
 		return 0;
 	else return 1;
 }
 
 int
-MoleculeReadExtendedInfo(Molecule *mp, const char *fname, char *errbuf, int errbufsize)
+MoleculeReadExtendedInfo(Molecule *mp, const char *fname, char **errbuf)
 {
 	FILE *fp;
 	char buf[1024];
@@ -3649,9 +3709,10 @@ MoleculeReadExtendedInfo(Molecule *mp, const char *fname, char *errbuf, int errb
 	double d[3];
 	int n, flag;
 	char flags[3];
+	*errbuf = NULL;
 	fp = fopen(fname, "rb");
 	if (fp == NULL) {
-		snprintf(errbuf, errbufsize, "Cannot open file");
+		s_append_asprintf(errbuf, "Cannot open file");
 		return -1;
 	}
 	errbuf[0] = 0;
@@ -3662,7 +3723,7 @@ MoleculeReadExtendedInfo(Molecule *mp, const char *fname, char *errbuf, int errb
 		if (strncmp(buf, "Bounding box:", 13) == 0) {
 			for (i = 0; i < 3; i++) {
 				if (ReadLine(buf, sizeof buf, fp, &lineNumber) <= 0) {
-					snprintf(errbuf, errbufsize, "line %d: missing %d component of the bounding box", lineNumber, i + 1);
+					s_append_asprintf(errbuf, "line %d: missing %d component of the bounding box", lineNumber, i + 1);
 					retval = 1;
 					goto abort;
 				}
@@ -3705,7 +3766,7 @@ MoleculeReadExtendedInfo(Molecule *mp, const char *fname, char *errbuf, int errb
 				flags[0] = flags[1] = flags[2] = 1.0;
 			}
 			if (ReadLine(buf, sizeof buf, fp, &lineNumber) <= 0 || (n = sscanf(buf, "%lf %lf %lf", &d[0], &d[1], &d[2]) < 3)) {
-				snprintf(errbuf, errbufsize, "line %d: wrong format for the bounding box origin", lineNumber);
+				s_append_asprintf(errbuf, "line %d: wrong format for the bounding box origin", lineNumber);
 				retval = 1;
 				goto abort;
 			}
@@ -3724,9 +3785,10 @@ abort:
 }
 			
 int
-MoleculeWriteToFile(Molecule *mp, const char *fname, const char *ftype, char *errbuf, int errbufsize)
+MoleculeWriteToFile(Molecule *mp, const char *fname, const char *ftype, char **errbuf)
 {
 	int retval;
+	*errbuf = NULL;
 	if (ftype == NULL || *ftype == 0) {
 		const char *cp;
 		cp = strrchr(fname, '.');
@@ -3739,13 +3801,13 @@ MoleculeWriteToFile(Molecule *mp, const char *fname, const char *ftype, char *er
 		}
 	}
 	if (strcasecmp(ftype, "psf") == 0) {
-		retval = MoleculeWriteToPsfFile(mp, fname, errbuf, errbufsize);
+		retval = MoleculeWriteToPsfFile(mp, fname, errbuf);
 	} else if (strcasecmp(ftype, "pdb") == 0) {
-		retval = MoleculeWriteToPdbFile(mp, fname, errbuf, errbufsize);
+		retval = MoleculeWriteToPdbFile(mp, fname, errbuf);
 	} else if (strcasecmp(ftype, "tep") == 0) {
-		retval = MoleculeWriteToTepFile(mp, fname, errbuf, errbufsize);
+		retval = MoleculeWriteToTepFile(mp, fname, errbuf);
 	} else {
-		snprintf(errbuf, errbufsize, "The file format should be specified");
+		s_append_asprintf(errbuf, "The file format should be specified");
 		retval = 1;
 	}
 	if (retval == 0)
@@ -3754,16 +3816,17 @@ MoleculeWriteToFile(Molecule *mp, const char *fname, const char *ftype, char *er
 }
 
 int
-MoleculeWriteToMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsize)
+MoleculeWriteToMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 {
 	FILE *fp;
-	Int i, j, k, n1, n2, n3, n_aniso, nframes, *ip;
+	Int i, j, k, n1, n2, n3, n_aniso, nframes;
 	Atom *ap;
 	char bufs[6][8];
 
+	*errbuf = NULL;
 	fp = fopen(fname, "wb");
 	if (fp == NULL) {
-		snprintf(errbuf, errbufsize, "Cannot write to file %s", fname);
+		s_append_asprintf(errbuf, "Cannot write to file %s", fname);
 		return 1;
 	}
 	errbuf[0] = 0;
@@ -4114,17 +4177,17 @@ MoleculeWriteToMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbu
 }
 
 int
-MoleculeWriteToPsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsize)
+MoleculeWriteToPsfFile(Molecule *mp, const char *fname, char **errbuf)
 {
 	FILE *fp;
 	int i;
 	Atom *ap;
+	*errbuf = NULL;
 	fp = fopen(fname, "wb");
 	if (fp == NULL) {
-		snprintf(errbuf, errbufsize, "Cannot write to file %s", fname);
+		s_append_asprintf(errbuf, "Cannot write to file %s", fname);
 		return 1;
 	}
-	errbuf[0] = 0;
 	fprintf(fp, "PSF\n\n");
 	fprintf(fp, "       1 !NTITLE\n");
 	fprintf(fp, " REMARKS FILENAME=\n");
@@ -4242,17 +4305,17 @@ MoleculeWriteToPsfFile(Molecule *mp, const char *fname, char *errbuf, int errbuf
 }
 
 int
-MoleculeWriteToPdbFile(Molecule *mp, const char *fname, char *errbuf, int errbufsize)
+MoleculeWriteToPdbFile(Molecule *mp, const char *fname, char **errbuf)
 {
 	FILE *fp;
 	int i, j;
 	Atom *ap;
+	*errbuf = NULL;
 	fp = fopen(fname, "wb");
 	if (fp == NULL) {
-		snprintf(errbuf, errbufsize, "Cannot write to file %s", fname);
+		s_append_asprintf(errbuf, "Cannot write to file %s", fname);
 		return 1;
 	}
-	errbuf[0] = 0;
 	for (i = 0; i < mp->natoms; i++) {
 		char buf[6];
 		ap = ATOM_AT_INDEX(mp->atoms, i);
@@ -4289,21 +4352,21 @@ MoleculeWriteToPdbFile(Molecule *mp, const char *fname, char *errbuf, int errbuf
 }
 
 int
-MoleculeWriteToDcdFile(Molecule *mp, const char *fname, char *errbuf, int errbufsize)
+MoleculeWriteToDcdFile(Molecule *mp, const char *fname, char **errbuf)
 {
 	DcdRecord dcd;
 	SFloat32 *xp, *yp, *zp;
 	int n;
-	errbuf[0] = 0;
+	*errbuf = NULL;
 	if (mp == NULL || mp->natoms == 0) {
-		snprintf(errbuf, errbufsize, "Molecule is empty");
+		s_append_asprintf(errbuf, "Molecule is empty");
 		return 1;
 	}
 	memset(&dcd, 0, sizeof(dcd));
 	dcd.natoms = mp->natoms;
 	dcd.nframes = MoleculeGetNumberOfFrames(mp);
 	if (dcd.nframes == 0) {
-		snprintf(errbuf, errbufsize, "no frame is present");
+		s_append_asprintf(errbuf, "no frame is present");
 		return 1;
 	}
 	dcd.nstart = mp->startStep;
@@ -4320,9 +4383,9 @@ MoleculeWriteToDcdFile(Molecule *mp, const char *fname, char *errbuf, int errbuf
 	n = DcdCreate(fname, &dcd);
 	if (n != 0) {
 		if (n < 0)
-			snprintf(errbuf, errbufsize, "Cannot create dcd file");
+			s_append_asprintf(errbuf, "Cannot create dcd file");
 		else
-			snprintf(errbuf, errbufsize, "Cannot write dcd header");
+			s_append_asprintf(errbuf, "Cannot write dcd header");
 		DcdClose(&dcd);
 		return 1;
 	}
@@ -4331,7 +4394,7 @@ MoleculeWriteToDcdFile(Molecule *mp, const char *fname, char *errbuf, int errbuf
 	yp = (SFloat32 *)malloc(sizeof(SFloat32) * dcd.natoms);
 	zp = (SFloat32 *)malloc(sizeof(SFloat32) * dcd.natoms);
 	if (xp == NULL || yp == NULL || zp == NULL) {
-		snprintf(errbuf, errbufsize, "Cannot allocate memory");
+		s_append_asprintf(errbuf, "Cannot allocate memory");
 		if (xp) free(xp);
 		if (yp) free(yp);
 		if (zp) free(zp);
@@ -4367,7 +4430,7 @@ MoleculeWriteToDcdFile(Molecule *mp, const char *fname, char *errbuf, int errbuf
 			dcd.globalcell[4] = VecDot(cp[1], cp[2]) / (dcd.globalcell[2] * dcd.globalcell[5]);			
 		}			
 		if (DcdWriteFrame(&dcd, n, xp, yp, zp, dcd.globalcell)) {
-			snprintf(errbuf, errbufsize, "Write error in dcd file");
+			s_append_asprintf(errbuf, "Write error in dcd file");
 			goto exit;
 		}
 	}
@@ -4383,15 +4446,15 @@ exit:
 }
 
 int
-MoleculeWriteExtendedInfo(Molecule *mp, const char *fname, char *errbuf, int errbufsize)
+MoleculeWriteExtendedInfo(Molecule *mp, const char *fname, char **errbuf)
 {
 	FILE *fp;
 	int i;
 	Vector v;
-	errbuf[0] = 0;
+	*errbuf = NULL;
 	fp = fopen(fname, "wb");
 	if (fp == NULL) {
-		snprintf(errbuf, errbufsize, "Cannot write to file %s", fname);
+		s_append_asprintf(errbuf, "Cannot write to file %s", fname);
 		return 1;
 	}
 	if (mp->cell != NULL) {
@@ -4740,7 +4803,7 @@ sOutputBondInstructions(FILE *fp, int natoms, Atom *atoms, int overlap_correctio
 #endif
 
 int
-MoleculeWriteToTepFile(Molecule *mp, const char *fname, char *errbuf, int errbufsize)
+MoleculeWriteToTepFile(Molecule *mp, const char *fname, char **errbuf)
 {
 	FILE *fp;
 	int i, j, natoms, *ip;
@@ -4749,7 +4812,7 @@ MoleculeWriteToTepFile(Molecule *mp, const char *fname, char *errbuf, int errbuf
 	Double *dp;
 	static Double sUnit[] = {1, 1, 1, 90, 90, 90};
 	
-	errbuf[0] = 0;
+	*errbuf = NULL;
 
 	/*  Create sorted array of atoms  */
 	natoms = mp->natoms;
@@ -4757,7 +4820,7 @@ MoleculeWriteToTepFile(Molecule *mp, const char *fname, char *errbuf, int errbuf
 	app = (Atom **)calloc(sizeof(Atom *), natoms);
 	ip = (int *)calloc(sizeof(int), natoms);
 	if (atoms == NULL || app == NULL || ip == NULL) {
-		snprintf(errbuf, errbufsize, "Cannot allocate memory");
+		s_append_asprintf(errbuf, "Cannot allocate memory");
 		return 1;
 	}
 	/*  Sort the atom pointer by atomic number  */
@@ -4793,10 +4856,9 @@ MoleculeWriteToTepFile(Molecule *mp, const char *fname, char *errbuf, int errbuf
 	
 	fp = fopen(fname, "wb");
 	if (fp == NULL) {
-		snprintf(errbuf, errbufsize, "Cannot write to file %s", fname);
+		s_append_asprintf(errbuf, "Cannot write to file %s", fname);
 		return 1;
 	}
-	errbuf[0] = 0;
 
 	/*  Title line  */
 	fprintf(fp, "Generated by Molby\n");
@@ -6578,7 +6640,7 @@ MoleculeAddExpandedAtoms(Molecule *mp, Symop symop, IntGroup *group, Int *indice
 				continue;
 			if (b[1] > n0 && b[0] > b[1])
 				continue;
-			MoleculeAddBonds(mp, 1, b);
+			MoleculeAddBonds(mp, 1, b, NULL, 1);
 		}
 	}
 	mp->needsMDRebuild = 1;
@@ -6882,6 +6944,79 @@ error:
 	return -1;
 }
 
+#if defined(DEBUG)
+
+static int s_error_count;
+
+static int
+s_fprintf(FILE *fp, const char *fmt, ...)
+{
+	va_list va;
+	va_start(va, fmt);
+	s_error_count++;
+	return vfprintf(fp, fmt, va);
+}
+
+int
+MoleculeCheckSanity(Molecule *mol)
+{
+	const char *fail = "Sanity check failure";
+	Int i, j, *ip;
+	Atom *ap;
+	s_error_count = 0;
+	for (i = 0, ap = mol->atoms; i < mol->natoms; i++, ap = ATOM_NEXT(ap)) {
+		if (ap->resSeq >= mol->nresidues)
+			s_fprintf(stderr, "%s: atom %d residue %d but nresidues %d\n", fail, i, ap->resSeq, mol->nresidues);
+		if (ap->type != 0 && ap->type < kAtomTypeMinimum)
+			s_fprintf(stderr, "%s: atom %d atom type %d less than minimum\n", fail, i, ap->type);
+		if (ap->atomicNumber < 0 || ap->atomicNumber > 113)
+			s_fprintf(stderr, "%s: atom %d atomic number %d\n", fail, i, ap->atomicNumber);
+		ip = AtomConnectData(&ap->connect);
+		for (j = 0; j < ap->connect.count; j++) {
+			if (ip[j] < 0 || ip[j] >= mol->natoms)
+				s_fprintf(stderr, "%s: atom %d connect %d = %d out of range\n", fail, i, j, ip[j]);
+			if (AtomConnectHasEntry(&(ATOM_AT_INDEX(mol->atoms, ip[j])->connect), i) == 0)
+				s_fprintf(stderr, "%s: atom %d connect %d but atom %d has no connect %d\n", fail, i, ip[j], ip[j], i);
+		}
+	}
+	for (i = 0, ip = mol->bonds; i < mol->nbonds; i++, ip += 2) {
+		if (ip[0] < 0 || ip[0] >= mol->natoms || ip[1] < 0 || ip[1] >= mol->natoms)
+			s_fprintf(stderr, "%s: bond %d %d-%d out of range\n", fail, i, ip[0], ip[1]);
+		if (AtomConnectHasEntry(&(ATOM_AT_INDEX(mol->atoms, ip[0])->connect), ip[1]) == 0)
+			s_fprintf(stderr, "%s: bond %d %d-%d but atom %d has no connect %d\n", fail, i, ip[0], ip[1], ip[0], ip[1]);
+	}
+	for (i = 0, ip = mol->angles; i < mol->nangles; i++, ip += 3) {
+		if (ip[0] < 0 || ip[0] >= mol->natoms || ip[1] < 0 || ip[1] >= mol->natoms || ip[2] < 0 || ip[2] >= mol->natoms)
+			s_fprintf(stderr, "%s: angle %d %d-%d-%d out of range\n", fail, i, ip[0], ip[1], ip[2]);
+		if (AtomConnectHasEntry(&(ATOM_AT_INDEX(mol->atoms, ip[0])->connect), ip[1]) == 0)
+			s_fprintf(stderr, "%s: angle %d %d-%d-%d but atom %d has no connect %d\n", fail, i, ip[0], ip[1], ip[2], ip[0], ip[1]);
+		if (AtomConnectHasEntry(&(ATOM_AT_INDEX(mol->atoms, ip[2])->connect), ip[1]) == 0)
+			s_fprintf(stderr, "%s: angle %d %d-%d-%d but atom %d has no connect %d\n", fail, i, ip[0], ip[1], ip[2], ip[2], ip[1]);
+	}
+	for (i = 0, ip = mol->dihedrals; i < mol->ndihedrals; i++, ip += 4) {
+		if (ip[0] < 0 || ip[0] >= mol->natoms || ip[1] < 0 || ip[1] >= mol->natoms || ip[2] < 0 || ip[2] >= mol->natoms || ip[3] < 0 || ip[3] >= mol->natoms)
+			s_fprintf(stderr, "%s: dihedral %d %d-%d-%d%d out of range\n", fail, i, ip[0], ip[1], ip[2], ip[3]);
+		if (AtomConnectHasEntry(&(ATOM_AT_INDEX(mol->atoms, ip[0])->connect), ip[1]) == 0)
+			s_fprintf(stderr, "%s: dihedral %d %d-%d-%d-%d but atom %d has no connect %d\n", fail, i, ip[0], ip[1], ip[2], ip[3], ip[0], ip[1]);
+		if (AtomConnectHasEntry(&(ATOM_AT_INDEX(mol->atoms, ip[1])->connect), ip[2]) == 0)
+			s_fprintf(stderr, "%s: dihedral %d %d-%d-%d-%d but atom %d has no connect %d\n", fail, i, ip[0], ip[1], ip[2], ip[3], ip[1], ip[2]);
+		if (AtomConnectHasEntry(&(ATOM_AT_INDEX(mol->atoms, ip[2])->connect), ip[3]) == 0)
+			s_fprintf(stderr, "%s: dihedral %d %d-%d-%d-%d but atom %d has no connect %d\n", fail, i, ip[0], ip[1], ip[2], ip[3], ip[2], ip[3]);
+	}
+	for (i = 0, ip = mol->impropers; i < mol->nimpropers; i++, ip += 4) {
+		if (ip[0] < 0 || ip[0] >= mol->natoms || ip[1] < 0 || ip[1] >= mol->natoms || ip[2] < 0 || ip[2] >= mol->natoms || ip[3] < 0 || ip[3] >= mol->natoms)
+			s_fprintf(stderr, "%s: improper %d %d-%d-%d%d out of range\n", fail, i, ip[0], ip[1], ip[2], ip[3]);
+		if (AtomConnectHasEntry(&(ATOM_AT_INDEX(mol->atoms, ip[0])->connect), ip[2]) == 0)
+			s_fprintf(stderr, "%s: improper %d %d-%d-%d-%d but atom %d has no connect %d\n", fail, i, ip[0], ip[1], ip[2], ip[3], ip[0], ip[2]);
+		if (AtomConnectHasEntry(&(ATOM_AT_INDEX(mol->atoms, ip[1])->connect), ip[2]) == 0)
+			s_fprintf(stderr, "%s: improper %d %d-%d-%d-%d but atom %d has no connect %d\n", fail, i, ip[0], ip[1], ip[2], ip[3], ip[1], ip[2]);
+		if (AtomConnectHasEntry(&(ATOM_AT_INDEX(mol->atoms, ip[3])->connect), ip[2]) == 0)
+			s_fprintf(stderr, "%s: improper %d %d-%d-%d-%d but atom %d has no connect %d\n", fail, i, ip[0], ip[1], ip[2], ip[3], ip[3], ip[2]);
+	}
+	return s_error_count;
+}
+#endif
+
 /*  Merge two molecules. We use this procedure for all add-atom operations.  */
 /*  resSeqOffset is an offset to add to the (non-zero) residue numbers in src. */
 /*  If nactions and actions are non-NULL, then the corresponding undo actions are created and returned. */
@@ -7043,17 +7178,14 @@ MoleculeMerge(Molecule *dst, Molecule *src, IntGroup *where, Int resSeqOffset, I
 		for (j = n1 * nsize; j < (n1 + n2) * nsize; j++)
 			(*items)[j] = old2new[(*items)[j] + ndst];
 		if (forUndo == 0 && actions != NULL) {
-			if (i == 0) {
-				act = MolActionNew(gMolActionDeleteBonds, n2 * 2, dst->bonds + n1 * 2);
-			} else {
-				ig = IntGroupNewWithPoints(n1, n2, -1);
-				switch (i) {
-					case 1: act = MolActionNew(gMolActionDeleteAngles, ig); break;
-					case 2: act = MolActionNew(gMolActionDeleteDihedrals, ig); break;
-					case 3: act = MolActionNew(gMolActionDeleteImpropers, ig); break;
-				}
-				IntGroupRelease(ig);
+			ig = IntGroupNewWithPoints(n1, n2, -1);
+			switch (i) {
+				case 0: act = MolActionNew(gMolActionDeleteBonds, ig); break;
+				case 1: act = MolActionNew(gMolActionDeleteAngles, ig); break;
+				case 2: act = MolActionNew(gMolActionDeleteDihedrals, ig); break;
+				case 3: act = MolActionNew(gMolActionDeleteImpropers, ig); break;
 			}
+			IntGroupRelease(ig);
 			AssignArray(actions, nactions, sizeof(MolAction *), *nactions, &act);
 			act = NULL;
 		}
@@ -7437,7 +7569,7 @@ sMoleculeUnmergeSub(Molecule *src, Molecule **dstp, IntGroup *where, int resSeqO
 	move_g = IntGroupNew();
 	if (move_g == NULL)
 		goto panic;
-	for (i = 0; i < 4; i++) {
+	for (i = 3; i >= 0; i--) {
 		Int *nitems, *nitems_dst;
 		Int **items, **items_dst;
 		Int nsize;  /*  Number of Ints in one element  */
@@ -7501,7 +7633,7 @@ sMoleculeUnmergeSub(Molecule *src, Molecule **dstp, IntGroup *where, int resSeqO
 						memmove(ip + j * nsize, *items + k * nsize, sizeof(Int) * nsize);
 					switch (i) {
 						case 0:
-							act = MolActionNew(gMolActionAddBonds, n2 * nsize, ip); break;
+							act = MolActionNew(gMolActionAddBondsForUndo, n2 * nsize, ip, del_g); break;
 						case 1:
 							act = MolActionNew(gMolActionAddAngles, n2 * nsize, ip, del_g); break;
 						case 2:
@@ -7844,7 +7976,7 @@ MoleculeExtract(Molecule *src, Molecule **dstp, IntGroup *where, int dummyFlag)
 				nn[1] = MoleculeCreateAnAtom(*dstp, &a, -1);
 				/*  Connect nn1 and nn2  */
 				nn[2] = kInvalidIndex;
-				MoleculeAddBonds(*dstp, 1, nn);
+				MoleculeAddBonds(*dstp, 1, nn, NULL, 1);
 			}
 			IntGroupIteratorRelease(&iter);
 			IntGroupRelease(ig);
@@ -7857,9 +7989,9 @@ MoleculeExtract(Molecule *src, Molecule **dstp, IntGroup *where, int dummyFlag)
 int
 MoleculeAddBonds(Molecule *mp, Int nbonds, const Int *bonds, IntGroup *where, Int autoGenerate)
 {
-	int i, j, n1, n2, n;
+	int i, j, n1, n2;
 	Atom *ap;
-	Int *bonds_tmp, *cp;
+	Int *cp;
 
 	if (mp == NULL || bonds == NULL || nbonds <= 0)
 		return 0;
@@ -7878,31 +8010,33 @@ MoleculeAddBonds(Molecule *mp, Int nbonds, const Int *bonds, IntGroup *where, In
 	}
 	
 	/*  Add connects[]  */
-	for (i = 0; i < n; i++) {
-		n1 = bonds_tmp[i * 2];
-		n2 = bonds_tmp[i * 2 + 1];
+	for (i = 0; i < nbonds; i++) {
+		n1 = bonds[i * 2];
+		n2 = bonds[i * 2 + 1];
 		ap = ATOM_AT_INDEX(mp->atoms, n1);
-		AtomConnectInsertEntry(&ap->connect, ap->connect.count, n2);
+		cp = AtomConnectData(&ap->connect);
+		AtomConnectInsertEntry(&ap->connect, -1, n2);
 		ap = ATOM_AT_INDEX(mp->atoms, n2);
-		AtomConnectInsertEntry(&ap->connect, ap->connect.count, n1);
+		cp = AtomConnectData(&ap->connect);
+		AtomConnectInsertEntry(&ap->connect, -1, n1);
 	}
 	
 	/*  Add angles, dihedrals, impropers  */
 	if (autoGenerate) {
 		Int nangles, ndihedrals;
 		Int *angles, *dihedrals;
-		Int k, n3, n4, c1, c2;
-		Int *ip, *cp1, *cp2;
+		Int k, kk;
+		Int *cp1, *cp2;
 		Int temp[4];
 		Atom *ap1, *ap2, *ap3;
 
 		angles = dihedrals = NULL;
 		nangles = ndihedrals = 0;
 
-		for (i = 0; i < n; i++) {
+		for (i = 0; i < nbonds; i++) {
 			AtomConnect *ac1, *ac2;
-			n1 = bonds_tmp[i * 2];
-			n2 = bonds_tmp[i * 2 + 1];
+			n1 = bonds[i * 2];
+			n2 = bonds[i * 2 + 1];
 			ap1 = ATOM_AT_INDEX(mp->atoms, n1);
 			ap2 = ATOM_AT_INDEX(mp->atoms, n2);
 			if (ap1->anchor == NULL || ap2->anchor == NULL) {
@@ -7983,23 +8117,35 @@ MoleculeAddBonds(Molecule *mp, Int nbonds, const Int *bonds, IntGroup *where, In
 	mp->needsMDRebuild = 1;
 	__MoleculeUnlock(mp);
 
-	free(bonds_tmp);
-	return n;	
+	return nbonds;
 
   panic:
 	__MoleculeUnlock(mp);
 	Panic("Low memory while adding bonds");
 	return -1;  /*  Not reached  */
-#endif
 }
 
+/*  Delete bonds  */
+/*  The deleted angles and dihedrals are stored in outRemoval.  */
+/*  (*outRemoval) is an array of integers, containing:
+      [0..na*3-1]: the angle indices
+      [na*3..na*3+nd*4-1]: the dihedral indices
+	  [na*3+nd*4..na*3+nd*4+ni*4-1]: the improper indices
+    *outRemovedPos is an intgroup denoting the positions of the removed angles/dihedrals/impropers.
+	  the angle indices are included as they are,
+      the dihedral indices are offset by ATOMS_MAX_NUMBER,
+      the improper indices are offset by ATOMS_MAX_NUMBER*2.
+    Note: the removed bond indices are not returned, because the caller should already know them.  */
 int
-MoleculeDeleteBonds(Molecule *mp, IntGroup *where, Int **outAutoRemoval, IntGroup **outWhere)
+MoleculeDeleteBonds(Molecule *mp, Int *bonds, IntGroup *where, Int **outRemoved, IntGroup **outRemovedPos)
 {
-	Int i, j, n1, n2, *cp;
+	Int i, j, n1, n2;
+	Int *ip, na, nd, ni;
+	IntGroup *ag, *dg, *ig;
 	Atom *ap;
+	IntGroupIterator iter;
 
-	if (mp == NULL || nbonds <= 0)
+	if (mp == NULL)
 		return 0;
 	if (mp->noModifyTopology)
 		return -4;  /*  Prohibited operation  */
@@ -8007,101 +8153,115 @@ MoleculeDeleteBonds(Molecule *mp, IntGroup *where, Int **outAutoRemoval, IntGrou
 	__MoleculeLock(mp);
 
 	/*  Update connects[]  */
-	for (i = 0; i < nbonds; i++) {
-		n1 = bonds[i * 2];
-		n2 = bonds[i * 2 + 1];
+	IntGroupIteratorInit(where, &iter);
+	while ((i = IntGroupIteratorNext(&iter)) >= 0) {
+		n1 = mp->bonds[i * 2];
+		n2 = mp->bonds[i * 2 + 1];
 		ap = ATOM_AT_INDEX(mp->atoms, n1);
-		cp = AtomConnectData(&ap->connect);
+		ip = AtomConnectData(&ap->connect);
 		for (j = 0; j < ap->connect.count; j++) {
-			if (cp[j] == n2) {
+			if (ip[j] == n2) {
 				AtomConnectDeleteEntry(&ap->connect, j);
 				break;
 			}
 		}
 		ap = ATOM_AT_INDEX(mp->atoms, n2);
-		cp = AtomConnectData(&ap->connect);
+		ip = AtomConnectData(&ap->connect);
 		for (j = 0; j < ap->connect.count; j++) {
-			if (cp[j] == n1) {
+			if (ip[j] == n1) {
 				AtomConnectDeleteEntry(&ap->connect, j);
 				break;
 			}
 		}
 	}
-
-	/*  Remove bonds, angles, dihedrals, impropers  */	
-	{
-		IntGroup *bg, *ag, *dg, *ig;
-		Int *ip;
-
-		bg = IntGroupNew();
-		ag = IntGroupNew();
-		dg = IntGroupNew();
-		ig = IntGroupNew();
-		if (bg == NULL || ag == NULL || dg == NULL || ig == NULL)
-			goto panic;
-		for (i = 0; i < nbonds; i++) {
-			n1 = bonds[i * 2];
-			n2 = bonds[i * 2 + 1];
-			for (j = 0; j < mp->nbonds; j++) {
-				ip = mp->bonds + j * 2;
-				if ((ip[0] == n1 && ip[1] == n2)
-				 || (ip[1] == n1 && ip[0] == n2)) {
-					if (IntGroupAdd(bg, j, 1) != 0)
-						goto panic;
-				}
-			}
-			for (j = 0; j < mp->nangles; j++) {
-				ip = mp->angles + j * 3;
-				if ((ip[0] == n1 && ip[1] == n2)
-				 || (ip[1] == n1 && ip[0] == n2)
-				 || (ip[1] == n1 && ip[2] == n2)
-				 || (ip[2] == n1 && ip[1] == n2)) {
-					if (IntGroupAdd(ag, j, 1) != 0)
-						goto panic;
-				}
-			}
-			for (j = 0; j < mp->ndihedrals; j++) {
-				ip = mp->dihedrals + j * 4;
-				if ((ip[1] == n1 && ip[2] == n2)
-				 || (ip[2] == n1 && ip[1] == n2)) {
-					if (IntGroupAdd(dg, j, 1) != 0)
-						goto panic;
-				}
-			}
-			for (j = 0; j < mp->nimpropers; j++) {
-				ip = mp->impropers + j * 4;
-				if ((ip[0] == n1 && ip[2] == n2)
-				 || (ip[1] == n1 && ip[2] == n2)
-				 || (ip[3] == n1 && ip[2] == n2)
-				 || (ip[0] == n2 && ip[2] == n1)
-				 || (ip[1] == n2 && ip[2] == n1)
-				 || (ip[3] == n2 && ip[2] == n1)) {
-					if (IntGroupAdd(ig, j, 1) != 0)
-						goto panic;
-				}
+	IntGroupIteratorReset(&iter);
+	
+	/*  Remove bonds, angles, dihedrals, impropers  */
+	ag = dg = ig = NULL;
+	na = nd = ni = 0;
+	while ((i = IntGroupIteratorNext(&iter)) >= 0) {
+		n1 = mp->bonds[i * 2];
+		n2 = mp->bonds[i * 2 + 1];
+		for (j = 0; j < mp->nangles; j++) {
+			ip = mp->angles + j * 3;
+			if ((ip[0] == n1 && ip[1] == n2)
+			 || (ip[1] == n1 && ip[0] == n2)
+			 || (ip[1] == n1 && ip[2] == n2)
+			 || (ip[2] == n1 && ip[1] == n2)) {
+				if (ag == NULL)
+					ag = IntGroupNew();
+				if (IntGroupAdd(ag, j, 1) != 0)
+					goto panic;
+				na++;
 			}
 		}
-		if (sRemoveElementsFromArrayAtPositions(mp->bonds, mp->nbonds, NULL, sizeof(Int) * 2, bg) != 0)
-			goto panic;
-		mp->nbonds -= IntGroupGetCount(bg);
-		
-		if (IntGroupGetCount(ag) > 0)
-			MoleculeDeleteAngles(mp, NULL, ag);
-		if (IntGroupGetCount(dg) > 0)
-			MoleculeDeleteDihedrals(mp, NULL, dg);
-		if (IntGroupGetCount(ig) > 0)
-			MoleculeDeleteImpropers(mp, NULL, ig);
-		IntGroupRelease(bg);
-		IntGroupRelease(ag);
+		for (j = 0; j < mp->ndihedrals; j++) {
+			ip = mp->dihedrals + j * 4;
+			if ((ip[0] == n1 && ip[1] == n2)
+			 || (ip[1] == n1 && ip[0] == n2)
+			 || (ip[1] == n1 && ip[2] == n2)
+			 || (ip[2] == n1 && ip[1] == n2)
+			 || (ip[2] == n1 && ip[3] == n2)
+			 || (ip[3] == n1 && ip[2] == n2)) {
+				if (dg == NULL)
+					dg = IntGroupNew();
+				if (IntGroupAdd(dg, j, 1) != 0)
+					goto panic;
+				nd++;
+			}
+		}
+		for (j = 0; j < mp->nimpropers; j++) {
+			ip = mp->impropers + j * 4;
+			if ((ip[0] == n1 && ip[2] == n2)
+			 || (ip[1] == n1 && ip[2] == n2)
+			 || (ip[3] == n1 && ip[2] == n2)
+			 || (ip[0] == n2 && ip[2] == n1)
+			 || (ip[1] == n2 && ip[2] == n1)
+			 || (ip[3] == n2 && ip[2] == n1)) {
+				if (ig == NULL)
+					ig = IntGroupNew();
+				if (IntGroupAdd(ig, j, 1) != 0)
+					goto panic;
+				ni++;
+			}
+		}
+	}
+	IntGroupIteratorRelease(&iter);
+
+	if (sRemoveElementsFromArrayAtPositions(mp->bonds, mp->nbonds, bonds, sizeof(Int) * 2, where) != 0)
+		goto panic;
+	mp->nbonds -= IntGroupGetCount(where);
+	if (mp->nbonds == 0) {
+		free(mp->bonds);
+		mp->bonds = NULL;
+	}
+	if (na == 0 && nd == 0 && ni == 0)
+		ip = NULL;
+	else
+		ip = (Int *)malloc(sizeof(Int) * (na * 3 + nd * 4 + ni * 4));
+	if (na > 0)
+		MoleculeDeleteAngles(mp, ip, ag);
+	if (nd > 0)
+		MoleculeDeleteDihedrals(mp, ip + na * 3, dg);
+	if (ni > 0)
+		MoleculeDeleteImpropers(mp, ip + na * 3 + nd * 4, ig);
+	if (ip != NULL) {
+		IntGroupOffset(dg, ATOMS_MAX_NUMBER);
+		IntGroupOffset(ig, ATOMS_MAX_NUMBER * 2);
+		IntGroupAddIntGroup(ag, dg);
+		IntGroupAddIntGroup(ag, ig);
 		IntGroupRelease(dg);
 		IntGroupRelease(ig);
 	}
+
+	*outRemoved = ip;
+	*outRemovedPos = ag;
 
 	MoleculeIncrementModifyCount(mp);
 	mp->needsMDRebuild = 1;
 	__MoleculeUnlock(mp);
 
-	return nbonds;
+	return na * 3 + nd * 4 + ni * 4;
 
   panic:
 	__MoleculeUnlock(mp);
@@ -8153,6 +8313,10 @@ MoleculeDeleteAngles(Molecule *mp, Int *angles, IntGroup *where)
 		Panic("Low memory while adding angles");
 	}
 	mp->nangles -= (nc = IntGroupGetCount(where));
+	if (mp->nangles == 0) {
+		free(mp->angles);
+		mp->angles = NULL;
+	}
 	mp->needsMDRebuild = 1;
 	__MoleculeUnlock(mp);
 	return nc;
@@ -8201,6 +8365,10 @@ MoleculeDeleteDihedrals(Molecule *mp, Int *dihedrals, IntGroup *where)
 		Panic("Low memory while adding dihedrals");
 	}
 	mp->ndihedrals -= (nc = IntGroupGetCount(where));
+	if (mp->ndihedrals == 0) {
+		free(mp->dihedrals);
+		mp->dihedrals = NULL;
+	}
 	mp->needsMDRebuild = 1;
 	__MoleculeUnlock(mp);
 	return nc;
@@ -8249,6 +8417,10 @@ MoleculeDeleteImpropers(Molecule *mp, Int *impropers, IntGroup *where)
 		Panic("Low memory while adding impropers");
 	}
 	mp->nimpropers -= (nc = IntGroupGetCount(where));
+	if (mp->impropers == NULL) {
+		free(mp->impropers);
+		mp->impropers = NULL;
+	}
 	__MoleculeUnlock(mp);
 	return nc;
 }
@@ -8324,6 +8496,7 @@ MoleculeConvertBondToDummies(Molecule *mp, Int bondIndex, Int *dummyIndices)
 	Atom *rootp[2];
 	Atom na[2], *nap;
 	int i, natoms;
+	IntGroup *ig;
 	if (mp == NULL || mp->noModifyTopology)
 		return 0;
 	if (bondIndex < 0 || bondIndex >= mp->nbonds)
@@ -8362,19 +8535,18 @@ MoleculeConvertBondToDummies(Molecule *mp, Int bondIndex, Int *dummyIndices)
 	dummyIndices[1] = natoms + 1;
 
 	/*  Remove the old bond and create new bonds  */
-/*	ig = IntGroupNewWithPoints(bondIndex, 1, -1);
+	ig = IntGroupNewWithPoints(bondIndex, 1, -1);
 	if (ig == NULL)
 		goto panic;
-	MoleculeDeleteBonds(mp, NULL, ig);
-	IntGroupRelease(ig); */
-	MoleculeDeleteBonds(mp, 1, roots);
+	MoleculeDeleteBonds(mp, NULL, ig, NULL, NULL);
+	IntGroupRelease(ig);
 	newBonds[0] = roots[0];
 	newBonds[1] = dummyIndices[0];
 	newBonds[2] = roots[1];
 	newBonds[3] = dummyIndices[1];
 	newBonds[4] = kInvalidIndex;
 	
-	i = (MoleculeAddBonds(mp, 2, newBonds) < 0 ? -1 : 0);
+	i = (MoleculeAddBonds(mp, 2, newBonds, NULL, 1) < 0 ? -1 : 0);
 	mp->needsMDRebuild = 1;
 	__MoleculeUnlock(mp);
 	return i;
@@ -9826,7 +9998,7 @@ MoleculeFragmentWithAtomGroups(Molecule *mp, IntGroup *inatoms, IntGroup *exatom
 int
 MoleculeIsFragmentDetachable(Molecule *mp, IntGroup *group, int *n1, int *n2)
 {
-	Int i, i1, i2, j, k, k2, bond_count, nval1, nval2, *cp;
+	Int i, i1, i2, j, k, bond_count, nval1, nval2, *cp;
 	Atom *ap;
 	if (mp == NULL || mp->natoms == 0 || group == NULL)
 		return 0;  /*  Invalid arguments  */

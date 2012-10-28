@@ -4148,6 +4148,12 @@ s_MolEnumerable_Each(VALUE self)
 
 #pragma mark ====== Molecule Class ======
 
+/*  An malloc'ed string buffer. Retains the error/warning message from the last ***load/***save method.  */
+/*  Accessible from Ruby as Molecule#error_message and Molecule#error_message=.  */
+char *gLoadSaveErrorMessage = NULL;
+
+#define MoleculeClearLoadSaveErrorMessage() (gLoadSaveErrorMessage != NULL ? (free(gLoadSaveErrorMessage), gLoadSaveErrorMessage = NULL) : NULL)
+
 Molecule *
 MoleculeFromValue(VALUE val)
 {
@@ -4276,7 +4282,7 @@ s_Molecule_AtomIndexFromValue(Molecule *mol, VALUE val)
 static int
 s_Molecule_AtomIndexFromValue(Molecule *mol, VALUE val)
 {
-	int n, i;
+	int n;
 	char *p;
 	if (FIXNUM_P(val)) {
 		n = FIX2INT(val);
@@ -4311,6 +4317,18 @@ s_Molecule_AtomGroupFromValue(VALUE self, VALUE val)
 	return ig;
 }
 
+static void
+s_Molecule_RaiseOnLoadSave(int status, const char *msg, const char *fname)
+{
+	if (gLoadSaveErrorMessage != NULL) {
+		MyAppCallback_setConsoleColor(1);
+		MyAppCallback_showScriptMessage("On loading %s:\n%s\n", fname, gLoadSaveErrorMessage);
+		MyAppCallback_setConsoleColor(0);
+	}
+	if (status != 0)
+		rb_raise(rb_eMolbyError, "%s %s", msg, fname);
+}
+
 /*
  *  call-seq:
  *     dup          -> Molecule
@@ -4342,17 +4360,13 @@ s_Molecule_Loadmbsf(int argc, VALUE *argv, VALUE self)
 	VALUE fname;
 	char *fstr;
 	Molecule *mol;
-	char errbuf[128];
 	int retval;
+	MoleculeClearLoadSaveErrorMessage();
 	Data_Get_Struct(self, Molecule, mol);
 	rb_scan_args(argc, argv, "1", &fname);
 	fstr = FileStringValuePtr(fname);
-	retval = MoleculeLoadMbsfFile(mol, fstr, errbuf, sizeof errbuf);
-	if (retval != 0) {
-	/*	if (retval == -1)
-			return Qnil; */
-		rb_raise(rb_eMolbyError, errbuf);
-	}
+	retval = MoleculeLoadMbsfFile(mol, fstr, &gLoadSaveErrorMessage);
+	s_Molecule_RaiseOnLoadSave(retval, "Failed to load mbsf", fstr);
 	return Qtrue;	
 }
 
@@ -4371,42 +4385,21 @@ s_Molecule_Loadpsf(int argc, VALUE *argv, VALUE self)
 	VALUE fname, pdbname;
 	char *fstr, *pdbstr;
 	Molecule *mol;
-	char errbuf[128];
 	int retval;
 	Data_Get_Struct(self, Molecule, mol);
 	if (mol->natoms > 0)
 		return Qnil;  /*  Must be a new molecule  */
+	MoleculeClearLoadSaveErrorMessage();
 	rb_scan_args(argc, argv, "11", &fname, &pdbname);
 	fstr = FileStringValuePtr(fname);
-	retval = MoleculeLoadPsfFile(mol, fstr, errbuf, sizeof errbuf);
-	if (retval != 0) {
-	/*	if (retval == -1)
-			return Qnil; */
-		rb_raise(rb_eMolbyError, errbuf);
-	}
+	retval = MoleculeLoadPsfFile(mol, fstr, &gLoadSaveErrorMessage);
+	s_Molecule_RaiseOnLoadSave(retval, "Failed to load psf", fstr);
 	pdbstr = NULL;
 	if (!NIL_P(pdbname)) {
 		pdbstr = strdup(FileStringValuePtr(pdbname));
-/*
-	2008.7.19. The pdbfile should be explicitly given
-	} else {
-		int len = strlen(fstr);
-		if (len > 4 && strcmp(fstr + len - 4, ".psf") == 0) {
-			pdbstr = ALLOC_N(char, len + 1);
-			strcpy(pdbstr, fstr);
-			strcpy(pdbstr + len - 4, ".pdb");
-		}
-	}
-	if (pdbstr != NULL) {
-*/
-		retval = MoleculeReadCoordinatesFromPdbFile(mol, pdbstr, errbuf, sizeof errbuf);
+		retval = MoleculeReadCoordinatesFromPdbFile(mol, pdbstr, &gLoadSaveErrorMessage);
 		free(pdbstr);
-	/*	if (retval == -1 && NIL_P(pdbname))
-			return Qtrue;
-		else 
-	*/
-		if (retval != 0)
-			rb_raise(rb_eMolbyError, errbuf);
+		s_Molecule_RaiseOnLoadSave(retval, "Failed to load coordinates from pdb", pdbstr);
 	}
 	return Qtrue;
 }
@@ -4425,17 +4418,13 @@ s_Molecule_Loadpdb(int argc, VALUE *argv, VALUE self)
 	VALUE fname;
 	char *fstr;
 	Molecule *mol;
-	char errbuf[128];
 	int retval;
 	Data_Get_Struct(self, Molecule, mol);
 	rb_scan_args(argc, argv, "1", &fname);
+	MoleculeClearLoadSaveErrorMessage();
 	fstr = FileStringValuePtr(fname);
-	retval = MoleculeReadCoordinatesFromPdbFile(mol, fstr, errbuf, sizeof errbuf);
-	if (retval != 0) {
-	/*	if (retval == -1)
-			return Qnil; */
-		rb_raise(rb_eMolbyError, errbuf);
-	}
+	retval = MoleculeReadCoordinatesFromPdbFile(mol, fstr, &gLoadSaveErrorMessage);
+	s_Molecule_RaiseOnLoadSave(retval, "Failed to load pdb", fstr);
 	return Qtrue;	
 }
 
@@ -4452,17 +4441,13 @@ s_Molecule_Loaddcd(int argc, VALUE *argv, VALUE self)
 	VALUE fname;
 	char *fstr;
 	Molecule *mol;
-	char errbuf[128];
 	int retval;
 	Data_Get_Struct(self, Molecule, mol);
 	rb_scan_args(argc, argv, "1", &fname);
+	MoleculeClearLoadSaveErrorMessage();
 	fstr = FileStringValuePtr(fname);
-	retval = MoleculeReadCoordinatesFromDcdFile(mol, fstr, errbuf, sizeof errbuf);
-	if (retval != 0) {
-	/*	if (retval == -1)
-			return Qnil; */
-		rb_raise(rb_eMolbyError, errbuf);
-	}
+	retval = MoleculeReadCoordinatesFromDcdFile(mol, fstr, &gLoadSaveErrorMessage);
+	s_Molecule_RaiseOnLoadSave(retval, "Failed to load dcd", fstr);
 	return Qtrue;	
 }
 
@@ -4479,17 +4464,13 @@ s_Molecule_Loadtep(int argc, VALUE *argv, VALUE self)
 	VALUE fname;
 	char *fstr;
 	Molecule *mol;
-	char errbuf[128];
 	int retval;
 	Data_Get_Struct(self, Molecule, mol);
 	rb_scan_args(argc, argv, "1", &fname);
+	MoleculeClearLoadSaveErrorMessage();
 	fstr = FileStringValuePtr(fname);
-	retval = MoleculeLoadTepFile(mol, fstr, errbuf, sizeof errbuf);
-	if (retval != 0) {
-	/*	if (retval == -1)
-			return Qnil; */
-		rb_raise(rb_eMolbyError, errbuf);
-	}
+	retval = MoleculeLoadTepFile(mol, fstr, &gLoadSaveErrorMessage);
+	s_Molecule_RaiseOnLoadSave(retval, "Failed to load ORTEP file", fstr);
 	return Qtrue;	
 }
 
@@ -4506,17 +4487,13 @@ s_Molecule_Loadres(int argc, VALUE *argv, VALUE self)
 	VALUE fname;
 	char *fstr;
 	Molecule *mol;
-	char errbuf[128];
 	int retval;
 	Data_Get_Struct(self, Molecule, mol);
 	rb_scan_args(argc, argv, "1", &fname);
+	MoleculeClearLoadSaveErrorMessage();
 	fstr = FileStringValuePtr(fname);
-	retval = MoleculeLoadShelxFile(mol, fstr, errbuf, sizeof errbuf);
-	if (retval != 0) {
-	/*	if (retval == -1)
-			return Qnil; */
-		rb_raise(rb_eMolbyError, errbuf);
-	}
+	retval = MoleculeLoadShelxFile(mol, fstr, &gLoadSaveErrorMessage);
+	s_Molecule_RaiseOnLoadSave(retval, "Failed to load SHELX res file", fstr);
 	return Qtrue;	
 }
 
@@ -4533,17 +4510,13 @@ s_Molecule_Loadfchk(int argc, VALUE *argv, VALUE self)
 	VALUE fname;
 	char *fstr;
 	Molecule *mol;
-	char errbuf[128];
 	int retval;
 	Data_Get_Struct(self, Molecule, mol);
 	rb_scan_args(argc, argv, "1", &fname);
+	MoleculeClearLoadSaveErrorMessage();
 	fstr = FileStringValuePtr(fname);
-	retval = MoleculeLoadGaussianFchkFile(mol, fstr, errbuf, sizeof errbuf);
-	if (retval != 0) {
-	/*	if (retval == -1)
-			return Qnil; */
-		rb_raise(rb_eMolbyError, errbuf);
-	}
+	retval = MoleculeLoadGaussianFchkFile(mol, fstr, &gLoadSaveErrorMessage);
+	s_Molecule_RaiseOnLoadSave(retval, "Failed to load Gaussian fchk", fstr);
 	return Qtrue;	
 }
 
@@ -4560,19 +4533,15 @@ s_Molecule_Loaddat(int argc, VALUE *argv, VALUE self)
 	VALUE fname;
 	char *fstr;
 	Molecule *mol;
-	char errbuf[128];
 	int retval;
 	Data_Get_Struct(self, Molecule, mol);
 	rb_scan_args(argc, argv, "1", &fname);
+	MoleculeClearLoadSaveErrorMessage();
 	fstr = FileStringValuePtr(fname);
 	MyAppCallback_showProgressPanel("Loading GAMESS dat file...");
-	retval = MoleculeLoadGamessDatFile(mol, fstr, errbuf, sizeof errbuf);
+	retval = MoleculeLoadGamessDatFile(mol, fstr, &gLoadSaveErrorMessage);
 	MyAppCallback_hideProgressPanel();
-	if (retval != 0) {
-	/*	if (retval == -1)
-			return Qnil; */
-		rb_raise(rb_eMolbyError, errbuf);
-	}
+	s_Molecule_RaiseOnLoadSave(retval, "Failed to load GAMESS dat", fstr);
 	return Qtrue;	
 }
 
@@ -4587,11 +4556,12 @@ s_Molecule_Savembsf(VALUE self, VALUE fname)
 {
 	char *fstr;
     Molecule *mol;
-	char errbuf[128];
+	int retval;
     Data_Get_Struct(self, Molecule, mol);
+	MoleculeClearLoadSaveErrorMessage();
 	fstr = FileStringValuePtr(fname);
-	if (MoleculeWriteToMbsfFile(mol, fstr, errbuf, sizeof errbuf) != 0)
-		rb_raise(rb_eMolbyError, errbuf);
+	retval = MoleculeWriteToMbsfFile(mol, fstr, &gLoadSaveErrorMessage);
+	s_Molecule_RaiseOnLoadSave(retval, "Failed to save mbsf", fstr);
 	return Qtrue;
 }
 
@@ -4606,11 +4576,12 @@ s_Molecule_Savepsf(VALUE self, VALUE fname)
 {
 	char *fstr;
     Molecule *mol;
-	char errbuf[128];
+	int retval;
     Data_Get_Struct(self, Molecule, mol);
+	MoleculeClearLoadSaveErrorMessage();
 	fstr = FileStringValuePtr(fname);
-	if (MoleculeWriteToPsfFile(mol, fstr, errbuf, sizeof errbuf) != 0)
-		rb_raise(rb_eMolbyError, errbuf);
+	retval = MoleculeWriteToPsfFile(mol, fstr, &gLoadSaveErrorMessage);
+	s_Molecule_RaiseOnLoadSave(retval, "Failed to save psf", fstr);
 	return Qtrue;
 }
 
@@ -4625,11 +4596,12 @@ s_Molecule_Savepdb(VALUE self, VALUE fname)
 {
 	char *fstr;
     Molecule *mol;
-	char errbuf[128];
+	int retval;
     Data_Get_Struct(self, Molecule, mol);
+	MoleculeClearLoadSaveErrorMessage();
 	fstr = FileStringValuePtr(fname);
-	if (MoleculeWriteToPdbFile(mol, fstr, errbuf, sizeof errbuf) != 0)
-		rb_raise(rb_eMolbyError, errbuf);
+	retval = MoleculeWriteToPdbFile(mol, fstr, &gLoadSaveErrorMessage);
+	s_Molecule_RaiseOnLoadSave(retval, "Failed to save pdb", fstr);
 	return Qtrue;
 }
 
@@ -4644,11 +4616,12 @@ s_Molecule_Savedcd(VALUE self, VALUE fname)
 {
 	char *fstr;
     Molecule *mol;
-	char errbuf[128];
+	int retval;
     Data_Get_Struct(self, Molecule, mol);
+	MoleculeClearLoadSaveErrorMessage();
 	fstr = FileStringValuePtr(fname);
-	if (MoleculeWriteToDcdFile(mol, fstr, errbuf, sizeof errbuf) != 0)
-		rb_raise(rb_eMolbyError, errbuf);
+	retval = MoleculeWriteToDcdFile(mol, fstr, &gLoadSaveErrorMessage);
+	s_Molecule_RaiseOnLoadSave(retval, "Failed to save dcd", fstr);
 	return Qtrue;
 }
 
@@ -4678,7 +4651,7 @@ static VALUE
 s_Molecule_LoadSave(int argc, VALUE *argv, VALUE self, int loadFlag)
 {
 	VALUE rval;
-	char *argstr, *methname, *p;
+	char *argstr, *methname, *p, *type = "";
 	ID mid = 0;
 	int i;
 	const char *ls = (loadFlag ? "load" : "save");
@@ -4694,6 +4667,7 @@ s_Molecule_LoadSave(int argc, VALUE *argv, VALUE self, int loadFlag)
 		methname = ALLOC_N(char, lslen + strlen(argstr));
 		strcpy(methname, ls);
 		strcat(methname, argstr + 1);
+		type = argstr + 1;
 		for (i = lslen; methname[i] != 0; i++)
 			methname[i] = tolower(methname[i]);
 		mid = rb_intern(methname);
@@ -4702,7 +4676,7 @@ s_Molecule_LoadSave(int argc, VALUE *argv, VALUE self, int loadFlag)
 		argv++;
 		rval = rb_funcall2(self, mid, argc, argv);
 		if (rval == Qnil)
-			rb_raise(rb_eMolbyError, "the format specification \'%s\' seems to be wrong", argstr);
+			goto failure;
 		else
 			goto success;
 	}
@@ -4710,6 +4684,7 @@ s_Molecule_LoadSave(int argc, VALUE *argv, VALUE self, int loadFlag)
 	p = strrchr(argstr, '.');
 	if (p != NULL) {
 		p++;
+		type = p;
 		for (methname = p; *methname != 0; methname++) {
 			if (!isalpha(*methname))
 				break;
@@ -4739,8 +4714,12 @@ s_Molecule_LoadSave(int argc, VALUE *argv, VALUE self, int loadFlag)
 			}
 		}
 	}
-	rb_raise(rb_eMolbyError, "the file %s cannot be %s", argstr, (loadFlag ? "loaded" : "saved"));
-	
+failure:
+	rval = rb_str_to_str(argv[0]);
+	asprintf(&p, "Failed to %s file %s", (loadFlag ? "load" : "save"), type);
+	s_Molecule_RaiseOnLoadSave(1, p, StringValuePtr(rval));
+	return Qnil;  /*  Does not reach here  */
+
 success:
 	{
 		/*  Register the path  */
@@ -6096,8 +6075,8 @@ static VALUE
 s_Molecule_Remove(VALUE self, VALUE group)
 {
     Molecule *mol1;
-	IntGroup *ig;
-	Int *bonds, nbonds, i, temp[2];
+	IntGroup *ig, *bg;
+	Int i;
 	IntGroupIterator iter;
 
     Data_Get_Struct(self, Molecule, mol1);
@@ -6108,9 +6087,8 @@ s_Molecule_Remove(VALUE self, VALUE group)
 
 	/*  Remove the bonds between the two fragments  */
 	/*  (This is necessary for undo to work correctly)  */
-	nbonds = 0;
-	bonds = NULL;
 	IntGroupIteratorInit(ig, &iter);
+	bg = NULL;
 	while ((i = IntGroupIteratorNext(&iter)) >= 0) {
 		Atom *ap = ATOM_AT_INDEX(mol1->atoms, i);
 		Int j, *cp;
@@ -6119,19 +6097,20 @@ s_Molecule_Remove(VALUE self, VALUE group)
 			int n = cp[j];
 			if (!IntGroupLookup(ig, n, NULL)) {
 				/*  bond i-n, i is in ig and n is not  */
-				temp[0] = i;
-				temp[1] = n;
-				AssignArray(&bonds, &nbonds, sizeof(Int) * 2, nbonds, temp);
+				int k = MoleculeLookupBond(mol1, i, n);
+				if (k >= 0) {
+					if (bg == NULL)
+						bg = IntGroupNew();
+					IntGroupAdd(bg, k, 1);
+				}
 			}
 		}
 	}
 	IntGroupIteratorRelease(&iter);
-	if (nbonds > 0) {
+	if (bg != NULL) {
 		/*  Remove bonds  */
-	/*	temp[0] = kInvalidIndex;
-		AssignArray(&bonds, &nbonds, sizeof(Int) * 2, nbonds, temp); */
-		MolActionCreateAndPerform(mol1, gMolActionDeleteBonds, nbonds * 2, bonds);
-		free(bonds);
+		MolActionCreateAndPerform(mol1, gMolActionDeleteBonds, bg);
+		IntGroupRelease(bg);
 	}
 	/*  Remove atoms  */
 	if (MolActionCreateAndPerform(mol1, gMolActionUnmergeMolecule, ig) == 0)
@@ -6257,7 +6236,7 @@ s_Molecule_CreateBond(int argc, VALUE *argv, VALUE self)
 	}
 	ip[argc] = kInvalidIndex;
 	old_nbonds = mol->nbonds;
-	i = MolActionCreateAndPerform(mol, gMolActionAddBonds, argc, ip);
+	i = MolActionCreateAndPerform(mol, gMolActionAddBonds, argc, ip, NULL);
 	xfree(ip);
 	if (i == -1)
 		rb_raise(rb_eMolbyError, "atom index out of range");
@@ -6284,20 +6263,31 @@ static VALUE
 s_Molecule_RemoveBond(int argc, VALUE *argv, VALUE self)
 {
     Molecule *mol;
-	Int i, *ip, old_nbonds;
+	Int i, j, n[2];
+	IntGroup *bg;
 	if (argc == 0)
 		rb_raise(rb_eMolbyError, "missing arguments");
 	if (argc % 2 != 0)
 		rb_raise(rb_eMolbyError, "bonds should be specified by pairs of atom indices");
     Data_Get_Struct(self, Molecule, mol);
-	ip = ALLOC_N(Int, argc + 1);
-	for (i = 0; i < argc; i++)
-		ip[i] = s_Molecule_AtomIndexFromValue(mol, argv[i]);
-	ip[argc] = kInvalidIndex;
-	old_nbonds = mol->nbonds;
-	MolActionCreateAndPerform(mol, gMolActionDeleteBonds, argc, ip);
-	xfree(ip);
-	return INT2NUM(old_nbonds - mol->nbonds);
+	bg = NULL;
+	for (i = j = 0; i < argc; i++, j = 1 - j) {
+		n[j] = s_Molecule_AtomIndexFromValue(mol, argv[i]);
+		if (j == 1) {
+			Int k = MoleculeLookupBond(mol, n[0], n[1]);
+			if (k >= 0) {
+				if (bg == NULL)
+					bg = IntGroupNew();
+				IntGroupAdd(bg, k, 1);
+			}
+		}
+	}
+	if (bg != NULL) {
+		MolActionCreateAndPerform(mol, gMolActionDeleteBonds, bg);
+		i = IntGroupGetCount(bg);
+		IntGroupRelease(bg);
+	} else i = 0;
+	return INT2NUM(i);
 }
 
 /*
@@ -6647,7 +6637,7 @@ s_Molecule_GuessBonds(int argc, VALUE *argv, VALUE self)
 		limit = NUM2DBL(rb_Float(limval));
 	MoleculeGuessBonds(mol, limit, &nbonds, &bonds);
 	if (nbonds > 0) {
-		MolActionCreateAndPerform(mol, gMolActionAddBonds, nbonds * 2, bonds);
+		MolActionCreateAndPerform(mol, gMolActionAddBonds, nbonds * 2, bonds, NULL);
 		free(bonds);
 	}
 	return INT2NUM(nbonds);
@@ -9867,6 +9857,41 @@ s_Molecule_OrderedList(VALUE klass)
 	return ary;
 }
 
+/*
+ *  call-seq:
+ *     error_message       -> String
+ *
+ *  Get the error_message from the last load/save method. If no error, returns nil.
+ */
+static VALUE
+s_Molecule_ErrorMessage(VALUE klass)
+{
+	if (gLoadSaveErrorMessage == NULL)
+		return Qnil;
+	else return rb_str_new2(gLoadSaveErrorMessage);
+}
+
+/*
+ *  call-seq:
+ *     set_error_message(String)
+ *     Molecule.error_message = String
+ *
+ *  Get the error_message from the last load/save method. If no error, returns nil.
+ */
+static VALUE
+s_Molecule_SetErrorMessage(VALUE klass, VALUE sval)
+{
+	if (gLoadSaveErrorMessage != NULL) {
+		free(gLoadSaveErrorMessage);
+		gLoadSaveErrorMessage = NULL;
+	}
+	if (sval != Qnil) {
+		sval = rb_str_to_str(sval);
+		gLoadSaveErrorMessage = strdup(StringValuePtr(sval));
+	}
+	return sval;
+}
+
 void
 Init_Molby(void)
 {
@@ -10111,6 +10136,9 @@ Init_Molby(void)
 	rb_define_singleton_method(rb_cMolecule, "open", s_Molecule_Open, -1);
 	rb_define_singleton_method(rb_cMolecule, "list", s_Molecule_List, 0);
 	rb_define_singleton_method(rb_cMolecule, "ordered_list", s_Molecule_OrderedList, 0);
+	rb_define_singleton_method(rb_cMolecule, "error_message", s_Molecule_ErrorMessage, 0);
+	rb_define_singleton_method(rb_cMolecule, "set_error_message", s_Molecule_SetErrorMessage, 1);
+	rb_define_singleton_method(rb_cMolecule, "error_message=", s_Molecule_SetErrorMessage, 1);
 	
 	/*  class MolEnumerable  */
 	rb_cMolEnumerable = rb_define_class_under(rb_mMolby, "MolEnumerable", rb_cObject);

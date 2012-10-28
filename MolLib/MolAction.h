@@ -33,6 +33,7 @@ extern const char *gMolActionMergeMoleculeForUndo;
 extern const char *gMolActionUnmergeMolecule;
 extern const char *gMolActionUnmergeMoleculeForUndo;
 extern const char *gMolActionAddBonds;
+extern const char *gMolActionAddBondsForUndo;
 extern const char *gMolActionDeleteBonds;
 extern const char *gMolActionAddAngles;
 extern const char *gMolActionDeleteAngles;

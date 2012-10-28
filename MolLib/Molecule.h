@@ -359,12 +359,12 @@ typedef struct Molecule {
 int strlen_limit(const char *s, int limit);
 
 Molecule *MoleculeNew(void);
-int MoleculeLoadFile(Molecule *mp, const char *fname, const char *ftype, char *errbuf, int errbufsize);
-int MoleculeLoadPsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsize);
-int MoleculeLoadTepFile(Molecule *mp, const char *fname, char *errbuf, int errbufsize);
-int MoleculeLoadShelxFile(Molecule *mp, const char *fname, char *errbuf, int errbufsize);
-int MoleculeLoadGaussianFchkFile(Molecule *mp, const char *fname, char *errbuf, int errbufsize);
-int MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsize);
+int MoleculeLoadFile(Molecule *mp, const char *fname, const char *ftype, char **errbuf);
+int MoleculeLoadPsfFile(Molecule *mp, const char *fname, char **errbuf);
+int MoleculeLoadTepFile(Molecule *mp, const char *fname, char **errbuf);
+int MoleculeLoadShelxFile(Molecule *mp, const char *fname, char **errbuf);
+int MoleculeLoadGaussianFchkFile(Molecule *mp, const char *fname, char **errbuf);
+int MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf);
 Molecule *MoleculeNewWithName(const char *name);
 Molecule *MoleculeInitWithAtoms(Molecule *mp, const Atom *atoms, int natoms);
 Molecule *MoleculeInitWithMolecule(Molecule *mp2, Molecule *mp);
@@ -395,18 +395,18 @@ void MoleculeSetAniso(Molecule *mp, int n1, int type, Double x11, Double x22, Do
 void MoleculeSetAnisoBySymop(Molecule *mp, int idx);
 int MoleculeSetPeriodicBox(Molecule *mp, const Vector *ax, const Vector *ay, const Vector *az, const Vector *ao, const char *periodic, int convertCoordinates);
 
-int MoleculeReadCoordinatesFromFile(Molecule *mp, const char *fname, const char *ftype, char *errbuf, int errbufsize);
-int MoleculeReadCoordinatesFromPdbFile(Molecule *mp, const char *fname, char *errbuf, int errbufsize);
-int MoleculeReadCoordinatesFromDcdFile(Molecule *mp, const char *fname, char *errbuf, int errbufsize);
+int MoleculeReadCoordinatesFromFile(Molecule *mp, const char *fname, const char *ftype, char **errbuf);
+int MoleculeReadCoordinatesFromPdbFile(Molecule *mp, const char *fname, char **errbuf);
+int MoleculeReadCoordinatesFromDcdFile(Molecule *mp, const char *fname, char **errbuf);
 
-int MoleculeReadExtendedInfo(Molecule *mp, const char *fname, char *errbuf, int errbufsize);
-int MoleculeWriteExtendedInfo(Molecule *mp, const char *fname, char *errbuf, int errbufsize);
+int MoleculeReadExtendedInfo(Molecule *mp, const char *fname, char **errbuf);
+int MoleculeWriteExtendedInfo(Molecule *mp, const char *fname, char **errbuf);
 
-int MoleculeWriteToFile(Molecule *mp, const char *fname, const char *ftype, char *errbuf, int errbufsize);
-int MoleculeWriteToPsfFile(Molecule *mp, const char *fname, char *errbuf, int errbufsize);
-int MoleculeWriteToPdbFile(Molecule *mp, const char *fname, char *errbuf, int errbufsize);
-int MoleculeWriteToDcdFile(Molecule *mp, const char *fname, char *errbuf, int errbufsize);
-int MoleculeWriteToTepFile(Molecule *mp, const char *fname, char *errbuf, int errbufsize);
+int MoleculeWriteToFile(Molecule *mp, const char *fname, const char *ftype, char **errbuf);
+int MoleculeWriteToPsfFile(Molecule *mp, const char *fname, char **errbuf);
+int MoleculeWriteToPdbFile(Molecule *mp, const char *fname, char **errbuf);
+int MoleculeWriteToDcdFile(Molecule *mp, const char *fname, char **errbuf);
+int MoleculeWriteToTepFile(Molecule *mp, const char *fname, char **errbuf);
 void MoleculeDump(Molecule *mol);
 
 int MoleculePrepareMDArena(Molecule *mol, int check_only, char **retmsg);
@@ -424,12 +424,18 @@ int MoleculeMaximumResidueNumber(Molecule *mp, IntGroup *group);
 int MoleculeMinimumResidueNumber(Molecule *mp, IntGroup *group);
 
 struct MolAction;
+#if defined(DEBUG)
+	int MoleculeCheckSanity(Molecule *mp);
+#else
+#define MoleculeCheckSanity(mp)
+#endif
+
 int MoleculeCreateAnAtom(Molecule *mp, const Atom *ap, int pos);
 int MoleculeMerge(Molecule *dst, Molecule *src, IntGroup *where, int resSeqOffset, Int *nactions, struct MolAction ***actions, Int forUndo);
 int MoleculeUnmerge(Molecule *src, Molecule **dstp, IntGroup *where, int resSeqOffset, Int *nactions, struct MolAction ***actions, Int forUndo);
 int MoleculeExtract(Molecule *src, Molecule **dstp, IntGroup *where, int dummyFlag);
-int MoleculeAddBonds(Molecule *mp, Int nbonds, const Int *bonds);
-int MoleculeDeleteBonds(Molecule *mp, Int nbonds, const Int *bonds);
+int MoleculeAddBonds(Molecule *mp, Int nbonds, const Int *bonds, IntGroup *where, Int autoGenerate);
+int MoleculeDeleteBonds(Molecule *mp, Int *bonds, IntGroup *where, Int **outRemoved, IntGroup **outRemovedPos);
 int MoleculeAddAngles(Molecule *mp, const Int *angles, IntGroup *where);
 int MoleculeDeleteAngles(Molecule *mp, Int *angles, IntGroup *where);
 int MoleculeAddDihedrals(Molecule *mp, const Int *dihedrals, IntGroup *where);
@@ -548,7 +554,8 @@ int MoleculeOutputCube(Molecule *mp, Int index, const char *fname, const char *c
 #define kParameterPasteboardType "Parameter" */
 extern char *gMoleculePasteboardType;
 extern char *gParameterPasteboardType;
-
+extern char *gLoadSaveErrorMessage;
+	
 STUB void MoleculeRetainExternalObj(Molecule *mol);
 STUB void MoleculeReleaseExternalObj(Molecule *mol);
 

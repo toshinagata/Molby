@@ -180,11 +180,10 @@ MyDocument::SetMolecule(Molecule *aMolecule)
 bool
 MyDocument::DoSaveDocument(const wxString& file)
 {
-	char buf[128];
+	char *buf = NULL;
 	char *p = strdup((const char *)file.mb_str(wxConvFile));
 	size_t len = strlen(p);
 	int retval;
-	buf[0] = 0;
 	if (MolActionCreateAndPerform(mol, SCRIPT_ACTION("s"), "molsave", p) != 0) {
 		free(p);
 		return false;
@@ -196,7 +195,7 @@ MyDocument::DoSaveDocument(const wxString& file)
 		char *pp = (char *)malloc(len + 2);
 		strcpy(pp, p);
 		strcpy(pp + len - 4, ".pdb");
-		retval = MoleculeWriteToPdbFile(mol, pp, buf, sizeof buf);
+		retval = MoleculeWriteToPdbFile(mol, pp, &buf);
 		if (retval != 0) {
 			free(pp);
 			goto exit;
@@ -204,7 +203,7 @@ MyDocument::DoSaveDocument(const wxString& file)
 		if (mol->cell != NULL) {
 			/*  Write an extended info (bounding box)  */
 			strcpy(pp + len - 4, ".info");
-			retval = MoleculeWriteExtendedInfo(mol, pp, buf, sizeof buf);
+			retval = MoleculeWriteExtendedInfo(mol, pp, &buf);
 			if (retval != 0) {
 				free(pp);
 				goto exit;
@@ -240,14 +239,15 @@ MyDocument::DoOpenDocument(const wxString& file)
 	
 	if ((len = strlen(p)) > 4 && strcasecmp(p + len - 4, ".psf") == 0) {
 		//  Look for a ".pdb" file with the same basename 
-		char buf[128];
+		char *buf;
 		strcpy(p + len - 4, ".pdb");
 		//  The error will be ignored
-		MoleculeReadCoordinatesFromPdbFile(newmol, p, buf, sizeof buf);
+		MoleculeReadCoordinatesFromPdbFile(newmol, p, &buf);
 		//  Look for an ".info" file with the same basename
 		p = (char *)realloc(p, len + 2);
 		strcpy(p + len - 4, ".info");
-		MoleculeReadExtendedInfo(newmol, p, buf, sizeof buf);
+		MoleculeReadExtendedInfo(newmol, p, &buf);
+		free(buf);
 	}
 	free(p);
 	Modify(false);
@@ -304,9 +304,9 @@ MyDocument::OnImport(wxCommandEvent& event)
 	if (dialog->ShowModal() == wxID_OK) {
 		char *p = strdup((const char *)(dialog->GetPath().mb_str(wxConvFile)));
 		MoleculeLock(mol);
-//		MolActionCallback_setUndoRegistrationEnabled(mol, 0);
 		MolActionCreateAndPerform(mol, SCRIPT_ACTION("s"), "molload", p);
-//		MolActionCallback_setUndoRegistrationEnabled(mol, 1);
+		if (gLoadSaveErrorMessage != NULL)
+			MyAppCallback_showScriptMessage("On loading %s:\n%s\n", p, gLoadSaveErrorMessage);
 		MoleculeUnlock(mol);
 		free(p);
 	}
@@ -1246,6 +1246,7 @@ MyDocument::OnInvokeAntechamber(wxCommandEvent &event)
 		Int *resno;
 		char *resnames;
 		Atom *ap;
+		char *errbuf;
 		resno = (Int *)calloc(sizeof(Int), mol->natoms);
 		resnames = (char *)calloc(sizeof(char), mol->natoms * 4);
 		if (resno == NULL || resnames == NULL) {
@@ -1260,7 +1261,7 @@ MyDocument::OnInvokeAntechamber(wxCommandEvent &event)
 				memmove(resnames + i * 4, "RES", 4);
 			}
 		}
-		n = MoleculeWriteToPdbFile(mol, "mol.pdb", buf, sizeof(buf));
+		n = MoleculeWriteToPdbFile(mol, "mol.pdb", &errbuf);
 		if (!use_residue) {
 			for (i = 0, ap = mol->atoms; i < mol->natoms; i++, ap = ATOM_NEXT(ap)) {
 				ap->resSeq = resno[i];
@@ -1270,7 +1271,8 @@ MyDocument::OnInvokeAntechamber(wxCommandEvent &event)
 		free(resno);
 		free(resnames);
 		if (n != 0) {
-			MyAppCallback_errorMessageBox("PDB export error: %s", buf);
+			MyAppCallback_errorMessageBox("PDB export error: %s", errbuf);
+			free(errbuf);
 			wxFileName::SetCwd(cwd);
 			return;
 		}
