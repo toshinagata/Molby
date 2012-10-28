@@ -9445,6 +9445,100 @@ s_Molecule_SearchEquivalentAtoms(int argc, VALUE *argv, VALUE self)
 	return val;
 }
 
+#if !defined(PIATOM)
+/*
+ *  call-seq:
+ *     create_pi_anchor(name, group [, type] [, weights] [, index]) -> AtomRef
+ *
+ *  Create a pi anchor, which is a "dummy" atom to represent pi-metal bonds.
+ *  Name is the name of the new pi anchor, and group is the atoms that define
+ *  the pi system. Type (a String) is an atom type for MM implementation.
+ *  Weights is the relative weights of the component atoms; if omitted, then
+ *  1.0/n (n is the number of component atoms) is assumed for all atoms.
+ *  The weight values will be normalized so that the sum of the weights is 1.0.
+ *  The weight values must be positive.
+ *  Index is the atom index where the created pi-anchor is inserted in the 
+ *  atoms array; if omitted, the pi-anchor is inserted after the component atom
+ *  having the largest index.
+ */
+static VALUE
+s_Molecule_CreatePiAnchor(int argc, VALUE *argv, VALUE self)
+{
+	Molecule *mol;
+	VALUE nval, gval;
+	IntGroup *ig;
+	Int i, n, idx;
+	Atom a;
+	PiAnchor an;
+	AtomRef *aref;
+	if (argc < 2 || argc >= 6)
+		rb_raise(rb_eMolbyError, "too %s arguments (should be 2..5)", (argc < 2 ? "few" : "many"));
+	nval = *argv++;
+	gval = *argv++;
+	argc -= 2;
+    Data_Get_Struct(self, Molecule, mol);
+	ig = IntGroupFromValue(gval);
+	memset(&a, 0, sizeof(a));
+	memset(&an, 0, sizeof(an));
+	strncpy(a.aname, StringValuePtr(nval), 4);
+	a.type = AtomTypeEncodeToUInt("an");  /*  Default atom type  */
+	for (i = 0; (n = IntGroupGetNthPoint(ig, i)) >= 0; i++) {
+		if (n >= mol->natoms) {
+			AtomConnectResize(&an.connect, 0);
+			rb_raise(rb_eMolbyError, "atom index (%d) out of range", n);
+		}
+		AtomConnectInsertEntry(&an.connect, an.connect.count, n);
+	}
+	if (an.connect.count == 0)
+		rb_raise(rb_eMolbyError, "no atoms are specified");
+	NewArray(&an.coeffs, &an.ncoeffs, sizeof(Double), an.connect.count);
+	for (i = 0; i < an.connect.count; i++) {
+		an.coeffs[i] = 1.0 / an.connect.count;
+	}
+	if (argc > 0 && (argv[0] == Qnil || rb_obj_is_kind_of(argv[0], rb_cString))) {
+		/*  Atom type  */
+		if (argv[0] != Qnil)
+			a.type = AtomTypeEncodeToUInt(StringValuePtr(argv[0]));
+		argc--;
+		argv++;
+	}
+	if (argc > 0 && (argv[0] == Qnil || rb_obj_is_kind_of(argv[0], rb_mEnumerable))) {
+		if (argv[0] != Qnil) {
+			VALUE aval = rb_ary_to_ary(argv[0]);
+			Double d, sum;
+			if (RARRAY_LEN(aval) != an.connect.count)
+				rb_raise(rb_eMolbyError, "the number of weight values does not match the number of atoms");
+			for (i = 0, sum = 0.0; i < an.connect.count; i++) {
+				d = NUM2DBL(rb_Float(RARRAY_PTR(aval)[i]));
+				if (d <= 0.0)
+					rb_raise(rb_eMolbyError, "the weight value must be positive");
+				sum += d;
+				an.coeffs[i] = d;
+			}
+			for (i = 0; i < an.connect.count; i++)
+				an.coeffs[i] /= sum;
+		}
+		argc--;
+		argv++;
+	}
+	if (argc > 0 && argv[0] != Qnil) {
+		/*  Index  */
+		idx = NUM2INT(rb_Integer(argv[0]));
+	} else idx = -1;
+	if (idx < 0 || idx > mol->natoms) {
+		/*  Immediately after the last specified atom  */
+		idx = AtomConnectData(&an.connect)[an.connect.count - 1] + 1;
+	}
+	a.anchor = (PiAnchor *)malloc(sizeof(PiAnchor));
+	memmove(a.anchor, &an, sizeof(PiAnchor));
+	if (MolActionCreateAndPerform(mol, gMolActionAddAnAtom, &a, idx, &idx) != 0)
+		return Qnil;
+    aref = AtomRefNew(mol, idx);
+    return Data_Wrap_Struct(rb_cAtomRef, 0, (void (*)(void *))AtomRefRelease, aref);
+}
+
+#endif
+
 #if PIATOM
 /*
  *  call-seq:
@@ -10115,8 +10209,9 @@ Init_Molby(void)
 	rb_define_method(rb_cMolecule, "allocate_basis_set_record", s_Molecule_AllocateBasisSetRecord, 3);
 	rb_define_method(rb_cMolecule, "search_equivalent_atoms", s_Molecule_SearchEquivalentAtoms, -1);
 	
-#if PIATOM
 	rb_define_method(rb_cMolecule, "create_pi_anchor", s_Molecule_CreatePiAnchor, -1);
+
+#if PIATOM
 	rb_define_method(rb_cMolecule, "replace_pi_anchor", s_Molecule_ReplacePiAnchor, -1);
 	rb_define_method(rb_cMolecule, "insert_pi_anchor", s_Molecule_InsertPiAnchor, -1);
 	rb_define_method(rb_cMolecule, "remove_pi_anchor", s_Molecule_RemovePiAnchor, 1);
