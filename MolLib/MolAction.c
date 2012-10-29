@@ -853,7 +853,6 @@ s_MolActionAddStructuralElements(Molecule *mol, MolAction *action, MolAction **a
 	if (type == 0 || type == 100) {  /*  bond  */
 		Int na, nd;
 		IntGroup *ig2;
-		MolAction *act2;
 		n1 = action->args[0].u.arval.nitems / 2;
 		ig = action->args[1].u.igval;
 		n2 = mol->nbonds;
@@ -865,23 +864,23 @@ s_MolActionAddStructuralElements(Molecule *mol, MolAction *action, MolAction **a
 			ig = IntGroupNewWithPoints(n2, mol->nbonds - n2, -1);
 		else
 			IntGroupRetain(ig);
-		/*  Register undo for creation of angle and dihedral  */
-		if (mol->nangles > na) {
-			ig2 = IntGroupNewWithPoints(na, mol->nangles - na, -1);
-			act2 = MolActionNew(gMolActionDeleteAngles, ig2);
-			MolActionCallback_registerUndo(mol, act2);
-			MolActionRelease(act2);
-			free(ig2);
-		}
-		if (mol->ndihedrals > nd) {
-			ig2 = IntGroupNewWithPoints(na, mol->ndihedrals - nd, -1);
-			act2 = MolActionNew(gMolActionDeleteDihedrals, ig2);
-			MolActionCallback_registerUndo(mol, act2);
-			MolActionRelease(act2);
-			IntGroupRelease(ig2);
-		}
 		*actp = MolActionNew(gMolActionDeleteBonds, ig);
 		IntGroupRelease(ig);
+		/*  Register undo for creation of angle and dihedral  */
+		if (mol->nangles > na) {
+			MolActionCallback_registerUndo(mol, *actp);
+			MolActionRelease(*actp);
+			ig2 = IntGroupNewWithPoints(na, mol->nangles - na, -1);
+			*actp = MolActionNew(gMolActionDeleteAngles, ig2);
+			IntGroupRelease(ig2);
+		}
+		if (mol->ndihedrals > nd) {
+			MolActionCallback_registerUndo(mol, *actp);
+			MolActionRelease(*actp);
+			ig2 = IntGroupNewWithPoints(na, mol->ndihedrals - nd, -1);
+			*actp = MolActionNew(gMolActionDeleteDihedrals, ig2);
+			IntGroupRelease(ig2);
+		}
 	} else if (type == 1) {  /*  angle  */
 		n1 = action->args[0].u.arval.nitems / 3;
 		ig = action->args[1].u.igval;

@@ -423,6 +423,8 @@ int MoleculeChangeResidueNames(Molecule *mp, int argc, Int *resSeqs, char *names
 int MoleculeMaximumResidueNumber(Molecule *mp, IntGroup *group);
 int MoleculeMinimumResidueNumber(Molecule *mp, IntGroup *group);
 
+int MoleculeAreAtomsConnected(Molecule *mol, int idx1, int idx2);
+
 struct MolAction;
 #if defined(DEBUG)
 	int MoleculeCheckSanity(Molecule *mp);
@@ -537,6 +539,11 @@ int MoleculeRemoveFrames(Molecule *mp, IntGroup *group, Vector *outFrame, Vector
 int MoleculeSelectFrame(Molecule *mp, int frame, int copyback);
 int MoleculeFlushFrames(Molecule *mp);
 
+#if !defined(PIATOM)
+void MoleculeCalculatePiAnchorPosition(Molecule *mol, int idx);
+int MoleculeSetPiAnchorList(Molecule *mol, Int idx, Int nentries, Int *entries, Double *weights, Int *nUndoActions, struct MolAction ***undoActions);
+#endif
+	
 #if PIATOM
 int MoleculeCalculatePiAtomPosition(Molecule *mol, int idx);
 int MoleculeValidatePiConnectionTable(Molecule *mol);

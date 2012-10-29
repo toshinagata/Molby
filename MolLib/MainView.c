@@ -1218,7 +1218,7 @@ drawAtom(MainView *mview, int i1, int selected, const Vector *dragOffset, const 
 			drawSphere(p, rad, 8);
 		}
 	} else {
-		drawSphere(p, dp->radius * mview->atomRadius, 8);
+		drawSphere(p, dp->radius * mview->atomRadius, 12);
 	}
 	if (MainView_convertObjectPositionToScreenPosition(mview, p, p + 3)) {
 	/*	fprintf(stderr, "atom %d: {%f, %f, %f}\n", i1, p[3], p[4], p[5]); */
@@ -1229,17 +1229,21 @@ drawAtom(MainView *mview, int i1, int selected, const Vector *dragOffset, const 
 }
 
 static void
-drawBond(MainView *mview, int i1, int i2, int selected, int selected2, int draft, const Vector *dragOffset, const Vector *periodicOffset)
+drawBond(MainView *mview, int i1, int i2, int selected, int selected2, int draft, const Vector *dragOffset, const Vector *periodicOffset, int isAnchorBond)
 {
 	const ElementPar *dp;
 	int i, in;
 	int an[2];
-	int expanded[2];
+	char expanded[2];
+	char anchor[2];
 	Vector r[2];
 	GLfloat p[6];
 	GLfloat rgba[4];
+	float rad_mul = 1.0;
+	float alpha_mul = 1.0;
 	int natoms = mview->mol->natoms;
 	expanded[0] = expanded[1] = 0;
+	anchor[0] = anchor[1] = 0;
 
 	for (i = 0; i < 2; i++) {
 		const Atom *ap;
@@ -1260,6 +1264,8 @@ drawBond(MainView *mview, int i1, int i2, int selected, int selected2, int draft
 			r[i] = ap->r;
 			if (SYMOP_ALIVE(ap->symop))
 				expanded[i] = 1;
+			if (ap->anchor != NULL)
+				anchor[i] = 1;
 		}
 		if (!mview->showHydrogens && an[i] == 1)
 			return;
@@ -1276,6 +1282,11 @@ drawBond(MainView *mview, int i1, int i2, int selected, int selected2, int draft
 		VecInc(r[1], *periodicOffset);
 	}
 
+	if (anchor[0] + anchor[1] == 2)
+		alpha_mul = 0.5;
+	if (anchor[0] + anchor[1] == 1)
+		rad_mul = (isAnchorBond ? 0.3 : 0.6);
+	
 	dp = &(gElementParameters[an[0]]);
 	if (dp == NULL)
 		return;
@@ -1284,6 +1295,7 @@ drawBond(MainView *mview, int i1, int i2, int selected, int selected2, int draft
 	} else {
 		rgba[0] = dp->r; rgba[1] = dp->g; rgba[2] = dp->b; rgba[3] = 1.0;
 	}
+	rgba[3] *= alpha_mul;
 	if (expanded[0] || periodicOffset != NULL) {
 		rgba[0] *= 0.5;
 		rgba[1] *= 0.5;
@@ -1307,7 +1319,7 @@ drawBond(MainView *mview, int i1, int i2, int selected, int selected2, int draft
 		glEnd();
 	} else {
 		glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, rgba);
-		drawCylinder(p, p + 3, mview->bondRadius, 6, 0);
+		drawCylinder(p, p + 3, mview->bondRadius * rad_mul, 8, 0);
 	}
 	dp = &(gElementParameters[an[1]]);
 	if (dp == NULL)
@@ -1315,6 +1327,7 @@ drawBond(MainView *mview, int i1, int i2, int selected, int selected2, int draft
 	if (!selected || !selected2) {
 		rgba[0] = dp->r; rgba[1] = dp->g; rgba[2] = dp->b; rgba[3] = 1.0;
 	}
+	rgba[3] *= alpha_mul;
 	if (expanded[1] || periodicOffset != NULL) {
 		rgba[0] *= 0.5;
 		rgba[1] *= 0.5;
@@ -1330,7 +1343,7 @@ drawBond(MainView *mview, int i1, int i2, int selected, int selected2, int draft
 		glEnd();
 	} else {
 		glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, rgba);
-		drawCylinder(p, p + 3, mview->bondRadius, 6, 0);
+		drawCylinder(p, p + 3, mview->bondRadius * rad_mul, 8, 0);
 	}
 }
 
@@ -1363,6 +1376,7 @@ drawModel(MainView *mview)
 	Vector *axes;
 	int selected, selected2;
 	char *selectFlags;
+	Atom *ap;
 	int draft = mview->lineMode;
 /*    static Double gray[] = {0.8, 0.8, 0.8, 1}; */
 	
@@ -1415,7 +1429,7 @@ drawModel(MainView *mview)
 						VecScaleInc(periodicOffset, axes[1], db);
 						VecScaleInc(periodicOffset, axes[2], dc);
 					}
-					for (i = 0; i < natoms; i++) {
+					for (i = 0, ap = mview->mol->atoms; i < natoms; i++, ap = ATOM_NEXT(ap)) {
 						if (mview->draggingMode != 0 && i % 50 == 0 && MainViewCallback_mouseCheck(mview)) {
 							/*  Mouse event is detected  */
 							draft = 1;
@@ -1428,6 +1442,19 @@ drawModel(MainView *mview)
 						else
 							selected = MoleculeIsAtomSelected(mview->mol, i);
 						drawAtom(mview, i, selected, &mview->dragOffset, (original ? NULL : &periodicOffset));
+						if (ap->anchor != NULL) {
+							/*  Draw anchor bonds  */
+							Int j, k;
+							Int *cp = AtomConnectData(&ap->anchor->connect);
+							for (j = 0; j < ap->anchor->connect.count; j++) {
+								k = cp[j];
+								if (selectFlags != NULL)
+									selected2 = selectFlags[k];
+								else
+									selected2 = MoleculeIsAtomSelected(mview->mol, k);
+								drawBond(mview, i, k, selected, selected2, draft, &mview->dragOffset, (original ? NULL : &periodicOffset), 1);
+							}
+						}
 					}
 				}
 	
@@ -1485,12 +1512,12 @@ skip:
 						selected = selectFlags[n1];
 						selected2 = selectFlags[n2];
 					}
-					drawBond(mview, n1, n2, selected, selected2, draft, &mview->dragOffset, (original ? NULL : &periodicOffset));
+					drawBond(mview, n1, n2, selected, selected2, draft, &mview->dragOffset, (original ? NULL : &periodicOffset), 0);
 				}
 				
 				/*  Extra bond  */
 				if (original && mview->draggingMode == kMainViewCreatingBond) {
-					drawBond(mview, natoms, natoms + 1, 1, 1, draft, &mview->dragOffset, NULL);
+					drawBond(mview, natoms, natoms + 1, 1, 1, draft, &mview->dragOffset, NULL, 0);
 				}
 				
 				/*  Expanded bonds  */

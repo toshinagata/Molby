@@ -70,7 +70,7 @@ static VALUE
 	s_VSym, s_FSym, s_OccupancySym, s_TempFactorSym,
 	s_AnisoSym, s_SymopSym, s_IntChargeSym, s_FixForceSym,
 	s_FixPosSym, s_ExclusionSym, s_MMExcludeSym, s_PeriodicExcludeSym,
-	s_HiddenSym;
+	s_HiddenSym, s_AnchorListSym;
 
 /*  Symbols for parameter attributes  */
 static VALUE
@@ -3493,6 +3493,22 @@ static VALUE s_AtomRef_GetHidden(VALUE self) {
 	return ((s_AtomFromValue(self)->exflags & kAtomHiddenFlag) != 0 ? Qtrue : Qfalse);
 }
 
+static VALUE s_AtomRef_GetAnchorList(VALUE self) {
+	VALUE retval;
+	Int i, count, *cp;
+	Atom *ap = s_AtomFromValue(self);
+	if (ap->anchor == NULL)
+		return Qnil;
+	count = ap->anchor->connect.count;
+	retval = rb_ary_new2(count * 2);
+	cp = AtomConnectData(&ap->anchor->connect);
+	for (i = 0; i < count; i++) {
+		rb_ary_store(retval, i, INT2NUM(cp[i]));
+		rb_ary_store(retval, i + count, rb_float_new(ap->anchor->coeffs[i]));
+	}
+	return retval;
+}
+
 static VALUE s_AtomRef_SetIndex(VALUE self, VALUE val) {
 	rb_raise(rb_eMolbyError, "index cannot be directly set");
 	return Qnil;
@@ -3520,9 +3536,12 @@ static VALUE s_AtomRef_SetResSeqOrResName(VALUE self, VALUE val) {
 }
 
 static VALUE s_AtomRef_SetName(VALUE self, VALUE val) {
+	Atom *ap = s_AtomFromValue(self);
 	char *p = StringValuePtr(val);
 	VALUE oval = s_AtomRef_GetName(self);
-	strncpy(s_AtomFromValue(self)->aname, p, 4);
+	if (ap->anchor != NULL && p[0] == '_')
+		rb_raise(rb_eMolbyError, "please avoid a name beginning with '_' for a pi anchor, because it causes some internal confusion.");
+	strncpy(ap->aname, p, 4);
 	s_RegisterUndoForAtomAttrChange(self, s_NameSym, val, oval);
 	return val;
 }
@@ -3949,6 +3968,82 @@ static VALUE s_AtomRef_SetHidden(VALUE self, VALUE val) {
 	return val;
 }
 
+static VALUE s_AtomRef_SetAnchorList(VALUE self, VALUE val) {
+	Int idx, i, j, k, n, *ip;
+	Double *dp;
+	Atom *ap;
+	Molecule *mol;
+	VALUE oval, v;
+	AtomConnect ac;
+	Int nUndoActions;
+	MolAction **undoActions;
+	memset(&ac, 0, sizeof(ac));
+	idx = s_AtomIndexFromValue(self, &ap, &mol);
+	oval = s_AtomRef_GetAnchorList(self);
+	if (val != Qnil) {
+		val = rb_ary_to_ary(val);
+		n = RARRAY_LEN(val);
+	} else n = 0;
+	if (n == 0) {
+		if (ap->anchor != NULL) {
+			AtomConnectResize(&ap->anchor->connect, 0);
+			free(ap->anchor->coeffs);
+			free(ap->anchor);
+			ap->anchor = NULL;
+			s_RegisterUndoForAtomAttrChange(self, s_AnchorListSym, val, oval);
+		}
+		return val;
+	}
+	if (n < 2)
+		rb_raise(rb_eMolbyError, "set_anchor_list: the argument should have at least two atom indices");
+	if (ap->aname[0] == '_')
+		rb_raise(rb_eMolbyError, "please avoid a name beginning with '_' for a pi anchor, because it causes some internal confusion.");
+	ip = (Int *)malloc(sizeof(Int) * n);
+	dp = NULL;
+	for (i = 0; i < n; i++) {
+		v = RARRAY_PTR(val)[i];
+		if (rb_obj_is_kind_of(v, rb_cFloat))
+			break;
+		j = NUM2INT(rb_Integer(v));
+		if (j < 0 || j >= mol->natoms)
+			rb_raise(rb_eMolbyError, "set_anchor_list: atom index (%d) out of range", j);
+		for (k = 0; k < i; k++) {
+			if (ip[k] == j)
+				rb_raise(rb_eMolbyError, "set_anchor_list: duplicate atom index (%d)", j);
+		}
+		ip[i] = j;
+	}
+	if (i < n) {
+		if (i < 2)
+			rb_raise(rb_eMolbyError, "set_anchor_list: the argument should have at least two atom indices");
+		else if (i * 2 != n)
+			rb_raise(rb_eMolbyError, "set_anchor_list: the weights should be given in the same number as the atom indices");
+		dp = (Double *)malloc(sizeof(Double) * n / 2);
+		for (i = 0; i < n / 2; i++) {
+			dp[i] = NUM2DBL(rb_Float(RARRAY_PTR(val)[i + n / 2]));
+			if (dp[i] <= 0.0)
+				rb_raise(rb_eMolbyError, "set_anchor_list: the weights should be positive Floats");
+		}
+		n /= 2;
+	}
+	nUndoActions = 0;
+	undoActions = NULL;
+	i = MoleculeSetPiAnchorList(mol, idx, n, ip, dp, &nUndoActions, &undoActions);
+	free(dp);
+	free(ip);
+	if (i != 0)
+		rb_raise(rb_eMolbyError, "invalid argument");
+	if (nUndoActions > 0) {
+		for (i = 0; i < nUndoActions; i++) {
+			MolActionCallback_registerUndo(mol, undoActions[i]);
+			MolActionRelease(undoActions[i]);
+		}
+		free(undoActions);
+	}
+	s_RegisterUndoForAtomAttrChange(self, s_AnchorListSym, val, oval);
+	return val;
+}
+
 static struct s_AtomAttrDef {
 	char *name;
 	VALUE *symref;  /*  Address of s_IndexSymbol etc. */
@@ -3993,6 +4088,7 @@ static struct s_AtomAttrDef {
 	{"mm_exclude",   &s_MMExcludeSym,    0, s_AtomRef_GetMMExclude,    s_AtomRef_SetMMExclude},
 	{"periodic_exclude", &s_PeriodicExcludeSym, 0, s_AtomRef_GetPeriodicExclude, s_AtomRef_SetPeriodicExclude},
 	{"hidden",       &s_HiddenSym,       0, s_AtomRef_GetHidden,       s_AtomRef_SetHidden},
+	{"anchor_list",  &s_AnchorListSym,   0, s_AtomRef_GetAnchorList,   s_AtomRef_SetAnchorList},
 	{NULL} /* Sentinel */
 };
 
@@ -9467,8 +9563,8 @@ s_Molecule_CreatePiAnchor(int argc, VALUE *argv, VALUE self)
 	Molecule *mol;
 	VALUE nval, gval;
 	IntGroup *ig;
-	Int i, n, idx;
-	Atom a;
+	Int i, n, idx, last_component;
+	Atom a, *ap;
 	PiAnchor an;
 	AtomRef *aref;
 	if (argc < 2 || argc >= 6)
@@ -9481,6 +9577,8 @@ s_Molecule_CreatePiAnchor(int argc, VALUE *argv, VALUE self)
 	memset(&a, 0, sizeof(a));
 	memset(&an, 0, sizeof(an));
 	strncpy(a.aname, StringValuePtr(nval), 4);
+	if (a.aname[0] == '_')
+		rb_raise(rb_eMolbyError, "please avoid a name beginning with '_' for a pi anchor, because it causes some internal confusion.");
 	a.type = AtomTypeEncodeToUInt("an");  /*  Default atom type  */
 	for (i = 0; (n = IntGroupGetNthPoint(ig, i)) >= 0; i++) {
 		if (n >= mol->natoms) {
@@ -9488,6 +9586,7 @@ s_Molecule_CreatePiAnchor(int argc, VALUE *argv, VALUE self)
 			rb_raise(rb_eMolbyError, "atom index (%d) out of range", n);
 		}
 		AtomConnectInsertEntry(&an.connect, an.connect.count, n);
+		last_component = n;
 	}
 	if (an.connect.count == 0)
 		rb_raise(rb_eMolbyError, "no atoms are specified");
@@ -9527,12 +9626,17 @@ s_Molecule_CreatePiAnchor(int argc, VALUE *argv, VALUE self)
 	} else idx = -1;
 	if (idx < 0 || idx > mol->natoms) {
 		/*  Immediately after the last specified atom  */
-		idx = AtomConnectData(&an.connect)[an.connect.count - 1] + 1;
+		idx = last_component + 1;
 	}
 	a.anchor = (PiAnchor *)malloc(sizeof(PiAnchor));
 	memmove(a.anchor, &an, sizeof(PiAnchor));
+	/*  Use residue information of the last specified atom  */
+	ap = ATOM_AT_INDEX(mol->atoms, last_component);
+	a.resSeq = ap->resSeq;
+	strncpy(a.resName, ap->resName, 4);
 	if (MolActionCreateAndPerform(mol, gMolActionAddAnAtom, &a, idx, &idx) != 0)
 		return Qnil;
+	MoleculeCalculatePiAnchorPosition(mol, idx);
     aref = AtomRefNew(mol, idx);
     return Data_Wrap_Struct(rb_cAtomRef, 0, (void (*)(void *))AtomRefRelease, aref);
 }

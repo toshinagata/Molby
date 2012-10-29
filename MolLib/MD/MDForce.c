@@ -843,6 +843,9 @@ s_make_verlet_list(MDArena *arena)
 		Int vdw_idx, vdw_idx2;
 		arena->verlet_i[i] = n;
 
+		if (api->anchor != NULL)
+			continue;  /*  Skip pi_anchors  */
+
 		for (j = i, apj = atoms + j; j < natoms; j++, apj++) {
 			Vector rij;
 			Double lenij2;
@@ -852,6 +855,10 @@ s_make_verlet_list(MDArena *arena)
 		/*	int dxbase, dybase, dzbase; */
 			int count;
 
+			/*  Pi anchors  */
+			if (apj->anchor != NULL)
+				continue;
+		
 			/*  Fixed atoms  */
 			if (api->fix_force < 0 && apj->fix_force < 0)
 				continue;
@@ -1255,6 +1262,8 @@ s_calc_auxiliary_force(MDArena *arena)
 		for (i = 0; i < natoms; i++) {
 			Vector r21;
 			Double w1, w2, k0, k1;
+			if (atoms[i].anchor != NULL)
+				continue;
 			VecSub(r21, atoms[i].r, center);
 			w2 = VecLength2(r21);
 			w1 = sqrt(w2);
@@ -1284,6 +1293,8 @@ s_calc_auxiliary_force(MDArena *arena)
 		Double k = arena->box_potential_force;
 		for (i = 0; i < natoms; i++) {
 			Vector r = atoms[i].r;
+			if (atoms[i].anchor != NULL)
+				continue;
 			if (r.x > xsize)
 				r.x -= xsize;
 			else if (r.x < -xsize)
@@ -1362,6 +1373,7 @@ calc_force(MDArena *arena)
 	Vector *ff, *fa;
 	Molecule *mol = arena->mol;
 	Int doSurface = 0;
+	Atom *ap;
 
 	natoms = mol->natoms;
 
@@ -1397,7 +1409,33 @@ calc_force(MDArena *arena)
 			calc_surface_force_2(arena); */
 		calc_surface_force(arena);
 	}
-	
+
+	/*  Distribute forces on pi-anchor atoms to their components  */
+	for (i = 0; i < natoms; i++) {
+		Int k, n, *ip;
+		Double w;
+		ap = &(mol->atoms[i]);
+		if (ap->anchor == NULL)
+			continue;
+		ip = AtomConnectData(&ap->anchor->connect);
+		n = ap->anchor->connect.count;
+		for (k = 0; k < n; k++) {
+			ff = &arena->forces[ip[k]];
+			fa = &arena->forces[i];
+			w = ap->anchor->coeffs[k];
+			for (j = 0; j < kKineticIndex; j++) {
+				VecScaleInc(*ff, *fa, w);
+				ff += natoms;
+				fa += natoms;
+			}
+		}
+		fa = &arena->forces[i];
+		for (j = 0; j < kKineticIndex; j++) {
+			VecZero(*fa);
+			fa += natoms;
+		}
+	}
+			
 	/*  Sum up all partial forces and energies  */
 	arena->total_energy = 0.0;
 	for (i = 0; i < kKineticIndex; i++)

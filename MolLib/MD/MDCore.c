@@ -2014,7 +2014,7 @@ md_scale_velocities(MDArena *arena)
 	if (arena->nsum_temperature == 0) {
 		Double kinetic = 0.0;
 		for (i = 0, ap = arena->mol->atoms; i < arena->natoms_uniq; i++, ap++) {
-			if (ap->fix_force < 0 || ap->mm_exclude)
+			if (ap->fix_force < 0 || ap->mm_exclude || ap->anchor != NULL)
 				continue;
 			kinetic += ap->weight * VecLength2(ap->v);
 		}
@@ -2025,7 +2025,7 @@ md_scale_velocities(MDArena *arena)
 	}
 	scale = sqrt(arena->temperature / ttemp);
 	for (i = 0, ap = arena->mol->atoms; i < arena->mol->natoms; i++, ap++) {
-		if (ap->fix_force < 0)
+		if (ap->fix_force < 0 || ap->mm_exclude || ap->anchor != NULL)
 			continue;
 		VecScaleSelf(ap->v, scale);
 	}
@@ -2043,7 +2043,7 @@ md_init_velocities(MDArena *arena)
 	Atom *ap = arena->mol->atoms;
 	n = arena->mol->natoms;
 	for (i = 0; i < n; i++, ap++) {
-		if (ap->fix_force < 0 || fabs(ap->weight) < 1e-6 || ap->mm_exclude) {
+		if (ap->fix_force < 0 || fabs(ap->weight) < 1e-6 || ap->mm_exclude || ap->anchor != NULL) {
 			ap->v.x = ap->v.y = ap->v.z = 0;
 		} else {
 			w = sqrt(arena->temperature * BOLTZMANN / ap->weight);
@@ -2277,7 +2277,7 @@ md_update_velocities(MDArena *arena)
 			continue;
 		if (ap->fix_force < 0)
 			continue;
-		if (ap->mm_exclude)
+		if (ap->mm_exclude || ap->anchor != NULL)
 			continue;
 		wt = ap->weight;
 		if (fabs(wt) < 1e-6)
@@ -2322,6 +2322,7 @@ md_update_positions(MDArena *arena)
 	Double timestep = arena->timestep;
 	Vector *vdr = arena->verlets_dr;
 	Vector dr;
+	Int count_anchors = 0;
 /*	Double w, limit;
 	Double kinetic, kinetic_uniq; */
 	Byte use_sym;
@@ -2338,11 +2339,34 @@ md_update_positions(MDArena *arena)
 			continue;
 		if (ap->mm_exclude)
 			continue;
+		if (ap->anchor != NULL) {
+			count_anchors++;
+			continue;
+		}
 		VecScale(dr, ap->v, timestep);
 		VecInc(ap->r, dr);
 		VecInc(*vdr, dr);
 	}
 
+	/*  Update the anchor positions  */
+	if (count_anchors > 0) {
+		Int *cp, n, j;
+		Atom *ap2;
+		ap = arena->mol->atoms;
+		for (i = 0; i < natoms; i++, ap++) {
+			if (ap->anchor == NULL)
+				continue;
+			cp = AtomConnectData(&ap->anchor->connect);
+			n = ap->anchor->connect.count;
+			VecZero(ap->r);
+			for (j = 0; j < n; j++) {
+				Double w = ap->anchor->coeffs[j];
+				ap2 = arena->mol->atoms + cp[j];
+				VecScaleInc(ap->r, ap2->r, w);
+			}
+		}
+	}
+	
 	/*  Update the abnormal bond parameters  */
 	if (arena->anbond_thres > 0.0) {
 		Double *fp = arena->anbond_r0;
