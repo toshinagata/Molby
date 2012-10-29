@@ -67,13 +67,6 @@ const char *gMolActionClearBox        = "clearBox";
 const char *gMolActionAddParameters   = "addParameters:iGU";
 const char *gMolActionDeleteParameters = "deleteParameters:iG";
 const char *gMolActionAmendBySymmetry = "amendBySymmetry:G;G";
-#if PIATOM
-const char *gMolActionInsertOnePiAtom = "insertOnePiAtom:iCiID";
-const char *gMolActionReplaceOnePiAtom = "replaceOnePiAtom:iCiID";
-const char *gMolActionRemoveOnePiAtom = "removeOnePiAtom:i";
-const char *gMolActionInsertPiBonds   = "insertPiBonds:GI";
-const char *gMolActionRemovePiBonds   = "removePiBonds:G";
-#endif
 
 /*  A Ruby array to retain objects used in MolActionArg  */
 static VALUE sMolActionArgValues = Qfalse;
@@ -1697,128 +1690,6 @@ s_MolActionDeleteParameters(Molecule *mol, MolAction *action, MolAction **actp)
 	return 0;
 }
 
-#if PIATOM
-static int
-s_MolActionInsertPiBonds(Molecule *mol, MolAction *action, MolAction **actp)
-{
-	IntGroup *ig;
-	Int i, j, n, *ip1;
-	ig = action->args[0].u.igval;
-	ip1 = action->args[1].u.arval.ptr;
-	if (ig == NULL || (n = IntGroupGetCount(ig)) == 0)
-		return 0;
-	for (i = 0; i < n; i++) {
-		j = IntGroupGetNthPoint(ig, i);
-		InsertArray(&mol->pibonds, &mol->npibonds, sizeof(Int) * 4, j, 1, ip1 + i * 4);
-	}
-	*actp = MolActionNew(gMolActionRemovePiBonds, ig);
-	MoleculeInvalidatePiConnectionTable(mol);
-	return 0;
-}
-
-static int
-s_MolActionRemovePiBonds(Molecule *mol, MolAction *action, MolAction **actp)
-{
-	IntGroup *ig;
-	Int i, j, n, *ip1;
-	ig = action->args[0].u.igval;
-	if (ig == NULL || (n = IntGroupGetCount(ig)) == 0)
-		return 0;
-	ip1 = (Int *)malloc(sizeof(Int) * 4 * n);
-	for (i = n - 1; i >= 0; i--) {
-		j = IntGroupGetNthPoint(ig, i);
-		DeleteArray(&mol->pibonds, &mol->npibonds, sizeof(Int) * 4, j, 1, ip1 + i * 4);
-	}
-	*actp = MolActionNew(gMolActionInsertPiBonds, ig, n * 4, ip1);
-	free(ip1);
-	MoleculeInvalidatePiConnectionTable(mol);
-	return 0;
-}
-
-static int
-s_MolActionInsertOnePiAtom(Molecule *mol, MolAction *action, MolAction **actp, int willReplace)
-{
-	Int idx, atype, nconnects, *connects, i;
-	char *aname;
-	Double *coeffs;
-	PiAtom *pp;
-	idx = action->args[0].u.ival;
-	if (idx < 0 || idx > mol->npiatoms)
-		return 1;
-	if (willReplace) {
-		if (idx == mol->npiatoms)
-			return 1;
-		pp = mol->piatoms + idx;
-		nconnects = pp->connect.count;
-		connects = AtomConnectData(&pp->connect);
-		*actp = MolActionNew(gMolActionReplaceOnePiAtom, idx, 4, pp->aname, pp->type, nconnects, connects, pp->ncoeffs, pp->coeffs);
-	} else {
-		*actp = MolActionNew(gMolActionRemoveOnePiAtom, idx);
-	}		
-	aname = action->args[1].u.arval.ptr;
-	atype = action->args[2].u.ival;
-	nconnects = action->args[3].u.arval.nitems;
-	connects = action->args[3].u.arval.ptr;
-	coeffs = action->args[4].u.arval.ptr;
-	if (willReplace) {
-		pp = mol->piatoms + idx;
-		PiAtomClean(pp);
-	} else {
-		pp = (PiAtom *)InsertArray(&mol->piatoms, &mol->npiatoms, sizeof(PiAtom), idx, 1, NULL);
-		memset(pp, 0, sizeof(PiAtom));
-	}
-	memmove(pp->aname, aname, 4);
-	pp->type = atype;
-	AtomConnectResize(&pp->connect, nconnects);
-	memmove(AtomConnectData(&pp->connect), connects, sizeof(Int) * nconnects);
-	NewArray(&pp->coeffs, &pp->ncoeffs, sizeof(Double), nconnects);
-	memmove(pp->coeffs, coeffs, sizeof(Double) * nconnects);
-	if (!willReplace) {
-		for (i = 0; i < mol->npibonds * 4; i++) {
-			if (mol->pibonds[i] >= ATOMS_MAX_NUMBER + idx)
-				mol->pibonds[i]++;
-		}
-	}
-	MoleculeInvalidatePiConnectionTable(mol);
-	return 0;
-}
-
-static int
-s_MolActionRemoveOnePiAtom(Molecule *mol, MolAction *action, MolAction **actp)
-{
-	Int idx, i, nconnects, *ip;
-	IntGroup *ig = NULL;
-	PiAtom *pp;
-	idx = action->args[0].u.ival;
-	if (idx < 0 || idx >= mol->npiatoms)
-		return 1;
-	/*  Look for the pibonds entry to be removed  */
-	for (i = 0; i < mol->npibonds * 4; i++) {
-		if (mol->pibonds[i] == idx + ATOMS_MAX_NUMBER) {
-			if (ig == NULL)
-				ig = IntGroupNew();
-			IntGroupAdd(ig, i / 4, 1);
-		}
-	}
-	if (ig != NULL) {
-		MolActionCreateAndPerform(mol, gMolActionRemovePiBonds, ig);
-		IntGroupRelease(ig);
-	}
-	pp = mol->piatoms + idx;
-	nconnects = pp->connect.count;
-	ip = AtomConnectData(&pp->connect);
-	*actp = MolActionNew(gMolActionInsertOnePiAtom, idx, 4, pp->aname, pp->type, nconnects, ip, pp->ncoeffs, pp->coeffs);
-	PiAtomClean(pp);
-	DeleteArray(&mol->piatoms, &mol->npiatoms, sizeof(PiAtom), idx, 1, NULL);
-	for (i = 0; i < mol->npibonds * 4; i++) {
-		if (mol->pibonds[i] > ATOMS_MAX_NUMBER + idx)
-			mol->pibonds[i]--;
-	}	
-	MoleculeInvalidatePiConnectionTable(mol);
-	return 0;
-}
-#endif  /*  PIATOM  */
-
 int
 MolActionPerform(Molecule *mol, MolAction *action)
 {
@@ -2005,28 +1876,6 @@ MolActionPerform(Molecule *mol, MolAction *action)
 		if ((result = s_MolActionDeleteParameters(mol, action, &act2)) != 0)
 			return result;
 		needsRebuildMDArena = 1;
-#if PIATOM 
-	} else if (strcmp(action->name, gMolActionInsertOnePiAtom) == 0) {
-		if ((result = s_MolActionInsertOnePiAtom(mol, action, &act2, 0)) != 0)
-			return result;
-		needsRebuildMDArena = 1;
-	} else if (strcmp(action->name, gMolActionReplaceOnePiAtom) == 0) {
-		if ((result = s_MolActionInsertOnePiAtom(mol, action, &act2, 1)) != 0)
-			return result;
-		needsRebuildMDArena = 1;
-	} else if (strcmp(action->name, gMolActionRemoveOnePiAtom) == 0) {
-		if ((result = s_MolActionRemoveOnePiAtom(mol, action, &act2)) != 0)
-			return result;
-		needsRebuildMDArena = 1;
-	} else if (strcmp(action->name, gMolActionInsertPiBonds) == 0) {
-		if ((result = s_MolActionInsertPiBonds(mol, action, &act2)) != 0)
-			return result;
-		needsRebuildMDArena = 1;
-	} else if (strcmp(action->name, gMolActionRemovePiBonds) == 0) {
-		if ((result = s_MolActionRemovePiBonds(mol, action, &act2)) != 0)
-			return result;
-		needsRebuildMDArena = 1;
-#endif  /*  PIATOM  */
 	} else if (strcmp(action->name, gMolActionNone) == 0) {
 		/*  Do nothing  */
 	} else {

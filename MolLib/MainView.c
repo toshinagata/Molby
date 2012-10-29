@@ -1555,80 +1555,6 @@ skip:
 		free(selectFlags);
 }
 
-#if PIATOM
-static void
-drawPiAtoms(MainView *mview)
-{
-	Int i, j, *cp, nrp;
-	Vector cen;
-	PiAtom *pp;
-	Double rad;
-	GLfloat fval[12];
-	Vector r, *rp;
-	Double d;
-//	static GLfloat sLightGreenColor[] = {0, 1, 0.50, 1};
-	static GLfloat sLightGreenTransColor[] = {0, 1, 0.50, 0.75};
-	Molecule *mol = mview->mol;
-//	Vector *vp = (Vector *)malloc(sizeof(Vector) * mol->npiatoms);
-	nrp = 0;
-	rp = NULL;
-	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, sLightGreenTransColor);
-	for (i = 0, pp = mol->piatoms; i < mol->npiatoms; i++, pp++) {
-		/*  The pi atom position should be explicitly calculated
-		    (because the base atom(s) may be dragged)  */
-		VecZero(cen);
-		cp = AtomConnectData(&pp->connect);
-		AssignArray(&rp, &nrp, sizeof(Vector), pp->connect.count - 1, NULL);
-		for (j = 0; j < pp->connect.count; j++) {
-			r = ATOM_AT_INDEX(mol->atoms, cp[j])->r;
-			if (mview->draggingMode == kMainViewDraggingSelectedAtoms) {
-				if (MoleculeIsAtomSelected(mol, cp[j]))
-					VecInc(r, mview->dragOffset);
-			}
-			d = (j < pp->ncoeffs ? pp->coeffs[j] : 0.0);
-			VecScaleInc(cen, r, d);
-			rp[j] = r;
-		}
-		pp->r = cen;
-		rad = 0.1;
-		fval[0] = cen.x;
-		fval[1] = cen.y;
-		fval[2] = cen.z;
-		fval[3] = fval[7] = fval[11] = rad;
-		fval[4] = fval[5] = fval[6] = fval[8] = fval[9] = fval[10] = 0.0;
-		drawEllipsoid(fval, fval + 3, fval + 6, fval + 9, 8);
-		for (j = 0; j < pp->connect.count; j++) {
-			fval[3] = rp[j].x;
-			fval[4] = rp[j].y;
-			fval[5] = rp[j].z;
-			drawCylinder(fval, fval + 3, 0.05, 6, 0);
-		}
-	}
-	for (i = 0, cp = mol->pibonds; i < mol->npibonds; i++, cp += 4) {
-		if (cp[2] >= 0)
-			continue;  /*  Angle or dihedral  */
-		for (j = 0; j < 2; j++) {
-			if (cp[j] >= 0 && cp[j] < mol->natoms) {
-				r = ATOM_AT_INDEX(mol->atoms, cp[j])->r;
-				if (mview->draggingMode == kMainViewDraggingSelectedAtoms) {
-					if (MoleculeIsAtomSelected(mol, cp[j]))
-						VecInc(r, mview->dragOffset);
-				}
-			} else if (cp[j] >= ATOMS_MAX_NUMBER && cp[j] < ATOMS_MAX_NUMBER + mol->npiatoms) {
-				r = mol->piatoms[cp[j] - ATOMS_MAX_NUMBER].r;
-			} else break;
-			fval[j * 3] = r.x;
-			fval[j * 3 + 1] = r.y;
-			fval[j * 3 + 2] = r.z;
-		}
-		if (j == 2)
-			drawCylinder(fval, fval + 3, 0.05, 6, 0);
-	}
-//	free(vp);
-	free(rp);
-}
-#endif
-
 static void
 drawGraphics(MainView *mview)
 {
@@ -1956,9 +1882,6 @@ MainView_drawModel(MainView *mview)
 	
 	MainViewCallback_clearLabels(mview);
     drawModel(mview);
-#if PIATOM
-	drawPiAtoms(mview);
-#endif
 	drawUnitCell(mview);
 	drawRotationCenter(mview);
 	drawGraphics(mview);

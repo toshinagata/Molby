@@ -179,18 +179,6 @@ typedef struct XtalCell {
 	Double  cellsigma[6];  /*  For crystallographic data; sigma for the cell parameters  */
 } XtalCell;
 
-#if PIATOM
-/*  Dummy atoms to represent metal-pi bonds  */
-typedef struct PiAtom {
-	char aname[4];
-	UInt type;
-	AtomConnect connect;
-	Int  ncoeffs;
-	Double *coeffs;  /*  The piatom position is given by sum(i, atoms[connect.data[i]] * coeffs[i]) */
-	Vector r;        /*  Current position (cache)  */
-} PiAtom;
-#endif
-
 /*  3-Dimensional distribution  */
 typedef struct Cube {
 	Int idn;             /*  Integer identifier (such as MO number)  */
@@ -277,24 +265,6 @@ typedef struct Molecule {
 	Int    nsyms;        /*  Symmetry operations; syms are always described in crystallographic units (even when the unit cell is not defined)  */
 	Transform *syms;
 
-#if PIATOM
-	Int    npiatoms;     /*  Number of "dummy" atoms to represent pi-metal bonds  */
-	PiAtom *piatoms;
-	Int    npibonds;
-	Int    *pibonds;     /*  Array to represent bond/angle/dihedral including piatoms. */
-                         /* [n1, n2, -1, -1]: bonds,
-							[n1, n2, n3, -1]: angle,
-						    [n1, n2, n3, n4]: dihedral,
-						    where n# is atom index if it is <ATOMS_MAX_NUMBER and
-						    is piatom index + ATOMS_MAX_NUMBER otherwise.
-						    The size of array is 4*npibonds.  */
-	Int    npiconnects;  /*  Connection table for pi-metal bonds  */
-	Int    *piconnects;  /*  The first (natoms + 1) entries are for lookup table, and
-						     the connection data (indices of connected atoms) follow.
-						     The connected atoms (only by pi-bonds) for atom i are listed in
-						     piconnects[piconnects[i]]...piconnects[piconnects[i+1]]  */
-#endif
-	
 	IntGroup *selection;
 	Int    nframes;      /*  The number of frames (>= 1). This is a cached value, and should be
 							 recalculated from the atoms if it is -1  */
@@ -537,16 +507,8 @@ int MoleculeRemoveFrames(Molecule *mp, IntGroup *group, Vector *outFrame, Vector
 int MoleculeSelectFrame(Molecule *mp, int frame, int copyback);
 int MoleculeFlushFrames(Molecule *mp);
 
-#if !defined(PIATOM)
 void MoleculeCalculatePiAnchorPosition(Molecule *mol, int idx);
 int MoleculeSetPiAnchorList(Molecule *mol, Int idx, Int nentries, Int *entries, Double *weights, Int *nUndoActions, struct MolAction ***undoActions);
-#endif
-	
-#if PIATOM
-int MoleculeCalculatePiAtomPosition(Molecule *mol, int idx);
-int MoleculeValidatePiConnectionTable(Molecule *mol);
-void MoleculeInvalidatePiConnectionTable(Molecule *mol);
-#endif
 	
 int MoleculeCalcMO(Molecule *mp, Int mono, const Vector *op, const Vector *dxp, const Vector *dyp, const Vector *dzp, Int nx, Int ny, Int nz, int (*callback)(double progress, void *ref), void *ref);
 int MoleculeGetDefaultMOGrid(Molecule *mp, Int npoints, Vector *op, Vector *xp, Vector *yp, Vector *zp, Int *nx, Int *ny, Int *nz);
