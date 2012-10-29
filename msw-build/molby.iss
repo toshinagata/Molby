@@ -9,7 +9,6 @@ OutputBaseFileName = SetupMolby
 [Files]
 Source: "build\Molby\Molby.exe"; DestDir: {app}
 Source: "build\Molby\mingwm10.dll"; DestDir: {app}
-Source: "build\Molby\buildInfo.txt"; DestDir: {app}
 Source: "build\Molby\amber11\bin\*"; DestDir: {app}\amber11\bin
 Source: "build\Molby\amber11\dat\antechamber\*"; DestDir: {app}\amber11\dat\antechamber
 Source: "build\Molby\amber11\dat\leap\parm\*"; DestDir: {app}\amber11\dat\leap\parm

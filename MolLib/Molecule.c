@@ -6069,6 +6069,17 @@ MoleculeRebuildTablesFromConnects(Molecule *mp)
 	return retval;
 }
 
+int
+MoleculeAreAtomsConnected(Molecule *mol, int idx1, int idx2)
+{
+	Atom *ap1 = ATOM_AT_INDEX(mol->atoms, idx1);
+	if (AtomConnectHasEntry(&ap1->connect, idx2))
+		return 1;
+	else if (ap1->anchor != NULL && AtomConnectHasEntry(&(ap1->anchor->connect), idx2))
+		return 2;
+	else return 0;
+}
+
 #pragma mark ====== Atom names ======
 
 /*  Look for the n1-th atom in resno-th residue (n1 is 0-based)  */
@@ -6181,23 +6192,6 @@ MoleculeAtomIndexFromString(Molecule *mp, const char *s)
 	}
 	return -1;  /*  Not found  */
 }
-
-/*
-int
-MoleculeAreAtomsConnected(Molecule *mp, int n1, int n2)
-{
-	Atom *ap;
-	Int i, *cp;
-	if (mp == NULL || n1 < 0 || n1 >= mp->natoms || n2 < 0 || n2 >= mp->natoms)
-		return 0;
-	ap = ATOM_AT_INDEX(mp->atoms, n1);
-	cp = AtomConnectData(&ap->connect);
-	for (i = 0; i < ap->connect.count; i++)
-		if (cp[i] == n2)
-			return 1;
-	return 0;
-}
-*/
 
 void
 MoleculeGetAtomName(Molecule *mp, int index, char *buf, int bufsize)
@@ -7132,17 +7126,6 @@ s_fprintf(FILE *fp, const char *fmt, ...)
 	va_start(va, fmt);
 	s_error_count++;
 	return vfprintf(fp, fmt, va);
-}
-
-int
-MoleculeAreAtomsConnected(Molecule *mol, int idx1, int idx2)
-{
-	Atom *ap1 = ATOM_AT_INDEX(mol->atoms, idx1);
-	if (AtomConnectHasEntry(&ap1->connect, idx2))
-		return 1;
-	else if (ap1->anchor != NULL && AtomConnectHasEntry(&(ap1->anchor->connect), idx2))
-		return 2;
-	else return 0;
 }
 
 int

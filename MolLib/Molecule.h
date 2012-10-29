@@ -423,8 +423,6 @@ int MoleculeChangeResidueNames(Molecule *mp, int argc, Int *resSeqs, char *names
 int MoleculeMaximumResidueNumber(Molecule *mp, IntGroup *group);
 int MoleculeMinimumResidueNumber(Molecule *mp, IntGroup *group);
 
-int MoleculeAreAtomsConnected(Molecule *mol, int idx1, int idx2);
-
 struct MolAction;
 #if defined(DEBUG)
 	int MoleculeCheckSanity(Molecule *mp);
@@ -480,9 +478,9 @@ int MoleculeAtomIndexFromString(Molecule *mp, const char *s);
 
 int MoleculeFindCloseAtoms(Molecule *mp, Int index, Double limit, Int *outNbonds, Int **outBonds, Int triangle);
 int MoleculeGuessBonds(Molecule *mp, Double limit, Int *outNbonds, Int **outBonds);
-int MoleculeAreAtomsConnected(Molecule *mp, int n1, int n2);
 int MoleculeRebuildTablesFromConnects(Molecule *mp);
-
+int MoleculeAreAtomsConnected(Molecule *mol, int idx1, int idx2);
+	
 void MoleculeGetAtomName(Molecule *mp, int index, char *buf, int bufsize);
 
 void MoleculeSetSelection(Molecule *mp, IntGroup *select);

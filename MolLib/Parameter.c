@@ -1970,8 +1970,15 @@ AtomTypeEncodeToUInt(const char *s)
 			break;
 		}
 		n = (*s - 0x20) % 96;  /*  Map to 1..95  */
-		if (i == 0 && n < 32)
-			n = 32;
+		if (i == 0) {
+			if (n < 16) {
+			/*  The first character: map !#$%&* to [\]{|}; other characters less than 32 -> _  */
+				static char sTab[] = "_[_\\]{|___}_____";
+				n = sTab[n] - 32;
+			} else if (n < 32) {
+				n = '_' - 32;
+			}
+		}
 		t += n * s_coeff[i];
 	}
 	return t;
@@ -1998,9 +2005,15 @@ AtomTypeDecodeToString(UInt type, char *s)
 		return s;
 	}
 	for (i = 0; i < 4; i++) {
-		s[i] = (type / s_coeff[i]) % 96;
-		if (s[i] != 0)
-			s[i] += 0x20;
+		n = (type / s_coeff[i]) % 96;
+		if (n != 0) {
+			n += 32;
+			if (n >= '[' && n <= ']')
+				n = "!#$"[n - '['];
+			else if (n >= '{' && n <= '}')
+				n = "%&*"[n - '{'];
+		}
+		s[i] = n;
 	}
 	s[4] = 0;
 	n = strlen(s);

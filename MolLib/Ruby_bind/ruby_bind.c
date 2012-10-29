@@ -9579,7 +9579,7 @@ s_Molecule_CreatePiAnchor(int argc, VALUE *argv, VALUE self)
 	strncpy(a.aname, StringValuePtr(nval), 4);
 	if (a.aname[0] == '_')
 		rb_raise(rb_eMolbyError, "please avoid a name beginning with '_' for a pi anchor, because it causes some internal confusion.");
-	a.type = AtomTypeEncodeToUInt("an");  /*  Default atom type  */
+	a.type = AtomTypeEncodeToUInt("##");  /*  Default atom type for pi_anchor  */
 	for (i = 0; (n = IntGroupGetNthPoint(ig, i)) >= 0; i++) {
 		if (n >= mol->natoms) {
 			AtomConnectResize(&an.connect, 0);
