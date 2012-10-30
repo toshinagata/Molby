@@ -134,6 +134,7 @@ public:
 	virtual bool DoSaveDocument(const wxString& file);
 	virtual bool DoOpenDocument(const wxString& file);
 	virtual bool OnCreate(const wxString& path, long flags);
+	virtual bool Revert();
 
  private:
 	DECLARE_DYNAMIC_CLASS(MyDocument)

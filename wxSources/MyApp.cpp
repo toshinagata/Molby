@@ -362,7 +362,7 @@ MyApp::CreateMenuBar(int kind, wxMenu **out_file_history_menu, wxMenu **out_edit
 	file_menu->Append(wxID_CLOSE, _T("&Close\tCtrl-W"));
 	file_menu->Append(wxID_SAVE, _T("&Save\tCtrl-S"));
 	file_menu->Append(wxID_SAVEAS, _T("Save &As..."));	
-	file_menu->Append(wxID_REVERT, _T("Revert..."));	
+	file_menu->Append(wxID_REVERT, _T("Revert to Saved"));	
 	
 	file_menu->AppendSeparator();
 	file_menu->Append(myMenuID_Import, _T("Import..."));	
@@ -648,14 +648,16 @@ void
 MyApp::SetConsoleColor(int color)
 {
 	wxTextCtrl *textCtrl = consoleFrame->textCtrl;
-	static wxTextAttr *col[4];
+	wxTextAttr attr(textCtrl->GetDefaultStyle());
+	static const wxColour *col[4];
 	if (col[0] == NULL) {
-		col[0] = new wxTextAttr(*wxBLACK);
-		col[1] = new wxTextAttr(*wxRED);
-		col[2] = new wxTextAttr(*wxGREEN);
-		col[3] = new wxTextAttr(*wxBLUE);
+		col[0] = wxBLACK;
+		col[1] = wxRED;
+		col[2] = wxGREEN;
+		col[3] = wxBLUE;
 	}
-	textCtrl->SetDefaultStyle(*(col[color % 4]));
+	attr.SetTextColour(*col[color % 4]);
+	textCtrl->SetDefaultStyle(attr);
 }
 
 void

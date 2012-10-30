@@ -1045,7 +1045,7 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 					if (iibuf[0] < 0 || iibuf[0] >= mp->natoms || iibuf[1] < 0 || iibuf[1] >= mp->natoms || iibuf[2] < 0 || iibuf[2] >= mp->natoms || iibuf[0] == iibuf[1] || iibuf[1] == iibuf[2]) {
 						s_append_asprintf(errbuf, "line %d: warning: bad angle specification (%d-%d-%d) - skipped\n", lineNumber, iibuf[0], iibuf[1], iibuf[2]);
 						nwarnings++;
-					} else if (MoleculeAreAtomsConnected(mp, iibuf[0], iibuf[1]) == 0 || MoleculeAreAtomsConnected(mp, iibuf[1], iibuf[2]) == 0) {
+					} else if (MoleculeAreAtomsConnected(mp, iibuf[1], iibuf[0]) == 0 || MoleculeAreAtomsConnected(mp, iibuf[1], iibuf[2]) == 0) {
 						s_append_asprintf(errbuf, "line %d: warning: angle with non-bonded atoms (%d-%d-%d) - skipped\n", lineNumber, iibuf[0], iibuf[1], iibuf[2]);
 						nwarnings++;						
 					} else if (MoleculeLookupAngle(mp, iibuf[0], iibuf[1], iibuf[2]) >= 0) {
@@ -1077,7 +1077,7 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 					if (iibuf[0] < 0 || iibuf[0] >= mp->natoms || iibuf[1] < 0 || iibuf[1] >= mp->natoms || iibuf[2] < 0 || iibuf[2] >= mp->natoms || iibuf[3] < 0 || iibuf[3] >= mp->natoms || iibuf[0] == iibuf[1] || iibuf[1] == iibuf[2] || iibuf[2] == iibuf[3] || iibuf[0] == iibuf[2] || iibuf[1] == iibuf[3] || iibuf[0] == iibuf[3]) {
 						s_append_asprintf(errbuf, "line %d: warning: bad dihedral specification (%d-%d-%d-%d) - skipped\n", lineNumber, iibuf[0], iibuf[1], iibuf[2], iibuf[3]);
 						nwarnings++;
-					} else if (MoleculeAreAtomsConnected(mp, iibuf[0], iibuf[1]) == 0 || MoleculeAreAtomsConnected(mp, iibuf[1], iibuf[2]) == 0 || MoleculeAreAtomsConnected(mp, iibuf[2], iibuf[3]) == 0) {
+					} else if (MoleculeAreAtomsConnected(mp, iibuf[1], iibuf[0]) == 0 || MoleculeAreAtomsConnected(mp, iibuf[1], iibuf[2]) == 0 || MoleculeAreAtomsConnected(mp, iibuf[2], iibuf[3]) == 0) {
 						s_append_asprintf(errbuf, "line %d: warning: dihedral with non-bonded atoms (%d-%d-%d-%d) - skipped\n", lineNumber, iibuf[0], iibuf[1], iibuf[2], iibuf[3]);
 						nwarnings++;						
 					} else if (MoleculeLookupDihedral(mp, iibuf[0], iibuf[1], iibuf[2], iibuf[3]) >= 0) {
@@ -1109,7 +1109,7 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 					if (iibuf[0] < 0 || iibuf[0] >= mp->natoms || iibuf[1] < 0 || iibuf[1] >= mp->natoms || iibuf[2] < 0 || iibuf[2] >= mp->natoms || iibuf[3] < 0 || iibuf[3] >= mp->natoms || iibuf[0] == iibuf[1] || iibuf[1] == iibuf[2] || iibuf[2] == iibuf[3] || iibuf[0] == iibuf[2] || iibuf[1] == iibuf[3] || iibuf[0] == iibuf[3]) {
 						s_append_asprintf(errbuf, "line %d: warning: bad improper specification (%d-%d-%d-%d) - skipped\n", lineNumber, iibuf[0], iibuf[1], iibuf[2], iibuf[3]);
 						nwarnings++;
-					} else if (MoleculeAreAtomsConnected(mp, iibuf[0], iibuf[2]) == 0 || MoleculeAreAtomsConnected(mp, iibuf[1], iibuf[2]) == 0 || MoleculeAreAtomsConnected(mp, iibuf[2], iibuf[3]) == 0) {
+					} else if (MoleculeAreAtomsConnected(mp, iibuf[2], iibuf[0]) == 0 || MoleculeAreAtomsConnected(mp, iibuf[2], iibuf[1]) == 0 || MoleculeAreAtomsConnected(mp, iibuf[2], iibuf[3]) == 0) {
 						s_append_asprintf(errbuf, "line %d: warning: improper with non-bonded atoms (%d-%d-%d-%d) - skipped\n", lineNumber, iibuf[0], iibuf[1], iibuf[2], iibuf[3]);
 						nwarnings++;						
 					} else if (MoleculeLookupImproper(mp, iibuf[0], iibuf[1], iibuf[2], iibuf[3]) >= 0) {
@@ -6624,8 +6624,10 @@ MoleculeAmendBySymmetry(Molecule *mp, IntGroup *group, IntGroup **groupout, Vect
 			free(vp);
 		}
 	} else {
-		*groupout = NULL;
-		*vpout = NULL;
+		if (groupout != NULL && vpout != NULL) {
+			*groupout = NULL;
+			*vpout = NULL;
+		}
 	}
 	return count;
 }
@@ -6828,10 +6830,17 @@ MoleculeCreateAnAtom(Molecule *mp, const Atom *ap, int pos)
 		for (i = 0, api = ATOM_AT_INDEX(mp->atoms, i); i < mp->natoms; i++, api = ATOM_NEXT(api)) {
 			int j;
 			Int *cp;
+			cp = AtomConnectData(&api->connect);
 			for (j = 0; j < api->connect.count; j++) {
-				cp = AtomConnectData(&api->connect);
 				if (cp[j] >= pos)
 					cp[j]++;
+			}
+			if (api->anchor != NULL) {
+				cp = AtomConnectData(&api->anchor->connect);
+				for (j = 0; j < api->anchor->connect.count; j++) {
+					if (cp[j] >= pos)
+						cp[j]++;
+				}
 			}
 		}
 		for (i = 0; i < mp->nbonds * 2; i++) {

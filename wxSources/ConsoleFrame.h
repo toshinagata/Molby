@@ -32,6 +32,8 @@ public:
 	wxMenu *file_history_menu;
 	wxMenu *edit_menu;
 
+	wxFont *default_font;
+
 	ConsoleFrame(wxMDIParentFrame *parent, const wxString& title, const wxPoint& pos, const wxSize& size, long type);
 	virtual ~ConsoleFrame();
 

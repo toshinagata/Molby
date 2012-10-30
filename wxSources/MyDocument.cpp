@@ -262,6 +262,15 @@ MyDocument::DoOpenDocument(const wxString& file)
 	return true;
 }
 
+bool
+MyDocument::Revert()
+{
+	if (wxDocument::Revert()) {
+		MainViewCallback_selectTable(mol->mview, 0);
+		return true;
+	} else return false;
+}
+
 /*  Override to intercept view creation for running script  */
 bool
 MyDocument::OnCreate(const wxString& path, long flags)

@@ -10087,7 +10087,7 @@ Init_Molby(void)
 	rb_define_method(rb_mKernel, "call_subprocess", s_Kernel_CallSubProcess, 2);
 	rb_define_method(rb_mKernel, "message_box", s_Kernel_MessageBox, -1);
 	rb_define_method(rb_mKernel, "error_message_box", s_Kernel_ErrorMessageBox, 1);
-	
+
 	s_ID_equal = rb_intern("==");
 }
 
@@ -10096,7 +10096,7 @@ Init_Molby(void)
 static VALUE s_ruby_top_self = Qfalse;
 
 static VALUE
-s_evalRubyScriptOnMoleculeSubSub(VALUE tagval, VALUE val)
+s_evalRubyScriptOnMoleculeSub(VALUE val)
 {
 	void **ptr = (void **)val;
 	Molecule *mol = (Molecule *)ptr[1];
@@ -10123,12 +10123,6 @@ s_evalRubyScriptOnMoleculeSubSub(VALUE tagval, VALUE val)
 	}
 }
 
-static VALUE
-s_evalRubyScriptOnMoleculeSub(VALUE val)
-{
-	return rb_catch("molby_top", s_evalRubyScriptOnMoleculeSubSub, val);
-}
-
 RubyValue
 Molby_evalRubyScriptOnMolecule(const char *script, Molecule *mol, const char *fname, int *status)
 {
@@ -10150,6 +10144,15 @@ Molby_evalRubyScriptOnMolecule(const char *script, Molecule *mol, const char *fn
 	save_ruby_sourcefile = ruby_sourcefile;
 	save_ruby_sourceline = ruby_sourceline;
 	retval = (RubyValue)rb_protect(s_evalRubyScriptOnMoleculeSub, (VALUE)args, status);
+	if (*status != 0) {
+		/*  Is this 'exit' exception?  */
+		VALUE last_exception = rb_gv_get("$!");
+		if (rb_obj_is_kind_of(last_exception, rb_eSystemExit)) {
+			/*  Capture exit and return the status value  */
+			retval = (RubyValue)rb_funcall(last_exception, rb_intern("status"), 0);
+			*status = 0;
+		}
+	}
 	s_SetInterruptFlag(Qnil, save_interrupt_flag);
 	ruby_sourcefile = save_ruby_sourcefile;
 	ruby_sourceline = save_ruby_sourceline;

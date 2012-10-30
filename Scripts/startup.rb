@@ -39,12 +39,6 @@ def backtrace
   end
 end
 
-if Molby::HasGUI
-  def exit(val = nil)
-    throw(:molby_top, val)
-  end
-end
-
 load "transform.rb"
 load "molecule.rb"
 load "loadsave.rb"

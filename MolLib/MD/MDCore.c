@@ -2332,21 +2332,33 @@ md_amend_by_symmetry(MDArena *arena)
 {
 	int i, natoms;
 	Atom *ap, *ap0;
-	if (arena->mol->nsyms == 0)
-		return;
 	ap = ap0 = arena->mol->atoms;
 	natoms = arena->mol->natoms;
-	for (i = 0; i < natoms; i++, ap++) {
-		Symop symop;
-		if (!ap->symop.alive)
-			continue;
-		symop = ap->symop;
-		ap0 = arena->mol->atoms + ap->symbase;
-		md_transform_vec_by_symmetry(arena, &(ap->r), &(ap0->r), symop, 0);
-		md_transform_vec_by_symmetry(arena, &(ap->f), &(ap0->f), symop, 1);
-		md_transform_vec_by_symmetry(arena, &(ap->v), &(ap0->v), symop, 1);
+	if (arena->mol->nsyms > 0) {
+		for (i = 0; i < natoms; i++, ap++) {
+			Symop symop;
+			if (!ap->symop.alive)
+				continue;
+			symop = ap->symop;
+			ap0 = arena->mol->atoms + ap->symbase;
+			md_transform_vec_by_symmetry(arena, &(ap->r), &(ap0->r), symop, 0);
+			md_transform_vec_by_symmetry(arena, &(ap->f), &(ap0->f), symop, 1);
+			md_transform_vec_by_symmetry(arena, &(ap->v), &(ap0->v), symop, 1);
+		}
 	}
-	
+	ap = arena->mol->atoms;
+	for (i = 0; i < natoms; i++, ap++) {
+		Int *ip, j;
+		if (ap->anchor == NULL)
+			continue;
+		ip = AtomConnectData(&ap->anchor->connect);
+		VecZero(ap->r);
+		for (j = 0; j < ap->anchor->connect.count; j++) {
+			Double w = ap->anchor->coeffs[j];
+			ap0 = arena->mol->atoms + ip[j];
+			VecScaleInc(ap->r, ap0->r, w);
+		}
+	}
 }
 
 void
@@ -3427,6 +3439,8 @@ cleanup:
 		retval = md_copy_coordinates_from_internal(arena);
 		MoleculeUnlock(arena->xmol); */
 	}
+	
+	md_amend_by_symmetry(arena);
 	
 	arena->setjmp_buf = NULL;
 

@@ -686,13 +686,23 @@ void
 MoleculeView::OnMoleculeReplaced()
 {
 	Molecule *mol = ((MyDocument *)GetDocument())->GetMolecule();
-	if ((mol == NULL && mview == NULL) || (mol != NULL && mol->mview == mview))
+	if (mol == NULL && mview == NULL)
 		return;
+	if (mol != NULL && mol->mview == mview) {
+		/*  Clear internal cache  */
+		MainView_refreshCachedInfo(mol->mview);
+		return;
+	}
 	if (mview != NULL)
 		MainView_setViewObject(mview, NULL);
 	if (mol != NULL) {
+		int tableIndex;
 		mview = mol->mview;
 		MainView_setViewObject(mview, this);
+		/*  Force updating the table  */
+		tableIndex = mview->tableIndex;
+		mview->tableIndex = -1;
+		SelectTable(tableIndex);
 	}
 }
 

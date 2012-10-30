@@ -71,14 +71,19 @@ ConsoleFrame::OnCreate()
 	//  Set the default font (fixed-pitch)
 	wxTextAttr attr;
 #if defined(__WXMSW__)
-//	wxFont font = wxSystemSettings::GetFont(wxSYS_ANSI_FIXED_FONT);
-	wxFont font(10, wxFONTFAMILY_MODERN, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL);
+	default_font = new wxFont(10, wxFONTFAMILY_MODERN, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL);
+	if (!default_font->SetFaceName(wxT("Consolas")))
+		default_font->SetFaceName(wxT("Courier"));
+#elif defined(__WXMAC__)
+	default_font = new wxFont(11, wxFONTFAMILY_MODERN, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL);
+	default_font->SetFaceName(wxT("Monaco"));
 #else
-	wxFont font(11, wxFONTFAMILY_MODERN, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL);
+	default_font = new wxFont(10, wxFONTFAMILY_MODERN, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL);
 #endif
-	attr.SetFont(font);
+	attr.SetFont(*default_font);
 	textCtrl->SetDefaultStyle(attr);
-	
+	textCtrl->SetFont(*default_font);
+
 	//  Connect "OnKeyDown" event handler
 	textCtrl->Connect(-1, wxEVT_KEY_DOWN, wxKeyEventHandler(ConsoleFrame::OnKeyDown), NULL, this);
 	
