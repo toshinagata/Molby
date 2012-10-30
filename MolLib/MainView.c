@@ -2407,10 +2407,12 @@ MainView_mouseUp(MainView *mview, const float *mousePos, int flags, int clickCou
 		case kMainViewDraggingSelectedAtoms: {
 			Vector offset;
 			if (mview->isDragging) {
+				IntGroup *dupSelection = IntGroupNewFromIntGroup(mview->mol->selection);
 				calcDragOffset(mview, &offset);
 			/*	if (mview->mol->is_xtal_coord)
 					TransformVec(&offset, mview->mol->cell->rtr, &offset); */
-				MolActionCreateAndPerform(mview->mol, gMolActionTranslateAtoms, &offset, mview->mol->selection);
+				MolActionCreateAndPerform(mview->mol, gMolActionTranslateAtoms, &offset, dupSelection);
+				IntGroupRelease(dupSelection);
 		/*	} else if (clickCount == 2) {
 				buf[0] = 0;
 				if (MyAppCallback_getTextWithPrompt("Enter formula (e.g. CH2OCH3)", buf, sizeof buf) == 0)
