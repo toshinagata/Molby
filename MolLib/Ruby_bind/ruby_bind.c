@@ -6275,19 +6275,25 @@ static VALUE
 s_Molecule_CreateBond(int argc, VALUE *argv, VALUE self)
 {
     Molecule *mol;
-	Int i, *ip, old_nbonds;
+	Int i, j, *ip, old_nbonds;
 	if (argc == 0)
 		rb_raise(rb_eMolbyError, "missing arguments");
 	if (argc % 2 != 0)
 		rb_raise(rb_eMolbyError, "bonds should be specified by pairs of atom indices");
     Data_Get_Struct(self, Molecule, mol);
 	ip = ALLOC_N(Int, argc + 1);
-	for (i = 0; i < argc; i++) {
-		ip[i] = s_Molecule_AtomIndexFromValue(mol, argv[i]);
+	for (i = j = 0; i < argc; i++, j++) {
+		ip[j] = s_Molecule_AtomIndexFromValue(mol, argv[i]);
+		if (i % 2 == 1) {
+			if (MoleculeLookupBond(mol, ip[j - 1], ip[j]) >= 0)
+				j -= 2;  /*  This bond is already present: skip it  */
+		}
 	}
-	ip[argc] = kInvalidIndex;
 	old_nbonds = mol->nbonds;
-	i = MolActionCreateAndPerform(mol, gMolActionAddBonds, argc, ip, NULL);
+	if (j > 0) {
+		ip[j] = kInvalidIndex;
+		i = MolActionCreateAndPerform(mol, gMolActionAddBonds, j, ip, NULL);
+	} else i = 0;
 	xfree(ip);
 	if (i == -1)
 		rb_raise(rb_eMolbyError, "atom index out of range");

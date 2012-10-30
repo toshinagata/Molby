@@ -671,6 +671,7 @@ end_of_header
 	    return [Integer($1) - 1, 0, 0, 0]
 	  end
 	end
+	warn_message = ""
 	verbose = nil
 	@tokens = []
 	special_positions = []

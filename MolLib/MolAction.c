@@ -1384,7 +1384,7 @@ s_MolActionExpandBySymmetry(Molecule *mol, MolAction *action, MolAction **actp)
 		/*  Request the indices of the atoms  */
 		ip = (Int *)calloc(sizeof(Int), count);
 	} else ip = NULL;
-	n1 = MoleculeAddExpandedAtoms(mol, symop, ig, ip);
+	n1 = MoleculeAddExpandedAtoms(mol, symop, ig, ip, 0);
 	if (n1 > 0) {
 		ig = IntGroupNew();
 		IntGroupAdd(ig, mol->natoms - n1, n1);
@@ -1400,7 +1400,7 @@ s_MolActionExpandBySymmetry(Molecule *mol, MolAction *action, MolAction **actp)
 		*((Int **)(action->args[5].u.retval.ptr)) = ip;
 		*(action->args[5].u.retval.nptr) = count;
 	}
-	return n1;
+	return (n1 >= 0 ? 0 : n1);
 }
 
 static int

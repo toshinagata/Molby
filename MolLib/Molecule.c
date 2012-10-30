@@ -6424,15 +6424,22 @@ MoleculeTransformBySymop(Molecule *mp, const Vector *vpin, Vector *vpout, Symop 
 	If indices is non-NULL, it should be an array of Int with at least 
 	IntGroupGetCount(group) entries, and on return it contains the
     indices of the expanded atoms (may be existing atoms if the expanded
-    atoms are already present)  */
+    atoms are already present)
+    If allowOverlap is non-zero, then the new atom is created even when the
+    coordinates coincide with the some other atom (special position) of the
+    same element; otherwise, such atom will not be created and the existing
+    atom is returned in indices[].  */
 int
-MoleculeAddExpandedAtoms(Molecule *mp, Symop symop, IntGroup *group, Int *indices)
+MoleculeAddExpandedAtoms(Molecule *mp, Symop symop, IntGroup *group, Int *indices, Int allowOverlap)
 {
-	int i, n, n0, n1, count, *table;
+	int i, n, n0, n1, n2, base, count, *table;
 	Atom *ap;
 	IntGroupIterator iter;
-	Transform tr;
-
+	Transform tr, t1;
+	Symop symop1;
+	Atom *ap2;
+	Vector nr, dr;
+	
 	if (mp == NULL || mp->natoms == 0 || group == NULL || (count = IntGroupGetCount(group)) == 0)
 		return -1;
 	if (symop.sym >= mp->nsyms)
@@ -6449,18 +6456,13 @@ MoleculeAddExpandedAtoms(Molecule *mp, Symop symop, IntGroup *group, Int *indice
 	MoleculeGetTransformForSymop(mp, symop, &tr, 0);
 	__MoleculeLock(mp);
 	for (i = 0; i < count; i++) {
-		int n2, base;
-		Symop symop1;
-		Atom *ap2;
-		Vector nr, dr;
 		n = IntGroupIteratorNext(&iter);
 		ap = ATOM_AT_INDEX(mp->atoms, n);
 		if (SYMOP_ALIVE(ap->symop)) {
 			/*  Calculate the cumulative symop  */
-			Transform t1;
 			MoleculeGetTransformForSymop(mp, ap->symop, &t1, 0);
-			TransformMul(t1, tr, t1);
-			if (MoleculeGetSymopForTransform(mp, t1, &symop1, 0) != 0) {
+			TransformMul(tr, tr, t1);
+			if (MoleculeGetSymopForTransform(mp, tr, &symop1, 0) != 0) {
 				if (indices != NULL)
 					indices[i] = -1;
 				continue;  /*  Skip this atom  */
@@ -6470,25 +6472,27 @@ MoleculeAddExpandedAtoms(Molecule *mp, Symop symop, IntGroup *group, Int *indice
 			symop1 = symop;
 			base = n;
 		}
+
+		/*  Calculate the expande position  */
+		MoleculeTransformBySymop(mp, &(ap->r), &nr, symop);
+		
 		/*  Is this expansion already present?  */
 		for (n2 = 0, ap2 = mp->atoms; n2 < n0; n2++, ap2 = ATOM_NEXT(ap2)) {
+			/*  Symmetry operation and the base atom are the same  */
 			if (ap2->symbase == base && SYMOP_EQUAL(symop1, ap2->symop))
 				break;
+			/*  Atomic number and the position are the same  */
+			if (ap2->atomicNumber == ap->atomicNumber && allowOverlap == 0) {
+				VecSub(dr, ap2->r, nr);
+				if (VecLength2(dr) < 1e-6)
+					break;
+			}
 		}
 		if (n2 < n0) {
 			/*  If yes, then skip it  */
 			if (indices != NULL)
 				indices[i] = n2;
 			continue;
-		}
-		/*  Is the expanded position coincides with itself?  */
-		MoleculeTransformBySymop(mp, &(ap->r), &nr, symop);
-		VecSub(dr, ap->r, nr);
-		if (VecLength2(dr) < 1e-6) {
-			/*  If yes, then this atom is included but no new atom is created  */
-			table[n] = n;
-			if (indices != NULL)
-				indices[i] = n;
 		} else {
 			/*  Create a new atom  */
 			Atom newAtom;
@@ -6510,6 +6514,37 @@ MoleculeAddExpandedAtoms(Molecule *mp, Symop symop, IntGroup *group, Int *indice
 	IntGroupIteratorRelease(&iter);
 
 	/*  Create bonds  */
+	for (i = n0; i < n1; i++) {
+		Int b[2], j;
+		ap = ATOM_AT_INDEX(mp->atoms, i);
+		if (MoleculeGetSymopForTransform(mp, tr, &ap->symop, 0) == 0) {
+			/*  For each connected atom, look for the transformed atom  */
+			Int *cp;
+			ap2 = ATOM_AT_INDEX(mp->atoms, ap->symbase);
+			cp = AtomConnectData(&ap2->connect);
+			n2 = ap2->connect.count;
+			for (n = 0; n < n2; n++) {
+				nr = ATOM_AT_INDEX(mp->atoms, cp[n])->r;
+				TransformVec(&nr, tr, &nr);
+				for (j = 0, ap2 = mp->atoms; j < mp->natoms; j++, ap2 = ATOM_NEXT(ap2)) {
+					if (ap2->symbase == cp[n] && SYMOP_EQUAL(ap->symop, ap2->symop))
+						break;
+					VecSub(dr, nr, ap2->r);
+					if (ap2->atomicNumber == ap->atomicNumber && VecLength2(dr) < 1e-6)
+						break;
+				}
+				if (j < mp->natoms) {
+					/*  Bond i-j is created  */
+					b[0] = i;
+					b[1] = j;
+					if (MoleculeLookupBond(mp, b[0], b[1]) < 0)
+						MoleculeAddBonds(mp, 1, b, NULL, 1);
+				}
+			}
+		}
+	}
+					
+#if 0
 	for (i = 0; i < n0; i++) {
 		int b[2];
 		Int *cp;
@@ -6524,9 +6559,12 @@ MoleculeAddExpandedAtoms(Molecule *mp, Symop symop, IntGroup *group, Int *indice
 				continue;
 			if (b[1] > n0 && b[0] > b[1])
 				continue;
+			if (MoleculeLookupBond(mp, b[0], b[1]) >= 0)
+				continue;
 			MoleculeAddBonds(mp, 1, b, NULL, 1);
 		}
 	}
+#endif
 	mp->needsMDRebuild = 1;
 	__MoleculeUnlock(mp);
 	free(table);
