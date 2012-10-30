@@ -8975,12 +8975,19 @@ MoleculeRenumberAtoms(Molecule *mp, const Int *new2old, Int *old2new_out, Int is
 	for (i = 0; i < mp->nimpropers * 4; i++) {
 		mp->impropers[i] = old2new[mp->impropers[i]];
 	}
+	/*  Renumber the connection table and pi anchor table  */
 	for (i = 0; i < mp->natoms; i++) {
 		Atom *ap = ATOM_AT_INDEX(saveAtoms, i);
 		Int *ip = AtomConnectData(&ap->connect);
 		for (j = 0; j < ap->connect.count; j++, ip++)
 			*ip = old2new[*ip];
+		if (ap->anchor != NULL) {
+			ip = AtomConnectData(&ap->anchor->connect);
+			for (j = 0; j < ap->anchor->connect.count; j++, ip++)
+				*ip = old2new[*ip];
+		}
 	}
+	
 	if (mp->par != NULL) {
 		/*  Renumber the parameters  */
 		int n;
