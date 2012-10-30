@@ -25,6 +25,7 @@ BEGIN_EVENT_TABLE(MyDocManager, wxDocManager)
 EVT_MENU(wxID_OPEN, MyDocManager::OnFileOpen)
 EVT_MENU(wxID_SAVE, MyDocManager::OnFileSave)
 EVT_MENU(wxID_SAVEAS, MyDocManager::OnFileSaveAs)
+EVT_MENU(wxID_REVERT, MyDocManager::OnFileRevert)
 END_EVENT_TABLE()
 
 static const char *sReadOnlyTypes[] = {

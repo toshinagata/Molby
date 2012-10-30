@@ -362,6 +362,7 @@ MyApp::CreateMenuBar(int kind, wxMenu **out_file_history_menu, wxMenu **out_edit
 	file_menu->Append(wxID_CLOSE, _T("&Close\tCtrl-W"));
 	file_menu->Append(wxID_SAVE, _T("&Save\tCtrl-S"));
 	file_menu->Append(wxID_SAVEAS, _T("Save &As..."));	
+	file_menu->Append(wxID_REVERT, _T("Revert..."));	
 	
 	file_menu->AppendSeparator();
 	file_menu->Append(myMenuID_Import, _T("Import..."));	

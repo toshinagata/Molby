@@ -410,11 +410,26 @@ wxOutputStream& wxDocument::SaveObject(wxOutputStream& stream)
     return stream;
 }
 
+/*  Taken from wxWidgets 2.9.3 and changed GetAppDisplayName() to GetAppName() */
 bool wxDocument::Revert()
 {
-    return false;
+    if ( wxMessageBox
+		(
+		 _("Discard changes and reload the last saved version?"),
+		 wxTheApp->GetAppName(),
+		 wxYES_NO | wxCANCEL | wxICON_QUESTION,
+		 GetDocumentWindow()
+		 ) != wxYES )
+        return false;
+	
+    if ( !DoOpenDocument(GetFilename()) )
+        return false;
+	
+    Modify(false);
+    UpdateAllViews();
+	
+    return true;
 }
-
 
 // Get title, or filename if no title, else unnamed
 bool wxDocument::GetPrintableName(wxString& buf) const
@@ -1092,10 +1107,11 @@ void wxDocManager::OnUpdateFileClose(wxUpdateUIEvent& event)
     event.Enable( (doc != (wxDocument*) NULL) );
 }
 
+/*  Taken from wxWidgets 2.9.3  */
 void wxDocManager::OnUpdateFileRevert(wxUpdateUIEvent& event)
 {
     wxDocument *doc = GetCurrentDocument();
-    event.Enable( (doc != (wxDocument*) NULL) );
+    event.Enable( (doc != (wxDocument*) NULL) && doc->IsModified() && doc->GetDocumentSaved() );
 }
 
 void wxDocManager::OnUpdateFileNew(wxUpdateUIEvent& event)
