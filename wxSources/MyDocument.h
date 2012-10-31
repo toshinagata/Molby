@@ -88,6 +88,7 @@ public:
 
 	void	OnCreateNewAtom(wxCommandEvent &event);
 	void	OnCreateNewParameter(wxCommandEvent &event);
+	void	OnCreatePiAnchor(wxCommandEvent &event);
 	
 	void	OnSelectAll(wxCommandEvent& event);
 	void	OnSelectFragment(wxCommandEvent& event);

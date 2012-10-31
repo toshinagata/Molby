@@ -403,6 +403,7 @@ MyApp::CreateMenuBar(int kind, wxMenu **out_file_history_menu, wxMenu **out_edit
 	create_parameter_menu->Append(myMenuID_CreateNewVdwCutoffParameter, _T("Vdw Cutoff"));
 	edit_menu->Append(myMenuID_CreateNewAtom, _T("Create New Atom\tCtrl-I"));
 	edit_menu->Append(myMenuID_CreateNewParameter, _T("Create New Parameter"), create_parameter_menu);
+	edit_menu->Append(myMenuID_CreatePiAnchor, _T("Create Pi Anchor"));
 	edit_menu->AppendSeparator();
 	wxMenu *add_hydrogen_menu = new wxMenu;
 	add_hydrogen_menu->Append(myMenuID_AddHydrogenSp3, _T("Tetrahedral sp3"));

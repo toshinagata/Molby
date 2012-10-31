@@ -76,6 +76,7 @@ BEGIN_EVENT_TABLE(MyDocument, wxDocument)
 	EVT_MENU(wxID_DELETE, MyDocument::OnDelete)
 	EVT_MENU(myMenuID_CreateNewAtom, MyDocument::OnCreateNewAtom)
 	EVT_MENU_RANGE(myMenuID_CreateNewVdwParameter, myMenuID_CreateNewVdwCutoffParameter, MyDocument::OnCreateNewParameter)
+	EVT_MENU(myMenuID_CreatePiAnchor, MyDocument::OnCreatePiAnchor)
 	EVT_MENU(wxID_SELECTALL, MyDocument::OnSelectAll)
 	EVT_MENU(myMenuID_SelectFragment, MyDocument::OnSelectFragment)
 	EVT_MENU(myMenuID_SelectReverse, MyDocument::OnSelectReverse)
@@ -610,6 +611,28 @@ MyDocument::OnCreateNewAtom(wxCommandEvent &event)
 	MainView_refreshTable(mview);
 	row = MainView_indexToTableRow(mview, idx);
 /*	MainViewCallback_ensureVisible(mview, row); */ /* Invoked from startEditText */
+	MainViewCallback_startEditText(mview, row, 1);
+}
+
+void
+MyDocument::OnCreatePiAnchor(wxCommandEvent &event)
+{
+	Int idx, row;
+	MainView *mview = GetMainView();
+	IntGroup *ig = MoleculeGetSelection(mol), *ig2;
+	if (ig == NULL || IntGroupGetCount(ig) < 2)
+		return;  /*  Do nothing  */
+	if (MolActionCreateAndPerform(mol, SCRIPT_ACTION("G;i"),
+			"proc { |g| create_pi_anchor('AN', g).index rescue -1 }",
+			ig, &idx) != 0)
+		return;
+	MainViewCallback_selectTable(mview, kMainViewAtomTableIndex);
+	ig2 = IntGroupNewFromIntGroup(ig);
+	IntGroupAdd(ig2, idx, 1);
+	MoleculeSetSelection(mol, ig2);
+	IntGroupRelease(ig2);
+	MainView_refreshTable(mview);
+	row = MainView_indexToTableRow(mview, idx);
 	MainViewCallback_startEditText(mview, row, 1);
 }
 
@@ -1416,6 +1439,9 @@ MyDocument::OnUpdateUI(wxUpdateUIEvent& event)
 			return;
 		case myMenuID_SelectReverse:
 			event.Enable(true);
+			return;
+		case myMenuID_CreatePiAnchor:
+			event.Enable(nselected > 0);
 			return;
 		case myMenuID_AddHydrogenSp3:
 		case myMenuID_AddHydrogenSp2:
