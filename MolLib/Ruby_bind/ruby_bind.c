@@ -2659,6 +2659,7 @@ s_Parameter_Lookup_sub(int argc, VALUE *argv, int parType, Molecule *mol)
 {
 	VALUE atval, optval;
 	UInt t[4];
+	Int ii[4];
 	int i, n, idx, flags, is_global;
 
 	rb_scan_args(argc, argv, "1*", &atval, &optval);
@@ -2674,6 +2675,17 @@ s_Parameter_Lookup_sub(int argc, VALUE *argv, int parType, Molecule *mol)
 		default: return Qnil;
 	}
 	s_ScanAtomTypes(atval, n, t);
+	for (i = 0; i < n; i++) {
+		if (t[i] < kAtomTypeMinimum) {
+			/*  Explicit atom index  */
+			if (mol == NULL)
+				rb_raise(rb_eMolbyError, "Explicit atom index (%d) is invalid for global parameters", t[i]);
+			if (t[i] >= mol->natoms)
+				rb_raise(rb_eMolbyError, "Atom index (%d) out of range", t[i]);
+			ii[i] = t[i];
+			t[i] = ATOM_AT_INDEX(mol->atoms, t[i])->type;
+		} else ii[i] = -1;
+	}
 	
 	/*  Analyze options  */
 	flags = 0;
@@ -2702,7 +2714,7 @@ s_Parameter_Lookup_sub(int argc, VALUE *argv, int parType, Molecule *mol)
 		case kBondParType: {
 			BondPar *bp;
 			if (mol != NULL) {
-				bp = ParameterLookupBondPar(mol->par, t[0], t[1], -1, -1, flags);
+				bp = ParameterLookupBondPar(mol->par, t[0], t[1], ii[0], ii[1], flags);
 				if (bp != NULL) {
 					idx = bp - mol->par->bondPars;
 					break;
@@ -2718,7 +2730,7 @@ s_Parameter_Lookup_sub(int argc, VALUE *argv, int parType, Molecule *mol)
 		case kAngleParType: {
 			AnglePar *ap;
 			if (mol != NULL) {
-				ap = ParameterLookupAnglePar(mol->par, t[0], t[1], t[2], -1, -1, -1, flags);
+				ap = ParameterLookupAnglePar(mol->par, t[0], t[1], t[2], ii[0], ii[1], ii[2], flags);
 				if (ap != NULL) {
 					idx = ap - mol->par->anglePars;
 					break;
@@ -2734,7 +2746,7 @@ s_Parameter_Lookup_sub(int argc, VALUE *argv, int parType, Molecule *mol)
 		case kDihedralParType: {
 			TorsionPar *tp;
 			if (mol != NULL) {
-				tp = ParameterLookupDihedralPar(mol->par, t[0], t[1], t[2], t[3], -1, -1, -1, -1, flags);
+				tp = ParameterLookupDihedralPar(mol->par, t[0], t[1], t[2], t[3], ii[0], ii[1], ii[2], ii[3], flags);
 				if (tp != NULL) {
 					idx = tp - mol->par->dihedralPars;
 					break;
@@ -2750,7 +2762,7 @@ s_Parameter_Lookup_sub(int argc, VALUE *argv, int parType, Molecule *mol)
 		case kImproperParType: {
 			TorsionPar *tp;
 			if (mol != NULL) {
-				tp = ParameterLookupImproperPar(mol->par, t[0], t[1], t[2], t[3], -1, -1, -1, -1, flags);
+				tp = ParameterLookupImproperPar(mol->par, t[0], t[1], t[2], t[3], ii[0], ii[1], ii[2], ii[3], flags);
 				if (tp != NULL) {
 					idx = tp - mol->par->improperPars;
 					break;
