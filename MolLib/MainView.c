@@ -1389,7 +1389,7 @@ drawModel(MainView *mview)
     }
 */
 	if (mview->draggingMode == kMainViewSelectingRegion)
-		selectFlags = temporarySelection(mview, mview->modifierFlags, 0, 1);
+		selectFlags = temporarySelection(mview, mview->modifierFlags, 0, 0);
 	else selectFlags = NULL;
 	
 	if (mview->draggingMode == kMainViewDraggingSelectedAtoms)
@@ -2423,7 +2423,7 @@ MainView_mouseUp(MainView *mview, const float *mousePos, int flags, int clickCou
 			break;
 		}
 		case kMainViewSelectingRegion: {
-			char *selectFlags = temporarySelection(mview, mview->modifierFlags, (mview->isDragging ? 0 : 1), 1);
+			char *selectFlags = temporarySelection(mview, mview->modifierFlags, (mview->isDragging ? 0 : 1), 0);
 			if (selectFlags != NULL) {
 				IntGroup *ig = IntGroupNew();
 				if (ig != NULL) {
