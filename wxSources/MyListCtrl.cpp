@@ -32,7 +32,7 @@ EVT_COMMAND(MyListCtrlEvent_tableSelectionChanged, MyListCtrlEvent, MyListCtrl::
 EVT_COMMAND(MyListCtrlEvent_enableTableSelectionNotification, MyListCtrlEvent, MyListCtrl::OnEnableTableSelectionNotification)
 EVT_LIST_BEGIN_DRAG(-1, MyListCtrl::OnBeginDrag)
 EVT_LEFT_DCLICK(MyListCtrl::OnLeftDClick)
-EVT_KEY_DOWN(MyListCtrl::OnKeyDown)
+EVT_CHAR(MyListCtrl::OnChar)
 EVT_LEFT_DOWN(MyListCtrl::OnMouseDown)
 END_EVENT_TABLE()
 
@@ -564,7 +564,7 @@ MyListCtrl::OnMouseDown(wxMouseEvent &event)
 }
 
 void
-MyListCtrl::OnKeyDown(wxKeyEvent &event)
+MyListCtrl::OnChar(wxKeyEvent &event)
 {
 	//  See comments on OnMouseUp()
 	PostSelectionChangeNotification();

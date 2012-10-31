@@ -102,7 +102,7 @@ public:
 	void OnItemActivated(wxListEvent &event);
 	void OnBeginDrag(wxListEvent &event);
 	
-	void OnKeyDown(wxKeyEvent &event);
+	void OnChar(wxKeyEvent &event);
 	void OnMouseDown(wxMouseEvent &event);
 	void OnLeftDClick(wxMouseEvent &event);
 	
