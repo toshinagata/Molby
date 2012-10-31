@@ -2153,7 +2153,9 @@ static Molecule *s_MoleculeFromParEnumerableValue(VALUE val);
 static Molecule *
 s_MoleculeFromParameterOrParEnumerableValue(VALUE val)
 {
-	if (rb_obj_is_kind_of(val, rb_cParameter)) {
+	if (val == rb_cParameter) {
+		return NULL;  /*  Parameter class method: builtin parameters  */
+	} else if (rb_obj_is_kind_of(val, rb_cParameter)) {
 		return s_MoleculeFromParameterValue(val);
 	} else if (rb_obj_is_kind_of(val, rb_cParEnumerable)) {
 		return s_MoleculeFromParEnumerableValue(val);
@@ -2379,7 +2381,7 @@ s_Parameter_Element(VALUE self, VALUE ival)
 		int i;
 		strncpy(name, StringValuePtr(ival), 4);
 		name[4] = 0;
-		for (i = gCountElementParameters - 1, ep = gElementParameters + i; i >= 0; i--) {
+		for (i = gCountElementParameters - 1, ep = gElementParameters + i; i >= 0; i--, ep--) {
 			if (strncmp(ep->name, name, 4) == 0)
 				return ValueFromMoleculeWithParameterTypeAndIndex(NULL, kElementParType, i);
 		}
@@ -10010,7 +10012,6 @@ Init_Molby(void)
 	
 	/*  class Parameter  */
 	rb_cParameter = rb_define_class_under(rb_mMolby, "Parameter", rb_cObject);
-	rb_define_singleton_method(rb_cParameter, "builtin", s_Parameter_Builtin, 0);
 	rb_define_method(rb_cParameter, "bond", s_Parameter_Bond, 1);
 	rb_define_method(rb_cParameter, "angle", s_Parameter_Angle, 1);
 	rb_define_method(rb_cParameter, "dihedral", s_Parameter_Dihedral, 1);
@@ -10036,6 +10037,32 @@ Init_Molby(void)
 	rb_define_method(rb_cParameter, "vdw_cutoffs", s_Parameter_VdwCutoffs, 0);
 	rb_define_method(rb_cParameter, "elements", s_Parameter_Elements, 0);
 	rb_define_method(rb_cParameter, "lookup", s_Parameter_LookUp, -1);
+	rb_define_singleton_method(rb_cParameter, "builtin", s_Parameter_Builtin, 0);
+	rb_define_singleton_method(rb_cParameter, "bond", s_Parameter_Bond, 1);
+	rb_define_singleton_method(rb_cParameter, "angle", s_Parameter_Angle, 1);
+	rb_define_singleton_method(rb_cParameter, "dihedral", s_Parameter_Dihedral, 1);
+	rb_define_singleton_method(rb_cParameter, "improper", s_Parameter_Improper, 1);
+	rb_define_singleton_method(rb_cParameter, "vdw", s_Parameter_Vdw, 1);
+	rb_define_singleton_method(rb_cParameter, "vdw_pair", s_Parameter_VdwPair, 1);
+	rb_define_singleton_method(rb_cParameter, "vdw_cutoff", s_Parameter_VdwCutoff, 1);
+	rb_define_singleton_method(rb_cParameter, "element", s_Parameter_Element, 1);
+	rb_define_singleton_method(rb_cParameter, "nbonds", s_Parameter_Nbonds, 0);
+	rb_define_singleton_method(rb_cParameter, "nangles", s_Parameter_Nangles, 0);
+	rb_define_singleton_method(rb_cParameter, "ndihedrals", s_Parameter_Ndihedrals, 0);
+	rb_define_singleton_method(rb_cParameter, "nimpropers", s_Parameter_Nimpropers, 0);
+	rb_define_singleton_method(rb_cParameter, "nvdws", s_Parameter_Nvdws, 0);
+	rb_define_singleton_method(rb_cParameter, "nvdw_pairs", s_Parameter_NvdwPairs, 0);
+	rb_define_singleton_method(rb_cParameter, "nvdw_cutoffs", s_Parameter_NvdwCutoffs, 0);
+	rb_define_singleton_method(rb_cParameter, "nelements", s_Parameter_Nelements, 0);
+	rb_define_singleton_method(rb_cParameter, "bonds", s_Parameter_Bonds, 0);
+	rb_define_singleton_method(rb_cParameter, "angles", s_Parameter_Angles, 0);
+	rb_define_singleton_method(rb_cParameter, "dihedrals", s_Parameter_Dihedrals, 0);
+	rb_define_singleton_method(rb_cParameter, "impropers", s_Parameter_Impropers, 0);
+	rb_define_singleton_method(rb_cParameter, "vdws", s_Parameter_Vdws, 0);
+	rb_define_singleton_method(rb_cParameter, "vdw_pairs", s_Parameter_VdwPairs, 0);
+	rb_define_singleton_method(rb_cParameter, "vdw_cutoffs", s_Parameter_VdwCutoffs, 0);
+	rb_define_singleton_method(rb_cParameter, "elements", s_Parameter_Elements, 0);
+	rb_define_singleton_method(rb_cParameter, "lookup", s_Parameter_LookUp, -1);
 	rb_define_const(rb_cParameter, "Builtin", Data_Wrap_Struct(rb_cParameter, 0, NULL, NULL));
 
 	/*  class ParEnumerable  */
