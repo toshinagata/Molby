@@ -30,7 +30,14 @@
 
 #include "MyApp.h"
 #include "../MolLib/Ruby_bind/Molby_extern.h"
+#include "../MolLib/MolLib.h"
+#include "../MolLib/Missing.h"
 #include "MyMBConv.h"
+
+#if defined(__WXMSW__)
+#include <windows.h>
+#include <richedit.h>
+#endif
 
 BEGIN_EVENT_TABLE(ConsoleFrame, wxMDIChildFrame)
 	EVT_UPDATE_UI(-1, ConsoleFrame::OnUpdateUI)
@@ -47,10 +54,21 @@ END_EVENT_TABLE()
 ConsoleFrame::ConsoleFrame(wxMDIParentFrame *parent, const wxString& title, const wxPoint& pos, const wxSize& size, long type):
 	wxMDIChildFrame(parent, wxID_ANY, title, pos, size, type)
 {
+	valueHistory = commandHistory = NULL;
+	nValueHistory = nCommandHistory = 0;
+	valueHistoryIndex = commandHistoryIndex = -1;
+	keyInputPos = -1;
 }
 
 ConsoleFrame::~ConsoleFrame()
 {
+	int i;
+	for (i = 0; i < nValueHistory; i++)
+		free(valueHistory[i]);
+	free(valueHistory);
+	for (i = 0; i < nCommandHistory; i++)
+		free(commandHistory[i]);
+	free(commandHistory);	
 	wxGetApp().DocManager()->FileHistoryRemoveMenu(file_history_menu);
 }
 
@@ -63,13 +81,26 @@ ConsoleFrame::OnCreate()
 	GetClientSize(&width, &height);
 	textCtrl = new wxTextCtrl(this, wxID_ANY, _T(""), wxPoint(0, 0), wxSize(100, 100), wxTE_MULTILINE | wxTE_RICH);
 
+#if defined(__WXMSW__)
+	{
+		HWND hwnd = (HWND)(textCtrl->GetHWND());
+		DWORD dwOptions;
+		LPARAM result;
+		
+		/*  Disable dual language mode  */
+		dwOptions = SendMessage(hwnd, EM_GETLANGOPTIONS, 0, 0); 
+		dwOptions &= ~0x02;   /*  0x02 = IMF_AUTOFONT  */
+		result = SendMessage(hwnd, EM_SETLANGOPTIONS, 0, (LPARAM)dwOptions);
+		printf("%ld\n", (long)result);		
+	}
+#endif
+		
 	wxBoxSizer *consoleSizer = new wxBoxSizer(wxHORIZONTAL);
 	consoleSizer->Add(textCtrl, 1, wxEXPAND);
 	this->SetSizer(consoleSizer);
 	consoleSizer->SetSizeHints(this);
 	
 	//  Set the default font (fixed-pitch)
-	wxTextAttr attr;
 #if defined(__WXMSW__)
 	default_font = new wxFont(10, wxFONTFAMILY_MODERN, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL);
 	if (!default_font->SetFaceName(wxT("Consolas")))
@@ -80,9 +111,9 @@ ConsoleFrame::OnCreate()
 #else
 	default_font = new wxFont(10, wxFONTFAMILY_MODERN, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL);
 #endif
-	attr.SetFont(*default_font);
-	textCtrl->SetDefaultStyle(attr);
-	textCtrl->SetFont(*default_font);
+	current_attr = new wxTextAttr;
+	current_attr->SetFont(*default_font);
+	textCtrl->SetDefaultStyle(*current_attr);
 
 	//  Connect "OnKeyDown" event handler
 	textCtrl->Connect(-1, wxEVT_KEY_DOWN, wxKeyEventHandler(ConsoleFrame::OnKeyDown), NULL, this);
@@ -271,7 +302,7 @@ ConsoleFrame::OnEnterPressed(wxKeyEvent& event)
 			MyAppCallback_setConsoleColor(3);
 			textCtrl->AppendText(string);
 		} else {
-			wxTextAttr scriptAttr(*wxBLUE);
+			wxTextAttr scriptAttr(*wxBLUE, wxNullColour, *default_font);
 			textCtrl->SetStyle(start, veryend, scriptAttr);
 		}
 		string.Append(wxT("\n"));  //  To avoid choking Ruby interpreter
@@ -279,23 +310,33 @@ ConsoleFrame::OnEnterPressed(wxKeyEvent& event)
 		re3.Replace(&string, wxT("\n"));
 		if (textCtrl->GetRange(lastpos - 1, lastpos).GetChar(0) != '\n')
 			textCtrl->AppendText(wxT("\n"));
-		MyAppCallback_setConsoleColor(0);
 		textCtrl->Update();
+		MyAppCallback_setConsoleColor(0);
 		
 		//  Invoke ruby interpreter
 		int status;
 		RubyValue val;
+		char *script;
 		Molecule *mol = MoleculeCallback_currentMolecule();
 		MoleculeLock(mol);
-		val = Molby_evalRubyScriptOnMolecule(string.mb_str(WX_DEFAULT_CONV), MoleculeCallback_currentMolecule(), NULL, &status);
+		script = strdup(string.mb_str(WX_DEFAULT_CONV));
+		val = Molby_evalRubyScriptOnMolecule(script, MoleculeCallback_currentMolecule(), NULL, &status);
 		MoleculeUnlock(mol);
+		script[strlen(script) - 1] = 0;  /*  Remove the last newline  */
+		AssignArray(&commandHistory, &nCommandHistory, sizeof(char *), nCommandHistory, &script);
+		if (nCommandHistory >= MAX_HISTORY_LINES)
+			DeleteArray(&commandHistory, &nCommandHistory, sizeof(char *), 0, 1, NULL);
 		if (status != -1) {  /*  Status -1 is already handled  */
+			char *valueString;
 			MyAppCallback_setConsoleColor(1);
 			if (status != 0) {
 				Molby_showError(status);
 			} else {
 				textCtrl->AppendText(wxT("-->"));
-				Molby_showRubyValue(val);
+				Molby_showRubyValue(val, &valueString);
+				AssignArray(&valueHistory, &nValueHistory, sizeof(char *), nValueHistory, &valueString);
+				if (nValueHistory >= MAX_HISTORY_LINES)
+					DeleteArray(&valueHistory, &nValueHistory, sizeof(char *), 0, 1, NULL);
 			}
 			MyAppCallback_setConsoleColor(0);
 			textCtrl->AppendText(wxT("\n"));
@@ -305,17 +346,112 @@ ConsoleFrame::OnEnterPressed(wxKeyEvent& event)
 		textCtrl->AppendText(wxT("\n"));
 		MyAppCallback_showRubyPrompt();
 	}
+	commandHistoryIndex = valueHistoryIndex = -1;
+}
+
+void
+ConsoleFrame::ShowHistory(bool up, bool option)
+{
+	char *p;
+	if (commandHistoryIndex == -1 && valueHistoryIndex == -1) {
+		if (!up)
+			return;
+		historyPos = textCtrl->GetLastPosition();
+	}
+	if (option) {
+		if (up) {
+			if (valueHistoryIndex == -1) {
+				if (nValueHistory == 0)
+					return;
+				valueHistoryIndex = nValueHistory;
+			}
+			if (valueHistoryIndex <= 0)
+				return; /* Do nothing */
+			valueHistoryIndex--;
+			p = valueHistory[valueHistoryIndex];
+		} else {
+			if (valueHistoryIndex == -1)
+				return;  /*  Do nothing  */
+			if (valueHistoryIndex == nValueHistory - 1) {
+				valueHistoryIndex = -1;
+				p = "";
+			} else {
+				valueHistoryIndex++;
+				p = valueHistory[valueHistoryIndex];
+			}
+		}
+	} else {
+		if (up) {
+			if (commandHistoryIndex == -1) {
+				if (nCommandHistory == 0)
+					return;
+				commandHistoryIndex = nCommandHistory;
+			}
+			if (commandHistoryIndex <= 0)
+				return; /* Do nothing */
+			commandHistoryIndex--;
+			p = commandHistory[commandHistoryIndex];
+		} else {
+			if (commandHistoryIndex == -1)
+				return;  /*  Do nothing  */
+			if (commandHistoryIndex == nCommandHistory - 1) {
+				commandHistoryIndex = -1;
+				p = "";
+			} else {
+				commandHistoryIndex++;
+				p = commandHistory[commandHistoryIndex];
+			}
+		}
+	}
+	textCtrl->Replace(historyPos, textCtrl->GetLastPosition(), wxT(""));
+	SetConsoleColor(option ? 1 : 3);
+	while (isspace(*p))
+		p++;
+	textCtrl->AppendText(wxString(p, WX_DEFAULT_CONV));
+	SetConsoleColor(0);
 }
 
 void
 ConsoleFrame::OnKeyDown(wxKeyEvent &event)
 {
 	int code = event.GetKeyCode();
-	//	printf("OnChar: %d\n", code);
 	if (code == WXK_RETURN || code == WXK_NUMPAD_ENTER)
 		OnEnterPressed(event);
+	else if ((code == WXK_UP || code == WXK_DOWN) && (textCtrl->GetInsertionPoint() == textCtrl->GetLastPosition()))
+		ShowHistory(code == WXK_UP, event.GetModifiers() == wxMOD_ALT);
 	else
 		event.Skip();
+}
+
+int
+ConsoleFrame::AppendConsoleMessage(const char *mes)
+{
+	wxString string(mes, WX_DEFAULT_CONV);
+	textCtrl->AppendText(string);
+	commandHistoryIndex = valueHistoryIndex = -1;
+	return string.Len();
+}
+
+void
+ConsoleFrame::FlushConsoleMessage()
+{
+	textCtrl->Refresh();
+	textCtrl->Update();
+}
+
+void
+ConsoleFrame::SetConsoleColor(int color)
+{
+	static const wxColour *col[4];
+	if (col[0] == NULL) {
+		col[0] = wxBLACK;
+		col[1] = wxRED;
+		col[2] = wxGREEN;
+		col[3] = wxBLUE;
+	}
+	current_attr->SetTextColour(*col[color % 4]);
+	current_attr->SetFont(*default_font);
+	textCtrl->SetDefaultStyle(wxTextAttr(*col[color % 4], wxNullColour, *default_font));
 }
 
 void
@@ -324,4 +460,49 @@ ConsoleFrame::EmptyBuffer(bool showRubyPrompt)
 	textCtrl->Clear();
 	if (showRubyPrompt)
 		MyAppCallback_showRubyPrompt();
+	commandHistoryIndex = valueHistoryIndex = -1;
+}
+
+#pragma mark ====== Plain-C interface ======
+
+int
+MyAppCallback_showScriptMessage(const char *fmt, ...)
+{
+	if (fmt != NULL) {
+		char *p;
+		va_list ap;
+		int retval;
+		va_start(ap, fmt);
+		if (strchr(fmt, '%') == NULL) {
+			/*  No format characters  */
+			return wxGetApp().GetConsoleFrame()->AppendConsoleMessage(fmt);
+		} else if (strcmp(fmt, "%s") == 0) {
+			/*  Direct output of one string  */
+			p = va_arg(ap, char *);
+			return wxGetApp().GetConsoleFrame()->AppendConsoleMessage(p);
+		}
+		vasprintf(&p, fmt, ap);
+		if (p != NULL) {
+			retval = wxGetApp().GetConsoleFrame()->AppendConsoleMessage(p);
+			free(p);
+			return retval;
+		} else return 0;
+	} else {
+		wxGetApp().GetConsoleFrame()->FlushConsoleMessage();
+		return 0;
+	}
+	return 0;
+}
+
+void
+MyAppCallback_setConsoleColor(int color)
+{
+	wxGetApp().GetConsoleFrame()->SetConsoleColor(color);
+}
+
+void
+MyAppCallback_showRubyPrompt(void)
+{
+	MyAppCallback_setConsoleColor(0);
+	MyAppCallback_showScriptMessage("%% ");
 }

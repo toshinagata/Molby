@@ -35,7 +35,7 @@ extern void Molby_showError(int status);
 extern RubyValue Molby_evalRubyScriptOnMolecule(const char *script, Molecule *mol, const char *fname, int *status);
 /* extern RubyValue Molby_evalRubyScript(const char *script, int *status);
 extern RubyValue Molby_evalRubyScriptOnActiveMoleculeWithInterrupt(const char *script, int *status); */
-extern void Molby_showRubyValue(RubyValue value);
+extern void Molby_showRubyValue(RubyValue value, char **outValueString);
 extern int Ruby_methodType(const char *className, const char *methodName);
 extern void Molby_buildARGV(int argc, const char **argv);
 	

@@ -22,6 +22,8 @@
 //#include "wx/richtext/richtextctrl.h"
 #include "wx/textctrl.h"
 
+#define MAX_HISTORY_LINES 1000
+
 class wxMenu;
 
 class ConsoleFrame: public wxMDIChildFrame
@@ -31,12 +33,23 @@ public:
 	wxTextCtrl *textCtrl;
 	wxMenu *file_history_menu;
 	wxMenu *edit_menu;
-
+	
+	wxTextAttr *current_attr;
 	wxFont *default_font;
+
+	char **valueHistory, **commandHistory;
+	int nValueHistory, nCommandHistory;
+	int valueHistoryIndex, commandHistoryIndex;
+	long historyPos;
+	long keyInputPos;
 
 	ConsoleFrame(wxMDIParentFrame *parent, const wxString& title, const wxPoint& pos, const wxSize& size, long type);
 	virtual ~ConsoleFrame();
 
+	int AppendConsoleMessage(const char *mes);
+	void FlushConsoleMessage();
+	void SetConsoleColor(int color);
+	
 	void OnCreate();
 	void OnEnterPressed(wxKeyEvent& event);
 	void OnKeyDown(wxKeyEvent &event);
@@ -48,7 +61,9 @@ public:
 
 	void OnUndo(wxCommandEvent &event);
 	void OnRedo(wxCommandEvent &event);
+
 	void EmptyBuffer(bool showRubyPrompt = true);
+	void ShowHistory(bool up, bool option);
 
 private:
 	DECLARE_EVENT_TABLE()

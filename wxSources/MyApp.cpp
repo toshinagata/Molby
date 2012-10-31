@@ -625,41 +625,6 @@ sModifyMenuForFilterMode(wxMenuBar *mbar)
 	
 }
 
-int
-MyApp::AppendConsoleMessage(const char *mes)
-{
-	wxTextCtrl *textCtrl;
-	if (consoleFrame != NULL && (textCtrl = consoleFrame->textCtrl) != NULL) {
-		wxString string(mes, WX_DEFAULT_CONV);
-		textCtrl->AppendText(string);
-		return string.Len();
-	} else return 0;
-}
-
-void
-MyApp::FlushConsoleMessage()
-{
-	wxTextCtrl *textCtrl = consoleFrame->textCtrl;
-	textCtrl->Refresh();
-	textCtrl->Update();
-}
-
-void
-MyApp::SetConsoleColor(int color)
-{
-	wxTextCtrl *textCtrl = consoleFrame->textCtrl;
-	wxTextAttr attr(textCtrl->GetDefaultStyle());
-	static const wxColour *col[4];
-	if (col[0] == NULL) {
-		col[0] = wxBLACK;
-		col[1] = wxRED;
-		col[2] = wxGREEN;
-		col[3] = wxBLUE;
-	}
-	attr.SetTextColour(*col[color % 4]);
-	textCtrl->SetDefaultStyle(attr);
-}
-
 void
 MyApp::ShowProgressPanel(const char *mes)
 {
@@ -1079,8 +1044,8 @@ MyApp::OnExecuteScript(wxCommandEvent &event)
 		cline.Prepend(_T("execute_script('"));
 		cline += _T("')");
 		MyAppCallback_setConsoleColor(3);
-		wxGetApp().AppendConsoleMessage((const char *)(cline.mb_str(wxConvFile)));
-		wxGetApp().AppendConsoleMessage("\n");
+		MyAppCallback_showScriptMessage("%s", (const char *)(cline.mb_str(wxConvFile)));
+		MyAppCallback_showScriptMessage("\n");
 		MyAppCallback_setConsoleColor(0);
 
 		retval = MyAppCallback_executeScriptFromFile((const char *)(path.mb_str(wxConvFile)), &status);
@@ -1509,58 +1474,6 @@ MyAppCallback_setGlobalSettingsWithType(const char *key, int type, const void *p
 			MyAppCallback_errorMessageBox("Internal error: unsupported format '%c' at line %d, file %s", type, __LINE__, __FILE__);
 			return -2;
 	}
-}
-
-int
-MyAppCallback_showScriptMessage(const char *fmt, ...)
-{
-	if (fmt != NULL) {
-		char *p;
-		va_list ap;
-		int retval;
-		va_start(ap, fmt);
-		if (strchr(fmt, '%') == NULL) {
-			/*  No format characters  */
-			return wxGetApp().AppendConsoleMessage(fmt);
-		} else if (strcmp(fmt, "%s") == 0) {
-			/*  Direct output of one string  */
-			p = va_arg(ap, char *);
-			return wxGetApp().AppendConsoleMessage(p);
-		}
-#if 1
-		vasprintf(&p, fmt, ap);
-#else
-		/*  Use safe wxString method  */
-		/*  Not necessary any longer; vasprintf() is implemented in Missing.c  */
-		{
-			wxString str;
-			str.PrintfV(wxString::FromUTF8(fmt).GetData(), ap);
-			p = strdup((const char *)str.mb_str(WX_DEFAULT_CONV));
-		}
-#endif
-		if (p != NULL) {
-			retval = wxGetApp().AppendConsoleMessage(p);
-			free(p);
-			return retval;
-		} else return 0;
-	} else {
-		wxGetApp().FlushConsoleMessage();
-		return 0;
-	}
-  return 0;
-}
-
-void
-MyAppCallback_setConsoleColor(int color)
-{
-	wxGetApp().SetConsoleColor(color);
-}
-
-void
-MyAppCallback_showRubyPrompt(void)
-{
-	MyAppCallback_setConsoleColor(0);
-	MyAppCallback_showScriptMessage("%% ");
 }
 
 int

@@ -10194,7 +10194,7 @@ Molby_evalRubyScriptOnMolecule(const char *script, Molecule *mol, const char *fn
 }
 
 void
-Molby_showRubyValue(RubyValue value)
+Molby_showRubyValue(RubyValue value, char **outValueString)
 {
 	VALUE val = (VALUE)value;
 	if (gMolbyIsCheckingInterrupt) {
@@ -10203,10 +10203,14 @@ Molby_showRubyValue(RubyValue value)
 	}
 	if (val != Qnil) {
 		int status;
+		char *str;
 		gMolbyRunLevel++;
 		val = rb_protect(rb_inspect, val, &status);
 		gMolbyRunLevel--;
-		MyAppCallback_showScriptMessage("%s", StringValuePtr(val));
+		str = StringValuePtr(val);
+		MyAppCallback_showScriptMessage("%s", str);
+		if (outValueString != NULL)
+			*outValueString = strdup(str);
 	}
 }
 

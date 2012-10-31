@@ -130,10 +130,8 @@ class MyApp: public wxApp
     bool OnInit(void);
     int OnExit(void);
 
-	int AppendConsoleMessage(const char *mes);
-	void FlushConsoleMessage();
-	void SetConsoleColor(int color);
-
+	ConsoleFrame *GetConsoleFrame() { return consoleFrame; }
+	
 	void ShowProgressPanel(const char *mes);
 	void HideProgressPanel();
 	void SetProgressValue(double dval);

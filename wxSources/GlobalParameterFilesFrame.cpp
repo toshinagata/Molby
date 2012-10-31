@@ -27,6 +27,7 @@
 #include "MyApp.h"
 #include "MyListCtrl.h"
 #include "../MolLib/MolLib.h"
+#include "../MolLib/Ruby_bind/Molby.h"
 #include "../MolLib/Missing.h"
 #include "MyMBConv.h"
 
@@ -148,9 +149,9 @@ GlobalParameterFilesFrame::OnAddGlobalParameterFile(wxCommandEvent& event)
 		}
 		ParameterReadFromFile(NULL, p, &wbuf, NULL);
 		if (wbuf != NULL) {
-			wxGetApp().SetConsoleColor(1);
-			wxGetApp().AppendConsoleMessage(wbuf);
-			wxGetApp().SetConsoleColor(0);
+			MyAppCallback_setConsoleColor(1);
+			MyAppCallback_showScriptMessage("%s", wbuf);
+			MyAppCallback_setConsoleColor(0);
 			free(wbuf);
 		}
 		free(p);
