@@ -2091,6 +2091,21 @@ s_ParameterRef_ToString(VALUE self)
 	return rb_str_new2(buf);
 }
 
+/*
+ *  call-seq:
+ *     self == parameterRef -> boolean
+ *  
+ *  True if the parameters point to the same parameter record.
+ */
+static VALUE
+s_ParameterRef_Equal(VALUE self, VALUE val)
+{
+	Int tp1, tp2;
+	if (rb_obj_is_kind_of(val, rb_cParameterRef)) {
+		return (s_UnionParFromValue(self, &tp1, 0) == s_UnionParFromValue(val, &tp2, 0) ? Qtrue : Qfalse);
+	} else return Qfalse;
+}
+	
 #pragma mark ====== Parameter Class ======
 
 /*  The Parameter class actually encapsulate Molecule record. If the record pointer
@@ -2880,6 +2895,20 @@ s_Parameter_LookUp(int argc, VALUE *argv, VALUE self)
 	return s_Parameter_Lookup_sub(argc - 1, argv + 1, parType, mol);
 }
 
+/*
+ *  call-seq:
+ *     self == parameter -> boolean
+ *  
+ *  True if the parameters point to the same parameter table.
+ */
+static VALUE
+s_Parameter_Equal(VALUE self, VALUE val)
+{
+	if (rb_obj_is_kind_of(val, rb_cParameter)) {
+		return (s_MoleculeFromParameterOrParEnumerableValue(self) == s_MoleculeFromParameterOrParEnumerableValue(val) ? Qtrue : Qfalse);
+	} else return Qfalse;
+}
+
 #pragma mark ====== ParEnumerable Class ======
 
 /*  The ParEnumerable class encapsulates the Molecule (not Parameter) pointer
@@ -3200,6 +3229,23 @@ s_ParEnumerable_LookUp(int argc, VALUE *argv, VALUE self)
 	ParEnumerable *pen;
     Data_Get_Struct(self, ParEnumerable, pen);
 	return s_Parameter_Lookup_sub(argc, argv, pen->parType, pen->mol);
+}
+
+/*
+ *  call-seq:
+ *     self == parEnumerable -> boolean
+ *  
+ *  True if the arguments point to the same parameter table and type.
+ */
+static VALUE
+s_ParEnumerable_Equal(VALUE self, VALUE val)
+{
+	if (rb_obj_is_kind_of(val, rb_cParEnumerable)) {
+		ParEnumerable *pen1, *pen2;
+		Data_Get_Struct(self, ParEnumerable, pen1);
+		Data_Get_Struct(val, ParEnumerable, pen2);
+		return (pen1->mol == pen2->mol && pen1->parType == pen2->parType) ? Qtrue : Qfalse;
+	} else return Qfalse;
 }
 
 #pragma mark ====== AtomRef Class ======
@@ -4133,6 +4179,20 @@ s_AtomRef_GetAttr(VALUE self, VALUE key)
 	return s_AtomRef_SetAttr(self, key, Qundef);
 }
 
+/*
+ *  call-seq:
+ *     self == atomRef -> boolean
+ *
+ *  True if the two references point to the same atom.
+ */
+static VALUE
+s_AtomRef_Equal(VALUE self, VALUE val)
+{
+	if (rb_obj_is_kind_of(val, rb_cAtomRef)) {
+		return (s_AtomFromValue(self) == s_AtomFromValue(val) ? Qtrue : Qfalse);
+	} else return Qfalse;
+}
+
 #pragma mark ====== MolEnumerable Class ======
 
 static int s_Molecule_AtomIndexFromValue(Molecule *, VALUE);
@@ -4255,6 +4315,24 @@ s_MolEnumerable_Each(VALUE self)
 	}
     return self;
 }
+
+/*
+ *  call-seq:
+ *     self == molEnumerable -> boolean
+ *
+ *  True if the two arguments point to the same molecule and enumerable type.
+ */
+static VALUE
+s_MolEnumerable_Equal(VALUE self, VALUE val)
+{
+	if (rb_obj_is_kind_of(val, rb_cMolEnumerable)) {
+		MolEnumerable *mseq1, *mseq2;
+		Data_Get_Struct(self, MolEnumerable, mseq1);
+		Data_Get_Struct(val, MolEnumerable, mseq2);
+		return ((mseq1->mol == mseq2->mol && mseq1->kind == mseq2->kind) ? Qtrue : Qfalse);
+	} else return Qfalse;
+}
+
 
 #pragma mark ====== Molecule Class ======
 
@@ -9761,6 +9839,23 @@ s_Molecule_SetErrorMessage(VALUE klass, VALUE sval)
 	return sval;
 }
 
+/*
+ *  call-seq:
+ *     self == Molecule -> boolean
+ *
+ *  True if the two arguments point to the same molecule.
+ */
+static VALUE
+s_Molecule_Equal(VALUE self, VALUE val)
+{
+	if (rb_obj_is_kind_of(val, rb_cMolecule)) {
+		Molecule *mol1, *mol2;
+		Data_Get_Struct(self, Molecule, mol1);
+		Data_Get_Struct(val, Molecule, mol2);
+		return (mol1 == mol2 ? Qtrue : Qfalse);
+	} else return Qfalse;
+}
+
 void
 Init_Molby(void)
 {
@@ -9985,6 +10080,7 @@ Init_Molby(void)
 	rb_define_method(rb_cMolecule, "search_equivalent_atoms", s_Molecule_SearchEquivalentAtoms, -1);
 	
 	rb_define_method(rb_cMolecule, "create_pi_anchor", s_Molecule_CreatePiAnchor, -1);
+	rb_define_method(rb_cMolecule, "==", s_Molecule_Equal, 1);
 
 	rb_define_singleton_method(rb_cMolecule, "current", s_Molecule_Current, 0);
 	rb_define_singleton_method(rb_cMolecule, "[]", s_Molecule_MoleculeAtIndex, -1);
@@ -10002,7 +10098,8 @@ Init_Molby(void)
 	rb_define_method(rb_cMolEnumerable, "length", s_MolEnumerable_Length, 0);
     rb_define_alias(rb_cMolEnumerable, "size", "length");
 	rb_define_method(rb_cMolEnumerable, "each", s_MolEnumerable_Each, 0);
-	
+	rb_define_method(rb_cMolEnumerable, "==", s_MolEnumerable_Equal, 1);
+
 	/*  class AtomRef  */
 	rb_cAtomRef = rb_define_class_under(rb_mMolby, "AtomRef", rb_cObject);
 	for (i = 0; s_AtomAttrDefTable[i].name != NULL; i++) {
@@ -10021,7 +10118,8 @@ Init_Molby(void)
 	s_SetAtomAttrString = rb_str_new2("set_atom_attr");
 	rb_global_variable(&s_SetAtomAttrString);
 	rb_define_method(rb_cAtomRef, "molecule", s_AtomRef_GetMolecule, 0);
-	
+	rb_define_method(rb_cAtomRef, "==", s_AtomRef_Equal, 1);
+
 	/*  class Parameter  */
 	rb_cParameter = rb_define_class_under(rb_mMolby, "Parameter", rb_cObject);
 	rb_define_method(rb_cParameter, "bond", s_Parameter_Bond, 1);
@@ -10049,6 +10147,7 @@ Init_Molby(void)
 	rb_define_method(rb_cParameter, "vdw_cutoffs", s_Parameter_VdwCutoffs, 0);
 	rb_define_method(rb_cParameter, "elements", s_Parameter_Elements, 0);
 	rb_define_method(rb_cParameter, "lookup", s_Parameter_LookUp, -1);
+	rb_define_method(rb_cParameter, "==", s_Parameter_Equal, 1);
 	rb_define_singleton_method(rb_cParameter, "builtin", s_Parameter_Builtin, 0);
 	rb_define_singleton_method(rb_cParameter, "bond", s_Parameter_Bond, 1);
 	rb_define_singleton_method(rb_cParameter, "angle", s_Parameter_Angle, 1);
@@ -10088,6 +10187,7 @@ Init_Molby(void)
 	rb_define_method(rb_cParEnumerable, "insert", s_ParEnumerable_Insert, -1);
 	rb_define_method(rb_cParEnumerable, "delete", s_ParEnumerable_Delete, 1);
 	rb_define_method(rb_cParEnumerable, "lookup", s_ParEnumerable_LookUp, -1);
+	rb_define_method(rb_cParEnumerable, "==", s_ParEnumerable_Equal, 1);
 	
 	/*  class ParameterRef  */
 	rb_cParameterRef = rb_define_class_under(rb_mMolby, "ParameterRef", rb_cObject);
@@ -10110,7 +10210,8 @@ Init_Molby(void)
 	rb_define_method(rb_cParameterRef, "to_hash", s_ParameterRef_ToHash, 0);
 	rb_define_method(rb_cParameterRef, "to_s", s_ParameterRef_ToString, 0);
 	rb_define_method(rb_cParameterRef, "keys", s_ParameterRef_Keys, 0);
-	
+	rb_define_method(rb_cParameterRef, "==", s_ParameterRef_Equal, 1);
+
 	/*  class MolbyError  */
 	rb_eMolbyError = rb_define_class_under(rb_mMolby, "MolbyError", rb_eStandardError);
 
@@ -10220,9 +10321,9 @@ Molby_showRubyValue(RubyValue value, char **outValueString)
 		val = rb_protect(rb_inspect, val, &status);
 		gMolbyRunLevel--;
 		str = StringValuePtr(val);
-		MyAppCallback_showScriptMessage("%s", str);
 		if (outValueString != NULL)
 			*outValueString = strdup(str);
+		MyAppCallback_showScriptMessage("%s", str);
 	}
 }
 
