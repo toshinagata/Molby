@@ -7881,12 +7881,17 @@ MoleculeAddBonds(Molecule *mp, Int nbonds, const Int *bonds, IntGroup *where, In
 						temp[2] = cp1[k];
 						if (temp[2] == temp[0])
 							continue;
+						ap3 = ATOM_AT_INDEX(mp->atoms, temp[2]);
+						if (ap3->anchor != NULL) {
+							/*  Avoid X-anchor-anchor angle (anchor-X-anchor is allowed)  */
+							if ((j < 2 && ap2->anchor != NULL) || (j >= 2 && ap1->anchor != NULL))
+								continue;
+						}
 						if (AssignArray(&angles, &nangles, sizeof(Int) * 3, nangles, temp) == NULL)
 							goto panic;
 						/*  Dihedrals N1-N2-X-X or N2-N1-X-X  */
 						if (j == 1 || j == 3)
 							continue;
-						ap3 = ATOM_AT_INDEX(mp->atoms, temp[2]);
 						cp2 = AtomConnectData(&ap3->connect);
 						for (kk = 0; kk < ap3->connect.count; kk++) {
 							temp[3] = cp2[kk];
