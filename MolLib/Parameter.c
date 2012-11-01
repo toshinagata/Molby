@@ -1264,7 +1264,7 @@ exit:
 int
 ParameterAppendToFile(Parameter *par, FILE *fp)
 {
-	int i, n;
+	int i, n, nn;
 	char cbuf[6][8];
 	char buf[120];
 	int bufsize = sizeof(buf);
@@ -1273,20 +1273,24 @@ ParameterAppendToFile(Parameter *par, FILE *fp)
 		return 0;
 	
 	n = 0;
-	if (par->nbondPars > 0)
-		fprintf(fp, "! type1 type2 k r0\n");
-	for (i = 0; i < par->nbondPars; i++) {
+	for (i = nn = 0; i < par->nbondPars; i++) {
 		BondPar *bp = par->bondPars + i;
+		if (bp->src < 0)
+			continue;  /*  missing parameter  */
+		if (nn++ == 0)
+			fprintf(fp, "! type1 type2 k r0\n");
 		AtomTypeDecodeToString(bp->type1, cbuf[0]);
 		AtomTypeDecodeToString(bp->type2, cbuf[1]);
 		s_CommentToString(buf, bufsize, bp);
 		fprintf(fp, "bond %s %s %.6f %f%s\n", cbuf[0], cbuf[1], bp->k * INTERNAL2KCAL, bp->r0, buf);
 		n++;
 	}
-	if (par->nanglePars > 0)
-		fprintf(fp, "! type1 type2 type3 k a0\n");
-	for (i = 0; i < par->nanglePars; i++) {
+	for (i = nn = 0; i < par->nanglePars; i++) {
 		AnglePar *ap = par->anglePars + i;
+		if (ap->src < 0)
+			continue;  /*  missing parameter  */
+		if (nn++ == 0)
+			fprintf(fp, "! type1 type2 type3 k a0\n");
 		AtomTypeDecodeToString(ap->type1, cbuf[0]);
 		AtomTypeDecodeToString(ap->type2, cbuf[1]);
 		AtomTypeDecodeToString(ap->type3, cbuf[2]);
@@ -1294,10 +1298,12 @@ ParameterAppendToFile(Parameter *par, FILE *fp)
 		fprintf(fp, "angle %s %s %s %.6f %f%s\n", cbuf[0], cbuf[1], cbuf[2], ap->k * INTERNAL2KCAL, ap->a0 * kRad2Deg, buf);
 		n++;
 	}
-	if (par->ndihedralPars > 0)
-		fprintf(fp, "! type1 type2 type3 type4 k periodicity phi0\n");
-	for (i = 0; i < par->ndihedralPars; i++) {
+	for (i = nn = 0; i < par->ndihedralPars; i++) {
 		TorsionPar *tp = par->dihedralPars + i;
+		if (tp->src < 0)
+			continue;  /*  missing parameter  */
+		if (nn++ == 0)
+			fprintf(fp, "! type1 type2 type3 type4 k periodicity phi0\n");
 		AtomTypeDecodeToString(tp->type1, cbuf[0]);
 		AtomTypeDecodeToString(tp->type2, cbuf[1]);
 		AtomTypeDecodeToString(tp->type3, cbuf[2]);
@@ -1306,10 +1312,12 @@ ParameterAppendToFile(Parameter *par, FILE *fp)
 		fprintf(fp, "dihe %s %s %s %s %.6f %d %f%s\n", cbuf[0], cbuf[1], cbuf[2], cbuf[3], tp->k[0] * INTERNAL2KCAL, tp->period[0], tp->phi0[0] * kRad2Deg, buf);
 		n++;
 	}
-	if (par->nimproperPars > 0)
-		fprintf(fp, "! type1 type2 type3 type4 k periodicity phi0\n");
-	for (i = 0; i < par->nimproperPars; i++) {
+	for (i = nn = 0; i < par->nimproperPars; i++) {
 		TorsionPar *tp = par->improperPars + i;
+		if (tp->src < 0)
+			continue;  /*  missing parameter  */
+		if (nn++ == 0)
+			fprintf(fp, "! type1 type2 type3 type4 k periodicity phi0\n");
 		AtomTypeDecodeToString(tp->type1, cbuf[0]);
 		AtomTypeDecodeToString(tp->type2, cbuf[1]);
 		AtomTypeDecodeToString(tp->type3, cbuf[2]);
@@ -1318,39 +1326,29 @@ ParameterAppendToFile(Parameter *par, FILE *fp)
 		fprintf(fp, "impr %s %s %s %s %.6f %d %f%s\n", cbuf[0], cbuf[1], cbuf[2], cbuf[3], tp->k[0] * INTERNAL2KCAL, tp->period[0], tp->phi0[0] * kRad2Deg, buf);
 		n++;
 	}
-	if (par->nvdwPars > 0)
-		fprintf(fp, "! type eps r_eq eps14 r_eq14 atomic_number weight\n");
-	for (i = 0; i < par->nvdwPars; i++) {
+	for (i = nn = 0; i < par->nvdwPars; i++) {
 		VdwPar *vp = par->vdwPars + i;
-	/*	Double eps, eps14;  */
+		if (vp->src < 0)
+			continue;  /*  missing parameter  */
+		if (nn++ == 0)
+			fprintf(fp, "! type eps r_eq eps14 r_eq14 atomic_number weight\n");
 		AtomTypeDecodeToString(vp->type1, cbuf[0]);
-	/*	eps = (vp->A == 0.0 ? 0.0 : vp->B * vp->B / vp->A * 0.25 * INTERNAL2KCAL);
-		eps14 = (vp->A14 == 0.0 ? 0.0 : vp->B14 * vp->B14 / vp->A14 * 0.25 * INTERNAL2KCAL);  */
 		s_CommentToString(buf, bufsize, vp);
 		fprintf(fp, "vdw %s %.6f %.6f %.6f %.6f %d %f%s\n", cbuf[0], vp->eps * INTERNAL2KCAL, vp->r_eq, vp->eps14 * INTERNAL2KCAL, vp->r_eq14, vp->atomicNumber, vp->weight, buf);  /*  polarizability is not written because it is not used now  */
 		n++;
 	}
-	if (par->nvdwpPars > 0)
-		fprintf(fp, "! type1 type2 eps r_eq eps14 r_eq14\n");
-	for (i = 0; i < par->nvdwpPars; i++) {
+	for (i = nn = 0; i < par->nvdwpPars; i++) {
 		VdwPairPar *vpp = par->vdwpPars + i;
-	/*	Double eps, eps14;  */
+		if (vpp->src < 0)
+			continue;  /*  missing parameter  */
+		if (nn++ == 0)
+			fprintf(fp, "! type1 type2 eps r_eq eps14 r_eq14\n");
 		AtomTypeDecodeToString(vpp->type1, cbuf[0]);
 		AtomTypeDecodeToString(vpp->type2, cbuf[1]);
-	/*	eps = (vpp->A == 0.0 ? 0.0 : vpp->B * vpp->B / vpp->A * 0.25 * INTERNAL2KCAL);
-		eps14 = (vpp->A14 == 0.0 ? 0.0 : vpp->B14 * vpp->B14 / vpp->A14 * 0.25 * INTERNAL2KCAL); */
 		s_CommentToString(buf, bufsize, vpp);
 		fprintf(fp, "vdwp %s %s %.6f %.6f %.6f %.6f%s\n", cbuf[0], cbuf[1], vpp->eps * INTERNAL2KCAL, vpp->r_eq, vpp->eps14 * INTERNAL2KCAL, vpp->r_eq14, buf);
 		n++;
 	}
-/*	if (par->natomPars > 0)
-		fprintf(fp, "! name atomic_number radius red green blue weight\n");
-	for (i = 0; i < par->natomPars; i++) {
-		ElementPar *app = par->atomPars + i;
-		s_CommentToString(buf, bufsize, app);
-		fprintf(fp, "element %.4s %d %f %f %f %f %f%s\n", app->name, app->number, app->radius, app->r, app->g, app->b, app->weight, buf);
-		n++;
-	} */
 	return n;
 }
 
@@ -1555,7 +1553,7 @@ ParameterLookupBondPar(Parameter *par, UInt t1, UInt t2, Int idx1, Int idx2, Int
 	Int nowildcard = (options & kParameterLookupNoWildcard);
 	if (par == NULL)
 		return NULL;
-	if ((options & (kParameterLookupGlobal | kParameterLookupLocal | kParameterLookupMissing)) == 0)
+	if ((options & (kParameterLookupGlobal | kParameterLookupLocal)) == 0)
 		options |= kParameterLookupGlobal | kParameterLookupLocal;
 	for (i = par->nbondPars - 1, bp = par->bondPars + i; i >= 0; i--, bp--) {
 		if ((bp->src > 0 && !(options & kParameterLookupGlobal))
@@ -1580,7 +1578,7 @@ ParameterLookupAnglePar(Parameter *par, UInt t1, UInt t2, UInt t3, Int idx1, Int
 	Int nowildcard = (options & kParameterLookupNoWildcard);
 	if (par == NULL)
 		return NULL;
-	if ((options & (kParameterLookupGlobal | kParameterLookupLocal | kParameterLookupMissing)) == 0)
+	if ((options & (kParameterLookupGlobal | kParameterLookupLocal)) == 0)
 		options |= kParameterLookupGlobal | kParameterLookupLocal;
 	for (i = par->nanglePars - 1, ap = par->anglePars + i; i >= 0; i--, ap--) {
 		if ((ap->src > 0 && !(options & kParameterLookupGlobal))
@@ -1605,7 +1603,7 @@ ParameterLookupDihedralPar(Parameter *par, UInt t1, UInt t2, UInt t3, UInt t4, I
 	Int nowildcard = (options & kParameterLookupNoWildcard);
 	if (par == NULL)
 		return NULL;
-	if ((options & (kParameterLookupGlobal | kParameterLookupLocal | kParameterLookupMissing)) == 0)
+	if ((options & (kParameterLookupGlobal | kParameterLookupLocal)) == 0)
 		options |= kParameterLookupGlobal | kParameterLookupLocal;
 	for (i = par->ndihedralPars - 1, tp = par->dihedralPars + i; i >= 0; i--, tp--) {
 		if ((tp->src > 0 && !(options & kParameterLookupGlobal))
@@ -1630,7 +1628,7 @@ ParameterLookupImproperPar(Parameter *par, UInt t1, UInt t2, UInt t3, UInt t4, I
 	Int nowildcard = (options & kParameterLookupNoWildcard);
 	if (par == NULL)
 		return NULL;
-	if ((options & (kParameterLookupGlobal | kParameterLookupLocal | kParameterLookupMissing)) == 0)
+	if ((options & (kParameterLookupGlobal | kParameterLookupLocal)) == 0)
 		options |= kParameterLookupGlobal | kParameterLookupLocal;
 	for (i = par->nimproperPars - 1, tp = par->improperPars + i; i >= 0; i--, tp--) {
 		if ((tp->src > 0 && !(options & kParameterLookupGlobal))
@@ -1660,7 +1658,7 @@ ParameterLookupVdwPar(Parameter *par, UInt t1, Int options)
 	Int nowildcard = (options & kParameterLookupNoWildcard);
 	if (par == NULL)
 		return NULL;
-	if ((options & (kParameterLookupGlobal | kParameterLookupLocal | kParameterLookupMissing)) == 0)
+	if ((options & (kParameterLookupGlobal | kParameterLookupLocal)) == 0)
 		options |= kParameterLookupGlobal | kParameterLookupLocal;
 	for (i = par->nvdwPars - 1, vp = par->vdwPars + i; i >= 0; i--, vp--) {
 		if ((vp->src > 0 && !(options & kParameterLookupGlobal))
@@ -1683,7 +1681,7 @@ ParameterLookupVdwPairPar(Parameter *par, UInt t1, UInt t2, Int options)
 	Int nowildcard = (options & kParameterLookupNoWildcard);
 	if (par == NULL)
 		return NULL;
-	if ((options & (kParameterLookupGlobal | kParameterLookupLocal | kParameterLookupMissing)) == 0)
+	if ((options & (kParameterLookupGlobal | kParameterLookupLocal)) == 0)
 		options |= kParameterLookupGlobal | kParameterLookupLocal;
 	for (i = par->nvdwpPars - 1, vp = par->vdwpPars + i; i >= 0; i--, vp--) {
 		if ((vp->src > 0 && !(options & kParameterLookupGlobal))
@@ -1707,7 +1705,7 @@ ParameterLookupVdwCutoffPar(Parameter *par, UInt t1, UInt t2, Int options)
 	Int nowildcard = (options & kParameterLookupNoWildcard);
 	if (par == NULL)
 		return NULL;
-	if ((options & (kParameterLookupGlobal | kParameterLookupLocal | kParameterLookupMissing)) == 0)
+	if ((options & (kParameterLookupGlobal | kParameterLookupLocal)) == 0)
 		options |= kParameterLookupGlobal | kParameterLookupLocal;
 	for (i = par->nvdwCutoffPars - 1, vp = par->vdwCutoffPars + i; i >= 0; i--, vp--) {
 		if ((vp->src > 0 && !(options & kParameterLookupGlobal))
