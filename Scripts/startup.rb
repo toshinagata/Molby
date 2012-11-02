@@ -39,6 +39,20 @@ def backtrace
   end
 end
 
+#  Utility methods
+module Enumerable
+  def sum(&block)
+    if block
+      self.inject(0) { |sum, v| sum + block.call(v) }
+	else
+	  self.inject(0) { |sum, v| sum + v }
+	end
+  end
+  def average(&block)
+    sum(&block) / Float(self.length)
+  end
+end
+
 load "transform.rb"
 load "molecule.rb"
 load "loadsave.rb"
