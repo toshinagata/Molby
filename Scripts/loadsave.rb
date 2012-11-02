@@ -583,6 +583,7 @@ class Molecule
  C1
 end_of_header
 	each_atom { |ap|
+		next if ap.atomic_number == 0
 		fp.printf " %-6s %4d %10.6f %10.6f %10.6f\n", ap.name, ap.atomic_number, ap.r.x, ap.r.y, ap.r.z
 	}
 	fp.print " $END\n"
@@ -605,6 +606,7 @@ end_of_header
  0 1
 end_of_header
 	each_atom { |ap|
+	    next if ap.atomic_number == 0
 		fp.printf "%-6s %10.6f %10.6f %10.6f\n", ap.element, ap.r.x, ap.r.y, ap.r.z
 	}
 	fp.print "\n"
