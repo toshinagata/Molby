@@ -19,7 +19,7 @@ class Molecule
     arena = self.md_arena
 	read_only = [:step, :coord_frame, :transient_temperature, :average_temperature]
 	keys = [:timestep, :temperature, :cutoff, :electro_cutoff, :pairlist_distance,
-	 :scale14_vdw, :scale14_elect, :use_xplor_shift, :dielectric,
+	 :switch_distance, :scale14_vdw, :scale14_elect, :use_xplor_shift, :dielectric,
 	 :andersen_freq, :andersen_coupling, :random_seed, :relocate_center,
 	 :use_graphite, :minimize_cell,
 	 :gradient_convergence, :coordinate_convergence,
@@ -1006,7 +1006,7 @@ class Molecule
       format_print(fp, 5, "16.8E", self.atoms.map { |ap| ap.weight })
       
       fp.print "%FLAG ATOM_TYPE_INDEX\n%FORMAT(10I8)\n"
-      format_print(fp, 10, "8d", (0...self.natoms).map { |i| self.vdw_par(i).index + 1 })
+      format_print(fp, 10, "8d", (0...self.natoms).map { |i| par.vdws.lookup(i).index + 1 })
       
       fp.print "%FLAG NUMBER_EXCLUDED_ATOMS\n%FORMAT(10I8)\n"
       format_print(fp, 10, "8d", exnumbers)
@@ -1061,22 +1061,22 @@ class Molecule
       fp.print "%FLAG BONDS_INC_HYDROGEN\n%FORMAT(10I8)\n"
       format_print(fp, 10, "8d", bonds_h.map { |n|
         x = self.bonds[n]
-        [x[0] * 3, x[1] * 3, self.bond_par(n).index + 1] }.flatten)
+        [x[0] * 3, x[1] * 3, par.bonds.lookup(x).index + 1] }.flatten)
       
       fp.print "%FLAG BONDS_WITHOUT_HYDROGEN\n%FORMAT(10I8)\n"
       format_print(fp, 10, "8d", bonds_a.map { |n|
         x = self.bonds[n]
-        [x[0] * 3, x[1] * 3, self.bond_par(n).index + 1] }.flatten)
+        [x[0] * 3, x[1] * 3, par.bonds.lookup(x).index + 1] }.flatten)
       
       fp.print "%FLAG ANGLES_INC_HYDROGEN\n%FORMAT(10I8)\n"
       format_print(fp, 10, "8d", angles_h.map { |n|
         x = self.angles[n]
-        [x[0] * 3, x[1] * 3, x[2] * 3, self.angle_par(n).index + 1] }.flatten)
+        [x[0] * 3, x[1] * 3, x[2] * 3, par.angles.lookup(x).index + 1] }.flatten)
       
       fp.print "%FLAG ANGLES_WITHOUT_HYDROGEN\n%FORMAT(10I8)\n"
       format_print(fp, 10, "8d", angles_a.map { |n|
         x = self.angles[n]
-        [x[0] * 3, x[1] * 3, x[2] * 3, self.angle_par(n).index + 1] }.flatten)
+        [x[0] * 3, x[1] * 3, x[2] * 3, par.angles.lookup(x).index + 1] }.flatten)
       
       [dihedrals_h, dihedrals_a].each { |dihed|
         if dihed == dihedrals_h
@@ -1092,7 +1092,7 @@ class Molecule
             if n >= 1000000 && x[2] == 0
               x = x.reverse
             end
-            k = self.dihedral_par(n % 1000000).index + 1
+            k = par.dihedrals.lookup(x).index + 1
             [x[0] * 3, x[1] * 3, (n >= 1000000 ? -x[2] : x[2]) * 3, x[3] * 3, k]
           else
             x = self.impropers[n % 1000000]
@@ -1100,7 +1100,7 @@ class Molecule
             if x[3] == 0
               x = [x[3], x[1], x[2], x[0]]
             end
-            k = self.improper_par(n % 1000000).index + 1 + par.ndihedrals
+            k = par.impropers.lookup(x).index + 1 + par.ndihedrals
             [x[0] * 3, x[1] * 3, -x[2] * 3, -x[3] * 3, k]
           end
         }.flatten)

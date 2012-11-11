@@ -16,6 +16,7 @@
 
 #include "MDForce.h"
 #include "MDGraphite.h"
+#include "MDEwald.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -91,7 +92,7 @@ s_calc_bond_force(MDArena *arena)
 		VecDec(forces[bonds[0]], r12);
 		VecInc(forces[bonds[1]], r12);
 		if (arena->debug_result && arena->debug_output_level > 1) {
-			fprintf(arena->debug_result, "bond force %d-%d: r=%f, r0=%f, k1=%f, {%f %f %f}\n", bonds[0]+1, bonds[1]+1, w1, r0, k1, r12.x, r12.y, r12.z);
+			fprintf(arena->debug_result, "bond force %d-%d: r=%f, r0=%f, k1=%f, {%f %f %f}\n", bonds[0]+1, bonds[1]+1, w1, r0, k1 * INTERNAL2KCAL, r12.x * INTERNAL2KCAL, r12.y * INTERNAL2KCAL, r12.z * INTERNAL2KCAL);
 		}
 	}
 }
@@ -196,7 +197,7 @@ s_calc_angle_force(MDArena *arena)
 		VecInc(forces[angles[1]], f2);
 		VecInc(forces[angles[2]], f3);
 		if (arena->debug_result && arena->debug_output_level > 1) {
-			fprintf(arena->debug_result, "angle force %d-%d-%d: a=%f, a0=%f, k1=%f, {%f %f %f}, {%f %f %f}\n", angles[0]+1, angles[1]+1, angles[2]+1, ang*180/PI, anp->a0*180/PI, k1, -f2.x, -f2.y, -f2.z, f3.x, f3.y, f3.z);
+			fprintf(arena->debug_result, "angle force %d-%d-%d: a=%f, a0=%f, k1=%f, {%f %f %f}, {%f %f %f}\n", angles[0]+1, angles[1]+1, angles[2]+1, ang*180/PI, anp->a0*180/PI, k1 * INTERNAL2KCAL, -f2.x * INTERNAL2KCAL, -f2.y * INTERNAL2KCAL, -f2.z * INTERNAL2KCAL, f3.x * INTERNAL2KCAL, f3.y * INTERNAL2KCAL, f3.z * INTERNAL2KCAL);
 		}
 	}
 }
@@ -443,7 +444,7 @@ s_calc_dihedral_force_sub(MDArena *arena, Atom *ap, Int ndihedrals, Int *dihedra
 		VecInc(forces[dihedrals[2]], f3);
 		VecInc(forces[dihedrals[3]], f4);
 		if (arena->debug_result && arena->debug_output_level > 1) {
-			fprintf(arena->debug_result, "dihedral(improper) force %d-%d-%d-%d: phi=%f, k1=%f, {%f %f %f}, {%f %f %f}, {%f %f %f}\n", dihedrals[0]+1, dihedrals[1]+1, dihedrals[2]+1, dihedrals[3]+1, phi*180/PI, k1, f1.x, f1.y, f1.z, f2.x, f2.y, f2.z, f3.x, f3.y, f3.z);
+			fprintf(arena->debug_result, "dihedral(improper) force %d-%d-%d-%d: phi=%f, k1=%f, {%f %f %f}, {%f %f %f}, {%f %f %f}\n", dihedrals[0]+1, dihedrals[1]+1, dihedrals[2]+1, dihedrals[3]+1, phi*180/PI, k1 * INTERNAL2KCAL, f1.x * INTERNAL2KCAL, f1.y * INTERNAL2KCAL, f1.z * INTERNAL2KCAL, f2.x * INTERNAL2KCAL, f2.y * INTERNAL2KCAL, f2.z * INTERNAL2KCAL, f3.x * INTERNAL2KCAL, f3.y * INTERNAL2KCAL, f3.z * INTERNAL2KCAL);
 		}
 	}
 }
@@ -647,7 +648,7 @@ s_enum_neighbors(MDArena *arena, Vector v, Double d)
 				dim = 1;
 			else dim = 2;
 		} else {
-			mu[2] = VecDot(axes[3], bn[1]) / bl[1];
+			mu[2] = VecDot(axes[2], bn[1]) / bl[1];
 			bn[2] = axes[2];
 			VecScaleInc(bn[2], bn[0], -mu[1]);
 			VecScaleInc(bn[2], bn[1], -mu[2]);
@@ -733,7 +734,7 @@ s_make_verlet_list(MDArena *arena)
 	Atom *api, *apj;
 	MDVerlet *vl = arena->verlets;
 	Vector *vdr = arena->verlets_dr;
-	Double limit;
+	Double limit, limit2;
 	Byte use_sym;
 	XtalCell *cell = mol->cell;
 	Parameter *par = arena->par;
@@ -746,7 +747,8 @@ s_make_verlet_list(MDArena *arena)
 	ndx = (arena->periodic_a ? 1 : 0);
 	ndy = (arena->periodic_b ? 1 : 0);
 	ndz = (arena->periodic_c ? 1 : 0);
-	limit = arena->pairlist_distance * arena->pairlist_distance;
+	limit = arena->pairlist_distance;
+	limit2 = limit * limit;
 	n = 0;
 	use_sym = (arena->mol->nsyms > 0);
 	for (i = 0, api = atoms; i < natoms; i++, api++) {
@@ -852,7 +854,7 @@ s_make_verlet_list(MDArena *arena)
 				}
 
 				lenij2 = VecLength2(rij0);
-				if (lenij2 <= limit) {
+				if (lenij2 <= limit2) {
 					MDVerlet *vlp;
 					if (n >= arena->max_nverlets) {
 						arena->max_nverlets += 32;
@@ -903,14 +905,28 @@ s_calc_nonbonded_force_sub(MDArena *arena, Double *energies, Double *eenergies, 
 {
 	int i;
 	Vector *vdr;
-	Double limit, elimit, dielec_r;
+	Double limit, elimit, slimit, vlimit, dielec_r;
+	Double slimit6, slimit12, vlimit6, vlimit12;
 	Double lambda, dlambda;
-
+/*	Double beta2;  */
 	MDVerlet *vl;
 /*	MDVdwCache *vdw_cache = arena->vdw_cache; */
 	Atom *atoms = arena->mol->atoms;
 	XtalCell *cell = arena->mol->cell;
-
+	Vector *eforces_corr;
+	Double *eenergies_corr;
+	Int do_ewald;
+	
+	if (group_flags_1 == NULL && arena->use_ewald) {
+		eforces_corr = &arena->forces[kESCorrectionIndex * arena->mol->natoms];
+		eenergies_corr = &arena->energies[kESCorrectionIndex];
+		do_ewald = 1;
+	} else {
+		do_ewald = 0;
+		eforces_corr = NULL;
+		eenergies_corr = NULL;
+	}
+	
 #if MINIMIZE_CELL
 	memset(arena->cell_forces, 0, sizeof(Double) * 12);
 #endif
@@ -931,13 +947,25 @@ s_calc_nonbonded_force_sub(MDArena *arena, Double *energies, Double *eenergies, 
 	} else i = 0;
 	if (i >= 0)
 		s_make_verlet_list(arena);
-	
+		
 	/*  Calculate the non-bonded interaction for each pair in the Verlet list  */
-/*	limit = arena->cutoff * arena->cutoff; */
+	vlimit = arena->cutoff * arena->cutoff;
 	elimit = arena->electro_cutoff * arena->electro_cutoff;
+	slimit = arena->switch_distance * arena->switch_distance;
+	if (slimit > vlimit)
+		slimit = 0.0;  /*  No switching  */
+	if (slimit > 0.0) {
+		slimit6 = 1/(slimit * slimit * slimit);
+		slimit12 = slimit6 * slimit6;
+	}
+	vlimit6 = 1/(vlimit * vlimit * vlimit);
+	vlimit12 = vlimit6 * vlimit6;
 	dielec_r = COULOMBIC / arena->dielectric;
+/*	if (arena->use_ewald)
+		beta2 = arena->ewald_beta * arena->ewald_beta;
+	else beta2 = 0.0; */
 	for (i = arena->nverlets - 1, vl = arena->verlets + i; i >= 0; i--, vl--) {
-		Double A, B, vofs, k0, k1;
+		Double A, B, k0, k1;
 		MDVdwCache *vp = arena->vdw_cache + vl->index;
 		Atom *ap1, *ap2;
 		Vector rij, fij, rij2, fij2;
@@ -1004,24 +1032,41 @@ s_calc_nonbonded_force_sub(MDArena *arena, Double *energies, Double *eenergies, 
 		/*  Coulombic force  */
 		w12 = ap1->charge * ap2->charge * dielec_r;
 		if (w12 != 0.0) {
-			if (arena->use_xplor_shift) {
+			Double k2, k3, er;
+			if (do_ewald || !arena->use_xplor_shift) {
+				w2 = 1.0 / sqrt(r2);
+				w6 = w2 / r2;
+				k0 = w12 * w2;
+				k1 = w12 * w6;
+				if (do_ewald) {
+					k2 = arena->ewald_beta / w2;
+					er = erf(k2);
+					k3 = -k1 * (-er + 2 * k2 * exp(-k2 * k2) * PI2R);
+					k2 = -k0 * er;
+				} else {
+				/*	vofs = -w12 / arena->electro_cutoff;
+					k0 += vofs; */  /*  Discontinue potential at cutoff  */
+				}
+			} else {
 				w2 = 1.0 / sqrt(r2);
 				k0 = r2 / elimit - 1.0;
 				k0 = k0 * k0;
 				k0 = w12 * k0 * w2;
 				k1 = (3.0 * r2 / elimit - 2.0) / elimit - 1.0 / r2;
 				k1 = -w12 * k1 * w2;
-			} else {
-				w2 = 1.0 / sqrt(r2);
-				w6 = w2 / r2;
-				k0 = w12 * w2;
-				k1 = w12 * w6;
-				vofs = -w12 / arena->electro_cutoff;
-				k0 += vofs;
 			}
 			if (vl->vdw_type == 1) {
 				k0 *= arena->scale14_elect;
 				k1 *= arena->scale14_elect;
+			}
+			if (do_ewald) {
+				VecScale(fij, rij, k3);
+				*eenergies_corr += k2 / vl->mult;
+				VecDec(eforces_corr[vl->n1], fij);
+				VecInc(eforces_corr[vl->n2], fij);
+				if (arena->debug_result && arena->debug_output_level > 1) {
+					fprintf(arena->debug_result, "Electrostatic correction force %d-%d: r=%f, k0=%f, k1=%f, {%f %f %f}\n", vl->n1+1, vl->n2+1, sqrt(r2), k2/KCAL2INTERNAL, k3*sqrt(r2)/KCAL2INTERNAL, fij.x/KCAL2INTERNAL, fij.y/KCAL2INTERNAL, fij.z/KCAL2INTERNAL);
+				}
 			}
 			VecScale(fij, rij, k1);
 			*eenergies += k0 / vl->mult;
@@ -1036,16 +1081,23 @@ s_calc_nonbonded_force_sub(MDArena *arena, Double *energies, Double *eenergies, 
 		}
 
 		/*  van der Waals force  */
+		/*  w2 = 1/(r**2), w6 = 1/(r**6), w12 = 1/(r**12)  */
 		w2 = 1.0 / r2;
 		w6 = w2 * w2 * w2;
 		w12 = w6 * w6;
-		k0 = A * w12 - B * w6;
-		k1 = 6 * w2 * (2.0 * A * w12 - B * w6);
-		w2 = 1.0 / limit;
-		w6 = w2 * w2 * w2;
-		w12 = w6 * w6;
-		vofs = -A * w12 + B * w6;
-		k0 += vofs;
+		if (slimit == 0 || r2 < slimit) {
+			k0 = A * w12 - B * w6;
+			k1 = 6 * w2 * (2.0 * A * w12 - B * w6);
+		} else {
+			/*  Between switch_distance and cutoff: Linear switching function  */
+			w2 = 1.0 / slimit;
+			w6 = w2 * w2 * w2;
+			w12 = w6 * w6;
+			k1 = (A * w12 - B * w6) / (arena->cutoff - arena->switch_distance);
+			w2 = sqrt(r2);
+			k0 = k1 * (arena->cutoff - w2);
+			k1 = -k1 / w2;
+		}
 		if (vl->vdw_type == 1) {
 			k0 *= arena->scale14_vdw;
 			k1 *= arena->scale14_vdw;
@@ -1112,6 +1164,36 @@ s_calc_nonbonded_force_sub(MDArena *arena, Double *energies, Double *eenergies, 
 #endif
 		
 	}
+	
+	if (arena->use_ewald != 0) {
+		/*  Calculate correction terms for excluded atom pairs  */
+		Atom *api, *apj;
+		Int j, k;
+		Vector rij;
+		Double d, dd, w0, w1, w12;
+		for (i = 0, api = arena->mol->atoms; i < arena->mol->natoms; i++, api = ATOM_NEXT(api)) {
+			MDExclusion *exinfo = arena->exinfo + i;
+			for (k = exinfo->index0; k < exinfo->index3; k++) {
+				j = arena->exlist[k];
+				if (j <= i)
+					continue;
+				apj = ATOM_AT_INDEX(arena->mol->atoms, j);
+				VecSub(rij, api->r, apj->r);
+				d = VecLength(rij);
+				w12 = -api->charge * apj->charge * COULOMBIC / arena->dielectric * 0.5;
+				dd = arena->ewald_beta * d;
+				w0 = w12 * erf(dd) / d;
+				w1 = (2 * w0 - w12 * 4 * dd * PI2R * exp(-dd * dd)) / (d * d);
+				VecScaleSelf(rij, w1);
+				if (arena->debug_result && arena->debug_output_level > 1) {
+					fprintf(arena->debug_result, "Electrostatic correction force (excluded) %d-%d: r=%f, k0=%f, k1=%f, {%f %f %f}\n", i+1, j+1, d, w0/KCAL2INTERNAL, w0*d/KCAL2INTERNAL, rij.x/KCAL2INTERNAL, rij.y/KCAL2INTERNAL, rij.z/KCAL2INTERNAL);
+				}
+				VecInc(eforces_corr[i], rij);
+				VecDec(eforces_corr[j], rij);
+				*eenergies_corr += w0;
+			}
+		}
+	}
 }
 
 static void
@@ -1159,7 +1241,7 @@ s_calc_auxiliary_force(MDArena *arena)
 			VecInc(forces[i], r21);
 #if DEBUG
 			if (arena->debug_result && arena->debug_output_level > 1) {
-				fprintf(arena->debug_result, "auxiliary(centric) force %d: r=%f, k1=%f, {%f %f %f}\n", i, w1, k1*w1, r21.x, r21.y, r21.z);
+				fprintf(arena->debug_result, "auxiliary(centric) force %d: r=%f, k1=%f, {%f %f %f}\n", i, w1, k1*w1 * INTERNAL2KCAL, r21.x * INTERNAL2KCAL, r21.y * INTERNAL2KCAL, r21.z * INTERNAL2KCAL);
 			}
 #endif
 		}
@@ -1193,7 +1275,7 @@ s_calc_auxiliary_force(MDArena *arena)
 			VecScaleSelf(r21, k1);
 			VecInc(forces[i], r21);
 			if (arena->debug_result && arena->debug_output_level > 1) {
-				fprintf(arena->debug_result, "auxiliary(spherical BC) force %d: r=%f, k1=%f, {%f %f %f}\n", i, w1, k1*w1, r21.x, r21.y, r21.z);
+				fprintf(arena->debug_result, "auxiliary(spherical BC) force %d: r=%f, k1=%f, {%f %f %f}\n", i, w1, k1*w1 * INTERNAL2KCAL, r21.x * INTERNAL2KCAL, r21.y * INTERNAL2KCAL, r21.z * INTERNAL2KCAL);
 			}
 		}
 	}
@@ -1226,7 +1308,7 @@ s_calc_auxiliary_force(MDArena *arena)
 			*energies += k * (r.x * r.x + r.y * r.y + r.z * r.z);
 			VecScaleInc(forces[i], r, -2);
 			if (arena->debug_result && arena->debug_output_level > 1) {
-				fprintf(arena->debug_result, "auxiliary(box) force %d: {%f %f %f}\n", i, -2*r.x, -2*r.y, -2*r.z);
+				fprintf(arena->debug_result, "auxiliary(box) force %d: {%f %f %f}\n", i, -2*r.x * INTERNAL2KCAL, -2*r.y * INTERNAL2KCAL, -2*r.z * INTERNAL2KCAL);
 			}
 		}
 	}
@@ -1248,7 +1330,7 @@ s_calc_auxiliary_force(MDArena *arena)
 		VecInc(forces[i], r21);
 		j++;
 		if (arena->debug_result && arena->debug_output_level > 1) {
-			fprintf(arena->debug_result, "auxiliary(fix) force %d: r=%f, k1=%f, {%f %f %f}\n", i, w1, k1*w1, r21.x, r21.y, r21.z);
+			fprintf(arena->debug_result, "auxiliary(fix) force %d: r=%f, k1=%f, {%f %f %f}\n", i, w1, k1*w1 * INTERNAL2KCAL, r21.x * INTERNAL2KCAL, r21.y * INTERNAL2KCAL, r21.z * INTERNAL2KCAL);
 		}
 	}
 	
@@ -1275,7 +1357,7 @@ s_md_debug_output_positions(MDArena *arena)
 	fprintf(arena->debug_result, "%5s %7s %7s %7s %7s %7s %7s %7s %7s %7s\n", "No.", "x", "y", "z", "vx", "vy", "vz", "fx", "fy", "fz");
 	for (i = 0; i < arena->mol->natoms; i++) {
 		Atom *ap = &arena->mol->atoms[i];
-		fprintf(arena->debug_result, "%5d %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f\n", i+1, ap->r.x, ap->r.y, ap->r.z, ap->v.x, ap->v.y, ap->v.z, ap->f.x, ap->f.y, ap->f.z);
+		fprintf(arena->debug_result, "%5d %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f %7.3f\n", i+1, ap->r.x, ap->r.y, ap->r.z, ap->v.x, ap->v.y, ap->v.z, ap->f.x * INTERNAL2KCAL, ap->f.y * INTERNAL2KCAL, ap->f.z * INTERNAL2KCAL);
 	}
 }
 
@@ -1285,7 +1367,7 @@ calc_force(MDArena *arena)
 	Int i, j, natoms;
 	Vector *ff, *fa;
 	Molecule *mol = arena->mol;
-	Int doSurface = 0;
+	Int doSurface = 0, doEwald = 0;
 	Atom *ap;
 
 	natoms = mol->natoms;
@@ -1305,6 +1387,12 @@ calc_force(MDArena *arena)
 		memset(arena->forces + kSurfaceIndex * natoms, 0, sizeof(Vector) * natoms);
 	}
 
+	if (arena->step == arena->start_step || arena->step % arena->surface_potential_freq == 0) {
+		doEwald = 1;
+		arena->energies[kPMEIndex] = 0.0;
+		memset(arena->forces + kPMEIndex * natoms, 0, sizeof(Vector) * natoms);
+	}
+	
 	s_calc_bond_force(arena);
 	s_calc_angle_force(arena);
 	s_calc_dihedral_force(arena);
@@ -1312,6 +1400,9 @@ calc_force(MDArena *arena)
 	s_calc_nonbonded_force(arena);
 	s_calc_auxiliary_force(arena);
 
+	if (doEwald && arena->use_ewald != 0)
+		calc_ewald_force(arena);
+	
 	if (doSurface && arena->probe_radius > 0.0) {
 	/*	if (arena->sphere_points == 0)
 			calc_surface_force(arena);

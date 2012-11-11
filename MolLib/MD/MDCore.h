@@ -52,7 +52,9 @@ enum {
 	kVDWIndex,
 	kElectrostaticIndex,
 	kAuxiliaryIndex,
+	kESCorrectionIndex,  /*  Correction term for Ewald sum  */
 	kSurfaceIndex,
+	kPMEIndex,
 	kKineticIndex,
 	kEndIndex,
 	kSlowIndex = kSurfaceIndex
@@ -189,6 +191,7 @@ typedef struct MDArena {
 	Double cutoff;
 	Double electro_cutoff;
 	Double pairlist_distance;
+	Double switch_distance;
 	Double temperature;
 	Int rescale_temp_freq;
 	Int reinit_temp_freq;
@@ -271,6 +274,12 @@ typedef struct MDArena {
 	
 	/*  The tolerance (in angstrom) to find symmetry-equivalent atoms. Default = 5e-3  */
 	Double sym_tolerance;
+	
+	/*  (Particle Mesh) Ewald settings  */
+	Int    use_ewald;       /*  1 if Ewald technique is to be used  */
+	Double ewald_beta;      /*  beta for Ewald sum  */
+	Int    ewald_grid_x, ewald_grid_y, ewald_grid_z;  /*  Number of grids for each direction; if all zero, then direct Ewald is used  */
+	Int    ewald_freq;
 	
 	/*  Runtime fields  */
 	
@@ -403,6 +412,9 @@ typedef struct MDArena {
 	
 	/*  Pressure control  */
 	struct MDPressureArena *pressure;
+
+	/*  Particle Mesh Ewald  */
+	struct MDPME *pme;
 
 } MDArena;
 

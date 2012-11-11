@@ -69,14 +69,6 @@ s_MDArena_Run_or_minimize(VALUE self, VALUE arg, int minimize)
 	if (nsteps < 0)
 		rb_raise(rb_eMolbyError, "the number of steps should be non-negative integer");
 	
-	{
-		/*  Update the path information of the molecule before MD setup  */
-		char *buf = (char *)malloc(4096);
-		MoleculeCallback_pathName(arena->xmol, buf, sizeof buf);
-		MoleculeSetPath(arena->xmol, buf);
-		free(buf);
-	}
-	
 	if (arena->is_initialized < 2 || arena->xmol->needsMDRebuild) {
 		const char *msg = md_prepare(arena, 0);
 		if (msg != NULL)
@@ -311,7 +303,7 @@ s_MDArena_Prepare(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     energies -> [total, bond, angle, dihedral, improper, vdw, electrostatic, auxiliary, surface, kinetic, net]
+ *     energies -> [total, bond, angle, dihedral, improper, vdw, electrostatic, auxiliary, surface, kinetic, net [, ewald]
  *
  *  Get the current energies.
  */
@@ -321,19 +313,22 @@ s_MDArena_Energies(VALUE self)
 	MDArena *arena;
 	VALUE val;
 	int i;
+	static Int s_indices[] = {kBondIndex, kAngleIndex, kDihedralIndex, kImproperIndex, kVDWIndex, kElectrostaticIndex, kAuxiliaryIndex, kSurfaceIndex, kKineticIndex };
 	Data_Get_Struct(self, MDArena, arena);
 	val = rb_ary_new();
 	rb_ary_push(val, rb_float_new(arena->total_energy * INTERNAL2KCAL));
-	for (i = 0; i < kEndIndex; i++)
-		rb_ary_push(val, rb_float_new(arena->energies[i] * INTERNAL2KCAL));
+	for (i = 0; i < sizeof(s_indices) / sizeof(s_indices[0]); i++)
+		rb_ary_push(val, rb_float_new(arena->energies[s_indices[i]] * INTERNAL2KCAL));
 	rb_ary_push(val, rb_float_new((arena->energies[kKineticIndex] + arena->total_energy) * INTERNAL2KCAL));
+	if (arena->use_ewald)
+		rb_ary_push(val, rb_float_new((arena->energies[kESCorrectionIndex] + arena->energies[kPMEIndex]) * INTERNAL2KCAL));
 	return val;
 }
 
 static VALUE s_LogFileSym, s_CoordFileSym, s_VelFileSym, s_ForceFileSym, 
 s_DebugFileSym, s_DebugOutputLevelSym, s_StepSym, s_CoordOutputFreqSym, 
 s_EnergyOutputFreqSym, s_CoordFrameSym, s_TimestepSym, s_CutoffSym, 
-s_ElectroCutoffSym, s_PairlistDistanceSym, s_TemperatureSym, s_TransientTempSym, 
+s_ElectroCutoffSym, s_PairlistDistanceSym, s_SwitchDistanceSym, s_TemperatureSym, s_TransientTempSym, 
 s_AverageTempSym, s_AndersenFreqSym, s_AndersenCouplingSym, s_RandomSeedSym, 
 s_DielectricSym, s_GradientConvergenceSym, s_CoordinateConvergenceSym, s_UseXplorShiftSym, 
 s_Scale14VdwSym, s_Scale14ElectSym, s_RelocateCenterSym, 
@@ -364,6 +359,7 @@ static struct s_MDArenaAttrDef s_MDArenaAttrDefTable[] = {
 	{"cutoff",            &s_CutoffSym,           0, 0, 'f', offsetof(MDArena, cutoff)},
 	{"electro_cutoff",    &s_ElectroCutoffSym,    0, 0, 'f', offsetof(MDArena, electro_cutoff)},
 	{"pairlist_distance", &s_PairlistDistanceSym, 0, 0, 'f', offsetof(MDArena, pairlist_distance)},
+	{"switch_distance",   &s_SwitchDistanceSym,   0, 0, 'f', offsetof(MDArena, switch_distance)},
 	{"temperature",       &s_TemperatureSym,      0, 0, 'f', offsetof(MDArena, temperature)},
 	{"transient_temperature", &s_TransientTempSym, 0, 0, 'F', offsetof(MDArena, transient_temperature)},
 	{"average_temperature", &s_AverageTempSym,    0, 0, 'F', offsetof(MDArena, average_temperature)},
@@ -748,8 +744,10 @@ s_MDArena_SetExternalForces(VALUE self, VALUE aval)
 		return self;
 	}
 	vp = (Vector *)calloc(sizeof(Vector), n);
-	for (i = 0; i < n; i++)
+	for (i = 0; i < n; i++) {
 		VectorFromValue(RARRAY_PTR(aval)[i], vp + i);
+		VecScaleSelf(vp[i], KCAL2INTERNAL);
+	}
 	md_set_external_forces(arena, n, vp);
 	free(vp);
 	return self;
@@ -766,6 +764,7 @@ s_MDArena_GetExternalForce(VALUE self, VALUE ival)
 {
 	int i;
 	VALUE vval;
+	Vector v;
 	MDArena *arena;
 	Data_Get_Struct(self, MDArena, arena);
 	if (arena->mol == NULL)
@@ -773,7 +772,9 @@ s_MDArena_GetExternalForce(VALUE self, VALUE ival)
 	i = NUM2INT(rb_Integer(ival));
 	if (i < 0 || i >= arena->nexforces)
 		return Qnil;
-	vval = ValueFromVector(arena->exforces + i);
+	v = arena->exforces[i];
+	VecScaleSelf(v, INTERNAL2KCAL);
+	vval = ValueFromVector(&v);
 	return vval;
 }
 
@@ -990,6 +991,37 @@ s_MDArena_VdwPar(VALUE self, VALUE val)
 	return ValueFromMoleculeWithParameterTypeAndIndex(arena->xmol, kVdwParType, -j - 1);
 }
 
+static VALUE
+s_MDArena_testPME(int argc, VALUE *argv, VALUE self)
+{
+	extern pme_test(MDArena *);
+	MDArena *arena;
+	if (rb_obj_is_kind_of(self, rb_cMDArena)) {
+		Data_Get_Struct(self, MDArena, arena);
+		if (argc == 0 || RTEST(argv[0])) {
+			arena->use_ewald = 1;
+			arena->xmol->needsMDRebuild = 1;
+			if (argc > 0 && rb_obj_is_kind_of(argv[0], rb_cNumeric)) {
+				Int n = NUM2INT(rb_Integer(argv[0]));
+				if (n > 1) {
+					arena->ewald_grid_x = n;
+					arena->ewald_grid_y = n;
+					arena->ewald_grid_z = n;
+				} else {
+					arena->use_ewald = 2;  /*  Direct Ewald  */
+				}
+			}
+		} else {
+			arena->use_ewald = 0;
+			arena->xmol->needsMDRebuild = 1;
+		}
+		s_MDArena_Prepare(0, NULL, self);
+	} else {
+		rb_raise(rb_eMolbyError, "class method MDArena.test_pme is not supported now");
+	}
+	return self;
+}
+
 void
 Init_MolbyMDTypes(void)
 {
@@ -1022,6 +1054,9 @@ Init_MolbyMDTypes(void)
 	rb_define_method(rb_cMDArena, "dihedral_par", s_MDArena_DihedralPar, 1);
 	rb_define_method(rb_cMDArena, "improper_par", s_MDArena_ImproperPar, 1);
 	rb_define_method(rb_cMDArena, "vdw_par", s_MDArena_VdwPar, 1);
+
+	rb_define_method(rb_cMDArena, "pme_test", s_MDArena_testPME, -1);
+//	rb_define_singleton_method(rb_cMDArena, "pme_test", s_MDArena_testPME, -1);
 
 	/*  All setter and getter are handled with the same C function (attribute name is taken
 	    from ruby_frame)  */

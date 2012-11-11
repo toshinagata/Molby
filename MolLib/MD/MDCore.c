@@ -17,6 +17,7 @@
 #include "MDCore.h"
 #include "MDGraphite.h"
 #include "MDPressure.h"
+#include "MDEwald.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -1761,6 +1762,13 @@ md_prepare(MDArena *arena, int check_only)
 		pressure_prepare(arena);
 	}
 
+	/*  Particle Ewald  */
+	if (arena->use_ewald != 0) {
+		pme_init(arena);
+	} else {
+		pme_release(arena);
+	}
+	
 	arena->is_initialized = 2;   /*  Runtime fields are ready  */
 	arena->mol->needsMDRebuild = 0;
 	arena->request_abort = 0;
@@ -2038,6 +2046,8 @@ md_output_energies(MDArena *arena)
 		md_log(arena, " %11s %11s %11s %11s %11s %11s %11s %11s", "VDW", "ELECT", "AUX", "SURFACE", "KINETIC", "NET", "TEMP", "TEMP_AVG");
 		if (periodic)
 			md_log(arena, " %11s", "VOLUME");
+		if (arena->use_ewald)
+			md_log(arena, " %11s", "EWALD");
 		if (arena->nalchem_flags > 0)
 			md_log(arena, " %11s %11s", "LAMBDA", "DEDL");
 		md_log(arena, "\n");
@@ -2055,6 +2065,9 @@ md_output_energies(MDArena *arena)
 		cv = &(arena->mol->cell->axes[2]);
 		VecCross(v, *av, *bv);
 		md_log(arena, " %11.5f", VecDot(v, *cv));
+	}
+	if (arena->use_ewald) {
+		md_log(arena, " %11.5f", (arena->energies[kESCorrectionIndex] + arena->energies[kPMEIndex]) * INTERNAL2KCAL);
 	}
 	if (arena->nalchem_flags > 0) {
 		md_log(arena, " %11.5f %11.5f", arena->alchem_lambda, arena->alchem_energy * INTERNAL2KCAL / arena->alchem_dlambda);
@@ -3464,6 +3477,7 @@ md_set_default(MDArena *arena)
 	arena->cutoff = 9.0;
 	arena->electro_cutoff = 9.0;
 	arena->pairlist_distance = 10.0;
+	arena->switch_distance = 8.0;
 	arena->use_xplor_shift = 1;
 	arena->scale14_vdw = 0.5;
 	arena->scale14_elect = 0.83;
@@ -3486,7 +3500,13 @@ md_set_default(MDArena *arena)
 
 	arena->alchem_dlambda = 0.1;
 	
-/*	arena->pressure_coupling = 0.4;
+	arena->ewald_beta = 0.5;
+	arena->ewald_grid_x = 16;
+	arena->ewald_grid_y = 16;
+	arena->ewald_grid_z = 16;
+	arena->ewald_freq = 2;
+	
+	/*	arena->pressure_coupling = 0.4;
 	arena->pressure_trial_width = 0.01;
 	arena->pressure_control_algorithm = 0;
 	arena->pressure_fluctuate_cell_origin = 0.01;

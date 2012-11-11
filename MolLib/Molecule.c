@@ -1392,6 +1392,7 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 						   || (strcmp(comp, "cutoff") == 0 && (dp = &arena->cutoff) != NULL)
 						   || (strcmp(comp, "electro_cutoff") == 0 && (dp = &arena->electro_cutoff) != NULL)
 						   || (strcmp(comp, "pairlist_distance") == 0 && (dp = &arena->pairlist_distance) != NULL)
+						   || (strcmp(comp, "switch_distance") == 0 && (dp = &arena->switch_distance) != NULL)
 						   || (strcmp(comp, "temperature") == 0 && (dp = &arena->temperature) != NULL)
 						   || (strcmp(comp, "andersen_coupling") == 0 && (dp = &arena->andersen_thermo_coupling) != NULL)
 						   || (strcmp(comp, "dielectric") == 0 && (dp = &arena->dielectric) != NULL)
@@ -3996,6 +3997,7 @@ MoleculeWriteToMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 		fprintf(fp, "cutoff %g\n", arena->cutoff);
 		fprintf(fp, "electro_cutoff %g\n", arena->electro_cutoff);
 		fprintf(fp, "pairlist_distance %g\n", arena->pairlist_distance);
+		fprintf(fp, "switch_distance %g\n", arena->switch_distance);
 		fprintf(fp, "temperature %g\n", arena->temperature);
 		fprintf(fp, "andersen_freq %d\n", arena->andersen_thermo_freq);
 		fprintf(fp, "andersen_coupling %g\n", arena->andersen_thermo_coupling);
@@ -4926,6 +4928,14 @@ MoleculePrepareMDArena(Molecule *mol, int check_only, char **retmsg)
 		IntGroupRelease(ig3);
 	}
 	
+	{
+		/*  Update the path information of the molecule before MD setup  */
+		char *buf = (char *)malloc(4096);
+		MoleculeCallback_pathName(mol, buf, sizeof buf);
+		MoleculeSetPath(mol, buf);
+		free(buf);
+	}
+		
 	/*  Prepare parameters and internal information  */
 	msg = md_prepare(arena, check_only);
 	
@@ -6442,7 +6452,7 @@ MoleculeAddExpandedAtoms(Molecule *mp, Symop symop, IntGroup *group, Int *indice
 	
 	if (mp == NULL || mp->natoms == 0 || group == NULL || (count = IntGroupGetCount(group)) == 0)
 		return -1;
-	if (symop.sym >= mp->nsyms)
+	if (symop.sym != 0 && symop.sym >= mp->nsyms)
 		return -2;
 
 	/*  Create atoms, with avoiding duplicates  */

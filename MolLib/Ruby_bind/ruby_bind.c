@@ -3455,7 +3455,9 @@ static VALUE s_AtomRef_GetV(VALUE self) {
 }
 
 static VALUE s_AtomRef_GetF(VALUE self) {
-	return ValueFromVector(&(s_AtomFromValue(self)->f));
+	Vector v = s_AtomFromValue(self)->f;
+	VecScaleSelf(v, INTERNAL2KCAL);
+	return ValueFromVector(&v);
 }
 
 static VALUE s_AtomRef_GetOccupancy(VALUE self) {
@@ -3861,6 +3863,7 @@ static VALUE s_AtomRef_SetF(VALUE self, VALUE val) {
 	Molecule *mp;
 	VALUE oval = s_AtomRef_GetF(self);
 	VectorFromValue(val, &v);
+	VecScaleSelf(v, KCAL2INTERNAL);
 	s_AtomAndMoleculeFromValue(self, &mp)->f = v;
 	s_RegisterUndoForAtomAttrChange(self, s_FSym, val, oval);
 	mp->needsMDCopyCoordinates = 1;
@@ -3939,8 +3942,8 @@ static VALUE s_AtomRef_SetSymop(VALUE self, VALUE val) {
 			} else ival[i] = -100000;
 		}
 	}
-	if (ival[0] != -100000 && (ival[0] < 0 || ival[0] >= mol->nsyms))
-		rb_raise(rb_eMolbyError, "index of symmetry (%d) is out of range (should be 0..%d)", ival[0], mol->nsyms - 1);
+	if (ival[0] != -100000 && (ival[0] < 0 || (ival[0] != 0 && ival[0] >= mol->nsyms)))
+		rb_raise(rb_eMolbyError, "index of symmetry (%d) is out of range (should be 0..%d)", ival[0], (mol->nsyms == 0 ? 0 : mol->nsyms - 1));
 	if (ival[4] != -100000 && (ival[4] < 0 || ival[4] >= mol->natoms))
 		rb_raise(rb_eMolbyError, "atom index number (%d) is out of range (should be 0..%d)", ival[4], mol->natoms - 1);
 	if (ap->symop.sym == ival[0] && ap->symop.dx == ival[1] && ap->symop.dy == ival[2] && ap->symop.dz == ival[3])
@@ -7822,7 +7825,7 @@ s_Molecule_ExpandBySymmetry(int argc, VALUE *argv, VALUE self)
 	n[2] = (yval == Qnil ? 0 : NUM2INT(rb_Integer(yval)));
 	n[3] = (zval == Qnil ? 0 : NUM2INT(rb_Integer(zval)));
 	ig = s_Molecule_AtomGroupFromValue(self, gval);
-	if (n[0] < 0 || n[0] >= mol->nsyms)
+	if (n[0] < 0 || (n[0] > 0 && n[0] >= mol->nsyms))
 		rb_raise(rb_eMolbyError, "symmetry index is out of bounds");
 	natoms = mol->natoms;
 	

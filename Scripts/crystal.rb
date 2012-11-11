@@ -87,7 +87,7 @@ def export_ortep(fp)
   x = org + tr.column(0)
   y = org + tr.column(1)
   tr = self.cell_transform
-  if tr != nil
+  if tr
     tr = tr.inverse
   else
     tr = Transform.identity

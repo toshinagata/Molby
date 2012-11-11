@@ -45,6 +45,8 @@
 		E445145415F1DA5B0050171E /* MainViewCommon.c in Sources */ = {isa = PBXBuildFile; fileRef = E445145215F1DA5B0050171E /* MainViewCommon.c */; };
 		E44CEED6100E1E9C0040BD51 /* ProgressFrame.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E44CEED4100E1E9C0040BD51 /* ProgressFrame.cpp */; };
 		E4513F550EED72C0009DF1F7 /* MyListCtrl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E4513F540EED72C0009DF1F7 /* MyListCtrl.cpp */; };
+		E4622E9B1649201400A0AA4D /* MDEwald.c in Sources */ = {isa = PBXBuildFile; fileRef = E4622E9A1649201400A0AA4D /* MDEwald.c */; };
+		E4622E9C1649201400A0AA4D /* MDEwald.c in Sources */ = {isa = PBXBuildFile; fileRef = E4622E9A1649201400A0AA4D /* MDEwald.c */; };
 		E46C904A108F491E000E984D /* MyThread.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E46C9049108F491E000E984D /* MyThread.cpp */; };
 		E472B7C51087F63200F931F3 /* MyVersion.c in Sources */ = {isa = PBXBuildFile; fileRef = E472B7C41087F63200F931F3 /* MyVersion.c */; };
 		E496A76F0EDD392F00499646 /* MyClipboardData.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E496A76E0EDD392F00499646 /* MyClipboardData.cpp */; };
@@ -141,6 +143,7 @@
 		E433CEA20EC709D300675985 /* MyDocument.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MyDocument.h; path = ../wxSources/MyDocument.h; sourceTree = SOURCE_ROOT; };
 		E433CEA30EC709D300675985 /* MyGLCanvas.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = MyGLCanvas.cpp; path = ../wxSources/MyGLCanvas.cpp; sourceTree = SOURCE_ROOT; };
 		E433CEA40EC709D300675985 /* MyGLCanvas.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MyGLCanvas.h; path = ../wxSources/MyGLCanvas.h; sourceTree = SOURCE_ROOT; };
+		E436C97F164A05560005D964 /* MDEwald.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MDEwald.h; sourceTree = "<group>"; };
 		E43CCDD10EB20F0F00108D2D /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = /System/Library/Frameworks/Accelerate.framework; sourceTree = "<absolute>"; };
 		E43CCDD20EB20F0F00108D2D /* AGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AGL.framework; path = /System/Library/Frameworks/AGL.framework; sourceTree = "<absolute>"; };
 		E43CCDD30EB20F0F00108D2D /* Carbon.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Carbon.framework; path = /System/Library/Frameworks/Carbon.framework; sourceTree = "<absolute>"; };
@@ -155,12 +158,13 @@
 		E44CEED5100E1E9C0040BD51 /* ProgressFrame.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ProgressFrame.h; path = ../wxSources/ProgressFrame.h; sourceTree = SOURCE_ROOT; };
 		E4513F530EED72C0009DF1F7 /* MyListCtrl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MyListCtrl.h; path = ../wxSources/MyListCtrl.h; sourceTree = SOURCE_ROOT; };
 		E4513F540EED72C0009DF1F7 /* MyListCtrl.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = MyListCtrl.cpp; path = ../wxSources/MyListCtrl.cpp; sourceTree = SOURCE_ROOT; };
+		E4622E9A1649201400A0AA4D /* MDEwald.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = MDEwald.c; sourceTree = "<group>"; wrapsLines = 1; };
 		E46C9048108F491E000E984D /* MyThread.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MyThread.h; path = ../wxSources/MyThread.h; sourceTree = SOURCE_ROOT; };
 		E46C9049108F491E000E984D /* MyThread.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = MyThread.cpp; path = ../wxSources/MyThread.cpp; sourceTree = SOURCE_ROOT; };
 		E472B7C41087F63200F931F3 /* MyVersion.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = MyVersion.c; path = ../wxSources/MyVersion.c; sourceTree = SOURCE_ROOT; };
 		E496A76D0EDD392F00499646 /* MyClipboardData.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MyClipboardData.h; path = ../wxSources/MyClipboardData.h; sourceTree = SOURCE_ROOT; };
 		E496A76E0EDD392F00499646 /* MyClipboardData.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = MyClipboardData.cpp; path = ../wxSources/MyClipboardData.cpp; sourceTree = SOURCE_ROOT; };
-		E49D17F1107753DF00C4841E /* MDSurface.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = MDSurface.c; sourceTree = "<group>"; };
+		E49D17F1107753DF00C4841E /* MDSurface.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = MDSurface.c; sourceTree = "<group>"; wrapsLines = 1; };
 		E49D17F2107753DF00C4841E /* MDSurface.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MDSurface.h; sourceTree = "<group>"; };
 		E4A0233B106B651C0094DBF8 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		E4A02340106B652F0094DBF8 /* English */ = {isa = PBXFileReference; fileEncoding = 10; lastKnownFileType = text.plist.strings; name = English; path = English.lproj/InfoPlist.strings; sourceTree = "<group>"; };
@@ -274,6 +278,8 @@
 				E42D8AF01030193F00C20247 /* MDGraphite.h */,
 				E42D8AF11030193F00C20247 /* MDCore.c */,
 				E42D8AF21030193F00C20247 /* MDCore.h */,
+				E4622E9A1649201400A0AA4D /* MDEwald.c */,
+				E436C97F164A05560005D964 /* MDEwald.h */,
 				E42D8AF31030193F00C20247 /* MDForce.c */,
 				E42D8AF41030193F00C20247 /* MDForce.h */,
 				E42D8AF61030193F00C20247 /* MDPressure.c */,
@@ -553,6 +559,7 @@
 				E445145415F1DA5B0050171E /* MainViewCommon.c in Sources */,
 				E4ED76E516256FC5006A1820 /* MyIPCSupport.cpp in Sources */,
 				E4A66F0F16365653003EE03A /* buildInfo.c in Sources */,
+				E4622E9B1649201400A0AA4D /* MDEwald.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -581,6 +588,7 @@
 				9ECE828311A191A2001B435E /* Trackball.c in Sources */,
 				E445145315F1DA5B0050171E /* MainViewCommon.c in Sources */,
 				E4A66F1016365653003EE03A /* buildInfo.c in Sources */,
+				E4622E9C1649201400A0AA4D /* MDEwald.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -613,6 +621,7 @@
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				GCC_VERSION = 4.0;
 				HEADER_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/../../fftw-3.3.2/osx-build/include",
 					"$(HOME)/Development/wxMac/include",
 					"$(HOME)/Development/wxMac/osx-build/lib/wx/include/mac-unicode-release-static-2.8",
 					"$(HOME)/Development/ruby-1.8.7-static",
@@ -620,6 +629,7 @@
 				INFOPLIST_FILE = Info.plist;
 				INSTALL_PATH = "$(HOME)/Applications";
 				LIBRARY_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/../../fftw-3.3.2/osx-build/lib",
 					"$(HOME)/Development/wxMac/osx-build/lib",
 					"$(HOME)/Development/ruby-1.8.7-static",
 				);
@@ -630,6 +640,7 @@
 					"-DDEBUG",
 				);
 				OTHER_LDFLAGS = (
+					"-lfftw3",
 					"-lwx_macu_html-2.8",
 					"-lwx_macu_richtext-2.8",
 					"-lwx_macu_core-2.8",
@@ -667,6 +678,7 @@
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				GCC_VERSION = 4.0;
 				HEADER_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/../../fftw-3.3.2/osx-build/include",
 					"$(HOME)/Development/wxMac/include",
 					"$(HOME)/Development/wxMac/osx-build/lib/wx/include/mac-unicode-release-static-2.8",
 					"$(HOME)/Development/ruby-1.8.7-static",
@@ -674,6 +686,7 @@
 				INFOPLIST_FILE = Info.plist;
 				INSTALL_PATH = "$(HOME)/Applications";
 				LIBRARY_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/../../fftw-3.3.2/osx-build/lib",
 					"$(HOME)/Development/wxMac/osx-build/lib",
 					"$(HOME)/Development/ruby-1.8.7-static",
 				);
@@ -683,6 +696,7 @@
 					"-D__WXMAC__",
 				);
 				OTHER_LDFLAGS = (
+					"-lfftw3",
 					"-lwx_macu_html-2.8",
 					"-lwx_macu_richtext-2.8",
 					"-lwx_macu_core-2.8",
@@ -750,6 +764,7 @@
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				GCC_VERSION = 4.0;
 				HEADER_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/../../fftw-3.3.2/osx-build/include",
 					"$(HOME)/Development/wxMac/include",
 					"$(HOME)/Development/wxMac/osx-build/lib/wx/include/mac-unicode-release-static-2.8",
 					"$(HOME)/Development/ruby-1.8.7-static",
@@ -757,6 +772,7 @@
 				INFOPLIST_FILE = Info.plist;
 				INSTALL_PATH = "$(HOME)/Applications";
 				LIBRARY_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/../../fftw-3.3.2/osx-build/lib",
 					"$(HOME)/Development/wxMac/osx-build/lib",
 					"$(HOME)/Development/ruby-1.8.7-static",
 				);
@@ -766,6 +782,7 @@
 					"-D__WXMAC__",
 				);
 				OTHER_LDFLAGS = (
+					"-lfftw3",
 					"-lwx_macu_html-2.8",
 					"-lwx_macu_richtext-2.8",
 					"-lwx_macu_core-2.8",
@@ -799,11 +816,20 @@
 				GCC_MODEL_TUNING = G5;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_VERSION = 4.0;
-				HEADER_SEARCH_PATHS = "$(HOME)/Development/ruby-1.8.7-static";
+				HEADER_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/../../fftw-3.3.2/osx-build/include",
+					"$(HOME)/Development/ruby-1.8.7-static",
+				);
 				INSTALL_PATH = /usr/local/bin;
-				LIBRARY_SEARCH_PATHS = "$(HOME)/Development/ruby-1.8.7-static";
+				LIBRARY_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/../../fftw-3.3.2/osx-build/lib",
+					"$(HOME)/Development/ruby-1.8.7-static",
+				);
 				OTHER_CFLAGS = "-D__CMDMAC__=1";
-				OTHER_LDFLAGS = "-lruby-static";
+				OTHER_LDFLAGS = (
+					"-lfftw3",
+					"-lruby-static",
+				);
 				PREBINDING = NO;
 				PRODUCT_NAME = Molby_command;
 			};
@@ -819,11 +845,20 @@
 				GCC_MODEL_TUNING = G5;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_VERSION = 4.0;
-				HEADER_SEARCH_PATHS = "$(HOME)/Development/ruby-1.8.7-static";
+				HEADER_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/../../fftw-3.3.2/osx-build/include",
+					"$(HOME)/Development/ruby-1.8.7-static",
+				);
 				INSTALL_PATH = /usr/local/bin;
-				LIBRARY_SEARCH_PATHS = "$(HOME)/Development/ruby-1.8.7-static";
+				LIBRARY_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/../../fftw-3.3.2/osx-build/lib",
+					"$(HOME)/Development/ruby-1.8.7-static",
+				);
 				OTHER_CFLAGS = "-D__CMDMAC__=1";
-				OTHER_LDFLAGS = "-lruby-static";
+				OTHER_LDFLAGS = (
+					"-lfftw3",
+					"-lruby-static",
+				);
 				PREBINDING = NO;
 				PRODUCT_NAME = Molby_command;
 			};
@@ -842,11 +877,20 @@
 				GCC_ENABLE_FIX_AND_CONTINUE = NO;
 				GCC_MODEL_TUNING = G5;
 				GCC_VERSION = 4.0;
-				HEADER_SEARCH_PATHS = "$(HOME)/Development/ruby-1.8.7-static";
+				HEADER_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/../../fftw-3.3.2/osx-build/include",
+					"$(HOME)/Development/ruby-1.8.7-static",
+				);
 				INSTALL_PATH = /usr/local/bin;
-				LIBRARY_SEARCH_PATHS = "$(HOME)/Development/ruby-1.8.7-static";
+				LIBRARY_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/../../fftw-3.3.2/osx-build/lib",
+					"$(HOME)/Development/ruby-1.8.7-static",
+				);
 				OTHER_CFLAGS = "-D__CMDMAC__=1";
-				OTHER_LDFLAGS = "-lruby-static";
+				OTHER_LDFLAGS = (
+					"-lfftw3",
+					"-lruby-static",
+				);
 				PREBINDING = NO;
 				PRODUCT_NAME = Molby_command;
 				ZERO_LINK = NO;

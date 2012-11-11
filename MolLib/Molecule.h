@@ -36,7 +36,8 @@ extern "C" {
 	
 #define BOLTZMANN (8.31441e-3*J2INTERNAL)
 #define PI 3.14159265358979
-		
+#define PI2R 0.564189583547756    /*  1.0/sqrt(PI)  */
+	
 /*  Anisotropic thermal parameter  */
 typedef struct Aniso {
 	Double  bij[6];    /*  b11, b22, b33, b12, b13, b23 (ORTEP type 0) */

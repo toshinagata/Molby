@@ -1501,7 +1501,7 @@ calc_surface_force(MDArena *arena)
 		int i;
 		for (i = 0; i < arena->mol->natoms; i++) {
 			Vector *fp = &arena->forces[kSurfaceIndex * arena->mol->natoms + i];
-			fprintf(arena->debug_result, "surface of atom %d: area=%f, pot=%f, {%f %f %f}\n", i+1, arena->sp_arena->atom_area[i], arena->sp_arena->atom_area[i]*arena->sp_arena->atom_pot[i], fp->x, fp->y, fp->z);
+			fprintf(arena->debug_result, "surface of atom %d: area=%f, pot=%f, {%f %f %f}\n", i+1, arena->sp_arena->atom_area[i], arena->sp_arena->atom_area[i]*arena->sp_arena->atom_pot[i], fp->x * INTERNAL2KCAL, fp->y * INTERNAL2KCAL, fp->z * INTERNAL2KCAL);
 		}
 	}
 #endif
