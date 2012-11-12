@@ -348,13 +348,15 @@ class Molecule
 	    FileTest.exist?(s + "/" + @toolname)
   	  end
 	  layout(2,
-		item(:checkbox, :title=>"Optimize structure and calculate charges (may be slow)", :tag=>"calc_charge",
-		  :value=>(get_global_settings("antechamber.calc_charge") || 0),
-		  :action=>proc { |it| set_attr("nc", :enabled=>(it[:value] != 0)) } ),
-		-1,
-		item(:text, :title=>"      Net Molecular Charge:"),
+		item(:text, :title=>"Net Molecular Charge:"),
 		item(:textfield, :width=>"80", :tag=>"nc", :value=>(get_global_settings("antechamber.nc") || "0")),
-		item(:checkbox, :title=>"Use the residue information", :tag=>"use_residue",
+		(tool == "resp" ?
+		  -1 :
+		  item(:checkbox, :title=>"Optimize structure and calculate charges (may be slow)", :tag=>"calc_charge",
+		    :value=>(get_global_settings("antechamber.calc_charge") || 0),
+		    :action=>proc { |it| set_attr("nc", :enabled=>(it[:value] != 0)) } )),
+		-1,
+		item(:checkbox, :title=>"Use the residue information for connection analysis", :tag=>"use_residue",
 		  :value=>(get_global_settings("antechamber.use_residue") || 0),
 		  :action=>proc { |it| valid_antechamber_dir(it[:value]) && set_attr(0, :enabled=>true) } ),
 		-1,
@@ -386,8 +388,6 @@ class Molecule
 		),
 		-1
 	  )
-	  set_attr("nc", :enabled=>(attr("calc_charge", :value) != 0))
-	  set_attr("calc_charge", :enabled=>(tool != "resp"))
     }
 	hash.each_pair { |key, value|
 	  next if key == :status
@@ -1192,7 +1192,7 @@ class Molecule
 	  error_message_box "No ESP information is loaded"
 	  return
 	end
-	return unless ambertools_dialog("resp")
+	return if ambertools_dialog("resp") == 0
 	nc = get_global_settings("antechamber.nc")
 	ante_dir = Molby::ResourcePath + "/amber11/bin"
 
