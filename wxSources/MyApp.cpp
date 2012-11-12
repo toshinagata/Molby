@@ -1286,17 +1286,22 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname)
 		if (waitpid(pid, &status, WNOHANG) != 0) {
 			/*  Already finished, although not detected by wxProcess  */
 			/*  This sometimes happens on ppc Mac  */
+#if LOG_SUBPROCESS
+			if (fplog)
+				fprintf(fplog, "OnEndProcess *NOT* called\n");
+#endif
 			proc->Detach();
 			status = WEXITSTATUS(status);
 			break;
 		}
 #endif
 #if LOG_SUBPROCESS
-		if (++nn >= 100) {
+		if (++nn >= 10) {
 			fprintf(fplog, "[DEBUG]pid %ld exists\n", pid);
 			nn = 0;
 		}
 #endif
+		::wxMilliSleep(10);
 		if (wxGetApp().IsInterrupted()) {
 			/*  User interrupt  */
 			int kflag = wxKILL_CHILDREN;
