@@ -3500,7 +3500,7 @@ md_set_default(MDArena *arena)
 
 	arena->alchem_dlambda = 0.1;
 	
-	arena->ewald_beta = 0.25;
+	arena->ewald_beta = 0.5;
 	arena->ewald_grid_x = 16;
 	arena->ewald_grid_y = 16;
 	arena->ewald_grid_z = 16;
