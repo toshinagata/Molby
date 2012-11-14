@@ -827,9 +827,11 @@ s_make_verlet_list(MDArena *arena)
 			/*  Search for pairs  */
 			for (nn = 0; nn < count; nn++) {
 				Vector rij0 = rij;
-				dx = arena->lattice_offsets[nn * 3];
-				dy = arena->lattice_offsets[nn * 3 + 1];
-				dz = arena->lattice_offsets[nn * 3 + 2];
+				/*  Note the minus signs; s_enum_neighbors finds "the nearest lattice point", so 
+				    the offsets should be subtracted  */
+				dx = -arena->lattice_offsets[nn * 3];
+				dy = -arena->lattice_offsets[nn * 3 + 1];
+				dz = -arena->lattice_offsets[nn * 3 + 2];
 				if (dx == 0 && dy == 0 && dz == 0) {
 					/*  Pair within the unit cell  */
 					if (i == j)
@@ -1192,6 +1194,9 @@ s_calc_nonbonded_force_sub(MDArena *arena, Double *energies, Double *eenergies, 
 				VecDec(eforces_corr[j], rij);
 				*eenergies_corr += w0;
 			}
+		}
+		if (arena->debug_result && arena->debug_output_level > 0) {
+			fprintf(arena->debug_result, "Electrostatic correction energy: %f\n", *eenergies_corr/KCAL2INTERNAL);
 		}
 	}
 }
