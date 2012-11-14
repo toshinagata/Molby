@@ -25,13 +25,16 @@
 
 /*  Temporary structure for Particle Mesh Ewald (Some fields are also used for Direct Ewald)  */
 struct MDPME {
-	Int grid_x, grid_y, grid_z;  /*  Grid size for each cell direction  */
+	Int grid_x, grid_y, grid_z;  /*  Grid size for each cell direction (should be even numbers)  */
+	Int natoms;                  /*  Number of atoms (necessary to indicate the size of allocated memory)  */
 	fftw_complex *qarray;        /*  Q array; size grid_x * grid_y * grid_z  */
 	fftw_complex *qfarray;       /*  Finv(Q) (Finv is inverse FFT); size grid_x * grid_y * grid_z  */
 	fftw_complex *qqarray;       /*  F(B*C*Finv(Q)) (F is FFT); size grid_x * grid_y * grid_z  */
+	fftw_complex *b0array;       /*  Complex B array (for debug); size grid_x + grid_y + grid_z  */
 	double       *marray;        /*  M array; size (grid_x + grid_y + grid_z) * 2 * natoms  */
 	double       *barray;        /*  B array; size grid_x + grid_y + grid_z  */
 	double       *bcarray;       /*  B*C array; size grid_x * grid_y * grid_z  */
+	double       *carray;        /*  C array (for debug); size grid_x * grid_y * grid_z  */
 	fftw_plan plan1;             /*  Inverse FFT of Q */
 	fftw_plan plan2;             /*  FFT of (B*C*Finv(Q))  */
 	Int       order;             /*  Order of cardinal B spline (must be even and >=4 and <= MAX_DIM_SPLINE )  */
@@ -67,13 +70,13 @@ s_initialize_spline_coeffs(void)
 				bin = 1;
 				sgn = 1;
 				if (m > 0) {
-					for (j = k; j < n; j++) {
+					for (j = k; j < n - 1; j++) {
 						b += SPLINE_COEFF(n - 1, m - 1, j) * bin * sgn;
 						sgn *= -1;
 						bin = bin * (j + 1) / (j + 1 - k); /* Always dividable; this is a binomial coefficient (j+1 k)  */
 					}
 				}
-				if (k > 0)
+				if (k > 0 && m < n - 1)
 					a = SPLINE_COEFF(n - 1, m, k - 1);
 				else a = 0.0;
 				a = (a + n * b - b_prev) / (n - 1);
@@ -393,6 +396,7 @@ calc_pme_force(MDArena *arena)
 	Vector r;
 	Int grid_x, grid_y, grid_z, order;
 	Int i, j, k, kx, ky, kz, n, n0, n1, n2;
+	Int debug_level = -1;
 	double m0, m1, t, *mp, *bp, *bcp;
 	fftw_complex *cp;
 	double volume;
@@ -403,6 +407,10 @@ calc_pme_force(MDArena *arena)
 
 	if (arena == NULL || (mol = arena->mol) == NULL || (pme = arena->pme) == NULL)
 		return;
+	
+	if (arena->debug_result != NULL) {
+		debug_level = arena->debug_output_level;
+	}
 	
 	forces = &arena->forces[kPMEIndex * arena->mol->natoms];
 	dielec_r = COULOMBIC / arena->dielectric;
@@ -433,6 +441,7 @@ calc_pme_force(MDArena *arena)
 			}
 			mp[k * 2] = m0;
 			mp[k * 2 + 1] = m1;
+			if (debug_level > 1) fprintf(arena->debug_result, "mx[%d] (%g, %g)\n", k, m0, m1);
 		}
 		for (k = 0; k < grid_y; k++) {
 			n0 = floor((r.y - order - k) / grid_y) + 1;
@@ -445,6 +454,7 @@ calc_pme_force(MDArena *arena)
 			}
 			mp[(k + grid_x) * 2] = m0;
 			mp[(k + grid_x) * 2 + 1] = m1;
+			if (debug_level > 1) fprintf(arena->debug_result, "my[%d] (%g, %g)\n", k, m0, m1);
 		}
 		for (k = 0; k < grid_z; k++) {
 			n0 = floor((r.z - order - k) / grid_z) + 1;
@@ -457,6 +467,7 @@ calc_pme_force(MDArena *arena)
 			}
 			mp[(k + grid_x + grid_y) * 2] = m0;
 			mp[(k + grid_x + grid_y) * 2 + 1] = m1;
+			if (debug_level > 1) fprintf(arena->debug_result, "mz[%d] (%g, %g)\n", k, m0, m1);
 		}
 		for (kx = 0; kx < grid_x; kx++) {
 			for (ky = 0; ky < grid_y; ky++) {
@@ -466,44 +477,95 @@ calc_pme_force(MDArena *arena)
 			}
 		}
 	}
+	if (debug_level > 1) {
+		for (kx = 0; kx < grid_x; kx++) {
+			for (ky = 0; ky < grid_y; ky++) {
+				for (kz = 0; kz < grid_z; kz++) {
+					j = kz + grid_z * (ky + grid_y * kx);
+					fprintf(arena->debug_result, "Q[%d,%d,%d] = (%g, %g)\n", kx, ky, kz, pme->qarray[j][0], pme->qarray[j][1]);
+				}
+			}
+		}
+	}
 	
 	/*  Q is transformed by inverse FFT into qfarray */
 	fftw_execute(pme->plan1);
 	
-	/*  B and C are built and multiply into qfarray  */
+	/*  Dump Finv(Q) and structure factor */
+	if (debug_level > 1) {
+		fprintf(arena->debug_result, "kx ky kz FB_re FB_im S_re S_im Sa_re Sa_im\n");
+		for (kx = 0; kx < grid_x; kx++) {
+			for (ky = 0; ky < grid_y; ky++) {
+				for (kz = 0; kz < grid_z; kz++) {
+					fftw_complex bf;
+					j = kz + grid_z * (ky + grid_y * kx);
+					fprintf(arena->debug_result, "%2d %2d %2d ", kx, ky, kz);
+					bf[0] = pme->qfarray[j][0];
+					bf[1] = pme->qfarray[j][1];
+					s_complex_mul(bf, bf, pme->b0array[kx]);
+					s_complex_mul(bf, bf, pme->b0array[ky + grid_x]);
+					s_complex_mul(bf, bf, pme->b0array[kz + grid_x + grid_y]);
+					fprintf(arena->debug_result, "%g %g ", bf[0], bf[1]);
+					m0 = m1 = 0.0;
+					bf[0] = bf[1] = 0;
+					for (i = 0, ap = mol->atoms; i < mol->natoms; i++, ap = ATOM_NEXT(ap)) {
+						/*  Calc S(m)  */
+						fftw_complex cw1, cw2;
+						Int kx0, ky0, kz0;
+						TransformVec(&r, mol->cell->rtr, &ap->r);
+						kx0 = (kx <= grid_x / 2 ? kx : kx - grid_x);
+						ky0 = (ky <= grid_y / 2 ? ky : ky - grid_y);
+						kz0 = (kz <= grid_z / 2 ? kz : kz - grid_z);
+						t = 2 * PI * (kx0 * r.x + ky0 * r.y + kz0 * r.z);
+						m0 += ap->charge * cos(t);
+						m1 += ap->charge * sin(t);
+						/*  Calc interpolated S(m)  */
+						n0 = floor(r.x * grid_x - order) + 1;
+						n1 = floor(r.x * grid_x);
+						cw1[0] = cw1[1] = 0.0;
+						for (j = n0; j <= n1; j++) {
+							double w = 2 * PI * kx * j / grid_x;
+							t = s_calc_spline(order, r.x * grid_x - j);
+							cw1[0] += t * cos(w);
+							cw1[1] += t * sin(w);
+						}
+						s_complex_mul(cw2, cw1, pme->b0array[kx]);
+						n0 = floor(r.y * grid_y - order) + 1;
+						n1 = floor(r.y * grid_y);
+						cw1[0] = cw1[1] = 0.0;
+						for (j = n0; j <= n1; j++) {
+							double w = 2 * PI * ky * j / grid_y;
+							t = s_calc_spline(order, r.y * grid_y - j);
+							cw1[0] += t * cos(w);
+							cw1[1] += t * sin(w);
+						}
+						s_complex_mul(cw1, cw1, pme->b0array[ky + grid_x]);
+						s_complex_mul(cw2, cw2, cw1);
+						n0 = floor(r.z * grid_z - order) + 1;
+						n1 = floor(r.z * grid_z);
+						cw1[0] = cw1[1] = 0.0;
+						for (j = n0; j <= n1; j++) {
+							double w = 2 * PI * kz * j / grid_z;
+							t = s_calc_spline(order, r.z * grid_z - j);
+							cw1[0] += t * cos(w);
+							cw1[1] += t * sin(w);
+						}
+						s_complex_mul(cw1, cw1, pme->b0array[kz + grid_x + grid_y]);
+						s_complex_mul(cw2, cw2, cw1);
+						bf[0] += ap->charge * cw2[0];
+						bf[1] += ap->charge * cw2[1];
+					}
+					fprintf(arena->debug_result, "%g %g %g %g\n", m0, m1, bf[0], bf[1]);
+				}
+			}
+		}
+	}
+	
+	/*  C is built and B*C is multiplied into qfarray  */
 	volume = TransformDeterminant(mol->cell->tr);
 	bp = pme->barray;
 	bcp = pme->bcarray;
-	for (i = 0; i < 3; i++) {
-		int idx_ofs, grid_i;
-		switch (i) {
-			case 0: grid_i = grid_x; idx_ofs = 0; break;
-			case 1: grid_i = grid_y; idx_ofs = grid_x; break;
-			case 2: grid_i = grid_z; idx_ofs = grid_x + grid_y; break;
-		}
-		for (j = 0; j < grid_i; j++) {
-			fftw_complex b1, b2;
-			double t;
-			if (j == grid_i / 2) {
-				bp[idx_ofs + j] = 0.0;
-				continue;
-			}
-			t = 2 * PI * (order - 1) * j / grid_i;
-			b1[0] = cos(t);
-			b1[1] = sin(t);
-			b2[0] = b2[1] = 0.0;
-			for (k = 0; k < order - 1; k++) {
-				double s;
-				t = 2 * PI * j * k / grid_i;
-				s = s_calc_spline(order, k + 1);
-				b2[0] += cos(t) * s;
-				b2[1] -= sin(t) * s;
-			}
-			t = 1.0 / (b2[0] * b2[0] + b2[1] * b2[1]);
-			s_complex_mul(b1, b1, b2);
-			bp[idx_ofs + j] = (b1[0] * b1[0] + b1[1] * b1[1]) * t;
-		}
-	}
+	*energy = 0.0;
 	for (kx = 0; kx < grid_x; kx++) {
 		n0 = (kx <= grid_x / 2 ? kx : kx - grid_x);
 		for (ky = 0; ky < grid_y; ky++) {
@@ -524,24 +586,52 @@ calc_pme_force(MDArena *arena)
 					d = exp(-PI * PI * d / beta2) / (PI * volume * d);
 				}
 				k = kz + grid_z * (ky + grid_y * kx);
+				pme->carray[k] = d;
 				bcp[k] = bp[kx] * bp[grid_x + ky] * bp[grid_x + grid_y + kz] * d;
-				pme->qfarray[k][0] *= bcp[k];
-				pme->qfarray[k][1] *= bcp[k];
+				m0 = pme->qfarray[k][0];
+				m1 = pme->qfarray[k][1];
+				pme->qarray[k][0] = m0; /* for debug */
+				pme->qarray[k][1] = m1; /* for debug */
+				*energy += (m0 * m0 + m1 * m1) * bcp[k];
+				pme->qfarray[k][0] = m0 * bcp[k];
+				pme->qfarray[k][1] = m1 * bcp[k];
 			}
 		}
 	}
-
+	*energy *= dielec_r / 0.5;
+	
 	/*  qfarray is transformed by FFT into qqarray  */
 	fftw_execute(pme->plan2);
 	
-	/*  Calculate energy and force  */
-	*energy = 0.0;
+	if (debug_level > 1) {
+		fprintf(arena->debug_result, "kx ky kz FB_re FB_im F2B2C b c bc QF_re QF_im\n");
+		for (kx = 0; kx < grid_x; kx++) {
+			for (ky = 0; ky < grid_y; ky++) {
+				for (kz = 0; kz < grid_z; kz++) {
+					fftw_complex bf;
+					j = kz + grid_z * (ky + grid_y * kx);
+					fprintf(arena->debug_result, "%2d %2d %2d ", kx, ky, kz);
+					bf[0] = pme->qarray[j][0];
+					bf[1] = pme->qarray[j][1];
+					s_complex_mul(bf, bf, pme->b0array[kx]);
+					s_complex_mul(bf, bf, pme->b0array[ky + grid_x]);
+					s_complex_mul(bf, bf, pme->b0array[kz + grid_x + grid_y]);
+					fprintf(arena->debug_result, "%g %g ", bf[0], bf[1]);
+					fprintf(arena->debug_result, "%g ", (bf[0] * bf[0] + bf[1] * bf[1]) * pme->carray[j]);
+				//	fprintf(arena->debug_result, "%g %g ", pme->qarray[j][0] * pme->bcarray[j], pme->qarray[j][1] * pme->bcarray[j]);
+					fprintf(arena->debug_result, "%g %g %g ", pme->barray[kx] * pme->barray[ky + grid_x] * pme->barray[kz + grid_x + grid_y], pme->carray[j], pme->bcarray[j]);
+					fprintf(arena->debug_result, "%g %g\n", pme->qqarray[j][0], pme->qqarray[j][1]);
+				}
+			}
+		}
+	}
+	
+	/*  Calculate force  */
 	memset(forces, 0, sizeof(Vector) * mol->natoms);
 	for (kx = 0; kx < grid_x; kx++) {
 		for (ky = 0; ky < grid_y; ky++) {
 			for (kz = 0; kz < grid_z; kz++) {
 				k = kz + grid_z * (ky + grid_y * kx);
-				*energy += pme->qarray[k][0] * pme->qqarray[k][0];
 				mp = pme->marray;
 				for (i = 0; i < mol->natoms; i++) {
 					t = ATOM_AT_INDEX(mol->atoms, i)->charge * pme->qqarray[k][0];
@@ -564,19 +654,16 @@ calc_pme_force(MDArena *arena)
 			TransformVec(&forces[i], tf, &v);
 		}
 	}
-	*energy *= dielec_r * 0.5;
 	
-	if (arena->debug_result) {
-		fprintf(arena->debug_result, "PME energy = %.9g\n", *energy * INTERNAL2KCAL);
-		if (arena->debug_output_level > 0) {
-			fprintf(arena->debug_result, "PME forces:\n");
-			for (i = 0; i < mol->natoms; i++)
-				fprintf(arena->debug_result, "%d %.9g %.9g %.9g\n", i, forces[i].x * INTERNAL2KCAL, forces[i].y * INTERNAL2KCAL, forces[i].z * INTERNAL2KCAL);
-			if (arena->debug_output_level > 1) {
-				fprintf(arena->debug_result, "Grid values:\n");		
-				for (i = 0; i < (grid_x + grid_y + grid_z); i++) {
-					fprintf(arena->debug_result, "%d %g %g\n", i, pme->marray[i * 2], pme->marray[i * 2 + 1]);
-				}
+	if (debug_level > 0) {
+		fprintf(arena->debug_result, "PME reciprocal energy = %.9g\n", *energy * INTERNAL2KCAL);
+		fprintf(arena->debug_result, "PME reciprocal forces:\n");
+		for (i = 0; i < mol->natoms; i++)
+			fprintf(arena->debug_result, "%d %.9g %.9g %.9g\n", i, forces[i].x * INTERNAL2KCAL, forces[i].y * INTERNAL2KCAL, forces[i].z * INTERNAL2KCAL);
+		if (debug_level > 1) {
+			fprintf(arena->debug_result, "Grid values:\n");		
+			for (i = 0; i < (grid_x + grid_y + grid_z); i++) {
+				fprintf(arena->debug_result, "%d %g %g\n", i, pme->marray[i * 2], pme->marray[i * 2 + 1]);
 			}
 		}
 	}
@@ -592,7 +679,7 @@ calc_ewald_force(MDArena *arena)
 			calc_direct_ewald_force(arena);
 		else return;
 		arena->energies[kPMEIndex] += arena->pme->self_correction;
-		if (arena->debug_result != NULL && arena->debug_output_level > 0) {
+		if (arena->debug_result != NULL) {
 			fprintf(arena->debug_result, "%s Ewald reciprocal energy = %.9g\n", (arena->use_ewald == 1 ? "Particle Mesh" : "Direct"), (arena->energies[kPMEIndex] - arena->pme->self_correction) * INTERNAL2KCAL);
 			fprintf(arena->debug_result, "Self correction energy = %.9g\n", arena->pme->self_correction * INTERNAL2KCAL);
 			fprintf(arena->debug_result, "Net Ewald indirect energy = %.9g\n", arena->energies[kPMEIndex] * INTERNAL2KCAL);
@@ -626,21 +713,117 @@ pme_release(MDArena *arena)
 		fftw_free(arena->pme->qfarray);
 	if (arena->pme->marray != NULL)
 		free(arena->pme->marray);
-	if (arena->pme->barray != NULL)
-		free(arena->pme->barray);
 	if (arena->pme->bcarray != NULL)
 		free(arena->pme->bcarray);
+	if (arena->pme->barray != NULL)
+		free(arena->pme->barray);
 	if (arena->pme->kxyz)
 		free(arena->pme->kxyz);
 	free(arena->pme);
 	arena->pme = NULL;
 }
 
+static void
+s_pme_spline_test(MDArena *arena)
+{
+	/*  Compare:
+	    exp(2*PI*i*m*x/K)                            ; target (S(m))
+		b(m)*Sum(k, spline(x - k)*exp(2*PI*i*m*k/K)) ; interpolation
+	    b(m)*Fourier(k, m, Sum(n, spline(x - k - n*K))) ; Fourier
+      b(m) = exp(2*PI*i*(order-1)*m/K)/Sum(k=0..order-2, spline(k+1)*exp(2*PI*i*m*k/K))
+	  Fourier(k, m, f(k)) = Sum(k, f(k)*exp(2*PI*i*m*k/K))  */
+#define DIM 32
+#define ORDER 8
+	Int kk = DIM;
+	fftw_complex a1[DIM], a2[DIM], a3[DIM], a4[DIM], b[DIM], c1, c2, c3;
+	double b2[DIM], c[DIM];
+	double d, w, x;
+	double len = 10.0;  /*  Unit cell dimension  */
+	Int i, j, k, m, n0, n1;
+	x = 3.7;
+	for (m = 0; m < DIM; m++) {
+		k = (m <= DIM / 2 ? m : m - DIM);
+		d = 2 * PI * k * x / kk;
+		a1[m][0] = cos(d);
+		a1[m][1] = sin(d);
+	}
+	for (m = 0; m < DIM; m++) {
+		c1[0] = c1[1] = 0.0;
+		for (k = 0; k < ORDER - 2; k++) {
+			d = 2 * PI * m * k / kk;
+			w = s_calc_spline(ORDER, k + 1.0);
+			c1[0] += w * cos(d);
+			c1[1] += w * sin(d);
+		}
+		c1[1] *= -1;
+		d = c1[0] * c1[0] + c1[1] * c1[1];
+		c1[0] /= d;
+		c1[1] /= d;
+		d = 2 * PI * (ORDER - 1) * m / kk;
+		c2[0] = cos(d);
+		c2[1] = sin(d);
+		s_complex_mul(b[m], c2, c1);
+	}
+	for (m = 0; m < DIM; m++) {
+		n0 = floor(x - ORDER) + 1;
+		n1 = floor(x);
+		c1[0] = c1[1] = 0.0;
+		for (k = n0; k <= n1; k++) {
+			d = 2 * PI * m * k / kk;
+			w = s_calc_spline(ORDER, x - k);
+			c1[0] += w * cos(d);
+			c1[1] += w * sin(d);
+		}
+		s_complex_mul(a2[m], b[m], c1);
+	}
+//	b(m)*Fourier(k, m, Sum(n, spline(x - k - n*K))) ; Fourier
+	for (m = 0; m < DIM; m++) {
+		n0 = floor((x - m - ORDER) / kk) + 1;
+		n1 = floor((x - m) / kk);
+		w = 0.0;
+		for (k = n0; k <= n1; k++) {
+			w += s_calc_spline(ORDER, x - m - k * kk);
+		}
+		a3[m][0] = w;
+		a3[m][1] = 0.0;
+	}
+	//  Fourier(k, m, f(k)) = Sum(k, f(k)*exp(2*PI*i*m*k/K))
+	for (m = 0; m < DIM; m++) {
+		c1[0] = c1[1] = 0.0;
+		for (k = 0; k < DIM; k++) {
+			d = -2 * PI * m * k / kk;  /*  Inverse Fourier  */
+			c1[0] += a3[k][0] * cos(d);
+			c1[1] += a3[k][0] * sin(d);
+		}
+		b[m][1] *= -1;
+		s_complex_mul(a4[m], b[m], c1);  /*  Finv(f(k))*b_conjugate should be S_conjugate  */
+		b[m][1] *= -1;
+	}
+	//  b2 = |b|^2
+	//  c = exp(-PI^2*|m|^2/(beta^2))/|m|^2)
+	for (m = 0; m < DIM; m++) {
+		b2[m] = b[m][0] * b[m][0] + b[m][1] * b[m][1];
+		w = (m <= DIM / 2 ? m : m - DIM) / len;
+		c[m] = exp(-PI * PI * w * w / (0.5 * 0.5)) / (w * w);
+	}
+	fprintf(stderr, "a1_re a1_im a2_re a2_im a3 a4_re a4_im b2c\n");
+	for (m = 0; m < DIM; m++) {
+		fprintf(stderr, "%.6g %.6g %.6g %.6g %.6g %.6g %.6g %.6g\n", a1[m][0], a1[m][1], a2[m][0], a2[m][1], a3[m][0], a4[m][0], a4[m][1], b2[m] * c[m]);
+	}
+	d = 0.0;
+	w = 0.0;
+	for (m = 1; m < DIM; m++) {
+		d += b2[m] * c[m] * (a1[m][0] * a1[m][0] + a1[m][1] * a1[m][1]);
+		w += b2[m] * c[m] * (a4[m][0] * a4[m][0] + a4[m][1] * a4[m][1]);
+	}
+	fprintf(stderr, "\nEnergy = %g %g\n", d, w);
+}
+
 void
 pme_init(MDArena *arena)
 {
 	MDPME *pme;
-	Int xyz, x_y_z;
+	Int xyz, x_y_z, i, j, k;
 	if (arena == NULL || arena->mol == NULL || arena->mol->cell == NULL) {
 		if (arena->pme != NULL)
 			pme_release(arena);
@@ -660,6 +843,25 @@ pme_init(MDArena *arena)
 		s_prepare_direct_ewald(arena);
 	} else {	
 		s_initialize_spline_coeffs();
+#if 0
+		{
+			/*  spline test  */
+			int n;
+			double x;
+			for (n = 3; n <= MAX_DIM_SPLINE; n++) {
+				for (x = 0.0; x <= n; x += 0.1) {
+					double y = s_calc_spline(n, x);
+					double yy = (x * s_calc_spline(n - 1, x) + (n - x) * s_calc_spline(n - 1, x - 1.0)) / (n - 1);
+					if (fabs(y - yy) > 1e-8) {
+						fprintf(stderr, "spline test failed n = %d x = %g y = %g yy = %g\n", n, x, y, yy);
+						break;
+					}
+				}
+			}
+		}
+		s_pme_spline_test(arena);
+#endif
+		
 		xyz = arena->ewald_grid_x * arena->ewald_grid_y * arena->ewald_grid_z;
 		x_y_z = arena->ewald_grid_x + arena->ewald_grid_y + arena->ewald_grid_z;
 		if (xyz == 0) {
@@ -673,7 +875,7 @@ pme_init(MDArena *arena)
 				return;
 		}
 		pme = arena->pme;
-		if (pme->grid_x != arena->ewald_grid_x || pme->grid_y != arena->ewald_grid_y || pme->grid_z != arena->ewald_grid_z) {
+		if (pme->grid_x != arena->ewald_grid_x || pme->grid_y != arena->ewald_grid_y || pme->grid_z != arena->ewald_grid_z || pme->natoms != arena->mol->natoms) {
 			/*  Need to rebuild internal table  */
 			if (pme->grid_x * pme->grid_y * pme->grid_z < xyz) {
 				if (pme->qarray != NULL)
@@ -686,12 +888,17 @@ pme_init(MDArena *arena)
 					fftw_free(pme->qqarray);
 				pme->qqarray = fftw_alloc_complex(xyz);
 				pme->bcarray = (double *)realloc(pme->bcarray, sizeof(double) * xyz);
+				pme->carray = (double *)realloc(pme->carray, sizeof(double) * xyz);
 			}
+			if (pme->b0array != NULL)
+				fftw_free(pme->b0array);
+			pme->b0array = fftw_alloc_complex(x_y_z);
 			pme->marray = (double *)realloc(pme->marray, sizeof(double) * x_y_z * 2 * arena->mol->natoms);
 			pme->barray = (double *)realloc(pme->barray, sizeof(double) * x_y_z);
 			pme->grid_x = arena->ewald_grid_x;
 			pme->grid_y = arena->ewald_grid_y;
 			pme->grid_z = arena->ewald_grid_z;
+			pme->natoms = arena->mol->natoms;
 			if (xyz != 0 && x_y_z != 0) {
 				if (pme->plan1 != NULL)
 					fftw_destroy_plan(pme->plan1);
@@ -701,12 +908,47 @@ pme_init(MDArena *arena)
 				pme->plan2 = fftw_plan_dft_3d(pme->grid_x, pme->grid_y, pme->grid_z, pme->qfarray, pme->qqarray, FFTW_FORWARD, FFTW_ESTIMATE);
 			}
 			pme->order = 8;
+			/*  Initialize B array  */
+			for (i = 0; i < 3; i++) {
+				int idx_ofs, grid_i;
+				switch (i) {
+					case 0: grid_i = pme->grid_x; idx_ofs = 0; break;
+					case 1: grid_i = pme->grid_y; idx_ofs = pme->grid_x; break;
+					case 2: grid_i = pme->grid_z; idx_ofs = pme->grid_x + pme->grid_y; break;
+				}
+				for (j = 0; j < grid_i; j++) {
+					fftw_complex b1, b2;
+					double t;
+					if (0 && j == grid_i / 2) {
+						b1[0] = b1[1] = 0.0;
+					} else {
+						t = 2 * PI * (pme->order - 1) * j / grid_i;
+						b1[0] = cos(t);
+						b1[1] = sin(t);
+						b2[0] = b2[1] = 0.0;
+						for (k = 0; k < pme->order - 1; k++) {
+							double s;
+							t = 2 * PI * j * k / grid_i;
+							s = s_calc_spline(pme->order, k + 1);
+							b2[0] += cos(t) * s;
+							b2[1] += sin(t) * s;
+						}
+						/*  Invert b2  */
+						t = 1.0 / (b2[0] * b2[0] + b2[1] * b2[1]);
+						b2[0] *= t;
+						b2[1] *= -t;
+						s_complex_mul(b1, b1, b2);
+					}
+					pme->b0array[idx_ofs + j][0] = b1[0];
+					pme->b0array[idx_ofs + j][1] = b1[1];
+					pme->barray[idx_ofs + j] = b1[0] * b1[0] + b1[1] * b1[1];
+				}
+			}
 		}
 	}
 	/*  Calculate self-correction term  */
 	{
 		Double en;
-		Int i;
 		Atom *ap;
 		en = 0.0;
 		for (i = 0, ap = arena->mol->atoms; i < arena->mol->natoms; i++, ap = ATOM_NEXT(ap)) {

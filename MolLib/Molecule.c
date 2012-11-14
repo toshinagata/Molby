@@ -6371,16 +6371,14 @@ MoleculeGetSymopForTransform(Molecule *mp, const Transform tf, Symop *symop, int
 	int i, j, n[3];
 	if (mp == NULL || mp->cell == NULL)
 		return -1;
-	if (mp->nsyms == 0)
-		return -2;
 	if (is_cartesian) {
 		TransformMul(t, tf, mp->cell->tr);
 		TransformMul(t, mp->cell->rtr, t);
 	} else {
 		memmove(t, tf, sizeof(Transform));
 	}
-	for (i = 0; i < mp->nsyms; i++) {
-		Transform *tp = mp->syms + i;
+	for (i = 0; i < mp->nsyms || i == 0; i++) {
+		Transform *tp = &(SYMMETRY_AT_INDEX(mp->syms, i));
 		for (j = 0; j < 9; j++) {
 			if (fabs((*tp)[j] - t[j]) > 1e-4)
 				break;
