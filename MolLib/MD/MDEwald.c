@@ -197,17 +197,23 @@ s_prepare_direct_ewald(MDArena *arena)
 		if (pass == 1)
 			ip = arena->pme->kxyz;
 		for (n = ninit; n <= 50; n += nstep) {
-			Int nx, ny, nz;
+			Int nx, ny, nz, nx0, ny0, nz0;
 			Vector vx, vy, vm;
 			Double len;
 			dc = 0;
-			for (nx = -n + 1; nx < n; nx++) {
+			nx0 = (arena->periodic_a ? n : 1);
+			ny0 = (arena->periodic_b ? n : 1);
+			nz0 = (arena->periodic_c ? n : 1);
+			for (nx = -nx0 + 1; nx < nx0; nx++) {
 				VecScale(vx, raxes[0], nx);
-				for (ny = -n + 1; ny < n; ny++) {
+				for (ny = -ny0 + 1; ny < ny0; ny++) {
 					VecScale(vy, raxes[1], ny);
-					for (nz = -n + 1; nz < n; nz++) {
-						if (n > ninit && nx > -n + nstep && nx < n - nstep && ny > -n + nstep && ny < n - nstep && nz > -n + nstep && nz < n - nstep)
-							continue;
+					for (nz = -nz0 + 1; nz < nz0; nz++) {
+						if (n > ninit)
+							if (arena->periodic_a == 0 || (nx > -n + nstep && nx < n - nstep))
+								if (arena->periodic_b == 0 || (ny > -n + nstep && ny < n - nstep))
+									if (arena->periodic_c == 0 || (nz > -n + nstep && nz < n - nstep))
+										continue;
 						if (nx == 0 && ny == 0 && nz == 0)
 							continue;
 						VecScale(vm, raxes[2], nz);
@@ -247,29 +253,33 @@ calc_direct_electrostatic(MDArena *arena)
 	Vector *forces, *f;
 	Double energy;
 	Double coul;
-	Int i, j, n, nx, ny, nz, zero;
+	Int i, j, n, nx, ny, nz, nx0, ny0, nz0, zero, ninit, nstep;
 	Atom *ap, *apj;
 	
-	forces = (Vector *)calloc(sizeof(Vector), mol->natoms);
+	forces = &arena->forces[kPMEIndex * arena->mol->natoms];
 	energy = 0.0;
 	coul = COULOMBIC / arena->dielectric;
-	for (n = 5; n < 50; n += 5) {
+	ninit = 3;
+	nstep = 1;
+	for (n = ninit; n <= 50; n += nstep) {
 		Vector vx, vy, vz;
 		Double de;
 		de = 0.0;
-		for (nx = -n + 1; nx < n; nx++) {
-			if (nx > -n + 5 && nx < n - 5)
-				continue;
+		nx0 = (arena->periodic_a ? n : 1);
+		ny0 = (arena->periodic_b ? n : 1);
+		nz0 = (arena->periodic_c ? n : 1);
+		for (nx = -nx0 + 1; nx < nx0; nx++) {
 			VecScale(vx, cell->axes[0], nx);
-			for (ny = -n + 1; ny < n; ny++) {
-				if (ny > -n + 5 && ny < n - 5)
-					continue;
+			for (ny = -ny0 + 1; ny < ny0; ny++) {
 				VecScale(vy, cell->axes[1], ny);
-				for (nz = -n + 1; nz < n; nz++) {
-					if (nz > -n + 5 && nz < n - 5)
-						continue;
-					VecScale(vz, cell->axes[2], nz);
+				for (nz = -nz0 + 1; nz < nz0; nz++) {
+					if (n > ninit)
+						if (arena->periodic_a == 0 || (nx > -n + nstep && nx < n - nstep))
+							if (arena->periodic_b == 0 || (ny > -n + nstep && ny < n - nstep))
+								if (arena->periodic_c == 0 || (nz > -n + nstep && nz < n - nstep))
+									continue;
 					zero = (nx == 0 && ny == 0 && nz == 0);
+					VecScale(vz, cell->axes[2], nz);
 					for (i = 0, ap = mol->atoms, f = forces; i < mol->natoms; i++, ap = ATOM_NEXT(ap), f++) {
 						Vector ri, rj, rij;
 						ri = ap->r;
@@ -297,16 +307,22 @@ calc_direct_electrostatic(MDArena *arena)
 		}
 		de *= 0.5 * coul;
 		energy += de;
-		if (arena->debug_result != NULL) {
+		if (arena->debug_result != NULL && arena->debug_output_level > 0) {
 			fprintf(arena->debug_result, "Direct electrostatic energy\n");
 			fprintf(arena->debug_result, "N = %d energy = %.9g %.9g\n", n, energy * INTERNAL2KCAL, de * INTERNAL2KCAL);
-			for (i = 0; i < mol->natoms; i++) {
-				fprintf(arena->debug_result, "  %d: %.9g %.9g %.9g\n", i, forces[i].x * coul * INTERNAL2KCAL, forces[i].y * coul * INTERNAL2KCAL, forces[i].z * coul * INTERNAL2KCAL);
+			if (arena->debug_output_level > 1) {
+				for (i = 0; i < mol->natoms; i++) {
+					fprintf(arena->debug_result, "  %d: %.9g %.9g %.9g\n", i, forces[i].x * coul * INTERNAL2KCAL, forces[i].y * coul * INTERNAL2KCAL, forces[i].z * coul * INTERNAL2KCAL);
+				}
 			}
 		}
 		if (fabs(de) < 1e-7 || fabs(de / energy) < 1e-6)
 			break;
 	}
+	if (arena->debug_result != NULL) {
+		fprintf(arena->debug_result, "Direct electrostatic energy = %g\n", energy);
+	}
+	arena->energies[kPMEIndex] += energy;
 }
 
 /*  Direct Ewald Sum  */
@@ -379,9 +395,12 @@ calc_direct_ewald_force(MDArena *arena)
 		VecScaleSelf(forces[i], coul_v);
 	}
 	arena->energies[kPMEIndex] += energy_rec;
-	if (arena->debug_result != NULL && arena->debug_output_level > 0) {
-		for (i = 0; i < mol->natoms; i++) {
-			fprintf(arena->debug_result, "  reciprocal force %d = {%g,%g,%g}\n", i, forces[i].x * INTERNAL2KCAL, forces[i].y * INTERNAL2KCAL, forces[i].z * INTERNAL2KCAL);
+	if (arena->debug_result != NULL) {
+		fprintf(arena->debug_result, "Reciprocal energy = %g\n", energy_rec);
+		if (arena->debug_output_level > 0) {
+			for (i = 0; i < mol->natoms; i++) {
+				fprintf(arena->debug_result, "  reciprocal force %d = {%g,%g,%g}\n", i, forces[i].x * INTERNAL2KCAL, forces[i].y * INTERNAL2KCAL, forces[i].z * INTERNAL2KCAL);
+			}
 		}
 	}
 }
@@ -431,39 +450,54 @@ calc_pme_force(MDArena *arena)
 		r.z *= grid_z;
 		mp = pme->marray + (grid_x + grid_y + grid_z) * 2 * i;
 		for (k = 0; k < grid_x; k++) {
-			n0 = floor((r.x - order - k) / grid_x) + 1;
-			n1 = floor((r.x - k) / grid_x);
-			m0 = m1 = 0.0;
-			for (n = n0; n <= n1; n++) {
-				t = r.x - k - n * grid_x;
-				m0 += s_calc_spline(order, t);
-				m1 += (s_calc_spline(order - 1, t) - s_calc_spline(order - 1, t - 1)) * grid_x;
+			if (grid_x == 1) {
+				m0 = 1.0;
+				m1 = 1.0;
+			} else {
+				n0 = floor((r.x - order - k) / grid_x) + 1;
+				n1 = floor((r.x - k) / grid_x);
+				m0 = m1 = 0.0;
+				for (n = n0; n <= n1; n++) {
+					t = r.x - k - n * grid_x;
+					m0 += s_calc_spline(order, t);
+					m1 += (s_calc_spline(order - 1, t) - s_calc_spline(order - 1, t - 1)) * grid_x;
+				}
 			}
 			mp[k * 2] = m0;
 			mp[k * 2 + 1] = m1;
 			if (debug_level > 1) fprintf(arena->debug_result, "mx[%d] (%g, %g)\n", k, m0, m1);
 		}
 		for (k = 0; k < grid_y; k++) {
-			n0 = floor((r.y - order - k) / grid_y) + 1;
-			n1 = floor((r.y - k) / grid_y);
-			m0 = m1 = 0.0;
-			for (n = n0; n <= n1; n++) {
-				t = r.y - k - n * grid_y;
-				m0 += s_calc_spline(order, t);
-				m1 += (s_calc_spline(order - 1, t) - s_calc_spline(order - 1, t - 1)) * grid_y;
+			if (grid_y == 1) {
+				m0 = 1.0;
+				m1 = 1.0;
+			} else {
+				n0 = floor((r.y - order - k) / grid_y) + 1;
+				n1 = floor((r.y - k) / grid_y);
+				m0 = m1 = 0.0;
+				for (n = n0; n <= n1; n++) {
+					t = r.y - k - n * grid_y;
+					m0 += s_calc_spline(order, t);
+					m1 += (s_calc_spline(order - 1, t) - s_calc_spline(order - 1, t - 1)) * grid_y;
+				}
 			}
 			mp[(k + grid_x) * 2] = m0;
 			mp[(k + grid_x) * 2 + 1] = m1;
 			if (debug_level > 1) fprintf(arena->debug_result, "my[%d] (%g, %g)\n", k, m0, m1);
 		}
 		for (k = 0; k < grid_z; k++) {
-			n0 = floor((r.z - order - k) / grid_z) + 1;
-			n1 = floor((r.z - k) / grid_z);
-			m0 = m1 = 0.0;
-			for (n = n0; n <= n1; n++) {
-				t = r.z - k - n * grid_z;
-				m0 += s_calc_spline(order, t);
-				m1 += (s_calc_spline(order - 1, t) - s_calc_spline(order - 1, t - 1)) * grid_z;
+			if (grid_z == 1) {
+				m0 = 1.0;
+				m1 = 1.0;
+			} else {
+				n0 = floor((r.z - order - k) / grid_z) + 1;
+				n1 = floor((r.z - k) / grid_z);
+				m0 = m1 = 0.0;
+				for (n = n0; n <= n1; n++) {
+					t = r.z - k - n * grid_z;
+					m0 += s_calc_spline(order, t);
+					m1 += (s_calc_spline(order - 1, t) - s_calc_spline(order - 1, t - 1)) * grid_z;
+				}
 			}
 			mp[(k + grid_x + grid_y) * 2] = m0;
 			mp[(k + grid_x + grid_y) * 2 + 1] = m1;
@@ -598,7 +632,7 @@ calc_pme_force(MDArena *arena)
 			}
 		}
 	}
-	*energy *= dielec_r / 0.5;
+	*energy *= dielec_r * 0.5;
 	
 	/*  qfarray is transformed by FFT into qqarray  */
 	fftw_execute(pme->plan2);
@@ -677,6 +711,8 @@ calc_ewald_force(MDArena *arena)
 			calc_pme_force(arena);
 		else if (arena->use_ewald == 2)
 			calc_direct_ewald_force(arena);
+		else if (arena->use_ewald == -1)   /*  Direct sum of electrostatic (very slow)  */
+			calc_direct_electrostatic(arena);
 		else return;
 		arena->energies[kPMEIndex] += arena->pme->self_correction;
 		if (arena->debug_result != NULL) {
@@ -735,11 +771,11 @@ s_pme_spline_test(MDArena *arena)
 #define DIM 32
 #define ORDER 8
 	Int kk = DIM;
-	fftw_complex a1[DIM], a2[DIM], a3[DIM], a4[DIM], b[DIM], c1, c2, c3;
+	fftw_complex a1[DIM], a2[DIM], a3[DIM], a4[DIM], b[DIM], c1, c2;
 	double b2[DIM], c[DIM];
 	double d, w, x;
 	double len = 10.0;  /*  Unit cell dimension  */
-	Int i, j, k, m, n0, n1;
+	Int k, m, n0, n1;
 	x = 3.7;
 	for (m = 0; m < DIM; m++) {
 		k = (m <= DIM / 2 ? m : m - DIM);
@@ -907,7 +943,13 @@ pme_init(MDArena *arena)
 				pme->plan1 = fftw_plan_dft_3d(pme->grid_x, pme->grid_y, pme->grid_z, pme->qarray, pme->qfarray, FFTW_BACKWARD, FFTW_ESTIMATE);
 				pme->plan2 = fftw_plan_dft_3d(pme->grid_x, pme->grid_y, pme->grid_z, pme->qfarray, pme->qqarray, FFTW_FORWARD, FFTW_ESTIMATE);
 			}
-			pme->order = 8;
+			pme->order = arena->ewald_order;
+			/*  Should be even numbers in [4..MAX_DIM_SPLINE]  */
+			if (pme->order < 4)
+				pme->order = 4;
+			if (pme->order > MAX_DIM_SPLINE)
+				pme->order = MAX_DIM_SPLINE;
+			pme->order -= pme->order % 2;
 			/*  Initialize B array  */
 			for (i = 0; i < 3; i++) {
 				int idx_ofs, grid_i;
@@ -919,8 +961,9 @@ pme_init(MDArena *arena)
 				for (j = 0; j < grid_i; j++) {
 					fftw_complex b1, b2;
 					double t;
-					if (0 && j == grid_i / 2) {
-						b1[0] = b1[1] = 0.0;
+					if (grid_i == 1) {
+						b1[0] = 1.0;
+						b1[1] = 0.0;
 					} else {
 						t = 2 * PI * (pme->order - 1) * j / grid_i;
 						b1[0] = cos(t);

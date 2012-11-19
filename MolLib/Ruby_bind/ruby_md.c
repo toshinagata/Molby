@@ -334,7 +334,7 @@ s_DielectricSym, s_GradientConvergenceSym, s_CoordinateConvergenceSym, s_UseXplo
 s_Scale14VdwSym, s_Scale14ElectSym, s_RelocateCenterSym, 
 s_SurfaceProbeRadiusSym, s_SurfaceTensionSym, s_SurfacePotentialFreqSym, s_UseGraphiteSym,
 s_AlchemicalLambdaSym, s_AlchemicalDeltaLambdaSym, s_AlchemicalEnergySym, s_MinimizeCellSym,
-s_UseEwaldSym, s_EwaldBetaSym, s_EwaldGridSym, s_EwaldFreqSym;
+s_UseEwaldSym, s_EwaldBetaSym, s_EwaldGridSym, s_EwaldFreqSym, s_EwaldOrderSym;
 
 struct s_MDArenaAttrDef {
 	char *name;
@@ -384,8 +384,9 @@ static struct s_MDArenaAttrDef s_MDArenaAttrDefTable[] = {
 	{"minimize_cell",     &s_MinimizeCellSym,     0, 0, 'b', offsetof(MDArena, minimize_cell)},
 	{"use_ewald",         &s_UseEwaldSym,         0, 0, 'i', offsetof(MDArena, use_ewald)},
 	{"ewald_beta",        &s_EwaldBetaSym,        0, 0, 'f', offsetof(MDArena, ewald_beta)},
-	{"ewald_grid",        &s_EwaldGridSym,        0, 0, 0, offsetof(MDArena, ewald_grid_x)},
+	{"ewald_grid",        &s_EwaldGridSym,        0, 0, 0,   offsetof(MDArena, ewald_grid_x)},
 	{"ewald_freq",        &s_EwaldFreqSym,        0, 0, 'i', offsetof(MDArena, ewald_freq)},
+	{"ewald_order",       &s_EwaldOrderSym,       0, 0, 'i', offsetof(MDArena, ewald_order)},
 	{NULL} /* Sentinel */
 };
 

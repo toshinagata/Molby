@@ -279,8 +279,9 @@ typedef struct MDArena {
 	Int    use_ewald;       /*  1 if Ewald technique is to be used  */
 	Double ewald_beta;      /*  beta for Ewald sum  */
 	Int    ewald_grid_x, ewald_grid_y, ewald_grid_z;  /*  Number of grids for each direction; if all zero, then direct Ewald is used  */
-	Int    ewald_freq;
-	
+	Int    ewald_freq;      /*  How frequent should Ewald sum be calculated? (default: 2)  */
+	Int    ewald_order;     /*  Order of cardinal B-spline for approximating structure factor (default: 8)  */
+
 	/*  Runtime fields  */
 	
 	/*  Initialize flag  */

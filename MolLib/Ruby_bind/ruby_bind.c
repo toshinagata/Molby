@@ -4430,7 +4430,7 @@ static int
 s_Molecule_AtomIndexFromValue(Molecule *mol, VALUE val)
 {
 	int n;
-	char *p;
+	char *p = "";
 	if (FIXNUM_P(val)) {
 		n = FIX2INT(val);
 		if (n >= 0 && n < mol->natoms)
@@ -4442,12 +4442,13 @@ s_Molecule_AtomIndexFromValue(Molecule *mol, VALUE val)
 	}
 	if (n >= 0 && n < mol->natoms)
 		return n;
+	p = StringValuePtr(val);
 	if (n == -1)
-		rb_raise(rb_eMolbyError, "no such atom: %s", StringValuePtr(val));
+		rb_raise(rb_eMolbyError, "no such atom: %s", p);
 	else if (n == -2)
-		rb_raise(rb_eMolbyError, "bad format of atom specification: %s", StringValuePtr(val));
+		rb_raise(rb_eMolbyError, "bad format of atom specification: %s", p);
 	else
-		rb_raise(rb_eMolbyError, "error in converting value to atom index: %s", StringValuePtr(val));
+		rb_raise(rb_eMolbyError, "error in converting value to atom index: %s", p);
 	return 0; /* Not reached */
 }
 

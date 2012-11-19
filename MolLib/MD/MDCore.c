@@ -3505,6 +3505,7 @@ md_set_default(MDArena *arena)
 	arena->ewald_grid_y = 16;
 	arena->ewald_grid_z = 16;
 	arena->ewald_freq = 2;
+	arena->ewald_order = 8;
 	
 	/*	arena->pressure_coupling = 0.4;
 	arena->pressure_trial_width = 0.01;
