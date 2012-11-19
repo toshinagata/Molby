@@ -1196,7 +1196,7 @@ s_calc_nonbonded_force_sub(MDArena *arena, Double *energies, Double *eenergies, 
 			}
 		}
 		if (arena->debug_result && arena->debug_output_level > 0) {
-			fprintf(arena->debug_result, "Electrostatic correction energy: %f\n", *eenergies_corr/KCAL2INTERNAL);
+			fprintf(arena->debug_result, "Electrostatic correction energy (non-bonded + excluded): %f\n", *eenergies_corr/KCAL2INTERNAL);
 		}
 	}
 }
@@ -1386,13 +1386,13 @@ calc_force(MDArena *arena)
 	arena->total_energy = 0.0;
 	arena->alchem_energy = 0.0;
 
-	if (arena->step == arena->start_step || arena->step % arena->surface_potential_freq == 0) {
+	if (arena->is_minimizing || arena->step == arena->start_step || arena->step % arena->surface_potential_freq == 0) {
 		doSurface = 1;
 		arena->energies[kSurfaceIndex] = 0.0;
 		memset(arena->forces + kSurfaceIndex * natoms, 0, sizeof(Vector) * natoms);
 	}
 
-	if (arena->step == arena->start_step || arena->step % arena->surface_potential_freq == 0) {
+	if (arena->is_minimizing || arena->step == arena->start_step || arena->step % arena->ewald_freq == 0) {
 		doEwald = 1;
 		arena->energies[kPMEIndex] = 0.0;
 		memset(arena->forces + kPMEIndex * natoms, 0, sizeof(Vector) * natoms);

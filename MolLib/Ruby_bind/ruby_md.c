@@ -333,7 +333,8 @@ s_AverageTempSym, s_AndersenFreqSym, s_AndersenCouplingSym, s_RandomSeedSym,
 s_DielectricSym, s_GradientConvergenceSym, s_CoordinateConvergenceSym, s_UseXplorShiftSym, 
 s_Scale14VdwSym, s_Scale14ElectSym, s_RelocateCenterSym, 
 s_SurfaceProbeRadiusSym, s_SurfaceTensionSym, s_SurfacePotentialFreqSym, s_UseGraphiteSym,
-s_AlchemicalLambdaSym, s_AlchemicalDeltaLambdaSym, s_AlchemicalEnergySym, s_MinimizeCellSym;
+s_AlchemicalLambdaSym, s_AlchemicalDeltaLambdaSym, s_AlchemicalEnergySym, s_MinimizeCellSym,
+s_UseEwaldSym, s_EwaldBetaSym, s_EwaldGridSym, s_EwaldFreqSym;
 
 struct s_MDArenaAttrDef {
 	char *name;
@@ -381,6 +382,10 @@ static struct s_MDArenaAttrDef s_MDArenaAttrDefTable[] = {
 	{"alchemical_delta_lambda", &s_AlchemicalDeltaLambdaSym, 0, 0, 'f', offsetof(MDArena, alchem_dlambda)},
 	{"alchemical_energy", &s_AlchemicalEnergySym, 0, 0, 'E', offsetof(MDArena, alchem_energy)},
 	{"minimize_cell",     &s_MinimizeCellSym,     0, 0, 'b', offsetof(MDArena, minimize_cell)},
+	{"use_ewald",         &s_UseEwaldSym,         0, 0, 'i', offsetof(MDArena, use_ewald)},
+	{"ewald_beta",        &s_EwaldBetaSym,        0, 0, 'f', offsetof(MDArena, ewald_beta)},
+	{"ewald_grid",        &s_EwaldGridSym,        0, 0, 0, offsetof(MDArena, ewald_grid_x)},
+	{"ewald_freq",        &s_EwaldFreqSym,        0, 0, 'i', offsetof(MDArena, ewald_freq)},
 	{NULL} /* Sentinel */
 };
 
@@ -409,6 +414,10 @@ s_MDArena_Get(VALUE self, VALUE attr)
 	struct s_MDArenaAttrDef *dp;
 	ID aid = rb_to_id(attr);
 	Data_Get_Struct(self, MDArena, arena);
+	if (aid == SYM2ID(s_EwaldGridSym)) {
+		/*  Array of three grid values  */
+		return rb_ary_new3(3, INT2NUM(arena->ewald_grid_x), INT2NUM(arena->ewald_grid_y), INT2NUM(arena->ewald_grid_z));
+	}
 	for (i = 0, dp = s_MDArenaAttrDefTable; dp->name != NULL; i++, dp++) {
 		if (dp->id == aid) {
 			char *p = (char *)arena + dp->offset;
@@ -498,6 +507,29 @@ s_MDArena_Set(VALUE self, VALUE attr, VALUE val)
 	ID aid = rb_to_id(attr);
 	attr = ID2SYM(aid);  /*  May be used later  */
 	Data_Get_Struct(self, MDArena, arena);
+	if (aid == SYM2ID(s_EwaldGridSym)) {
+		if (rb_obj_is_kind_of(val, rb_cNumeric)) {
+			i = NUM2INT(rb_Integer(val));
+			if (i <= 0)
+				rb_raise(rb_eMolbyError, "The ewald grid must be positive integer");
+			arena->ewald_grid_x = arena->ewald_grid_y = arena->ewald_grid_z = i;
+		} else {
+			int ival[3];
+			val = rb_ary_to_ary(val);
+			j = RARRAY_LEN(val);
+			if (j < 3)
+				rb_raise(rb_eMolbyError, "The ewald grid must be an integer or an array of three integers");
+			for (i = 0; i < 3; i++) {
+				ival[i] = NUM2INT(rb_Integer(RARRAY_PTR(val)[i]));
+				if (ival[i] <= 0)
+					rb_raise(rb_eMolbyError, "The ewald grid must be positive integer");
+			}
+			arena->ewald_grid_x = ival[0];
+			arena->ewald_grid_y = ival[1];
+			arena->ewald_grid_z = ival[2];
+		}
+		return val;
+	}
 	for (i = 0, dp = s_MDArenaAttrDefTable; dp->name != NULL; i++, dp++) {
 		if (dp->id == aid) {
 			char *p = (char *)arena + dp->offset;
@@ -1063,6 +1095,7 @@ Init_MolbyMDTypes(void)
 	for (i = 0, dp = s_MDArenaAttrDefTable; dp->name != NULL; i++, dp++) {
 		rb_define_method(rb_cMDArena, dp->name, s_MDArena_GetAttr, 0);
 		strncpy(name, dp->name, 38);
+		name[38] = 0;
 		strcat(name, "=");
 		rb_define_method(rb_cMDArena, name, s_MDArena_SetAttr, 1);
 		dp->id = rb_intern(dp->name);
@@ -1072,6 +1105,7 @@ Init_MolbyMDTypes(void)
 	for (i = 0, dp = s_MDPressureAttrDefTable; dp->name != NULL; i++, dp++) {
 		rb_define_method(rb_cMDArena, dp->name, s_MDArena_GetAttr, 0);
 		strncpy(name, dp->name, 38);
+		name[38] = 0;
 		strcat(name, "=");
 		rb_define_method(rb_cMDArena, name, s_MDArena_SetAttr, 1);
 		dp->id = rb_intern(dp->name);
