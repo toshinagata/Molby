@@ -4443,11 +4443,11 @@ s_Molecule_AtomIndexFromValue(Molecule *mol, VALUE val)
 	if (n >= 0 && n < mol->natoms)
 		return n;
 	if (n == -1)
-		rb_raise(rb_eMolbyError, "no such atom: %s", p);
+		rb_raise(rb_eMolbyError, "no such atom: %s", StringValuePtr(val));
 	else if (n == -2)
-		rb_raise(rb_eMolbyError, "bad format of atom specification: %s", p);
+		rb_raise(rb_eMolbyError, "bad format of atom specification: %s", StringValuePtr(val));
 	else
-		rb_raise(rb_eMolbyError, "error in converting value to atom index: %s", p);
+		rb_raise(rb_eMolbyError, "error in converting value to atom index: %s", StringValuePtr(val));
 	return 0; /* Not reached */
 }
 
