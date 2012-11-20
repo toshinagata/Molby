@@ -320,7 +320,7 @@ calc_direct_electrostatic(MDArena *arena)
 			break;
 	}
 	if (arena->debug_result != NULL) {
-		fprintf(arena->debug_result, "Direct electrostatic energy = %g\n", energy);
+		fprintf(arena->debug_result, "Direct electrostatic energy = %g\n", energy * INTERNAL2KCAL);
 	}
 	arena->energies[kPMEIndex] += energy;
 }
@@ -452,7 +452,7 @@ calc_pme_force(MDArena *arena)
 		for (k = 0; k < grid_x; k++) {
 			if (grid_x == 1) {
 				m0 = 1.0;
-				m1 = 1.0;
+				m1 = 0.0;
 			} else {
 				n0 = floor((r.x - order - k) / grid_x) + 1;
 				n1 = floor((r.x - k) / grid_x);
@@ -470,7 +470,7 @@ calc_pme_force(MDArena *arena)
 		for (k = 0; k < grid_y; k++) {
 			if (grid_y == 1) {
 				m0 = 1.0;
-				m1 = 1.0;
+				m1 = 0.0;
 			} else {
 				n0 = floor((r.y - order - k) / grid_y) + 1;
 				n1 = floor((r.y - k) / grid_y);
@@ -488,7 +488,7 @@ calc_pme_force(MDArena *arena)
 		for (k = 0; k < grid_z; k++) {
 			if (grid_z == 1) {
 				m0 = 1.0;
-				m1 = 1.0;
+				m1 = 0.0;
 			} else {
 				n0 = floor((r.z - order - k) / grid_z) + 1;
 				n1 = floor((r.z - k) / grid_z);
@@ -714,11 +714,14 @@ calc_ewald_force(MDArena *arena)
 		else if (arena->use_ewald == -1)   /*  Direct sum of electrostatic (very slow)  */
 			calc_direct_electrostatic(arena);
 		else return;
-		arena->energies[kPMEIndex] += arena->pme->self_correction;
+		if (arena->use_ewald != -1)
+			arena->energies[kPMEIndex] += arena->pme->self_correction;
 		if (arena->debug_result != NULL) {
-			fprintf(arena->debug_result, "%s Ewald reciprocal energy = %.9g\n", (arena->use_ewald == 1 ? "Particle Mesh" : "Direct"), (arena->energies[kPMEIndex] - arena->pme->self_correction) * INTERNAL2KCAL);
-			fprintf(arena->debug_result, "Self correction energy = %.9g\n", arena->pme->self_correction * INTERNAL2KCAL);
-			fprintf(arena->debug_result, "Net Ewald indirect energy = %.9g\n", arena->energies[kPMEIndex] * INTERNAL2KCAL);
+			if (arena->use_ewald >= 0) {
+				fprintf(arena->debug_result, "%s Ewald reciprocal energy = %.9g\n", (arena->use_ewald == 1 ? "Particle Mesh" : "Direct"), (arena->energies[kPMEIndex] - arena->pme->self_correction) * INTERNAL2KCAL);
+				fprintf(arena->debug_result, "Self correction energy = %.9g\n", arena->pme->self_correction * INTERNAL2KCAL);
+				fprintf(arena->debug_result, "Net Ewald indirect energy = %.9g\n", arena->energies[kPMEIndex] * INTERNAL2KCAL);
+			}
 		}
 	}
 }
@@ -859,7 +862,7 @@ void
 pme_init(MDArena *arena)
 {
 	MDPME *pme;
-	Int xyz, x_y_z, i, j, k;
+	Int xyz, x_y_z, i, j, k, grid_x, grid_y, grid_z;
 	if (arena == NULL || arena->mol == NULL || arena->mol->cell == NULL) {
 		if (arena->pme != NULL)
 			pme_release(arena);
@@ -897,9 +900,12 @@ pme_init(MDArena *arena)
 		}
 		s_pme_spline_test(arena);
 #endif
-		
-		xyz = arena->ewald_grid_x * arena->ewald_grid_y * arena->ewald_grid_z;
-		x_y_z = arena->ewald_grid_x + arena->ewald_grid_y + arena->ewald_grid_z;
+		grid_x = (arena->periodic_a ? arena->ewald_grid_x : 1);
+		grid_y = (arena->periodic_b ? arena->ewald_grid_y : 1);
+		grid_z = (arena->periodic_c ? arena->ewald_grid_z : 1);
+
+		xyz = grid_x * grid_y * grid_z;
+		x_y_z = grid_x + grid_y + grid_z;
 		if (xyz == 0) {
 			if (arena->pme != NULL)
 				pme_release(arena);
@@ -911,7 +917,7 @@ pme_init(MDArena *arena)
 				return;
 		}
 		pme = arena->pme;
-		if (pme->grid_x != arena->ewald_grid_x || pme->grid_y != arena->ewald_grid_y || pme->grid_z != arena->ewald_grid_z || pme->natoms != arena->mol->natoms) {
+		if (pme->grid_x != grid_x || pme->grid_y != grid_y || pme->grid_z != grid_z || pme->natoms != arena->mol->natoms) {
 			/*  Need to rebuild internal table  */
 			if (pme->grid_x * pme->grid_y * pme->grid_z < xyz) {
 				if (pme->qarray != NULL)
@@ -931,9 +937,9 @@ pme_init(MDArena *arena)
 			pme->b0array = fftw_alloc_complex(x_y_z);
 			pme->marray = (double *)realloc(pme->marray, sizeof(double) * x_y_z * 2 * arena->mol->natoms);
 			pme->barray = (double *)realloc(pme->barray, sizeof(double) * x_y_z);
-			pme->grid_x = arena->ewald_grid_x;
-			pme->grid_y = arena->ewald_grid_y;
-			pme->grid_z = arena->ewald_grid_z;
+			pme->grid_x = grid_x;
+			pme->grid_y = grid_y;
+			pme->grid_z = grid_z;
 			pme->natoms = arena->mol->natoms;
 			if (xyz != 0 && x_y_z != 0) {
 				if (pme->plan1 != NULL)

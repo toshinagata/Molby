@@ -919,7 +919,7 @@ s_calc_nonbonded_force_sub(MDArena *arena, Double *energies, Double *eenergies, 
 	Double *eenergies_corr;
 	Int do_ewald;
 	
-	if (group_flags_1 == NULL && arena->use_ewald) {
+	if (group_flags_1 == NULL && arena->use_ewald > 0) {
 		eforces_corr = &arena->forces[kESCorrectionIndex * arena->mol->natoms];
 		eenergies_corr = &arena->energies[kESCorrectionIndex];
 		do_ewald = 1;
@@ -1167,7 +1167,7 @@ s_calc_nonbonded_force_sub(MDArena *arena, Double *energies, Double *eenergies, 
 		
 	}
 	
-	if (arena->use_ewald != 0) {
+	if (do_ewald) {
 		/*  Calculate correction terms for excluded atom pairs  */
 		Atom *api, *apj;
 		Int j, k;
@@ -1182,10 +1182,10 @@ s_calc_nonbonded_force_sub(MDArena *arena, Double *energies, Double *eenergies, 
 				apj = ATOM_AT_INDEX(arena->mol->atoms, j);
 				VecSub(rij, api->r, apj->r);
 				d = VecLength(rij);
-				w12 = -api->charge * apj->charge * COULOMBIC / arena->dielectric * 0.5;
+				w12 = -api->charge * apj->charge * COULOMBIC / arena->dielectric;
 				dd = arena->ewald_beta * d;
 				w0 = w12 * erf(dd) / d;
-				w1 = (2 * w0 - w12 * 4 * dd * PI2R * exp(-dd * dd)) / (d * d);
+				w1 = -(w0 - w12 * 2 * arena->ewald_beta * PI2R * exp(-dd * dd)) / (d * d);
 				VecScaleSelf(rij, w1);
 				if (arena->debug_result && arena->debug_output_level > 1) {
 					fprintf(arena->debug_result, "Electrostatic correction force (excluded) %d-%d: r=%f, k0=%f, k1=%f, {%f %f %f}\n", i+1, j+1, d, w0/KCAL2INTERNAL, w0*d/KCAL2INTERNAL, rij.x/KCAL2INTERNAL, rij.y/KCAL2INTERNAL, rij.z/KCAL2INTERNAL);

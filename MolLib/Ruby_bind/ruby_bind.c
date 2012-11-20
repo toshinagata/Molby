@@ -5909,6 +5909,7 @@ s_Molecule_SetCellPeriodicity(VALUE self, VALUE arg)
 		Int i;
 		VALUE arg0;
 		arg = rb_ary_to_ary(arg);
+		flag = 0;
 		for (i = 0; i < 3 && i < RARRAY_LEN(arg); i++) {
 			arg0 = RARRAY_PTR(arg)[i];
 			if (arg0 != Qnil && arg0 != Qfalse && arg0 != INT2FIX(0))
