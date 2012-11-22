@@ -16,12 +16,26 @@
 class Molecule
 
   def Molecule.read_gamess_basis_sets(fname)
-    $gamess_basis = Hash.new unless $gamess_basis
+    # $gamess_basis = Hash.new unless $gamess_basis
 	$gamess_ecp = Hash.new unless $gamess_ecp
+	# $gamess_basis_desc = Hash.new unless $gamess_basis_desc
+	# $gamess_basis_keys = [] unless $gamess_basis_keys
 	basename = File.basename(fname, ".*")
 	keys = []
+	descname = nil
     File.open(fname, "r") { |fp|
 	  while (s = fp.gets)
+	    if s =~ /^\s*!\s*/ && descname == nil
+	      #  Get the descriptive name from the first comment line
+		  s = Regexp.last_match.post_match
+		  if s =~ /  EMSL/
+		    descname = Regexp.last_match.pre_match
+		  else
+		    descname = (s.split)[0]
+		  end
+		  $gamess_basis_desc[basename] = descname
+		  next
+		end
 		ss, bas = (s.split)[0..1]     #  Tokens delimited by whitespaces
 		next if ss == nil || ss == ""
 		if ss == "$ECP"
@@ -79,6 +93,9 @@ class Molecule
 		end
 	  end
     }
+	unless $gamess_basis_keys.include?(basename)
+	  $gamess_basis_keys.push(basename)
+	end
   end
   
   def export_gamess(fname, hash)
@@ -222,8 +239,9 @@ class Molecule
     end
 
 	#  Descriptive text and internal string for popup menus
-    bset_desc = ["PM3", "STO-3G", "3-21G", "6-31G", "6-31G(d)", "6-31G(d,p)", "6-311G", "6-311G(d,p)", "LanL2DZ"]
-	bset_internal = ["PM3", "STO3G", "321G", "631G", "631Gd", "631Gdp", "6311G", "6311Gdp", "LanL2DZ"]
+#    bset_desc = ["PM3", "STO-3G", "3-21G", "6-31G", "6-31G(d)", "6-31G(d,p)", "6-311G", "6-311G(d,p)", "LanL2DZ"]
+#	bset_internal = ["PM3", "STO3G", "321G", "631G", "631Gd", "631Gdp", "6311G", "6311Gdp", "LanL2DZ"]
+    bset_desc = $gamess_basis_keys.map { |key| $gamess_basis_desc[key] }
 	dft_desc = ["B3LYP"]
 	dft_internal = ["B3LYP"]
 
@@ -232,6 +250,19 @@ class Molecule
 	  "secondary_basis"=>8, "esp"=>0}
 
     hash = Dialog.run("GAMESS Export") {
+      def load_basis_set_sub(item)
+	    fname = Dialog.open_panel("Select a file containing GAMESS basis set:")
+		if fname
+		  Molecule.read_gamess_basis_sets(fname)
+		  bset_desc_new = $gamess_basis_keys.map { |key| $gamess_basis_desc[key] }
+		  sel1 = attr("basis", :value)
+		  sel2 = attr("secondary_basis", :value)
+		  set_attr("basis", :subitems=>bset_desc_new)
+		  set_attr("basis", :value=>sel1)
+		  set_attr("secondary_basis", :subitems=>bset_desc_new)
+		  set_attr("secondary_basis", :value=>sel2)
+		end
+      end
 	  layout(4,
 		item(:text, :title=>"SCF type"),
 		item(:popup, :subitems=>["RHF", "ROHF", "UHF"], :tag=>"scftype"),
@@ -258,8 +289,12 @@ class Molecule
 
 		item(:text, :title=>"Basis set"),
 		item(:popup, :subitems=>bset_desc, :tag=>"basis"),
-		-1, -1,
+		-1,
+		-1,
 
+		item(:button, :title=>"Load Basis Set...", :action=>:load_basis_set_sub),
+		-1, -1, -1,
+		
 		item(:checkbox, :title=>"Use secondary basis set", :tag=>"use_secondary_basis",
 		  :action=>proc { |it|
 		    flag = (it[:value] != 0)
@@ -301,8 +336,8 @@ class Molecule
 	}
 	if hash[:status] == 0
 	  #  Specify basis by internal keys
-	  hash["basis"] = bset_internal[hash["basis"]]
-	  hash["secondary_basis"] = bset_internal[hash["secondary_basis"]]
+	  hash["basis"] = $gamess_basis_keys[hash["basis"]]
+	  hash["secondary_basis"] = $gamess_basis_keys[hash["secondary_basis"]]
 	  hash["dfttype"] = dft_internal[hash["dfttype"]]
 	  basename = (self.path ? File.basename(self.path, ".*") : self.name)
       fname = Dialog.save_panel("GAMESS input file name", self.dir, basename + ".inp", "GAMESS input file (*.inp)|*.inp|All files|*.*")
@@ -315,11 +350,18 @@ class Molecule
   
 end
 
-Molecule.read_gamess_basis_sets("LanL2DZ.txt")
-Molecule.read_gamess_basis_sets("631Gd.txt")
-Molecule.read_gamess_basis_sets("631Gdp.txt")
-Molecule.read_gamess_basis_sets("6311Gdp.txt")
-$gamess_basis["PM3"]   = " PM3 0\n"
-$gamess_basis["STO3G"] = " STO 3\n"
-$gamess_basis["321G"]  = " N21 3\n"
-$gamess_basis["631G"]  = " N31 6\n"
+$gamess_basis = {
+  "PM3"   => " PM3 0\n",
+  "STO3G" => " STO 3\n",
+  "321G"  => " N21 3\n",
+  "631G"  => " N31 6\n" }
+$gamess_basis_desc = {
+  "PM3"   => "PM3",
+  "STO3G" => "STO-3G",
+  "321G"  => "3-21G",
+  "631G"  => "6-31G" }
+$gamess_basis_keys = ["PM3", "STO3G", "321G", "631G"]
+
+["631Gd", "631Gdp", "631+Gd", "631++Gdp", "6311Gdp", "6311+Gd", "6311++Gdp", "6311++G2d2p", "6311++G3df3pd", "LanL2DZ"].each { |n|
+  Molecule.read_gamess_basis_sets("basis_sets/#{n}.txt")
+}
