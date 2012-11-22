@@ -9394,12 +9394,12 @@ MoleculeCalculateCellFromAxes(XtalCell *cp, int calc_abc)
 		return -1;  /*  Non-regular transform  */
 
 	/*  Calculate the reciprocal cell parameters  */
-	cp->rcell[0] = sqrt(cp->rtr[0] * cp->rtr[0] + cp->rtr[1] * cp->rtr[1] + cp->rtr[2] * cp->rtr[2]);
-	cp->rcell[1] = sqrt(cp->rtr[3] * cp->rtr[3] + cp->rtr[4] * cp->rtr[4] + cp->rtr[5] * cp->rtr[5]);
-	cp->rcell[2] = sqrt(cp->rtr[6] * cp->rtr[6] + cp->rtr[7] * cp->rtr[7] + cp->rtr[8] * cp->rtr[8]);
-	cp->rcell[3] = acos((cp->rtr[3] * cp->rtr[6] + cp->rtr[4] * cp->rtr[7] + cp->rtr[5] * cp->rtr[8]) / (cp->rcell[1] * cp->rcell[2])) * kRad2Deg;
-	cp->rcell[4] = acos((cp->rtr[6] * cp->rtr[0] + cp->rtr[7] * cp->rtr[1] + cp->rtr[8] * cp->rtr[2]) / (cp->rcell[2] * cp->rcell[0])) * kRad2Deg;
-	cp->rcell[5] = acos((cp->rtr[0] * cp->rtr[3] + cp->rtr[1] * cp->rtr[4] + cp->rtr[2] * cp->rtr[5]) / (cp->rcell[0] * cp->rcell[1])) * kRad2Deg;
+	cp->rcell[0] = sqrt(cp->rtr[0] * cp->rtr[0] + cp->rtr[3] * cp->rtr[3] + cp->rtr[6] * cp->rtr[6]);
+	cp->rcell[1] = sqrt(cp->rtr[1] * cp->rtr[1] + cp->rtr[4] * cp->rtr[4] + cp->rtr[7] * cp->rtr[7]);
+	cp->rcell[2] = sqrt(cp->rtr[2] * cp->rtr[2] + cp->rtr[5] * cp->rtr[5] + cp->rtr[8] * cp->rtr[8]);
+	cp->rcell[3] = acos((cp->rtr[1] * cp->rtr[2] + cp->rtr[4] * cp->rtr[5] + cp->rtr[7] * cp->rtr[8]) / (cp->rcell[1] * cp->rcell[2])) * kRad2Deg;
+	cp->rcell[4] = acos((cp->rtr[2] * cp->rtr[0] + cp->rtr[5] * cp->rtr[3] + cp->rtr[8] * cp->rtr[6]) / (cp->rcell[2] * cp->rcell[0])) * kRad2Deg;
+	cp->rcell[5] = acos((cp->rtr[0] * cp->rtr[1] + cp->rtr[3] * cp->rtr[4] + cp->rtr[6] * cp->rtr[7]) / (cp->rcell[0] * cp->rcell[1])) * kRad2Deg;
 	
 	if (calc_abc) {
 		/*  Calculate a, b, c, alpha, beta, gamma  */
@@ -9410,7 +9410,6 @@ MoleculeCalculateCellFromAxes(XtalCell *cp, int calc_abc)
 		cp->cell[4] = acos((cp->tr[6] * cp->tr[0] + cp->tr[7] * cp->tr[1] + cp->tr[8] * cp->tr[2]) / (cp->cell[2] * cp->cell[0])) * kRad2Deg;
 		cp->cell[5] = acos((cp->tr[0] * cp->tr[3] + cp->tr[1] * cp->tr[4] + cp->tr[2] * cp->tr[5]) / (cp->cell[0] * cp->cell[1])) * kRad2Deg;
 	}
-	
 	return 0;
 }
 
