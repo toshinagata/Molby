@@ -1,7 +1,7 @@
 ifeq ($(TARGET_PLATFORM),MAC)
  WXCONFIG_PREFIX = $(HOME)/Development/wxMac/osx-build/
- CPP_EXTRA_FLAGS = -isysroot /Developer/SDKs/MacOSX10.4u.sdk -mmacosx-version-min=10.4 -arch ppc -arch i386 -DUSE_RUBY=1 -g
- LD_EXTRA_FLAGS = -framework Accelerate -framework GLUT
+ CPP_EXTRA_FLAGS = -isysroot /Developer/SDKs/MacOSX10.4u.sdk -mmacosx-version-min=10.4 -arch ppc -arch i386 -DUSE_RUBY=1 -g -I$(PWD)/../../fftw-3.3.2/osx-build/include
+ LD_EXTRA_FLAGS = -framework Accelerate -framework GLUT -L$(PWD)/../../fftw-3.3.2/osx-build/lib -lfftw3
  RUBY_DIR = $(HOME)/Development/ruby-1.8.7-static
  RUBY_CFLAGS = -I$(RUBY_DIR)
  RUBY_LDFLAGS = -L$(RUBY_DIR) -lruby-static
@@ -10,8 +10,8 @@ endif
 
 ifeq ($(TARGET_PLATFORM),MSW)
  WXCONFIG_PREFIX = $(HOME)/wxMSW-2.8.9/msw-build/
- CPP_EXTRA_FLAGS = -O2 -I/lib/clapack -g
- LD_EXTRA_FLAGS = -L/lib/clapack -llapack -lblas -lf2c_nomain
+ CPP_EXTRA_FLAGS = -O2 -I/lib/clapack -I$(PWD)/../../fftw-3.3.2/msw-build/include -g
+ LD_EXTRA_FLAGS = -L/lib/clapack  -L$(PWD)/../../fftw-3.3.2/msw-build/lib -llapack -lblas -lf2c_nomain -lfftw3
  RUBY_DIR = $(HOME)/ruby-1.8.7-static
  RUBY_CFLAGS = -I$(RUBY_DIR)
 # RUBY_LDFLAGS = -L$(RUBY_DIR) -lruby-static /c/Ruby/bin/msvcrt-ruby18.dll
