@@ -43,6 +43,8 @@ public:
 	long historyPos;
 	long keyInputPos;
 
+	long selectionFrom, selectionTo;
+	
 	ConsoleFrame(wxMDIParentFrame *parent, const wxString& title, const wxPoint& pos, const wxSize& size, long type);
 	virtual ~ConsoleFrame();
 
@@ -59,6 +61,9 @@ public:
 	void OnClose(wxCommandEvent &event);
 	void OnUpdateUI(wxUpdateUIEvent& event);
 
+	void OnSetFocus(wxFocusEvent &event);
+	void OnKillFocus(wxFocusEvent &event);
+	
 	void OnUndo(wxCommandEvent &event);
 	void OnRedo(wxCommandEvent &event);
 

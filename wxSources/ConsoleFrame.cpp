@@ -58,6 +58,7 @@ ConsoleFrame::ConsoleFrame(wxMDIParentFrame *parent, const wxString& title, cons
 	nValueHistory = nCommandHistory = 0;
 	valueHistoryIndex = commandHistoryIndex = -1;
 	keyInputPos = -1;
+	selectionFrom = selectionTo = -1;
 }
 
 ConsoleFrame::~ConsoleFrame()
@@ -115,9 +116,11 @@ ConsoleFrame::OnCreate()
 	current_attr->SetFont(*default_font);
 	textCtrl->SetDefaultStyle(*current_attr);
 
-	//  Connect "OnKeyDown" event handler
+	//  Connect textCtrl event handler
 	textCtrl->Connect(-1, wxEVT_KEY_DOWN, wxKeyEventHandler(ConsoleFrame::OnKeyDown), NULL, this);
-	
+	textCtrl->Connect(-1, wxEVT_SET_FOCUS, wxFocusEventHandler(ConsoleFrame::OnSetFocus), NULL, this);
+	textCtrl->Connect(-1, wxEVT_KILL_FOCUS, wxFocusEventHandler(ConsoleFrame::OnKillFocus), NULL, this);
+
 	wxMenuBar *menu_bar = wxGetApp().CreateMenuBar(2, &file_history_menu, &edit_menu);
 	
 	//// Associate the menu bar with the frame
@@ -194,6 +197,26 @@ void
 ConsoleFrame::OnClose(wxCommandEvent &event)
 {
 	this->Close();
+}
+
+void
+ConsoleFrame::OnKillFocus(wxFocusEvent &event)
+{
+#if defined(__WXMSW__)
+	textCtrl->GetSelection(&selectionFrom, &selectionTo);
+#endif
+	event.Skip();
+}
+
+void
+ConsoleFrame::OnSetFocus(wxFocusEvent &event)
+{
+#if defined(__WXMSW__)
+	if (selectionFrom >= 0 && selectionTo >= 0) {
+		textCtrl->SetSelection(selectionFrom, selectionTo);
+	}
+#endif
+	event.Skip();
 }
 
 //  I do not understand why these functions should be written...
