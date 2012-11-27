@@ -6372,7 +6372,7 @@ static VALUE
 s_Molecule_CreateBond(int argc, VALUE *argv, VALUE self)
 {
     Molecule *mol;
-	Int i, j, *ip, old_nbonds;
+	Int i, j, k, *ip, old_nbonds;
 	if (argc == 0)
 		rb_raise(rb_eMolbyError, "missing arguments");
 	if (argc % 2 != 0)
@@ -6384,6 +6384,14 @@ s_Molecule_CreateBond(int argc, VALUE *argv, VALUE self)
 		if (i % 2 == 1) {
 			if (MoleculeLookupBond(mol, ip[j - 1], ip[j]) >= 0)
 				j -= 2;  /*  This bond is already present: skip it  */
+			else {
+				for (k = 0; k < j - 1; k += 2) {
+					if ((ip[k] == ip[j - 1] && ip[k + 1] == ip[j]) || (ip[k + 1] == ip[j - 1] && ip[k] == ip[j])) {
+						j -= 2;   /*  The same entry is already in the argument  */
+						break;
+					}
+				}
+			}
 		}
 	}
 	old_nbonds = mol->nbonds;

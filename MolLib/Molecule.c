@@ -7825,10 +7825,13 @@ MoleculeExtract(Molecule *src, Molecule **dstp, IntGroup *where, int dummyFlag)
 int
 MoleculeAddBonds(Molecule *mp, Int nbonds, const Int *bonds, IntGroup *where, Int autoGenerate)
 {
-	int i, j, n1, n2;
-	Atom *ap;
-	Int *cp;
-
+	Int nangles, ndihedrals;
+	Int *angles, *dihedrals;
+	Int i, j, k, kk, n1, n2;
+	Int *cp1, *cp2;
+	Int temp[4];
+	Atom *ap1, *ap2, *ap3;
+	
 	if (mp == NULL || bonds == NULL || nbonds <= 0)
 		return 0;
 	if (mp->noModifyTopology)
@@ -7845,36 +7848,25 @@ MoleculeAddBonds(Molecule *mp, Int nbonds, const Int *bonds, IntGroup *where, In
 		return -4;  /*  Out of memory  */
 	}
 	
-	/*  Add connects[]  */
+	angles = dihedrals = NULL;
+	nangles = ndihedrals = 0;
+	
+	/*  Add connects[], and angles/dihedrals (if autoGenerate is true)  */
 	for (i = 0; i < nbonds; i++) {
+		
+		/*  One entry at time  */
+		/*  (Otherwise, duplicate entries of angles and dihedrals result)  */
 		n1 = bonds[i * 2];
 		n2 = bonds[i * 2 + 1];
-		ap = ATOM_AT_INDEX(mp->atoms, n1);
-		cp = AtomConnectData(&ap->connect);
-		AtomConnectInsertEntry(&ap->connect, -1, n2);
-		ap = ATOM_AT_INDEX(mp->atoms, n2);
-		cp = AtomConnectData(&ap->connect);
-		AtomConnectInsertEntry(&ap->connect, -1, n1);
-	}
+		
+		ap1 = ATOM_AT_INDEX(mp->atoms, n1);
+		AtomConnectInsertEntry(&ap1->connect, -1, n2);
+		ap2 = ATOM_AT_INDEX(mp->atoms, n2);
+		AtomConnectInsertEntry(&ap2->connect, -1, n1);
 	
-	/*  Add angles, dihedrals, impropers  */
-	if (autoGenerate) {
-		Int nangles, ndihedrals;
-		Int *angles, *dihedrals;
-		Int k, kk;
-		Int *cp1, *cp2;
-		Int temp[4];
-		Atom *ap1, *ap2, *ap3;
-
-		angles = dihedrals = NULL;
-		nangles = ndihedrals = 0;
-
-		for (i = 0; i < nbonds; i++) {
+		/*  Add angles and dihedrals  */
+		if (autoGenerate) {
 			AtomConnect *ac1, *ac2;
-			n1 = bonds[i * 2];
-			n2 = bonds[i * 2 + 1];
-			ap1 = ATOM_AT_INDEX(mp->atoms, n1);
-			ap2 = ATOM_AT_INDEX(mp->atoms, n2);
 			if (ap1->anchor == NULL || ap2->anchor == NULL) {
 				/*  N1-N2-{XY} or N2-N1-{XY} angles (X: connected atom, Y: constitute atom of pi-anchor)  */
 				for (j = 0; j < 4; j++) {
@@ -7939,21 +7931,23 @@ MoleculeAddBonds(Molecule *mp, Int nbonds, const Int *bonds, IntGroup *where, In
 				}
 			}
 		}
-		temp[0] = kInvalidIndex;  /*  For termination  */
-		if (angles != NULL) {
-			if (AssignArray(&angles, &nangles, sizeof(Int) * 3, nangles, temp) == NULL)
-				goto panic;
-			MoleculeAddAngles(mp, angles, NULL);
-			free(angles);
-		}
-		if (dihedrals != NULL) {
-			if (AssignArray(&dihedrals, &ndihedrals, sizeof(Int) * 4, ndihedrals, temp) == NULL)
-				goto panic;
-			MoleculeAddDihedrals(mp, dihedrals, NULL);
-			free(dihedrals);
-		}
 	}
 	
+	if (angles != NULL) {
+		temp[0] = kInvalidIndex;
+		if (AssignArray(&angles, &nangles, sizeof(Int) * 3, nangles, temp) == NULL)
+			goto panic;
+		MoleculeAddAngles(mp, angles, NULL);
+		free(angles);
+	}
+	if (dihedrals != NULL) {
+		temp[0] = kInvalidIndex;
+		if (AssignArray(&dihedrals, &ndihedrals, sizeof(Int) * 4, ndihedrals, temp) == NULL)
+			goto panic;
+		MoleculeAddDihedrals(mp, dihedrals, NULL);
+		free(dihedrals);
+	}
+
 	MoleculeIncrementModifyCount(mp);
 	mp->needsMDRebuild = 1;
 	__MoleculeUnlock(mp);
