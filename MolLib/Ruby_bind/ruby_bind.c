@@ -10379,7 +10379,11 @@ Molby_getDescription(void)
 #else
 			 "Including "
 #endif
-			 "ruby %s\n%s",
+			 "ruby %s, http://www.ruby-lang.org/\n"
+			 "%s\n"
+			 "FFTW 3.3.2, http://www.fftw.org/\n"
+			 "  Copyright (C) 2003, 2007-11 Matteo Frigo\n"
+			 "  and Massachusetts Institute of Technology",
 			 gVersionString, revisionString, gCopyrightString, gLastBuildString,
 #if !defined(__CMDMAC__)
 			 MyAppCallback_getGUIDescriptionString(),

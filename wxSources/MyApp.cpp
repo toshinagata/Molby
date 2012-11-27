@@ -1408,12 +1408,12 @@ MyAppCallback_getGUIDescriptionString(void)
 	if (desc == NULL) {
 		asprintf(&desc,
 			"AmberTools 1.3, http://ambermd.org/\n"
-			"  Copyright (c) Junmei Wang, Ross C. Walker, \n"
+			"  Copyright (C) Junmei Wang, Ross C. Walker, \n"
 			"  Michael F. Crowley, Scott Brozell and David A. Case\n"
-			"wxWidgets %d.%d.%d, Copyright (c) 1992-2008 Julian Smart, \n"
-			"  Robert Roebling, Vadim Zeitlin and other members of the \n"
-			"  wxWidgets team\n"
-			"  Portions (c) 1996 Artificial Intelligence Applications Institute\n",
+			"wxWidgets %d.%d.%d, http://www.wxwidgets.org/\n"
+		    "  Copyright (C) 1992-2008 Julian Smart, Robert Roebling,\n"
+			"  Vadim Zeitlin and other members of the wxWidgets team\n"
+			"  Portions (C) 1996 Artificial Intelligence Applications Institute\n",
 			wxMAJOR_VERSION, wxMINOR_VERSION, wxRELEASE_NUMBER);
 	}
 	return desc;
