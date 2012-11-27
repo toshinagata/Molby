@@ -7980,8 +7980,8 @@ MoleculeAddBonds(Molecule *mp, Int nbonds, const Int *bonds, IntGroup *where, In
 int
 MoleculeDeleteBonds(Molecule *mp, Int *bonds, IntGroup *where, Int **outRemoved, IntGroup **outRemovedPos)
 {
-	Int i, j, n1, n2;
-	Int *ip, na, nd, ni;
+	Int i, j, n1, n2, nw;
+	Int *ip, *jp, na, nd, ni;
 	IntGroup *ag, *dg, *ig;
 	Atom *ap;
 	IntGroupIterator iter;
@@ -8015,29 +8015,42 @@ MoleculeDeleteBonds(Molecule *mp, Int *bonds, IntGroup *where, Int **outRemoved,
 			}
 		}
 	}
-	IntGroupIteratorReset(&iter);
 	
 	/*  Remove bonds, angles, dihedrals, impropers  */
 	ag = dg = ig = NULL;
 	na = nd = ni = 0;
+	
+	nw = IntGroupGetCount(where);
+	jp = (Int *)malloc(sizeof(Int) * nw * 2);
+	j = 0;
+	IntGroupIteratorReset(&iter);
 	while ((i = IntGroupIteratorNext(&iter)) >= 0) {
-		n1 = mp->bonds[i * 2];
-		n2 = mp->bonds[i * 2 + 1];
-		for (j = 0; j < mp->nangles; j++) {
-			ip = mp->angles + j * 3;
+		jp[j++] = mp->bonds[i * 2];
+		jp[j++] = mp->bonds[i * 2 + 1];
+	}
+	IntGroupIteratorRelease(&iter);
+
+	for (i = 0, ip = mp->angles; i < mp->nangles; i++, ip += 3) {
+		for (j = 0; j < nw; j++) {
+			n1 = jp[j * 2];
+			n2 = jp[j * 2 + 1];
 			if ((ip[0] == n1 && ip[1] == n2)
-			 || (ip[1] == n1 && ip[0] == n2)
-			 || (ip[1] == n1 && ip[2] == n2)
-			 || (ip[2] == n1 && ip[1] == n2)) {
+				|| (ip[1] == n1 && ip[0] == n2)
+				|| (ip[1] == n1 && ip[2] == n2)
+				|| (ip[2] == n1 && ip[1] == n2)) {
 				if (ag == NULL)
 					ag = IntGroupNew();
-				if (IntGroupAdd(ag, j, 1) != 0)
+				if (IntGroupAdd(ag, i, 1) != 0)
 					goto panic;
 				na++;
+				break;
 			}
 		}
-		for (j = 0; j < mp->ndihedrals; j++) {
-			ip = mp->dihedrals + j * 4;
+	}
+	for (i = 0, ip = mp->dihedrals; i < mp->ndihedrals; i++, ip += 4) {
+		for (j = 0; j < nw; j++) {
+			n1 = jp[j * 2];
+			n2 = jp[j * 2 + 1];
 			if ((ip[0] == n1 && ip[1] == n2)
 			 || (ip[1] == n1 && ip[0] == n2)
 			 || (ip[1] == n1 && ip[2] == n2)
@@ -8046,13 +8059,17 @@ MoleculeDeleteBonds(Molecule *mp, Int *bonds, IntGroup *where, Int **outRemoved,
 			 || (ip[3] == n1 && ip[2] == n2)) {
 				if (dg == NULL)
 					dg = IntGroupNew();
-				if (IntGroupAdd(dg, j, 1) != 0)
+				if (IntGroupAdd(dg, i, 1) != 0)
 					goto panic;
 				nd++;
+				break;
 			}
 		}
-		for (j = 0; j < mp->nimpropers; j++) {
-			ip = mp->impropers + j * 4;
+	}
+	for (i = 0, ip = mp->impropers; i < mp->nimpropers; i++, ip += 4) {
+		for (j = 0; j < nw; j++) {
+			n1 = jp[j * 2];
+			n2 = jp[j * 2 + 1];
 			if ((ip[0] == n1 && ip[2] == n2)
 			 || (ip[1] == n1 && ip[2] == n2)
 			 || (ip[3] == n1 && ip[2] == n2)
@@ -8061,14 +8078,15 @@ MoleculeDeleteBonds(Molecule *mp, Int *bonds, IntGroup *where, Int **outRemoved,
 			 || (ip[3] == n2 && ip[2] == n1)) {
 				if (ig == NULL)
 					ig = IntGroupNew();
-				if (IntGroupAdd(ig, j, 1) != 0)
+				if (IntGroupAdd(ig, i, 1) != 0)
 					goto panic;
 				ni++;
+				break;
 			}
 		}
 	}
-	IntGroupIteratorRelease(&iter);
-
+	free(jp);
+	
 	if (sRemoveElementsFromArrayAtPositions(mp->bonds, mp->nbonds, bonds, sizeof(Int) * 2, where) != 0)
 		goto panic;
 	mp->nbonds -= IntGroupGetCount(where);
