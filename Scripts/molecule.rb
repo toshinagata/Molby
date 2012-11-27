@@ -54,7 +54,7 @@ class Molecule
 	return nil if group.length == 0
     csum = self.charge
 	w = c - csum
-    if w < -1e6 || w > 1e6
+    if w < -1e-6 || w > 1e-6
       w /= group.length
       group.each { |i| atoms[i].charge += w }
 	  csum = self.charge
