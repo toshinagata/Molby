@@ -196,8 +196,10 @@ enum {
 	kGTOType_P,
 	kGTOType_D,
 	kGTOType_D5,
-	kGTOtype_F,
+	kGTOType_F,
 	kGTOType_F7,
+	kGTOType_G,
+	kGTOType_G9,
 	kGTOType_UU
 };
 

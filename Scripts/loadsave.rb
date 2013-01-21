@@ -244,6 +244,10 @@ class Molecule
 						  sym = -1; n = 4
 						when "D"
 						  sym = 2; n = 6
+						when "F"
+						  sym = 3; n = 10
+						when "G"
+						  sym = 4; n = 15
 						else
 						  raise MolbyError, "Unknown gaussian shell type at line #{fp.lineno}"
 						end
@@ -300,8 +304,12 @@ class Molecule
 					mo = mo_labels.map { [] }    #  array of *independent* empty arrays
 					while (line = fp.gets) != nil
 						break unless line =~ /^\s*\d/
-						line[14..-1].split.each_with_index { |s, i|
-							mo[i].push(Float(s))
+						5.times { |i|
+						  s = line[15 + 11 * i, 11].chomp
+						  break if s =~ /^\s*$/
+						  mo[i].push(Float(s)) rescue print "line = #{line}, s = #{s}"
+						# line[15..-1].split.each_with_index { |s, i|
+						#  	mo[i].push(Float(s))
 						}
 					end
 					mo.each_with_index { |m, i|

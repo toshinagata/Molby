@@ -2341,9 +2341,10 @@ MoleculeAddGaussianOrbitalShell(Molecule *mol, Int sym, Int nprims, Int a_idx)
 		case -1: shellp->sym = kGTOType_SP; shellp->ncomp = 4; break;
 		case 2:  shellp->sym = kGTOType_D;  shellp->ncomp = 6; break;
 		case -2: shellp->sym = kGTOType_D5; shellp->ncomp = 5; break;
-			/*  TODO: Support F/F7 type orbitals  */
-			/*	case 3: sp->sym = kGTOtype_F;  sp->ncomp = 10; break;
-			 case -3: sp->sym = kGTOType_F7; sp->ncomp = 7; break; */
+		case 3:  shellp->sym = kGTOType_F;  shellp->ncomp = 10; break;
+		case -3: shellp->sym = kGTOType_F7; shellp->ncomp = 7; break;
+		case 4:  shellp->sym = kGTOType_G;  shellp->ncomp = 15; break;
+		case -4: shellp->sym = kGTOType_G9; shellp->ncomp = 9; break;
 		default:
 			return -3;  /* Unsupported shell type  */
 	}
@@ -2583,6 +2584,7 @@ sSetupGaussianCoefficients(BasisSet *bset)
 					dp[3] = d * 1.425410941;
 					dp += 5;
 					break;
+				/*  TODO: Support F/F7 and G/G9 type orbitals  */
 			}
 		}
 	}
@@ -2801,9 +2803,10 @@ MoleculeLoadGaussianFchkFile(Molecule *mp, const char *fname, char **errbuf)
 					case -1: sp->sym = kGTOType_SP; sp->ncomp = 4; break;
 					case 2:  sp->sym = kGTOType_D;  sp->ncomp = 6; break;
 					case -2: sp->sym = kGTOType_D5; sp->ncomp = 5; break;
-						/*  TODO: Support F/F7 type orbitals  */
-						/*	case 3: sp->sym = kGTOtype_F;  sp->ncomp = 10; break;
-						 case -3: sp->sym = kGTOType_F7; sp->ncomp = 7; break; */
+					case 3:  sp->sym = kGTOType_F;  sp->ncomp = 10; break;
+					case -3: sp->sym = kGTOType_F7; sp->ncomp = 7; break;
+					case 4:  sp->sym = kGTOType_G;  sp->ncomp = 15; break;
+					case -4: sp->sym = kGTOType_G9; sp->ncomp = 9; break;
 					default:
 						s_append_asprintf(errbuf, "Line %d: unsupported shell type %d", lineNumber, iary[i]);
 						retval = 2;
@@ -10541,6 +10544,7 @@ sCalcMOPoint(const BasisSet *bset, Int index, const Vector *vp, Double *tmp)
 				val += d0 + d1p + d1n + d2p + d2n;
 				break;
 			}
+			/*  TODO: Support F/F7 and G/G9 type orbitals  */
 		}
 	}
 	return val;
