@@ -674,15 +674,20 @@ end_of_header
 	end
 	def parse_symmetry_operation(str)
 	  if str == "."
-	    return nil
+	    sym = nil
 	  elsif (str =~ /(\d+)_(\d)(\d)(\d)/) || (str =~ /(\d+) +(\d)(\d)(\d)/)
-	    return [Integer($1) - 1, Integer($2) - 5, Integer($3) - 5, Integer($4) - 5]
+	    sym = [Integer($1) - 1, Integer($2) - 5, Integer($3) - 5, Integer($4) - 5]
 	  elsif (str =~ /^(\d+)$/)
-	    return [Integer($1) - 1, 0, 0, 0]
+	    sym = [Integer($1) - 1, 0, 0, 0]
 	  end
+	  if sym && (sym[0] == 0 && sym[1] == 0 && sym[2] == 0 && sym[3] == 0)
+	    sym = nil
+	  end
+	  sym
 	end
 	warn_message = ""
 	verbose = nil
+	bond_defined = false
 	@tokens = []
 	special_positions = []
 	self.remove(All)
@@ -787,6 +792,13 @@ end_of_header
 			  biso = d[hlabel["_atom_site_B_iso_or_equiv"]]
 			  occ = d[hlabel["_atom_site_occupancy"]]
 			  calc = d[hlabel["_atom_site_calc_flag"]]
+			  if elem == nil || elem == ""
+			    if name =~ /[A-Za-z]{1,2}/
+				  elem = $&.capitalize
+				else
+				  elem = "Du"
+				end
+			  end
 			  ap = self.add_atom(name, elem, elem)
 			  ap.fract_x, ap.sigma_x = float_strip_rms(fx)
 			  ap.fract_y, ap.sigma_y = float_strip_rms(fy)
@@ -877,6 +889,7 @@ end_of_header
 				}
 			  end				
 		    }
+			bond_defined = true
 			puts "#{self.nbonds} bonds are created." if verbose
 			if calculated_atoms.length > 0
 			  #  Guess bonds for calculated hydrogen atoms
@@ -956,6 +969,9 @@ end_of_header
 	  next
 	end
 	fp.close
+	if !bond_defined
+	  self.guess_bonds
+	end
 #	self.undo_enabled = save_undo_enabled
 	return true
   end
