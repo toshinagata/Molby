@@ -685,8 +685,21 @@ end_of_header
 	  end
 	  sym
 	end
+	def find_atom_by_name(name)
+	  ap = self.atoms[name] rescue ap = nil
+	  if ap != nil
+	    return ap
+	  end
+	  name = name.delete(" ()").upcase
+	  each_atom { |ap|
+	    if ap.name.delete(" ()").upcase == name
+		  return ap
+	    end
+	  }
+	  return nil
+	end
 	warn_message = ""
-	verbose = nil
+	verbose = 0
 	bond_defined = false
 	@tokens = []
 	special_positions = []
@@ -838,7 +851,7 @@ end_of_header
 			c = 0
 			data.each { |d|
 			  name = d[hlabel["_atom_site_aniso_label"]]
-			  ap = self.atoms[name]
+			  ap = find_atom_by_name(name)
 			  next if !ap
 			  u11 = d[hlabel["_atom_site_aniso_U_11"]]
 			  if u11
@@ -862,8 +875,11 @@ end_of_header
 			  n2 = d[hlabel["_geom_bond_atom_site_label_2"]]
 			  sym1 = d[hlabel["_geom_bond_site_symmetry_1"]] || "."
 			  sym2 = d[hlabel["_geom_bond_site_symmetry_2"]] || "."
-			  n1 = self.atoms[n1].index
-			  n2 = self.atoms[n2].index
+			  n1 = find_atom_by_name(n1)
+			  n2 = find_atom_by_name(n2)
+			  next if n1 == nil || n2 == nil
+		      n1 = n1.index
+			  n2 = n2.index
 			  sym1 = parse_symmetry_operation(sym1)
 			  sym2 = parse_symmetry_operation(sym2)
 			  if sym1 || sym2
