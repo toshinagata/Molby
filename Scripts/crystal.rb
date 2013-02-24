@@ -28,6 +28,19 @@ class AtomRef
   end
 end
 
+#  Used in bond_angle_with_sigma
+module Math
+  def acos_safe(arg)
+    if arg <= -1.0
+      return PI
+    elsif arg >= 1.0
+      return 0.0
+    else
+      return acos(arg)
+    end
+  end
+end
+
 class Molecule
 
 def export_ortep(fp)
@@ -604,9 +617,323 @@ def cmd_plane
   @plane_settings = plane_settings
 end
 
+#  Calculate bond length and angles with standard deviations
+#  args can be a single IntGroup (calculate bonds and angles including those atoms)
+#  or arrays of 2 or 3 integers (explicitly specifying bonds and angles)
+def bond_angle_with_sigma(*args)
+
+  if args.length >= 2 || (args.length == 1 && !args[0].is_a?(IntGroup))
+    #  Bonds and angles are explicitly specified
+    bonds = []
+    angles = []
+    args.each { |arg|
+      if arg.length == 2 && arg[0].is_a?(Integer) && arg[1].is_a?(Integer)
+        bonds.push(arg)
+      elsif arg.length == 3 && arg[0].is_a?(Integer) && arg[1].is_a?(Integer) && arg[2].is_a?(Integer)
+        angles.push(arg)
+      else
+        raise MolbyError, "Invalid argument #{arg.inspect}"
+      end
+    }
+  else
+    if args.length == 0
+	  g = nil
+	else
+	  g = args[0]
+	end
+	bonds = self.bonds.select { |b|
+	  (g == nil || (g.include?(b[0]) && g.include?(b[1]))) &&
+	    (atoms[b[0]].symop == nil || atoms[b[1]].symop == nil)
+	}
+	angles = self.angles.select { |ang|
+	  (g == nil || (g.include?(ang[0]) && g.include?(ang[1]) && g.include?(ang[2]))) &&
+	    (atoms[ang[0]].symop == nil || atoms[ang[1]].symop == nil || atoms[ang[2]].symop == nil)
+	}
+  end
+
+  #  A list of interatomic distance, its differential coefficients, and other
+  #  useful quantities.
+  #  The hash tag is a list [i, j] (i and j are the atom indices) or [i, j, k]
+  #  (i, j, k are the atom indices, and r(ijk) is the distance between the atom i
+  #  and the center point between the atoms j and k).
+  #  The value is a list of following quantities:
+  #    index 0: rij or r(ijk)
+  #    index 1-9: d(rij)/d(xij), d(rij)/d(yij), d(rij)/d(zij),
+  #      d(rij)/da, d(rij)/db, d(rij)/dc, d(rij)/d(alpha), d(rij)/d(beta), d(rij)/d(gamma)
+  #    index 10: the list of the "base atom"
+  #    index 11: the list of the transform matrices
+  dlist = Hash.new
+
+  #  A list of fractional coordinates and sigmas
+  fract = []
+  sigma = []
+  each_atom { |ap|
+    fract.push(ap.fract_r)
+    sigma.push(ap.sigma)
+  }
+
+  #  A list of base atoms (for symmetry-related atoms) and transform matrices
+  bases = []
+  trans = []
+  symcode = []
+  trans_i = Transform.identity
+  each_atom { |ap|
+    sym = ap.symop
+    bases.push(sym ? sym[4] : ap.index)
+	if sym
+	  tr = transform_for_symop(sym).transpose
+      tr[3, 0] = tr[3, 1] = tr[3, 2] = 0.0
+	else
+	  tr = trans_i
+	end
+    trans.push(tr)
+	symcode.push(sym ? sprintf("%d_%d%d%d", sym[0] + 1, sym[1] + 5, sym[2] + 5, sym[3] + 5) : ".")
+  }
+
+  #  Unit cell parameter
+  cell = self.cell
+  # $a, $b, $c, $alpha, $beta, $gamma, $sig_a, $sig_b, $sig_c, $sig_alpha, $sig_beta, $sig_gamma = self.cell
+  cos_a = cos(cell[3] * PI / 180.0)
+  cos_b = cos(cell[4] * PI / 180.0)
+  cos_c = cos(cell[5] * PI / 180.0)
+  abc = cell[0] * cell[1] * cos_c
+  bca = cell[1] * cell[2] * cos_a
+  cab = cell[2] * cell[0] * cos_b
+  aa = cell[0] * cell[0]
+  bb = cell[1] * cell[1]
+  cc = cell[2] * cell[2]
+
+  get_dlist = proc { |_i, _j, _k|
+    if _k != nil
+      if _j > _k
+        _j, _k = _k, _j
+      end
+      _p = dlist[[_i, _j, _k]]
+      return _p if _p != nil
+      _p = (dlist[[_i, _j, _k]] = [])
+      _vij = fract[_i] - (fract[_j] + fract[_k]) * 0.5
+      _p[10] = [bases[_i], bases[_j], bases[_k]]
+      _p[11] = [trans[_i], trans[_j], trans[_k]]
+    else
+      if _i > _j
+        _i, _j = _j, _i
+      end
+      _p = dlist[[_i, _j]]
+      return _p if _p != nil
+      _p = (dlist[[_i, _j]] = [])
+      _vij = fract[_i] - fract[_j]
+      _p[10] = [bases[_i], bases[_j]]
+      _p[11] = [trans[_i], trans[_j]]
+    end
+    _xij = _vij.x
+    _yij = _vij.y
+    _zij = _vij.z
+    _dij = sqrt(aa * _xij * _xij + bb * _yij * _yij + cc * _zij * _zij + 2 * bca * _yij * _zij + 2 * cab * _zij * _xij + 2 * abc * _xij * _yij)
+    _p[0] = _dij
+    _p[1] = (aa * _xij + abc * _yij + cab * _zij) / _dij
+    _p[2] = (bb * _yij + bca * _zij + abc * _xij) / _dij
+    _p[3] = (cc * _zij + cab * _xij + bca * _yij) / _dij
+    _p[4] = (cell[0] * _xij * _xij + cell[2] * cos_b * _zij * _xij + cell[1] * cos_c * _xij * _yij) / _dij
+    _p[5] = (cell[1] * _yij * _yij + cell[0] * cos_c * _xij * _yij + cell[2] * cos_a * _yij * _zij) / _dij
+    _p[6] = (cell[2] * _zij * _zij + cell[1] * cos_a * _yij * _zij + cell[0] * cos_b * _zij * _xij) / _dij
+    _p[7] = (-cell[1] * cell[2] * sin(cell[3] * PI / 180.0) * _yij * _zij) * (PI / 180.0) / _dij
+    _p[8] = (-cell[2] * cell[0] * sin(cell[4] * PI / 180.0) * _zij * _xij) * (PI / 180.0) / _dij
+    _p[9] = (-cell[0] * cell[1] * sin(cell[5] * PI / 180.0) * _xij * _yij) * (PI / 180.0) / _dij
+    return _p
+  }
+
+  diff_by_rn = proc { |_dl, _n, _ijk|
+    #  dl = dlist(i, j)
+    #  return value: Vector3D[ d(rij)/d(xn), d(rij)/d(yn), d(rij)/d(zn) ]
+    #  If ijk is true, then dl is dlist(i, j, k)
+    _dv = Vector3D[_dl[1], _dl[2], _dl[3]]
+    _c = Vector3D[0, 0, 0]
+    if _dl[10][0] == _n
+      _c += _dl[11][0] * _dv
+    end
+    if _ijk
+      if _dl[10][1] == _n
+        _c -= _dl[11][1] * _dv * 0.5
+      end
+      if _dl[10][2] == _n
+        _c -= _dl[11][2] * _dv * 0.5
+      end
+    else
+      if _dl[10][1] == _n
+        _c -= _dl[11][1] * _dv
+      end
+    end
+    return _c
+  }
+
+  notate_with_sigma = proc { |_val, _sig|
+    if _sig == 0.0
+      return sprintf "%.4f", _val
+    end
+    _lg = log(_sig.abs / 1.95) / log(10.0)
+    _n = -(_lg.floor)
+    _val2 = (_val * (10 ** _n) + 0.5).floor * (0.1 ** _n)
+    return sprintf "%.#{_n}f(%d)", _val2, (_sig * (10 ** _n) + 0.5).floor
+  }
+
+  results = []
+
+  c = Vector3D[0, 0, 0]
+  bonds.each { |b|
+    i = b[0]
+    j = b[1]
+    if i > j
+      i, j = j, i
+    end
+    p = get_dlist.call(i, j, nil)
+    sig = 0.0
+    p[10].uniq.each { |k|
+      s = sigma[k]
+      next unless s
+      c = diff_by_rn.call(p, k, false)
+      #  Test
+      if nil
+        apk = atoms[k]
+        r = apk.fract_r
+        d0 = calc_bond(i, j)
+        apk.fract_r = r + Vector3D[0.00001, 0, 0]
+        amend_by_symmetry(p[10])
+        d1 = calc_bond(i, j)
+        apk.fract_r = r + Vector3D[0, 0.00001, 0]
+        amend_by_symmetry(p[10])
+        d2 = calc_bond(i, j)
+        apk.fract_r = r + Vector3D[0, 0, 0.00001]
+        amend_by_symmetry(p[10])
+        d3 = calc_bond(i, j)
+        apk.fract_r = r
+        amend_by_symmetry(p[10])
+        printf " dr/dv[%d] cal %10.5g %10.5g %10.5g\n", k, c[0], c[1], c[2]
+        printf " dr/dv[%d] est %10.5g %10.5g %10.5g\n", k, (d1 - d0) / 0.00001, (d2 - d0) / 0.00001, (d3 - d0) / 0.00001
+      end
+      sig += c[0] * c[0] * s[0] * s[0] + c[1] * c[1] * s[1] * s[1] + c[2] * c[2] * s[2] * s[2]
+    }
+    6.times { |n|
+      sig += (p[4 + n] * cell[6 + n]) ** 2
+    }
+    #  Test
+    if nil
+      ncell = cell.dup
+      d0 = calc_bond(i, j)
+      dd = [0, 0, 0, 0, 0, 0]
+      6.times { |n|
+        ncell[n] += 0.0001
+        set_cell(ncell, true)
+        amend_by_symmetry(p[10])
+        d1 = calc_bond(i, j)
+        dd[n] = (d1 - d0) / 0.0001
+        ncell[n] = cell[n]
+      }
+      set_cell(ncell, true)
+      amend_by_symmetry(p[10])
+      printf " dr/d{a,b,c} cal %10.5g %10.5g %10.5g\n", p[4], p[5], p[6]
+      printf " dr/d{a,b,c} est %10.5g %10.5g %10.5g\n", dd[0], dd[1], dd[2]
+      printf " dr/d{alpha,beta,gamma} cal %10.5g %10.5g %10.5g\n", p[7], p[8], p[9]
+      printf " dr/d{alpha,beta,gamma} est %10.5g %10.5g %10.5g\n", dd[3], dd[4], dd[5]
+    end
+    sig = sqrt(sig)
+    results.push([i, j, nil, notate_with_sigma.call(p[0], sig), symcode[i], symcode[j]])
+  }
+
+  angles.each { |ang|
+    i = ang[0]
+    j = ang[1]
+    k = ang[2]
+    p0 = get_dlist.call(i, j, nil)
+    p1 = get_dlist.call(j, k, nil)
+    p2 = get_dlist.call(i, k, nil)
+    p3 = get_dlist.call(j, i, k)
+    t123 = acos_safe((p0[0] ** 2 + p1[0] ** 2 - p2[0] ** 2) / (2 * p0[0] * p1[0]))
+    t124 = acos_safe((p0[0] ** 2 + p3[0] ** 2 - p2[0] ** 2 * 0.25) / (2 * p0[0] * p3[0]))
+    t324 = acos_safe((p1[0] ** 2 + p3[0] ** 2 - p2[0] ** 2 * 0.25) / (2 * p1[0] * p3[0]))
+    if nil
+      printf "t123 = %.2f t124+t324 = %.2f t124 = %.2f t324 = %.2f\n", t123*180/PI, (t124+t324)*180/PI, t124*180/PI, t324*180/PI
+    end
+    dtdr12 = -(p0[0] ** 2 - p3[0] ** 2 + p2[0] ** 2 * 0.25) / (2 * p3[0] * (p0[0] ** 2) * sin(t124))
+    dtdr23 = -(p1[0] ** 2 - p3[0] ** 2 + p2[0] ** 2 * 0.25) / (2 * p3[0] * (p1[0] ** 2) * sin(t324))
+    dtdr13 = p2[0] / (sin(t124) * 4 * p0[0] * p3[0]) + p2[0] / (sin(t324) * 4 * p1[0] * p3[0])
+    dtdr24 = -(p3[0] ** 2 - p0[0] ** 2 + p2[0] ** 2 * 0.25) / (2 * (p3[0] ** 2) * p0[0] * sin(t124)) - (p3[0] ** 2 - p1[0] ** 2 + p2[0] ** 2 * 0.25) / (2 * (p3[0] ** 2) * p1[0] * sin(t324))
+    pp = (p0[10] + p1[10] + p2[10] + p3[10]).uniq
+    sig = 0.0
+    pp.each { |n|
+      s = sigma[n]
+      next unless s
+      c = Vector3D[0, 0, 0]
+      c += diff_by_rn.call(p0, n, false) * (dtdr12 * 180.0 / PI)
+      c += diff_by_rn.call(p1, n, false) * (dtdr23 * 180.0 / PI)
+      c += diff_by_rn.call(p2, n, false) * (dtdr13 * 180.0 / PI)
+      c += diff_by_rn.call(p3, n, true) * (dtdr24 * 180.0 / PI)
+      #  Test
+      if nil
+        apn = atoms[n]
+        r = apn.fract_r
+        t0 = calc_angle(i, j, k)
+        apn.fract_r = r + Vector3D[0.00001, 0, 0]
+        amend_by_symmetry(pp)
+        t1 = calc_angle(i, j, k)
+        apn.fract_r = r + Vector3D[0, 0.00001, 0]
+        amend_by_symmetry(pp)
+        t2 = calc_angle(i, j, k)
+        apn.fract_r = r + Vector3D[0, 0, 0.00001]
+        amend_by_symmetry(pp)
+        t3 = calc_angle(i, j, k)
+        apn.fract_r = r
+        amend_by_symmetry(pp)
+        printf " dt/dv[%d] cal %10.5g %10.5g %10.5g\n", n, c[0], c[1], c[2]
+        printf " dt/dv[%d] est %10.5g %10.5g %10.5g\n", n, (t1 - t0) / 0.00001, (t2 - t0) / 0.00001, (t3 - t0) / 0.00001
+      end
+      sig += c[0] * c[0] * s[0] * s[0] + c[1] * c[1] * s[1] * s[1] + c[2] * c[2] * s[2] * s[2]
+    }
+    dd = dtdr12 * p0[4] + dtdr23 * p1[4] + dtdr13 * p2[4] + dtdr24 * p3[4]
+    sig += dd * dd * cell[6] * cell[6]
+    dd = dtdr12 * p0[5] + dtdr23 * p1[5] + dtdr13 * p2[5] + dtdr24 * p3[5]
+    sig += dd * dd * cell[7] * cell[7]
+    dd = dtdr12 * p0[6] + dtdr23 * p1[6] + dtdr13 * p2[6] + dtdr24 * p3[6]
+    sig += dd * dd * cell[8] * cell[8]
+    dd = dtdr12 * p0[7] + dtdr23 * p1[7] + dtdr13 * p2[7] + dtdr24 * p3[7]
+    sig += dd * dd * cell[9] * cell[9]
+    dd = dtdr12 * p0[8] + dtdr23 * p1[8] + dtdr13 * p2[8] + dtdr24 * p3[8]
+    sig += dd * dd * cell[10] * cell[10]
+    dd = dtdr12 * p0[9] + dtdr23 * p1[9] + dtdr13 * p2[9] + dtdr24 * p3[9]
+    sig += dd * dd * cell[11] * cell[11]
+    sig = sqrt(sig)
+    results.push([i, j, k, notate_with_sigma.call(t123*180/PI, sig), symcode[i], symcode[j], symcode[k]])
+  }
+  results
+end
+
+def cmd_bond_angle_with_sigma
+  if self.cell == nil
+    error_message_box "Unit cell is not defined"
+  elsif self.cell.length < 12
+    error_message_box "Sigmas are not assigned for the unit cell parameters"
+  else
+    if selection.count == 0
+	  a = bond_angle_with_sigma
+	else
+	  a = bond_angle_with_sigma(selection)
+	end
+	s = ""
+	a.each { |e|
+	  if e[2] == nil
+	    ss = sprintf("%s %s  %s  %s %s\n", atoms[e[0]].name, atoms[e[1]].name, e[3], e[4], e[5])
+	  else
+	    ss = sprintf("%s %s %s  %s  %s %s %s\n", atoms[e[0]].name, atoms[e[1]].name, atoms[e[2]].name, e[3], e[4], e[5], e[6])
+	  end
+	  s += ss
+	}
+	print s
+  end
+end
+
 if lookup_menu("Best-fit Planes...") < 0
   register_menu("", "")
   register_menu("Best-fit Planes...", :cmd_plane)
+  register_menu("Bonds and angles with sigma", :cmd_bond_angle_with_sigma)
 end
 
 end
