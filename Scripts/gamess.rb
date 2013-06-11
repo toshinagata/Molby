@@ -137,7 +137,7 @@ class Molecule
 	if !use_2nd
 	  case bssname
 	  when "PM3"
-		gbasis = "PM3"
+		gbasis = "PM3 NGAUSS=3"
 	  when "STO3G"
 		gbasis = "STO NGAUSS=3"
 	  when "321G"
