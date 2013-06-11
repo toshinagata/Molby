@@ -3100,7 +3100,7 @@ MoleculeLoadGamessDatFile(Molecule *mol, const char *fname, char **errbuf)
 				/*  2013.6.11. Line including "PM3" is also recognized as the end of atom  */
 				while ((status = sReadLineWithInterrupt(buf, sizeof buf, fp, &lineNumber)) > 0) {
 					for (j = 0; buf[j] == ' '; j++);
-					if (buf[j] == '\n' || strncmp(buf, "PM3", 3) == 0)
+					if (buf[j] == '\n' || strncmp(buf + j, "PM3", 3) == 0)
 						break;
 				}
 				i++;
