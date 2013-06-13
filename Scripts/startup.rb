@@ -53,6 +53,25 @@ module Enumerable
   end
 end
 
+module Kernel
+  def filecopy(src, dst)
+    fpin = File.open(src, "rb")
+    return nil if fpin == nil
+    fpout = File.open(dst, "wb")
+    if fpout == nil
+      fpin.close
+      return nil
+    end
+    a = ""
+    while fpin.read(4096, a)
+      fpout.write(a)
+    end
+    fpin.close
+    fpout.close
+    return true
+  end
+end
+
 load "transform.rb"
 load "molecule.rb"
 load "loadsave.rb"

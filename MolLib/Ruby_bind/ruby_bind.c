@@ -229,6 +229,32 @@ s_Kernel_Ask(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
+ *     show_console_window
+ *
+ *  Show the console window and bring to the front.
+ */
+static VALUE
+s_Kernel_ShowConsoleWindow(VALUE self)
+{
+	MyAppCallback_showConsoleWindow();
+	return Qnil;
+}
+
+/*
+ *  call-seq:
+ *     hide_console_window
+ *
+ *  Hide the console window.
+ */
+static VALUE
+s_Kernel_HideConsoleWindow(VALUE self)
+{
+	MyAppCallback_hideConsoleWindow();
+	return Qnil;
+}
+
+/*
+ *  call-seq:
  *     stdout.write(str)
  *
  *  Put the message in the main text view in black color.
@@ -670,17 +696,39 @@ s_Kernel_DocumentHome(VALUE self)
 	return retval;
 }
 
+/*  The callback functions for call_subprocess  */
+static VALUE
+s_Kernel_CallSubProcess_CallbackSub(VALUE val)
+{
+	return rb_funcall(val, rb_intern("call"), 0);
+}
+
+static int
+s_Kernel_CallSubProcess_Callback(void *data)
+{
+	int status;
+	VALUE retval = rb_protect(s_Kernel_CallSubProcess_CallbackSub, (VALUE)data, &status);
+	if (status != 0 || retval == Qnil || retval == Qfalse)
+		return 1;
+	else return 0;
+}
+
 /*
  *  call-seq:
- *     call_subprocess(cmd, process_name)
+ *     call_subprocess(cmd, process_name [, callback_proc])
  *
  *  Call subprocess. A progress dialog window is displayed, with a message
  *  "Running #{process_name}...".
+ *  A callback proc can be given, which is called periodically during execution. If the proc returns
+ *  nil or false, then the execution will be interrupted.
  */
 static VALUE
-s_Kernel_CallSubProcess(VALUE self, VALUE cmd, VALUE procname)
+s_Kernel_CallSubProcess(int argc, VALUE *argv, VALUE self)
 {
-	int n = MyAppCallback_callSubProcess(StringValuePtr(cmd), StringValuePtr(procname));
+	VALUE cmd, procname, cproc;
+	int n;
+	rb_scan_args(argc, argv, "21", &cmd, &procname, &cproc);
+	n = MyAppCallback_callSubProcess(StringValuePtr(cmd), StringValuePtr(procname), (cproc == Qnil ? NULL : s_Kernel_CallSubProcess_Callback), (cproc == Qnil ? NULL : (void *)cproc));
 	return INT2NUM(n);
 }
 
@@ -10243,10 +10291,12 @@ Init_Molby(void)
 	rb_define_method(rb_mKernel, "set_global_settings", s_Kernel_SetGlobalSettings, 2);
 	rb_define_method(rb_mKernel, "execute_script", s_Kernel_ExecuteScript, 1);
 	rb_define_method(rb_mKernel, "document_home", s_Kernel_DocumentHome, 0);
-	rb_define_method(rb_mKernel, "call_subprocess", s_Kernel_CallSubProcess, 2);
+	rb_define_method(rb_mKernel, "call_subprocess", s_Kernel_CallSubProcess, -1);
 	rb_define_method(rb_mKernel, "message_box", s_Kernel_MessageBox, -1);
 	rb_define_method(rb_mKernel, "error_message_box", s_Kernel_ErrorMessageBox, 1);
-
+	rb_define_method(rb_mKernel, "show_console_window", s_Kernel_ShowConsoleWindow, 0);
+	rb_define_method(rb_mKernel, "hide_console_window", s_Kernel_HideConsoleWindow, 0);
+	
 	s_ID_equal = rb_intern("==");
 }
 
