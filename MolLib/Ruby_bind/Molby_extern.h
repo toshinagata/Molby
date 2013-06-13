@@ -61,10 +61,12 @@ STUB char *MyAppCallback_getDocumentHomeDir(void);
 STUB void MyAppCallback_registerScriptMenu(const char *cmd, const char *title);
 STUB int MyAppCallback_lookupScriptMenu(const char *title);
 STUB RubyValue MyAppCallback_executeScriptFromFile(const char *path, int *status);
-STUB int MyAppCallback_callSubProcess(const char *cmdline, const char *procname);
+STUB int MyAppCallback_callSubProcess(const char *cmdline, const char *procname, int (*callback)(void *), void *callback_data);
 STUB void MyAppCallback_beginUndoGrouping(void);
 STUB void MyAppCallback_endUndoGrouping(void);
 STUB int MyAppCallback_switchToFilterMode(void);
+STUB void MyAppCallback_showConsoleWindow(void);
+STUB void MyAppCallback_hideConsoleWindow(void);
 	
 #ifdef __cplusplus
 }

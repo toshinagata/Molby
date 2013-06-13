@@ -1217,10 +1217,11 @@ MyApp::OnEndProcess(wxProcessEvent &event)
 }
 
 int
-MyApp::CallSubProcess(const char *cmdline, const char *procname)
+MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)(void *), void *callback_data)
 {
 	const int sEndProcessMessageID = 2;
 	int status = 0;
+	int callback_result = 0;
 	char buf[256];
 	size_t len, len_total;
 	wxString cmdstr(cmdline, WX_DEFAULT_CONV);
@@ -1302,7 +1303,7 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname)
 		}
 #endif
 		::wxMilliSleep(10);
-		if (wxGetApp().IsInterrupted()) {
+		if (wxGetApp().IsInterrupted() || (callback != NULL && (callback_result = (*callback)(callback_data)) != 0)) {
 			/*  User interrupt  */
 			int kflag = wxKILL_CHILDREN;
 			wxKillError rc;
@@ -1319,7 +1320,12 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname)
 					case wxKILL_NO_PROCESS: status = -5; break; /*  No such process  */
 					default: status = -6; break;  /*  unknown error  */
 				}
-			} else status = -2;  /*  User interrupt  */
+			} else {
+				if (callback_result != 0)
+					status = -3;  /*  Interrupt from callback  */
+				else
+					status = -2;  /*  User interrupt  */
+			}
 			proc->Detach();
 			break;
 		}
@@ -1730,7 +1736,20 @@ void MyAppCallback_endUndoGrouping(void)
 	}
 }
 
-int MyAppCallback_callSubProcess(const char *cmdline, const char *procname)
+int MyAppCallback_callSubProcess(const char *cmdline, const char *procname, int (*callback)(void *), void *callback_data)
 {
-	return wxGetApp().CallSubProcess(cmdline, procname);
+	return wxGetApp().CallSubProcess(cmdline, procname, callback, callback_data);
+}
+
+void MyAppCallback_showConsoleWindow(void)
+{
+	ConsoleFrame *frame = wxGetApp().GetConsoleFrame();
+	frame->Show(true);
+	frame->Raise();
+}
+
+void MyAppCallback_hideConsoleWindow(void)
+{
+	ConsoleFrame *frame = wxGetApp().GetConsoleFrame();
+	frame->Hide();
 }

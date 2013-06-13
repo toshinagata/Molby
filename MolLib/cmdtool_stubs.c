@@ -155,7 +155,7 @@ MyAppCallback_getTextWithPrompt(const char *prompt, char *buf, int bufsize)
 }
 
 int
-MyAppCallback_callSubProcess(const char *cmdline, const char *procname)
+MyAppCallback_callSubProcess(const char *cmdline, const char *procname, int (*callback)(void *), void *callback_data)
 {
 	return system(cmdline);
 }
@@ -207,6 +207,16 @@ MyAppCallback_lookupScriptMenu(const char *title)
 
 void
 MyAppCallback_endUndoGrouping(void)
+{
+}
+
+void
+MyAppCallback_showConsoleWindow(void)
+{
+}
+
+void
+MyAppCallback_hideConsoleWindow(void)
 {
 }
 

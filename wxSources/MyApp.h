@@ -172,7 +172,7 @@ class MyApp: public wxApp
 	void OnImportAmberLib(wxCommandEvent &event);
 
 	void OnEndProcess(wxProcessEvent &event);
-	int CallSubProcess(const char *cmdline, const char *procname);
+	int CallSubProcess(const char *cmdline, const char *procname, int (*callback)(void *) = NULL, void *callback_data = NULL);
 
 	void OnActivate(wxActivateEvent &event);
 
