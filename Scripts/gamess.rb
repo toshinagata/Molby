@@ -97,6 +97,357 @@ class Molecule
 	  $gamess_basis_keys.push(basename)
 	end
   end
+
+  #  Execute GAMESS (inferior copy of rungms script)
+  #  inpname is the input file
+  #  mol (optional) is the molecule from which the GAMESS input was built.
+  #  If mol is specified and RUNTYP=OPTIMIZE, then the intermediate structures are
+  #  displayed real-time.
+  def Molecule.execute_gamess(inpname, mol = nil)
+    gmsname = get_global_settings("gamess.executable_path")
+    gmsdir = nil
+    gmsvers = nil
+    while 1
+      if gmsname == nil || !File.exist?(gmsname)
+        gmsname = Dialog.open_panel("Please locate the GAMESS executable")
+        exit if gmsname == nil
+      end
+      gmsbase = File.basename(gmsname)
+      gmsdir = File.dirname(gmsname)
+      if gmsbase =~ /gamess\.(.*)\.(exe|x)$/i
+        gmsvers = $1
+        break
+      else
+        gmsname = nil
+        error_message_box(gmsbase + " does not look like a GAMESS executable!")
+      end
+    end
+
+    inpbase = File.basename(inpname)
+    inpdir = File.dirname(inpname)
+    inpbody = inpbase.sub(/\.inp$/, "")
+    logbase = inpbody + ".log"
+
+    set_global_settings("gamess.executable_path", gmsname)
+
+    #  Prepare the scratch directory in the home directory
+    #  (Not in the document home to avoid space-containing path in Windows)
+    scrdir = document_home.sub(/\/My Documents/, "") + "/gamess"
+    n = 0
+    while File.exist?(scrdir) && !File.directory?(scrdir)
+      if n == 0
+        scrdir += ".1"
+      else
+        scrdir = scrdir.sub(".#{n}", ".#{n + 1}")
+      end
+      n += 1
+    end
+    if !File.exist?(scrdir)
+      Dir.mkdir(scrdir)
+    end
+    scrdir = scrdir + "/" + inpbody + "." + $$.to_s + ".0"
+    n = 0
+    while File.exist?(scrdir)
+      scrdir = scrdir.sub(".#{n}", ".#{n + 1}")
+      n += 1
+    end
+    Dir.mkdir(scrdir)
+
+    if $platform == "win"
+      sep = "\\"
+      scrdir.gsub!("/", sep)
+      gmsdir.gsub!("/", sep)
+    else
+      sep = "/"
+    end
+
+    #  Get the host name etc.
+    hostname = `hostname`.chomp
+    if $platform == "win"
+      freebytes = `dir #{scrdir}`.split("\n").pop.match(/([0-9,]+)[^0-9]*$/).to_a[1]
+      if freebytes
+        freebytes = (freebytes.gsub(",","").to_i / 1024).to_s + " Kbytes"
+      else
+        freebytes = "(unknown)"
+      end
+      uname = `ver`.to_s.gsub("\n", "")
+    else
+      freebytes = `df -k #{scrdir}`
+      uname = `uname`.chomp
+    end
+
+    #  Redirect standard output to the log file
+    logname = scrdir + sep + logbase
+    fpout = File.open(logname, "w")
+    fpout.print "----- GAMESS execution script -----\n"
+    fpout.print "This job is running on host #{hostname}\n"
+    fpout.print "under operating system #{uname} at #{Time.now.to_s}\n"
+    fpout.print "Available scratch disk space (Kbyte units) at beginning of the job is\n"
+    fpout.print freebytes
+
+    #  Copy the input file
+    scrprefix = scrdir + sep + inpbody
+    filecopy(inpname, scrprefix + ".F05")
+
+    #  Prepare environmental variables
+    auxdir = "#{gmsdir}#{sep}auxdata"
+    ENV["ERICFMT"] = "#{auxdir}#{sep}ericfmt.dat"
+    ENV["MCPPATH"] = "#{auxdir}#{sep}MCP"
+    ENV["BASPATH"] = "#{auxdir}#{sep}BASES"
+    ENV["QUANPOL"] = "#{auxdir}#{sep}QUANPOL"
+    ENV["EXTBAS"] = "/dev/null"
+    ENV["IRCDATA"] = "#{scrprefix}.irc"
+    ENV["PUNCH"] = "#{scrprefix}.dat"
+    ENV["INPUT"] = "#{scrprefix}.F05"
+    ENV["AOINTS"] = "#{scrprefix}.F08"
+    ENV["MOINTS"] = "#{scrprefix}.F09"
+    ENV["DICTNRY"] = "#{scrprefix}.F10"
+    ENV["DRTFILE"] = "#{scrprefix}.F11"
+    ENV["CIVECTR"] = "#{scrprefix}.F12"
+    ENV["CASINTS"] = "#{scrprefix}.F13"
+    ENV["CIINTS"] = "#{scrprefix}.F14"
+    ENV["WORK15"] = "#{scrprefix}.F15"
+    ENV["WORK16"] = "#{scrprefix}.F16"
+    ENV["CSFSAVE"] = "#{scrprefix}.F17"
+    ENV["FOCKDER"] = "#{scrprefix}.F18"
+    ENV["WORK19"] = "#{scrprefix}.F19"
+    ENV["DASORT"] = "#{scrprefix}.F20"
+    ENV["DFTINTS"] = "#{scrprefix}.F21"
+    ENV["DFTGRID"] = "#{scrprefix}.F22"
+    ENV["JKFILE"] = "#{scrprefix}.F23"
+    ENV["ORDINT"] = "#{scrprefix}.F24"
+    ENV["EFPIND"] = "#{scrprefix}.F25"
+    ENV["PCMDATA"] = "#{scrprefix}.F26"
+    ENV["PCMINTS"] = "#{scrprefix}.F27"
+    ENV["MLTPL"] = "#{scrprefix}.F28"
+    ENV["MLTPLT"] = "#{scrprefix}.F29"
+    ENV["DAFL30"] = "#{scrprefix}.F30"
+    ENV["SOINTX"] = "#{scrprefix}.F31"
+    ENV["SOINTY"] = "#{scrprefix}.F32"
+    ENV["SOINTZ"] = "#{scrprefix}.F33"
+    ENV["SORESC"] = "#{scrprefix}.F34"
+    ENV["SIMEN"] = "#{scrprefix}.simen"
+    ENV["SIMCOR"] = "#{scrprefix}.simcor"
+    ENV["GCILIST"] = "#{scrprefix}.F37"
+    ENV["HESSIAN"] = "#{scrprefix}.F38"
+    ENV["SOCCDAT"] = "#{scrprefix}.F40"
+    ENV["AABB41"] = "#{scrprefix}.F41"
+    ENV["BBAA42"] = "#{scrprefix}.F42"
+    ENV["BBBB43"] = "#{scrprefix}.F43"
+    ENV["MCQD50"] = "#{scrprefix}.F50"
+    ENV["MCQD51"] = "#{scrprefix}.F51"
+    ENV["MCQD52"] = "#{scrprefix}.F52"
+    ENV["MCQD53"] = "#{scrprefix}.F53"
+    ENV["MCQD54"] = "#{scrprefix}.F54"
+    ENV["MCQD55"] = "#{scrprefix}.F55"
+    ENV["MCQD56"] = "#{scrprefix}.F56"
+    ENV["MCQD57"] = "#{scrprefix}.F57"
+    ENV["MCQD58"] = "#{scrprefix}.F58"
+    ENV["MCQD59"] = "#{scrprefix}.F59"
+    ENV["MCQD60"] = "#{scrprefix}.F60"
+    ENV["MCQD61"] = "#{scrprefix}.F61"
+    ENV["MCQD62"] = "#{scrprefix}.F62"
+    ENV["MCQD63"] = "#{scrprefix}.F63"
+    ENV["MCQD64"] = "#{scrprefix}.F64"
+    ENV["NMRINT1"] = "#{scrprefix}.F61"
+    ENV["NMRINT2"] = "#{scrprefix}.F62"
+    ENV["NMRINT3"] = "#{scrprefix}.F63"
+    ENV["NMRINT4"] = "#{scrprefix}.F64"
+    ENV["NMRINT5"] = "#{scrprefix}.F65"
+    ENV["NMRINT6"] = "#{scrprefix}.F66"
+    ENV["DCPHFH2"] = "#{scrprefix}.F67"
+    ENV["DCPHF21"] = "#{scrprefix}.F68"
+    ENV["GVVPT"] = "#{scrprefix}.F69"
+
+    #    next files are used only during coupled cluster runs, so let's
+    #    display the numerous definitions only if they are to be used.
+    ENV["CCREST"] = "#{scrprefix}.F70"
+    ENV["CCDIIS"] = "#{scrprefix}.F71"
+    ENV["CCINTS"] = "#{scrprefix}.F72"
+    ENV["CCT1AMP"] = "#{scrprefix}.F73"
+    ENV["CCT2AMP"] = "#{scrprefix}.F74"
+    ENV["CCT3AMP"] = "#{scrprefix}.F75"
+    ENV["CCVM"] = "#{scrprefix}.F76"
+    ENV["CCVE"] = "#{scrprefix}.F77"
+    ENV["EOMSTAR"] = "#{scrprefix}.F80"
+    ENV["EOMVEC1"] = "#{scrprefix}.F81"
+    ENV["EOMVEC2"] = "#{scrprefix}.F82"
+    ENV["EOMHC1"] = "#{scrprefix}.F83"
+    ENV["EOMHC2"] = "#{scrprefix}.F84"
+    ENV["EOMHHHH"] = "#{scrprefix}.F85"
+    ENV["EOMPPPP"] = "#{scrprefix}.F86"
+    ENV["EOMRAMP"] = "#{scrprefix}.F87"
+    ENV["EOMRTMP"] = "#{scrprefix}.F88"
+    ENV["EOMDG12"] = "#{scrprefix}.F89"
+    ENV["MMPP"] = "#{scrprefix}.F90"
+    ENV["MMHPP"] = "#{scrprefix}.F91"
+    ENV["MMCIVEC"] = "#{scrprefix}.F92"
+    ENV["MMCIVC1"] = "#{scrprefix}.F93"
+    ENV["MMCIITR"] = "#{scrprefix}.F94"
+    ENV["MMNEXM"] = "#{scrprefix}.F95"
+    ENV["MMNEXE"] = "#{scrprefix}.F96"
+    ENV["MMNREXM"] = "#{scrprefix}.F97"
+    ENV["MMNREXE"] = "#{scrprefix}.F98 "
+    #
+    #     next are for TDHFX code, not used by current GAMESS
+    #
+    ENV["OLI201"] = "#{scrprefix}.F201"
+    ENV["OLI202"] = "#{scrprefix}.F202"
+    ENV["OLI203"] = "#{scrprefix}.F203"
+    ENV["OLI204"] = "#{scrprefix}.F204"
+    ENV["OLI205"] = "#{scrprefix}.F205"
+    ENV["OLI206"] = "#{scrprefix}.F206"
+    ENV["OLI207"] = "#{scrprefix}.F207"
+    ENV["OLI208"] = "#{scrprefix}.F208"
+    ENV["OLI209"] = "#{scrprefix}.F209"
+    ENV["OLI210"] = "#{scrprefix}.F210"
+    ENV["OLI211"] = "#{scrprefix}.F211"
+    ENV["OLI212"] = "#{scrprefix}.F212"
+    ENV["OLI213"] = "#{scrprefix}.F213"
+    ENV["OLI214"] = "#{scrprefix}.F214"
+    ENV["OLI215"] = "#{scrprefix}.F215"
+    ENV["OLI216"] = "#{scrprefix}.F216"
+    ENV["OLI217"] = "#{scrprefix}.F217"
+    ENV["OLI218"] = "#{scrprefix}.F218"
+    ENV["OLI219"] = "#{scrprefix}.F219"
+    ENV["OLI220"] = "#{scrprefix}.F220"
+    ENV["OLI221"] = "#{scrprefix}.F221"
+    ENV["OLI222"] = "#{scrprefix}.F222"
+    ENV["OLI223"] = "#{scrprefix}.F223"
+    ENV["OLI224"] = "#{scrprefix}.F224"
+    ENV["OLI225"] = "#{scrprefix}.F225"
+    ENV["OLI226"] = "#{scrprefix}.F226"
+    ENV["OLI227"] = "#{scrprefix}.F227"
+    ENV["OLI228"] = "#{scrprefix}.F228"
+    ENV["OLI229"] = "#{scrprefix}.F229"
+    ENV["OLI230"] = "#{scrprefix}.F230"
+    ENV["OLI231"] = "#{scrprefix}.F231"
+    ENV["OLI232"] = "#{scrprefix}.F232"
+    ENV["OLI233"] = "#{scrprefix}.F233"
+    ENV["OLI234"] = "#{scrprefix}.F234"
+    ENV["OLI235"] = "#{scrprefix}.F235"
+    ENV["OLI236"] = "#{scrprefix}.F236"
+    ENV["OLI237"] = "#{scrprefix}.F237"
+    ENV["OLI238"] = "#{scrprefix}.F238"
+    ENV["OLI239"] = "#{scrprefix}.F239"
+
+    if $platform == "win"
+      fpout.print "Microsoft MPI will be running GAMESS on 1 node.\n"
+      fpout.print "The binary kicked off by 'mpiexec' is gamess.#{gmsvers}.exe\n"
+      fpout.print "MS-MPI will run 1 compute process\n"
+      #  File containing environmental variables
+      envfil = "#{scrprefix}.GMS.ENV"
+      fp = File.open(envfil, "w")
+      ENV.each { |k, v| fp.print "#{k}=#{v}\n" }
+      fp.close
+      #  File containing arguments to mpiexec
+      procfil = "#{scrprefix}.processes.mpd"
+      fp = File.open(procfil, "w")
+      fp.print "-env ENVFIL #{envfil} -n 2 #{gmsdir}#{sep}gamess.#{gmsvers}.exe\n"
+      fp.close
+    end
+    
+    fpout.close
+    fplog = File.open(logname, "r")
+    size = 0
+    lines = []
+    last_line = ""
+    
+    #  Callback proc
+    callback = proc {
+      fplog.seek(0, IO::SEEK_END)
+      sizec = fplog.tell
+      if sizec > size
+        #  Read new lines
+        fplog.seek(size, IO::SEEK_SET)
+        fplog.each_line { |line|
+          if line[-1, 1] == "\n"
+            lines.push(last_line + line)
+            last_line = ""
+          else
+            last_line += line
+            break
+          end
+        }
+        size = fplog.tell
+        last_i = nil
+        i = 0
+        nserch = -1
+        while i < lines.count
+          line = lines[i]
+          if line =~ /GEOMETRY SEARCH POINT NSERCH= *(\d+)/
+            nserch = $1.to_i
+            last_i = i
+          elsif line =~ /NSERCH:/
+            print line
+			if mol
+			  dummy, n, grad = line.match(/NSERCH:[^0-9]*([0-9]+).*GRAD[^0-9]*([-.0-9]+)/).to_a
+			  mol.show_text("Search: #{n}\nGradient: #{grad}")
+			end
+          elsif nserch > 0 && line =~ /ddikick\.x/
+            last_i = -1
+            break
+          elsif mol && nserch > 0 && line =~ /COORDINATES OF ALL ATOMS/
+            #  There should be (natoms + 2) lines
+            if i + mol.natoms + 3 <= lines.count
+              coords = []
+              (i + 3...i + 3 + mol.natoms).each { |j|
+                name, charge, x, y, z = lines[j].split
+                coords.push(Vector3D[x.to_f, y.to_f, z.to_f])
+              }
+              mol.create_frame([coords])
+              mol.display
+              last_i = i + mol.natoms + 2
+              i = last_i   #  Skip the processed lines
+            end
+          end
+          i += 1
+        end
+        if last_i == -1
+          lines.clear
+          break
+        elsif last_i
+          lines[0..last_i] = nil
+        end
+      end
+      true
+    }
+
+    show_console_window
+    if mol
+	  mol.make_front
+	end
+	
+    if $platform == "win"
+      status = call_subprocess("cmd.exe /c \"mpiexec -configfile #{procfil} >>#{logname}\"", "GAMESS")
+    else
+      status = call_subprocess("/bin/sh -c '#{gmsdir}/ddikick.x #{gmsdir}/gamess.#{gmsvers}.x #{inpbody} -ddi 1 1 localhost -scr #{scrdir} < /dev/null >>#{logname}'", "GAMESS", callback)
+    end
+
+    if status != 0
+      if status == -1
+        error_message_box("GAMESS failed to start. Please examine GAMESS installation.")
+        exit
+      elsif status == -2
+        error_message_box("GAMESS execution interrupted.")
+      else 
+        error_message_box("GAMESS failed with exit status #{status}.")
+      end
+	end
+
+	ext_to_keep = [".dat", ".rst", ".trj", ".efp", ".gamma", ".log"]
+	ext_to_keep.each { |ex|
+	  if File.exists?("#{scrprefix}#{ex}")
+		filecopy("#{scrprefix}#{ex}", "#{inpdir}#{sep}#{inpbody}#{ex}")
+	  end
+	}
+	Dir.foreach(scrdir) { |file|
+	  if file != "." && file != ".." && !ext_to_keep.include?(File.extname(file))
+		File.delete("#{scrdir}#{sep}#{file}")
+	  end
+	}
+
+  end
   
   def export_gamess(fname, hash)
 
@@ -338,7 +689,7 @@ class Molecule
 
 	defaults = {"scftype"=>0, "runtype"=>0, "charge"=>"0", "mult"=>"1",
 	  "basis"=>4, "use_secondary_basis"=>0, "secondary_elements"=>"",
-	  "secondary_basis"=>8, "esp"=>0}
+	  "secondary_basis"=>8, "esp"=>0, "ncpus"=>"1"}
 
     hash = Dialog.run("GAMESS Export") {
       def load_basis_set_sub(item)
@@ -354,6 +705,19 @@ class Molecule
 		  set_attr("secondary_basis", :value=>sel2)
 		end
       end
+	  def select_gamess_path(item)
+	    while 1
+	      fname = Dialog.open_panel("Locate GAMESS executable:")
+		  return if fname == nil
+		  bname = File.basename(fname)
+		  if bname =~ /gamess\.(.*)\.(exe|x)$/i
+		    set_attr("executable_path", :value=>fname)
+		    return
+		  else
+		    error_message_box("\"#{bname}\" does not look like a GAMESS executable!  Please try again.")
+		  end
+		end
+	  end
 	  layout(4,
 		item(:text, :title=>"SCF type"),
 		item(:popup, :subitems=>["RHF", "ROHF", "UHF"], :tag=>"scftype"),
@@ -406,6 +770,30 @@ class Molecule
 		-1, -1, -1,
 	
 		item(:line),
+		-1, -1, -1,
+		
+		item(:checkbox, :title=>"Execute GAMESS on this machine", :tag=>"execute_local",
+		  :action=>proc { |it|
+		    flag = (it[:value] != 0)
+			set_attr("executable_path", :enabled=>flag)
+			set_attr("select_path", :enabled=>flag)
+			set_attr("ncpus", :enabled=>flag)
+		  }),
+		-1, -1, -1,
+
+		item(:text, :title=>"   Path"),
+		item(:textfield, :width=>300, :tag=>"executable_path"),
+		-1, -1,
+		
+		-1,
+		item(:button, :title=>"Select Path...", :tag=>"select_path", :action=>:select_gamess_path),
+		-1, -1,
+		
+		item(:text, :title=>"   N of CPUs"),
+		item(:textfield, :width=>80, :tag=>"ncpus"),
+		-1, -1,
+		
+		item(:line),
 		-1, -1, -1
 	  )
 	  values = Hash.new
@@ -420,6 +808,9 @@ class Molecule
 	  set_attr("secondary_basis", :enabled=>(values["use_secondary_basis"] == 1))
 	  set_attr("dfttype", :enabled=>(values["dft"] == 1))
 	  set_attr("use_internal", :enabled=>(values["runtype"] == 2))
+	  set_attr("executable_path", :enabled=>(values["execute_local"] == 1))
+	  set_attr("select_path", :enabled=>(values["execute_local"] == 1))
+	  set_attr("ncpus", :enabled=>(values["execute_local"] == 1))
 	}
 	hash.each_pair { |key, value|
 	  next if key == :status
@@ -431,9 +822,12 @@ class Molecule
 	  hash["secondary_basis"] = $gamess_basis_keys[hash["secondary_basis"]]
 	  hash["dfttype"] = dft_internal[hash["dfttype"]]
 	  basename = (self.path ? File.basename(self.path, ".*") : self.name)
-      fname = Dialog.save_panel("GAMESS input file name", self.dir, basename + ".inp", "GAMESS input file (*.inp)|*.inp|All files|*.*")
+      fname = Dialog.save_panel("Export GAMESS input file:", self.dir, basename + ".inp", "GAMESS input file (*.inp)|*.inp|All files|*.*")
 	  return nil if !fname
 	  export_gamess(fname, hash)
+	  if hash["execute_local"] == 1
+	    Molecule.execute_gamess(fname, self)
+	  end
 	else
 	  nil
 	end
