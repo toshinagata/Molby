@@ -1085,11 +1085,11 @@ Build this molecule. The easiest way is, (1) double-click the empty editing area
 </p>
 <p><img src="../etc/tutorial_40.png" /></p>
 <p>
-Open the "MM/MD" menu, and select "antechamber/parmchk..." command in the "Tools" submenu.
+Open the "MM/MD" menu, and select "Auto Guess MM/MD Parameters..." command.
 </p>
 <p><img src="../etc/tutorial_41.png" /></p>
 <p>
-A dialog like below shows up. Turn off the first two checkboxes. The "log" directory is used by AmberTools for storing intermediate files; the default value would be acceptable, but you can change it here.
+A dialog like below shows up. This is for execution of Antechamber on the current molecule. Turn off the first two checkboxes. The "log" directory is used by AmberTools for storing intermediate files; the default value would be acceptable, but you can change it here.
 </p>
 <p><img src="../etc/tutorial_42.png" /></p>
 <p>
@@ -1174,11 +1174,11 @@ Molby の分子力学計算は、基本的な分子力場（結合の伸縮、�
 </p>
 <p><img src="../etc/tutorial_40.png" /></p>
 <p>
-"MM/MD"メニューを開き、"Tools" サブメニューから "Antechamber/parmchk..." コマンドを実行します。
+"MM/MD"メニューを開き、"Auto Guess MM/MD Parameters..." コマンドを実行します。
 </p>
 <p><img src="../etc/tutorial_41.png" /></p>
 <p>
-下のようなダイアログが現れます。上の２つのチェックボックスをオフにしてください。"Log" ディレクトリは、AmberTools のプログラムが中間ファイルを保存するのに使います。デフォルトの位置で問題はないでしょうが、変更してもかまいません。
+下のようなダイアログが現れます。これは現在の分子に対して Antechamber を実行するためのものです。上の２つのチェックボックスをオフにしてください。"Log" ディレクトリは、AmberTools のプログラムが中間ファイルを保存するのに使います。デフォルトの位置で問題はないでしょうが、変更してもかまいません。
 </p>
 <p><img src="../etc/tutorial_42.png" /></p>
 <p>
@@ -1532,6 +1532,8 @@ You can specify various settings in the dialog.
 <li><b>Elements:</b> The elements (comma separated) to use secondary basis set.</li>
 <li><b>Basis set:</b> The secondary basis set.</li>
 <li><b>Calculate electrostatic potential:</b> This is used for RESP charge calculation for AMBER.</li>
+<li><b>Execite GAMESS on this machine:</b> (0.6.5 and later) Execute GAMESS, provided that GAMESS is installed on the same computer. Specify the full path of the GAMESS executable in "Path", and the number of CPU cores for calculation in "N of CPUs."<br>
+(Note: GAMESS may not work depending on the version of the executable.)</li>
 </ul>
 <p>
 When the calculation of GAMESS is complete, you will find two output files, namely *.log and *.dat. Either format can be imported by use of the "Import..." menu command. Some informations are included in both (<i>e.g.</i> coordinates during structural optimization), but other informations are only in one of these files (<i>e.g.</i> the full description of gaussian functions is only in the *.log file, whereas the orbital coefficients with full precision are only in the *.dat file). You need to be familiar with the structure of the GAMESS output files to fully utilize the GAMESS import capability of Molby.
@@ -1633,6 +1635,8 @@ GAMESS の入力を作成するのは Gaussian よりもずっと複雑なので
 <li><b>Elements:</b> 別の基底を使う元素（コンマで区切って複数指定できます）。</li>
 <li><b>Basis set:</b> 別の基底。</li>
 <li><b>Calculate electrostatic potential:</b> RESP 電荷を求めるための静電ポテンシャルの計算を行う。</li>
+<li><b>Execite GAMESS on this machine:</b> (0.6.5 以降) Molby と同じコンピュータに GAMESS がインストールされているとき、GAMESS を実行することができます。Path に GAMESS の実行ファイルのフルパス名、N of CPUs に使用する CPU のコア数を指定します。<br>
+（注： GAMESS のバージョンによっては動作しないことがあります。）</li>
 </ul>
 <p>
 GAMESS の計算が終了すると、*.log と *.dat の２つのファイルができます。どちらも "Import..." コマンドで読み込むことができます。ある種の情報（たとえば構造最適化途中の座標）はどちらのファイルにも含まれていますが、その他の情報はどちらか一方にしか含まれません（たとえば、基底を構成する Gaussian 関数の完全な係数は *.log ファイルにしかなく、精度の高い軌道係数は *.dat にしかありません）。GAMESS 読み込み機能を十分に活用するには、GAMESS の出力が何を含んでいるかをよく理解する必要があります。
