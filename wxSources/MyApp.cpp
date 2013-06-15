@@ -442,7 +442,8 @@ MyApp::CreateMenuBar(int kind, wxMenu **out_file_history_menu, wxMenu **out_edit
 	md_menu->Append(myMenuID_Minimize, _T("Minimize..."));
 	md_menu->Append(myMenuID_StopMDRun, _T("Stop\tCtrl-."));
 	md_menu->AppendSeparator();
-//	md_menu->Append(myMenuID_ReadParameters, _T("Read Parameters..."));	
+//	md_menu->Append(myMenuID_ReadParameters, _T("Read Parameters..."));
+	md_menu->Append(myMenuID_RunAntechamber, _T("Auto Guess MM/MD Parameters..."));
 	md_menu->Append(myMenuID_ViewGlobalParameters, _T("View Global Parameters..."));
 	md_menu->Append(myMenuID_ViewParameterFilesList, _T("Load/Unload Global Parameters..."));
 	md_menu->AppendSeparator();
@@ -454,7 +455,7 @@ MyApp::CreateMenuBar(int kind, wxMenu **out_file_history_menu, wxMenu **out_edit
 	md_menu->AppendSeparator();
 	
 	wxMenu *md_tools_menu = new wxMenu;
-	md_tools_menu->Append(myMenuID_RunAntechamber, _T("Antechamber/parmchk..."));
+/*	md_tools_menu->Append(myMenuID_RunAntechamber, _T("Antechamber/parmchk...")); */
 	md_tools_menu->Append(myMenuID_RunResp, _T("GAMESS/RESP..."));
 	md_tools_menu->Append(myMenuID_CreateSanderInput, _T("Create SANDER input..."));
 	md_tools_menu->Append(myMenuID_ImportAmberLib, _T("Import AMBER Lib..."));

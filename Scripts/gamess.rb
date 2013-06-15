@@ -130,6 +130,11 @@ class Molecule
 
     set_global_settings("gamess.executable_path", gmsname)
 
+    ncpus = get_global_settings("gamess.ncpus").to_i
+	if ncpus == 0
+	  ncpus = 1
+	end
+	
     #  Prepare the scratch directory in the home directory
     #  (Not in the document home to avoid space-containing path in Windows)
     scrdir = document_home.sub(/\/My Documents/, "") + "/gamess"
@@ -332,9 +337,12 @@ class Molecule
     ENV["OLI239"] = "#{scrprefix}.F239"
 
     if $platform == "win"
+	  if ncpus < 2
+	    ncpus = 2
+	  end
       fpout.print "Microsoft MPI will be running GAMESS on 1 node.\n"
       fpout.print "The binary kicked off by 'mpiexec' is gamess.#{gmsvers}.exe\n"
-      fpout.print "MS-MPI will run 1 compute process\n"
+      fpout.print "MS-MPI will run #{ncpus} compute process\n"
       #  File containing environmental variables
       envfil = "#{scrprefix}.GMS.ENV"
       fp = File.open(envfil, "w")
@@ -343,7 +351,7 @@ class Molecule
       #  File containing arguments to mpiexec
       procfil = "#{scrprefix}.processes.mpd"
       fp = File.open(procfil, "w")
-      fp.print "-env ENVFIL #{envfil} -n 2 #{gmsdir}#{sep}gamess.#{gmsvers}.exe\n"
+      fp.print "-env ENVFIL #{envfil} -n #{ncpus} #{gmsdir}#{sep}gamess.#{gmsvers}.exe\n"
       fp.close
     end
     
@@ -419,9 +427,10 @@ class Molecule
 	end
 	
     if $platform == "win"
-      status = call_subprocess("cmd.exe /c \"mpiexec -configfile #{procfil} >>#{logname}\"", "GAMESS")
+      status = call_subprocess("cmd.exe /c \"mpiexec -configfile #{procfil} >>#{logname}\"", "GAMESS", callback)
     else
-      status = call_subprocess("/bin/sh -c '#{gmsdir}/ddikick.x #{gmsdir}/gamess.#{gmsvers}.x #{inpbody} -ddi 1 1 localhost -scr #{scrdir} < /dev/null >>#{logname}'", "GAMESS", callback)
+	  hosts = "localhost " * ncpus
+      status = call_subprocess("/bin/sh -c '#{gmsdir}/ddikick.x #{gmsdir}/gamess.#{gmsvers}.x #{inpbody} -ddi #{ncpus} #{ncpus} #{hosts} -scr #{scrdir} < /dev/null >>#{logname}'", "GAMESS", callback)
     end
 
     if status != 0

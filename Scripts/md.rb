@@ -65,12 +65,27 @@ class Molecule
 	#  Get the MDArena
 	arena = self.md_arena
 	if !arena.prepare(true)   #  Parameter check only
-	  Dialog.run("MD Error") {
+	  mol = self
+	  h = Dialog.run("MM/MD Parameter Missing", nil, nil) {
 		layout(1,
-		  item(:text, :title=>"Some parameters are missing. Please open\nthe 'parameters' table and examine."))
-		  set_attr(1, :hidden=>true)  #  Hide the cancel button
+		  item(:text, :title=>"Some MM/MD parameters are missing.\nPlease select one of the following options."),
+		  item(:button, :title=>"Auto Guess", :align=>:center,
+		    :action=>proc { |it| end_modal(2) } ),
+		  item(:button, :title=>"Run Antechamber Manually...", :align=>:center,
+		    :action=>proc { |it| end_modal(3) } ),
+		  item(:button, :title=>"Cancel", :align=>:center,
+		    :action=>proc { |it| end_modal(1) } ))
 	  }
-	  return nil
+	  status = h[:status]
+	  if status == 2
+	    n = invoke_antechamber(false)
+		return nil if n != 0
+	  elsif status == 3
+	    n = invoke_antechamber(true)
+		return nil if n != 0
+	  else
+	    return nil
+	  end
     end
 
     #  Initialize some fields at first invocation
@@ -342,7 +357,12 @@ class Molecule
 	  suffix = ""
 	end
 	log_level = (get_global_settings("antechamber.log_level") || "none")
-    hash = Dialog.run("Run " + tool.capitalize) {
+	if tool == "antechamber"
+	  msg = "Auto Guess MM/MD Parameters (Antechamber)"
+	else
+	  msg = "Run " + tool.capitalize
+	end
+    hash = Dialog.run(msg) {
 	  @toolname = tool + suffix
       def valid_antechamber_dir(s)
 	    FileTest.exist?(s + "/" + @toolname)
@@ -464,6 +484,132 @@ class Molecule
     return ambertools_dialog("antechamber")
   end
   
+  def remove_dir(dir)
+    entries = Dir.entries(dir)
+	entries.each { |en|
+	  next if en == "." || en == ".."
+	  fname = "#{dir}/#{en}"
+	  if File.directory?(fname)
+	    remove_dir(fname)
+	  else
+	    File.unlink(fname)
+	  end
+	}
+	Dir.unlink(dir)
+  end
+  
+  def erase_old_logs(tdir, level, keep_number)
+    log_dir = File.dirname(tdir)
+	if level == nil || level == "none"
+	  remove_dir(tdir)
+	elsif level == "latest"
+	  if keep_number == nil
+	    keep_number = 5
+	  else
+	    keep_number = keep_number.to_i
+	  end
+	  entries = Dir.entries(log_dir).select { |en| en != "." && en != ".." && File.directory?("#{log_dir}/#{en}") }
+	  #  Sort by modification date
+	  entries = entries.sort_by { |en| File.mtime("#{log_dir}/#{en}").to_i }
+	  (0...entries.count - keep_number).each { |i|
+	    remove_dir("#{log_dir}/#{entries[i]}")
+	  }
+	end
+  end
+  
+  def invoke_antechamber(ask_options = true)
+    #  Find the ambertool directory
+	ante_dir = "#{ResourcePath}/amber11/bin"
+	#  Ask for antechamber options and log directory
+	if ask_options
+  	  n = cmd_antechamber()
+	  return 1 if n == 0
+	end
+	nc = get_global_settings("antechamber.nc").to_i
+	calc_charge = get_global_settings("antechamber.calc_charge").to_i
+	use_residue = get_global_settings("antechamber.use_residue").to_i
+	#  Create log directory
+	name = self.name.sub(/\.\w*$/, "")  #  Remove the extension
+	log_dir = get_global_settings("antechamber.log_dir")
+	if log_dir == nil
+	  log_dir = document_home + "/antechamber"
+	end
+	if !File.directory?(log_dir)
+	  Dir.mkdir(log_dir)
+	end
+	tdir = nil
+	1000.times { |i|
+	  tdir = sprintf("%s/%s.%04d", log_dir, name, i)
+	  if !File.exists?(tdir) && (Dir.mkdir(tdir) == 0)
+	    break
+	  end
+	  tdir = nil
+	}
+	if tdir == nil
+	  error_message_box("Cannot create log directory in #{log_dir}.")
+	  return -1
+	end
+	cwd = Dir.pwd
+	Dir.chdir(tdir)
+	if use_residue == 0
+	  mol2 = self.dup
+	  mol2.assign_residue(mol2.all, 1)
+	else
+	  mol2 = self
+	end
+	mol2.savepdb("./mol.pdb")
+	#  Set environmental variable
+	p = ENV["AMBERHOME"]
+	if p == nil
+	  amberhome = "#{ResourcePath}/amber11"
+	  if $platform == "win"
+	    amberhome.gsub!("/", "\\")
+	  end
+	  ENV["AMBERHOME"] = amberhome
+	end
+	if calc_charge != 0
+	  opt = "-nc #{net_charge} -c bcc"
+	else
+	  opt = ""
+	end
+	n = call_subprocess("#{ante_dir}/antechamber -i mol.pdb -fi pdb -o mol.ac -fo ac #{opt}", "Antechamber")
+	if n != 0
+	  error_message_box("Antechamber failed: status = #{n}.")
+	  Dir.chdir(cwd)
+	  return n
+	else
+	  n = call_subprocess("#{ante_dir}/parmchk -i mol.ac -f ac -o frcmod", "Parmchk")
+	  if n != 0
+	    error_message_box("Parmchk failed: status = #{n}.")
+		Dir.chdir(cwd)
+		return n
+	  end
+	end
+	Dir.chdir(cwd)
+	n = import_ac("#{tdir}/mol.ac")
+	if n != 0
+	  error_message_box("Cannot import antechamber output.")
+	  return n
+	end
+	if calc_charge != 0
+	  n = import_sqmout("#{tdir}/sqm.out")
+	  if n != 0
+	    error_message_box("Cannot import sqm output.")
+		return n
+	  end
+	end
+	n = import_frcmod("#{tdir}/frcmod")
+	if n != 0
+	  error_message_box("Cannot import parmchk output.")
+	  return n
+	end
+	log_level = get_global_settings("antechamber.log_level")
+	log_keep_number = get_global_settings("antechamber.log_keep_number")
+	erase_old_logs(tdir, log_level, log_keep_number)
+	return 0
+	
+  end
+  
   def import_ac(acfile)
     open(acfile, "r") { |fp|
 	  while (s = fp.gets)
@@ -478,6 +624,7 @@ class Molecule
 		ap.atom_type = type
 	  end
 	}
+	return 0
   end
   
   def import_sqmout(file)
@@ -498,6 +645,7 @@ class Molecule
 		break
 	  end
 	}
+	return 0
   end
   
   def import_frcmod(file)
@@ -587,6 +735,7 @@ class Molecule
 		end
 	  end
     }
+	return 0
   end
 
   def cmd_import_frcmod
