@@ -6631,26 +6631,34 @@ s_Molecule_AddImproper(VALUE self, VALUE v1, VALUE v2, VALUE v3, VALUE v4)
 /*
  *  call-seq:
  *     remove_improper(n1, n2, n3, n4)       -> Molecule
+ *     remove_improper(intgroup)             -> Molecule
  *
- *  Remove improper n1-n2-n3-n4. Returns self. Unlike angles and dihedrals, impropers are
+ *  Remove improper n1-n2-n3-n4, or the specified impropers (in indices) in IntGroup.
+ *  Returns self. Unlike angles and dihedrals, impropers are
  *  not automatically added when a new bond is created, so this method is more useful than
  *  the angle/dihedral counterpart.
  *  This operation is undoable.
  */
 static VALUE
-s_Molecule_RemoveImproper(VALUE self, VALUE v1, VALUE v2, VALUE v3, VALUE v4)
+s_Molecule_RemoveImproper(int argc, VALUE *argv, VALUE self)
 {
 	Int n[5];
+	VALUE v1, v2, v3, v4;
     Molecule *mol;
 	IntGroup *ig;
     Data_Get_Struct(self, Molecule, mol);
-	n[0] = s_Molecule_AtomIndexFromValue(mol, v1);
-	n[1] = s_Molecule_AtomIndexFromValue(mol, v2);
-	n[2] = s_Molecule_AtomIndexFromValue(mol, v3);
-	n[3] = s_Molecule_AtomIndexFromValue(mol, v4);
-	if ((n[4] = MoleculeLookupImproper(mol, n[0], n[1], n[2], n[3])) < 0)
-		rb_raise(rb_eMolbyError, "improper %d-%d-%d-%d is not present", n[0], n[1], n[2], n[3]);
-	ig = IntGroupNewWithPoints(n[4], 1, -1);
+	if (argc == 1) {
+		ig = IntGroupFromValue(argv[0]);
+	} else {
+		rb_scan_args(argc, argv, "40", &v1, &v2, &v3, &v4);
+		n[0] = s_Molecule_AtomIndexFromValue(mol, v1);
+		n[1] = s_Molecule_AtomIndexFromValue(mol, v2);
+		n[2] = s_Molecule_AtomIndexFromValue(mol, v3);
+		n[3] = s_Molecule_AtomIndexFromValue(mol, v4);
+		if ((n[4] = MoleculeLookupImproper(mol, n[0], n[1], n[2], n[3])) < 0)
+			rb_raise(rb_eMolbyError, "improper %d-%d-%d-%d is not present", n[0], n[1], n[2], n[3]);
+		ig = IntGroupNewWithPoints(n[4], 1, -1);
+	}
 	MolActionCreateAndPerform(mol, gMolActionDeleteImpropers, ig);
 	IntGroupRelease(ig);
 	return self;
@@ -10025,7 +10033,7 @@ Init_Molby(void)
 	rb_define_method(rb_cMolecule, "add_dihedral", s_Molecule_AddDihedral, 4);
 	rb_define_method(rb_cMolecule, "remove_dihedral", s_Molecule_RemoveDihedral, 4);
 	rb_define_method(rb_cMolecule, "add_improper", s_Molecule_AddImproper, 4);
-	rb_define_method(rb_cMolecule, "remove_improper", s_Molecule_RemoveImproper, 4);
+	rb_define_method(rb_cMolecule, "remove_improper", s_Molecule_RemoveImproper, -1);
 	rb_define_method(rb_cMolecule, "assign_residue", s_Molecule_AssignResidue, 2);
 	rb_define_method(rb_cMolecule, "offset_residue", s_Molecule_OffsetResidue, 2);
 	rb_define_method(rb_cMolecule, "renumber_atoms", s_Molecule_RenumberAtoms, 1);
