@@ -56,6 +56,8 @@ class Molecule
 	["C7H7", "cycloheptatrienyl"],
 	["C7H6", "cycloheptatrienyl", "H1"],
 	
+    ["C60 fullerene", "aromatic/c60.mbsf"],
+    
 	"Heterocyclic",
 	["furan", "heterocyclic/furan.mbsf"],
 	["imidazole", "heterocyclic/imidazole.mbsf"],
