@@ -603,6 +603,9 @@ class Molecule
 	  error_message_box("Cannot import parmchk output.")
 	  return n
 	end
+	if self.nimpropers > 0
+	  remove_improper(IntGroup[0...self.nimpropers])
+	end
 	log_level = get_global_settings("antechamber.log_level")
 	log_keep_number = get_global_settings("antechamber.log_keep_number")
 	erase_old_logs(tdir, log_level, log_keep_number)

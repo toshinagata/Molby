@@ -1372,6 +1372,16 @@ MyDocument::OnInvokeAntechamber(wxCommandEvent &event)
 		}
 	}
 	
+	if (status == 0) {
+		/*  Remove improper torsions (they should be rebuilt)  */
+		if (mol->nimpropers > 0) {
+			IntGroup *ig;
+			ig = IntGroupNewWithPoints(0, mol->nimpropers, -1);
+			MolActionCreateAndPerform(mol, gMolActionDeleteImpropers, ig);
+			IntGroupRelease(ig);
+		}
+	}
+	
 	wxFileName::SetCwd(cwd);
 
 	/*  Erase log files  */
