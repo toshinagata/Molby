@@ -392,6 +392,7 @@ class Molecule
 			  dummy, n, grad = line.match(/NSERCH:[^0-9]*([0-9]+).*GRAD[^0-9]*([-.0-9]+)/).to_a
 			  mol.show_text("Search: #{n}\nGradient: #{grad}")
 			end
+			last_i = i
           elsif nserch > 0 && line =~ /ddikick\.x/
             last_i = -1
             break

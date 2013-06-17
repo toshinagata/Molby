@@ -521,3 +521,8 @@ ChangeLog
 - Building verlet list was reworked to implement complete search of the periodic lattice points. Still in progress.
 - Symmetry operations from the CIF file were not read correctly for hexagonal system. Fixed.
 - Mac (only 10.6?): when the graphite display is on, the lighting of the molecule model looks strange. Fixed.
+
+2012.6.15.
+　Version 0.6.5 を公開したのだが、GAMESS の構造最適化中のコンソールメッセージが変。同じ NSERCH に対応する行が複数表示されてしまう。要修正。
+　理想的には、GAMESS も MM/MD と同じように実行中はいったん Molby に制御を戻して、表示を自由に変更できるようにするのがよい（編集は禁止）。さらに、複数の分子についてそれぞれ計算を走らせることも可能にできればなおよい。これはかなりの大改造が必要。
+
