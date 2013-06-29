@@ -20,8 +20,13 @@
 
 #include "wx/docview.h"
 #include "wx/cmdproc.h"
+#include "wx/process.h"
 
 #include "../MolLib/MolLib.h"
+
+#include <stdio.h>   /*  For FILE structure  */
+
+class wxProcess;  /*  For running QChem  */
 
 /*  Custom Event for Document handling  */
 extern const wxEventType MyDocumentEvent;
@@ -60,7 +65,14 @@ public:
 
 	bool hasFile;  /*  wxWidgets does not maintain this info for us  */
 
-	int subThreadKind;  /*  0: none, 1: MM/MD (mutex is in Molecule structure)  */
+	int subThreadKind;  /*  0: none, 1: MM/MD (mutex is in Molecule structure), 2: QChem (also mutex is in Molecule structure)  */
+	
+	wxProcess *subProcess;  /*  subprocess object for QChem run  */
+	long    subProcessPID;
+	int		(*endSubProcessCallback)(Molecule *mol, int status);
+	int		(*timerSubProcessCallback)(Molecule *mol, int timerCount);
+	FILE    *subProcessStdout;  /*  Stdout of the subprocess  */
+	FILE    *subProcessStderr;  /*  Stderr of the subprocess  */
 	
 	MainView	*GetMainView() { return (mol != NULL ? mol->mview : NULL); }
 	void    SetIsUndoing(bool flag) { isUndoing = flag; }
@@ -111,6 +123,11 @@ public:
 	void	OnMolecularDynamics(wxCommandEvent &event);
 	void	OnMinimize(wxCommandEvent &event);
 	void	OnStopMDRun(wxCommandEvent &event);
+	
+	long	RunSubProcess(const char *cmd, int (*callback)(Molecule *, int), int (*timerCallback)(Molecule *, int), FILE *output, FILE *errout);
+	void	OnEndSubProcess(wxProcessEvent &event);
+	void	FlushSubProcessOutput();
+
 	void	OnDefinePeriodicBox(wxCommandEvent &event);
 	void	OnShowPeriodicImage(wxCommandEvent &event);
 	void	OnPressureControl(wxCommandEvent &event);
@@ -130,6 +147,8 @@ public:
 	void	OnSubThreadTerminated(wxCommandEvent &event);
 	
 	void	OnUpdateUI(wxUpdateUIEvent &event);
+
+	void	TimerCallback(int timerCount);
 
  protected:
 	virtual bool DoSaveDocument(const wxString& file);

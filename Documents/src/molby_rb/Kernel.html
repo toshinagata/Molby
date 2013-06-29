@@ -66,15 +66,34 @@ Open a modal dialog and get a line of text.
 </div>
 </div>
 
-<div id="method-M000375" class="method-detail">
-<a name="call_subprocess"></a>
+<div id="method-M000376" class="method-detail">
+<a name="backquote"></a>
 <div class="method-heading">
-<span class="method-name">call_subprocess(cmdline, cmdname) &rarr; Integer<br />
+<span class="method-name">backquote(string) &rarr; string<br />
 </span>
 </div>
 <div class="method-description">
 <p>
-Call a subprocess by the given command line. A progress window is shown, and the argument <code>cmdname</code> is used to show an appropriate message. Returns an integer value with the same meaning as <code>Kernel.system</code>.
+Same as the built-in backquote operator, except that it does not show the console window on Windows platform.
+</p>
+</div>
+</div>
+
+<div id="method-M000375" class="method-detail">
+<a name="call_subprocess"></a>
+<div class="method-heading">
+<span class="method-name">call_subprocess(cmdline, cmdname, callback = nil) &rarr; Integer<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Call a subprocess by the given command line. A progress window is shown, and the argument <code>cmdname</code> is used to show an appropriate message. If <code>callback</code> is given (as a Proc object), it will be called periodically during execution; if <code>callback</code> returns <code>nil</code> or <code>false</code>, execution of the subprocess is interrupted.
+</p>
+<p>
+Returns an integer value with the same meaning as <code>Kernel.system</code>.
+</p>
+<p>
+<i>See Also:</i> <a href="Molecule.html#call_subprocess_async">Molecule#call_subprocess_async</a>
 </p>
 </div>
 </div>

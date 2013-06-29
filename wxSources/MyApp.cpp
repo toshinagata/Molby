@@ -95,6 +95,7 @@ BEGIN_EVENT_TABLE(MyApp, wxApp)
 	EVT_ACTIVATE(MyApp::OnActivate)
 #endif
 	EVT_END_PROCESS(-1, MyApp::OnEndProcess)
+	EVT_TIMER(-1, MyApp::TimerInvoked)
 END_EVENT_TABLE()
 
 //  Find the path of the directory where the relevant resources are to be found.
@@ -168,6 +169,10 @@ MyApp::MyApp(void)
 	m_CountNamedFragments = 0;
 	m_NamedFragments = (char **)(-1);  /*  Will be set to NULL after Ruby interpreter is initialized  */
 	m_pendingFilesToOpen = NULL;
+	m_CountTimerDocs = 0;
+	m_TimerDocs = NULL;
+	m_Timer = NULL;
+
 #if defined(__WXMSW__)
 	m_checker = NULL;
 	m_ipcServiceName = NULL;
@@ -1220,9 +1225,10 @@ MyApp::OnEndProcess(wxProcessEvent &event)
 int
 MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)(void *), void *callback_data)
 {
-	const int sEndProcessMessageID = 2;
 	int status = 0;
 	int callback_result = 0;
+	int count = 0;
+	bool progress_panel = false;
 	char buf[256];
 	size_t len, len_total;
 	wxString cmdstr(cmdline, WX_DEFAULT_CONV);
@@ -1230,17 +1236,18 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
 	extern int myKillAllChildren(long pid, wxSignal sig, wxKillError *krc);
 #endif
 	//  Show progress panel
-	if (procname == NULL)
-		procname = "subprocess";
-	snprintf(buf, sizeof buf, "Running %s...", procname);
-	ShowProgressPanel(buf);
+	if (procname != NULL) {
+		snprintf(buf, sizeof buf, "Running %s...", procname);
+		ShowProgressPanel(buf);
+		progress_panel = true;
+	}
 	
 	//  Create log file in the document home directory
 #if LOG_SUBPROCESS
 	int nn = 0;
 	{
 		char *dochome = MyAppCallback_getDocumentHomeDir();
-		snprintf(buf, sizeof buf, "%s/%s.log", dochome, procname);
+		snprintf(buf, sizeof buf, "%s/%s.log", dochome, (procname ? procname : "subprocess"));
 		free(dochome);
 		fplog = fopen(buf, "w");
 		if (fplog == NULL)
@@ -1249,7 +1256,7 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
 #endif
 
 	//  Create proc object and call subprocess
-	wxProcess *proc = new wxProcess(wxGetApp().GetProgressFrame(), sEndProcessMessageID);
+	wxProcess *proc = new wxProcess(this, -1);
 	proc->Redirect();
 	int flag = wxEXEC_ASYNC;
 //#if !__WXMSW__
@@ -1261,21 +1268,70 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
 	if (pid == 0) {
 	//	MyAppCallback_errorMessageBox("Cannot start %s", procname);
 		proc->Detach();
-		HideProgressPanel();
+		if (procname != NULL)
+			HideProgressPanel();
 #if LOG_SUBPROCESS
+		fprintf(fplog, "Cannot start '%s'\n", cmdline);
 		fclose(fplog);
 #endif
 		return -1;
 	}
 #if LOG_SUBPROCESS
 	fprintf(fplog, "[DEBUG]pid = %ld\n", pid);
+	fflush(fplog);
 #endif
 	
 	//  Wait until process ends or user interrupts
 	wxInputStream *in = proc->GetInputStream();
 	wxInputStream *err = proc->GetErrorStream();
 	len_total = 0;
+	char *membuf = NULL;
+	int memsize = 0;
 	while (1) {
+		while (in->CanRead()) {
+			in->Read(buf, sizeof buf - 1);
+			if ((len = in->LastRead()) > 0) {
+				buf[len] = 0;
+				len_total += len;
+#if LOG_SUBPROCESS
+				fprintf(fplog, "%s", buf);
+				fflush(fplog);
+#endif
+				if (callback == DUMMY_CALLBACK) {
+					if (memsize < len_total + 1) {
+						char *p = (char *)realloc(membuf, len_total + 1);
+						if (p != NULL) {
+							membuf = p;
+							memmove(membuf + len_total - len, buf, len + 1);
+							memsize = len_total + 1;
+						}
+					}
+				} else {
+					MyAppCallback_setConsoleColor(0);
+					MyAppCallback_showScriptMessage("%s", buf);
+				}
+			}
+		}
+		while (err->CanRead()) {
+			err->Read(buf, sizeof buf - 1);
+			if ((len = err->LastRead()) > 0) {
+				buf[len] = 0;
+				len_total += len;
+#if LOG_SUBPROCESS
+				fprintf(fplog, "%s", buf);
+				fflush(fplog);
+#endif
+				MyAppCallback_setConsoleColor(1);
+				MyAppCallback_showScriptMessage("\n%s", buf);
+				MyAppCallback_setConsoleColor(0); 
+			}
+		}
+		if (++count == 100) {
+			if (progress_panel == false) {
+				ShowProgressPanel("Running subprocess...");
+				progress_panel = true;
+			}
+		}
 		if (m_processTerminated || !wxProcess::Exists(pid)) {
 			if (m_processExitCode != 0) {
 				/*  Error from subprocess  */
@@ -1284,27 +1340,65 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
 			} else status = 0;
 			break;
 		}
-#if defined(__WXMAC__)
-		if (waitpid(pid, &status, WNOHANG) != 0) {
-			/*  Already finished, although not detected by wxProcess  */
-			/*  This sometimes happens on ppc Mac  */
+	
+		/*  In some cases, wxProcess cannot detect the termination of the subprocess. */
+		/*  So here are the platform-dependent examination   */
+#if __WXMSW__
+		{
+		 // get the process handle to operate on
+			HANDLE hProcess = ::OpenProcess(SYNCHRONIZE |
+										PROCESS_TERMINATE |
+										PROCESS_QUERY_INFORMATION,
+										false, // not inheritable
+										(DWORD)pid);
+			if (hProcess == NULL) {
+				if (::GetLastError() != ERROR_ACCESS_DENIED) {
+					m_processTerminated = 1;
+					m_processExitCode = 255;
+				}
+			} else {
+				DWORD exitCode;
+				if (::GetExitCodeProcess(hProcess, &exitCode) && exitCode != STILL_ACTIVE) {
+					m_processTerminated = 1;
+					m_processExitCode = exitCode;
+				}
+				::CloseHandle(hProcess);
+			}
+			if (m_processTerminated) {
 #if LOG_SUBPROCESS
-			if (fplog)
+				if (fplog) {
+					fprintf(fplog, "OnEndProcess *NOT* called\n");
+					fflush(fplog);
+				}
+#endif
+				status = m_processExitCode & 255;
+				proc->Detach();
+				break;
+			}
+		}
+#else
+		if (waitpid(pid, &status, WNOHANG) != 0) {
+#if LOG_SUBPROCESS
+			if (fplog) {
 				fprintf(fplog, "OnEndProcess *NOT* called\n");
+				fflush(fplog);
+			}
 #endif
 			proc->Detach();
 			status = WEXITSTATUS(status);
 			break;
 		}
 #endif
+		
 #if LOG_SUBPROCESS
 		if (++nn >= 10) {
 			fprintf(fplog, "[DEBUG]pid %ld exists\n", pid);
+			fflush(fplog);
 			nn = 0;
 		}
 #endif
 		::wxMilliSleep(10);
-		if (wxGetApp().IsInterrupted() || (callback != NULL && (callback_result = (*callback)(callback_data)) != 0)) {
+		if (wxGetApp().IsInterrupted() || (callback != NULL && callback != DUMMY_CALLBACK && (callback_result = (*callback)(callback_data)) != 0)) {
 			/*  User interrupt  */
 			int kflag = wxKILL_CHILDREN;
 			wxKillError rc;
@@ -1330,40 +1424,86 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
 			proc->Detach();
 			break;
 		}
-		while (in->CanRead()) {
-			in->Read(buf, sizeof buf - 1);
-			if ((len = in->LastRead()) > 0) {
-				buf[len] = 0;
-				len_total += len;
-#if LOG_SUBPROCESS
-				fprintf(fplog, "%s", buf);
-#endif
-				MyAppCallback_setConsoleColor(0);
-				MyAppCallback_showScriptMessage("%s", buf);
-			}
-		}
-		while (err->CanRead()) {
-			err->Read(buf, sizeof buf - 1);
-			if ((len = err->LastRead()) > 0) {
-				buf[len] = 0;
-				len_total += len;
-#if LOG_SUBPROCESS
-				fprintf(fplog, "%s", buf);
-#endif
-				MyAppCallback_setConsoleColor(1);
-				MyAppCallback_showScriptMessage("\n%s", buf);
-				MyAppCallback_setConsoleColor(0); 
-			}
-		}
 	}
 #if LOG_SUBPROCESS
 	fclose(fplog);
 #endif
 
-	HideProgressPanel();
+	if (progress_panel)
+		HideProgressPanel();
+
+	if (callback == DUMMY_CALLBACK) {
+#if __WXMSW__
+		/*  Convert "\r\n" to "\n"  */
+		char *p, *pend;
+		p = pend = membuf + strlen(membuf);
+		while (--p >= membuf) {
+			if (*p == '\r') {
+				memmove(p, p + 1, pend - p);
+				pend--;
+			}
+		}
+#endif
+		*((char **)callback_data) = membuf;
+	}
+	
 /*	if (len_total > 0)
 		MyAppCallback_showRubyPrompt(); */
+
 	return status;
+}
+
+static int sTimerCount = 0;
+
+void
+MyApp::EnableTimerForDocument(MyDocument *doc)
+{
+	int i;
+	if (doc == NULL)
+		return;
+	for (i = 0; i < m_CountTimerDocs; i++) {
+		if (m_TimerDocs[i] == doc)
+			return;
+	}
+	m_TimerDocs = (MyDocument **)realloc(m_TimerDocs, sizeof(MyDocument *) * (m_CountTimerDocs + 1));
+	m_TimerDocs[m_CountTimerDocs++] = doc;
+	if (m_Timer == NULL)
+		m_Timer = new wxTimer(this, -1);
+	if (!m_Timer->IsRunning())
+		m_Timer->Start(100, wxTIMER_CONTINUOUS);
+}
+
+void
+MyApp::DisableTimerForDocument(MyDocument *doc)
+{
+	int i;
+	if (doc == NULL)
+		return;
+	for (i = 0; i < m_CountTimerDocs; i++) {
+		if (m_TimerDocs[i] == doc) {
+			//  Remove this document from the array
+			if (i < m_CountTimerDocs - 1) {
+				memmove(&m_TimerDocs[i], &m_TimerDocs[i + 1], sizeof(MyDocument *) * (m_CountTimerDocs - 1 - i));
+			}
+			m_CountTimerDocs--;
+			if (m_CountTimerDocs == 0) {
+				free(m_TimerDocs);
+				m_TimerDocs = NULL;
+				m_Timer->Stop();
+			}
+			break;
+		}
+	}
+}
+
+void
+MyApp::TimerInvoked(wxTimerEvent &event)
+{
+	int i;
+	sTimerCount++;
+	for (i = 0; i < m_CountTimerDocs; i++) {
+		m_TimerDocs[i]->TimerCallback(sTimerCount);
+	}
 }
 
 #pragma mark ====== MyFrame (top-level window) ======

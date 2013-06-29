@@ -59,6 +59,7 @@
 		E4A66F0F16365653003EE03A /* buildInfo.c in Sources */ = {isa = PBXBuildFile; fileRef = E4A66F0E16365653003EE03A /* buildInfo.c */; };
 		E4A66F1016365653003EE03A /* buildInfo.c in Sources */ = {isa = PBXBuildFile; fileRef = E4A66F0E16365653003EE03A /* buildInfo.c */; };
 		E4C0C4960F25734B00161EC2 /* Dcd.c in Sources */ = {isa = PBXBuildFile; fileRef = E4C0C4950F25734B00161EC2 /* Dcd.c */; };
+		E4C86B94177B3006005BA7AC /* MyProgressIndicator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E4C86B91177B3006005BA7AC /* MyProgressIndicator.cpp */; };
 		E4C8CBDF10B83060006C4692 /* MyDocManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E4C8CBDE10B83060006C4692 /* MyDocManager.cpp */; };
 		E4CFBB3B111096CF0081C481 /* amber11 in Resources */ = {isa = PBXBuildFile; fileRef = E4CFBB16111096CF0081C481 /* amber11 */; };
 		E4D5AD6A1180868A00B1D8A4 /* MyVersion.c in Sources */ = {isa = PBXBuildFile; fileRef = E472B7C41087F63200F931F3 /* MyVersion.c */; };
@@ -175,6 +176,8 @@
 		E4A66F0E16365653003EE03A /* buildInfo.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = buildInfo.c; path = build/buildInfo.c; sourceTree = "<group>"; };
 		E4C0C4940F25734B00161EC2 /* Dcd.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Dcd.h; sourceTree = "<group>"; };
 		E4C0C4950F25734B00161EC2 /* Dcd.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = Dcd.c; sourceTree = "<group>"; };
+		E4C86B91177B3006005BA7AC /* MyProgressIndicator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = MyProgressIndicator.cpp; path = ../wxSources/MyProgressIndicator.cpp; sourceTree = SOURCE_ROOT; };
+		E4C86B92177B3006005BA7AC /* MyProgressIndicator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MyProgressIndicator.h; path = ../wxSources/MyProgressIndicator.h; sourceTree = SOURCE_ROOT; };
 		E4C8CBDD10B83060006C4692 /* MyDocManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MyDocManager.h; path = ../wxSources/MyDocManager.h; sourceTree = SOURCE_ROOT; };
 		E4C8CBDE10B83060006C4692 /* MyDocManager.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = MyDocManager.cpp; path = ../wxSources/MyDocManager.cpp; sourceTree = SOURCE_ROOT; };
 		E4CBF38C10A91EAC00C7C74A /* doc_source.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; name = doc_source.html; path = ../Documents/src/doc_source.html; sourceTree = SOURCE_ROOT; };
@@ -373,6 +376,8 @@
 				E4E470C810AE6F8600F72B68 /* GlobalParameterFilesFrame.cpp */,
 				E433CE9C0EC709D300675985 /* MoleculeView.h */,
 				E433CE9B0EC709D300675985 /* MoleculeView.cpp */,
+				E4C86B92177B3006005BA7AC /* MyProgressIndicator.h */,
+				E4C86B91177B3006005BA7AC /* MyProgressIndicator.cpp */,
 				E433CE9E0EC709D300675985 /* MyApp.h */,
 				E433CE9D0EC709D300675985 /* MyApp.cpp */,
 				E433CEA00EC709D300675985 /* MyCommand.h */,
@@ -560,6 +565,7 @@
 				E4ED76E516256FC5006A1820 /* MyIPCSupport.cpp in Sources */,
 				E4A66F0F16365653003EE03A /* buildInfo.c in Sources */,
 				E4622E9B1649201400A0AA4D /* MDEwald.c in Sources */,
+				E4C86B94177B3006005BA7AC /* MyProgressIndicator.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

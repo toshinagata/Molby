@@ -40,6 +40,7 @@
 #include "MyListCtrl.h"
 #include "../MolLib/Missing.h"
 #include "MyMBConv.h"
+#include "MyProgressIndicator.h"
 
 #include "wx/tglbtn.h"
 #include "wx/listctrl.h"
@@ -67,7 +68,8 @@ enum {
 	myID_PlayForwardButton,
 	myID_JumpToEndButton,
 	myID_Table,
-	myID_TableMenu
+	myID_TableMenu,
+	myID_StopProgressButton
 };
 
 IMPLEMENT_DYNAMIC_CLASS(MoleculeView, wxView)
@@ -79,6 +81,7 @@ BEGIN_EVENT_TABLE(MoleculeView, wxView)
 	EVT_TOGGLEBUTTON(myID_SelectButton, MoleculeView::OnButtonPressed)
 	EVT_TOGGLEBUTTON(myID_BondButton, MoleculeView::OnButtonPressed)
 	EVT_TOGGLEBUTTON(myID_EraseButton, MoleculeView::OnButtonPressed)
+	EVT_BUTTON(myID_StopProgressButton, MoleculeView::OnStopProgressPressed)
 	EVT_COMMAND(wxID_ANY, MySliderEvent, MoleculeView::OnSliderAction)
 	EVT_COMMAND_SCROLL(myID_FrameSlider, MoleculeView::OnFrameSliderAction)
 	EVT_TEXT_ENTER(myID_FrameText, MoleculeView::OnFrameTextAction)
@@ -89,7 +92,7 @@ END_EVENT_TABLE()
 	(src->Connect(wxEVT_LEFT_DOWN, wxMouseEventHandler(func), NULL, target), \
 	src->Connect(wxEVT_LEFT_DCLICK, wxMouseEventHandler(func), NULL, target))
 				 
-				 
+
 bool
 MoleculeView::OnCreate(wxDocument *doc, long WXUNUSED(flags) )
 {
@@ -114,7 +117,7 @@ MoleculeView::OnCreate(wxDocument *doc, long WXUNUSED(flags) )
 	frameSlider = NULL;
 	frameText = NULL;
 	isRebuildingTable = false;
-	
+
 	Molecule *mol = ((MyDocument *)doc)->GetMolecule();
 	if (mol != NULL) {
 		mview = mol->mview;
@@ -171,7 +174,7 @@ MoleculeView::OnCreate(wxDocument *doc, long WXUNUSED(flags) )
 		wxBoxSizer *sizer1;
 		sizer1 = new wxBoxSizer(wxVERTICAL);
 		
-		{	//  Horizontal sizer containing [button0, button1, ..., button5, infotext]
+		{	//  Horizontal sizer containing [button0, ..., button5, infotext, progress_indicator]
 			wxBoxSizer *sizer2;
 			sizer2 = new wxBoxSizer(wxHORIZONTAL);
 			
@@ -195,7 +198,10 @@ MoleculeView::OnCreate(wxDocument *doc, long WXUNUSED(flags) )
 				infotext->SetFont(*wxSMALL_FONT);
 				sizer2->Add(infotext, 1, wxALL | wxEXPAND, 3);   // Can expand horizontally
 			}
-			
+			{	// Custom progress indicator
+				progress = new MyProgressIndicator(panel1, myID_StopProgressButton, wxDefaultPosition, wxSize(12, 24));
+				sizer2->Add(progress, 0, wxALL | wxEXPAND, 3);
+			}
 			sizer1->Add(sizer2, 0, wxALL | wxEXPAND, 0);
 		}
 		
@@ -437,6 +443,18 @@ MoleculeView::UpdateFrameControls()
 }
 
 void
+MoleculeView::InvalidateProgressIndicator()
+{
+	progress->Refresh();
+}
+
+void
+MoleculeView::ProceedProgressIndicator()
+{
+	progress->ProceedIndicatorState();
+}
+
+void
 MoleculeView::SelectButtonForMode(int mode)
 {
 	int i;
@@ -544,6 +562,12 @@ MoleculeView::OnFrameTextAction(wxCommandEvent &event)
 		}
 	}
 	MoleculeUnlock(mview->mol);
+}
+
+void
+MoleculeView::OnStopProgressPressed(wxCommandEvent& event)
+{
+	mview->mol->requestAbortThread = 1;
 }
 
 void
@@ -704,6 +728,12 @@ MoleculeView::OnMoleculeReplaced()
 		mview->tableIndex = -1;
 		SelectTable(tableIndex);
 	}
+}
+
+void
+MoleculeView::EnableProgressIndicator(bool flag)
+{
+	progress->SetEnabled(flag);
 }
 
 #pragma mark ====== MyListCtrl data source ======
@@ -874,6 +904,13 @@ MainViewCallback_setKeyboardFocus(MainView *mview)
 	if (mview != NULL && mview->ref != NULL) {
 		((MoleculeView *)(mview->ref))->canvas->SetFocus();
 	}
+}
+
+void
+MainViewCallback_enableToggleButton(MainView *mview, int mode, int flag)
+{
+	if (mode >= kTrackballRotateMode && mode <= kTrackballEraseMode)
+		((MoleculeView *)(mview->ref))->GetToggleButtonAtIndex(mode - kTrackballRotateMode)->Enable(flag);
 }
 
 void
@@ -1074,6 +1111,7 @@ MainViewCallback_newLabel(MainView *mview, const char *message, float fontsize, 
 //	MainViewCallback_unlockFocus(mview);
 	return label;
   */
+	return NULL;
 }
 
 void

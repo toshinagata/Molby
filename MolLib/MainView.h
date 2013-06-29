@@ -266,6 +266,7 @@ STUB MainView *MainViewCallback_activeView(void);
 STUB int MainViewCallback_importFromFile(MainView *mview, const char *fname);
 STUB void MainViewCallback_getFilename(MainView *mview, char *buf, int bufsize);
 //STUB void MainViewCallback_moleculeReplaced(MainView *mview, struct Molecule *mol);
+STUB void MainViewCallback_enableToggleButton(MainView *mview, int mode, int flag);
 
 STUB struct Label *MainViewCallback_newLabel(MainView *mview, const char *message, float fontsize, const float *forecolor, const float *backcolor); /* colors are rgba */
 STUB void MainViewCallback_releaseLabel(struct Label *label);

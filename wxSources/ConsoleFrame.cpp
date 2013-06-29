@@ -341,10 +341,13 @@ ConsoleFrame::OnEnterPressed(wxKeyEvent& event)
 		RubyValue val;
 		char *script;
 		Molecule *mol = MoleculeCallback_currentMolecule();
-		MoleculeLock(mol);
+		int lock_needed = (mol != NULL && mol->mutex != NULL);
+		if (lock_needed)
+			MoleculeLock(mol);
 		script = strdup(string.mb_str(WX_DEFAULT_CONV));
 		val = Molby_evalRubyScriptOnMolecule(script, MoleculeCallback_currentMolecule(), NULL, &status);
-		MoleculeUnlock(mol);
+		if (lock_needed)
+			MoleculeUnlock(mol);
 		script[strlen(script) - 1] = 0;  /*  Remove the last newline  */
 		AssignArray(&commandHistory, &nCommandHistory, sizeof(char *), nCommandHistory, &script);
 		if (nCommandHistory >= MAX_HISTORY_LINES)

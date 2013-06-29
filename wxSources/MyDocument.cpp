@@ -111,6 +111,7 @@ BEGIN_EVENT_TABLE(MyDocument, wxDocument)
 	EVT_MENU(myMenuID_HideReverse, MyDocument::OnHideReverse)
 	EVT_MENU(myMenuID_HideSelected, MyDocument::OnHideSelected)
 	EVT_MENU(myMenuID_HideUnselected, MyDocument::OnHideUnselected)
+	EVT_END_PROCESS(-1, MyDocument::OnEndSubProcess)
 END_EVENT_TABLE()
 
 MyDocument::MyDocument()
@@ -126,6 +127,9 @@ MyDocument::MyDocument()
 	isCleanUndoStackRequested = false;
 	hasFile = false;
 	subThreadKind = 0;
+	subProcess = NULL;
+	endSubProcessCallback = NULL;
+	timerSubProcessCallback = NULL;
 }
 
 MyDocument::~MyDocument()
@@ -134,6 +138,11 @@ MyDocument::~MyDocument()
 	Molecule *mol2 = mol;
 	mol = NULL;
 
+	if (subProcess != NULL) {
+		subProcess->Detach();
+		subProcess->Kill(subProcess->GetPid(), wxSIGTERM, wxKILL_CHILDREN);
+	}
+	
 	/*  May be unnecessary?  */
 	MoleculeView *view = (MoleculeView *)GetFirstView();
 	if (view != NULL) {
@@ -147,6 +156,8 @@ MyDocument::~MyDocument()
 			MolActionRelease(undoStack[i]);
 		free(undoStack);
 	}
+	
+	wxGetApp().DisableTimerForDocument(this);
 }
 
 /*
@@ -860,6 +871,7 @@ sCheckIsSubThreadRunning(Molecule *mol, int n)
 		const char *mes;
 		switch (n) {
 			case 1: mes = "MM/MD is already running."; break;
+			case 2: mes = "Quantum chemistry calculation is already running."; break;
 			default: mes = "Some subprocess is already running."; break;
 		}
 		MyAppCallback_errorMessageBox(mes);
@@ -969,6 +981,13 @@ MyDocument::DoMDOrMinimize(int minimize)
 	subThreadKind = 1;
 	BeginUndoGrouping();
 	mol->requestAbortThread = 0;
+	MoleculeCallback_disableModificationFromGUI(mol);
+	
+	if (mol->mview != NULL && mol->mview->ref != NULL) {
+		((MoleculeView *)(mol->mview->ref))->EnableProgressIndicator(true);
+	}
+	wxGetApp().EnableTimerForDocument(this);
+
 	MyThread::DetachNewThread(sDoMolecularDynamics, NULL, (void *)this, (minimize ? -n : n));
 }
 
@@ -1051,10 +1070,135 @@ MyDocument::OnSubThreadTerminated(wxCommandEvent &event)
 		mol->requestAbortThread = 0;
 		EndUndoGrouping();
 		subThreadKind = 0;
+
+		if (mol->mview != NULL && mol->mview->ref != NULL) {
+			((MoleculeView *)(mol->mview->ref))->EnableProgressIndicator(false);
+		}
 		
+		wxGetApp().DisableTimerForDocument(this);
+
 		if (mol->arena != NULL && mol->arena->errmsg[0] != 0)
 			MyAppCallback_errorMessageBox("MD Error: %s", mol->arena->errmsg);
+		
+		MoleculeCallback_enableModificationFromGUI(mol);
+		if (mol->mview != NULL && mol->mview->ref != NULL) {
+			((MoleculeView *)(mol->mview->ref))->InvalidateProgressIndicator();
+		}
 	}
+}
+
+/*  Run a subprocess asynchronically  */
+long
+MyDocument::RunSubProcess(const char *cmd, int (*callback)(Molecule *, int), int (*timerCallback)(Molecule *, int), FILE *output, FILE *errout)
+{
+	if (sCheckIsSubThreadRunning(mol, subThreadKind))
+		return -1;  /*  subProcess (or MM/MD subThread) is already running  */
+
+	mol->mutex = new wxMutex;
+	mol->requestAbortThread = 0;
+	
+	wxString cmdstr(cmd, WX_DEFAULT_CONV);
+	subProcess = new wxProcess(this, -1);
+	subProcess->Redirect();
+	subProcessStdout = output;
+	subProcessStderr = errout;
+
+	subProcessPID = ::wxExecute(cmdstr, wxEXEC_ASYNC | wxEXEC_MAKE_GROUP_LEADER, subProcess);
+	if (subProcessPID == 0) {
+		subProcess->Detach();
+		subProcess = NULL;
+		delete (wxMutex *)(mol->mutex);
+		mol->mutex = NULL;
+		subThreadKind = 0;
+		return -2;  /*  Cannot start subProcess  */
+	}
+
+	if (mol->mview != NULL && mol->mview->ref != NULL) {
+		((MoleculeView *)(mol->mview->ref))->EnableProgressIndicator(true);
+	}
+	subThreadKind = 2;
+	mol->requestAbortThread = 0;
+	MoleculeCallback_disableModificationFromGUI(mol);
+	BeginUndoGrouping();
+	wxGetApp().EnableTimerForDocument(this);
+	endSubProcessCallback = callback;
+	timerSubProcessCallback = timerCallback;
+
+	return subProcessPID;
+}
+
+void
+MyDocument::FlushSubProcessOutput()
+{
+	wxInputStream *stream;
+	char buf[1024];
+	int len;
+	if (subProcess == NULL)
+		return;  /*  Do nothing  */
+	stream = subProcess->GetInputStream();
+	if (subProcessStdout != NULL && stream != NULL && stream->CanRead()) {
+		stream->Read(buf, sizeof buf - 1);
+		len = stream->LastRead();
+		if (len > 0) {
+			buf[len] = 0;
+			if (subProcessStdout == (FILE *)1) {
+				MyAppCallback_setConsoleColor(0);
+				MyAppCallback_showScriptMessage("%s", buf);
+			} else {
+				fwrite(buf, 1, len, subProcessStdout);
+			}
+		}
+	}
+	stream = subProcess->GetErrorStream();
+	if (subProcessStderr != NULL && stream != NULL && stream->CanRead()) {
+		stream->Read(buf, sizeof buf - 1);
+		len = stream->LastRead();
+		if (len > 0) {
+			buf[len] = 0;
+			if (subProcessStderr == (FILE *)1) {
+				MyAppCallback_setConsoleColor(1);
+				MyAppCallback_showScriptMessage("%s", buf);
+				MyAppCallback_setConsoleColor(0);
+			} else {
+				fwrite(buf, 1, len, subProcessStderr);
+			}
+		}
+	}	
+}
+
+void
+MyDocument::OnEndSubProcess(wxProcessEvent &event)
+{
+	if (mol != NULL && mol->mutex != NULL) {
+		
+		FlushSubProcessOutput();
+		if (subProcessStdout != NULL && subProcessStdout != (FILE *)1)
+			fclose(subProcessStdout);
+		if (subProcessStderr != NULL && subProcessStderr != (FILE *)1)
+			fclose(subProcessStderr);
+		subProcessStdout = subProcessStderr = NULL;
+	
+		delete (wxMutex *)mol->mutex;
+		mol->mutex = NULL;
+		mol->requestAbortThread = 0;
+		EndUndoGrouping();
+		subThreadKind = 0;
+
+		delete subProcess;
+		subProcess = NULL;
+		
+		wxGetApp().DisableTimerForDocument(this);
+		
+		MoleculeCallback_enableModificationFromGUI(mol);
+		if (mol->mview != NULL && mol->mview->ref != NULL) {
+			((MoleculeView *)(mol->mview->ref))->EnableProgressIndicator(false);
+		}
+		if (endSubProcessCallback != NULL) {
+			(*endSubProcessCallback)(mol, event.GetExitCode());
+			endSubProcessCallback = NULL;
+		}
+		timerSubProcessCallback = NULL;
+	}	
 }
 
 void
@@ -1541,6 +1685,25 @@ MyDocument::OnUpdateUI(wxUpdateUIEvent& event)
 	event.Skip();
 }
 
+void
+MyDocument::TimerCallback(int timerCount)
+{
+	if (mol != NULL && mol->mview != NULL && mol->mview->ref != NULL) {
+		((MoleculeView *)(mol->mview->ref))->ProceedProgressIndicator();
+		if (subProcess != NULL) {
+			FlushSubProcessOutput();
+			if (timerSubProcessCallback != NULL) {
+				if ((*timerSubProcessCallback)(mol, timerCount) != 0)
+					mol->requestAbortThread = 1;
+			}
+			if (mol->requestAbortThread) {
+				/*  Try to terminate the subprocess gently  */
+				wxProcess::Kill(subProcessPID, wxSIGTERM, wxKILL_CHILDREN);
+			}
+		}
+	}
+}
+
 #pragma mark ====== Plain C Interface ======
 
 MyDocument *
@@ -1769,9 +1932,42 @@ MoleculeCallback_unlockMutex(void *mutex)
 }
 
 void
+MoleculeCallback_disableModificationFromGUI(Molecule *mol)
+{
+	mol->dontModifyFromGUI = 1;
+	if (mol->mview != NULL) {
+		if (mol->mview->mode == kTrackballCreateMode || mol->mview->mode == kTrackballEraseMode) {
+			MainView_setMode(mol->mview, kTrackballSelectionMode);
+			MainViewCallback_selectMatrixCellForMode(mol->mview, kTrackballSelectionMode);
+		}
+		MainViewCallback_enableToggleButton(mol->mview, kTrackballCreateMode, false);
+		MainViewCallback_enableToggleButton(mol->mview, kTrackballEraseMode, false);
+	}
+}
+
+void
+MoleculeCallback_enableModificationFromGUI(Molecule *mol)
+{
+	mol->dontModifyFromGUI = 0;
+	if (mol->mview != NULL) {
+		MainViewCallback_enableToggleButton(mol->mview, kTrackballCreateMode, true);
+		MainViewCallback_enableToggleButton(mol->mview, kTrackballEraseMode, true);
+	}
+}
+
+void
 MoleculeCallback_cannotModifyMoleculeDuringMDError(Molecule *mol)
 {
 	MyAppCallback_errorMessageBox("Cannot modify molecule during MD");
+}
+
+int
+MoleculeCallback_callSubProcessAsync(Molecule *mol, const char *cmd, int (*callback)(Molecule *, int), int (*timerCallback)(Molecule *, int), FILE *output, FILE *errout)
+{
+	MyDocument *doc = MyDocumentFromMolecule(mol);
+	if (doc != NULL)
+		return doc->RunSubProcess(cmd, callback, timerCallback, output, errout);
+	else return -1;
 }
 
 void

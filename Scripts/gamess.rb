@@ -123,6 +123,14 @@ class Molecule
       end
     end
 
+	if mol == nil
+		mol = Molecule.open(inpname)
+		if mol == nil
+			error_message_box("Cannot open #{inpname} as GAMESS input")
+			return
+		end
+	end
+	
     inpbase = File.basename(inpname)
     inpdir = File.dirname(inpname)
     inpbody = inpbase.sub(/\.inp$/, "")
@@ -167,15 +175,16 @@ class Molecule
     end
 
     #  Get the host name etc.
-    hostname = `hostname`.chomp
+    hostname = backquote("hostname").chomp
     if $platform == "win"
-      freebytes = `dir #{scrdir}`.split("\n").pop.match(/([0-9,]+)[^0-9]*$/).to_a[1]
+	  s = backquote("cmd.exe /c dir #{scrdir}")
+      freebytes = s.split("\n").pop.match(/([0-9,]+)[^0-9]*$/).to_a[1]
       if freebytes
         freebytes = (freebytes.gsub(",","").to_i / 1024).to_s + " Kbytes"
       else
         freebytes = "(unknown)"
       end
-      uname = `ver`.to_s.gsub("\n", "")
+      uname = backquote("cmd.exe /c ver").to_s.gsub("\n", "")
     else
       freebytes = `df -k #{scrdir}`
       uname = `uname`.chomp
@@ -361,8 +370,35 @@ class Molecule
     lines = []
     last_line = ""
     
-    #  Callback proc
-    callback = proc {
+    #  Callback procs
+	term_callback = proc { |m, n|
+	  msg = "GAMESS execution on #{inpbase} "
+	  hmsg = "GAMESS "
+	  if n == 0
+	    msg += "succeeded."
+		hmsg += "Completed"
+		icon = :info
+	  else
+	    msg += "failed with status #{n}."
+		hmsg += "Failed"
+		icon = :error
+	  end
+	  msg += "\n(In directory #{inpdir})"
+  	  ext_to_keep = [".dat", ".rst", ".trj", ".efp", ".gamma", ".log"]
+	  ext_to_keep.each { |ex|
+	    if File.exists?("#{scrprefix}#{ex}")
+		  filecopy("#{scrprefix}#{ex}", "#{inpdir}#{sep}#{inpbody}#{ex}")
+	    end
+	  }
+	  Dir.foreach(scrdir) { |file|
+	    if file != "." && file != ".." && !ext_to_keep.include?(File.extname(file))
+		  File.delete("#{scrdir}#{sep}#{file}")
+	    end
+	  }
+	  message_box(msg, hmsg, :ok, icon)
+    }
+	
+    timer_callback = proc { |m, n|
       fplog.seek(0, IO::SEEK_END)
       sizec = fplog.tell
       if sizec > size
@@ -387,7 +423,7 @@ class Molecule
             nserch = $1.to_i
             last_i = i
           elsif line =~ /NSERCH:/
-            print line
+          #  print line
 			if mol
 			  dummy, n, grad = line.match(/NSERCH:[^0-9]*([0-9]+).*GRAD[^0-9]*([-.0-9]+)/).to_a
 			  mol.show_text("Search: #{n}\nGradient: #{grad}")
@@ -422,40 +458,17 @@ class Molecule
       true
     }
 
-    show_console_window
-    if mol
-	  mol.make_front
-	end
-	
     if $platform == "win"
-      status = call_subprocess("cmd.exe /c \"mpiexec -configfile #{procfil} >>#{logname}\"", "GAMESS", callback)
+      pid = mol.call_subprocess_async("cmd.exe /c \"mpiexec -configfile #{procfil} >>#{logname}\"", term_callback, timer_callback)
     else
 	  hosts = "localhost " * ncpus
-      status = call_subprocess("/bin/sh -c '#{gmsdir}/ddikick.x #{gmsdir}/gamess.#{gmsvers}.x #{inpbody} -ddi #{ncpus} #{ncpus} #{hosts} -scr #{scrdir} < /dev/null >>#{logname}'", "GAMESS", callback)
+      pid = mol.call_subprocess_async("/bin/sh -c '#{gmsdir}/ddikick.x #{gmsdir}/gamess.#{gmsvers}.x #{inpbody} -ddi #{ncpus} #{ncpus} #{hosts} -scr #{scrdir} < /dev/null >>#{logname}'", term_callback, timer_callback)
     end
 
-    if status != 0
-      if status == -1
-        error_message_box("GAMESS failed to start. Please examine GAMESS installation.")
-        exit
-      elsif status == -2
-        error_message_box("GAMESS execution interrupted.")
-      else 
-        error_message_box("GAMESS failed with exit status #{status}.")
-      end
+	if pid < 0
+	  error_message_box("GAMESS failed to start. Please examine GAMESS installation.")
+	  return
 	end
-
-	ext_to_keep = [".dat", ".rst", ".trj", ".efp", ".gamma", ".log"]
-	ext_to_keep.each { |ex|
-	  if File.exists?("#{scrprefix}#{ex}")
-		filecopy("#{scrprefix}#{ex}", "#{inpdir}#{sep}#{inpbody}#{ex}")
-	  end
-	}
-	Dir.foreach(scrdir) { |file|
-	  if file != "." && file != ".." && !ext_to_keep.include?(File.extname(file))
-		File.delete("#{scrdir}#{sep}#{file}")
-	  end
-	}
 
   end
   

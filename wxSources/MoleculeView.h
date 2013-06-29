@@ -29,6 +29,7 @@ class wxMenu;
 class wxToggleButton;
 class wxStaticText;
 class wxChoice;
+class MyProgressIndicator;
 
 class MoleculeView: public wxView, public MyListCtrlDataSource
 {
@@ -42,17 +43,20 @@ public:
 	wxMenu *edit_menu;
 	wxToggleButton *tbuttons[6];
 	wxStaticText *infotext;
+	MyProgressIndicator *progress;
 	wxPanel *frameControlPanel;
 	wxSlider *frameSlider;
 	wxTextCtrl *frameText;
 
 	bool isRebuildingTable;
 
+	
     MoleculeView() { canvas = (MyGLCanvas *) NULL; frame = (wxMDIChildFrame *) NULL; }
     ~MoleculeView() {}
 
     MyDocument *MolDocument() { return (MyDocument *)m_viewDocument; }
 	MyListCtrl *GetListCtrl() { return listctrl; }
+	wxToggleButton *GetToggleButtonAtIndex(int i) { return (i >= 0 && i < 6 ? tbuttons[i] : NULL); }
 
     bool OnCreate(wxDocument *doc, long flags);
     void OnDraw(wxDC *dc);
@@ -74,14 +78,20 @@ public:
 	void SelectButtonForMode(int mode);
 	void UpdateFrameControlValues();
 	void UpdateFrameControls();
-	
+
+	void InvalidateProgressIndicator();
+	void ProceedProgressIndicator();
+	void OnStopProgressPressed(wxCommandEvent& event);
+
 	void SelectTable(int idx);
 	void OnSelectTable(wxCommandEvent &event);
 
 	void OnActivate(wxActivateEvent &event);
 	
 	void OnMoleculeReplaced();  /*  Called when Molecule is replaced within MyDocument  */
-	
+
+	void EnableProgressIndicator(bool flag);
+
 	/*  MyListCtrlDataSource functions  */
 	virtual int GetItemCount(MyListCtrl *ctrl);
 	virtual wxString GetItemText(MyListCtrl *ctrl, long row, long column) const;

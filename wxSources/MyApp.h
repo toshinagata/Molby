@@ -24,6 +24,7 @@
 #include "wx/docmdi.h"
 #include "wx/hashmap.h"
 #include "wx/process.h"
+#include "wx/timer.h"
 
 #if defined(__WXMSW__)
 #include "wx/snglinst.h"
@@ -47,6 +48,7 @@ class ProgressFrame;
 class GlobalParameterFrame;
 class GlobalParameterFilesFrame;
 class MyListCtrl;
+class MyDocument;
 
 enum {
 	myMenuID_MyFirstMenuItem = 100,
@@ -189,6 +191,10 @@ class MyApp: public wxApp
 	virtual short MacHandleAEODoc(const WXEVENTREF event, WXEVENTREF WXUNUSED(reply));
 #endif
 	
+	void EnableTimerForDocument(MyDocument *doc);
+	void DisableTimerForDocument(MyDocument *doc);
+	void TimerInvoked(wxTimerEvent &event);
+
 protected:
     MyDocManager* m_docManager;
 	ProgressFrame *m_progressFrame;
@@ -211,6 +217,10 @@ protected:
 
 	int m_CountNamedFragments;
 	char **m_NamedFragments;
+
+	int m_CountTimerDocs;
+	MyDocument **m_TimerDocs;
+	wxTimer *m_Timer;
 
 	wxString *m_pendingFilesToOpen;  /*  Files to be processed by OnOpenFilesByIPC()  */
 

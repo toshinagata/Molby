@@ -21,6 +21,8 @@
 #include "Object.h"
 #include "IntGroup.h"
 
+#include <stdio.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -323,6 +325,9 @@ typedef struct Molecule {
 	/*  Mutex object. If non-NULL, it should be locked before modifying molecule  */
 	void *mutex;
 	
+	/*  Flag to prohibit modification from user interface  */
+	Byte   dontModifyFromGUI;
+
 	/*  Ruby pointer (see ruby_bind.c)  */
 	void *exmolobj;
 	Byte exmolobjProtected;
@@ -544,7 +549,12 @@ STUB int MoleculeCallback_setDisplayName(Molecule *mol, const char *name);
 
 STUB void MoleculeCallback_lockMutex(void *mutex);
 STUB void MoleculeCallback_unlockMutex(void *mutex);
+STUB void MoleculeCallback_disableModificationFromGUI(Molecule *mol);
+STUB void MoleculeCallback_enableModificationFromGUI(Molecule *mol);
+	
 STUB void MoleculeCallback_cannotModifyMoleculeDuringMDError(Molecule *mol);
+
+STUB int MoleculeCallback_callSubProcessAsync(Molecule *mol, const char *cmd, int (*callback)(Molecule *, int), int (*timerCallback)(Molecule *, int), FILE *output, FILE *errout);
 
 /*  This is also defined in Molby_extern.h, but it may be called from functions in Molecule.c  */
 STUB int MyAppCallback_checkInterrupt(void);

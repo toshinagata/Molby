@@ -65,6 +65,12 @@ MoleculeCallback_unlockMutex(void *mutex)
 {
 }
 
+int
+MoleculeCallback_callSubProcessAsync(Molecule *mol, const char *cmd, int (*callback)(Molecule *, int), int (*timerCallback)(Molecule *, int), FILE *output, FILE *errout)
+{
+	return -1;
+}
+
 void
 MyAppCallback_setGlobalSettings(const char *key, const char *value)
 {
