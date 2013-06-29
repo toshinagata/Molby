@@ -19,6 +19,7 @@
 #include "ruby_dialog.h"
 #include "../MD/MDCore.h"
 
+#include <stdio.h>
 #include <errno.h>
 #include <string.h>
 #include <ctype.h>
@@ -696,18 +697,12 @@ s_Kernel_DocumentHome(VALUE self)
 	return retval;
 }
 
-/*  The callback functions for call_subprocess  */
-static VALUE
-s_Kernel_CallSubProcess_CallbackSub(VALUE val)
-{
-	return rb_funcall(val, rb_intern("call"), 0);
-}
-
+/*  The callback function for call_subprocess  */
 static int
 s_Kernel_CallSubProcess_Callback(void *data)
 {
 	int status;
-	VALUE retval = rb_protect(s_Kernel_CallSubProcess_CallbackSub, (VALUE)data, &status);
+	VALUE retval = Ruby_funcall2_protect((VALUE)data, rb_intern("call"), 0, NULL, &status);
 	if (status != 0 || retval == Qnil || retval == Qfalse)
 		return 1;
 	else return 0;
@@ -730,6 +725,30 @@ s_Kernel_CallSubProcess(int argc, VALUE *argv, VALUE self)
 	rb_scan_args(argc, argv, "21", &cmd, &procname, &cproc);
 	n = MyAppCallback_callSubProcess(StringValuePtr(cmd), StringValuePtr(procname), (cproc == Qnil ? NULL : s_Kernel_CallSubProcess_Callback), (cproc == Qnil ? NULL : (void *)cproc));
 	return INT2NUM(n);
+}
+
+/*
+ *  call-seq:
+ *     backquote(cmd)
+ *
+ *  Same as the builtin backquote, except that, under Windows, no console window gets opened.
+ */
+static VALUE
+s_Kernel_Backquote(VALUE self, VALUE cmd)
+{
+	char *buf;
+	int n;
+	VALUE val;
+	n = MyAppCallback_callSubProcess(StringValuePtr(cmd), NULL, DUMMY_CALLBACK, &buf);
+	if (n != 0)
+		rb_raise(rb_eMolbyError, "Cannot invoke command '%s'", StringValuePtr(cmd));
+	if (buf != NULL) {
+		val = rb_str_new2(buf);
+		free(buf);
+	} else {
+		val = rb_str_new2("");
+	}
+	return val;
 }
 
 #pragma mark ====== User defaults ======
@@ -9925,6 +9944,66 @@ s_Molecule_Equal(VALUE self, VALUE val)
 	} else return Qfalse;
 }
 
+/*  The callback functions for call_subprocess_async  */
+static int
+s_Molecule_CallSubProcessAsync_EndCallback(Molecule *mol, int status)
+{
+	int ruby_status;
+	VALUE procval, retval, args[2];
+	args[0] = ValueFromMolecule(mol);
+	args[1] = INT2NUM(status);
+	procval = rb_ivar_get(args[0], rb_intern("end_proc"));
+	if (procval != Qnil) {
+		retval = Ruby_funcall2_protect(procval, rb_intern("call"), 2, args, &ruby_status);
+		if (ruby_status != 0 || retval == Qnil || retval == Qfalse)
+			return 1;
+	}
+	return 0;
+}
+
+static int
+s_Molecule_CallSubProcessAsync_TimerCallback(Molecule *mol, int tcount)
+{
+	int ruby_status;
+	VALUE procval, retval, args[2];
+	args[0] = ValueFromMolecule(mol);
+	args[1] = INT2NUM(tcount);
+	procval = rb_ivar_get(args[0], rb_intern("timer_proc"));
+	if (procval != Qnil) {
+		retval = Ruby_funcall2_protect(procval, rb_intern("call"), 2, args, &ruby_status);
+		if (ruby_status != 0 || retval == Qnil || retval == Qfalse)
+			return 1;
+	}
+	return 0;
+}
+
+/*
+ *  call-seq:
+ *     call_subprocess_async(cmd [, end_callback [, timer_callback]])
+ *
+ *  Call subprocess asynchronically.
+ *  If end_callback is given, it will be called (with two arguments self and termination status)
+ *  when the subprocess terminated.
+ *  If timer_callback is given, it will be called (also with two arguments, self and timer count).
+ *  If timer_callback returns nil or false, then the subprocess will be interrupted.
+ *  Returns the process ID as an integer.
+ */
+static VALUE
+s_Molecule_CallSubProcessAsync(int argc, VALUE *argv, VALUE self)
+{
+	VALUE cmd, end_proc, timer_proc;
+	Molecule *mol;
+	int n;
+	rb_scan_args(argc, argv, "12", &cmd, &end_proc, &timer_proc);
+	Data_Get_Struct(self, Molecule, mol);
+
+	/*  Register procs as instance variables  */
+	rb_ivar_set(self, rb_intern("end_proc"), end_proc);
+	rb_ivar_set(self, rb_intern("timer_proc"), timer_proc);
+	n = MoleculeCallback_callSubProcessAsync(mol, StringValuePtr(cmd), s_Molecule_CallSubProcessAsync_EndCallback, (timer_proc == Qnil ? NULL : s_Molecule_CallSubProcessAsync_TimerCallback), (FILE *)1, (FILE *)1);
+	return INT2NUM(n);
+}
+
 void
 Init_Molby(void)
 {
@@ -10150,6 +10229,7 @@ Init_Molby(void)
 	
 	rb_define_method(rb_cMolecule, "create_pi_anchor", s_Molecule_CreatePiAnchor, -1);
 	rb_define_method(rb_cMolecule, "==", s_Molecule_Equal, 1);
+	rb_define_method(rb_cMolecule, "call_subprocess_async", s_Molecule_CallSubProcessAsync, -1);
 
 	rb_define_singleton_method(rb_cMolecule, "current", s_Molecule_Current, 0);
 	rb_define_singleton_method(rb_cMolecule, "[]", s_Molecule_MoleculeAtIndex, -1);
@@ -10300,6 +10380,7 @@ Init_Molby(void)
 	rb_define_method(rb_mKernel, "execute_script", s_Kernel_ExecuteScript, 1);
 	rb_define_method(rb_mKernel, "document_home", s_Kernel_DocumentHome, 0);
 	rb_define_method(rb_mKernel, "call_subprocess", s_Kernel_CallSubProcess, -1);
+	rb_define_method(rb_mKernel, "backquote", s_Kernel_Backquote, 1);
 	rb_define_method(rb_mKernel, "message_box", s_Kernel_MessageBox, -1);
 	rb_define_method(rb_mKernel, "error_message_box", s_Kernel_ErrorMessageBox, 1);
 	rb_define_method(rb_mKernel, "show_console_window", s_Kernel_ShowConsoleWindow, 0);

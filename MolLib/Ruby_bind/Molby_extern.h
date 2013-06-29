@@ -67,7 +67,9 @@ STUB void MyAppCallback_endUndoGrouping(void);
 STUB int MyAppCallback_switchToFilterMode(void);
 STUB void MyAppCallback_showConsoleWindow(void);
 STUB void MyAppCallback_hideConsoleWindow(void);
-	
+
+#define DUMMY_CALLBACK ((int (*)(void *))1)
+
 #ifdef __cplusplus
 }
 #endif
