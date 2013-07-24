@@ -638,13 +638,14 @@ MyDocument::OnCreatePiAnchor(wxCommandEvent &event)
 			ig, &idx) != 0)
 		return;
 	MainViewCallback_selectTable(mview, kMainViewAtomTableIndex);
-	ig2 = IntGroupNewFromIntGroup(ig);
-	IntGroupAdd(ig2, idx, 1);
+//	ig2 = IntGroupNewFromIntGroup(ig);
+//	IntGroupAdd(ig2, idx, 1);
+	ig2 = IntGroupNewWithPoints(idx, 1, -1);
 	MoleculeSetSelection(mol, ig2);
 	IntGroupRelease(ig2);
 	MainView_refreshTable(mview);
-	row = MainView_indexToTableRow(mview, idx);
-	MainViewCallback_startEditText(mview, row, 1);
+//	row = MainView_indexToTableRow(mview, idx);
+//	MainViewCallback_startEditText(mview, row, 1);
 }
 
 void
