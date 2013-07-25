@@ -634,18 +634,16 @@ MyDocument::OnCreatePiAnchor(wxCommandEvent &event)
 	if (ig == NULL || IntGroupGetCount(ig) < 2)
 		return;  /*  Do nothing  */
 	if (MolActionCreateAndPerform(mol, SCRIPT_ACTION("G;i"),
-			"proc { |g| create_pi_anchor('AN', g).index rescue -1 }",
+			"proc { |g| create_pi_anchor('AN', atom_group(g) { |ap| ap.atomic_number != 1 }, nil, nil, g.max + 1).index rescue -1 }",
 			ig, &idx) != 0)
 		return;
 	MainViewCallback_selectTable(mview, kMainViewAtomTableIndex);
-//	ig2 = IntGroupNewFromIntGroup(ig);
-//	IntGroupAdd(ig2, idx, 1);
 	ig2 = IntGroupNewWithPoints(idx, 1, -1);
 	MoleculeSetSelection(mol, ig2);
 	IntGroupRelease(ig2);
 	MainView_refreshTable(mview);
-//	row = MainView_indexToTableRow(mview, idx);
-//	MainViewCallback_startEditText(mview, row, 1);
+	row = MainView_indexToTableRow(mview, idx);
+	MainViewCallback_ensureVisible(mview, row);
 }
 
 void
