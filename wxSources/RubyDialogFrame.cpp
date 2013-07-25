@@ -261,10 +261,14 @@ RubyDialogFrame::SetItemColor(MyListCtrl *ctrl, long row, long col, float *fg, f
 #pragma mark ====== Plain C interface ======
 
 RubyDialog *
-RubyDialogCallback_new(void)
+RubyDialogCallback_new(int style)
 {
 	/*  RubyDialogFrame should not have a close box  */
-	RubyDialogFrame *dref = new RubyDialogFrame(GetMainFrame(), -1, _T("Ruby Dialog"), wxDefaultPosition, wxDefaultSize, wxCAPTION | wxSYSTEM_MENU);
+	RubyDialogFrame *dref;
+	int fstyle = wxCAPTION | wxSYSTEM_MENU;
+	if (style & rd_Resizable)
+		fstyle |= wxRESIZE_BOX | wxRESIZE_BORDER;
+	dref = new RubyDialogFrame(GetMainFrame(), -1, _T("Ruby Dialog"), wxDefaultPosition, wxDefaultSize, fstyle);
 	return (RubyDialog *)dref;
 }
 

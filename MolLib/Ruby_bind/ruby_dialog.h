@@ -27,6 +27,11 @@ extern "C" {
 /*  RubyDialog class  */
 /* extern VALUE rb_cDialog; */
 
+/*  Style of the dialog frame  */
+enum {
+	rd_Resizable = 1,
+};
+
 /*  True if y-coordinate grows from bottom to top (like Cocoa)  */
 extern int gRubyDialogIsFlipped;
 	
@@ -58,7 +63,7 @@ extern int RubyDialog_SetTableItemColor(RubyValue self, RDItem *ip, int row, int
 extern void RubyDialogInitClass(void);
 
 /*  Stub routines  */
-STUB RubyDialog *RubyDialogCallback_new(void);
+STUB RubyDialog *RubyDialogCallback_new(int style);
 STUB void RubyDialogCallback_release(RubyDialog *dref);
 STUB void RubyDialogCallback_setRubyObject(RubyDialog *dref, RubyValue val);
 STUB void RubyDialogCallback_setWindowTitle(RubyDialog *dref, const char *title);

@@ -23,7 +23,7 @@ static VALUE
 	sCheckBoxSymbol, sPopUpSymbol, sTextViewSymbol, sViewSymbol,
 	sLineSymbol, sTagSymbol, sTypeSymbol, sTitleSymbol, sRadioGroupSymbol,
 	sTableSymbol,
-	sDialogSymbol, sIndexSymbol,
+	sResizableSymbol, sDialogSymbol, sIndexSymbol,
 	sXSymbol, sYSymbol, sWidthSymbol, sHeightSymbol, 
 	sOriginSymbol, sSizeSymbol, sFrameSymbol,
 	sEnabledSymbol, sEditableSymbol, sHiddenSymbol, sValueSymbol,
@@ -88,10 +88,10 @@ s_RubyDialog_Alloc(VALUE klass)
 {
 	VALUE val;
 	RubyDialogInfo *di;
-	RubyDialog *dref = RubyDialogCallback_new();
+//	RubyDialog *dref = RubyDialogCallback_new();
 	val = Data_Make_Struct(klass, RubyDialogInfo, 0, s_RubyDialog_Release, di);
-	di->dref = dref;
-	RubyDialogCallback_setRubyObject(dref, (RubyValue)val);
+	di->dref = NULL;
+//	RubyDialogCallback_setRubyObject(dref, (RubyValue)val);
 	return val;
 }
 
@@ -487,13 +487,28 @@ s_RubyDialogItem_AppendString(VALUE self, VALUE val)
 static VALUE
 s_RubyDialog_Initialize(int argc, VALUE *argv, VALUE self)
 {
-	int i;
-	VALUE val1, val2, val3;
+	int i, style;
+	VALUE val1, val2, val3, val4;
 	VALUE items;
 	char *title1, *title2;
-	RubyDialog *dref = s_RubyDialog_GetController(self);
+	RubyDialogInfo *di;
+	RubyDialog *dref;
+
+	Data_Get_Struct(self, RubyDialogInfo, di);
+
+	rb_scan_args(argc, argv, "04", &val1, &val2, &val3, &val4);
+
+	style = 0;
+	if (val4 != Qnil) {
+		VALUE optval;
+		optval = rb_hash_aref(val4, sResizableSymbol);
+		if (RTEST(optval))
+			style |= rd_Resizable;
+	}
 	
-	rb_scan_args(argc, argv, "03", &val1, &val2, &val3);
+	di->dref = dref = RubyDialogCallback_new(style);
+	RubyDialogCallback_setRubyObject(dref, (RubyValue)self);
+	
 	if (!NIL_P(val1)) {
 		char *p = StringValuePtr(val1);
 		RubyDialogCallback_setWindowTitle(dref, p);
@@ -1407,8 +1422,6 @@ s_RubyDialog_doTableAction(VALUE val)
 	RDItem *ip = (RDItem *)vp[1];
 	VALUE sym = (VALUE)vp[2];
 	RubyDialog *dref = s_RubyDialog_GetController(self);
-	VALUE items = rb_iv_get(self, "_items");
-	int nitems = RARRAY_LEN(items);
 	int idx = RubyDialogCallback_indexOfItem(dref, ip);
 	if (idx < 0)
 		return Qnil;   /*  No such item (this cannot happen)  */
@@ -1793,7 +1806,7 @@ RubyDialogInitClass(void)
 			&sTextSymbol, &sTextFieldSymbol, &sRadioSymbol, &sButtonSymbol,
 			&sCheckBoxSymbol, &sPopUpSymbol, &sTextViewSymbol, &sViewSymbol,
 			&sTableSymbol,
-			&sDialogSymbol, &sIndexSymbol, &sLineSymbol, &sTagSymbol,
+			&sResizableSymbol, &sDialogSymbol, &sIndexSymbol, &sLineSymbol, &sTagSymbol,
 			&sTypeSymbol, &sTitleSymbol, &sXSymbol, &sYSymbol,
 			&sWidthSymbol, &sHeightSymbol, &sOriginSymbol, &sSizeSymbol,
 			&sFrameSymbol, &sEnabledSymbol, &sEditableSymbol, &sHiddenSymbol,
@@ -1812,7 +1825,7 @@ RubyDialogInitClass(void)
 			"text", "textfield", "radio", "button",
 			"checkbox", "popup", "textview", "view",
 			"table",
-			"dialog", "index", "line", "tag",
+			"resizable", "dialog", "index", "line", "tag",
 			"type", "title", "x", "y",
 			"width", "height", "origin", "size",
 			"frame", "enabled", "editable", "hidden",
