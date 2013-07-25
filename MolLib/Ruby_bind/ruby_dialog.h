@@ -47,6 +47,14 @@ extern const RDRect gZeroRect;
 extern int RubyDialog_validateItemContent(RubyValue self, RDItem *ip, const char *s);
 extern void RubyDialog_doItemAction(RubyValue self, RDItem *ip);
 extern void RubyDialog_doTimerAction(RubyValue self);
+extern int RubyDialog_GetTableItemCount(RubyValue self, RDItem *ip);
+extern void RubyDialog_GetTableItemText(RubyValue self, RDItem *ip, int row, int column, char *buf, int blen);
+extern int RubyDialog_SetTableItemText(RubyValue self, RDItem *ip, int row, int column, const char *str);
+extern void RubyDialog_DragTableSelectionToRow(RubyValue self, RDItem *ip, int row);
+extern int RubyDialog_IsTableItemEditable(RubyValue self, RDItem *ip, int row, int column);
+extern int RubyDialog_IsTableDragAndDropEnabled(RubyValue self, RDItem *ip);
+extern void RubyDialog_OnTableSelectionChanged(RubyValue self, RDItem *ip);
+extern int RubyDialog_SetTableItemColor(RubyValue self, RDItem *ip, int row, int column, float *fg, float *bg);
 extern void RubyDialogInitClass(void);
 
 /*  Stub routines  */
@@ -101,6 +109,14 @@ STUB int RubyDialogCallback_selectedSubItem(RDItem *item);
 	
 STUB RDSize RubyDialogCallback_sizeOfString(RDItem *item, const char *s);
 STUB RDSize RubyDialogCallback_resizeToBest(RDItem *item);
+
+STUB char RubyDialogCallback_insertTableColumn(RDItem *item, int col, const char *heading, int format, int width);
+STUB char RubyDialogCallback_deleteTableColumn(RDItem *item, int col);
+STUB char RubyDialogCallback_isTableRowSelected(RDItem *item, int row);
+STUB char RubyDialogCallback_setTableRowSelected(RDItem *item, int row, int flag);
+STUB void RubyDialogCallback_refreshTable(RDItem *item);
+//STUB IntGroup *RubyDialogCallback_getTableSelectionForItem(RDItem *item);
+//STUB void RubyDialogCallback_setTableSelectionForItem(RDItem *item, IntGroup *ig);
 
 STUB int RubyDialogCallback_savePanel(const char *title, const char *dirname, const char *wildcard, char *buf, int bufsize);
 STUB int RubyDialogCallback_openPanel(const char *title, const char *dirname, const char *wildcard, char ***array, int for_directories, int multiple_selection);

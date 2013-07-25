@@ -23,8 +23,9 @@
 #include "wx/panel.h"
 #include "wx/timer.h"
 #include "../Mollib/Ruby_bind/ruby_dialog.h"
+#include "MyListCtrl.h"
 
-class RubyDialogFrame: public wxDialog {	
+class RubyDialogFrame: public wxDialog, public MyListCtrlDataSource {	
 public:
 	RDItem **ditems;
 	int nditems;
@@ -49,6 +50,16 @@ public:
 	void OnDialogItemAction(wxCommandEvent &event);
 	void OnTimerEvent(wxTimerEvent &event);
 	void OnDefaultButtonPressed(wxCommandEvent &event);
+
+	//  MyListCtrlDataSource methods
+	virtual int GetItemCount(MyListCtrl *ctrl);
+	virtual wxString GetItemText(MyListCtrl *ctrl, long row, long column) const;
+	virtual int SetItemText(MyListCtrl *ctrl, long row, long column, const wxString &value);
+	virtual void DragSelectionToRow(MyListCtrl *ctrl, long row);
+	virtual bool IsItemEditable(MyListCtrl *ctrl, long row, long column);
+	virtual bool IsDragAndDropEnabled(MyListCtrl *ctrl);
+	virtual void OnSelectionChanged(MyListCtrl *ctrl);
+	virtual int SetItemColor(MyListCtrl *ctrl, long row, long col, float *fg, float *bg);
 	
 private:
 	DECLARE_EVENT_TABLE()

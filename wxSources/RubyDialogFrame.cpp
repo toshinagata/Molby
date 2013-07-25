@@ -205,6 +205,59 @@ RubyDialogFrame::OnTimerEvent(wxTimerEvent &event)
 	RubyDialog_doTimerAction((RubyValue)dval);
 }
 
+#pragma mark ====== MyListCtrlDataSource methods ======
+
+int
+RubyDialogFrame::GetItemCount(MyListCtrl *ctrl)
+{
+	return RubyDialog_GetTableItemCount((RubyValue)dval, (RDItem *)ctrl);
+}
+
+wxString 
+RubyDialogFrame::GetItemText(MyListCtrl *ctrl, long row, long column) const
+{
+	char buf[1024];
+	RubyDialog_GetTableItemText((RubyValue)dval, (RDItem *)ctrl, row, column, buf, sizeof buf);
+	wxString str(buf, WX_DEFAULT_CONV);
+	return str;
+}
+
+int 
+RubyDialogFrame::SetItemText(MyListCtrl *ctrl, long row, long column, const wxString &value)
+{
+	return RubyDialog_SetTableItemText((RubyValue)dval, (RDItem *)ctrl, row, column, value.mb_str(WX_DEFAULT_CONV));
+}
+
+void 
+RubyDialogFrame::DragSelectionToRow(MyListCtrl *ctrl, long row)
+{
+	RubyDialog_DragTableSelectionToRow((RubyValue)dval, (RDItem *)ctrl, row);
+}
+
+bool 
+RubyDialogFrame::IsItemEditable(MyListCtrl *ctrl, long row, long column)
+{
+	return RubyDialog_IsTableItemEditable((RubyValue)dval, (RDItem *)ctrl, row, column);
+}
+
+bool 
+RubyDialogFrame::IsDragAndDropEnabled(MyListCtrl *ctrl)
+{
+	return RubyDialog_IsTableDragAndDropEnabled((RubyValue)dval, (RDItem *)ctrl);
+}
+
+void 
+RubyDialogFrame::OnSelectionChanged(MyListCtrl *ctrl)
+{
+	RubyDialog_OnTableSelectionChanged((RubyValue)dval, (RDItem *)ctrl);
+}
+
+int 
+RubyDialogFrame::SetItemColor(MyListCtrl *ctrl, long row, long col, float *fg, float *bg)
+{
+	return RubyDialog_SetTableItemColor((RubyValue)dval, (RDItem *)ctrl, row, col, fg, bg);
+}
+
 #pragma mark ====== Plain C interface ======
 
 RubyDialog *
@@ -417,6 +470,12 @@ RubyDialogCallback_createItem(RubyDialog *dref, const char *type, const char *ti
 		wxRadioButton *rb = new wxRadioButton(parent, -2, tstr, rect.GetPosition(), rect.GetSize(), wxRB_SINGLE);
 		control = rb;
 		rb->Connect(-1, wxEVT_COMMAND_RADIOBUTTON_SELECTED, wxCommandEventHandler(RubyDialogFrame::OnDialogItemAction), NULL, parent);
+	} else if (strcmp(type, "table") == 0) {
+		/*  Table view = MyListCtrl  */
+		MyListCtrl *tb = new MyListCtrl();
+		tb->Create(parent, -1, rect.GetPosition(), rect.GetSize());
+		control = tb;
+		tb->SetDataSource(parent);
 	} else return NULL;
 	
 	if (title[0] != 0 || strcmp(type, "textfield") == 0) {
@@ -810,6 +869,48 @@ RubyDialogCallback_resizeToBest(RDItem *item)
 	rsize.width = size.GetWidth();
 	rsize.height = size.GetHeight();
 	return rsize;
+}
+
+char
+RubyDialogCallback_deleteTableColumn(RDItem *item, int col)
+{
+	if (wxDynamicCast((wxWindow *)item, MyListCtrl) != NULL) {
+		return ((MyListCtrl *)item)->DeleteColumn(col);
+	} else return false;
+}
+
+char
+RubyDialogCallback_insertTableColumn(RDItem *item, int col, const char *heading, int format, int width)
+{
+	if (wxDynamicCast((wxWindow *)item, MyListCtrl) != NULL) {
+		wxString hstr((heading ? heading : ""), WX_DEFAULT_CONV);
+		return ((MyListCtrl *)item)->InsertColumn(col, hstr, format, width);
+	} else return false;
+}
+
+char
+RubyDialogCallback_isTableRowSelected(RDItem *item, int row)
+{
+	if (wxDynamicCast((wxWindow *)item, MyListCtrl) != NULL) {
+		return ((MyListCtrl *)item)->GetItemState(row, wxLIST_STATE_SELECTED) != 0;
+	} else return false;
+}
+
+char
+RubyDialogCallback_setTableRowSelected(RDItem *item, int row, int flag)
+{
+	if (wxDynamicCast((wxWindow *)item, MyListCtrl) != NULL) {
+		long state = (flag ? wxLIST_STATE_SELECTED : 0);
+		return ((MyListCtrl *)item)->SetItemState(row, state, wxLIST_STATE_SELECTED);
+	} else return false;
+}
+
+void
+RubyDialogCallback_refreshTable(RDItem *item)
+{
+	if (wxDynamicCast((wxWindow *)item, MyListCtrl) != NULL) {
+		((MyListCtrl *)item)->RefreshTable();
+	}
 }
 
 int

@@ -22,6 +22,7 @@ static VALUE
 	sTextSymbol, sTextFieldSymbol, sRadioSymbol, sButtonSymbol,
 	sCheckBoxSymbol, sPopUpSymbol, sTextViewSymbol, sViewSymbol,
 	sLineSymbol, sTagSymbol, sTypeSymbol, sTitleSymbol, sRadioGroupSymbol,
+	sTableSymbol,
 	sDialogSymbol, sIndexSymbol,
 	sXSymbol, sYSymbol, sWidthSymbol, sHeightSymbol, 
 	sOriginSymbol, sSizeSymbol, sFrameSymbol,
@@ -35,7 +36,11 @@ static VALUE
 	sFontSymbol,
 	sDefaultSymbol, sRomanSymbol, sSwissSymbol, sFixedSymbol,
 	sNormalSymbol, sSlantSymbol, sItalicSymbol,
-	sMediumSymbol, sBoldSymbol, sLightSymbol;
+	sMediumSymbol, sBoldSymbol, sLightSymbol,
+	/*  Data source for Table (= MyListCtrl)  */
+	sOnCountSymbol, sOnGetValueSymbol, sOnSetValueSymbol, sOnSelectionChangedSymbol,
+	sOnSetColorSymbol, sIsItemEditableSymbol, sIsDragAndDropEnabledSymbol, sOnDragSelectionToRowSymbol,
+	sSelectionSymbol, sColumnsSymbol;
 
 VALUE rb_cDialog = Qfalse;
 VALUE rb_cDialogItem = Qfalse;
@@ -249,6 +254,41 @@ s_RubyDialogItem_SetAttr(VALUE self, VALUE key, VALUE val)
 			}
 		}
 		RubyDialogCallback_setFontForItem(view, size, family, style, weight);
+	} else if (key == sSelectionSymbol) {
+		/*  Selection (for Table == MyTextCtrl item)  */
+		if (type == sTableSymbol) {
+			IntGroup *ig = IntGroupFromValue(val);
+			int row, count;
+			count = RubyDialog_GetTableItemCount((RubyValue)self, (RDItem *)view);
+			for (row = 0; row < count; row++) {
+				int flag = (IntGroupLookup(ig, row, NULL) != 0);
+				RubyDialogCallback_setTableRowSelected((RDItem *)view, row, flag);
+			}
+		}
+	} else if (key == sColumnsSymbol) {
+		/*  Columns (for Table == MyTextCtrl item)  */
+		if (type == sTableSymbol) {
+			/*  The value should be an array of [name, width, align (0: natural, 1: right, 2: center)] */
+			int col;
+			VALUE cval;
+			val = rb_ary_to_ary(val);
+			for (col = 0; col < RARRAY_LEN(val); col++) {
+				const char *heading;
+				int format, width, len;
+				cval = rb_ary_to_ary(RARRAY_PTR(val)[col]);
+				len = RARRAY_LEN(cval);
+				if (len >= 1) {
+					heading = StringValuePtr(RARRAY_PTR(cval)[0]);
+				} else heading = "";
+				if (len >= 2) {
+					width = NUM2INT(rb_Integer(RARRAY_PTR(cval)[1]));
+				} else width = -1;
+				if (len >= 3) {
+					format = NUM2INT(rb_Integer(RARRAY_PTR(cval)[2]));
+				} else format = 0;
+				RubyDialogCallback_insertTableColumn((RDItem *)view, col, heading, format, width);
+			}
+		}
 	} else {
 		if (key == sTagSymbol && rb_obj_is_kind_of(val, rb_cInteger))
 			rb_raise(rb_eMolbyError, "the dialog item tag must not be integers");				
@@ -397,6 +437,18 @@ s_RubyDialogItem_Attr(VALUE self, VALUE key)
 				  Qnil)));
 		val = rb_ary_new3(4, INT2NUM(size), fval, sval, wval);
 		rb_obj_freeze(val);
+	} else if (key == sSelectionSymbol) {
+		/*  Selection (for Table == MyTextCtrl item)  */
+		if (type == sTableSymbol) {
+			IntGroup *ig = IntGroupNew();
+			int row, count;
+			count = RubyDialog_GetTableItemCount((RubyValue)self, (RDItem *)view);
+			for (row = 0; row < count; row++) {
+				if (RubyDialogCallback_isTableRowSelected((RDItem *)view, row))
+					IntGroupAdd(ig, row, 1);
+			}
+			val = ValueFromIntGroup(ig);
+		} else val = Qnil;
 	} else {
 		val = rb_ivar_get(self, key_id);
 	}
@@ -1015,6 +1067,11 @@ s_RubyDialog_Item(int argc, VALUE *argv, VALUE self)
 			rb_ivar_set(new_item, SYM2ID(sVFillSymbol), Qtrue);
 	}
 
+	if (type == sTableSymbol) {
+		RDItem *rd_item = RubyDialogCallback_dialogItemAtIndex(dref, itag);
+		RubyDialogCallback_refreshTable(rd_item);
+	}
+	
 	return new_item;
 }
 
@@ -1164,6 +1221,22 @@ s_RubyDialog_EndModal(int argc, VALUE *argv, VALUE self)
 	return Qnil;
 }
 
+static VALUE
+s_RubyDialog_CallActionProc(VALUE self, VALUE aval, int argc, VALUE *argv)
+{
+	if (aval == Qnil)
+		return Qnil;
+	if (TYPE(aval) == T_SYMBOL)
+		return rb_funcall2(self, SYM2ID(aval), argc, argv);
+	else if (rb_obj_is_kind_of(aval, rb_cProc))
+		return rb_funcall2(aval, rb_intern("call"), argc, argv);
+	else {
+		VALUE insval = rb_inspect(aval);
+		rb_raise(rb_eTypeError, "Cannot call action method '%s'", StringValuePtr(insval));
+	}
+	return Qnil;  /*  Not reached  */
+}
+
 /*
  *  call-seq:
  *     action(item)
@@ -1192,17 +1265,7 @@ s_RubyDialog_Action(VALUE self, VALUE item)
 		return Qnil;
 	}
 	aval = s_RubyDialogItem_Attr(item, sActionSymbol);
-	if (aval == Qnil)
-		return Qnil;
-	if (TYPE(aval) == T_SYMBOL) {
-		return rb_funcall(self, SYM2ID(aval), 1, item);
-	} else if (rb_obj_is_kind_of(aval, rb_cProc)) {
-		return rb_funcall(aval, rb_intern("call"), 1, item);
-	} else {
-		VALUE insval = rb_inspect(aval);
-		rb_raise(rb_eTypeError, "Cannot call action method '%s'", StringValuePtr(insval));
-	}
-	return Qnil;  /*  Not reached  */
+	return s_RubyDialog_CallActionProc(self, aval, 1, &item);
 }
 
 /*
@@ -1330,6 +1393,204 @@ s_RubyDialog_OpenPanel(int argc, VALUE *argv, VALUE klass)
 		free(ary);
 		return retval;
 	} else return Qnil;
+}
+
+#pragma mark ====== Table view support ======
+
+static VALUE
+s_RubyDialog_doTableAction(VALUE val)
+{
+	VALUE ival, itval, pval, retval;
+	VALUE args[5];
+	void **vp = (void **)val;
+	VALUE self = (VALUE)vp[0];
+	RDItem *ip = (RDItem *)vp[1];
+	VALUE sym = (VALUE)vp[2];
+	RubyDialog *dref = s_RubyDialog_GetController(self);
+	VALUE items = rb_iv_get(self, "_items");
+	int nitems = RARRAY_LEN(items);
+	int idx = RubyDialogCallback_indexOfItem(dref, ip);
+	if (idx < 0)
+		return Qnil;   /*  No such item (this cannot happen)  */
+	ival = INT2NUM(idx);
+	itval = s_RubyDialog_ItemAtIndex(self, ival);
+	pval = rb_ivar_get(itval, SYM2ID(sym));
+	if (pval == Qnil)
+		return Qnil;   /*  No action is defined: return the default value  */
+	args[0] = itval;
+
+	if (sym == sOnCountSymbol) {
+		retval = s_RubyDialog_CallActionProc(self, pval, 1, args);
+		vp[3] = (void *)(NUM2INT(rb_Integer(retval)));
+		return retval;
+	} else if (sym == sOnGetValueSymbol) {
+		args[1] = INT2NUM((int)vp[3]);
+		args[2] = INT2NUM((int)vp[4]);
+		retval = s_RubyDialog_CallActionProc(self, pval, 3, args);
+		retval = rb_str_to_str(retval);
+		vp[5] = strdup(StringValuePtr(retval));
+		return retval;
+	} else if (sym == sOnSetValueSymbol) {
+		args[1] = INT2NUM((int)vp[3]);
+		args[2] = INT2NUM((int)vp[4]);
+		args[3] = rb_str_new2((char *)vp[5]);
+		retval = s_RubyDialog_CallActionProc(self, pval, 4, args);
+		vp[6] = (void *)(NUM2INT(rb_Integer(retval)));
+		return retval;
+	} else if (sym == sOnDragSelectionToRowSymbol) {
+		args[1] = INT2NUM((int)vp[3]);
+		retval = s_RubyDialog_CallActionProc(self, pval, 2, args);
+		return retval;
+	} else if (sym == sIsItemEditableSymbol) {
+		args[1] = INT2NUM((int)vp[3]);
+		args[2] = INT2NUM((int)vp[4]);
+		retval = s_RubyDialog_CallActionProc(self, pval, 3, args);
+		vp[5] = (void *)(RTEST(retval) ? 1 : 0);
+		return retval;
+	} else if (sym == sIsDragAndDropEnabledSymbol) {
+		retval = s_RubyDialog_CallActionProc(self, pval, 1, args);
+		vp[3] = (void *)(RTEST(retval) ? 1 : 0);
+		return retval;
+	} else if (sym == sOnSelectionChangedSymbol) {
+		retval = s_RubyDialog_CallActionProc(self, pval, 1, args);
+		vp[3] = (void *)(RTEST(retval) ? 1 : 0);
+		return retval;
+	} else if (sym == sOnSetColorSymbol) {
+		float *fg = (float *)vp[5];
+		float *bg = (float *)vp[6];
+		int i, n = 0;
+		VALUE cval;
+		args[1] = INT2NUM((int)vp[3]);
+		args[2] = INT2NUM((int)vp[4]);
+		retval = s_RubyDialog_CallActionProc(self, pval, 3, args);
+		if (retval == Qnil)
+			return Qnil;
+		retval = rb_ary_to_ary(retval);
+		if (RARRAY_LEN(retval) >= 1 && fg != NULL) {
+			cval = rb_ary_to_ary(RARRAY_PTR(retval)[0]);
+			for (i = 0; i < 4 && i < RARRAY_LEN(cval); i++) {
+				fg[i] = NUM2DBL(rb_Float(RARRAY_PTR(cval)[i]));
+			}
+			n = 1;
+		}
+		if (RARRAY_LEN(retval) >= 2 && bg != NULL) {
+			cval = rb_ary_to_ary(RARRAY_PTR(retval)[1]);
+			for (i = 0; i < 4 && i < RARRAY_LEN(cval); i++) {
+				bg[i] = NUM2DBL(rb_Float(RARRAY_PTR(cval)[i]));
+			}
+			n |= 2;
+		}
+		vp[7] = (void *)n;
+		return retval;
+	} else return Qnil;
+}
+
+int
+RubyDialog_GetTableItemCount(RubyValue self, RDItem *ip)
+{
+	int status;
+	void *vp[4] = { (void *)self, (void *)ip, (void *)sOnCountSymbol, NULL };
+	VALUE val = rb_protect(s_RubyDialog_doTableAction, (VALUE)vp, &status);
+	if (status != 0) {
+		Molby_showError(status);
+		return 0;
+	} else if (val == Qnil)
+		return 0;
+	else return (int)vp[3];	
+}
+
+void
+RubyDialog_GetTableItemText(RubyValue self, RDItem *ip, int row, int column, char *buf, int buflen)
+{
+	int status;
+	void *vp[6] = { (void *)self, (void *)ip, (void *)sOnGetValueSymbol, (void *)row, (void *)column, NULL };
+	VALUE val = rb_protect(s_RubyDialog_doTableAction, (VALUE)vp, &status);
+	if (status != 0) {
+		Molby_showError(status);
+		buf[0] = 0;
+	} else if (val == Qnil)
+		buf[0] = 0;
+	else {
+		strncpy(buf, (char *)vp[5], buflen - 1);
+		buf[buflen - 1] = 0;
+	}
+}
+
+int
+RubyDialog_SetTableItemText(RubyValue self, RDItem *ip, int row, int column, const char *str)
+{
+	int status;
+	void *vp[7] = { (void *)self, (void *)ip, (void *)sOnSetValueSymbol, (void *)row, (void *)column, (void *)str, NULL };
+	VALUE val = rb_protect(s_RubyDialog_doTableAction, (VALUE)vp, &status);
+	if (status != 0) {
+		Molby_showError(status);
+		return -1;
+	} else if (val == Qnil)
+		return -1;
+	else
+		return (int)vp[6];
+}
+
+void
+RubyDialog_DragTableSelectionToRow(RubyValue self, RDItem *ip, int row)
+{
+	int status;
+	void *vp[5] = { (void *)self, (void *)ip, (void *)sOnDragSelectionToRowSymbol, (void *)row, NULL };
+	rb_protect(s_RubyDialog_doTableAction, (VALUE)vp, &status);
+	if (status != 0)
+		Molby_showError(status);
+}
+
+int
+RubyDialog_IsTableItemEditable(RubyValue self, RDItem *ip, int row, int column)
+{
+	int status;
+	void *vp[4] = { (void *)self, (void *)ip, (void *)sIsItemEditableSymbol, NULL };
+	VALUE val = rb_protect(s_RubyDialog_doTableAction, (VALUE)vp, &status);
+	if (status != 0) {
+		Molby_showError(status);
+		return 0;
+	} else if (val == Qnil)
+		return 0;
+	else return (int)vp[3];	
+}
+
+int
+RubyDialog_IsTableDragAndDropEnabled(RubyValue self, RDItem *ip)
+{
+	int status;
+	void *vp[4] = { (void *)self, (void *)ip, (void *)sIsDragAndDropEnabledSymbol, NULL };
+	VALUE val = rb_protect(s_RubyDialog_doTableAction, (VALUE)vp, &status);
+	if (status != 0) {
+		Molby_showError(status);
+		return 0;
+	} else if (val == Qnil)
+		return 0;
+	else return (int)vp[3];	
+}
+
+void
+RubyDialog_OnTableSelectionChanged(RubyValue self, RDItem *ip)
+{
+	int status;
+	void *vp[4] = { (void *)self, (void *)ip, (void *)sOnSelectionChangedSymbol, NULL };
+	rb_protect(s_RubyDialog_doTableAction, (VALUE)vp, &status);
+	if (status != 0)
+		Molby_showError(status);
+}
+
+int
+RubyDialog_SetTableItemColor(RubyValue self, RDItem *ip, int row, int column, float *fg, float *bg)
+{
+	int status;
+	void *vp[8] = { (void *)self, (void *)ip, (void *)sOnSetColorSymbol, (void *)row, (void *)column, (void *)fg, (void *)bg, NULL };
+	VALUE val = rb_protect(s_RubyDialog_doTableAction, (VALUE)vp, &status);
+	if (status != 0) {
+		Molby_showError(status);
+		return 0;
+	} else if (val == Qnil)
+		return 0;
+	else return (int)vp[7];
 }
 
 #pragma mark ====== Utility function ======
@@ -1531,6 +1792,7 @@ RubyDialogInitClass(void)
 		static VALUE *sTable1[] = {
 			&sTextSymbol, &sTextFieldSymbol, &sRadioSymbol, &sButtonSymbol,
 			&sCheckBoxSymbol, &sPopUpSymbol, &sTextViewSymbol, &sViewSymbol,
+			&sTableSymbol,
 			&sDialogSymbol, &sIndexSymbol, &sLineSymbol, &sTagSymbol,
 			&sTypeSymbol, &sTitleSymbol, &sXSymbol, &sYSymbol,
 			&sWidthSymbol, &sHeightSymbol, &sOriginSymbol, &sSizeSymbol,
@@ -1541,11 +1803,15 @@ RubyDialogInitClass(void)
 			&sSubItemsSymbol, &sHFillSymbol, &sVFillSymbol, &sIsProcessingActionSymbol,
 			&sFontSymbol, &sDefaultSymbol, &sRomanSymbol, &sSwissSymbol,
 			&sFixedSymbol, &sNormalSymbol, &sSlantSymbol, &sItalicSymbol,
-			&sMediumSymbol, &sBoldSymbol, &sLightSymbol
+			&sMediumSymbol, &sBoldSymbol, &sLightSymbol,
+			&sOnCountSymbol, &sOnGetValueSymbol, &sOnSetValueSymbol, &sOnSelectionChangedSymbol,
+			&sOnSetColorSymbol, &sIsItemEditableSymbol, &sIsDragAndDropEnabledSymbol, &sOnDragSelectionToRowSymbol,
+			&sSelectionSymbol, &sColumnsSymbol
 		};
 		static const char *sTable2[] = {
 			"text", "textfield", "radio", "button",
 			"checkbox", "popup", "textview", "view",
+			"table",
 			"dialog", "index", "line", "tag",
 			"type", "title", "x", "y",
 			"width", "height", "origin", "size",
@@ -1556,7 +1822,10 @@ RubyDialogInitClass(void)
 			"subitems", "hfill", "vfill", "is_processing_action",
 			"font", "default", "roman", "swiss",
 			"fixed", "normal", "slant", "italic",
-			"medium", "bold", "light"
+			"medium", "bold", "light",
+			"on_count", "on_get_value", "on_set_value", "on_selection_changed",
+			"on_set_color", "is_item_editable", "is_drag_and_drop_enabled", "on_drag_selection_to_row",
+			"selection", "columns"
 		};
 		int i;
 		for (i = 0; i < sizeof(sTable1) / sizeof(sTable1[0]); i++)
