@@ -52,6 +52,7 @@ extern const RDRect gZeroRect;
 extern int RubyDialog_validateItemContent(RubyValue self, RDItem *ip, const char *s);
 extern void RubyDialog_doItemAction(RubyValue self, RDItem *ip);
 extern void RubyDialog_doTimerAction(RubyValue self);
+extern int RubyDialog_getFlexFlags(RubyValue self, RDItem *ip);
 extern int RubyDialog_GetTableItemCount(RubyValue self, RDItem *ip);
 extern void RubyDialog_GetTableItemText(RubyValue self, RDItem *ip, int row, int column, char *buf, int blen);
 extern int RubyDialog_SetTableItemText(RubyValue self, RDItem *ip, int row, int column, const char *str);
@@ -75,7 +76,13 @@ STUB void RubyDialogCallback_hide(RubyDialog *dref);
 STUB int RubyDialogCallback_startIntervalTimer(RubyDialog *dref, float interval);
 STUB void RubyDialogCallback_stopIntervalTimer(RubyDialog *dref);
 STUB RDSize RubyDialogCallback_windowMinSize(RubyDialog *dref);
+STUB void RubyDialogCallback_setWindowMinSize(RubyDialog *dref, RDSize size);
+STUB RDSize RubyDialogCallback_windowSize(RubyDialog *dref);
 STUB void RubyDialogCallback_setWindowSize(RubyDialog *dref, RDSize size);
+
+STUB void RubyDialogCallback_setAutoResizeEnabled(RubyDialog *dref, int flag);
+STUB int RubyDialogCallback_isAutoResizeEnabled(RubyDialog *dref);
+
 STUB void RubyDialogCallback_createStandardButtons(RubyDialog *dref, const char *oktitle, const char *canceltitle);
 STUB RDItem *RubyDialogCallback_createItem(RubyDialog *dref, const char *type, const char *title, RDRect frame);
 STUB RDItem *RubyDialogCallback_dialogItemAtIndex(RubyDialog *dref, int idx);
@@ -117,11 +124,10 @@ STUB RDSize RubyDialogCallback_resizeToBest(RDItem *item);
 
 STUB char RubyDialogCallback_insertTableColumn(RDItem *item, int col, const char *heading, int format, int width);
 STUB char RubyDialogCallback_deleteTableColumn(RDItem *item, int col);
+STUB int RubyDialogCallback_countTableColumn(RDItem *item);
 STUB char RubyDialogCallback_isTableRowSelected(RDItem *item, int row);
 STUB char RubyDialogCallback_setTableRowSelected(RDItem *item, int row, int flag);
 STUB void RubyDialogCallback_refreshTable(RDItem *item);
-//STUB IntGroup *RubyDialogCallback_getTableSelectionForItem(RDItem *item);
-//STUB void RubyDialogCallback_setTableSelectionForItem(RDItem *item, IntGroup *ig);
 
 STUB int RubyDialogCallback_savePanel(const char *title, const char *dirname, const char *wildcard, char *buf, int bufsize);
 STUB int RubyDialogCallback_openPanel(const char *title, const char *dirname, const char *wildcard, char ***array, int for_directories, int multiple_selection);

@@ -19,6 +19,7 @@
 #include "wx/stattext.h"
 #include "wx/textctrl.h"
 #include "wx/button.h"
+#include "wx/tglbtn.h"
 #include "wx/filedlg.h"
 #include "wx/dirdlg.h"
 #include "wx/dcclient.h"
@@ -36,6 +37,7 @@ BEGIN_EVENT_TABLE(RubyDialogFrame, wxDialog)
   EVT_TIMER(-1, RubyDialogFrame::OnTimerEvent)
   EVT_BUTTON(wxID_OK, RubyDialogFrame::OnDefaultButtonPressed)
   EVT_BUTTON(wxID_CANCEL, RubyDialogFrame::OnDefaultButtonPressed)
+  EVT_SIZE(RubyDialogFrame::OnSize)
 END_EVENT_TABLE()
 
 RubyDialogFrame::RubyDialogFrame(wxWindow* parent, wxWindowID wid, const wxString& title, const wxPoint& pos, const wxSize& size, long style):
@@ -44,7 +46,9 @@ RubyDialogFrame::RubyDialogFrame(wxWindow* parent, wxWindowID wid, const wxStrin
 	ditems = NULL;
 	nditems = 0;
 	dval = NULL;
-	
+	mySize = gZeroSize;
+	autoResizeEnabled = true;
+
 	//  Create a vertical box sizer that contains a panel containing all controls and a sizer containing
 	//  OK/Cancel buttons
 	contentSizer = new wxBoxSizer(wxVERTICAL);
@@ -203,6 +207,82 @@ void
 RubyDialogFrame::OnTimerEvent(wxTimerEvent &event)
 {
 	RubyDialog_doTimerAction((RubyValue)dval);
+}
+
+void
+RubyDialogFrame::OnSize(wxSizeEvent &event)
+{
+	wxSize size = GetClientSize();
+	if (mySize.width != 0 && mySize.height != 0 && /*(mySize.width != size.x || mySize.height != size.y) &&*/ autoResizeEnabled) {
+		/*  Resize the subviews  */
+		int i;
+		for (i = 2; i < nditems; i++) {
+			RDItem *item = ditems[i];
+			int glue = RubyDialog_getFlexFlags((RubyValue)dval, item);
+			if (glue >= 0) {
+				RDRect frame = RubyDialogCallback_frameOfItem(item);
+				switch (glue & 5) {
+					case 5: /* left & right */
+						frame.size.width += size.x - mySize.width;
+						break;
+					case 4: /* right */
+						frame.origin.x += size.x - mySize.width;
+						break;
+				}
+				switch (glue & 10) {
+					case 10: /* top & bottom */
+						frame.size.height += size.y - mySize.height;
+						break;
+					case 8: /* bottom */
+						frame.origin.y += size.y - mySize.height;
+						break;
+				}
+				RubyDialogCallback_setFrameOfItem(item, frame);
+			} else if (wxDynamicCast((wxWindow *)item, wxPanel) != NULL) {
+				wxWindowList & children = ((wxWindow *)item)->GetChildren();
+				wxWindowList::Node *node;
+				wxRect thisRect, origRect, thatRect;
+				int count = 0, dx, dy;
+				origRect = ((wxWindow *)item)->GetRect();
+				for (node = children.GetFirst(); node; node = node->GetNext(), count++) {
+					wxWindow *current = (wxWindow *)node->GetData();
+					thatRect = current->GetRect();
+					if (count == 0) {
+						thisRect = thatRect;
+						continue;
+					}
+					if (thisRect.x > thatRect.x) {
+						thisRect.width += thisRect.x - thatRect.x;
+						thisRect.x = thatRect.x;
+					}
+					if (thisRect.y > thatRect.y) {
+						thisRect.height += thisRect.y - thatRect.y;
+						thisRect.y = thatRect.y;
+					}
+					if (thatRect.x + thatRect.width > thisRect.x + thisRect.width)
+						thisRect.width = thatRect.x + thatRect.width - thisRect.x;
+					if (thatRect.y + thatRect.height > thisRect.y + thisRect.height)
+						thisRect.height = thatRect.y + thatRect.height - thisRect.y;
+				}
+				/*  Resize the view, while keeping the subviews at the same window position */
+				dx = thisRect.x;
+				dy = thisRect.y;
+				for (node = children.GetFirst(); node; node = node->GetNext()) {
+					wxWindow *current = (wxWindow *)node->GetData();
+					thatRect = current->GetRect();
+					current->Move(thatRect.x - dx, thatRect.y - dy);
+				}
+				origRect.x += dx;
+				origRect.y += dy;
+				origRect.width = thisRect.width;
+				origRect.height = thisRect.height;
+				((wxWindow *)item)->SetSize(origRect);
+			}
+		}
+	}
+	mySize.width = size.x;
+	mySize.height = size.y;
+	event.Skip();
 }
 
 #pragma mark ====== MyListCtrlDataSource methods ======
@@ -371,11 +451,41 @@ RubyDialogCallback_windowMinSize(RubyDialog *dref)
 }
 
 void
+RubyDialogCallback_setWindowMinSize(RubyDialog *dref, RDSize size)
+{
+	wxSize minSize;
+	minSize.x = size.width;
+	minSize.y = size.height;
+	((RubyDialogFrame *)dref)->SetMinSize(minSize);
+}
+
+RDSize
+RubyDialogCallback_windowSize(RubyDialog *dref)
+{
+	wxSize minSize = ((RubyDialogFrame *)dref)->GetSize();
+	RDSize rminSize;
+	rminSize.width = minSize.GetWidth();
+	rminSize.height = minSize.GetHeight();
+	return rminSize;
+}
+void
 RubyDialogCallback_setWindowSize(RubyDialog *dref, RDSize size)
 {
 	wxSize wsize(size.width, size.height);
 	((RubyDialogFrame *)dref)->SetSize(wsize);
 	((RubyDialogFrame *)dref)->CentreOnScreen();
+}
+
+void
+RubyDialogCallback_setAutoResizeEnabled(RubyDialog *dref, int flag)
+{
+	((RubyDialogFrame *)dref)->SetAutoResizeEnabled(flag);
+}
+
+int
+RubyDialogCallback_isAutoResizeEnabled(RubyDialog *dref)
+{
+	return ((RubyDialogFrame *)dref)->IsAutoResizeEnabled();
 }
 
 void
@@ -458,6 +568,11 @@ RubyDialogCallback_createItem(RubyDialog *dref, const char *type, const char *ti
 		wxButton *bn = new wxButton(parent, -1, tstr, rect.GetPosition(), rect.GetSize());
 		control = bn;
 		bn->Connect(-1, wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(RubyDialogFrame::OnDialogItemAction), NULL, parent);
+	} else if (strcmp(type, "togglebutton") == 0) {
+		/*  Button  */
+		wxToggleButton *bn = new wxToggleButton(parent, -1, tstr, rect.GetPosition(), rect.GetSize());
+		control = bn;
+		bn->Connect(-1, wxEVT_COMMAND_TOGGLEBUTTON_CLICKED, wxCommandEventHandler(RubyDialogFrame::OnDialogItemAction), NULL, parent);
 	} else if (strcmp(type, "popup") == 0) {
 		/*  Popup button (wxChoice)  */
 		wxString du[1] = { _T(" ") };
@@ -660,6 +775,8 @@ RubyDialogCallback_setStateForItem(RDItem *item, int state)
 		((wxRadioButton *)item)->SetValue(state);
 	} else if (wxDynamicCast((wxWindow *)item, wxCheckBox) != NULL) {
 		((wxCheckBox *)item)->SetValue(state);
+	} else if (wxDynamicCast((wxWindow *)item, wxToggleButton) != NULL) {
+		((wxToggleButton *)item)->SetValue(state);
 	}
 }
 
@@ -670,6 +787,8 @@ RubyDialogCallback_getStateForItem(RDItem *item)
 		return ((wxRadioButton *)item)->GetValue();
 	} else if (wxDynamicCast((wxWindow *)item, wxCheckBox) != NULL) {
 		return ((wxCheckBox *)item)->GetValue();
+	} else if (wxDynamicCast((wxWindow *)item, wxToggleButton) != NULL) {
+		return ((wxToggleButton *)item)->GetValue();
 	} else return -1;
 }
 
@@ -890,6 +1009,14 @@ RubyDialogCallback_insertTableColumn(RDItem *item, int col, const char *heading,
 		wxString hstr((heading ? heading : ""), WX_DEFAULT_CONV);
 		return ((MyListCtrl *)item)->InsertColumn(col, hstr, format, width);
 	} else return false;
+}
+
+int
+RubyDialogCallback_countTableColumn(RDItem *item)
+{
+	if (wxDynamicCast((wxWindow *)item, MyListCtrl) != NULL) {
+		return ((MyListCtrl *)item)->GetColumnCount();
+	} else return -1;
 }
 
 char

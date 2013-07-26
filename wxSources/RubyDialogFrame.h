@@ -37,9 +37,16 @@ public:
 	wxBoxSizer *boxSizer;
 	wxTimer *myTimer;
 	
+	/*  Auto resizing  */
+	RDSize mySize;  /*  Previous size  */
+	bool autoResizeEnabled;  /*  true if auto resizing is enabled  */
+	
 	RubyDialogFrame(wxWindow* parent, wxWindowID wid, const wxString& title, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxDEFAULT_DIALOG_STYLE);
 	virtual ~RubyDialogFrame();
 
+	void SetAutoResizeEnabled(int flag) { autoResizeEnabled = (flag != 0); }
+	bool IsAutoResizeEnabled() { return autoResizeEnabled; }
+	
 	int AddDialogItem(RDItem *item);
 	RDItem *DialogItemAtIndex(int index);
 	int SearchDialogItem(RDItem *item);
@@ -50,6 +57,7 @@ public:
 	void OnDialogItemAction(wxCommandEvent &event);
 	void OnTimerEvent(wxTimerEvent &event);
 	void OnDefaultButtonPressed(wxCommandEvent &event);
+	void OnSize(wxSizeEvent &event);
 
 	//  MyListCtrlDataSource methods
 	virtual int GetItemCount(MyListCtrl *ctrl);
