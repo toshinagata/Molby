@@ -58,7 +58,9 @@ int gMolbyIsCheckingInterrupt = 0;
 char *gRubyVersion, *gRubyCopyright;
 
 /*  For convenience  */
-static VALUE s_ID_equal;  /*  rb_intern("==")  */
+static ID s_ID_equal;  /*  rb_intern("==")  */
+
+int g_RubyID_call;
 
 /*  Symbols for atom attributes  */
 static VALUE
@@ -71,7 +73,7 @@ static VALUE
 	s_VSym, s_FSym, s_OccupancySym, s_TempFactorSym,
 	s_AnisoSym, s_SymopSym, s_IntChargeSym, s_FixForceSym,
 	s_FixPosSym, s_ExclusionSym, s_MMExcludeSym, s_PeriodicExcludeSym,
-	s_HiddenSym, s_AnchorListSym;
+	s_HiddenSym, s_AnchorListSym, s_UFFTypeSym;
 
 /*  Symbols for parameter attributes  */
 static VALUE
@@ -809,6 +811,12 @@ Ruby_funcall2_protect(VALUE recv, ID mid, int argc, VALUE *argv, int *status)
 	rec.argc = argc;
 	rec.argv = argv;
 	return rb_protect(s_Ruby_funcall2_sub, (VALUE)&rec, status);
+}
+
+RubyValue
+Ruby_funcall2_protect_extern(RubyValue recv, int mid, int argc, RubyValue *argv, int *status)
+{
+	return (RubyValue)Ruby_funcall2_protect((VALUE)recv, mid, argc, (VALUE *)argv, status);
 }
 
 #pragma mark ====== ParameterRef Class ======
@@ -3638,6 +3646,11 @@ static VALUE s_AtomRef_GetAnchorList(VALUE self) {
 	return retval;
 }
 
+static VALUE s_AtomRef_GetUFFType(VALUE self) {
+	char *p = s_AtomFromValue(self)->uff_type;
+	return rb_str_new(p, strlen_limit(p, 5));
+}
+
 static VALUE s_AtomRef_SetIndex(VALUE self, VALUE val) {
 	rb_raise(rb_eMolbyError, "index cannot be directly set");
 	return Qnil;
@@ -4174,6 +4187,16 @@ static VALUE s_AtomRef_SetAnchorList(VALUE self, VALUE val) {
 	return val;
 }
 
+static VALUE s_AtomRef_SetUFFType(VALUE self, VALUE val) {
+	Atom *ap = s_AtomFromValue(self);
+	char *p = StringValuePtr(val);
+	VALUE oval = s_AtomRef_GetUFFType(self);
+	strncpy(ap->uff_type, p, 5);
+	ap->uff_type[5] = 0;
+	s_RegisterUndoForAtomAttrChange(self, s_UFFTypeSym, val, oval);
+	return val;
+}
+
 static struct s_AtomAttrDef {
 	char *name;
 	VALUE *symref;  /*  Address of s_IndexSymbol etc. */
@@ -4219,6 +4242,7 @@ static struct s_AtomAttrDef {
 	{"periodic_exclude", &s_PeriodicExcludeSym, 0, s_AtomRef_GetPeriodicExclude, s_AtomRef_SetPeriodicExclude},
 	{"hidden",       &s_HiddenSym,       0, s_AtomRef_GetHidden,       s_AtomRef_SetHidden},
 	{"anchor_list",  &s_AnchorListSym,   0, s_AtomRef_GetAnchorList,   s_AtomRef_SetAnchorList},
+	{"uff_type",     &s_UFFTypeSym,      0, s_AtomRef_GetUFFType,      s_AtomRef_SetUFFType},
 	{NULL} /* Sentinel */
 };
 
@@ -10387,6 +10411,7 @@ Init_Molby(void)
 	rb_define_method(rb_mKernel, "hide_console_window", s_Kernel_HideConsoleWindow, 0);
 	
 	s_ID_equal = rb_intern("==");
+	g_RubyID_call = rb_intern("call");
 }
 
 #pragma mark ====== External functions ======

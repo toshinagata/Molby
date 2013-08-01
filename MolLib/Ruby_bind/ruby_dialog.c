@@ -40,7 +40,7 @@ static VALUE
 	/*  Data source for Table (= MyListCtrl)  */
 	sOnCountSymbol, sOnGetValueSymbol, sOnSetValueSymbol, sOnSelectionChangedSymbol,
 	sOnSetColorSymbol, sIsItemEditableSymbol, sIsDragAndDropEnabledSymbol, sOnDragSelectionToRowSymbol,
-	sSelectionSymbol, sColumnsSymbol;
+	sSelectionSymbol, sColumnsSymbol, sRefreshSymbol;
 
 VALUE rb_cDialog = Qfalse;
 VALUE rb_cDialogItem = Qfalse;
@@ -221,35 +221,24 @@ s_RubyDialogItem_SetAttr(VALUE self, VALUE key, VALUE val)
 		frame.size.height = NUM2DBL(rb_Float(Ruby_ObjectAtIndex(val, 3)));
 		RubyDialogCallback_setFrameOfItem(view, frame);
 	} else if (key == sFlexSymbol) {
-		/*  Glue to [left, top, right, bottom]
-			An array of 4 integers or a string like "LTRB" (case insensitive)  */
-		int glue = 0;
+		/*  Flex flags: [left, top, right, bottom, width, height] (0: fixed, 1: flex)  */
+		int flex = 0;
 		if (val == Qnil) {
 			rb_ivar_set(self, key_id, val);
 		} else {
-			if (rb_obj_is_kind_of(val, rb_cString)) {
-				const char *sp = StringValuePtr(val);
-				if (strchr(sp, 'l') || strchr(sp, 'L'))
-					glue |= 1;
-				if (strchr(sp, 't') || strchr(sp, 'T'))
-					glue |= 2;
-				if (strchr(sp, 'r') || strchr(sp, 'R'))
-					glue |= 4;
-				if (strchr(sp, 'b') || strchr(sp, 'B'))
-					glue |= 8;
-			} else if (rb_obj_is_kind_of(val, rb_mEnumerable)) {
+			if (rb_obj_is_kind_of(val, rb_mEnumerable)) {
 				int i;
-				for (i = 0; i < 4; i++) {
+				for (i = 0; i < 6; i++) {
 					VALUE gval = Ruby_ObjectAtIndex(val, i);
 					if (RTEST(gval) && NUM2INT(rb_Integer(gval)) != 0)
-						glue |= (1 << i);
+						flex |= (1 << i);
 				}
 			} else if (rb_obj_is_kind_of(val, rb_cNumeric)) {
-				glue = NUM2INT(rb_Integer(val));
+				flex = NUM2INT(rb_Integer(val));
 			} else {
-				rb_raise(rb_eMolbyError, "the 'glue' attribute should be either an integer, an array of 4 boolean/integers or a string");
+				rb_raise(rb_eMolbyError, "the 'flex' attribute should be either an integer or an array of 4 boolean/integers");
 			}
-			rb_ivar_set(self, key_id, INT2NUM(glue));
+			rb_ivar_set(self, key_id, INT2NUM(flex));
 		}
 	} else if (key == sFontSymbol) {
 		int size, family, style, weight, i;
@@ -286,7 +275,7 @@ s_RubyDialogItem_SetAttr(VALUE self, VALUE key, VALUE val)
 		}
 		RubyDialogCallback_setFontForItem(view, size, family, style, weight);
 	} else if (key == sSelectionSymbol) {
-		/*  Selection (for Table == MyTextCtrl item)  */
+		/*  Selection (for Table == MyListCtrl item)  */
 		if (type == sTableSymbol) {
 			IntGroup *ig = IntGroupFromValue(val);
 			int row, count;
@@ -297,7 +286,7 @@ s_RubyDialogItem_SetAttr(VALUE self, VALUE key, VALUE val)
 			}
 		}
 	} else if (key == sColumnsSymbol) {
-		/*  Columns (for Table == MyTextCtrl item)  */
+		/*  Columns (for Table == MyListCtrl item)  */
 		if (type == sTableSymbol) {
 			/*  The value should be an array of [name, width, align (0: natural, 1: right, 2: center)] */
 			int col;
@@ -323,6 +312,13 @@ s_RubyDialogItem_SetAttr(VALUE self, VALUE key, VALUE val)
 				RubyDialogCallback_insertTableColumn((RDItem *)view, col, heading, format, width);
 			}
 		}
+	} else if (key == sRefreshSymbol) {
+		/*  Refresh (for Table == MyListCtrl item)  */
+		if (type == sTableSymbol) {
+			if (RTEST(val)) {
+				RubyDialogCallback_refreshTable((RDItem *)view);
+			}
+		}			
 	} else {
 		if (key == sTagSymbol && rb_obj_is_kind_of(val, rb_cInteger))
 			rb_raise(rb_eMolbyError, "the dialog item tag must not be integers");				
@@ -452,15 +448,14 @@ s_RubyDialogItem_Attr(VALUE self, VALUE key)
 		val = rb_ary_new3(4, rb_float_new(frame.origin.x), rb_float_new(frame.origin.y), rb_float_new(frame.size.width), rb_float_new(frame.size.height));
 		rb_obj_freeze(val);
 	} else if (key == sFlexSymbol) {
-		int glue;
+		int i, flex;
 		val = rb_ivar_get(self, key_id);
 		if (val != Qnil) {
-			glue = NUM2INT(rb_Integer(val));
+			flex = NUM2INT(rb_Integer(val));
 			val = rb_ary_new();
-			rb_ary_push(val, ((glue & 1) ? INT2FIX(1) : INT2FIX(0)));
-			rb_ary_push(val, ((glue & 2) ? INT2FIX(1) : INT2FIX(0)));
-			rb_ary_push(val, ((glue & 4) ? INT2FIX(1) : INT2FIX(0)));
-			rb_ary_push(val, ((glue & 8) ? INT2FIX(1) : INT2FIX(0)));
+			for (i = 0; i < 6; i++) {
+				rb_ary_push(val, ((flex & (1 << i)) ? INT2FIX(1) : INT2FIX(0)));
+			}
 		}
 	} else if (key == sFontSymbol) {
 		int size, family, style, weight;
@@ -1007,13 +1002,21 @@ s_RubyDialog_Layout(int argc, VALUE *argv, VALUE self)
 	/*  Index for the layout view  */
 	itag = RARRAY_LEN(items);
 
-	/*  Create a new hash for the layout view and push to _items */
-	{
-		new_item = rb_class_new_instance(0, NULL, rb_cDialogItem);
-		rb_ivar_set(new_item, SYM2ID(sTypeSymbol), sViewSymbol);
-		rb_ivar_set(new_item, SYM2ID(sDialogSymbol), self);
-		rb_ivar_set(new_item, SYM2ID(sIndexSymbol), INT2NUM(itag));
-		rb_ary_push(items, new_item);
+	/*  Create a new item object for the layout view and push to _items */
+	new_item = rb_class_new_instance(0, NULL, rb_cDialogItem);
+	rb_ivar_set(new_item, SYM2ID(sTypeSymbol), sViewSymbol);
+	rb_ivar_set(new_item, SYM2ID(sDialogSymbol), self);
+	rb_ivar_set(new_item, SYM2ID(sIndexSymbol), INT2NUM(itag));
+	rb_ary_push(items, new_item);
+
+	if (oval != Qnil) {
+		/*  Set the attributes given in the option hash  */
+		VALUE keys = rb_funcall(oval, rb_intern("keys"), 0);
+		for (i = 0; i < RARRAY_LEN(keys); i++) {
+			VALUE kval = RARRAY_PTR(keys)[i];
+			if (TYPE(kval) == T_SYMBOL)
+				s_RubyDialogItem_SetAttr(new_item, kval, rb_hash_aref(oval, kval));
+		}
 	}
 	
 	RubyDialogCallback_setAutoResizeEnabled(dref, autoResizeFlag);
@@ -1453,6 +1456,51 @@ s_RubyDialog_SetMinSize(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
+ *     listen(obj, str, pr)
+ *
+ *  Listen to the event invoked by the object. str = the name of the event (dependent on the
+ *  object), pr = the callback procedure. The first argument to the callback procedure is
+ *  always obj. Other arguments are dependent on the event and the object.
+ */
+static VALUE
+s_RubyDialog_Listen(VALUE self, VALUE oval, VALUE sval, VALUE pval)
+{
+	int i;
+	const char *sptr;
+	if (sval == Qnil)
+		sptr = NULL;
+	else
+		sptr = StringValuePtr(sval);
+	if (rb_obj_is_kind_of(oval, rb_cMolecule)) {
+		Molecule *mol = MoleculeFromValue(oval);
+		i = RubyDialogCallback_Listen(s_RubyDialog_GetController(self), mol, "Molecule", sptr, (RubyValue)oval, (RubyValue)pval);
+		if (i < 0) {
+			switch (i) {
+				case -1: rb_raise(rb_eMolbyError, "This dialog cannot be listened to."); break;
+				case -2: rb_raise(rb_eMolbyError, "This message is not supported"); break;
+			}
+		} else {
+			/*  Keep the objects in the internal array, to protect from GC  */
+			ID id = rb_intern("listen");
+			VALUE aval = rb_ivar_get(self, id);
+			if (aval == Qnil) {
+				aval = rb_ary_new();
+				rb_ivar_set(self, id, aval);
+			}
+			if (pval == Qfalse || pval == Qnil) {
+				rb_ary_delete_at(aval, i);
+			} else {
+				rb_ary_store(aval, i, rb_ary_new3(2, oval, pval));
+			}
+		}
+	} else {
+		rb_raise(rb_eMolbyError, "Dialog#listen is presently only available for Molecule object");
+	}
+	return self;
+}
+
+/*
+ *  call-seq:
  *     save_panel(message = nil, directory = nil, default_filename = nil, wildcard = nil)
  *
  *  Display the "save as" dialog and returns the fullpath filename.
@@ -1648,12 +1696,9 @@ RubyDialog_GetTableItemText(RubyValue self, RDItem *ip, int row, int column, cha
 	int status;
 	void *vp[6] = { (void *)self, (void *)ip, (void *)sOnGetValueSymbol, (void *)row, (void *)column, NULL };
 	VALUE val = rb_protect(s_RubyDialog_doTableAction, (VALUE)vp, &status);
-	if (status != 0) {
-		Molby_showError(status);
+	if (status != 0 || val == Qnil) {
 		buf[0] = 0;
-	} else if (val == Qnil)
-		buf[0] = 0;
-	else {
+	} else {
 		strncpy(buf, (char *)vp[5], buflen - 1);
 		buf[buflen - 1] = 0;
 	}
@@ -1893,19 +1938,39 @@ RubyDialog_doTimerAction(RubyValue self)
 	}
 }
 
+static VALUE
+s_RubyDialog_getFlexFlags(VALUE val)
+{
+	VALUE self = (VALUE)(((void **)val)[0]);
+	RDItem *ip = (RDItem *)(((void **)val)[1]);
+	VALUE itval, pval;
+	RubyDialog *dref = s_RubyDialog_GetController(self);
+	int idx = RubyDialogCallback_indexOfItem(dref, ip);
+	if (idx < 0)
+		return Qnil;  /*  No such item (this cannot happen)  */
+	itval = s_RubyDialog_ItemAtIndex(self, INT2NUM(idx));
+	pval = rb_ivar_get(itval, SYM2ID(sFlexSymbol));
+	if (pval == Qnil)
+		return Qnil;  /*  Not set  */
+	else {
+		pval = rb_Integer(pval);
+		((void **)val)[2] = (void *)(NUM2INT(pval));
+		return pval;
+	}
+}
+
 int
 RubyDialog_getFlexFlags(RubyValue self, RDItem *ip)
 {
-	VALUE itval, pval;
-	RubyDialog *dref = s_RubyDialog_GetController((VALUE)self);
-	int idx = RubyDialogCallback_indexOfItem(dref, ip);
-	if (idx < 0)
-		return -1;  /*  No such item (this cannot happen)  */
-	itval = s_RubyDialog_ItemAtIndex((VALUE)self, INT2NUM(idx));
-	pval = rb_ivar_get(itval, SYM2ID(sFlexSymbol));
-	if (pval == Qnil)
-		return -1;  /*  Not set  */
-	else return NUM2INT(rb_Integer(pval));
+	int status;
+	VALUE rval;
+	void *args[3] = { (void *)self, (void *)ip, NULL };
+	rval = rb_protect(s_RubyDialog_getFlexFlags, (VALUE)args, &status);
+	if (status != 0)
+		return -1;
+	else if (rval == Qnil)
+		return -1;
+	else return (int)args[2];
 }
 
 #pragma mark ====== Initialize class ======
@@ -1940,6 +2005,7 @@ RubyDialogInitClass(void)
 	rb_define_method(rb_cDialog, "size", s_RubyDialog_Size, 0);
 	rb_define_method(rb_cDialog, "set_min_size", s_RubyDialog_SetMinSize, -1);
 	rb_define_method(rb_cDialog, "min_size", s_RubyDialog_MinSize, 0);
+	rb_define_method(rb_cDialog, "listen", s_RubyDialog_Listen, 3);
 	rb_define_singleton_method(rb_cDialog, "save_panel", s_RubyDialog_SavePanel, -1);
 	rb_define_singleton_method(rb_cDialog, "open_panel", s_RubyDialog_OpenPanel, -1);
 
@@ -1969,7 +2035,7 @@ RubyDialogInitClass(void)
 			&sMediumSymbol, &sBoldSymbol, &sLightSymbol,
 			&sOnCountSymbol, &sOnGetValueSymbol, &sOnSetValueSymbol, &sOnSelectionChangedSymbol,
 			&sOnSetColorSymbol, &sIsItemEditableSymbol, &sIsDragAndDropEnabledSymbol, &sOnDragSelectionToRowSymbol,
-			&sSelectionSymbol, &sColumnsSymbol
+			&sSelectionSymbol, &sColumnsSymbol, &sRefreshSymbol
 		};
 		static const char *sTable2[] = {
 			"text", "textfield", "radio", "button",
@@ -1989,7 +2055,7 @@ RubyDialogInitClass(void)
 			"medium", "bold", "light",
 			"on_count", "on_get_value", "on_set_value", "on_selection_changed",
 			"on_set_color", "is_item_editable", "is_drag_and_drop_enabled", "on_drag_selection_to_row",
-			"selection", "columns"
+			"selection", "columns", "refresh"
 		};
 		int i;
 		for (i = 0; i < sizeof(sTable1) / sizeof(sTable1[0]); i++)

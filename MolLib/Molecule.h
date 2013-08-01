@@ -116,6 +116,7 @@ typedef struct Atom {
 	Vector fix_pos;
 	Byte   mm_exclude;        /*  If nonzero, then this atom is excluded from MM/MD calculations  */
 	Byte   periodic_exclude;  /*  If nonzero, then this atom is excluded from periodic calculations  */
+	char   uff_type[6]; /*  UFF type string  */
 } Atom;
 
 extern Int gSizeOfAtomRecord;

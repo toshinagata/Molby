@@ -37,7 +37,8 @@ enum {
 	MyDocumentEvent_updateDisplay,
 	MyDocumentEvent_insertFrameFromMD,
 	MyDocumentEvent_threadTerminated,
-	MyDocumentEvent_openFilesByIPC
+	MyDocumentEvent_openFilesByIPC,
+	MyDocumentEvent_documentWillClose
 };
 
 class MyDocument: public wxDocument

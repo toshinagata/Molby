@@ -668,7 +668,7 @@ void
 MoleculeView::OnLeftDClickInListCtrl(wxMouseEvent &event)
 {
 	listctrl->OnLeftDClick(event);
-	if (mview->tableIndex >= kMainViewBondTableIndex && mview->tableIndex <= kMainViewImproperTableIndex && mview->mol->par != NULL) {
+	if (mview->tableIndex >= kMainViewBondTableIndex && mview->tableIndex <= kMainViewImproperTableIndex /* && mview->mol->par != NULL */ ) {
 		int row, col, i;
 		char indices[64], names[64], types[64], value[20], partypes[64], params[3][20];
 		char *ptype, *parstr;

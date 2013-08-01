@@ -32,6 +32,7 @@
 #include "RubyDialogFrame.h"
 #include "MyApp.h"
 #include "MyMBConv.h"
+#include "MyDocument.h"
 
 BEGIN_EVENT_TABLE(RubyDialogFrame, wxDialog)
   EVT_TIMER(-1, RubyDialogFrame::OnTimerEvent)
@@ -48,7 +49,9 @@ RubyDialogFrame::RubyDialogFrame(wxWindow* parent, wxWindowID wid, const wxStrin
 	dval = NULL;
 	mySize = gZeroSize;
 	autoResizeEnabled = true;
-
+	messageData = NULL;
+	countMessageData = 0;
+	
 	//  Create a vertical box sizer that contains a panel containing all controls and a sizer containing
 	//  OK/Cancel buttons
 	contentSizer = new wxBoxSizer(wxVERTICAL);
@@ -64,10 +67,16 @@ RubyDialogFrame::RubyDialogFrame(wxWindow* parent, wxWindowID wid, const wxStrin
 
 RubyDialogFrame::~RubyDialogFrame()
 {
+	int i;
 	if (myTimer != NULL)
 		delete myTimer;
 	if (ditems != NULL)
 		free(ditems);
+	for (i = 0; i < countMessageData; i++) {
+		if (messageData[i * 5] != NULL) {
+			((wxEvtHandler *)messageData[i * 5])->Disconnect((int)messageData[i * 5 + 1], (wxEventType)messageData[i * 5 + 2], wxCommandEventHandler(RubyDialogFrame::HandleDocumentEvent));
+		}
+	}	
 }
 
 int
@@ -209,79 +218,174 @@ RubyDialogFrame::OnTimerEvent(wxTimerEvent &event)
 	RubyDialog_doTimerAction((RubyValue)dval);
 }
 
+static void
+sResizeSubWindows(RubyValue dval, wxWindow *win, int dx, int dy)
+{
+	wxWindowList & children = win->GetChildren();
+	wxWindowList::Node *node;
+	for (node = children.GetFirst(); node; node = node->GetNext()) {
+		int i, d, f, d1, d2, d3, ddx, ddy;
+		wxWindow *current = (wxWindow *)node->GetData();
+		wxRect frame = current->GetRect();
+		int flex = RubyDialog_getFlexFlags(dval, (RDItem *)current);
+		if (flex < 0)
+			continue;		
+		for (i = 0, f = flex; i < 2; i++, f /= 2) {
+			if (i == 0)
+				d = dx;
+			else
+				d = dy;
+			switch (f & 21) {  /*  left, right, width (or top, bottom, height) */
+				case 21:  /*  all flex  */
+					d1 = d2 = d / 3;
+					d3 = d - d1 - d2;
+					break;
+				case 5:   /*  left & right  */
+					d1 = d / 2;
+					d2 = 0;
+					d3 = d - d1;
+					break;
+				case 17:  /*  left & width  */
+					d1 = d / 2;
+					d2 = d - d1;
+					d3 = 0;
+					break;
+				case 20:  /*  right & width  */
+					d1 = 0;
+					d2 = d / 2;
+					d3 = d - d2;
+					break;
+				case 1:   /*  left  */
+					d1 = d;
+					d2 = d3 = 0;
+					break;
+				case 4:   /*  right */
+					d3 = d;
+					d1 = d2 = 0;
+					break;
+				case 16:  /*  width  */
+					d2 = d;
+					d1 = d3 = 0;
+					break;
+			}
+			if (i == 0) {
+				frame.x += d1;
+				frame.width += d2;
+				ddx = d2;
+			} else {
+				frame.y += d1;
+				frame.height += d2;
+				ddy = d2;
+			}
+		}
+		if (ddx != 0 || ddy != 0)
+			sResizeSubWindows(dval, current, ddx, ddy);
+		current->SetSize(frame);
+	}
+}
+
 void
 RubyDialogFrame::OnSize(wxSizeEvent &event)
 {
 	wxSize size = GetClientSize();
 	if (mySize.width != 0 && mySize.height != 0 && /*(mySize.width != size.x || mySize.height != size.y) &&*/ autoResizeEnabled) {
 		/*  Resize the subviews  */
-		int i;
-		for (i = 2; i < nditems; i++) {
-			RDItem *item = ditems[i];
-			int glue = RubyDialog_getFlexFlags((RubyValue)dval, item);
-			if (glue >= 0) {
-				RDRect frame = RubyDialogCallback_frameOfItem(item);
-				switch (glue & 5) {
-					case 5: /* left & right */
-						frame.size.width += size.x - mySize.width;
-						break;
-					case 4: /* right */
-						frame.origin.x += size.x - mySize.width;
-						break;
-				}
-				switch (glue & 10) {
-					case 10: /* top & bottom */
-						frame.size.height += size.y - mySize.height;
-						break;
-					case 8: /* bottom */
-						frame.origin.y += size.y - mySize.height;
-						break;
-				}
-				RubyDialogCallback_setFrameOfItem(item, frame);
-			} else if (wxDynamicCast((wxWindow *)item, wxPanel) != NULL) {
-				wxWindowList & children = ((wxWindow *)item)->GetChildren();
-				wxWindowList::Node *node;
-				wxRect thisRect, origRect, thatRect;
-				int count = 0, dx, dy;
-				origRect = ((wxWindow *)item)->GetRect();
-				for (node = children.GetFirst(); node; node = node->GetNext(), count++) {
-					wxWindow *current = (wxWindow *)node->GetData();
-					thatRect = current->GetRect();
-					if (count == 0) {
-						thisRect = thatRect;
-						continue;
-					}
-					if (thisRect.x > thatRect.x) {
-						thisRect.width += thisRect.x - thatRect.x;
-						thisRect.x = thatRect.x;
-					}
-					if (thisRect.y > thatRect.y) {
-						thisRect.height += thisRect.y - thatRect.y;
-						thisRect.y = thatRect.y;
-					}
-					if (thatRect.x + thatRect.width > thisRect.x + thisRect.width)
-						thisRect.width = thatRect.x + thatRect.width - thisRect.x;
-					if (thatRect.y + thatRect.height > thisRect.y + thisRect.height)
-						thisRect.height = thatRect.y + thatRect.height - thisRect.y;
-				}
-				/*  Resize the view, while keeping the subviews at the same window position */
-				dx = thisRect.x;
-				dy = thisRect.y;
-				for (node = children.GetFirst(); node; node = node->GetNext()) {
-					wxWindow *current = (wxWindow *)node->GetData();
-					thatRect = current->GetRect();
-					current->Move(thatRect.x - dx, thatRect.y - dy);
-				}
-				origRect.x += dx;
-				origRect.y += dy;
-				origRect.width = thisRect.width;
-				origRect.height = thisRect.height;
-				((wxWindow *)item)->SetSize(origRect);
-			}
-		}
+		sResizeSubWindows((RubyValue)dval, this, size.x - mySize.width, size.y - mySize.height);
 	}
 	mySize.width = size.x;
 	mySize.height = size.y;
+	event.Skip();
+}
+
+int
+RubyDialogFrame::ListenToObject(void *obj, const char *objtype, const char *msg, RubyValue oval, RubyValue pval)
+{
+	int i, j, eventId;
+	wxEventType eventType;
+	wxEvtHandler *handler;
+	if (strcmp(objtype, "Molecule") == 0) {
+		eventType = MyDocumentEvent;
+		handler = MyDocumentFromMolecule((Molecule *)obj);
+		if (handler == NULL)
+			return -1;  /*  obj is not an event handler  */
+		if (msg == NULL)
+			eventId = -1;
+		else if (strcmp(msg, "documentModified") == 0)
+			eventId = MyDocumentEvent_documentModified;
+		else if (strcmp(msg, "documentWillClose") == 0)
+			eventId = MyDocumentEvent_documentWillClose;
+		else return -2; /*  this event type is not supported  */
+	} else return -1;
+	
+	if (pval == NULL || pval == RubyNil) {
+		/*  Remove the registration  */
+		for (i = 0; i < countMessageData; i++) {
+			if (messageData[i * 5] == (void *)handler && 
+				messageData[i * 5 + 1] == (void *)eventId &&
+				messageData[i * 5 + 2] == (void *)eventType) {
+				handler->Disconnect(eventId, eventType, wxCommandEventHandler(RubyDialogFrame::HandleDocumentEvent));
+				break;
+			}
+		}
+		if (i == countMessageData)
+			return -3;  /*  No such message  */
+		messageData[i * 5] = NULL;
+		return i;
+	} else {
+		/*  Check the duplicate  */
+		j = countMessageData;  /*  The position to store info if it is new  */
+		for (i = 0; i < countMessageData; i++) {
+			if (messageData[i * 5] == (void *)handler && 
+				messageData[i * 5 + 1] == (void *)eventId &&
+				messageData[i * 5 + 2] == (void *)eventType) {
+				/*  Just replace the arguments  */
+				messageData[i * 5 + 3] = (void *)oval;
+				messageData[i * 5 + 4] = (void *)pval;
+				break;
+			}
+			if (messageData[i * 5] == NULL)
+				j = i;
+		}
+		if (i == countMessageData) {
+			/*  Register the data and establish a new connection  */
+			if (j == countMessageData) {
+				/*  Create a new entry  */
+				InsertArray(&messageData, &countMessageData, sizeof(void *) * 5, i, 1, NULL);
+			}
+			messageData[j * 5] = (void *)handler;
+			messageData[j * 5 + 1] = (void *)eventId;
+			messageData[j * 5 + 2] = (void *)eventType;
+			messageData[j * 5 + 3] = (void *)oval;
+			messageData[j * 5 + 4] = (void *)pval;
+			handler->Connect(eventId, eventType, wxCommandEventHandler(RubyDialogFrame::HandleDocumentEvent), NULL, this);
+			i = j;
+		}
+		return i;
+	}
+}
+
+void
+RubyDialogFrame::HandleDocumentEvent(wxCommandEvent &event)
+{
+	int i;
+	int eventId = event.GetId();
+	int eventType = event.GetEventType();
+	wxObject *eventObject = event.GetEventObject();
+		
+	/*  Look up the message table  */
+	for (i = 0; i < countMessageData; i++) {
+		if (messageData[i * 5] == (void *)eventObject && 
+			messageData[i * 5 + 1] == (void *)eventId &&
+			messageData[i * 5 + 2] == (void *)eventType) {
+			int status;
+			RubyValue oval = (RubyValue)messageData[i * 5 + 3];
+			RubyValue pval = (RubyValue)messageData[i * 5 + 4];
+			Ruby_funcall2_protect_extern(pval, g_RubyID_call, 1, &oval, &status);
+/*			if (status != 0) {
+				Molby_showError(status);
+			} */
+		}
+	}
 	event.Skip();
 }
 
@@ -486,6 +590,12 @@ int
 RubyDialogCallback_isAutoResizeEnabled(RubyDialog *dref)
 {
 	return ((RubyDialogFrame *)dref)->IsAutoResizeEnabled();
+}
+
+int
+RubyDialogCallback_Listen(RubyDialog *dref, void *obj, const char *objtype, const char *msg, RubyValue oval, RubyValue pval)
+{
+	return ((RubyDialogFrame *)dref)->ListenToObject(obj, objtype, msg, oval, pval);
 }
 
 void

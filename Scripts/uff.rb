@@ -195,6 +195,7 @@ def guess_uff_parameter_dialog(current_value, indices)
   }
   names = indices.map { |i| sprintf("%d:%s", atoms[i].res_seq, atoms[i].name) }
   types = indices.map { |i| atoms[i].atom_type }
+  utypes = indices.map { |i| atoms[i].uff_type }
   names_str = names.join("-")
   types_str = types.join("-")
   recalc = proc { |i1, i2, i3, b1, b2|
@@ -224,7 +225,9 @@ def guess_uff_parameter_dialog(current_value, indices)
       if p.length == 1
         type_selects.push(item(:text, :title=>UFFParams[p[0]][0]))
       else
-        type_selects.push(item(:popup, :subitems=>p.map { |pp| UFFParams[pp][0] }, :tag=>"uff_type_#{i}", :action=>action_proc))
+	    subitems = p.map { |pp| UFFParams[pp][0] }
+		uff_idx = subitems.index(utypes[i]) || 0
+        type_selects.push(item(:popup, :subitems=>p.map { |pp| UFFParams[pp][0] }, :tag=>"uff_type_#{i}", :action=>action_proc, :value=>uff_idx))
       end
     }
     bond_orders = []
@@ -252,6 +255,15 @@ def guess_uff_parameter_dialog(current_value, indices)
     )
   }
   if hash[:status] == 0
+    3.times { |i|
+	  idx = indices[i]
+	  next unless idx
+	  ii = uff_types[i][hash["uff_type_#{i}"].to_i]
+	  puts "i = #{i}, idx = #{idx}, ii = #{ii}, UFFParams[ii][0] = #{UFFParams[ii][0].inspect}"
+	  if ii
+        atoms[idx].uff_type = UFFParams[ii][0]
+      end
+	}
     return hash["guessed"], current_value
   else
     return nil

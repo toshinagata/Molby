@@ -372,9 +372,22 @@ class Molecule
 		item(:textfield, :width=>"80", :tag=>"nc", :value=>(get_global_settings("antechamber.nc") || "0")),
 		(tool == "resp" ?
 		  -1 :
-		  item(:checkbox, :title=>"Optimize structure and calculate charges (may be slow)", :tag=>"calc_charge",
-		    :value=>(get_global_settings("antechamber.calc_charge") || 0),
-		    :action=>proc { |it| set_attr("nc", :enabled=>(it[:value] != 0)) } )),
+		  item(:checkbox, :title=>"Calculate partial charges", :tag=>"calc_charge",
+		    :action=>proc { |it|
+			  set_attr("optimize_structure", :enabled=>(it[:value] != 0)) } )),
+		-1,
+		(tool == "resp" ?
+		  -1 :
+		  layout(2,
+		    item(:view, :width=>"12"),
+			item(:checkbox, :title=>"Optimize structure before calculating charges (may be slow)",
+			  :tag=>"optimize_structure",
+			  :value=>(get_global_settings("antechamber.optimize_structure") || 0)))),
+		-1,
+		(tool == "resp" ?
+		  -1 :
+		  item(:checkbox, :title=>"Guess atom types", :tag=>"guess_atom_types",
+		    :value=>(get_global_settings("antechamber.guess_atom_types") || 1))),
 		-1,
 		item(:checkbox, :title=>"Use the residue information for connection analysis", :tag=>"use_residue",
 		  :value=>(get_global_settings("antechamber.use_residue") || 0),
@@ -408,6 +421,11 @@ class Molecule
 		),
 		-1
 	  )
+	  it = item_with_tag("calc_charge")
+	  if it
+	    it[:value] = (get_global_settings("antechamber.calc_charge") || 0)
+		it[:action].call(it)
+	  end
     }
 	hash.each_pair { |key, value|
 	  next if key == :status
@@ -613,18 +631,22 @@ class Molecule
 	
   end
   
-  def import_ac(acfile)
+  def import_ac(acfile, read_charge, read_type)
     open(acfile, "r") { |fp|
 	  while (s = fp.gets)
 	    next if s !~ /^ATOM/
 		s.chomp!
 		idx = Integer(s[4..11]) - 1
-		charge = Float(s[54..63])
-		type = s[72..-1]
-		type.gsub!(/ /, "")
 		ap = atoms[idx]
-		ap.charge = charge
-		ap.atom_type = type
+		if read_charge != 0
+		  charge = Float(s[54..63])
+  		  ap.charge = charge
+		end
+		if read_type != 0
+		  type = s[72..-1]
+		  type.gsub!(/ /, "")
+		  ap.atom_type = type
+		end
 	  end
 	}
 	return 0

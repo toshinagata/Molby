@@ -876,6 +876,27 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 				i++;
 			}
 			continue;
+		} else if (strcmp(buf, "!:uff_types") == 0) {
+			i = 0;
+			while (ReadLine(buf, sizeof buf, fp, &lineNumber) > 0) {
+				if (buf[0] == '!')
+					continue;
+				if (buf[0] == '\n')
+					break;
+				/* idx uff_type */
+				if (sscanf(buf, "%d %6s", &ibuf[0], cbuf[0]) < 2) {
+					s_append_asprintf(errbuf, "line %d: uff type info cannot be read for atom %d", lineNumber, i + 1);
+					goto err_exit;
+				}
+				if (i >= mp->natoms) {
+					s_append_asprintf(errbuf, "line %d: too many uff type info\n", lineNumber);
+					goto err_exit;
+				}
+				ap = ATOM_AT_INDEX(mp->atoms, i);
+				strncpy(ap->uff_type, cbuf[0], 5);
+				ap->uff_type[5] = 0;
+				i++;
+			}
 		} else if (strcmp(buf, "!:mm_exclude") == 0) {
 			i = 0;
 			while (ReadLine(buf, sizeof buf, fp, &lineNumber) > 0) {
@@ -3763,7 +3784,7 @@ int
 MoleculeWriteToMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 {
 	FILE *fp;
-	Int i, j, k, n1, n2, n3, n_aniso, nframes, nanchors;
+	Int i, j, k, n1, n2, n3, n_aniso, nframes, nanchors, n_uff;
 	Atom *ap;
 	char bufs[6][8];
 
@@ -3779,7 +3800,7 @@ MoleculeWriteToMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 
 	fprintf(fp, "!:atoms\n");
 	fprintf(fp, "! idx seg_name res_seq res_name name type charge weight element atomic_number occupancy temp_factor int_charge\n");
-	n1 = n2 = n3 = n_aniso = nanchors = 0;
+	n1 = n2 = n3 = n_aniso = nanchors = n_uff = 0;
 	for (i = 0, ap = mp->atoms; i < mp->natoms; i++, ap = ATOM_NEXT(ap)) {
 		strncpy(bufs[0], ap->segName, 4);
 		bufs[0][4] = 0;
@@ -3813,9 +3834,21 @@ MoleculeWriteToMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 			n_aniso++;
 		if (ap->anchor != NULL)
 			nanchors++;
+		if (ap->uff_type[0] != 0)
+			n_uff++;
 		fprintf(fp, "%d %s %d %s %s %s %.5f %.5f %s %d %f %f %d\n", i, bufs[0], ap->resSeq, bufs[1], bufs[2], bufs[3], ap->charge, ap->weight, bufs[4], ap->atomicNumber, ap->occupancy, ap->tempFactor, ap->intCharge);
 	}
 	fprintf(fp, "\n");
+	
+	if (n_uff > 0) {
+		fprintf(fp, "!:uff_type\n");
+		fprintf(fp, "! idx uff_type\n");
+		for (i = 0, ap = mp->atoms; i < mp->natoms; i++, ap = ATOM_NEXT(ap)) {
+			int n;
+			fprintf(fp, "%d %.5s\n", i, ap->uff_type);
+		}
+		fprintf(fp, "\n");
+	}
 	
 	if (n1 > 0) {
 		fprintf(fp, "!:atoms_symop\n");

@@ -25,6 +25,8 @@ extern "C" {
 
 /*  This definition is to work around 'VALUE' type in sources without "ruby.h"  */
 typedef void *RubyValue;
+
+#define RubyNil ((RubyValue)4)
 	
 extern char *gRubyVersion;
 extern char *gRubyCopyright;
@@ -38,6 +40,11 @@ extern RubyValue Molby_evalRubyScriptOnActiveMoleculeWithInterrupt(const char *s
 extern void Molby_showRubyValue(RubyValue value, char **outValueString);
 extern int Ruby_methodType(const char *className, const char *methodName);
 extern void Molby_buildARGV(int argc, const char **argv);
+	
+/*  RubyValue version of Ruby_funcall2_protect()  */
+extern RubyValue Ruby_funcall2_protect_extern(RubyValue recv, int mid, int argc, RubyValue *argv, int *status);
+
+extern int g_RubyID_call;  /*  rb_intern("call") for extrenal use  */
 	
 STUB char *MyAppCallback_getGUIDescriptionString(void);
 STUB char *MyAppCallback_getGlobalSettings(const char *key);

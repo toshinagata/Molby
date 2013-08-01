@@ -485,7 +485,13 @@ MyDocument::Close()
 		MyAppCallback_errorMessageBox("%s is running: please stop it before closing", msg);
 		return false;
 	}
-	return wxDocument::Close();
+	if (wxDocument::Close()) {
+		/*  Send a message that this document will close  */
+		wxCommandEvent myEvent(MyDocumentEvent, MyDocumentEvent_documentWillClose);
+		myEvent.SetEventObject(this);
+		ProcessEvent(myEvent);
+		return true;
+	} else return false;		
 }
 
 void
@@ -1386,7 +1392,7 @@ void
 MyDocument::OnInvokeAntechamber(wxCommandEvent &event)
 {
 	char *ante_dir, buf[256];
-	Int net_charge, i, n, calc_charge, use_residue;
+	Int net_charge, i, n, calc_charge, optimize_structure, use_residue, guess_atom_types;
 	int status;
 
 	/*  Find the ambertool directory  */
@@ -1401,6 +1407,8 @@ MyDocument::OnInvokeAntechamber(wxCommandEvent &event)
 
 	if ((status = MyAppCallback_getGlobalSettingsWithType("antechamber.nc", 'i', &net_charge))
 		|| (status = MyAppCallback_getGlobalSettingsWithType("antechamber.calc_charge", 'i', &calc_charge))
+		|| (status = MyAppCallback_getGlobalSettingsWithType("antechamber.optimize_structure", 'i', &optimize_structure))
+		|| (status = MyAppCallback_getGlobalSettingsWithType("antechamber.guess_atom_types", 'i', &guess_atom_types))
 		|| (status = MyAppCallback_getGlobalSettingsWithType("antechamber.use_residue", 'i', &use_residue))) {
 		Molby_showError(status);
 		return;
@@ -1456,6 +1464,7 @@ MyDocument::OnInvokeAntechamber(wxCommandEvent &event)
 	{
 		/*  Run antechamber and parmck  */
 		char *p;
+		int j_option = 4;
 
 		/*  Set AMBERHOME environment variable if necessary  */
 		n = strlen(ante_dir);
@@ -1473,15 +1482,20 @@ MyDocument::OnInvokeAntechamber(wxCommandEvent &event)
 		}
 		
 		if (calc_charge) {
-			snprintf(buf, sizeof buf, "-nc %d -c bcc", net_charge);
+			snprintf(buf, sizeof buf, "-nc %d -c bcc %s", net_charge,
+					 (optimize_structure ? "" : " -ek 'maxcyc=0'"));
 		} else buf[0] = 0;
 
-		asprintf(&p, "\"%s/antechamber\" -i mol.pdb -fi pdb -o mol.ac -fo ac %s", ante_dir, buf);
+		if (!guess_atom_types) {
+			j_option = 0;
+		}
+		
+		asprintf(&p, "\"%s/antechamber\" -i mol.pdb -fi pdb -o mol.ac -fo ac -j %d %s", ante_dir, j_option, buf);
 
 		status = MyAppCallback_callSubProcess(p, "antechamber", NULL, NULL);
 		if (status != 0) {
 			MyAppCallback_errorMessageBox("Antechamber failed: status = %d.", status);
-		} else {
+		} else if (guess_atom_types) {
 			asprintf(&p, "\"%s/parmchk\" -i mol.ac -f ac -o frcmod", ante_dir);
 			status = MyAppCallback_callSubProcess(p, "parmchk", NULL, NULL);
 			if (status != 0)
@@ -1491,7 +1505,7 @@ MyDocument::OnInvokeAntechamber(wxCommandEvent &event)
 
 	if (status == 0) {
 		wxString acfile = tdir + wxFileName::GetPathSeparator() + _T("mol.ac");
-		status = MolActionCreateAndPerform(mol, SCRIPT_ACTION("s"), "import_ac", (const char *)acfile.mb_str(wxConvFile));
+		status = MolActionCreateAndPerform(mol, SCRIPT_ACTION("sii"), "import_ac", (const char *)acfile.mb_str(wxConvFile), calc_charge, guess_atom_types);
 		if (status != 0) {
 			MyAppCallback_errorMessageBox("Cannot import antechamber output.");
 		}
@@ -1507,7 +1521,7 @@ MyDocument::OnInvokeAntechamber(wxCommandEvent &event)
 		}
 	}
 
-	if (status == 0) {
+	if (guess_atom_types && status == 0) {
 		wxString frcmodfile = tdir + wxFileName::GetPathSeparator() + _T("frcmod");
 		status = MolActionCreateAndPerform(mol, SCRIPT_ACTION("s"), "import_frcmod", (const char *)frcmodfile.mb_str(wxConvFile));
 		if (status != 0) {
@@ -1737,6 +1751,7 @@ MoleculeCallback_notifyModification(Molecule *mp, int now_flag)
 	if (doc && !doc->isModifyNotificationSent) {
 		doc->isModifyNotificationSent = true;
 		wxCommandEvent myEvent(MyDocumentEvent, MyDocumentEvent_documentModified);
+		myEvent.SetEventObject(doc);
 		if (now_flag)
 			doc->ProcessEvent(myEvent);
 		else
