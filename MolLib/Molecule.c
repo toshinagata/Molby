@@ -3844,7 +3844,6 @@ MoleculeWriteToMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 		fprintf(fp, "!:uff_type\n");
 		fprintf(fp, "! idx uff_type\n");
 		for (i = 0, ap = mp->atoms; i < mp->natoms; i++, ap = ATOM_NEXT(ap)) {
-			int n;
 			fprintf(fp, "%d %.5s\n", i, ap->uff_type);
 		}
 		fprintf(fp, "\n");

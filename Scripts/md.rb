@@ -498,7 +498,7 @@ class Molecule
 	return count
   end
   
-  def cmd_antechamber
+  def antechamber_dialog
     return ambertools_dialog("antechamber")
   end
   
@@ -540,11 +540,13 @@ class Molecule
 	ante_dir = "#{ResourcePath}/amber11/bin"
 	#  Ask for antechamber options and log directory
 	if ask_options
-  	  n = cmd_antechamber()
+  	  n = antechamber_dialog()
 	  return 1 if n == 0
 	end
 	nc = get_global_settings("antechamber.nc").to_i
 	calc_charge = get_global_settings("antechamber.calc_charge").to_i
+	guess_atom_types = get_global_settings("antechamber.guess_atom_types").to_i
+	optimize_structure = get_global_settings("antechamber.optimize_structure").to_i
 	use_residue = get_global_settings("antechamber.use_residue").to_i
 	#  Create log directory
 	name = self.name.sub(/\.\w*$/, "")  #  Remove the extension
@@ -569,12 +571,19 @@ class Molecule
 	end
 	cwd = Dir.pwd
 	Dir.chdir(tdir)
+	mol2 = self.dup
 	if use_residue == 0
-	  mol2 = self.dup
 	  mol2.assign_residue(mol2.all, 1)
-	else
-	  mol2 = self
 	end
+	#  Rename the molecule (antechamber assumes the atom names begin with element symbol)
+	mol2.each_atom { |ap|
+	  ap.name = ap.element
+	  if ap.name.length == 1
+	    ap.name += sprintf("%03d", ap.index % 1000)
+	  else
+	    ap.name += sprintf("%02d", ap.index % 100)
+	  end
+	}
 	mol2.savepdb("./mol.pdb")
 	#  Set environmental variable
 	p = ENV["AMBERHOME"]
@@ -586,25 +595,33 @@ class Molecule
 	  ENV["AMBERHOME"] = amberhome
 	end
 	if calc_charge != 0
-	  opt = "-nc #{net_charge} -c bcc"
+	  opt = "-nc #{nc} -c bcc"
+	  if optimize_structure == 0
+	    opt += " -ek 'maxcyc=0'"
+	  end
 	else
 	  opt = ""
 	end
+	if guess_atom_types == 0
+	  opt += " -j 0"
+    end
 	n = call_subprocess("#{ante_dir}/antechamber -i mol.pdb -fi pdb -o mol.ac -fo ac #{opt}", "Antechamber")
 	if n != 0
 	  error_message_box("Antechamber failed: status = #{n}.")
 	  Dir.chdir(cwd)
 	  return n
 	else
-	  n = call_subprocess("#{ante_dir}/parmchk -i mol.ac -f ac -o frcmod", "Parmchk")
-	  if n != 0
-	    error_message_box("Parmchk failed: status = #{n}.")
-		Dir.chdir(cwd)
-		return n
+	  if guess_atom_types != 0
+	    n = call_subprocess("#{ante_dir}/parmchk -i mol.ac -f ac -o frcmod", "Parmchk")
+	    if n != 0
+	      error_message_box("Parmchk failed: status = #{n}.")
+		  Dir.chdir(cwd)
+		  return n
+	    end
 	  end
 	end
 	Dir.chdir(cwd)
-	n = import_ac("#{tdir}/mol.ac")
+	n = import_ac("#{tdir}/mol.ac", calc_charge, guess_atom_types)
 	if n != 0
 	  error_message_box("Cannot import antechamber output.")
 	  return n
@@ -616,13 +633,15 @@ class Molecule
 		return n
 	  end
 	end
-	n = import_frcmod("#{tdir}/frcmod")
-	if n != 0
-	  error_message_box("Cannot import parmchk output.")
-	  return n
-	end
-	if self.nimpropers > 0
-	  remove_improper(IntGroup[0...self.nimpropers])
+	if guess_atom_types != 0
+	  n = import_frcmod("#{tdir}/frcmod")
+	  if n != 0
+	    error_message_box("Cannot import parmchk output.")
+	    return n
+	  end
+	  if self.nimpropers > 0
+	    remove_improper(IntGroup[0...self.nimpropers])
+	  end
 	end
 	log_level = get_global_settings("antechamber.log_level")
 	log_keep_number = get_global_settings("antechamber.log_keep_number")
@@ -1356,6 +1375,15 @@ class Molecule
 	  end
 	}
 	elements.sort_by { |p| p[0] }
+  end
+  
+  def cmd_antechamber
+    if natoms == 0
+	  error_message_box "Molecule is empty"
+	  return
+	end
+	return if invoke_antechamber(true) != 0
+	message_box("Antechamber succeeded.", "Antechamber Success", :ok)
   end
   
   def cmd_run_resp
