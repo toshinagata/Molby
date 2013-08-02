@@ -40,7 +40,7 @@ static VALUE
 	/*  Data source for Table (= MyListCtrl)  */
 	sOnCountSymbol, sOnGetValueSymbol, sOnSetValueSymbol, sOnSelectionChangedSymbol,
 	sOnSetColorSymbol, sIsItemEditableSymbol, sIsDragAndDropEnabledSymbol, sOnDragSelectionToRowSymbol,
-	sSelectionSymbol, sColumnsSymbol, sRefreshSymbol;
+	sSelectionSymbol, sColumnsSymbol, sRefreshSymbol, sHasPopUpMenu, sOnPopUpMenuSelected;
 
 VALUE rb_cDialog = Qfalse;
 VALUE rb_cDialogItem = Qfalse;
@@ -1710,12 +1710,9 @@ RubyDialog_SetTableItemText(RubyValue self, RDItem *ip, int row, int column, con
 	int status;
 	void *vp[7] = { (void *)self, (void *)ip, (void *)sOnSetValueSymbol, (void *)row, (void *)column, (void *)str, NULL };
 	VALUE val = rb_protect(s_RubyDialog_doTableAction, (VALUE)vp, &status);
-	if (status != 0) {
-		Molby_showError(status);
+	if (status != 0 || val == Qnil) {
 		return -1;
-	} else if (val == Qnil)
-		return -1;
-	else
+	} else
 		return (int)vp[6];
 }
 
@@ -1735,10 +1732,7 @@ RubyDialog_IsTableItemEditable(RubyValue self, RDItem *ip, int row, int column)
 	int status;
 	void *vp[4] = { (void *)self, (void *)ip, (void *)sIsItemEditableSymbol, NULL };
 	VALUE val = rb_protect(s_RubyDialog_doTableAction, (VALUE)vp, &status);
-	if (status != 0) {
-		Molby_showError(status);
-		return 0;
-	} else if (val == Qnil)
+	if (status != 0 || val == Qnil)
 		return 0;
 	else return (int)vp[3];	
 }
@@ -1749,10 +1743,7 @@ RubyDialog_IsTableDragAndDropEnabled(RubyValue self, RDItem *ip)
 	int status;
 	void *vp[4] = { (void *)self, (void *)ip, (void *)sIsDragAndDropEnabledSymbol, NULL };
 	VALUE val = rb_protect(s_RubyDialog_doTableAction, (VALUE)vp, &status);
-	if (status != 0) {
-		Molby_showError(status);
-		return 0;
-	} else if (val == Qnil)
+	if (status != 0 || val == Qnil)
 		return 0;
 	else return (int)vp[3];	
 }
@@ -1773,14 +1764,32 @@ RubyDialog_SetTableItemColor(RubyValue self, RDItem *ip, int row, int column, fl
 	int status;
 	void *vp[8] = { (void *)self, (void *)ip, (void *)sOnSetColorSymbol, (void *)row, (void *)column, (void *)fg, (void *)bg, NULL };
 	VALUE val = rb_protect(s_RubyDialog_doTableAction, (VALUE)vp, &status);
-	if (status != 0) {
-		Molby_showError(status);
-		return 0;
-	} else if (val == Qnil)
+	if (status != 0 || val == Qnil)
 		return 0;
 	else return (int)vp[7];
 }
 
+int
+RubyDialog_HasPopUpMenu(RubyValue self, RDItem *ip, int row, int column, char ***menu_titles)
+{
+	int status;
+	void *vp[7] = { (void *)self, (void *)ip, (void *)sHasPopUpMenu, (void *)row, (void *)column, (void *)menu_titles, NULL };
+	VALUE val = rb_protect(s_RubyDialog_doTableAction, (VALUE)vp, &status);
+	if (status != 0 || val == Qnil)
+		return 0;
+	else return (int)vp[6];
+}
+
+void
+RubyDialog_OnPopUpMenuSelected(RubyValue self, RDItem *ip, int row, int column, int selected_index)
+{
+	int status;
+	void *vp[7] = { (void *)self, (void *)ip, (void *)sOnPopUpMenuSelected, (void *)row, (void *)column, (void *)selected_index, NULL };
+	rb_protect(s_RubyDialog_doTableAction, (VALUE)vp, &status);
+	if (status != 0)
+		Molby_showError(status);
+}
+	
 #pragma mark ====== Utility function ======
 
 int
@@ -2035,7 +2044,7 @@ RubyDialogInitClass(void)
 			&sMediumSymbol, &sBoldSymbol, &sLightSymbol,
 			&sOnCountSymbol, &sOnGetValueSymbol, &sOnSetValueSymbol, &sOnSelectionChangedSymbol,
 			&sOnSetColorSymbol, &sIsItemEditableSymbol, &sIsDragAndDropEnabledSymbol, &sOnDragSelectionToRowSymbol,
-			&sSelectionSymbol, &sColumnsSymbol, &sRefreshSymbol
+			&sSelectionSymbol, &sColumnsSymbol, &sRefreshSymbol, &sHasPopUpMenu, &sOnPopUpMenuSelected
 		};
 		static const char *sTable2[] = {
 			"text", "textfield", "radio", "button",
@@ -2055,7 +2064,7 @@ RubyDialogInitClass(void)
 			"medium", "bold", "light",
 			"on_count", "on_get_value", "on_set_value", "on_selection_changed",
 			"on_set_color", "is_item_editable", "is_drag_and_drop_enabled", "on_drag_selection_to_row",
-			"selection", "columns", "refresh"
+			"selection", "columns", "refresh", "has_popup_menu", "on_popup_menu_selected"
 		};
 		int i;
 		for (i = 0; i < sizeof(sTable1) / sizeof(sTable1[0]); i++)

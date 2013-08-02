@@ -44,7 +44,12 @@ public:
 	virtual bool IsItemEditable(MyListCtrl *ctrl, long row, long column) { return false; }
 	virtual bool IsDragAndDropEnabled(MyListCtrl *ctrl) { return false; }
 	virtual void OnSelectionChanged(MyListCtrl *ctrl) {}
-	
+
+	//  If a popup menu is attached to the cell, then returns a positive integer, and *menu_titles should
+	//  contain a malloc()'ed array of char* pointers (that are also malloc()'ed or strdup()'ed)
+	virtual int HasPopUpMenu(MyListCtrl *ctrl, long row, long column, char ***menu_titles) { return 0; }
+	virtual void OnPopUpMenuSelected(MyListCtrl *ctrl, long row, long column, int selected_index) {}
+
 	//  Return 1 if foreground color should be modified, 2 if background color should be modified, 3 if both
 	virtual int SetItemColor(MyListCtrl *ctrl, long row, long col, float *fg, float *bg) { return 0; }
 };
@@ -104,13 +109,15 @@ public:
 	
 	void OnChar(wxKeyEvent &event);
 	void OnMouseDown(wxMouseEvent &event);
+	void OnPopUpMenuSelected(wxCommandEvent &event);
 	void OnLeftDClick(wxMouseEvent &event);
 	
 	void PostSelectionChangeNotification();
 	
 	bool selectionChangeNotificationSent;
 	bool selectionChangeNotificationEnabled;
-	
+	int lastPopUpColumn, lastPopUpRow;
+
 private:
 	DECLARE_DYNAMIC_CLASS(MyListCtrl)
 	DECLARE_EVENT_TABLE()

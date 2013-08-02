@@ -442,6 +442,18 @@ RubyDialogFrame::SetItemColor(MyListCtrl *ctrl, long row, long col, float *fg, f
 	return RubyDialog_SetTableItemColor((RubyValue)dval, (RDItem *)ctrl, row, col, fg, bg);
 }
 
+int
+RubyDialogFrame::HasPopUpMenu(MyListCtrl *ctrl, long row, long column, char ***menu_titles)
+{
+	return RubyDialog_HasPopUpMenu((RubyValue)dval, (RDItem *)ctrl, row, column, menu_titles);
+}
+
+void
+RubyDialogFrame::OnPopUpMenuSelected(MyListCtrl *ctrl, long row, long column, int selected_index)
+{
+	RubyDialog_OnPopUpMenuSelected((RubyValue)dval, (RDItem *)ctrl, row, column, selected_index);
+}
+
 #pragma mark ====== Plain C interface ======
 
 RubyDialog *

@@ -361,8 +361,8 @@
 			children = (
 				E4A4667410C15B4300E40A9D /* listctrl.cpp */,
 				9E12580E119EC42E00E95DC3 /* docview.cpp */,
-				E4513F530EED72C0009DF1F7 /* MyListCtrl.h */,
 				E40DDC6C1435C03E000F0E81 /* MyMBConv.h */,
+				E4513F530EED72C0009DF1F7 /* MyListCtrl.h */,
 				E4513F540EED72C0009DF1F7 /* MyListCtrl.cpp */,
 				E4C8CBDD10B83060006C4692 /* MyDocManager.h */,
 				E4C8CBDE10B83060006C4692 /* MyDocManager.cpp */,

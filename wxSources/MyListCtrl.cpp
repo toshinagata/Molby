@@ -16,10 +16,12 @@
  */
 
 #include "MyListCtrl.h"
+#include "MyMBConv.h"
 
 #include "wx/dcclient.h"
 #include "wx/scrolwin.h"
 #include "wx/glcanvas.h"
+#include "wx/menu.h"
 
 const wxEventType MyListCtrlEvent = wxNewEventType();
 
@@ -532,6 +534,13 @@ MyListCtrl::InsertColumn(long col, const wxString &heading, int format, int widt
 }
 
 void
+MyListCtrl::OnPopUpMenuSelected(wxCommandEvent &event)
+{
+	if (dataSource != NULL)
+		dataSource->OnPopUpMenuSelected(this, lastPopUpRow, lastPopUpColumn, event.GetId());
+}
+
+void
 MyListCtrl::OnLeftDClick(wxMouseEvent &event)
 {
 	int row, col;
@@ -552,11 +561,31 @@ MyListCtrl::OnLeftDClick(wxMouseEvent &event)
 void
 MyListCtrl::OnMouseDown(wxMouseEvent &event)
 {
+	int row, col, i, n;
+	char **items;
+
 	if (editText != NULL && editText->IsShown()) {
 		//  During the text edit, mouse down outside the textctrl will terminate the editing
 		EndEditText();
 	}
 
+	wxPoint pos = event.GetPosition();
+	if (FindItemAtPosition(pos, &row, &col) && dataSource != NULL && (n = dataSource->HasPopUpMenu(this, row, col, &items)) > 0) {
+		wxMenu mnu;
+		for (i = 0; i < n; i++) {
+			wxString itemStr(items[i], WX_DEFAULT_CONV);
+			mnu.Append(i, itemStr);
+			free(items[i]);
+			items[i] = NULL;
+		}
+		free(items);
+		lastPopUpColumn = col;
+		lastPopUpRow = row;
+		mnu.Connect(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler(MyListCtrl::OnPopUpMenuSelected), NULL, this);
+		PopupMenu(&mnu);
+		return;
+	}
+	
 	//  Intercept mouse down event and post selection change notification
 	//  (a workaround of wxMSW problem where EVT_LIST_ITEM_SELECTED is not sent in some occasions)
 	PostSelectionChangeNotification();

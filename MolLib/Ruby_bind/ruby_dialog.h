@@ -53,6 +53,7 @@ extern int RubyDialog_validateItemContent(RubyValue self, RDItem *ip, const char
 extern void RubyDialog_doItemAction(RubyValue self, RDItem *ip);
 extern void RubyDialog_doTimerAction(RubyValue self);
 extern int RubyDialog_getFlexFlags(RubyValue self, RDItem *ip);
+
 extern int RubyDialog_GetTableItemCount(RubyValue self, RDItem *ip);
 extern void RubyDialog_GetTableItemText(RubyValue self, RDItem *ip, int row, int column, char *buf, int blen);
 extern int RubyDialog_SetTableItemText(RubyValue self, RDItem *ip, int row, int column, const char *str);
@@ -61,6 +62,9 @@ extern int RubyDialog_IsTableItemEditable(RubyValue self, RDItem *ip, int row, i
 extern int RubyDialog_IsTableDragAndDropEnabled(RubyValue self, RDItem *ip);
 extern void RubyDialog_OnTableSelectionChanged(RubyValue self, RDItem *ip);
 extern int RubyDialog_SetTableItemColor(RubyValue self, RDItem *ip, int row, int column, float *fg, float *bg);
+extern int RubyDialog_HasPopUpMenu(RubyValue self, RDItem *ip, int row, int column, char ***menu_titles);
+extern void RubyDialog_OnPopUpMenuSelected(RubyValue self, RDItem *ip, int row, int column, int selected_index);
+	
 extern void RubyDialogInitClass(void);
 
 /*  Stub routines  */

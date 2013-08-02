@@ -75,7 +75,9 @@ public:
 	virtual bool IsDragAndDropEnabled(MyListCtrl *ctrl);
 	virtual void OnSelectionChanged(MyListCtrl *ctrl);
 	virtual int SetItemColor(MyListCtrl *ctrl, long row, long col, float *fg, float *bg);
-	
+	virtual int HasPopUpMenu(MyListCtrl *ctrl, long row, long column, char ***menu_titles);
+	virtual void OnPopUpMenuSelected(MyListCtrl *ctrl, long row, long column, int selected_index);
+		
 private:
 	DECLARE_EVENT_TABLE()
 };
