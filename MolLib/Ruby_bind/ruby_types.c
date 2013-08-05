@@ -2457,6 +2457,14 @@ s_IntGroup_Initialize(int argc, VALUE *argv, VALUE self)
 	return Qnil;
 }
 
+static VALUE
+s_IntGroup_Create(int argc, VALUE *argv, VALUE klass)
+{
+	VALUE val = IntGroup_Alloc(klass);
+	s_IntGroup_Initialize(argc, argv, val);
+	return val;
+}
+
 /*
  *  call-seq:
  *     clear -> self
@@ -2488,6 +2496,25 @@ s_IntGroup_InitializeCopy(VALUE self, VALUE val)
     Data_Get_Struct(val, IntGroup, ig2);
 	IntGroupCopy(ig1, ig2);
 	return self;
+}
+
+/*
+ *  call-seq:
+ *     ==(arg)
+ *
+ *  Returns true if the argument represents the same integer group.
+ */
+static VALUE
+s_IntGroup_Equal(VALUE self, VALUE val)
+{
+	IntGroup *ig1, *ig2;
+	Data_Get_Struct(self, IntGroup, ig1);
+	if (!rb_obj_is_kind_of(val, rb_cIntGroup))
+		val = s_IntGroup_Create(1, &val, rb_cIntGroup);
+	Data_Get_Struct(val, IntGroup, ig2);
+	if (IntGroupIsEqual(ig1, ig2))
+		return Qtrue;
+	else return Qfalse;
 }
 
 /*
@@ -2733,40 +2760,23 @@ s_IntGroup_RangeAt(VALUE self, VALUE val)
 }
 
 /*
+ *  call-seq:
+ *     each_range {|r| ...}
+ *
+ *  Call the block with each range in self.
+ */
 static VALUE
-s_IntGroup_Merge(VALUE self, VALUE val)
+s_IntGroup_EachRange(VALUE self)
 {
-	IntGroup *ig1, *ig2;
-	int i, sp, interval;
-    if (OBJ_FROZEN(self))
-		rb_error_frozen("IntGroup");
-	Data_Get_Struct(self, IntGroup, ig1);
-	ig2 = IntGroupFromValue(val);
-	for (i = 0; (sp = IntGroupGetStartPoint(ig2, i)) >= 0; i++) {
-		interval = IntGroupGetInterval(ig2, i);
-		IntGroup_RaiseIfError(IntGroupAdd(ig1, sp, interval));
+	IntGroup *ig;
+	int i, sp, ep;
+	Data_Get_Struct(self, IntGroup, ig);
+	for (i = 0; (sp = IntGroupGetStartPoint(ig, i)) >= 0; i++) {
+		ep = IntGroupGetEndPoint(ig, i);
+		rb_yield(rb_range_new(INT2NUM(sp), INT2NUM(ep), 1));
 	}
-	IntGroupRelease(ig2);
 	return self;
 }
-
-static VALUE
-s_IntGroup_Subtract(VALUE self, VALUE val)
-{
-	IntGroup *ig1, *ig2;
-	int i, sp, interval;
-    if (OBJ_FROZEN(self))
-		rb_error_frozen("IntGroup");
-	Data_Get_Struct(self, IntGroup, ig1);
-	ig2 = IntGroupFromValue(val);
-	for (i = 0; (sp = IntGroupGetStartPoint(ig2, i)) >= 0; i++) {
-		interval = IntGroupGetInterval(ig2, i);
-		IntGroup_RaiseIfError(IntGroupRemove(ig1, sp, interval));
-	}
-	IntGroupRelease(ig2);
-	return self;
-}
-*/
 
 /*
  *  call-seq:
@@ -2790,14 +2800,6 @@ s_IntGroup_Offset(VALUE self, VALUE ofs)
 		rb_raise(rb_eMolbyError, "Bad offset %d", iofs);
 	val = ValueFromIntGroup(ig2);
 	IntGroupRelease(ig2);
-	return val;
-}
-
-static VALUE
-s_IntGroup_Create(int argc, VALUE *argv, VALUE klass)
-{
-	VALUE val = IntGroup_Alloc(klass);
-	s_IntGroup_Initialize(argc, argv, val);
 	return val;
 }
 
@@ -2953,6 +2955,7 @@ Init_MolbyTypes(void)
 	rb_define_method(rb_cIntGroup, "clear", s_IntGroup_Clear, 0);
 	rb_define_method(rb_cIntGroup, "initialize", s_IntGroup_Initialize, -1);
 	rb_define_method(rb_cIntGroup, "initialize_copy", s_IntGroup_InitializeCopy, 1);
+	rb_define_method(rb_cIntGroup, "==", s_IntGroup_Equal, 1);
 	rb_define_method(rb_cIntGroup, "length", s_IntGroup_Length, 0);
 	rb_define_alias(rb_cIntGroup, "size", "length");
 	rb_define_method(rb_cIntGroup, "member?", s_IntGroup_MemberP, 1);
@@ -2975,8 +2978,7 @@ Init_MolbyTypes(void)
 	rb_define_alias(rb_cIntGroup, "&", "intersection");
 	rb_define_alias(rb_cIntGroup, "^", "sym_difference");
 	rb_define_method(rb_cIntGroup, "range_at", s_IntGroup_RangeAt, 1);
-/*	rb_define_method(rb_cIntGroup, "merge", s_IntGroup_Merge, -1);
-	rb_define_method(rb_cIntGroup, "subtract", s_IntGroup_Subtract, -1); */
+	rb_define_method(rb_cIntGroup, "each_range", s_IntGroup_Equal, 0);
 	rb_define_method(rb_cIntGroup, "inspect", s_IntGroup_Inspect, 0);
 	rb_define_alias(rb_cIntGroup, "to_s", "inspect");
 	rb_define_singleton_method(rb_cIntGroup, "[]", s_IntGroup_Create, -1);
