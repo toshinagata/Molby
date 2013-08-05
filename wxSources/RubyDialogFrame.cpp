@@ -74,9 +74,15 @@ RubyDialogFrame::~RubyDialogFrame()
 		free(ditems);
 	for (i = 0; i < countMessageData; i++) {
 		if (messageData[i * 5] != NULL) {
-			((wxEvtHandler *)messageData[i * 5])->Disconnect((int)messageData[i * 5 + 1], (wxEventType)messageData[i * 5 + 2], wxCommandEventHandler(RubyDialogFrame::HandleDocumentEvent));
+			wxEventType eventType = (wxEventType)messageData[i * 5 + 2];
+			wxEvtHandler *handler = NULL;
+			if (eventType == MyDocumentEvent)
+				handler = MyDocumentFromMolecule((Molecule *)messageData[i * 5]);
+			if (handler != NULL) {
+				handler->Disconnect((int)messageData[i * 5 + 1], eventType, wxCommandEventHandler(RubyDialogFrame::HandleDocumentEvent), NULL, this);
+			}
 		}
-	}	
+	}
 }
 
 int
@@ -320,10 +326,12 @@ RubyDialogFrame::ListenToObject(void *obj, const char *objtype, const char *msg,
 	if (pval == NULL || pval == RubyNil) {
 		/*  Remove the registration  */
 		for (i = 0; i < countMessageData; i++) {
-			if (messageData[i * 5] == (void *)handler && 
+			if (messageData[i * 5] == obj && 
 				messageData[i * 5 + 1] == (void *)eventId &&
 				messageData[i * 5 + 2] == (void *)eventType) {
-				handler->Disconnect(eventId, eventType, wxCommandEventHandler(RubyDialogFrame::HandleDocumentEvent));
+				handler->Disconnect(eventId, eventType, wxCommandEventHandler(RubyDialogFrame::HandleDocumentEvent), NULL, this);
+				if (eventType == MyDocumentEvent)
+					MoleculeRelease((Molecule *)obj);
 				break;
 			}
 		}
@@ -335,7 +343,7 @@ RubyDialogFrame::ListenToObject(void *obj, const char *objtype, const char *msg,
 		/*  Check the duplicate  */
 		j = countMessageData;  /*  The position to store info if it is new  */
 		for (i = 0; i < countMessageData; i++) {
-			if (messageData[i * 5] == (void *)handler && 
+			if (messageData[i * 5] == obj && 
 				messageData[i * 5 + 1] == (void *)eventId &&
 				messageData[i * 5 + 2] == (void *)eventType) {
 				/*  Just replace the arguments  */
@@ -352,12 +360,14 @@ RubyDialogFrame::ListenToObject(void *obj, const char *objtype, const char *msg,
 				/*  Create a new entry  */
 				InsertArray(&messageData, &countMessageData, sizeof(void *) * 5, i, 1, NULL);
 			}
-			messageData[j * 5] = (void *)handler;
+			messageData[j * 5] = obj;
 			messageData[j * 5 + 1] = (void *)eventId;
 			messageData[j * 5 + 2] = (void *)eventType;
 			messageData[j * 5 + 3] = (void *)oval;
 			messageData[j * 5 + 4] = (void *)pval;
 			handler->Connect(eventId, eventType, wxCommandEventHandler(RubyDialogFrame::HandleDocumentEvent), NULL, this);
+			if (eventType == MyDocumentEvent)
+				MoleculeRetain((Molecule *)obj);
 			i = j;
 		}
 		return i;
@@ -371,19 +381,23 @@ RubyDialogFrame::HandleDocumentEvent(wxCommandEvent &event)
 	int eventId = event.GetId();
 	int eventType = event.GetEventType();
 	wxObject *eventObject = event.GetEventObject();
-		
+	void *obj;
+
+	if (eventType == MyDocumentEvent) {
+		if (wxDynamicCast(eventObject, MyDocument) != NULL) {
+			obj = ((MyDocument *)eventObject)->GetMolecule();
+		} else return;
+	} else return;
+	
 	/*  Look up the message table  */
 	for (i = 0; i < countMessageData; i++) {
-		if (messageData[i * 5] == (void *)eventObject && 
+		if (messageData[i * 5] == obj && 
 			messageData[i * 5 + 1] == (void *)eventId &&
 			messageData[i * 5 + 2] == (void *)eventType) {
 			int status;
 			RubyValue oval = (RubyValue)messageData[i * 5 + 3];
 			RubyValue pval = (RubyValue)messageData[i * 5 + 4];
 			Ruby_funcall2_protect_extern(pval, g_RubyID_call, 1, &oval, &status);
-/*			if (status != 0) {
-				Molby_showError(status);
-			} */
 		}
 	}
 	event.Skip();
@@ -515,6 +529,8 @@ RubyDialogCallback_close(RubyDialog *dref)
 void
 RubyDialogCallback_show(RubyDialog *dref)
 {
+	if (((RubyDialogFrame *)dref)->myTimer != NULL)
+		((RubyDialogFrame *)dref)->StartIntervalTimer(-1);
 	((RubyDialogFrame *)dref)->Show(true);
 	((RubyDialogFrame *)dref)->Raise();
 }

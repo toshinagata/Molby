@@ -41,7 +41,7 @@ public:
 	RDSize mySize;  /*  Previous size  */
 	bool autoResizeEnabled;  /*  true if auto resizing is enabled  */
 	
-	/*  Message bridge (with Ruby world); obj, objtype, msg, pval  */
+	/*  Message bridge (with Ruby world); obj, event_type, event_id, proc val  */
 	void **messageData;
 	Int countMessageData;
 	

@@ -279,7 +279,7 @@ s_RubyDialogItem_SetAttr(VALUE self, VALUE key, VALUE val)
 		if (type == sTableSymbol) {
 			IntGroup *ig = IntGroupFromValue(val);
 			int row, count;
-			count = RubyDialog_GetTableItemCount((RubyValue)self, (RDItem *)view);
+			count = RubyDialog_GetTableItemCount((RubyValue)dialog_val, (RDItem *)view);
 			for (row = 0; row < count; row++) {
 				int flag = (IntGroupLookup(ig, row, NULL) != 0);
 				RubyDialogCallback_setTableRowSelected((RDItem *)view, row, flag);
@@ -482,7 +482,7 @@ s_RubyDialogItem_Attr(VALUE self, VALUE key)
 		if (type == sTableSymbol) {
 			IntGroup *ig = IntGroupNew();
 			int row, count;
-			count = RubyDialog_GetTableItemCount((RubyValue)self, (RDItem *)view);
+			count = RubyDialog_GetTableItemCount((RubyValue)dialog_val, (RDItem *)view);
 			for (row = 0; row < count; row++) {
 				if (RubyDialogCallback_isTableRowSelected((RDItem *)view, row))
 					IntGroupAdd(ig, row, 1);
@@ -764,7 +764,7 @@ s_RubyDialog_Show(VALUE self)
  *
  *  Hide the modeless dialog. This is to be used with Dialog#show in pairs.
  *  If the dialog is registered in the ruby_dialog_list global variable, it becomes unregistered.
- *  Mixing Dialog#hide and Dialog#run will lead to unpredictable results, including crash. The 
+ *  Mixing Dialog#hide and Dialog#run will lead to unpredictable results, including crash.
  */
 static VALUE
 s_RubyDialog_Hide(VALUE self)
