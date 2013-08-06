@@ -1673,6 +1673,32 @@ s_RubyDialog_doTableAction(VALUE val)
 		}
 		vp[7] = (void *)n;
 		return retval;
+	} else if (sym == sHasPopUpMenu) {
+		args[1] = INT2NUM((int)vp[3]);
+		args[2] = INT2NUM((int)vp[4]);
+		retval = s_RubyDialog_CallActionProc(self, pval, 3, args);
+		if (retval == Qnil) {
+			vp[6] = (void *)0;
+		} else {
+			int i, n;
+			char **titles;
+			retval = rb_ary_to_ary(retval);
+			n = RARRAY_LEN(retval);
+			vp[6] = (void *)n;
+			titles = ALLOC_N(char *, n);
+			*((char ***)vp[5]) = titles;
+			for (i = 0; i < n; i++) {
+				VALUE tval = RARRAY_PTR(retval)[i];
+				titles[i] = strdup(StringValuePtr(tval));
+			}
+		}
+		return retval;
+	} else if (sym == sOnPopUpMenuSelected) {
+		args[1] = INT2NUM((int)vp[3]);
+		args[2] = INT2NUM((int)vp[4]);
+		args[3] = INT2NUM((int)vp[5]);
+		retval = s_RubyDialog_CallActionProc(self, pval, 4, args);
+		return retval;
 	} else return Qnil;
 }
 
