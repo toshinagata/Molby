@@ -346,7 +346,7 @@ class Molecule
 	end
   end
   
-  def ambertools_dialog(tool)
+  def ambertools_dialog(tool, msg = nil)
 	log_dir = get_global_settings("antechamber.log_dir")
 	if !log_dir
 	  log_dir = document_home + "/antechamber"
@@ -357,11 +357,13 @@ class Molecule
 	  suffix = ""
 	end
 	log_level = (get_global_settings("antechamber.log_level") || "none")
-	if tool == "antechamber"
-	  msg = "Auto Guess MM/MD Parameters (Antechamber)"
-	else
-	  msg = "Run " + tool.capitalize
-	end
+	if msg == nil
+	  if tool == "antechamber"
+	    msg = "Auto Guess MM/MD Parameters (Antechamber)"
+	  else
+	    msg = "Run " + tool.capitalize
+	  end
+    end
     hash = Dialog.run(msg) {
 	  @toolname = tool + suffix
       def valid_antechamber_dir(s)
@@ -498,10 +500,6 @@ class Molecule
 	return count
   end
   
-  def antechamber_dialog
-    return ambertools_dialog("antechamber")
-  end
-  
   def remove_dir(dir)
     entries = Dir.entries(dir)
 	entries.each { |en|
@@ -535,12 +533,12 @@ class Molecule
 	end
   end
   
-  def invoke_antechamber(ask_options = true)
+  def invoke_antechamber(ask_options = true, msg = nil)
     #  Find the ambertool directory
 	ante_dir = "#{ResourcePath}/amber11/bin"
 	#  Ask for antechamber options and log directory
 	if ask_options
-  	  n = antechamber_dialog()
+  	  n = ambertools_dialog("antechamber", msg)
 	  return 1 if n == 0
 	end
 	nc = get_global_settings("antechamber.nc").to_i
@@ -549,7 +547,7 @@ class Molecule
 	optimize_structure = get_global_settings("antechamber.optimize_structure").to_i
 	use_residue = get_global_settings("antechamber.use_residue").to_i
 	#  Create log directory
-	name = self.name.sub(/\.\w*$/, "")  #  Remove the extension
+	name = (self.name || "unknown").sub(/\.\w*$/, "")  #  Remove the extension
 	log_dir = get_global_settings("antechamber.log_dir")
 	if log_dir == nil
 	  log_dir = document_home + "/antechamber"
