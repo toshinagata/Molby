@@ -48,6 +48,9 @@ public:
 	RubyDialogFrame(wxWindow* parent, wxWindowID wid, const wxString& title, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxDEFAULT_DIALOG_STYLE);
 	virtual ~RubyDialogFrame();
 
+	/*  For internal use (discard data in messageData[])  */
+	void DiscardMessageData();
+	
 	void SetAutoResizeEnabled(int flag) { autoResizeEnabled = (flag != 0); }
 	bool IsAutoResizeEnabled() { return autoResizeEnabled; }
 	

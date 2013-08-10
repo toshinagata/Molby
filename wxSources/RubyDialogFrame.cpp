@@ -67,11 +67,17 @@ RubyDialogFrame::RubyDialogFrame(wxWindow* parent, wxWindowID wid, const wxStrin
 
 RubyDialogFrame::~RubyDialogFrame()
 {
-	int i;
 	if (myTimer != NULL)
 		delete myTimer;
 	if (ditems != NULL)
 		free(ditems);
+	DiscardMessageData();
+}
+
+void
+RubyDialogFrame::DiscardMessageData()
+{
+	int i;
 	for (i = 0; i < countMessageData; i++) {
 		if (messageData[i * 5] != NULL) {
 			wxEventType eventType = (wxEventType)messageData[i * 5 + 2];
@@ -83,6 +89,9 @@ RubyDialogFrame::~RubyDialogFrame()
 			}
 		}
 	}
+	free(messageData);
+	messageData = NULL;
+	countMessageData = 0;
 }
 
 int
@@ -132,6 +141,10 @@ void
 RubyDialogFrame::SetRubyObject(RubyValue val)
 {
 	dval = val;
+	if (dval == NULL) {
+		/*  Stop message mechanism (because this object is already disconnected from the Ruby world)  */
+		DiscardMessageData();
+	}
 }
 
 /*  Create standard buttons. If oktitle/canceltitle == NULL, then the button is created but set hidden.
