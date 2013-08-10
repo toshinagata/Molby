@@ -1265,11 +1265,11 @@ static VALUE s_ParameterRef_GetEps14(VALUE self) {
 	if (tp == kVdwParType) {
 	/*	a = up->vdw.A14;
 		b = up->vdw.B14;  */
-		eps = up->vdw.eps;
+		eps = up->vdw.eps14;
 	} else if (tp == kVdwPairParType) {
 	/*	a = up->vdwp.A14;
 		b = up->vdwp.B14; */
-		eps = up->vdwp.eps;
+		eps = up->vdwp.eps14;
 	} else rb_raise(rb_eMolbyError, "invalid member eps14");
 /*	if (a == 0.0 || b == 0.0) */
 	return rb_float_new(eps * INTERNAL2KCAL);
@@ -2052,6 +2052,8 @@ s_ParameterRef_SetAttr(VALUE self, VALUE key, VALUE value)
 		if (s_ParameterAttrDefTable[i].id == kid) {
 			if (value == Qundef)
 				return (*(s_ParameterAttrDefTable[i].getter))(self);
+			else if (s_ParameterAttrDefTable[i].setter == NULL)
+				rb_raise(rb_eMolbyError, "the attribute \"%s\" is read-only", rb_id2name(kid));
 			else
 				return (*(s_ParameterAttrDefTable[i].setter))(self, value);
 		}
