@@ -1658,11 +1658,13 @@ s_RubyDialog_doTableAction(VALUE val)
 			return Qnil;
 		retval = rb_ary_to_ary(retval);
 		if (RARRAY_LEN(retval) >= 1 && fg != NULL) {
-			cval = rb_ary_to_ary(RARRAY_PTR(retval)[0]);
-			for (i = 0; i < 4 && i < RARRAY_LEN(cval); i++) {
-				fg[i] = NUM2DBL(rb_Float(RARRAY_PTR(cval)[i]));
-			}
-			n = 1;
+			if (RARRAY_PTR(retval)[0] != Qnil) {
+				cval = rb_ary_to_ary(RARRAY_PTR(retval)[0]);
+				for (i = 0; i < 4 && i < RARRAY_LEN(cval); i++) {
+					fg[i] = NUM2DBL(rb_Float(RARRAY_PTR(cval)[i]));
+				}
+				n = 1;
+			} else n = 0;
 		}
 		if (RARRAY_LEN(retval) >= 2 && bg != NULL) {
 			cval = rb_ary_to_ary(RARRAY_PTR(retval)[1]);
@@ -1756,11 +1758,11 @@ int
 RubyDialog_IsTableItemEditable(RubyValue self, RDItem *ip, int row, int column)
 {
 	int status;
-	void *vp[4] = { (void *)self, (void *)ip, (void *)sIsItemEditableSymbol, NULL };
+	void *vp[6] = { (void *)self, (void *)ip, (void *)sIsItemEditableSymbol, (void *)row, (void *)column, NULL };
 	VALUE val = rb_protect(s_RubyDialog_doTableAction, (VALUE)vp, &status);
 	if (status != 0 || val == Qnil)
 		return 0;
-	else return (int)vp[3];	
+	else return (int)vp[5];	
 }
 
 int

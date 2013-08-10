@@ -583,6 +583,10 @@ MyListCtrl::OnMouseDown(wxMouseEvent &event)
 		lastPopUpRow = row;
 		mnu.Connect(wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler(MyListCtrl::OnPopUpMenuSelected), NULL, this);
 		PopupMenu(&mnu);
+		n = dataSource->GetItemCount(this);
+		for (i = 0; i < n; i++)
+			SetItemState(i, (i == row ? wxLIST_STATE_SELECTED : 0), wxLIST_STATE_SELECTED);
+		PostSelectionChangeNotification();
 		return;
 	}
 	
