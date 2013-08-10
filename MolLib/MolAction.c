@@ -33,6 +33,8 @@ const char *gMolActionUnmergeMolecule = "unmergeMol:G";
 const char *gMolActionUnmergeMoleculeForUndo = "unmergeMolForUndo:G";
 const char *gMolActionAddBonds        = "addBonds:IG";
 const char *gMolActionAddBondsForUndo = "addBondsForUndo:IG";
+const char *gMolActionAssignBondOrders = "assignBondOrders:DG";
+const char *gMolActionClearBondOrders = "clearBondOrders";
 const char *gMolActionDeleteBonds     = "deleteBonds:G";
 const char *gMolActionAddAngles       = "addAngles:IG";
 const char *gMolActionDeleteAngles    = "deleteAngles:G";
@@ -1026,6 +1028,54 @@ s_MolActionDeleteStructuralElements(Molecule *mol, MolAction *action, MolAction 
 }
 
 static int
+s_MolActionAssignBondOrders(Molecule *mol, MolAction *action, MolAction **actp)
+{
+	Int n1, clearUndo = 0;
+	Double *dp, *dp2;
+	IntGroup *ig;
+	if (mol->nbonds == 0)
+		return 0;  /*  Do nothing  */
+	n1 = action->args[0].u.arval.nitems;
+	dp = (Double *)action->args[0].u.arval.ptr;
+	ig = action->args[1].u.igval;
+	if (IntGroupGetCount(ig) == 0 || n1 == 0)
+		return 0;  /*  Do nothing  */
+	if (mol->bondOrders == NULL) {
+		AssignArray(&mol->bondOrders, &mol->nbondOrders, sizeof(Double), mol->nbonds - 1, NULL);
+		memset(mol->bondOrders, 0, sizeof(Double) * mol->nbonds);
+		clearUndo = 1;
+		dp2 = NULL;
+	} else {
+		/*  Get the old bond orders  */
+		dp2 = (Double *)calloc(sizeof(Double), n1);
+		MoleculeGetBondOrders(mol, dp2, ig);
+	}
+	MoleculeAssignBondOrders(mol, dp, ig);
+	if (clearUndo) {
+		*actp = MolActionNew(gMolActionClearBondOrders);
+	} else {
+		*actp = MolActionNew(gMolActionAssignBondOrders, n1, dp2, ig);
+		free(dp2);
+	}
+	return 0;	
+}
+
+static int
+s_MolActionClearBondOrders(Molecule *mol, MolAction *action, MolAction **actp)
+{
+	IntGroup *ig;
+	if (mol->nbonds == 0 || mol->bondOrders == NULL)
+		return 0;  /*  Do nothing  */
+	ig = IntGroupNewWithPoints(0, mol->nbondOrders, -1);
+	*actp = MolActionNew(gMolActionAssignBondOrders, mol->nbondOrders, mol->bondOrders, ig);
+	IntGroupRelease(ig);
+	free(mol->bondOrders);
+	mol->bondOrders = NULL;
+	mol->nbondOrders = 0;
+	return 0;	
+}
+
+static int
 s_MolActionTransformAtoms(Molecule *mol, MolAction *action, MolAction **actp, IntGroup **igp, int type)
 {
 	Vector *vp, v;
@@ -1767,6 +1817,14 @@ MolActionPerform(Molecule *mol, MolAction *action)
 		needsRebuildMDArena = 1;
 	} else if (strcmp(action->name, gMolActionDeleteImpropers) == 0) {
 		if ((result = s_MolActionDeleteStructuralElements(mol, action, &act2, 3)) != 0)
+			return result;
+		needsRebuildMDArena = 1;
+	} else if (strcmp(action->name, gMolActionAssignBondOrders) == 0) {
+		if ((result = s_MolActionAssignBondOrders(mol, action, &act2)) != 0)
+			return result;
+		needsRebuildMDArena = 1;
+	} else if (strcmp(action->name, gMolActionClearBondOrders) == 0) {
+		if ((result = s_MolActionClearBondOrders(mol, action, &act2)) != 0)
 			return result;
 		needsRebuildMDArena = 1;
 	} else if (strcmp(action->name, gMolActionTranslateAtoms) == 0) {

@@ -305,6 +305,10 @@ typedef struct Molecule {
 	/*  Parameters specific for this molecule  */
 	struct Parameter *par;
 	
+	/*  Bond order (not to be used in MM/MD, but may be necessary to hold this info)  */
+	Int    nbondOrders;
+	Double *bondOrders;
+
 	/*  Flag to request rebuilding MD internal information  */
 	Byte   needsMDRebuild;
 	
@@ -415,6 +419,8 @@ int MoleculeUnmerge(Molecule *src, Molecule **dstp, IntGroup *where, int resSeqO
 int MoleculeExtract(Molecule *src, Molecule **dstp, IntGroup *where, int dummyFlag);
 int MoleculeAddBonds(Molecule *mp, Int nbonds, const Int *bonds, IntGroup *where, Int autoGenerate);
 int MoleculeDeleteBonds(Molecule *mp, Int *bonds, IntGroup *where, Int **outRemoved, IntGroup **outRemovedPos);
+int MoleculeAssignBondOrders(Molecule *mp, const Double *orders, IntGroup *where);
+int MoleculeGetBondOrders(Molecule *mp, Double *outOrders, IntGroup *where);
 int MoleculeAddAngles(Molecule *mp, const Int *angles, IntGroup *where);
 int MoleculeDeleteAngles(Molecule *mp, Int *angles, IntGroup *where);
 int MoleculeAddDihedrals(Molecule *mp, const Int *dihedrals, IntGroup *where);

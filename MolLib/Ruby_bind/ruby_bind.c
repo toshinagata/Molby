@@ -6547,6 +6547,103 @@ s_Molecule_RemoveBond(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
+ *     assign_bond_order(idx, d1)
+ *     assign_bond_orders(group, [d1, d2, ...])
+ *
+ *  Assign bond order. In the first form, the bond order of the idx-th bond is set to d1 (a Float value).
+ *  In the second form, the bond orders at the indices in the group are set to d1, d2, etc.
+ *  At present, the bond orders are only used in UFF parameter guess, and not in the MM/MD calculations.
+ *  (This may change in the future)
+ *  This operation is undoable.
+ */
+static VALUE
+s_Molecule_AssignBondOrder(VALUE self, VALUE idxval, VALUE dval)
+{
+    Molecule *mol;
+	IntGroup *ig;
+    Data_Get_Struct(self, Molecule, mol);
+	if (rb_obj_is_kind_of(idxval, rb_cNumeric)) {
+		/*  The first form  */
+		Int idx = NUM2INT(rb_Integer(idxval));
+		Double d1 = NUM2DBL(rb_Float(dval));
+		if (idx < 0 || idx >= mol->nbonds)
+			rb_raise(rb_eMolbyError, "the bond index (%d) is out of bounds", idx);
+		ig = IntGroupNewWithPoints(idx, 1, -1);
+		MolActionCreateAndPerform(mol, gMolActionAssignBondOrders, 1, &d1, ig);
+		IntGroupRelease(ig);
+	} else {
+		Int i, n;
+		Double *dp;
+		ig = IntGroupFromValue(idxval);
+		n = IntGroupGetCount(ig);
+		if (n == 0)
+			rb_raise(rb_eMolbyError, "the bond index is empty");
+		dval = rb_ary_to_ary(dval);
+		dp = (Double *)calloc(sizeof(Double), n);
+		for (i = 0; i < RARRAY_LEN(dval) && i < n; i++) {
+			dp[i] = NUM2DBL(rb_Float(RARRAY_PTR(dval)[i]));
+		}
+		MolActionCreateAndPerform(mol, gMolActionAssignBondOrders, n, dp, ig);
+		free(dp);
+		IntGroupRelease(ig);
+	}
+	return self;
+}
+
+/*
+ *  call-seq:
+ *     get_bond_order(idx) -> Float
+ *     get_bond_orders(group) -> Array
+ *
+ *  Get the bond order. In the first form, the bond order of the idx-th bond is returned.
+ *  In the second form, the bond orders at the indices in the group are returned as an array.
+ *  If no bond order information have been assigned, returns nil (the first form)
+ *  or an empty array (the second form).
+ */
+static VALUE
+s_Molecule_GetBondOrder(VALUE self, VALUE idxval)
+{
+    Molecule *mol;
+	IntGroup *ig;
+	Double *dp;
+	VALUE retval;
+	Int i, n, numericArg;
+    Data_Get_Struct(self, Molecule, mol);
+	if (rb_obj_is_kind_of(idxval, rb_cNumeric)) {
+		/*  The first form  */
+		Int idx = NUM2INT(rb_Integer(idxval));
+		if (idx < 0 || idx >= mol->nbonds)
+			rb_raise(rb_eMolbyError, "the bond index (%d) is out of bounds", idx);
+		if (mol->bondOrders == NULL)
+			return Qnil;
+		ig = IntGroupNewWithPoints(idx, 1, -1);
+		n = 1;
+		numericArg = 1;
+	} else {
+		if (mol->bondOrders == NULL)
+			return rb_ary_new();
+		ig = IntGroupFromValue(idxval);
+		n = IntGroupGetCount(ig);
+		if (n == 0)
+			rb_raise(rb_eMolbyError, "the bond index is empty");
+		numericArg = 0;
+	}
+	dp = (Double *)calloc(sizeof(Double), n);
+	MoleculeGetBondOrders(mol, dp, ig);
+	if (numericArg)
+		retval = rb_float_new(dp[0]);
+	else {
+		retval = rb_ary_new();
+		for (i = 0; i < n; i++)
+			rb_ary_push(retval, rb_float_new(dp[i]));
+	}
+	free(dp);
+	IntGroupRelease(ig);
+	return retval;
+}
+
+/*
+ *  call-seq:
  *     add_angle(n1, n2, n3)       -> Molecule
  *
  *  Add angle n1-n2-n3. Returns self. Usually, angles are automatically added
@@ -10188,6 +10285,10 @@ Init_Molby(void)
 	rb_define_alias(rb_cMolecule, "create_bonds", "create_bond");
 	rb_define_method(rb_cMolecule, "remove_bond", s_Molecule_RemoveBond, -1);
 	rb_define_alias(rb_cMolecule, "remove_bonds", "remove_bond");
+	rb_define_method(rb_cMolecule, "assign_bond_order", s_Molecule_AssignBondOrder, 2);
+	rb_define_alias(rb_cMolecule, "assign_bond_orders", "assign_bond_order");
+	rb_define_method(rb_cMolecule, "get_bond_order", s_Molecule_GetBondOrder, 1);
+	rb_define_alias(rb_cMolecule, "get_bond_orders", "get_bond_order");
 	rb_define_method(rb_cMolecule, "add_angle", s_Molecule_AddAngle, 3);
 	rb_define_method(rb_cMolecule, "remove_angle", s_Molecule_RemoveAngle, 3);
 	rb_define_method(rb_cMolecule, "add_dihedral", s_Molecule_AddDihedral, 4);

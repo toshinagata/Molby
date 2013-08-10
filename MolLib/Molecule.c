@@ -1047,6 +1047,36 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 				}
 			}
 			continue;
+		} else if (strcmp(buf, "!:bond_orders") == 0) {
+			while (ReadLine(buf, sizeof buf, fp, &lineNumber) > 0) {
+				if (buf[0] == '!')
+					continue;
+				if (buf[0] == '\n')
+					break;
+				/* b1 b2 b3 b4 */
+				i = sscanf(buf, "%lf %lf %lf %lf", &dbuf[0], &dbuf[1], &dbuf[2], &dbuf[3]);
+				if (i == 0) {
+					s_append_asprintf(errbuf, "line %d: bad bond order format", lineNumber);
+					goto err_exit;
+				}
+				for (j = 0; j < i; j++) {
+					AssignArray(&mp->bondOrders, &mp->nbondOrders, sizeof(Double), mp->nbondOrders, &dbuf[j]);
+				}
+			}
+			if (mp->nbondOrders > mp->nbonds) {
+				s_append_asprintf(errbuf, "line %d: warning: the number of bond order info (%d) exceeds number of bonds (%d) - ignoring excess info\n", lineNumber, mp->nbondOrders, mp->nbonds);
+				nwarnings++;
+				mp->nbondOrders = mp->nbonds;
+			} else if (mp->nbondOrders < mp->nbonds) {
+				s_append_asprintf(errbuf, "line %d: warning: the number of bond order info (%d) is less than number of bonds (%d)\n", lineNumber, mp->nbondOrders, mp->nbonds);
+				nwarnings++;
+				j = mp->nbondOrders;
+				AssignArray(&mp->bondOrders, &mp->nbondOrders, sizeof(Double), mp->nbonds - 1, NULL);
+				for (i = j; i < mp->nbonds; i++)
+					mp->bondOrders[i] = 0.0;
+			}
+			continue;
+			
 		} else if (strcmp(buf, "!:angles") == 0) {
 			while (ReadLine(buf, sizeof buf, fp, &lineNumber) > 0) {
 				if (buf[0] == '!')
@@ -3927,6 +3957,15 @@ MoleculeWriteToMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 		fprintf(fp, "! from1 to1 from2 to2 from3 to3 from4 to4\n");
 		for (i = 0; i < mp->nbonds; i++) {
 			fprintf(fp, "%d %d%c", mp->bonds[i * 2], mp->bonds[i * 2 + 1], (i % 4 == 3 || i == mp->nbonds - 1 ? '\n' : ' '));
+		}
+		fprintf(fp, "\n");
+	}
+
+	if (mp->nbondOrders > 0) {
+		fprintf(fp, "!:bond_orders\n");
+		fprintf(fp, "! order1 order2 order3 order4\n");
+		for (i = 0; i < mp->nbondOrders; i++) {
+			fprintf(fp, "%.6f%c", mp->bondOrders[i], (i % 4 == 3 || i == mp->nbondOrders - 1 ? '\n' : ' '));
 		}
 		fprintf(fp, "\n");
 	}
@@ -7192,6 +7231,17 @@ MoleculeMerge(Molecule *dst, Molecule *src, IntGroup *where, Int resSeqOffset, I
 				goto panic;
 			/*  Copy the items  */
 			memmove(*items + n1 * nsize, *items_src, sizeof(Int) * nsize * n2);
+			if (i == 0) {
+				/*  Copy the bond order info if present */
+				Int nn1 = dst->nbondOrders;
+				if (dst->bondOrders != NULL || src->bondOrders != NULL) {
+					if (AssignArray(&dst->bondOrders, &dst->nbondOrders, sizeof(Double), dst->nbonds - 1, NULL) == NULL)
+						goto panic;
+					memset(dst->bondOrders + nn1, 0, sizeof(Double) * (dst->nbonds - nn1));
+					if (src->bondOrders != NULL)
+						memmove(dst->bondOrders + n1, src->bondOrders, sizeof(Double) * n2);
+				}
+			}
 		}
 		/*  Renumber  */
 		for (j = 0; j < n1 * nsize; j++)
@@ -7638,14 +7688,26 @@ sMoleculeUnmergeSub(Molecule *src, Molecule **dstp, IntGroup *where, int resSeqO
 					goto panic;
 				if (sCopyElementsFromArrayAtPositions(*items, *nitems, *items_dst, sizeof(Int) * nsize, move_g) != 0)
 					goto panic;
+				if (i == 0 && src->bondOrders != NULL) {
+					if (AssignArray(&dst->bondOrders, &dst->nbondOrders, sizeof(Double), n3 - 1, NULL) == NULL)
+						goto panic;
+					if (sCopyElementsFromArrayAtPositions(src->bondOrders, src->nbondOrders, dst->bondOrders, sizeof(Double), move_g) != 0)
+						goto panic;
+				}
 			}
 			/*  Remove from src  */
 			if (moveFlag && forUndo == 0) {
 				if (nactions != NULL) {
 					Int k, *ip;
+					Double *dp;
 					ip = (Int *)malloc(sizeof(Int) * nsize * n2);
 					for (j = 0; (k = IntGroupGetNthPoint(del_g, j)) >= 0; j++)
 						memmove(ip + j * nsize, *items + k * nsize, sizeof(Int) * nsize);
+					if (i == 0 && src->bondOrders != NULL) {
+						dp = (Double *)malloc(sizeof(Double) * n2);
+						for (j = 0; (k = IntGroupGetNthPoint(del_g, j)) >= 0; j++)
+							dp[j] = src->bondOrders[k];
+					} else dp = NULL;
 					switch (i) {
 						case 0:
 							act = MolActionNew(gMolActionAddBondsForUndo, n2 * nsize, ip, del_g); break;
@@ -7661,6 +7723,12 @@ sMoleculeUnmergeSub(Molecule *src, Molecule **dstp, IntGroup *where, int resSeqO
 						act = NULL;
 					}
 					free(ip);
+					if (dp != NULL) {
+						act = MolActionNew(gMolActionAssignBondOrders, n2, dp, del_g);
+						AssignArray(actions, nactions, sizeof(MolAction *), *nactions, &act);
+						act = NULL;
+						free(dp);
+					}
 				}
 				if (sRemoveElementsFromArrayAtPositions(*items, *nitems, NULL, sizeof(Int) * nsize, del_g) != 0)
 					goto panic;
@@ -7882,6 +7950,19 @@ MoleculeAddBonds(Molecule *mp, Int nbonds, const Int *bonds, IntGroup *where, In
 		|| sInsertElementsToArrayAtPositions(mp->bonds, n1, bonds, nbonds, sizeof(Int) * 2, where) != 0) {
 		__MoleculeUnlock(mp);
 		return -4;  /*  Out of memory  */
+	}
+	if (mp->bondOrders != NULL) {
+		/*  Expand the bond order info (all new entries are zero)  */
+		Double *dp = (Double *)calloc(sizeof(Double), nbonds);
+		if (dp == NULL)
+			return -4;
+		if (AssignArray(&(mp->bondOrders), &(mp->nbondOrders), sizeof(Double), n1 + nbonds - 1, NULL) == NULL
+			|| sInsertElementsToArrayAtPositions(mp->bondOrders, n1, dp, nbonds, sizeof(Double), where) != 0) {
+			__MoleculeUnlock(mp);
+			free(dp);
+			return -4;
+		}
+		free(dp);
 	}
 	
 	angles = dihedrals = NULL;
@@ -8124,6 +8205,15 @@ MoleculeDeleteBonds(Molecule *mp, Int *bonds, IntGroup *where, Int **outRemoved,
 		free(mp->bonds);
 		mp->bonds = NULL;
 	}
+	if (mp->bondOrders != NULL) {
+		if (sRemoveElementsFromArrayAtPositions(mp->bondOrders, mp->nbondOrders, NULL, sizeof(Double), where) != 0)
+			goto panic;
+		mp->nbondOrders -= IntGroupGetCount(where);
+		if (mp->nbondOrders == 0) {
+			free(mp->bondOrders);
+			mp->bondOrders = NULL;
+		}
+	}
 	if (na == 0 && nd == 0 && ni == 0)
 		ip = NULL;
 	else
@@ -8156,6 +8246,55 @@ MoleculeDeleteBonds(Molecule *mp, Int *bonds, IntGroup *where, Int **outRemoved,
 	__MoleculeUnlock(mp);
 	Panic("Low memory while removing bonds");
 	return -1;  /*  Not reached  */
+}
+
+int
+MoleculeAssignBondOrders(Molecule *mp, const Double *orders, IntGroup *where)
+{
+	Int i, j;
+	IntGroupIterator iter;
+	if (mp == NULL || orders == NULL || mp->nbonds == 0)
+		return 0;
+	if (mp->noModifyTopology)
+		return -4;  /*  Prohibited operation  */
+	if (mp->bondOrders == NULL) {
+		AssignArray(&mp->bondOrders, &mp->nbondOrders, sizeof(Double), mp->nbonds - 1, NULL);
+		memset(mp->bondOrders, 0, sizeof(Double) * mp->nbondOrders);
+	}
+	IntGroupIteratorInit(where, &iter);
+	j = 0;
+	while ((i = IntGroupIteratorNext(&iter)) >= 0) {
+		if (i >= mp->nbondOrders)
+			break;
+		mp->bondOrders[i] = orders[j++];
+	}
+	IntGroupIteratorRelease(&iter);
+	return 0;
+}
+
+int
+MoleculeGetBondOrders(Molecule *mp, Double *outOrders, IntGroup *where)
+{
+	Int i, j;
+	IntGroupIterator iter;
+	if (mp == NULL || mp->nbonds == 0)
+		return 0;
+	if (mp->bondOrders == NULL) {
+		/*  Returns all zero  */
+		i = IntGroupGetCount(where);
+		for (j = 0; j < i; j++)
+			outOrders[j] = 0.0;
+	} else {
+		IntGroupIteratorInit(where, &iter);
+		j = 0;
+		while ((i = IntGroupIteratorNext(&iter)) >= 0) {
+			if (i < mp->nbondOrders)
+				outOrders[j] = mp->bondOrders[i];
+			else outOrders[j] = 0.0;
+			j++;
+		}
+	}
+	return 0;
 }
 
 int
