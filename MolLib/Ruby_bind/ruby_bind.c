@@ -7474,24 +7474,77 @@ s_Molecule_Fragment(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     each_fragment {|group| ...}
+ *     fragments(exclude = nil)
+ *
+ *  Returns the fragments as an array of IntGroups. 
+ *  If exclude is given (as an array or an IntGroup), then those atoms are excluded
+ *  in defining the fragment.
+ */
+static VALUE
+s_Molecule_Fragments(int argc, VALUE *argv, VALUE self)
+{
+    Molecule *mol;
+	IntGroup *ag, *fg, *eg;
+	VALUE gval, exval, retval;
+    Data_Get_Struct(self, Molecule, mol);
+	if (mol == NULL)
+		return Qnil;
+	if (mol->natoms == 0)
+		return rb_ary_new();
+	rb_scan_args(argc, argv, "01", &exval);
+	if (exval == Qnil)
+		eg = NULL;
+	else
+		eg = IntGroupFromValue(exval);
+	ag = IntGroupNewWithPoints(0, mol->natoms, -1);
+	if (eg != NULL)
+		IntGroupRemoveIntGroup(ag, eg);
+	retval = rb_ary_new();
+	while (IntGroupGetCount(ag) > 0) {
+		int n = IntGroupGetNthPoint(ag, 0);
+		fg = MoleculeFragmentExcludingAtomGroup(mol, n, eg);
+		if (fg == NULL)
+			rb_raise(rb_eMolbyError, "internal error during each_fragment");
+		gval = ValueFromIntGroup(fg);
+		rb_ary_push(retval, gval);
+		IntGroupRemoveIntGroup(ag, fg);
+		IntGroupRelease(fg);
+	}
+	IntGroupRelease(ag);
+	if (eg != NULL)
+		IntGroupRelease(eg);
+	return retval;
+}
+
+/*
+ *  call-seq:
+ *     each_fragment(exclude = nil) {|group| ...}
  *
  *  Execute the block, with the IntGroup object for each fragment as the argument.
  *  Atoms or bonds should not be added or removed during the execution of the block.
+ *  If exclude is given (as an array or an IntGroup), then those atoms are excluded
+ *  in defining the fragment.
  */
 static VALUE
-s_Molecule_EachFragment(VALUE self)
+s_Molecule_EachFragment(int argc, VALUE *argv, VALUE self)
 {
     Molecule *mol;
-	IntGroup *ag, *fg;
-	VALUE gval;
+	IntGroup *ag, *fg, *eg;
+	VALUE gval, exval;
     Data_Get_Struct(self, Molecule, mol);
 	if (mol == NULL || mol->natoms == 0)
 		return self;
+	rb_scan_args(argc, argv, "01", &exval);
+	if (exval == Qnil)
+		eg = NULL;
+	else
+		eg = IntGroupFromValue(exval);
 	ag = IntGroupNewWithPoints(0, mol->natoms, -1);
+	if (eg != NULL)
+		IntGroupRemoveIntGroup(ag, eg);
 	while (IntGroupGetCount(ag) > 0) {
 		int n = IntGroupGetNthPoint(ag, 0);
-		fg = MoleculeFragmentExcludingAtomGroup(mol, n, NULL);
+		fg = MoleculeFragmentExcludingAtomGroup(mol, n, eg);
 		if (fg == NULL)
 			rb_raise(rb_eMolbyError, "internal error during each_fragment");
 		gval = ValueFromIntGroup(fg);
@@ -7500,6 +7553,8 @@ s_Molecule_EachFragment(VALUE self)
 		IntGroupRelease(fg);
 	}
 	IntGroupRelease(ag);
+	if (eg != NULL)
+		IntGroupRelease(eg);
 	return self;
 }
 
@@ -10168,7 +10223,8 @@ Init_Molby(void)
 	rb_define_method(rb_cMolecule, "set_atom_attr", s_Molecule_SetAtomAttr, 3);
 	rb_define_method(rb_cMolecule, "get_atom_attr", s_Molecule_GetAtomAttr, 2);
 	rb_define_method(rb_cMolecule, "fragment", s_Molecule_Fragment, -1);
-	rb_define_method(rb_cMolecule, "each_fragment", s_Molecule_EachFragment, 0);
+	rb_define_method(rb_cMolecule, "fragments", s_Molecule_Fragments, -1);
+	rb_define_method(rb_cMolecule, "each_fragment", s_Molecule_EachFragment, -1);
 	rb_define_method(rb_cMolecule, "detachable?", s_Molecule_Detachable_P, 1);
 	rb_define_method(rb_cMolecule, "bonds_on_border", s_Molecule_BondsOnBorder, -1);
 	rb_define_method(rb_cMolecule, "translate", s_Molecule_Translate, -1);
