@@ -135,6 +135,7 @@ public:
 	void	OnDefineSymmetry(wxCommandEvent &event);
 	void	OnExpandBySymmetry(wxCommandEvent &event);
 
+	void	OnGuessUFFParameters(wxCommandEvent &event);
 	void	OnInvokeResp(wxCommandEvent &event);
 	void    OnInvokeAntechamber(wxCommandEvent &event);
 	void	OnCreateSanderInput(wxCommandEvent &event);

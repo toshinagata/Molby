@@ -87,7 +87,6 @@ BEGIN_EVENT_TABLE(MyApp, wxApp)
 	EVT_MENU(myMenuID_ExecuteScript, MyApp::OnExecuteScript)
 	EVT_MENU(myMenuID_OpenConsoleWindow, MyApp::OnOpenConsoleWindow)
 	EVT_MENU(myMenuID_EmptyConsoleWindow, MyApp::OnEmptyConsoleWindow)
-//	EVT_MENU(myMenuID_ReadParameters, MyApp::OnReadParameters)
 	EVT_MENU(myMenuID_ViewGlobalParameters, MyApp::OnViewGlobalParameters)
 	EVT_MENU(myMenuID_ViewParameterFilesList, MyApp::OnViewParameterFilesList)
 	EVT_MENU(myMenuID_ImportAmberLib, MyApp::OnImportAmberLib)
@@ -449,6 +448,7 @@ MyApp::CreateMenuBar(int kind, wxMenu **out_file_history_menu, wxMenu **out_edit
 	md_menu->AppendSeparator();
 //	md_menu->Append(myMenuID_ReadParameters, _T("Read Parameters..."));
 	md_menu->Append(myMenuID_RunAntechamber, _T("Auto Guess MM/MD Parameters..."));
+	md_menu->Append(myMenuID_GuessUFFParameters, _T("Guess UFF Parameters..."));
 	md_menu->Append(myMenuID_ViewGlobalParameters, _T("View Global Parameters..."));
 	md_menu->Append(myMenuID_ViewParameterFilesList, _T("Load/Unload Global Parameters..."));
 	md_menu->AppendSeparator();

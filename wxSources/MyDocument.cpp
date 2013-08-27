@@ -102,6 +102,7 @@ BEGIN_EVENT_TABLE(MyDocument, wxDocument)
 	EVT_MENU(myMenuID_DefineSymmetry, MyDocument::OnDefineSymmetry)
 	EVT_MENU(myMenuID_ExpandBySymmetry, MyDocument::OnExpandBySymmetry)
 	EVT_MENU(myMenuID_RunAntechamber, MyDocument::OnInvokeAntechamber)
+    EVT_MENU(myMenuID_GuessUFFParameters, MyDocument::OnGuessUFFParameters)
 	EVT_MENU(myMenuID_RunResp, MyDocument::OnInvokeResp)
 	EVT_MENU(myMenuID_CreateSanderInput, MyDocument::OnCreateSanderInput)
 	EVT_MENU(myMenuID_ImportAmberFrcmod, MyDocument::OnImportAmberFrcmod)
@@ -1386,6 +1387,12 @@ sEraseLogFiles(const wxString& tdir, int status)
 		MyAppCallback_errorMessageBox("Error during deleting log file '%s'", (const char *)dir2.mb_str(wxConvFile));
 		return -1;
 	}
+}
+
+void
+MyDocument::OnGuessUFFParameters(wxCommandEvent &event)
+{
+	MolActionCreateAndPerform(mol, SCRIPT_ACTION(""), "guess_uff_parameters");
 }
 
 void

@@ -167,6 +167,8 @@ end
 
 def guess_uff_parameter_dialog(current_value, indices)
 
+  #  TODO: this dialog is soon to be made obsolete
+  
   indices = indices.split(/-/)
 
   if indices.length == 2
@@ -267,6 +269,565 @@ def guess_uff_parameter_dialog(current_value, indices)
   else
     return nil
   end
+end
+
+def guess_uff_parameters
+  mol = self
+  #  Look up the non-conventional atoms
+  exclude = [1, 6, 7, 8, 9, 15, 16, 17, 35, 53]
+  arena = mol.md_arena
+  arena.prepare(true)
+  xatoms = IntGroup[]
+  xbonds = xangles = xdihedrals = xfragments = []
+  h = Dialog.new("Uncommon MM/MD Parameters: #{mol.name}", nil, nil, :resizable=>true) {
+    update_xatoms = proc {
+      xatoms = mol.atom_group { |ap| !exclude.member?(ap.atomic_number) }
+      xfragments = mol.fragments(xatoms)
+      xbonds = (0...mol.nbonds).select { |i| b = mol.bonds[i]; xatoms.include?(b[0]) || xatoms.include?(b[1]) }
+      xangles = (0...mol.nangles).select { |i| a = mol.angles[i]; xatoms.include?(a[0]) || xatoms.include?(a[1]) || xatoms.include?(a[2]) }
+      xdihedrals = (0...mol.ndihedrals).select { |i| d = mol.dihedrals[i]; xatoms.include?(d[0]) || xatoms.include?(d[1]) || xatoms.include?(d[2]) || xatoms.include?(d[3]) }
+      xbonds.each { |i| xatoms.add(mol.bonds[i]) }
+      xangles.each { |i| xatoms.add(mol.angles[i]) }
+      item_with_tag("table")[:refresh] = true
+    }
+    columns = {
+      "atoms"=>[["no", 40], ["name", 60], ["type", 40], ["element", 40], ["int_charge", 40], ["uff_type", 120], ["weight", 70], ["eps", 70], ["r", 70], ["eps14", 70], ["r14", 70]],
+      "bonds"=>[["no", 40], ["bond", 110], ["nums", 80], ["types", 90], ["par_types", 90], ["order", 80], ["k", 80], ["r0", 80], ["real_r", 80]],
+      "angles"=>[["no", 40], ["angle", 140], ["nums", 100], ["types", 100], ["par_types", 100], ["k", 80], ["a0", 80], ["real_a", 80]],
+      "dihedrals"=>[["no", 40], ["dihedral", 180], ["nums", 100], ["types", 110], ["par_types", 110], ["k", 50], ["period", 20], ["phi0", 50], ["real_phi", 60]],
+      "fragments"=>[["no", 40], ["fragment", 360]]
+    }
+    tab = "atoms"
+    update_selection = proc {
+      g = mol.selection
+      sel = IntGroup[]
+      case tab
+      when "atoms"
+        xatoms.each_with_index { |n, i|
+          sel.add(i) if g.include?(n)
+        }
+      when "bonds"
+        xbonds.each_with_index { |n, i|
+          b = mol.bonds[n]
+          sel.add(i) if g.include?(b[0]) && g.include?(b[1])
+        }
+      when "angles"
+        xangles.each_with_index { |n, i|
+          an = mol.angles[n]
+          sel.add(i) if g.include?(an[0]) && g.include?(an[1]) && g.include?(an[2])
+        }
+      when "dihedrals"
+        xdihedrals.each_with_index { |n, i|
+          di = mol.dihedrals[n]
+          sel.add(i) if g.include?(di[0]) && g.include?(di[1]) && g.include?(di[2]) && g.include?(di[3])
+        }
+      when "fragments"
+        xfragments.each_with_index { |f, i|
+          sel.add(i) if (f - g).count == 0
+        }
+      end
+      it = item_with_tag("table")
+      if sel != it[:selection]
+        @dont_change_mol_selection = true
+        it[:selection] = sel
+      end
+    }
+    selection_changed = proc { |it|
+      if @dont_change_mol_selection
+        @dont_change_mol_selection = false
+        return
+      end
+      sel = it[:selection]
+      g = IntGroup[]
+      case tab
+      when "atoms"
+        sel.each { |idx|
+          g.add(xatoms[idx])
+        }
+      when "bonds"
+        sel.each { |idx|
+          g.add(mol.bonds[xbonds[idx]])
+        }
+      when "angles"
+        sel.each { |idx|
+          g.add(mol.angles[xangles[idx]])
+        }
+      when "dihedrals"
+        sel.each { |idx|
+          g.add(mol.dihedrals[xdihedrals[idx]])
+        }
+      when "fragments"
+        sel.each { |idx|
+          g.add(xfragments[idx])
+        }
+      end
+      mol.selection = g
+    }
+    select_tab = proc { |tag|
+      table = item_with_tag("table")
+      table[:columns] = columns[tag]
+      tab = tag
+      table[:refresh] = true
+      update_selection.call
+    }
+    tab_button_pressed = proc { |it|
+      ["atoms", "bonds", "angles", "dihedrals", "fragments"].each { |tag|
+        next if tag == it[:tag]
+        item_with_tag(tag)[:value] = 0
+      }
+      select_tab.call(it[:tag])
+    }
+    uff_popup_titles = []
+    uff_type_for_title = Hash.new
+    uff_title_for_type = Hash.new
+    uff_title_for_type[""] = "-- select --"
+    uff_popup = proc { |an|
+      if uff_popup_titles[an] == nil
+        titles = []
+        Molby::Molecule::UFFParams.each { |u|
+          if u[1] == an
+            titles.push(u[13])
+            uff_type_for_title[u[13]] = u[0]
+            uff_title_for_type[u[0]] = u[13]
+          end
+        }
+        uff_popup_titles[an] = titles
+      end
+      uff_popup_titles[an]
+    }
+    get_count = proc { |it|
+      case tab
+      when "atoms"
+        return xatoms.count
+      when "bonds"
+        return xbonds.count
+      when "angles"
+        return xangles.count
+      when "dihedrals"
+        return xdihedrals.count
+      when "fragments"
+        return xfragments.count
+      end
+      return 0
+    }
+    get_value = proc { |it, row, col|
+      case tab
+      when "atoms"
+        idx = xatoms[row]
+        ap0 = mol.atoms[idx]
+        case col
+        when 0
+          return idx.to_s
+        when 1
+          return "#{ap0.res_seq}:#{ap0.name}"
+        when 2
+          return ap0.atom_type
+        when 3
+          return ap0.element
+        when 4
+          return ap0.int_charge.to_s
+        when 5
+          return uff_title_for_type[ap0.uff_type] || "..."
+        when 6
+          return sprintf("%.3f", ap0.weight)
+        when 7
+          return sprintf("%.3f", arena.vdw_par(idx).eps)
+        when 8
+          return sprintf("%.3f", arena.vdw_par(idx).r_eq)
+        when 9
+          return sprintf("%.3f", arena.vdw_par(idx).eps14)
+        when 10
+          return sprintf("%.3f", arena.vdw_par(idx).r_eq14)
+        end
+      when "bonds"
+        idx = xbonds[row]
+        b = mol.bonds[idx]
+        ap0 = mol.atoms[b[0]]
+        ap1 = mol.atoms[b[1]]
+        case col
+        when 0
+          return idx.to_s
+        when 1
+          return "#{ap0.res_seq}:#{ap0.name}-#{ap1.res_seq}:#{ap1.name}"
+        when 2
+          return "#{b[0]}-#{b[1]}"
+        when 3
+          return "#{ap0.atom_type}-#{ap1.atom_type}"
+        when 4
+          atom_types = arena.bond_par(idx).atom_types
+          return atom_types[0] + "-" + atom_types[1]
+        when 5
+          return (o = mol.get_bond_order(idx)) && sprintf("%.3f", o)
+        when 6
+          return sprintf("%.3f", arena.bond_par(idx).k)
+        when 7
+          return sprintf("%.3f", arena.bond_par(idx).r0)
+        when 8
+          return sprintf("%.3f", mol.calc_bond(b[0], b[1]))
+        end
+      when "angles"
+        idx = xangles[row]
+        an = mol.angles[idx]
+        ap0 = mol.atoms[an[0]]
+        ap1 = mol.atoms[an[1]]
+        ap2 = mol.atoms[an[2]]
+        case col
+        when 0
+          return idx.to_s
+        when 1
+          return "#{ap0.res_seq}:#{ap0.name}-#{ap1.res_seq}:#{ap1.name}-#{ap2.res_seq}:#{ap2.name}"
+        when 2
+          return "#{an[0]}-#{an[1]}-#{an[2]}"
+        when 3
+          return "#{ap0.atom_type}-#{ap1.atom_type}-#{ap2.atom_type}"
+        when 4
+          atom_types = arena.angle_par(idx).atom_types
+          return atom_types[0] + "-" + atom_types[1] + "-" + atom_types[2]
+        when 5
+          return sprintf("%.3f", arena.angle_par(idx).k)
+        when 6
+          return sprintf("%.2f", arena.angle_par(idx).a0)
+        when 7
+          return sprintf("%.2f", mol.calc_angle(an[0], an[1], an[2]))
+        end
+      when "dihedrals"
+        idx = xdihedrals[row]
+        di = mol.dihedrals[idx]
+        ap0 = mol.atoms[di[0]]
+        ap1 = mol.atoms[di[1]]
+        ap2 = mol.atoms[di[2]]
+        ap3 = mol.atoms[di[3]]
+        case col
+        when 0
+          return idx.to_s
+        when 1
+          return "#{ap0.res_seq}:#{ap0.name}-#{ap1.res_seq}:#{ap1.name}-#{ap2.res_seq}:#{ap2.name}-#{ap2.res_seq}:#{ap2.name}"
+        when 2
+          return "#{di[0]}-#{di[1]}-#{di[2]}-#{di[3]}"
+        when 3
+          return "#{ap0.atom_type}-#{ap1.atom_type}-#{ap2.atom_type}-#{ap3.atom_type}"
+        when 4
+          atom_types = arena.dihedral_par(idx).atom_types
+          return atom_types[0] + "-" + atom_types[1] + "-" + atom_types[2] + "-" + atom_types[3]
+        when 5
+          return sprintf("%.3f", arena.dihedral_par(idx).k)
+        when 6
+          return arena.dihedral_par(idx).period.to_s
+        when 7
+          return sprintf("%.2f", arena.dihedral_par(idx).phi0)
+        when 8
+          return sprintf("%.2f", mol.calc_dihedral(di[0], di[1], di[2], di[3]))
+        end
+      when "fragments"
+        case col
+        when 0
+          return row.to_s
+        when 1
+          return xfragments[row].to_s[9..-2]  #  Remove "IntGroup[" and "]"
+        end
+      end
+      return "..."
+    }
+    is_item_editable = proc { |it, row, col|
+      case tab
+      when "atoms"
+        case col
+        when 1..4, 6..10
+          return true
+        end
+      when "bonds"
+        case col
+        when 5..7
+          return true
+        end
+      when "angles"
+        case col
+        when 5..6
+          return true
+        end
+      when "dihedrals"
+        case col
+        when 5..7
+          return true
+        end
+      end
+      return false
+    }
+    modify_parameter = proc { |mol, partype, idx, attr, val|
+      arena = mol.md_arena
+      case partype
+      when "vdw"
+        pref = arena.vdw_par(idx)
+        pen = mol.parameter.vdws
+      when "bond"
+        pref = arena.bond_par(idx)
+        pen = mol.parameter.bonds
+      when "angle"
+        pref = arena.angle_par(idx)
+        pen = mol.parameter.angles
+      when "dihedral"
+        pref = arena.dihedral_par(idx)
+        pen = mol.parameter.dihedrals
+      when "improper"
+        pref = arena.improper_par(idx)
+        pen = mol.parameter.impropers
+      end
+      pref_new = pen.lookup(pref.atom_types, :create, :local, :missing, :nobasetype, :nowildcard)
+      pref.keys.each { |k|
+        next if k == :source || k == :index || k == :par_type
+        pref_new.set_attr(k, pref.get_attr(k))
+      }
+      if attr != nil
+        pref_new.set_attr(attr, val)
+        arena.prepare(true)
+      end
+      return pref_new
+    }
+    set_value = proc { |it, row, col, val|
+      case tab
+      when "atoms"
+        idx = xatoms[row]
+        ap0 = mol.atoms[idx]
+        case col
+        when 1
+          val = val.to_s
+          if val =~ /\d:/
+            val = Regexp.last_match.post_match
+          end
+          ap0.name = val
+        when 2
+          ap0.atom_type = val
+        when 3
+          ap0.element = val
+        when 4
+          ap0.int_charge = val.to_i
+        when 6
+          ap0.weight = val.to_f
+        when 7
+          pp = modify_parameter.call(mol, "vdw", idx, :eps, val)
+          if pp.eps14 == 0.0
+            pp.eps14 = val.to_f
+          end
+        when 8
+          pp = modify_parameter.call(mol, "vdw", idx, :r_eq, val)
+          if pp.r_eq14 == 0.0
+            pp.r_eq14 = val.to_f
+          end
+        when 9
+          modify_parameter.call(mol, "vdw", idx, :eps14, val)
+        when 10
+          modify_parameter.call(mol, "vdw", idx, :r_eq14, val)
+        end
+      when "bonds"
+        idx = xbonds[row]
+        case col
+        when 5
+          mol.assign_bond_order(idx, val.to_f)
+        when 6
+          modify_parameter.call(mol, "bond", idx, :k, val)
+        when 7
+          modify_parameter.call(mol, "bond", idx, :r0, val)
+        end
+      when "angles"
+        idx = xangles[row]
+        case col
+        when 5
+          modify_parameter.call(mol, "angle", idx, :k, val)
+        when 6
+          modify_parameter.call(mol, "angle", idx, :a0, val)
+        end
+      when "dihedrals"
+        idx = xdihedrals[row]
+        case col
+        when 5
+          modify_parameter.call(mol, "dihedral", idx, :k, val)
+        when 6
+          modify_parameter.call(mol, "dihedral", idx, :period, val)
+        when 7
+          modify_parameter.call(mol, "dihedral", idx, :phi0, val)
+        end
+      end
+    }
+    has_popup_menu = proc { |it, row, col|
+      if tab == "atoms" && col == 5
+        #  UFF type popup
+        ap = mol.atoms[xatoms[row]]
+        val = uff_popup.call(ap.atomic_number)
+        return val
+      else
+        return nil
+      end
+    }
+    popup_menu_selected = proc { |it, row, col, sel|
+      return if tab != "atoms" || col != 5
+      ap = mol.atoms[xatoms[row]]
+      title = uff_popup.call(ap.atomic_number)[sel]
+      ap.uff_type = uff_type_for_title[title]
+    }
+    guess_uff_types = proc { |recalc_all|
+      xatoms.each { |idx|
+        ap = mol.atoms[idx]
+        next if !recalc_all && ap.uff_type != ""
+        u = uff_popup.call(ap.atomic_number)
+        if u.length == 1
+          ap.uff_type = uff_type_for_title[u[0]]
+          next
+        end
+        case ap.atom_type
+        when "c3", "cx", "cy"
+          ap.uff_type = "C_3"
+        when "ca", "cc", "cd", "cp", "cq"
+          ap.uff_type = "C_R"
+        when "c2", "ce", "cf", "cu", "cv", "c"
+          ap.uff_type = "C_2"
+        when "c1", "cg", "ch"
+          ap.uff_type = "C_1"
+        when "n3", "n4", "nh"
+          ap.uff_type = "N_3"
+        when "nb", "nc", "nd"
+          ap.uff_type = "N_R"
+        when "n", "n2", "na", "ne", "nf"
+          ap.uff_type = "N_2"
+        when "n1"
+          ap.uff_type = "N_1"
+        when "oh", "os", "ow"
+          ap.uff_type = "O_2"
+        else
+          ap.uff_type = ""
+        end
+      }
+    }
+    set_color = proc { |it, row, col|
+      @red_color ||= [1.0, 0.2, 0.2]
+      @yellow_color ||= [1.0, 1.0, 0.6]
+      arena = mol.md_arena
+      case tab
+      when "atoms"
+        pp = arena.vdw_par(xatoms[row])
+      when "bonds"
+        pp = arena.bond_par(xbonds[row])
+      when "angles"
+        pp = arena.angle_par(xangles[row])
+      when "dihedrals"
+        pp = arena.dihedral_par(xdihedrals[row])
+      end
+      src = pp.source
+      if src == nil
+        return [nil, @yellow_color]
+      elsif src == false
+        return [nil, @red_color]
+      else
+        return nil
+      end
+    }
+    guess_parameters_for_fragments = proc {
+      name = mol.name
+      xfragments.each_with_index { |frag, i|
+        fmol = mol.extract(frag)
+        n = fmol.invoke_antechamber(true, "Guess MM/MD Parameters for #{mol.name}.fragment.#{i}")
+        break if n != 0
+        calc_charge = get_global_settings("antechamber.calc_charge").to_i
+        guess_atom_types = get_global_settings("antechamber.guess_atom_types").to_i
+        if calc_charge
+          #  Copy partial charges
+          frag.each_with_index { |n, i|
+            mol.atoms[n].charge = fmol.atoms[i].charge
+          }
+        end
+        if guess_atom_types
+          #  Copy atom types and local parameters
+          frag.each_with_index { |n, i|
+            mol.atoms[n].atom_type = fmol.atoms[i].atom_type
+          }
+          [:bond, :angle, :dihedral, :improper, :vdw].each { |ptype|
+            case ptype
+            when :bond
+              pen = fmol.parameter.bonds
+            when :angle
+              pen = fmol.parameter.angles
+            when :dihedral
+              pen = fmol.parameter.dihedrals
+            when :improper
+              pen = fmol.parameter.impropers
+            when :vdw
+              pen = fmol.parameter.vdws
+            end
+            pen.each { |pref|
+              next if pref.source != nil
+              pref_new = mol.parameter.lookup(ptype, pref.atom_types, :local, :missing, :create, :nowildcard, :nobasetype)
+              if pref_new != nil
+                pref.keys.each { |k|
+                  next if k == :index || k == :par_type || k == :source
+                  pref_new.set_attr(k, pref.get_attr(k))
+                }
+              end
+            }
+          }
+        end
+      }
+    }
+    guess_parameters_for_metals = proc {
+      #  Atoms
+      catch(:exit) {
+        xatoms.each { |idx|
+          ap0 = mol.atoms[idx]
+          next if exclude.member?(ap0.atomic_number)
+          uff_type = ap0.uff_type
+          u = Molby::Molecule::UFFParams.find { |u| u[0] == uff_type }
+          if u == nil
+            error_message_box("The UFF type for atom #{idx} (#{ap0.name}) is not defined.")
+            throw(:exit)
+          end
+          pref = mol.parameter.lookup(:vdw, ap0.index, :local, :missing, :create, :nowildcard, :nobasetype)
+          pref.atom_type = idx
+          pref.eps = pref.eps14 = u[5]
+          pref.r_eq = pref.r_eq14 = u[4] * 0.5
+        }
+      }
+    }
+    layout(1,
+      layout(2,
+        item(:text, :title=>"Total charge: "),
+        item(:textfield, :width=>"80", :tag=>"total_charge")),
+      layout(5,
+        item(:togglebutton, :width=>80, :height=>24, :title=>"Atoms", :tag=>"atoms",
+          :value=>1,
+          :action=>tab_button_pressed),
+        item(:togglebutton, :width=>80, :height=>24, :title=>"Bonds", :tag=>"bonds",
+          :action=>tab_button_pressed),
+        item(:togglebutton, :width=>80, :height=>24, :title=>"Angles", :tag=>"angles", 
+          :action=>tab_button_pressed),
+        item(:togglebutton, :width=>80, :height=>24, :title=>"Dihedrals", :tag=>"dihedrals", 
+          :action=>tab_button_pressed),
+        item(:togglebutton, :width=>80, :height=>24, :title=>"Fragments", :tag=>"fragments", 
+          :action=>tab_button_pressed),
+        :padding=>0, :margin=>0),
+      item(:table, :width=>640, :height=>240, :flex=>[0,0,0,0,1,1], :tag=>"table", 
+        :columns=>columns["atoms"],
+        :on_count=>get_count,
+        :on_get_value=>get_value,
+        :on_set_value=>set_value,
+        :is_item_editable=>is_item_editable,
+        :on_selection_changed=>selection_changed,
+        :has_popup_menu=>has_popup_menu,
+        :on_popup_menu_selected=>popup_menu_selected,
+        :on_set_color=>set_color),
+      item(:button, :title=>"Run Antechamber for Non-Metal Fragments",
+        :action=>guess_parameters_for_fragments, :flex=>[1,1,1,0,0,0], :align=>:center),
+      item(:button, :title=>"Guess UFF Parameters for Metal Atoms",
+        :action=>guess_parameters_for_metals, :flex=>[1,1,1,0,0,0], :align=>:center),
+      item(:button, :title=>"Close", :action=>proc { hide }, :flex=>[1,1,1,0,0,0], :align=>:center),
+      :flex=>[0,0,0,0,1,1]
+    )
+    size = self.size
+    set_min_size(size)
+    set_size(size[0] + 100, size[1] + 50);
+    listen(mol, "documentModified", proc { update_xatoms.call; update_selection.call })
+    listen(mol, "documentWillClose", proc { hide })
+    update_xatoms.call
+    guess_uff_types.call(true)
+    show
+  }
 end
 
 end
