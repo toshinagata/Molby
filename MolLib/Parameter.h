@@ -230,8 +230,8 @@ BondPar *ParameterLookupBondPar(Parameter *par, UInt t1, UInt t2, Int idx1, Int 
 AnglePar *ParameterLookupAnglePar(Parameter *par, UInt t1, UInt t2, UInt t3, Int idx1, Int idx2, Int idx3, Int options);
 TorsionPar *ParameterLookupDihedralPar(Parameter *par, UInt t1, UInt t2, UInt t3, UInt t4, Int idx1, Int idx2, Int idx3, Int idx4, Int options);
 TorsionPar *ParameterLookupImproperPar(Parameter *par, UInt t1, UInt t2, UInt t3, UInt t4, Int idx1, Int idx2, Int idx3, Int idx4, Int options);
-VdwPar *ParameterLookupVdwPar(Parameter *par, UInt t1, Int options);
-VdwPairPar *ParameterLookupVdwPairPar(Parameter *par, UInt t1, UInt t2, Int options);
+VdwPar *ParameterLookupVdwPar(Parameter *par, UInt t1, Int idx1, Int options);
+VdwPairPar *ParameterLookupVdwPairPar(Parameter *par, UInt t1, UInt t2, Int idx1, Int idx2, Int options);
 VdwCutoffPar *ParameterLookupVdwCutoffPar(Parameter *par, UInt t1, UInt t2, Int options);
 
 int ElementParameterInitialize(const char *fname, char **outWarningMessage);

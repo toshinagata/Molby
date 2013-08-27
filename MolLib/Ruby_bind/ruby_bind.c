@@ -2870,13 +2870,13 @@ s_Parameter_Lookup_sub(int argc, VALUE *argv, int parType, Molecule *mol)
 		case kVdwParType: {
 			VdwPar *vp;
 			if (mol != NULL) {
-				vp = ParameterLookupVdwPar(mol->par, t[0], flags);
+				vp = ParameterLookupVdwPar(mol->par, t[0], ii[0], flags);
 				if (vp != NULL) {
 					idx = vp - mol->par->vdwPars;
 					break;
 				}
 			}
-			vp = ParameterLookupVdwPar(gBuiltinParameters, t[0], flags);
+			vp = ParameterLookupVdwPar(gBuiltinParameters, t[0], -1, flags);
 			if (vp != NULL) {
 				idx = vp - gBuiltinParameters->vdwPars;
 				is_global = 1;
@@ -2886,13 +2886,13 @@ s_Parameter_Lookup_sub(int argc, VALUE *argv, int parType, Molecule *mol)
 		case kVdwPairParType: {
 			VdwPairPar *vp;
 			if (mol != NULL) {
-				vp = ParameterLookupVdwPairPar(mol->par, t[0], t[1], flags);
+				vp = ParameterLookupVdwPairPar(mol->par, t[0], t[1], ii[0], ii[1], flags);
 				if (vp != NULL) {
 					idx = vp - mol->par->vdwpPars;
 					break;
 				}
 			}
-			vp = ParameterLookupVdwPairPar(gBuiltinParameters, t[0], t[1], flags);
+			vp = ParameterLookupVdwPairPar(gBuiltinParameters, t[0], t[1], -1, -1, flags);
 			if (vp != NULL) {
 				idx = vp - gBuiltinParameters->vdwpPars;
 				is_global = 1;
@@ -5494,34 +5494,6 @@ s_Molecule_ImproperPar(VALUE self, VALUE val)
 	if (tp == NULL)
 		return Qnil;
 	return ValueFromMoleculeWithParameterTypeAndIndex(mol, kImproperParType, tp - mol->par->improperPars);
-}
-*/
-/*
- *  call-seq:
- *     vdw_par(idx)    -> ParameterRef
- *
- *  Returns the vdw parameter for the idx-th atom.
- */
-/*
-static VALUE
-s_Molecule_VdwPar(VALUE self, VALUE val)
-{
-    Molecule *mol;
-	Int ival;
-	VdwPar *vp;
-	UInt t1;
-    Data_Get_Struct(self, Molecule, mol);
-	ival = NUM2INT(rb_Integer(val));
-	if (ival < -mol->natoms || ival >= mol->natoms)
-		rb_raise(rb_eMolbyError, "atom index (%d) out of range", ival);
-	if (ival < 0)
-		ival += mol->natoms;
-	s_RebuildMDParameterIfNecessary(self, Qtrue);
-	t1 = ATOM_AT_INDEX(mol->atoms, ival)->type;
-	vp = ParameterLookupVdwPar(mol->par, t1, 0);
-	if (vp == NULL)
-		return Qnil;
-	return ValueFromMoleculeWithParameterTypeAndIndex(mol, kVdwParType, vp - mol->par->vdwPars);
 }
 */
 

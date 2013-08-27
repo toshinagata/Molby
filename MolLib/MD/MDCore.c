@@ -569,22 +569,19 @@ s_find_vdw_parameters(MDArena *arena)
 	    (3) variant->aware in global par, (4) global par ignoring variants  */
 	for (i = 0, ap = mol->atoms; i < mol->natoms; i++, ap = ATOM_NEXT(ap)) {
 		if (mol->par != NULL) {
-			vp = ParameterLookupVdwPar(mol->par, ap->type, 0);
-		/*	vp = ParameterLookupVdwPar(mol->par, i, kParameterLookupLocal | kParameterLookupNoWildcard);
-			if (vp == NULL)
-				vp = ParameterLookupVdwPar(mol->par, ap->type, kParameterLookupLocal | kParameterLookupGlobal); */
+			vp = ParameterLookupVdwPar(mol->par, ap->type, i, 0);
 			if (vp != NULL) {
 				arena->vdw_par_i[i] = (vp - mol->par->vdwPars) + ATOMS_MAX_NUMBER * 2;
 				continue;
 			}
 		}
-		vp = ParameterLookupVdwPar(gBuiltinParameters, ap->type, 0);
+		vp = ParameterLookupVdwPar(gBuiltinParameters, ap->type, -1, 0);
 		if (vp != NULL) {
 			arena->vdw_par_i[i] = (vp - gBuiltinParameters->vdwPars) + ATOMS_MAX_NUMBER;
 			continue;
 		}
 		/*  Record as missing  */
-		vp = ParameterLookupVdwPar(par, ap->type, kParameterLookupMissing | kParameterLookupNoBaseAtomType);
+		vp = ParameterLookupVdwPar(par, ap->type, i, kParameterLookupMissing | kParameterLookupNoBaseAtomType);
 		if (vp == NULL) {
 			vp = AssignArray(&par->vdwPars, &par->nvdwPars, sizeof(VdwPar), par->nvdwPars, NULL);
 			vp->src = -1;
@@ -684,10 +681,10 @@ s_find_vdw_parameters(MDArena *arena)
 			type2 = par->vdwPars[j].type1;  /*  Not type2  */
 			/*  Look up the pair-specific van der Waals parameters  */
 			if (mol->par != NULL) {
-				vpp = ParameterLookupVdwPairPar(mol->par, type1, type2, 0);
+				vpp = ParameterLookupVdwPairPar(mol->par, type1, type2, type1, type2, 0);
 			}
 			if (vpp == NULL)
-				vpp = ParameterLookupVdwPairPar(gBuiltinParameters, type1, type2, 0);
+				vpp = ParameterLookupVdwPairPar(gBuiltinParameters, type1, type2, type1, type2, 0);
 			if (vpp != NULL) {
 				newpar = *vpp;
 			} else {

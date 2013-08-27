@@ -1651,7 +1651,7 @@ ParameterLookupImproperPar(Parameter *par, UInt t1, UInt t2, UInt t3, UInt t4, I
 }
 
 VdwPar *
-ParameterLookupVdwPar(Parameter *par, UInt t1, Int options)
+ParameterLookupVdwPar(Parameter *par, UInt t1, Int idx1, Int options)
 {
 	int i;
 	VdwPar *vp;
@@ -1665,16 +1665,16 @@ ParameterLookupVdwPar(Parameter *par, UInt t1, Int options)
 			|| (vp->src == 0 && !(options & kParameterLookupLocal))
 			|| (vp->src < 0 && !(options & kParameterLookupMissing)))
 			continue;
-		if (s_ParMatch(vp->type1, t1, -1, nowildcard))
+		if (s_ParMatch(vp->type1, t1, idx1, nowildcard))
 			return vp;
 	}
 	if (options & kParameterLookupNoBaseAtomType)
 		return NULL;
-	return ParameterLookupVdwPar(par, t1 % kAtomTypeVariantBase, options | kParameterLookupNoBaseAtomType);
+	return ParameterLookupVdwPar(par, t1 % kAtomTypeVariantBase, idx1, options | kParameterLookupNoBaseAtomType);
 }
 
 VdwPairPar *
-ParameterLookupVdwPairPar(Parameter *par, UInt t1, UInt t2, Int options)
+ParameterLookupVdwPairPar(Parameter *par, UInt t1, UInt t2, Int idx1, Int idx2, Int options)
 {
 	int i;
 	VdwPairPar *vp;
@@ -1688,13 +1688,13 @@ ParameterLookupVdwPairPar(Parameter *par, UInt t1, UInt t2, Int options)
 			|| (vp->src == 0 && !(options & kParameterLookupLocal))
 			|| (vp->src < 0 && !(options & kParameterLookupMissing)))
 			continue;
-		if ((s_ParMatch(vp->type1, t1, -1, nowildcard) && s_ParMatch(vp->type2, t2, -1, nowildcard))
-			|| (s_ParMatch(vp->type1, t2, -1, nowildcard) && s_ParMatch(vp->type2, t1, -1, nowildcard)))
+		if ((s_ParMatch(vp->type1, t1, idx1, nowildcard) && s_ParMatch(vp->type2, t2, idx2, nowildcard))
+			|| (s_ParMatch(vp->type1, t2, idx2, nowildcard) && s_ParMatch(vp->type2, t1, idx1, nowildcard)))
 			return vp;
 	}
 	if (options & kParameterLookupNoBaseAtomType)
 		return NULL;
-	return ParameterLookupVdwPairPar(par, t1 % kAtomTypeVariantBase, t2 % kAtomTypeVariantBase, options | kParameterLookupNoBaseAtomType);
+	return ParameterLookupVdwPairPar(par, t1 % kAtomTypeVariantBase, t2 % kAtomTypeVariantBase, idx1, idx2, options | kParameterLookupNoBaseAtomType);
 }
 
 VdwCutoffPar *
