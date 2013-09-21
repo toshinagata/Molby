@@ -2510,7 +2510,7 @@ s_IntGroup_Equal(VALUE self, VALUE val)
 	IntGroup *ig1, *ig2;
 	Data_Get_Struct(self, IntGroup, ig1);
 	if (!rb_obj_is_kind_of(val, rb_cIntGroup))
-		val = s_IntGroup_Create(1, &val, rb_cIntGroup);
+		return Qfalse;
 	Data_Get_Struct(val, IntGroup, ig2);
 	if (IntGroupIsEqual(ig1, ig2))
 		return Qtrue;
