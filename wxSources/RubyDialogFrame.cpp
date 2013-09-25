@@ -690,8 +690,11 @@ RubyDialogCallback_createItem(RubyDialog *dref, const char *type, const char *ti
 	}
 
 	if (strcmp(type, "text") == 0) {
-		/*  Static text */
-		wxStaticText *st = new wxStaticText(parent, -1, tstr, rect.GetPosition(), rect.GetSize(), wxST_NO_AUTORESIZE);
+		/*  Static text */		
+		long style = wxST_NO_AUTORESIZE;
+		if (rect.width == wxDefaultSize.x && rect.height == wxDefaultSize.y)
+			style = 0;  /*  Allow autoresize  */
+		wxStaticText *st = new wxStaticText(parent, -1, tstr, rect.GetPosition(), rect.GetSize(), style);
 		control = st;
 		no_action = true;
 	} else if (strcmp(type, "textfield") == 0) {
@@ -959,36 +962,47 @@ void
 RubyDialogCallback_setFontForItem(RDItem *item, int size, int family, int style, int weight)
 {
 	wxTextCtrl *ctrl;
+	wxStaticText *stxt;
+	wxFont font;
 	if ((ctrl = wxDynamicCast((wxWindow *)item, wxTextCtrl)) != NULL) {
 		wxTextAttr attr = ctrl->GetDefaultStyle();
-		wxFont font = attr.GetFont();
-		if (size == 0)
-			size = font.GetPointSize();
-		if (family == 0)
-			family = font.GetFamily();
-		else {
-			family = (family == 2 ? wxFONTFAMILY_ROMAN :
-					  (family == 3 ? wxFONTFAMILY_SWISS :
-					   (family == 4 ? wxFONTFAMILY_MODERN :
-						wxFONTFAMILY_DEFAULT)));
-		}
-		if (style == 0)
-			style = font.GetStyle();
-		else {
-			style = (style == 2 ? wxFONTSTYLE_SLANT :
-					 (style == 3 ? wxFONTSTYLE_ITALIC :
-					  wxFONTSTYLE_NORMAL));
-		}
-		if (weight == 0)
-			weight = font.GetWeight();
-		else {
-			weight = (weight == 2 ? wxFONTWEIGHT_BOLD :
-					  (weight == 3 ? wxFONTWEIGHT_LIGHT :
-					   wxFONTWEIGHT_NORMAL));
-		}
+		font = attr.GetFont();
+	} else if ((stxt = wxDynamicCast((wxWindow *)item, wxStaticText)) != NULL) {
+		font = stxt->GetFont();
+	}
+	if (size == 0)
+		size = font.GetPointSize();
+	if (family == 0)
+		family = font.GetFamily();
+	else {
+		family = (family == 2 ? wxFONTFAMILY_ROMAN :
+				  (family == 3 ? wxFONTFAMILY_SWISS :
+				   (family == 4 ? wxFONTFAMILY_MODERN :
+					wxFONTFAMILY_DEFAULT)));
+	}
+	if (style == 0)
+		style = font.GetStyle();
+	else {
+		style = (style == 2 ? wxFONTSTYLE_SLANT :
+				 (style == 3 ? wxFONTSTYLE_ITALIC :
+				  wxFONTSTYLE_NORMAL));
+	}
+	if (weight == 0)
+		weight = font.GetWeight();
+	else {
+		weight = (weight == 2 ? wxFONTWEIGHT_BOLD :
+				  (weight == 3 ? wxFONTWEIGHT_LIGHT :
+				   wxFONTWEIGHT_NORMAL));
+	}
+	if (ctrl != NULL) {
 		wxTextAttr newAttr;
 		newAttr.SetFont(wxFont(size, family, style, weight));
 		ctrl->SetDefaultStyle(newAttr);
+	} else if (stxt != NULL) {
+		stxt->SetFont(wxFont(size, family, style, weight));
+		wxString label = stxt->GetLabel();
+		stxt->SetLabel(_(""));
+		stxt->SetLabel(label);  /*  Update the control size  */
 	}
 }
 
