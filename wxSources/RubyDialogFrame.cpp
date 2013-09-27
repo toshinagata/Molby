@@ -39,6 +39,8 @@ BEGIN_EVENT_TABLE(RubyDialogFrame, wxDialog)
   EVT_BUTTON(wxID_OK, RubyDialogFrame::OnDefaultButtonPressed)
   EVT_BUTTON(wxID_CANCEL, RubyDialogFrame::OnDefaultButtonPressed)
   EVT_SIZE(RubyDialogFrame::OnSize)
+  EVT_CHAR(RubyDialogFrame::OnChar)
+  EVT_CLOSE(RubyDialogFrame::OnCloseWindow)
 END_EVENT_TABLE()
 
 RubyDialogFrame::RubyDialogFrame(wxWindow* parent, wxWindowID wid, const wxString& title, const wxPoint& pos, const wxSize& size, long style):
@@ -51,6 +53,7 @@ RubyDialogFrame::RubyDialogFrame(wxWindow* parent, wxWindowID wid, const wxStrin
 	autoResizeEnabled = true;
 	messageData = NULL;
 	countMessageData = 0;
+	onKeyHandlerEnabled = false;
 	
 	//  Create a vertical box sizer that contains a panel containing all controls and a sizer containing
 	//  OK/Cancel buttons
@@ -316,6 +319,23 @@ RubyDialogFrame::OnSize(wxSizeEvent &event)
 	event.Skip();
 }
 
+void
+RubyDialogFrame::OnChar(wxKeyEvent &event)
+{
+
+	int code = event.GetKeyCode();
+	if (onKeyHandlerEnabled) {
+		RubyDialog_doKeyAction((RubyValue)dval, code);
+	} else
+		event.Skip();
+}
+
+void
+RubyDialogFrame::OnCloseWindow(wxCloseEvent &event)
+{
+	RubyDialog_doCloseWindow((RubyValue)dval, IsModal());
+}
+
 int
 RubyDialogFrame::ListenToObject(void *obj, const char *objtype, const char *msg, RubyValue oval, RubyValue pval)
 {
@@ -486,11 +506,12 @@ RubyDialogFrame::OnPopUpMenuSelected(MyListCtrl *ctrl, long row, long column, in
 RubyDialog *
 RubyDialogCallback_new(int style)
 {
-	/*  RubyDialogFrame should not have a close box  */
 	RubyDialogFrame *dref;
 	int fstyle = wxCAPTION | wxSYSTEM_MENU;
 	if (style & rd_Resizable)
 		fstyle |= wxRESIZE_BOX | wxRESIZE_BORDER;
+	if (style & rd_HasCloseBox)
+		fstyle |= wxCLOSE_BOX;
 	dref = new RubyDialogFrame(GetMainFrame(), -1, _T("Ruby Dialog"), wxDefaultPosition, wxDefaultSize, fstyle);
 	return (RubyDialog *)dref;
 }
@@ -566,6 +587,13 @@ RubyDialogCallback_stopIntervalTimer(RubyDialog *dref)
 {
 	((RubyDialogFrame *)dref)->StopIntervalTimer();
 }
+
+void
+RubyDialogCallback_enableOnKeyHandler(RubyDialog *dref, int flag)
+{
+	((RubyDialogFrame *)dref)->onKeyHandlerEnabled = (flag != 0);
+}
+
 
 static inline RDRect
 RDRectFromwxRect(const wxRect &frame)
@@ -840,6 +868,8 @@ RubyDialogCallback_setStringToItem(RDItem *item, const char *s)
 	wxString str(s, WX_DEFAULT_CONV);
 	if (wxDynamicCast((wxWindow *)item, wxTextCtrl) != NULL) {
 		((wxTextCtrl *)item)->SetValue(str);
+	} else if (wxDynamicCast((wxWindow *)item, wxStaticText) != NULL) {
+		((wxStaticText *)item)->SetLabel(str);
 	}
 }
 
@@ -849,6 +879,8 @@ RubyDialogCallback_getStringFromItem(RDItem *item, char *buf, int bufsize)
 	wxString str;
 	if (wxDynamicCast((wxWindow *)item, wxTextCtrl) != NULL) {
 		str = ((wxTextCtrl *)item)->GetValue();
+	} else if (wxDynamicCast((wxWindow *)item, wxStaticText) != NULL) {
+			str = ((wxStaticText *)item)->GetLabel();
 	} else {
 		buf[0] = 0;
 		return;
@@ -1040,6 +1072,40 @@ RubyDialogCallback_getFontForItem(RDItem *item, int *size, int *family, int *sty
 		}
 		return 1;
 	} else return 0;
+}
+
+void
+RubyDialogCallback_setForegroundColorForItem(RDItem *item, const double *col)
+{
+	wxColour wcol(col[0] * 255, col[1] * 255, col[2] * 255, col[3] * 255);
+	((wxWindow *)item)->SetForegroundColour(wcol);
+}
+
+void
+RubyDialogCallback_setBackgroundColorForItem(RDItem *item, const double *col)
+{
+	wxColour wcol(col[0] * 255, col[1] * 255, col[2] * 255, col[3] * 255);
+	((wxWindow *)item)->SetBackgroundColour(wcol);
+}
+
+void
+RubyDialogCallback_getForegroundColorForItem(RDItem *item, double *col)
+{
+	wxColour wcol = ((wxWindow *)item)->GetForegroundColour();
+	col[0] = wcol.Red() / 255.0;
+	col[1] = wcol.Green() / 255.0;
+	col[2] = wcol.Blue() / 255.0;
+	col[3] = wcol.Alpha() / 255.0;
+}
+
+void
+RubyDialogCallback_getBackgroundColorForItem(RDItem *item, double *col)
+{
+	wxColour wcol = ((wxWindow *)item)->GetBackgroundColour();
+	col[0] = wcol.Red() / 255.0;
+	col[1] = wcol.Green() / 255.0;
+	col[2] = wcol.Blue() / 255.0;
+	col[3] = wcol.Alpha() / 255.0;
 }
 
 int

@@ -258,6 +258,55 @@ s_Kernel_HideConsoleWindow(VALUE self)
 
 /*
  *  call-seq:
+ *     bell
+ *
+ *  Ring the system bell.
+ */
+static VALUE
+s_Kernel_Bell(VALUE self)
+{
+	MyAppCallback_bell();
+	return Qnil;
+}
+
+/*
+ *  call-seq:
+ *     play_sound(filename, flag = 0)
+ *
+ *  Play the sound (a WAV file) in the file. Flag: 0, pause until sound ends;
+ *  1, play the sound asynchronously; 3, play the sound with loop asynchronously
+ */
+static VALUE
+s_Kernel_PlaySound(int argc, VALUE *argv, VALUE self)
+{
+	VALUE fnval, flval;
+	int flag, retval;
+	char *fname;
+	rb_scan_args(argc, argv, "11", &fnval, &flval);
+	if (flval == Qnil)
+		flag = 0;
+	else flag = NUM2INT(rb_Integer(flval));
+	fnval = rb_funcall(rb_cFile, rb_intern("expand_path"), 1, fnval);
+	fname = StringValuePtr(fnval);
+	retval = MyAppCallback_playSound(fname, flag);
+	return (retval ? Qtrue : Qnil);
+}
+
+/*
+ *  call-seq:
+ *     stop_sound
+ *
+ *  Stop the sound if playing.
+ */
+static VALUE
+s_Kernel_StopSound(VALUE self)
+{
+	MyAppCallback_stopSound();
+	return Qnil;
+}
+
+/*
+ *  call-seq:
  *     stdout.write(str)
  *
  *  Put the message in the main text view in black color.
@@ -10540,7 +10589,10 @@ Init_Molby(void)
 	rb_define_method(rb_mKernel, "error_message_box", s_Kernel_ErrorMessageBox, 1);
 	rb_define_method(rb_mKernel, "show_console_window", s_Kernel_ShowConsoleWindow, 0);
 	rb_define_method(rb_mKernel, "hide_console_window", s_Kernel_HideConsoleWindow, 0);
-	
+	rb_define_method(rb_mKernel, "bell", s_Kernel_Bell, 0);
+	rb_define_method(rb_mKernel, "play_sound", s_Kernel_PlaySound, -1);
+	rb_define_method(rb_mKernel, "stop_sound", s_Kernel_StopSound, 0);
+
 	s_ID_equal = rb_intern("==");
 	g_RubyID_call = rb_intern("call");
 }

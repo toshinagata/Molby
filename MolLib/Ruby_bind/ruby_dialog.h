@@ -30,6 +30,7 @@ extern "C" {
 /*  Style of the dialog frame  */
 enum {
 	rd_Resizable = 1,
+	rd_HasCloseBox = 2,
 };
 
 /*  True if y-coordinate grows from bottom to top (like Cocoa)  */
@@ -52,7 +53,9 @@ extern const RDRect gZeroRect;
 extern int RubyDialog_validateItemContent(RubyValue self, RDItem *ip, const char *s);
 extern void RubyDialog_doItemAction(RubyValue self, RDItem *ip);
 extern void RubyDialog_doTimerAction(RubyValue self);
+extern void RubyDialog_doKeyAction(RubyValue self, int keyCode);
 extern int RubyDialog_getFlexFlags(RubyValue self, RDItem *ip);
+extern void RubyDialog_doCloseWindow(RubyValue self, int isModal);
 
 extern int RubyDialog_GetTableItemCount(RubyValue self, RDItem *ip);
 extern void RubyDialog_GetTableItemText(RubyValue self, RDItem *ip, int row, int column, char *buf, int blen);
@@ -79,6 +82,8 @@ STUB void RubyDialogCallback_show(RubyDialog *dref);
 STUB void RubyDialogCallback_hide(RubyDialog *dref);
 STUB int RubyDialogCallback_startIntervalTimer(RubyDialog *dref, float interval);
 STUB void RubyDialogCallback_stopIntervalTimer(RubyDialog *dref);
+STUB void RubyDialogCallback_enableOnKeyHandler(RubyDialog *dref, int flag);
+
 STUB RDSize RubyDialogCallback_windowMinSize(RubyDialog *dref);
 STUB void RubyDialogCallback_setWindowMinSize(RubyDialog *dref, RDSize size);
 STUB RDSize RubyDialogCallback_windowSize(RubyDialog *dref);
@@ -115,6 +120,10 @@ STUB int RubyDialogCallback_isItemHidden(RDItem *item);
 STUB void RubyDialogCallback_setNeedsDisplay(RDItem *item, int flag);
 STUB void RubyDialogCallback_setFontForItem(RDItem *item, int size, int family, int style, int weight);
 STUB int RubyDialogCallback_getFontForItem(RDItem *item, int *size, int *family, int *style, int *weight);
+STUB void RubyDialogCallback_setForegroundColorForItem(RDItem *item, const double *col);
+STUB void RubyDialogCallback_setBackgroundColorForItem(RDItem *item, const double *col);
+STUB void RubyDialogCallback_getForegroundColorForItem(RDItem *item, double *col);
+STUB void RubyDialogCallback_getBackgroundColorForItem(RDItem *item, double *col);
 STUB int RubyDialogCallback_appendString(RDItem *item, const char *str);
 
 STUB int RubyDialogCallback_countSubItems(RDItem *item);

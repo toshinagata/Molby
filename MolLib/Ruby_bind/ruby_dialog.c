@@ -23,7 +23,8 @@ static VALUE
 	sCheckBoxSymbol, sToggleButtonSymbol, sPopUpSymbol, sTextViewSymbol,
     sViewSymbol, sLineSymbol, sTagSymbol, sTypeSymbol, sTitleSymbol, 
 	sRadioGroupSymbol, sTableSymbol,
-	sResizableSymbol, sDialogSymbol, sIndexSymbol,
+	sResizableSymbol, sHasCloseBoxSymbol,
+	sDialogSymbol, sIndexSymbol,
 	sXSymbol, sYSymbol, sWidthSymbol, sHeightSymbol, 
 	sOriginSymbol, sSizeSymbol, sFrameSymbol,
 	sEnabledSymbol, sEditableSymbol, sHiddenSymbol, sValueSymbol,
@@ -33,6 +34,7 @@ static VALUE
 	sMarginSymbol, sPaddingSymbol, sSubItemsSymbol,
 	sHFillSymbol, sVFillSymbol, sFlexSymbol,
 	sIsProcessingActionSymbol,
+	sForeColorSymbol, sBackColorSymbol,
 	sFontSymbol,
 	sDefaultSymbol, sRomanSymbol, sSwissSymbol, sFixedSymbol,
 	sNormalSymbol, sSlantSymbol, sItalicSymbol,
@@ -40,7 +42,7 @@ static VALUE
 	/*  Data source for Table (= MyListCtrl)  */
 	sOnCountSymbol, sOnGetValueSymbol, sOnSetValueSymbol, sOnSelectionChangedSymbol,
 	sOnSetColorSymbol, sIsItemEditableSymbol, sIsDragAndDropEnabledSymbol, sOnDragSelectionToRowSymbol,
-	sSelectionSymbol, sColumnsSymbol, sRefreshSymbol, sHasPopUpMenu, sOnPopUpMenuSelected;
+	sSelectionSymbol, sColumnsSymbol, sRefreshSymbol, sHasPopUpMenuSymbol, sOnPopUpMenuSelectedSymbol;
 
 VALUE rb_cDialog = Qfalse;
 VALUE rb_cDialogItem = Qfalse;
@@ -107,7 +109,7 @@ s_RubyDialog_Alloc(VALUE klass)
 static VALUE
 s_RubyDialogItem_SetAttr(VALUE self, VALUE key, VALUE val)
 {
-	int flag, itag;
+	int flag, itag, i;
 	VALUE dialog_val, type;
 	RubyDialog *dref;
 	RDItem *view;
@@ -227,7 +229,6 @@ s_RubyDialogItem_SetAttr(VALUE self, VALUE key, VALUE val)
 			rb_ivar_set(self, key_id, val);
 		} else {
 			if (rb_obj_is_kind_of(val, rb_mEnumerable)) {
-				int i;
 				for (i = 0; i < 6; i++) {
 					VALUE gval = Ruby_ObjectAtIndex(val, i);
 					if (RTEST(gval) && NUM2INT(rb_Integer(gval)) != 0)
@@ -240,8 +241,18 @@ s_RubyDialogItem_SetAttr(VALUE self, VALUE key, VALUE val)
 			}
 			rb_ivar_set(self, key_id, INT2NUM(flex));
 		}
+	} else if (key == sForeColorSymbol || key == sBackColorSymbol) {
+		double col[4];
+		val = rb_ary_to_ary(val);
+		col[0] = col[1] = col[2] = col[3] = 1.0;
+		for (i = 0; i < 4 && i < RARRAY_LEN(val); i++)
+			col[i] = NUM2DBL(rb_Float(RARRAY_PTR(val)[i]));
+		if (key == sForeColorSymbol)
+			RubyDialogCallback_setForegroundColorForItem(view, col);
+		else
+			RubyDialogCallback_setBackgroundColorForItem(view, col);
 	} else if (key == sFontSymbol) {
-		int size, family, style, weight, i;
+		int size, family, style, weight;
 		size = family = style = weight = 0;
 		val = rb_ary_to_ary(val);
 		for (i = 0; i < RARRAY_LEN(val); i++) {
@@ -457,6 +468,13 @@ s_RubyDialogItem_Attr(VALUE self, VALUE key)
 				rb_ary_push(val, ((flex & (1 << i)) ? INT2FIX(1) : INT2FIX(0)));
 			}
 		}
+	} else if (key == sForeColorSymbol || key == sBackColorSymbol) {
+		double col[4];
+		if (key == sForeColorSymbol)
+			RubyDialogCallback_getForegroundColorForItem(view, col);
+		else
+			RubyDialogCallback_getBackgroundColorForItem(view, col);
+		val = rb_ary_new3(4, rb_float_new(col[0]), rb_float_new(col[1]), rb_float_new(col[2]), rb_float_new(col[3]));
 	} else if (key == sFontSymbol) {
 		int size, family, style, weight;
 		VALUE fval, sval, wval;
@@ -544,6 +562,9 @@ s_RubyDialog_Initialize(int argc, VALUE *argv, VALUE self)
 		optval = rb_hash_aref(val4, sResizableSymbol);
 		if (RTEST(optval))
 			style |= rd_Resizable;
+		optval = rb_hash_aref(val4, sHasCloseBoxSymbol);
+		if (RTEST(optval))
+			style |= rd_HasCloseBox;
 	}
 	
 	di->dref = dref = RubyDialogCallback_new(style);
@@ -1379,6 +1400,26 @@ s_RubyDialog_StopTimer(VALUE self)
 
 /*
  *  call-seq:
+ *     on_key(action = nil)
+ *
+ *  Set keydown action method. When a keydown event occurs and no other controls
+ *  in this dialog accept the event, the action method (if non-nil) is invoked
+ *  with the keycode integer as the single argument. 
+ *  The action is either a symbol (method name) or a Proc object.
+ */
+static VALUE
+s_RubyDialog_OnKey(int argc, VALUE *argv, VALUE self)
+{
+	VALUE actval;
+	RubyDialog *dref = s_RubyDialog_GetController(self);
+	rb_scan_args(argc, argv, "01", &actval);
+	rb_iv_set(self, "_key_action", actval);
+	RubyDialogCallback_enableOnKeyHandler(dref, (actval != Qnil));
+	return self;
+}
+
+/*
+ *  call-seq:
  *     size -> [width, height]
  *
  *  Get the size for this dialog.
@@ -1675,7 +1716,7 @@ s_RubyDialog_doTableAction(VALUE val)
 		}
 		vp[7] = (void *)n;
 		return retval;
-	} else if (sym == sHasPopUpMenu) {
+	} else if (sym == sHasPopUpMenuSymbol) {
 		args[1] = INT2NUM((int)vp[3]);
 		args[2] = INT2NUM((int)vp[4]);
 		retval = s_RubyDialog_CallActionProc(self, pval, 3, args);
@@ -1695,7 +1736,7 @@ s_RubyDialog_doTableAction(VALUE val)
 			}
 		}
 		return retval;
-	} else if (sym == sOnPopUpMenuSelected) {
+	} else if (sym == sOnPopUpMenuSelectedSymbol) {
 		args[1] = INT2NUM((int)vp[3]);
 		args[2] = INT2NUM((int)vp[4]);
 		args[3] = INT2NUM((int)vp[5]);
@@ -1801,7 +1842,7 @@ int
 RubyDialog_HasPopUpMenu(RubyValue self, RDItem *ip, int row, int column, char ***menu_titles)
 {
 	int status;
-	void *vp[7] = { (void *)self, (void *)ip, (void *)sHasPopUpMenu, (void *)row, (void *)column, (void *)menu_titles, NULL };
+	void *vp[7] = { (void *)self, (void *)ip, (void *)sHasPopUpMenuSymbol, (void *)row, (void *)column, (void *)menu_titles, NULL };
 	VALUE val = rb_protect(s_RubyDialog_doTableAction, (VALUE)vp, &status);
 	if (status != 0 || val == Qnil)
 		return 0;
@@ -1812,7 +1853,7 @@ void
 RubyDialog_OnPopUpMenuSelected(RubyValue self, RDItem *ip, int row, int column, int selected_index)
 {
 	int status;
-	void *vp[7] = { (void *)self, (void *)ip, (void *)sOnPopUpMenuSelected, (void *)row, (void *)column, (void *)selected_index, NULL };
+	void *vp[7] = { (void *)self, (void *)ip, (void *)sOnPopUpMenuSelectedSymbol, (void *)row, (void *)column, (void *)selected_index, NULL };
 	rb_protect(s_RubyDialog_doTableAction, (VALUE)vp, &status);
 	if (status != 0)
 		Molby_showError(status);
@@ -1976,6 +2017,35 @@ RubyDialog_doTimerAction(RubyValue self)
 }
 
 static VALUE
+s_RubyDialog_doKeyAction(VALUE val)
+{
+	void **values = (void **)val;
+	VALUE self = (VALUE)values[0];
+	int keyCode = (int)values[1];
+	VALUE actval = rb_iv_get(self, "_key_action");
+	if (actval != Qnil) {
+		if (TYPE(actval) == T_SYMBOL)
+			rb_funcall(self, SYM2ID(actval), 1, INT2NUM(keyCode));
+		else
+			rb_funcall(actval, rb_intern("call"), 1, INT2NUM(keyCode));
+	}
+	return Qnil;
+}
+
+void
+RubyDialog_doKeyAction(RubyValue self, int keyCode)
+{
+	int status;
+	void *values[2];
+	values[0] = (void *)self;
+	values[1] = (void *)keyCode;
+	rb_protect(s_RubyDialog_doKeyAction, (VALUE)values, &status);
+	if (status != 0) {
+		Molby_showError(status);
+	}
+}
+
+static VALUE
 s_RubyDialog_getFlexFlags(VALUE val)
 {
 	VALUE self = (VALUE)(((void **)val)[0]);
@@ -2010,6 +2080,23 @@ RubyDialog_getFlexFlags(RubyValue self, RDItem *ip)
 	else return (int)args[2];
 }
 
+/*  Handle close box.  Invokes Dialog.end_modal or Dialog.hide in Ruby world  */
+void
+RubyDialog_doCloseWindow(RubyValue self, int isModal)
+{
+	int status;
+	VALUE val;
+	if (isModal) {
+		val = INT2NUM(1);
+		Ruby_funcall2_protect((VALUE)self, rb_intern("end_modal"), 1, &val, &status);
+	} else {
+		Ruby_funcall2_protect((VALUE)self, rb_intern("hide"), 0, NULL, &status);
+	}
+	if (status != 0) {
+		Molby_showError(status);
+	}
+}
+
 #pragma mark ====== Initialize class ======
 
 void
@@ -2038,6 +2125,7 @@ RubyDialogInitClass(void)
 	rb_define_method(rb_cDialog, "hide", s_RubyDialog_Hide, 0);
 	rb_define_method(rb_cDialog, "start_timer", s_RubyDialog_StartTimer, -1);
 	rb_define_method(rb_cDialog, "stop_timer", s_RubyDialog_StopTimer, 0);
+	rb_define_method(rb_cDialog, "on_key", s_RubyDialog_OnKey, -1);
 	rb_define_method(rb_cDialog, "set_size", s_RubyDialog_SetSize, -1);
 	rb_define_method(rb_cDialog, "size", s_RubyDialog_Size, 0);
 	rb_define_method(rb_cDialog, "set_min_size", s_RubyDialog_SetMinSize, -1);
@@ -2058,7 +2146,8 @@ RubyDialogInitClass(void)
 			&sTextSymbol, &sTextFieldSymbol, &sRadioSymbol, &sButtonSymbol,
 			&sCheckBoxSymbol, &sToggleButtonSymbol, &sPopUpSymbol, &sTextViewSymbol,
 			&sViewSymbol, &sTableSymbol,
-			&sResizableSymbol, &sDialogSymbol, &sIndexSymbol, &sLineSymbol, &sTagSymbol,
+			&sResizableSymbol, &sHasCloseBoxSymbol,
+			&sDialogSymbol, &sIndexSymbol, &sLineSymbol, &sTagSymbol,
 			&sTypeSymbol, &sTitleSymbol, &sXSymbol, &sYSymbol,
 			&sWidthSymbol, &sHeightSymbol, &sOriginSymbol, &sSizeSymbol,
 			&sFrameSymbol, &sEnabledSymbol, &sEditableSymbol, &sHiddenSymbol,
@@ -2067,18 +2156,20 @@ RubyDialogInitClass(void)
 			&sVerticalAlignSymbol, &sBottomSymbol, &sMarginSymbol, &sPaddingSymbol,
 			&sSubItemsSymbol, &sHFillSymbol, &sVFillSymbol, &sFlexSymbol,
 			&sIsProcessingActionSymbol,
+			&sForeColorSymbol, &sBackColorSymbol,
 			&sFontSymbol, &sDefaultSymbol, &sRomanSymbol, &sSwissSymbol,
 			&sFixedSymbol, &sNormalSymbol, &sSlantSymbol, &sItalicSymbol,
 			&sMediumSymbol, &sBoldSymbol, &sLightSymbol,
 			&sOnCountSymbol, &sOnGetValueSymbol, &sOnSetValueSymbol, &sOnSelectionChangedSymbol,
 			&sOnSetColorSymbol, &sIsItemEditableSymbol, &sIsDragAndDropEnabledSymbol, &sOnDragSelectionToRowSymbol,
-			&sSelectionSymbol, &sColumnsSymbol, &sRefreshSymbol, &sHasPopUpMenu, &sOnPopUpMenuSelected
+			&sSelectionSymbol, &sColumnsSymbol, &sRefreshSymbol, &sHasPopUpMenuSymbol, &sOnPopUpMenuSelectedSymbol
 		};
 		static const char *sTable2[] = {
 			"text", "textfield", "radio", "button",
 			"checkbox", "togglebutton", "popup", "textview",
 			"view", "table",
-			"resizable", "dialog", "index", "line", "tag",
+			"resizable", "has_close_box",
+			"dialog", "index", "line", "tag",
 			"type", "title", "x", "y",
 			"width", "height", "origin", "size",
 			"frame", "enabled", "editable", "hidden",
@@ -2087,6 +2178,7 @@ RubyDialogInitClass(void)
 			"vertical_align", "bottom", "margin", "padding",
 			"subitems", "hfill", "vfill", "flex",
 			"is_processing_action",
+			"foreground_color", "background_color",
 			"font", "default", "roman", "swiss",
 			"fixed", "normal", "slant", "italic",
 			"medium", "bold", "light",

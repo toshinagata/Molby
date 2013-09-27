@@ -41,6 +41,8 @@
 #include "wx/stdpaths.h"
 #include "wx/textfile.h"
 #include "wx/process.h"
+#include "wx/utils.h"
+#include "wx/sound.h"
 
 #include "MyApp.h"
 #include "MyDocument.h"
@@ -1667,12 +1669,13 @@ MyAppCallback_getTextWithPrompt(const char *prompt, char *buf, int bufsize)
 	wxTextCtrl *tctrl;
 	int retval;
 	wxString pstr(prompt, WX_DEFAULT_CONV);
+	wxString defstr(buf, WX_DEFAULT_CONV);
 	{	//  Vertical sizer containing [prompt, textbox, buttons]
 		wxBoxSizer *sizer1;
 		sizer1 = new wxBoxSizer(wxVERTICAL);
 		stext = new wxStaticText(dialog, -1, pstr, wxDefaultPosition, wxSize(200, 22));
 		sizer1->Add(stext, 0, wxEXPAND | wxALL, 6);
-		tctrl = new wxTextCtrl(dialog, -1, _T(""), wxDefaultPosition, wxSize(200, 22));
+		tctrl = new wxTextCtrl(dialog, -1, defstr, wxDefaultPosition, wxSize(200, 22));
 		sizer1->Add(tctrl, 0, wxEXPAND | wxALL, 6);
 		wxSizer *bsizer = dialog->CreateButtonSizer(wxOK | wxCANCEL);
 		sizer1->Add(bsizer, 0, wxEXPAND | wxALL, 6);
@@ -1893,4 +1896,26 @@ void MyAppCallback_hideConsoleWindow(void)
 {
 	ConsoleFrame *frame = wxGetApp().GetConsoleFrame();
 	frame->Hide();
+}
+
+void MyAppCallback_bell(void)
+{
+	wxBell();
+}
+
+int MyAppCallback_playSound(const char *filename, int flag)
+{
+	unsigned uflag = wxSOUND_SYNC;
+	if (flag == 1)
+		uflag = wxSOUND_ASYNC;
+	else if (flag == 3)
+		uflag = wxSOUND_ASYNC | wxSOUND_LOOP;
+	wxString fnamestr(filename, wxConvFile);
+	bool retval = wxSound::Play(fnamestr, uflag);
+	return retval;
+}
+
+void MyAppCallback_stopSound(void)
+{
+	wxSound::Stop();
 }

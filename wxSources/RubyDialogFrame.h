@@ -45,6 +45,9 @@ public:
 	void **messageData;
 	Int countMessageData;
 	
+	/*  On key handler (the handler is in the Ruby world)  */
+	bool onKeyHandlerEnabled;
+
 	RubyDialogFrame(wxWindow* parent, wxWindowID wid, const wxString& title, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxDEFAULT_DIALOG_STYLE);
 	virtual ~RubyDialogFrame();
 
@@ -68,6 +71,8 @@ public:
 	void OnTimerEvent(wxTimerEvent &event);
 	void OnDefaultButtonPressed(wxCommandEvent &event);
 	void OnSize(wxSizeEvent &event);
+	void OnChar(wxKeyEvent &event);
+	void OnCloseWindow(wxCloseEvent &event);
 
 	//  MyListCtrlDataSource methods
 	virtual int GetItemCount(MyListCtrl *ctrl);

@@ -74,6 +74,9 @@ STUB void MyAppCallback_endUndoGrouping(void);
 STUB int MyAppCallback_switchToFilterMode(void);
 STUB void MyAppCallback_showConsoleWindow(void);
 STUB void MyAppCallback_hideConsoleWindow(void);
+STUB void MyAppCallback_bell(void);
+STUB int MyAppCallback_playSound(const char *filename, int flag);
+STUB void MyAppCallback_stopSound(void);
 
 #define DUMMY_CALLBACK ((int (*)(void *))1)
 
