@@ -232,6 +232,19 @@ MoleculeCallback_openNewMolecule(const char *fname)
 	return NULL;
 }
 
+void MyAppCallback_bell(void)
+{
+}
+
+int MyAppCallback_playSound(const char *filename, int flag)
+{
+	return 0;
+}
+
+void MyAppCallback_stopSound(void)
+{
+}
+
 void
 MainView_getCamera(MainView *mview, Vector *outCamera, Vector *outLookAt, Vector *outUp)
 {
