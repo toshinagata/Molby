@@ -72,6 +72,21 @@ An <a href="AtomRef.html">AtomRef</a> object contains the parent <a href="Molecu
 <div id="methods">
 <h3 class="section-bar">Public Instance methods</h3>
 
+<div id="method-anchor_list" class="method-detail">
+<a name="anchor_list"></a>
+<div class="method-heading">
+<span class="method-name">
+anchor_list       &rarr; [n1, w1, n2, w2, ...]<br />
+self.anchor_list = [n1, w1, n2, w2, ...]
+</span>
+</div>
+<div class="method-description">
+<p>
+Get/set the list of component atoms for a pi-anchor. N1, n2, ... are the component atom indices from which the pi anchor is defined, and w1, w2, ... are the significance of each component atom.
+</p>
+</div>
+</div>
+
 <div id="method-aniso" class="method-detail">
 <a name="aniso"></a>
 <div class="method-heading">
@@ -401,7 +416,7 @@ Get/set the flag whether to exclude this atom from MM/MD calculation. The atom i
 </div>
 </div>
 
-<div id="method-atom_type" class="method-detail">
+<div id="method-name" class="method-detail">
 <a name="name"></a>
 <div class="method-heading">
 <span class="method-name">
@@ -416,7 +431,7 @@ Get/set the atom name. An atom name consists of up to 4 printable ASCII characte
 </div>
 </div>
 
-<div id="method-atom_type" class="method-detail">
+<div id="method-occupancy" class="method-detail">
 <a name="occupancy"></a>
 <div class="method-heading">
 <span class="method-name">
@@ -431,7 +446,22 @@ Get/set the occupancy.
 </div>
 </div>
 
-<div id="method-atom_type" class="method-detail">
+<div id="method-periodic_exclude" class="method-detail">
+<a name="periodic_exclude"></a>
+<div class="method-heading">
+<span class="method-name">
+periodic_exclude       &rarr; Integer<br />
+self.periodic_exclude = Integer<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get/set the flag whether to exclude this atom from periodic calculation. The atom is to be excluded if the flag is non-zero.
+</p>
+</div>
+</div>
+
+<div id="method-r" class="method-detail">
 <a name="r"></a>
 <div class="method-heading">
 <span class="method-name">
@@ -446,7 +476,7 @@ Get/set the atom position as a <a href="Vector3D.html">Vector3D</a>. The atom po
 </div>
 </div>
 
-<div id="method-atom_type" class="method-detail">
+<div id="method-res_name" class="method-detail">
 <a name="res_name"></a>
 <div class="method-heading">
 <span class="method-name">
@@ -460,7 +490,7 @@ Get the residue name. A residue name consists of up to 4 printable ASCII charact
 </div>
 </div>
 
-<div id="method-atom_type" class="method-detail">
+<div id="method-res_seq" class="method-detail">
 <a name="res_seq"></a>
 <div class="method-heading">
 <span class="method-name">
@@ -474,7 +504,7 @@ Get the residue number. Residue numbers are 1-based, and the number 0 means "no 
 </div>
 </div>
 
-<div id="method-atom_type" class="method-detail">
+<div id="method-seg_name" class="method-detail">
 <a name="seg_name"></a>
 <div class="method-heading">
 <span class="method-name">
@@ -489,7 +519,7 @@ Get/set the segment name. A segment name consists of up to 4 printable ASCII cha
 </div>
 </div>
 
-<div id="method-atom_type" class="method-detail">
+<div id="method-seg_seq" class="method-detail">
 <a name="seg_seq"></a>
 <div class="method-heading">
 <span class="method-name">
@@ -504,7 +534,7 @@ Get/set the segment number.
 </div>
 </div>
 
-<div id="method-atom_type" class="method-detail">
+<div id="method-sigma" class="method-detail">
 <a name="sigma"></a>
 <div class="method-heading">
 <span class="method-name">
@@ -525,7 +555,7 @@ Get/set the "sigma" (standard deviation) for the fractional coordinates. Usually
 </div>
 </div>
 
-<div id="method-atom_type" class="method-detail">
+<div id="method-symop" class="method-detail">
 <a name="symop"></a>
 <div class="method-heading">
 <span class="method-name">
@@ -544,7 +574,7 @@ Get/set the symmetry operation. If this atom is not symmetry expanded, then nil 
 </div>
 </div>
 
-<div id="method-atom_type" class="method-detail">
+<div id="method-temp_factor" class="method-detail">
 <a name="temp_factor"></a>
 <div class="method-heading">
 <span class="method-name">
@@ -559,7 +589,22 @@ Get/set the (isotropic) temperature factor. For anisotropic temperature factors,
 </div>
 </div>
 
-<div id="method-atom_type" class="method-detail">
+<div id="method-uff_type" class="method-detail">
+<a name="uff_type"></a>
+<div class="method-heading">
+<span class="method-name">
+uff_type       &rarr; String<br />
+self.uff_type = String<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get/set the UFF atom type as a 5-character string.
+</p>
+</div>
+</div>
+
+<div id="method-v" class="method-detail">
 <a name="v"></a>
 <div class="method-heading">
 <span class="method-name">
@@ -574,7 +619,7 @@ Get/set the velocity value from the last MM/MD calculation. The value is in Å f
 </div>
 </div>
 
-<div id="method-atom_type" class="method-detail">
+<div id="method-weight" class="method-detail">
 <a name="weight"></a>
 <div class="method-heading">
 <span class="method-name">
@@ -589,7 +634,7 @@ Get/set the atomic weight. This attribute is automatically updated when <a href=
 </div>
 </div>
 
-<div id="method-atom_type" class="method-detail">
+<div id="method-x" class="method-detail">
 <a name="x"></a>
 <div class="method-heading">
 <span class="method-name">
@@ -604,7 +649,7 @@ Get/set the cartesian coordinate x. To handle crystallographic fractional coordi
 </div>
 </div>
 
-<div id="method-atom_type" class="method-detail">
+<div id="method-y" class="method-detail">
 <a name="y"></a>
 <div class="method-heading">
 <span class="method-name">
@@ -619,7 +664,7 @@ Get/set the cartesian coordinate y. To handle crystallographic fractional coordi
 </div>
 </div>
 
-<div id="method-atom_type" class="method-detail">
+<div id="method-z" class="method-detail">
 <a name="z"></a>
 <div class="method-heading">
 <span class="method-name">

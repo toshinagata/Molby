@@ -53,6 +53,7 @@ The MM/MD calculation uses many setting parameters and runtime information, whic
 <tr><td>cutoff</td><td>Float</td><td>The cutoff distance (in Å) for van der Waals interaction. Default: 9.0 Å.</td></tr>
 <tr><td>electro_cutoff</td><td>Float</td><td>The cutoff distance (in Å) for electrostatic interaction. Default: 9.0 Å.</td></tr>
 <tr><td>pairlist_distance</td><td>Float</td><td>The threshold distance for making the pairlist table. The pairlist table records the interatomic distances, and is updated when the maximum displacement of any atom exceeds <code>(pairlist_distance - cutoff)</code> or <code>(pairlist_distance - electro_cutoff)</code>. The recommended value is <code>cutoff + 1.0</code> or <code>electro_cutoff + 1.0</code>, whichever is larger. Default: 10.0 Å.</td></tr>
+<tr><td>switch_distance</td><td>Float</td><td>The switching distance (in Å) for van der Waals interaction; between switch_distance and cutoff, the van der Waals potential decreases linearly to zero. Default: 8.0 Å.</td></tr>
 <tr><td>temperature</td><td>Float</td><td>The target temperature (in Kelvin). Default: 300.0 K.</td></tr>
 <tr><td>transient_temperature</td><td>Float</td><td>The transient temperature at the last MD step (in Kelvin). Read only.</td></tr>
 <tr><td>average_temperature</td><td>Float</td><td>The average temperature from the beginning of the MD run (in Kelvin). Read only.</td></tr>
@@ -76,6 +77,15 @@ The MM/MD calculation uses many setting parameters and runtime information, whic
 <tr><td>coord_output_freq</td><td>Integer</td><td>Output the coordinates every this step. Default: 10.</td></tr>
 <tr><td>energy_output_freq</td><td>Integer</td><td>Output the energies every this step to the log file. Default: 10.</td></tr>
 <tr><td>debug_output_level</td><td>Integer</td><td>Set the verbosity of the debug information. Default: 0.</td></tr>
+<tr><td>use_graphite</td><td>Integer</td><td>If non-zero, an infinite array of graphite carbons are assumed in the xy plane. Default: 0.</td></tr>
+<tr><td>alchemical_lambda</td><td>Float</td><td>When the alchemical transformation is turned on, this parameter defines the population of the appearing group.</td></tr>
+<tr><td>alchemical_delta_lambda</td><td>Float</td><td>When the alchemical transformation is turned on, this parameter defines the increment width of the lambda parameter. Default: 0.1.</td></tr>
+<tr><td>alchemical_energy</td><td>Float</td><td>When the alchemical transformation is turned on, this parameter gives the energy difference for incremental change of the lambda parameter. Read only.</td></tr>
+<tr><td>minimize_cell</td><td>Boolean</td><td>Flag to determine whether the unit cell should be minimized. Default: false.</td></tr>
+<tr><td>use_ewald</td><td>Integer</td><td>If 1, the Particle Mesh Ewald technique is used. Default: 0.</td></tr>
+<tr><td>ewald_beta</td><td>Float</td><td>The beta parameter for the PME calculation. Default: 0.25</td></tr>
+<tr><td>ewald_order</td><td>Integer</td><td>The spline order for the PME calculation. Default: 8</td></tr>
+<tr><td>ewald_freq</td><td>Integer</td><td>The frequency to perform the PME calculation. Default: 2</td></tr>
 </table>
 </div>
 
@@ -146,6 +156,18 @@ Returns a MM/MD parameter record that is used for the idx-th dihedral.
 <div class="method-description">
 <p>
 Get the <a href="MDArena.html#M000047">energies</a> at the last step of the MM/MD calculation. The unit is kcal/mol.
+</p>
+</div>
+</div>
+
+<div id="method-get_alchemical_perturbation" class="method-detail">
+<a name="get_alchemical_perturbation"></a>
+<div class="method-heading">
+<span class="method-name">get_alchemical_perturbation &rarr; [vanish_group, appear_group] or nil</span>
+</div>
+<div class="method-description">
+<p>
+Get the vanishing and appearing atom groups for alchemical perturbation. If alchemical perturbation is disabled, returns nil (not [nil, nil]).
 </p>
 </div>
 </div>
@@ -254,6 +276,18 @@ Run the MD simulation for n steps.
 <div class="method-description">
 <p>
 Scale the current velocities of the atoms according to the Boltzmann distribution. If temperature is given, it is also set as the 'temperature' attribute.
+</p>
+</div>
+</div>
+
+<div id="method-set_alchemical_perturbation" class="method-detail">
+<a name="set_alchemical_perturbation"></a>
+<div class="method-heading">
+<span class="method-name">set_alchemical_perturbation(vanish_group, appear_group) &rarr; [vanish_group, appear_group]</span>
+</div>
+<div class="method-description">
+<p>
+Set the vanishing and appearing atom groups for alchemical perturbation. To disable alchemical perturbation, give nil for the both groups.
 </p>
 </div>
 </div>

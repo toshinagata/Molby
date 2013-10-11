@@ -194,6 +194,21 @@ document is open, returns an empry array.
 </div>
 </div>
 
+<div id="method-error_message" class="method-detail">
+<a name="error_message"></a>
+<div class="method-heading">
+<span class="method-name">error_message &rarr; String<br />
+self.error_message = String<br />
+set_error_message(String)
+</span>
+</div>
+<div class="method-description">
+<p>
+Get/set the error_message from the last load/save method. Nil means no error.
+</p>
+</div>
+</div>
+
 <div id="method-M000190" class="method-detail">
 <a name="M000190"></a>
 <div class="method-heading">
@@ -318,6 +333,34 @@ This operation is undoable.
 </div>
 </div>
 
+<div id="method-add_gaussian_orbital_shell" class="method-detail">
+<a name="add_gaussian_orbital_shell"></a>
+<div class="method-heading">
+<span class="method-name">add_gaussian_orbital_shell(sym, nprims, atom_index)       &rarr; self<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Only used internally. Add a gaussian orbital shell with symmetry code, number of primitives,
+and the corresponding atom index. Symmetry code: 0, S-type; 1, P-type; -1, SP-type; 2, D-type;
+-2, D5-type.
+</p>
+</div>
+</div>
+
+<div id="method-add_gaussian_primitive_cofficient" class="method-detail">
+<a name="add_gaussian_primitive_cofficient"></a>
+<div class="method-heading">
+<span class="method-name">add_gaussian_primitive_coefficients(exponent, contraction, contraction_sp)      &rarr; self<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Only used internally. Add a gaussian primitive coefficients.
+</p>
+</div>
+</div>
+
 <div id="method-M000125" class="method-detail">
 <a name="M000125"></a>
 <div class="method-heading">
@@ -429,6 +472,24 @@ angle n1-n2-n3 is represented [n1, n2, n3], where n1, n2, n3 are the atom indice
 </p>
 <p>
 <i>See Also:</i> <a href="Molecule.html#M000219">Molecule#nangles</a>
+</div>
+</div>
+
+<div id="method-assign_bond_order" class="method-detail">
+<a name="assign_bond_order"></a>
+<div class="method-heading">
+<span class="method-name">assign_bond_order(idx, d1) &rarr; self <br />
+assign_bond_orders(group, [d1, d2, ...]) &rarr; self
+</span>
+</div>
+<div class="method-description">
+<p>
+Assign bond order. In the first form, the bond order of the idx-th bond is set to d1 (a Float value).
+In the second form, the bond orders at the indices in the group are set to d1, d2, etc.
+At present, the bond orders are only used in UFF parameter guess, and not in the MM/MD calculations.
+(This may change in the future)
+This operation is undoable.
+</p>
 </div>
 </div>
 
@@ -706,7 +767,7 @@ Returns the unit cell parameters. If a unit cell is not set, returns nil. Alpha/
 <div id="method-M000236" class="method-detail">
 <a name="M000236"></a>
 <div class="method-heading">
-<span class="method-name">cell = [a, b, c, alpha, beta, gamma [, sig_a, sig_b, sig_c, sig_alpha, sig_beta, sig_gamma]]<br />
+<span class="method-name">self.cell = [a, b, c, alpha, beta, gamma [, sig_a, sig_b, sig_c, sig_alpha, sig_beta, sig_gamma]]<br />
 set_cell([a, b, c, alpha, beta, gamma[, sig_a, sig_b, sig_c, sig_alpha, sig_beta, sig_gamma]], convert_coord = nil)<br />
 </span>
 </div>
@@ -921,19 +982,30 @@ Returns the index of the newly created graphic.
 <div id="method-M000242" class="method-detail">
 <a name="create_pi_anchor"></a>
 <div class="method-heading">
-<span class="method-name">create_pi_anchor(name, type, group [, weights]) &rarr; index<br />
+<span class="method-name">create_pi_anchor(name, group [, type] [, weights] [, index]) &rarr; <a href="AtomRef.html">AtomRef</a><br />
 </span>
 </div>
 <div class="method-description">
 <p>
-Same as <code>insert_pi_anchor(-1, name, type, group [, weight])</code>.
+Create a pi anchor, which is a "dummy" atom to represent pi-metal bonds.
+Name is the name of the new pi anchor, and group is the atoms that define the pi system.
+Type (a String) is an atom type for MM implementation (default: "##").
+Weights is the relative weights of the component atoms; if omitted, then
+1.0/n (n is the number of component atoms) is assumed for all atoms.
+The weight values will be normalized so that the sum of the weights is 1.0.
+The weight values must be positive.
+Index is the atom index where the created pi-anchor is inserted in the 
+atoms array; if omitted, the pi-anchor is inserted after the component atom
+having the largest index.
 </p>
 <p>
-<i>See Also:</i> <a href="Molecule.html#insert_pi_anchor">Molecule#insert_pi_anchor</a>
+Pi anchors are appear in the atom list along with other ordinary atoms. The list
+of component atoms (and their weights) can be retrived by <a href="AtomRef.html#anchor_list">AtomRef#anchor_list</a>.
 </p>
 </div>
 </div>
 
+<!--
 <div id="method-M000242" class="method-detail">
 <a name="create_pi_anchor_construct"></a>
 <div class="method-heading">
@@ -980,6 +1052,7 @@ Returns the number of defined pi-anchor constructs.
 </p>
 </div>
 </div>
+-->
 
 <div id="method-M000318" class="method-detail">
 <a name="M000318"></a>
@@ -1427,6 +1500,23 @@ Get the atom attribute for the specified atom. Equivalent to <a href="Molecule.h
 </div>
 </div>
 
+<div id="method-get_bond_order" class="method-detail">
+<a name="get_bond_order"></a>
+<div class="method-heading">
+<span class="method-name">
+get_bond_order(idx) &rarr; Float <br />
+get_bond_orders(group) &rarr; Array
+</span>
+</div>
+<div class="method-description">
+<p>
+Get the bond order. In the first form, the bond order of the idx-th bond is returned.
+In the second form, the bond orders at the indices in the group are returned as an array.
+If no bond order information have been assigned, returns nil (the first form) or an empty array (the second form).
+</p>
+</div>
+</div>
+
 <div id="method-get_coord_from_frame" class="method-detail">
 <a name="get_coord_from_frame"></a>
 <div class="method-heading">
@@ -1534,7 +1624,6 @@ improper is represented by an array of four atom indices.
 insert_frames(intGroup = nil, coordinates = nil) &rarr; <a href="IntGroup.html">IntGroup</a><br />
 </span>
 </div>
-
 <div class="method-description">
 <p>
 Insert new frames at the indices
@@ -1547,6 +1636,7 @@ the inserted frames if successful, nil if not.
 </div>
 </div>
 
+<!--
 <div id="method-M000242" class="method-detail">
 <a name="insert_pi_anchor"></a>
 <div class="method-heading">
@@ -1565,6 +1655,7 @@ in the group) is assumed for all atoms. This operation is undoable.
 </p>
 </div>
 </div>
+-->
 
 <div id="method-M000210" class="method-detail">
 <a name="M000210"></a>
@@ -1805,6 +1896,17 @@ Read coordinates from an ORTEP input file. Return true if successful.
 <p>
 Load molecule from a text file describing the cartesian coordinates. The first line may be "natoms a b c alpha beta gamma", which defines crystallographic unit cell; in this case, the coordinates are regarded as crystallographic internal coordinates. (The first "natoms" field is present for historical reasons.)
 </p>
+</div>
+</div>
+
+<div id="method-make_front" class="method-detail">
+<a name="make_front"></a>
+<div class="method-heading">
+<span class="method-name">make_front &rarr; nil</span>
+</div>
+<div class="method-description">
+<p>
+Make the window frontmost if this molecule is bound to a view. Otherwise do nothing</p>
 </div>
 </div>
 
@@ -2204,6 +2306,7 @@ If the molecule has no associated document, then returns nil.
 </div>
 </div>
 
+<!--
 <div id="method-M000242" class="method-detail">
 <a name="pi_anchor"></a>
 <div class="method-heading">
@@ -2219,7 +2322,9 @@ Return the attributes of the idx-th pi anchor if present, otherwise nil.
 </p>
 </div>
 </div>
+-->
 
+<!--
 <div id="method-M000242" class="method-detail">
 <a name="pi_anchor_construct"></a>
 <div class="method-heading">
@@ -2232,6 +2337,7 @@ Returns the elements representing the index-th pi anchor constructs.
 </p>
 </div>
 </div>
+-->
 
 <div id="method-M000226" class="method-detail">
 <a name="M000226"></a>
@@ -2410,6 +2516,7 @@ This operation is undoable.
 </div>
 </div>
 
+<!--
 <div id="method-M000242" class="method-detail">
 <a name="remove_pi_anchor"></a>
 <div class="method-heading">
@@ -2440,6 +2547,7 @@ This operation is undoable.
 </p>
 </div>
 </div>
+-->
 
 <div id="method-M000243" class="method-detail">
 <a name="M000243"></a>
@@ -2472,6 +2580,7 @@ operation is undoable.
 </div>
 </div>
 
+<!--
 <div id="method-M000242" class="method-detail">
 <a name="replace_pi_anchor"></a>
 <div class="method-heading">
@@ -2484,6 +2593,7 @@ Replace an existing "pi anchor", which is an anchor point to define a metal-pi b
 </p>
 </div>
 </div>
+-->
 
 <div id="method-M000216" class="method-detail">
 <a name="M000216"></a>
@@ -2778,6 +2888,30 @@ Change the color of graphic_index-th graphic object. The new value must be an ar
 <div class="method-description">
 <p>
 Change the point_index-th control point of graphic_index-th graphic object. If the object is a line strip, nil is allowed for the new value, which means the line strip ends at the last point.
+</p>
+</div>
+</div>
+
+<div id="method-set_name" class="method-detail">
+<a name="set_name"></a>
+<div class="method-heading">
+<span class="method-name">set_name(name) &rarr; self</span>
+</div>
+<div class="method-description">
+<p>
+Set the name of an untitled molecule. This method requires that the molecule is associated with a window and does not have an associated file yet. Otherwise, an exception is thrown.
+</p>
+</div>
+</div>
+
+<div id="method-set_parameter_attr" class="method-detail">
+<a name="set_parameter_attr"></a>
+<div class="method-heading">
+<span class="method-name">set_parameter_attr(type, index, key, value, src) &rarr; value</span>
+</div>
+<div class="method-description">
+<p>
+Set the name of an untitled molecule. This method requires that the molecule is associated with a window and does not have an associated file yet. Otherwise, an exception is thrown.
 </p>
 </div>
 </div>
