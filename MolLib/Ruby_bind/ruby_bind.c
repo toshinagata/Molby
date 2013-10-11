@@ -9888,13 +9888,15 @@ s_Molecule_SearchEquivalentAtoms(int argc, VALUE *argv, VALUE self)
  *  Create a pi anchor, which is a "dummy" atom to represent pi-metal bonds.
  *  Name is the name of the new pi anchor, and group is the atoms that define
  *  the pi system. Type (a String) is an atom type for MM implementation.
- *  Weights is the relative weights of the component atoms; if omitted, then
+ *  Weights represent the relative significance of the component atoms; if omitted, then
  *  1.0/n (n is the number of component atoms) is assumed for all atoms.
  *  The weight values will be normalized so that the sum of the weights is 1.0.
  *  The weight values must be positive.
  *  Index is the atom index where the created pi-anchor is inserted in the 
  *  atoms array; if omitted, the pi-anchor is inserted after the component atom
  *  having the largest index.
+ *  Pi anchors are appear in the atom list along with other ordinary atoms. The list
+ *  of component atoms (and their weights) can be retrived by AtomRef#anchor_list.
  */
 static VALUE
 s_Molecule_CreatePiAnchor(int argc, VALUE *argv, VALUE self)

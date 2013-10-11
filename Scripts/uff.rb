@@ -287,7 +287,23 @@ def guess_uff_parameters
       xangles = (0...mol.nangles).select { |i| a = mol.angles[i]; xatoms.include?(a[0]) || xatoms.include?(a[1]) || xatoms.include?(a[2]) }
       xdihedrals = (0...mol.ndihedrals).select { |i| d = mol.dihedrals[i]; xatoms.include?(d[0]) || xatoms.include?(d[1]) || xatoms.include?(d[2]) || xatoms.include?(d[3]) }
       xbonds.each { |i| xatoms.add(mol.bonds[i]) }
-      xangles.each { |i| xatoms.add(mol.angles[i]) }
+      xangles.each { |i|
+	    ang = mol.angles[i]
+		xatoms.add(ang)
+		2.times { |j|
+		  b0 = ang[j]
+		  b1 = ang[j + 1]
+		  k = 0
+		  mol.bonds.each { |b|
+		    break if (b[0] == b0 && b[1] && b1) || (b[0] == b1 && b[1] && b0)
+			k += 1
+		  }
+		  if k < mol.nbonds && !xbonds.include?(k)
+		    xbonds.push(k)
+		  end
+		}
+	  }
+	  xbonds.sort!
       item_with_tag("table")[:refresh] = true
     }
     columns = {
@@ -455,7 +471,7 @@ def guess_uff_parameters
           return "#{ap0.atom_type}-#{ap1.atom_type}"
         when 4
           atom_types = arena.bond_par(idx).atom_types
-          return atom_types[0] + "-" + atom_types[1]
+          return "#{atom_types[0]}-#{atom_types[1]}"
         when 5
           return (o = mol.get_bond_order(idx)) && sprintf("%.3f", o)
         when 6
@@ -482,7 +498,7 @@ def guess_uff_parameters
           return "#{ap0.atom_type}-#{ap1.atom_type}-#{ap2.atom_type}"
         when 4
           atom_types = arena.angle_par(idx).atom_types
-          return atom_types[0] + "-" + atom_types[1] + "-" + atom_types[2]
+          return "#{atom_types[0]}-#{atom_types[1]}-#{atom_types[2]}"
         when 5
           return sprintf("%.3f", arena.angle_par(idx).k)
         when 6
@@ -508,7 +524,7 @@ def guess_uff_parameters
           return "#{ap0.atom_type}-#{ap1.atom_type}-#{ap2.atom_type}-#{ap3.atom_type}"
         when 4
           atom_types = arena.dihedral_par(idx).atom_types
-          return atom_types[0] + "-" + atom_types[1] + "-" + atom_types[2] + "-" + atom_types[3]
+          return "#{atom_types[0]}-#{atom_types[1]}-#{atom_types[2]}-#{atom_types[3]}"
         when 5
           return sprintf("%.3f", arena.dihedral_par(idx).k)
         when 6
@@ -763,17 +779,18 @@ def guess_uff_parameters
               end
             }
           }
+		  guess_uff_types.call(false)
         end
       }
     }
     guess_parameters_for_metals = proc {
-      #  Atoms
       catch(:exit) {
+        #  Atoms
         xatoms.each { |idx|
           ap0 = mol.atoms[idx]
           next if exclude.member?(ap0.atomic_number)
           uff_type = ap0.uff_type
-          u = Molby::Molecule::UFFParams.find { |u| u[0] == uff_type }
+          u = UFFParams.find { |u| u[0] == uff_type }
           if u == nil
             error_message_box("The UFF type for atom #{idx} (#{ap0.name}) is not defined.")
             throw(:exit)
@@ -782,8 +799,43 @@ def guess_uff_parameters
           pref.atom_type = idx
           pref.eps = pref.eps14 = u[5]
           pref.r_eq = pref.r_eq14 = u[4] * 0.5
+		  pref.atomic_number = ap0.atomic_number
+		  pref.weight = ap0.weight
         }
+		#  Bonds
+		xbonds.each { |idx|
+		  pref = arena.bond_par(idx)
+		  next if pref.source != false   #  Already defined
+		  b = mol.bonds[idx]
+		  is = []
+		  aps = [mol.atoms[b[0]], mol.atoms[b[1]]]
+		  2.times { |i|
+		    uff_type = aps[i].uff_type
+		    UFFParams.each_with_index { |u, j|
+			  if u[0] == uff_type
+			    is[i] = j
+				break
+			  end
+			}
+		    if is[i] == nil
+			  error_message_box("The UFF type for atom #{b[i]} (#{aps[i].name}) is not defined.")
+			  throw(:exit)
+			end
+		  }
+		  bo = mol.get_bond_order(idx)
+		  if bo == nil || bo == 0.0
+		    bo = 1.0
+		  end
+		  force = mol.uff_bond_force(is[0], is[1], bo)
+		  len = mol.calc_bond(b[0], b[1])
+		  pref = mol.parameter.lookup(:bond, b, :local, :missing, :create, :nowildcard, :nobasetype)
+		  pref.atom_types = [b[0], b[1]]
+		  pref.k = force
+		  pref.r0 = len
+	    }
       }
+	  arena.prepare(true)
+	  item_with_tag("table")[:refresh] = true
     }
     layout(1,
       layout(2,

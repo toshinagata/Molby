@@ -1530,6 +1530,7 @@ MyDocument::OnUpdateUI(wxUpdateUIEvent& event)
 		case myMenuID_RunAntechamber:
 		case myMenuID_RunResp:
 		case myMenuID_CreateSanderInput:
+		case myMenuID_GuessUFFParameters:
 			if (mol != NULL && mol->natoms > 0)
 				event.Enable(true);
 			else event.Enable(false);
