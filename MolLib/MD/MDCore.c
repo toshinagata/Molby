@@ -279,11 +279,12 @@ s_register_missing_parameters(Int **missing, Int *nmissing, Int type, Int t1, In
 static int
 s_check_bonded(Molecule *mol, Int idx, Int *results)
 {
-	Int i, n, *ip;
+	Int i, j, n, *ip;
 	const Int *cp;
 	Atom *ap = ATOM_AT_INDEX(mol->atoms, idx);
 	cp = AtomConnectData(&ap->connect);
 	for (i = 0; i < ap->connect.count; i++, cp++) {
+		Atom *api;
 		n = *cp;
 		for (ip = results; *ip >= 0; ip++) {
 			if (n == *ip)
@@ -292,6 +293,35 @@ s_check_bonded(Molecule *mol, Int idx, Int *results)
 		if (*ip < 0) {
 			*ip++ = n;
 			*ip = -1;
+		}
+		api = ATOM_AT_INDEX(mol->atoms, n);
+		if (api->anchor != NULL) {
+			const Int *cpi = AtomConnectData(&api->anchor->connect);
+			for (j = 0; j < api->anchor->connect.count; j++, cpi++) {
+				n = *cpi;
+				for (ip = results; *ip >= 0; ip++) {
+					if (n == *ip)
+						break;
+				}
+				if (*ip < 0) {
+					*ip++ = n;
+					*ip = -1;
+				}
+			}
+		}
+	}
+	if (ap->anchor != NULL) {
+		cp = AtomConnectData(&ap->anchor->connect);
+		for (i = 0; i < ap->anchor->connect.count; i++, cp++) {
+			n = *cp;
+			for (ip = results; *ip >= 0; ip++) {
+				if (n == *ip)
+					break;
+			}
+			if (*ip < 0) {
+				*ip++ = n;
+				*ip = -1;
+			}
 		}
 	}
 	for (ip = results; *ip >= 0; ip++)
