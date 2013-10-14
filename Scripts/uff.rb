@@ -787,6 +787,8 @@ def guess_uff_parameters
       catch(:exit) {
         #  Atoms
         xatoms.each { |idx|
+		  pref = arena.vdw_par(idx) 
+		  next if pref.source != false   #  Already defined
           ap0 = mol.atoms[idx]
           next if exclude.member?(ap0.atomic_number)
 		  next if ap0.anchor_list != nil
@@ -858,6 +860,136 @@ def guess_uff_parameters
 		  pref.atom_types = [b[0], b[1]]
 		  pref.k = force
 		  pref.r0 = len
+	    }
+		#  Angles
+		xangles.each { |idx|
+		  pref = arena.angle_par(idx)
+		  next if pref.source != false   #  Already defined
+		  a = mol.angles[idx]
+		  is = []
+		  aps = [mol.atoms[a[0]], mol.atoms[a[1]], mol.atoms[a[2]]]
+		  3.times { |i|
+		    if aps[i].anchor_list != nil
+			  is[i] = -1
+			  next
+			end
+		    uff_type = aps[i].uff_type
+		    UFFParams.each_with_index { |u, j|
+			  if u[0] == uff_type
+			    is[i] = j
+				break
+			  end
+			}
+		    if is[i] == nil
+			  error_message_box("The UFF type for atom #{b[i]} (#{aps[i].name}) is not defined.")
+			  throw(:exit)
+			end
+		  }
+		  bos = [1.0, 1.0]
+		  2.times { |i|
+		    #  Look up the bond and get the bond order
+			mol.bonds.each_with_index { |b, j|
+			  if (a[i] == b[0] && a[i + 1] == b[1]) || (a[i] == b[1] && a[i + 1] == b[0])
+			    bos[i] = mol.get_bond_order(j)
+				if bos[i] == nil || bos[i] == 0.0
+				  bos[i] = 1.0
+				end
+			  end
+			}
+		  }
+		  ang = mol.calc_angle(a[0], a[1], a[2])
+		  met = [aps[0].atomic_number, aps[1].atomic_number, aps[2].atomic_number].max
+		  if is[1] == -1 && is[0] != -1 && is[2] != 0
+		    #  Metal-Dummy-C angle
+			case met
+			when 0..23
+			  force = 85.0
+			when 24
+			  force = 93.0
+			when 25..27
+			  force = 100.0
+			when 28..36
+			  force = 28.0
+			when 37..54
+			  force = 125.0
+			else
+			  force = 130.0
+			end
+		  elsif is[1] != -1 && is[0] == -1 && is[2] == -1
+		    #  Dummy-Metal-Dummy angle
+			case met
+			when 0..23
+			  force = 50.0
+			when 24
+			  force = 40.0
+			when 25..27
+			  force = 40.0
+			when 28..36
+			  force = 40.0
+			when 37..54
+			  force = 52.0
+			else
+			  force = 56.0
+			end
+		  elsif is[0] >= 0 && is[1] >= 0 && is[2] >= 0
+		    force = mol.uff_angle_force(is[0], is[1], is[2], bos[0], bos[1], ang)
+		  else
+		    force = 0.0
+		  end
+		  pref = mol.parameter.lookup(:angle, a, :local, :missing, :create, :nowildcard, :nobasetype)
+		  pref.atom_types = [a[0], a[1], a[2]]
+		  pref.k = force
+		  pref.a0 = ang
+	    }
+		xdihedrals.each { |idx|
+		  pref = arena.dihedral_par(idx)
+		  next if pref.source != false   #  Already defined
+		  d = mol.dihedrals[idx]
+		  is = []
+		  aps = [mol.atoms[d[0]], mol.atoms[d[1]], mol.atoms[d[2]], mol.atoms[d[3]]]
+		  4.times { |i|
+		    if aps[i].anchor_list != nil
+			  is[i] = -1
+			  next
+			end
+		    uff_type = aps[i].uff_type
+		    UFFParams.each_with_index { |u, j|
+			  if u[0] == uff_type
+			    is[i] = j
+				break
+			  end
+			}
+		    if is[i] == nil
+			  error_message_box("The UFF type for atom #{b[i]} (#{aps[i].name}) is not defined.")
+			  throw(:exit)
+			end
+		  }
+		  if is[1] == -1 && is[2] == -1 && is[0] != -1 && is[3] != -1
+		    #  X-##-##-X dihedral
+			met = (aps[1].connects & aps[2].connects)[0]
+			if met != nil
+			  case mol.atoms[met].atomic_number
+			  when 0..36
+			    force = 0.36
+		      when 37..54
+			    force = 3.4
+			  else
+			    force = 3.4
+			  end
+			  pref = mol.parameter.lookup(:dihedral, ["X", d[1], d[2], "X"], :local, :missing, :create)
+			  pref.atom_types = ["X", d[1], d[2], "X"]
+			  pref.period = 5
+			  pref.phi0 = 180.0
+			  pref.k = force
+			  arena.prepare(true)
+			end
+		  else
+		    pref = mol.parameter.lookup(:dihedral, d, :local, :missing, :create, :nowildcard, :nobasetype)
+			pref.atom_types = d
+			pref.period = 2
+			pref.phi0 = 180.0
+			pref.k = 0.0
+		  end
 	    }
       }
 	  arena.prepare(true)
