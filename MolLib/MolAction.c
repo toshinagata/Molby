@@ -1168,7 +1168,7 @@ s_MolActionSetAtomGeometry(Molecule *mol, MolAction *action, MolAction **actp, I
 		ap = ATOM_AT_INDEX(mol->atoms, j);
 		vp[k++] = (type == 0 ? ap->r : (type == 1 ? ap->v : ap->f));
 	}
-	*actp = MolActionNew(gMolActionSetAtomPositions, *igp, n2, vp);
+	*actp = MolActionNew(action->name, *igp, n2, vp);
 	free(vp);
 	vp = (Vector *)action->args[1].u.arval.ptr;
 	IntGroupIteratorReset(&iter);
