@@ -240,7 +240,10 @@ self.k = Float<br />
 </div>
 <div class="method-description">
 <p>
-Get/set the force constant.  This attribute is available for bond, angle, dihedral, and improper parameters. The unit is kcal/mol/Å<sup>2</sup> for bond parameters and kcal/mol/radian<sup>2</sup> for angle, dihedral, and improper parameters.
+Get/set the force constant.  This attribute is available for bond, angle, dihedral, and improper parameters. The unit is kcal/mol/Å<sup>2</sup> for bond parameters, and kcal/mol/radian<sup>2</sup> for angle parameters as well as dihedral and improper parameters with periodicity == 0. For dihedral and improper parameters with periodicity > 0, the unit is kcal/mol.
+</p>
+<p>
+For harmonic potentials (i.e. bond, angle, and dihedrals with periodicity == 0), the potential energy is defined as E = k (x - x0)<sup>2</sup>. That is, the 1/2 factor usually associated with this term is included within the force constant k.
 </p>
 </div>
 </div>
@@ -268,7 +271,7 @@ self.mult = Integer<br />
 </div>
 <div class="method-description">
 <p>
-Get/set the multiplicity of the dihedral parameters. This attribute if available for dihedral and improper parameters.
+Get/set the multiplicity of the dihedral parameters. This attribute if available for dihedral and improper parameters. Currently only mult = 1 is implemented.
 </p>
 </div>
 </div>
@@ -326,7 +329,7 @@ self.phi0 = Float<br />
 </div>
 <div class="method-description">
 <p>
-Get/set the equilibrium dihedral angle (in degree). This attribute is available for dihedral and improper parameters.
+Get/set the phase shift or equilibrium dihedral angle (in degree). This attribute is available for dihedral and improper parameters.
 </p>
 </div>
 </div>
