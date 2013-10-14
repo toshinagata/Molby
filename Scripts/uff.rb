@@ -789,6 +789,7 @@ def guess_uff_parameters
         xatoms.each { |idx|
           ap0 = mol.atoms[idx]
           next if exclude.member?(ap0.atomic_number)
+		  next if ap0.anchor_list != nil
           uff_type = ap0.uff_type
           u = UFFParams.find { |u| u[0] == uff_type }
           if u == nil
@@ -810,6 +811,10 @@ def guess_uff_parameters
 		  is = []
 		  aps = [mol.atoms[b[0]], mol.atoms[b[1]]]
 		  2.times { |i|
+		    if aps[i].anchor_list != nil
+			  is[i] = -1
+			  next
+			end
 		    uff_type = aps[i].uff_type
 		    UFFParams.each_with_index { |u, j|
 			  if u[0] == uff_type
@@ -826,8 +831,29 @@ def guess_uff_parameters
 		  if bo == nil || bo == 0.0
 		    bo = 1.0
 		  end
-		  force = mol.uff_bond_force(is[0], is[1], bo)
 		  len = mol.calc_bond(b[0], b[1])
+		  if is[0] == -1 && is[1] == -1
+		    #  Bond between anchors: no force
+			force = 0.0
+	      elsif is[0] == -1 || is[1] == -1
+		    i = (is[0] == -1 ? 1 : 0)
+			case aps[i].atomic_number
+			when 0..23
+			  force = 135.0
+			when 24
+			  force = 150.0
+			when 25..27
+			  force = 205.0
+			when 28..36
+			  force = 140.0
+			when 37..54
+			  force = 205.0
+			else
+			  force = 260.0
+			end
+		  else
+		    force = mol.uff_bond_force(is[0], is[1], bo)
+		  end
 		  pref = mol.parameter.lookup(:bond, b, :local, :missing, :create, :nowildcard, :nobasetype)
 		  pref.atom_types = [b[0], b[1]]
 		  pref.k = force
