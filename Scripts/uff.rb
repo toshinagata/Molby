@@ -970,11 +970,11 @@ def guess_uff_parameters
 			if met != nil
 			  case mol.atoms[met].atomic_number
 			  when 0..36
-			    force = 0.36
+			    force = 0.36 / 25   #  Actually should be divided by ring-size-1 * ring-size-2
 		      when 37..54
-			    force = 3.4
+			    force = 3.4 / 25
 			  else
-			    force = 3.4
+			    force = 3.4 / 25
 			  end
 			  pref = mol.parameter.lookup(:dihedral, ["X", d[1], d[2], "X"], :local, :missing, :create)
 			  pref.atom_types = ["X", d[1], d[2], "X"]
