@@ -501,7 +501,7 @@ class Molecule
 		end
 	  end
 	else
-	  t = e.upcase
+	  t = e.downcase
 	end
     ap.atom_type = t
   end

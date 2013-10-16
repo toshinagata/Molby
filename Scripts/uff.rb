@@ -806,9 +806,10 @@ def guess_uff_parameters
 		  pref.weight = ap0.weight
         }
 		#  Bonds
+		pars = []
 		xbonds.each { |idx|
 		  pref = arena.bond_par(idx)
-		  next if pref.source != false   #  Already defined
+		  next if pref.source != false && pref.k > 0.0   #  Already defined
 		  b = mol.bonds[idx]
 		  is = []
 		  aps = [mol.atoms[b[0]], mol.atoms[b[1]]]
@@ -833,7 +834,11 @@ def guess_uff_parameters
 		  if bo == nil || bo == 0.0
 		    bo = 1.0
 		  end
-		  len = mol.calc_bond(b[0], b[1])
+		  if pref.source != false && pref.r0 > 0.0
+		    len = pref.r0
+	      else
+		    len = mol.calc_bond(b[0], b[1])
+	      end
 		  if is[0] == -1 && is[1] == -1
 		    #  Bond between anchors: no force
 			force = 0.0
@@ -856,15 +861,22 @@ def guess_uff_parameters
 		  else
 		    force = mol.uff_bond_force(is[0], is[1], bo)
 		  end
-		  pref = mol.parameter.lookup(:bond, b, :local, :missing, :create, :nowildcard, :nobasetype)
-		  pref.atom_types = [b[0], b[1]]
-		  pref.k = force
-		  pref.r0 = len
+		  pars[idx] = [b, force, len]
+		}
+		pars.each { |pp|
+		  next if pp == nil
+		  pref = mol.parameter.lookup(:bond, pp[0], :local, :missing, :create, :nowildcard, :nobasetype)
+		  if pref.source == false
+ 		    pref.atom_types = pp[0]
+		  end
+		  pref.k = pp[1]
+		  pref.r0 = pp[2]
 	    }
 		#  Angles
+		pars.clear
 		xangles.each { |idx|
 		  pref = arena.angle_par(idx)
-		  next if pref.source != false   #  Already defined
+		  next if pref.source != false && pref.k > 0.0   #  Already defined
 		  a = mol.angles[idx]
 		  is = []
 		  aps = [mol.atoms[a[0]], mol.atoms[a[1]], mol.atoms[a[2]]]
@@ -897,7 +909,11 @@ def guess_uff_parameters
 			  end
 			}
 		  }
-		  ang = mol.calc_angle(a[0], a[1], a[2])
+		  if pref.source != false && pref.a0 > 0.0
+		    ang = pref.a0
+		  else
+		    ang = mol.calc_angle(a[0], a[1], a[2])
+		  end
 		  met = [aps[0].atomic_number, aps[1].atomic_number, aps[2].atomic_number].max
 		  if is[1] == -1 && is[0] != -1 && is[2] != 0
 		    #  Metal-Dummy-C angle
@@ -936,10 +952,16 @@ def guess_uff_parameters
 		  else
 		    force = 0.0
 		  end
-		  pref = mol.parameter.lookup(:angle, a, :local, :missing, :create, :nowildcard, :nobasetype)
-		  pref.atom_types = [a[0], a[1], a[2]]
-		  pref.k = force
-		  pref.a0 = ang
+		  pars[idx] = [a, force, ang]
+		}
+		pars.each { |pp|
+		  next if pp == nil
+		  pref = mol.parameter.lookup(:angle, pp[0], :local, :missing, :create, :nowildcard, :nobasetype)
+		  if pref.source == false
+		    pref.atom_types = pp[0]
+		  end
+		  pref.k = pp[1]
+		  pref.a0 = pp[2]
 	    }
 		xdihedrals.each { |idx|
 		  pref = arena.dihedral_par(idx)
@@ -959,10 +981,6 @@ def guess_uff_parameters
 				break
 			  end
 			}
-		    if is[i] == nil
-			  error_message_box("The UFF type for atom #{b[i]} (#{aps[i].name}) is not defined.")
-			  throw(:exit)
-			end
 		  }
 		  if is[1] == -1 && is[2] == -1 && is[0] != -1 && is[3] != -1
 		    #  X-##-##-X dihedral
