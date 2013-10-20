@@ -38,6 +38,8 @@ class Molecule
 	["cyclooctyl", "cyclooctane", "H11"],
 	["C8H15", "cyclooctyl"],
 
+	["cyclohexane (twist boat)", "alicyclic/cyclohexane-twist-boat.mbsf"],
+
     "Aromatic",
     ["benzene", "aromatic/benzene.mbsf"],
     ["C6H6", "benzene"],
