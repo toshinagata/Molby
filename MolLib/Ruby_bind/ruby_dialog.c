@@ -34,11 +34,14 @@ static VALUE
 	sMarginSymbol, sPaddingSymbol, sSubItemsSymbol,
 	sHFillSymbol, sVFillSymbol, sFlexSymbol,
 	sIsProcessingActionSymbol,
-	sForeColorSymbol, sBackColorSymbol,
-	sFontSymbol,
+	sColorSymbol, sForeColorSymbol, sBackColorSymbol,
+	sStyleSymbol, sSolidSymbol, sTransparentSymbol, sDotSymbol,
+	sLongDashSymbol, sShortDashSymbol, sDotDashSymbol,
+	sFontSymbol, sFamilySymbol, sWeightSymbol,
 	sDefaultSymbol, sRomanSymbol, sSwissSymbol, sFixedSymbol,
 	sNormalSymbol, sSlantSymbol, sItalicSymbol,
 	sMediumSymbol, sBoldSymbol, sLightSymbol,
+	sOnPaintSymbol,
 	/*  Data source for Table (= MyListCtrl)  */
 	sOnCountSymbol, sOnGetValueSymbol, sOnSetValueSymbol, sOnSelectionChangedSymbol,
 	sOnSetColorSymbol, sIsItemEditableSymbol, sIsDragAndDropEnabledSymbol, sOnDragSelectionToRowSymbol,
@@ -540,6 +543,43 @@ s_RubyDialogItem_AppendString(VALUE self, VALUE val)
 	return self;
 }
 
+/*
+ *  call-seq:
+ *     refresh_rect(rectArray, eraseBackground = true) -> self
+ *
+ *  Request refreshing part of the content in the next update event.
+ *  rectArray = [x, y, width, height].
+ */
+static VALUE
+s_RubyDialogItem_RefreshRect(int argc, VALUE *argv, VALUE self)
+{
+	VALUE rval, fval;
+	VALUE dialog_val, index_val;
+	int itag;
+	RubyDialog *dref;
+	RDItem *view;
+	RDRect rect;
+
+	dialog_val = rb_ivar_get(self, SYM2ID(sDialogSymbol));
+	index_val = rb_ivar_get(self, SYM2ID(sIndexSymbol));
+	itag = NUM2INT(index_val);
+	if (dialog_val == Qnil || (dref = s_RubyDialog_GetController(dialog_val)) == NULL)
+		rb_raise(rb_eStandardError, "The dialog item does not belong to any dialog (internal error?)");
+	view = RubyDialogCallback_dialogItemAtIndex(dref, itag);
+	rb_scan_args(argc, argv, "11", &rval, &fval);
+	if (argc == 1)
+		fval = Qtrue;
+	rval = rb_ary_to_ary(rval);
+	if (RARRAY_LEN(rval) != 4)
+		rb_raise(rb_eArgError, "The rectangle should be given as an array of four numerics (x, y, width, height)");
+	rect.origin.x = NUM2DBL(rb_Float(RARRAY_PTR(rval)[0]));
+	rect.origin.y = NUM2DBL(rb_Float(RARRAY_PTR(rval)[1]));
+	rect.size.width = NUM2DBL(rb_Float(RARRAY_PTR(rval)[2]));
+	rect.size.height = NUM2DBL(rb_Float(RARRAY_PTR(rval)[3]));
+	RubyDialogCallback_setNeedsDisplayInRect(view, rect, RTEST(fval));
+	return self;
+}
+
 #pragma mark ====== Dialog methods ======
 
 static VALUE
@@ -941,7 +981,7 @@ s_RubyDialog_Layout(int argc, VALUE *argv, VALUE self)
 /*	printf("layoutFrame = [%f,%f,%f,%f]\n", layoutFrame.origin.x, layoutFrame.origin.y, layoutFrame.size.width, layoutFrame.size.height); */
 
 	/*  Create a layout view  */
-	layoutView = RubyDialogCallback_createItem(dref, "view", "", layoutFrame);
+	layoutView = RubyDialogCallback_createItem(dref, "layout_view", "", layoutFrame);
 
 	/*  Move the subviews into the layout view  */
 	for (i = 0; i < row; i++) {
@@ -1542,6 +1582,345 @@ s_RubyDialog_Listen(VALUE self, VALUE oval, VALUE sval, VALUE pval)
 
 /*
  *  call-seq:
+ *     clear
+ *
+ *  Clear the drawing context.
+ */
+static VALUE
+s_RubyDialog_Clear(VALUE self)
+{
+	RubyDialog *dref = s_RubyDialog_GetController(self);
+	RubyDialogCallback_clear(dref);
+	return Qnil;
+}
+
+/*
+ *  call-seq:
+ *     draw_ellipse(x1, y1, radius1 [, radius2])
+ *
+ *  Draw an ellipse in the graphic context.
+ */
+static VALUE
+s_RubyDialog_DrawEllipse(int argc, VALUE *argv, VALUE self)
+{
+	VALUE xval, yval, rval1, rval2;
+	RubyDialog *dref = s_RubyDialog_GetController(self);
+	rb_scan_args(argc, argv, "31", &xval, &yval, &rval1, &rval2);
+	if (rval2 == Qnil)
+		rval2 = rval1;
+	RubyDialogCallback_drawEllipse(dref, NUM2DBL(rb_Float(xval)), NUM2DBL(rb_Float(yval)), NUM2DBL(rb_Float(rval1)), NUM2DBL(rb_Float(rval2)));
+	return Qnil;
+}
+
+/*
+ *  call-seq:
+ *     draw_line(x1, y1, x2, y2, ...)
+ *     draw_line([x1, y1], [x2, y2], ...)
+ *     draw_line([x1, y1, x2, y2, ...])
+ *
+ *  Draw a series of line segments in the graphic context.
+ */
+static VALUE
+s_RubyDialog_DrawLine(int argc, VALUE *argv, VALUE self)
+{
+	float *coords;
+	int ncoords, i;
+	RubyDialog *dref = s_RubyDialog_GetController(self);
+	if (argc == 0)
+		return Qnil;
+	if (rb_obj_is_kind_of(argv[0], rb_mEnumerable)) {
+		VALUE aval = rb_ary_to_ary(argv[0]);
+		if (RARRAY_LEN(aval) == 2) {
+			/*  The second form  */
+			ncoords = argc;
+			if (ncoords < 2)
+				rb_raise(rb_eMolbyError, "Too few coordinates are given (requires at least two points)");
+			coords = (float *)calloc(sizeof(float), ncoords * 2);
+			coords[0] = NUM2DBL(rb_Float(RARRAY_PTR(aval)[0]));
+			coords[1] = NUM2DBL(rb_Float(RARRAY_PTR(aval)[1]));
+			for (i = 1; i < ncoords; i++) {
+				aval = rb_ary_to_ary(argv[i]);
+				if (RARRAY_LEN(aval) < 2)
+					rb_raise(rb_eMolbyError, "The coordinate should be an array of two numerics");
+				coords[i * 2] = NUM2DBL(rb_Float(RARRAY_PTR(aval)[0]));
+				coords[i * 2 + 1] = NUM2DBL(rb_Float(RARRAY_PTR(aval)[1]));
+			}
+		} else {
+			/*  The third form  */
+			if (RARRAY_LEN(aval) % 2 == 1)
+				rb_raise(rb_eMolbyError, "An odd number of numerics are given; the coordinate values should be given in pairs");
+			ncoords = RARRAY_LEN(aval) / 2;
+			if (ncoords < 2)
+				rb_raise(rb_eMolbyError, "Too few coordinates are given (requires at least two points)");
+			coords = (float *)calloc(sizeof(float), ncoords * 2);
+			for (i = 0; i < ncoords * 2; i++) {
+				coords[i] = NUM2DBL(rb_Float(RARRAY_PTR(aval)[i]));
+			}
+		}
+	} else {
+		/*  The first form  */
+		ncoords = argc / 2;
+		if (ncoords < 2)
+			rb_raise(rb_eMolbyError, "Too few coordinates are given (requires at least two points)");
+		if (argc % 2 == 1)
+			rb_raise(rb_eMolbyError, "An odd number of numerics are given; the coordinate values should be given in pairs");
+		coords = (float *)calloc(sizeof(float), ncoords * 2);
+		for (i = 0; i < ncoords * 2; i++) {
+			coords[i] = NUM2DBL(rb_Float(argv[i]));
+		}
+	}
+	RubyDialogCallback_drawLine(dref, ncoords, coords);
+	return Qnil;
+}
+
+/*
+ *  call-seq:
+ *     draw_rectangle(ary [, round])
+ *     draw_rectangle(x, y, width, height [, round])
+ *
+ *  Draw a rectangle in the graphic context. If the first argument is an array, it should contain
+ *  four numerics [x, y, width, height]. If round is given and positive, 
+ *  then draw a rounded rectangle with the given radius.
+ */
+static VALUE
+s_RubyDialog_DrawRectangle(int argc, VALUE *argv, VALUE self)
+{
+	VALUE xval, yval, wval, hval, rval;
+	RubyDialog *dref = s_RubyDialog_GetController(self);
+	float r;
+	if (argc >= 4) {
+		rb_scan_args(argc, argv, "41", &xval, &yval, &wval, &hval, &rval);
+	} else {
+		rb_scan_args(argc, argv, "11", &xval, &rval);
+		xval = rb_ary_to_ary(xval);
+		if (RARRAY_LEN(xval) < 4)
+			rb_raise(rb_eMolbyError, "The dimension of rectangle should be given as four numerics (x, y, width, height) or an array of four numerics.");
+		hval = RARRAY_PTR(xval)[3];
+		wval = RARRAY_PTR(xval)[2];
+		yval = RARRAY_PTR(xval)[1];
+		xval = RARRAY_PTR(xval)[0];
+	}
+	if (rval == Qnil)
+		r = 0.0;
+	else r = NUM2DBL(rb_Float(rval));
+	RubyDialogCallback_drawRectangle(dref, NUM2DBL(rb_Float(xval)), NUM2DBL(rb_Float(yval)), NUM2DBL(rb_Float(wval)), NUM2DBL(rb_Float(hval)), r);
+	return Qnil;
+}
+
+
+/*
+ *  call-seq:
+ *     draw_text(string, x, y)
+ *
+ *  Draw a string in the graphic context.
+ */
+static VALUE
+s_RubyDialog_DrawText(VALUE self, VALUE sval, VALUE xval, VALUE yval)
+{
+	RubyDialog *dref = s_RubyDialog_GetController(self);
+	const char *s = StringValuePtr(sval);
+	float x = NUM2DBL(rb_Float(xval));
+	float y = NUM2DBL(rb_Float(yval));
+	RubyDialogCallback_drawText(dref, s, x, y);
+	return Qnil;
+}
+
+/*
+ *  call-seq:
+ *     font(hash)
+ *     font(nil)
+ *
+ *  Set the default font for the graphic context (not for the dialog!).
+ *  If the argument is nil, then the default font is set.
+ *  Otherwise, the font is set according to the attributes in the given hash.
+ *  The following keys are implemented: :size (font size),
+ *  :family (:default, :roman, :swiss, :fixed), :style (:normal, :italic, :slant),
+ *  :weight (:medium, :light, :bold)
+ */
+static VALUE
+s_RubyDialog_Font(int argc, VALUE *argv, VALUE self)
+{
+	VALUE hval;
+	RubyDialog *dref = s_RubyDialog_GetController(self);
+	rb_scan_args(argc, argv, "01", &hval);
+	if (hval == Qnil)
+		RubyDialogCallback_setFont(dref, NULL);
+	else {
+		void **args;
+		int i, j;
+		VALUE keys = rb_funcall(hval, rb_intern("keys"), 0);
+		float width;
+		args = (void **)calloc(sizeof(void *), RARRAY_LEN(keys) * 2 + 1);
+		for (i = 0; i < RARRAY_LEN(keys); i++) {
+			VALUE kval = RARRAY_PTR(keys)[i];
+			VALUE aval = rb_hash_aref(hval, RARRAY_PTR(keys)[i]);
+			if (kval == sSizeSymbol) {
+				width = NUM2DBL(rb_Float(aval));
+				args[i * 2] = "size";
+				args[i * 2 + 1] = &width;
+				args[i * 2 + 2] = NULL;
+			} else if (kval == sStyleSymbol) {
+				if (aval == sNormalSymbol)
+					j = 0;
+				else if (aval == sItalicSymbol)
+					j = 1;
+				else if (aval == sSlantSymbol)
+					j = 2;
+				else j = 0;
+				args[i * 2] = "style";
+				args[i * 2 + 1] = (void *)j;
+				args[i * 2 + 2] = NULL;
+			} else if (kval == sWeightSymbol) {
+				if (aval == sMediumSymbol)
+					j = 0;
+				else if (aval == sLightSymbol)
+					j = 1;
+				else if (aval == sBoldSymbol)
+					j = 2;
+				else j = 0;
+				args[i * 2] = "weight";
+				args[i * 2 + 1] = (void *)j;
+				args[i * 2 + 2] = NULL;
+			} else if (kval == sFamilySymbol) {
+				if (aval == sDefaultSymbol)
+					j = 0;
+				else if (aval == sRomanSymbol)
+					j = 1;
+				else if (aval == sSwissSymbol)
+					j = 2;
+				else if (aval == sFixedSymbol)
+					j = 3;
+				else j = 0;
+				args[i * 2] = "family";
+				args[i * 2 + 1] = (void *)j;
+				args[i * 2 + 2] = NULL;
+			}
+		}
+		RubyDialogCallback_setFont(dref, args);
+		free(args);
+	}
+	return Qnil;
+}
+
+/*
+ *  call-seq:
+ *     pen(hash)
+ *     pen(nil)
+ *
+ *  Set the drawing pen for the graphic context. If the argument is nil, then
+ *  null pen is set. Otherwise, an appropriate pen is created from the given hash.
+ *  The following keys are implemented: :color (foreground color), :width (pen width),
+ *  :style (:solid, :transparent, :dot, :long_dash, :short_dash, :dot_dash)
+ */
+static VALUE
+s_RubyDialog_Pen(int argc, VALUE *argv, VALUE self)
+{
+	VALUE hval;
+	RubyDialog *dref = s_RubyDialog_GetController(self);
+	rb_scan_args(argc, argv, "01", &hval);
+	if (hval == Qnil)
+		RubyDialogCallback_setPen(dref, NULL);
+	else {
+		void **args;
+		int i, j;
+		VALUE keys = rb_funcall(hval, rb_intern("keys"), 0);
+		float forecolor[4], width;
+		args = (void **)calloc(sizeof(void *), RARRAY_LEN(keys) * 2 + 1);
+		for (i = 0; i < RARRAY_LEN(keys); i++) {
+			VALUE kval = RARRAY_PTR(keys)[i];
+			VALUE aval = rb_hash_aref(hval, RARRAY_PTR(keys)[i]);
+			if (kval == sForeColorSymbol || kval == sColorSymbol) {
+				aval = rb_ary_to_ary(aval);
+				for (j = 0; j < RARRAY_LEN(aval) && j < 4; j++) {
+					forecolor[j] = NUM2DBL(rb_Float(RARRAY_PTR(aval)[j]));
+				}
+				if (j < 4) {
+					for (; j < 3; j++)
+						forecolor[j] = 0.0;
+					forecolor[3] = 1.0;
+				}
+				args[i * 2] = "color";
+				args[i * 2 + 1] = forecolor;
+				args[i * 2 + 2] = NULL;
+			} else if (kval == sWidthSymbol) {
+				width = NUM2DBL(rb_Float(aval));
+				args[i * 2] = "width";
+				args[i * 2 + 1] = &width;
+				args[i * 2 + 2] = NULL;
+			} else if (kval == sStyleSymbol) {
+				if (aval == sSolidSymbol)
+					j = 0;
+				else if (aval == sTransparentSymbol)
+					j = 1;
+				else if (aval == sDotSymbol)
+					j = 2;
+				else if (aval == sLongDashSymbol)
+					j = 3;
+				else if (aval == sShortDashSymbol)
+					j = 4;
+				else if (aval == sDotDashSymbol)
+					j = 5;
+				else j = 0;
+				args[i * 2] = "style";
+				args[i * 2 + 1] = (void *)j;
+				args[i * 2 + 2] = NULL;
+			}
+		}
+		RubyDialogCallback_setPen(dref, args);
+		free(args);
+	}
+	return Qnil;
+}
+
+/*
+ *  call-seq:
+ *     brush(:color=>[r, g, b, a])
+ *     brush(nil)
+ *
+ *  Set the painting brush for the graphic context. If the argument is nil, then
+ *  null brush is set. Otherwise, an appropriate brush is created from the given hash.
+ *  (Currently only foreground color is implemented.)
+ */
+static VALUE
+s_RubyDialog_Brush(int argc, VALUE *argv, VALUE self)
+{
+	VALUE hval;
+	RubyDialog *dref = s_RubyDialog_GetController(self);
+	rb_scan_args(argc, argv, "01", &hval);
+	if (hval == Qnil)
+		RubyDialogCallback_setBrush(dref, NULL);
+	else {
+		void **args;
+		int i, j;
+		VALUE keys = rb_funcall(hval, rb_intern("keys"), 0);
+		float forecolor[4];
+		args = (void **)malloc(sizeof(void *) * (RARRAY_LEN(keys) * 2 + 1));
+		for (i = 0; i < RARRAY_LEN(keys); i++) {
+			VALUE kval = RARRAY_PTR(keys)[i];
+			VALUE aval = rb_hash_aref(hval, RARRAY_PTR(keys)[i]);
+			if (kval == sForeColorSymbol || kval == sColorSymbol) {
+				aval = rb_ary_to_ary(aval);
+				for (j = 0; j < RARRAY_LEN(aval) && j < 4; j++) {
+					forecolor[j] = NUM2DBL(rb_Float(RARRAY_PTR(aval)[j]));
+				}
+				if (j < 4) {
+					for (; j < 3; j++)
+						forecolor[j] = 0.0;
+					forecolor[3] = 1.0;
+				}
+				args[i * 2] = "color";
+				args[i * 2 + 1] = forecolor;
+				args[i * 2 + 2] = NULL;
+			}
+		}
+		RubyDialogCallback_setBrush(dref, args);
+		free(args);
+	}
+	return Qnil;
+}
+
+/*
+ *  call-seq:
  *     save_panel(message = nil, directory = nil, default_filename = nil, wildcard = nil)
  *
  *  Display the "save as" dialog and returns the fullpath filename.
@@ -1992,6 +2371,42 @@ RubyDialog_doItemAction(RubyValue self, RDItem *ip)
 }
 
 static VALUE
+s_RubyDialog_doPaintAction(VALUE val)
+{
+	void **vp = (void **)val;
+	VALUE self = (VALUE)vp[0];
+	RDItem *ip = (RDItem *)vp[1];
+	VALUE ival, itval, actval;
+	RubyDialog *dref = s_RubyDialog_GetController(self);
+	int idx = RubyDialogCallback_indexOfItem(dref, ip);
+	if (idx < 0)
+		return Qnil;
+	ival = INT2NUM(idx);
+	itval = s_RubyDialog_ItemAtIndex(self, ival);
+	actval = s_RubyDialogItem_Attr(itval, sOnPaintSymbol);
+	if (actval != Qnil) {
+		if (TYPE(actval) == T_SYMBOL)
+			rb_funcall(self, SYM2ID(actval), 1, itval);
+		else
+			rb_funcall(actval, rb_intern("call"), 1, itval);
+	}
+	return Qnil;
+}
+
+/*  Paint action for view item.  */
+void
+RubyDialog_doPaintAction(RubyValue self, RDItem *ip)
+{
+	int status;
+	void *vp[2];
+	vp[0] = (void *)self;
+	vp[1] = ip;
+	rb_protect(s_RubyDialog_doPaintAction, (VALUE)vp, &status);
+	if (status != 0)
+		Molby_showError(status);
+}
+
+static VALUE
 s_RubyDialog_doTimerAction(VALUE self)
 {
 	VALUE actval = rb_iv_get(self, "_timer_action");
@@ -2131,6 +2546,15 @@ RubyDialogInitClass(void)
 	rb_define_method(rb_cDialog, "set_min_size", s_RubyDialog_SetMinSize, -1);
 	rb_define_method(rb_cDialog, "min_size", s_RubyDialog_MinSize, 0);
 	rb_define_method(rb_cDialog, "listen", s_RubyDialog_Listen, 3);
+	rb_define_method(rb_cDialog, "clear", s_RubyDialog_Clear, 0);
+	rb_define_method(rb_cDialog, "draw_ellipse", s_RubyDialog_DrawEllipse, -1);
+	rb_define_method(rb_cDialog, "draw_line", s_RubyDialog_DrawLine, -1);
+	rb_define_method(rb_cDialog, "draw_polygon", s_RubyDialog_DrawLine, -1);
+	rb_define_method(rb_cDialog, "draw_rectangle", s_RubyDialog_DrawRectangle, -1);
+	rb_define_method(rb_cDialog, "draw_text", s_RubyDialog_DrawText, 3);
+	rb_define_method(rb_cDialog, "font", s_RubyDialog_Font, -1);
+	rb_define_method(rb_cDialog, "pen", s_RubyDialog_Pen, -1);
+	rb_define_method(rb_cDialog, "brush", s_RubyDialog_Brush, -1);
 	rb_define_singleton_method(rb_cDialog, "save_panel", s_RubyDialog_SavePanel, -1);
 	rb_define_singleton_method(rb_cDialog, "open_panel", s_RubyDialog_OpenPanel, -1);
 
@@ -2140,6 +2564,7 @@ RubyDialogInitClass(void)
 	rb_define_alias(rb_cDialogItem, "set_attr", "[]=");
 	rb_define_alias(rb_cDialogItem, "attr", "[]");
 	rb_define_method(rb_cDialogItem, "append_string", s_RubyDialogItem_AppendString, 1);
+	rb_define_method(rb_cDialogItem, "refresh_rect", s_RubyDialogItem_RefreshRect, -1);
 	
 	{
 		static VALUE *sTable1[] = {
@@ -2156,10 +2581,14 @@ RubyDialogInitClass(void)
 			&sVerticalAlignSymbol, &sBottomSymbol, &sMarginSymbol, &sPaddingSymbol,
 			&sSubItemsSymbol, &sHFillSymbol, &sVFillSymbol, &sFlexSymbol,
 			&sIsProcessingActionSymbol,
-			&sForeColorSymbol, &sBackColorSymbol,
-			&sFontSymbol, &sDefaultSymbol, &sRomanSymbol, &sSwissSymbol,
+			&sColorSymbol, &sForeColorSymbol, &sBackColorSymbol,
+			&sStyleSymbol, &sSolidSymbol, &sTransparentSymbol, &sDotSymbol,
+			&sLongDashSymbol, &sShortDashSymbol, &sDotDashSymbol,
+			&sFontSymbol, &sFamilySymbol, &sWeightSymbol,
+			&sDefaultSymbol, &sRomanSymbol, &sSwissSymbol,
 			&sFixedSymbol, &sNormalSymbol, &sSlantSymbol, &sItalicSymbol,
 			&sMediumSymbol, &sBoldSymbol, &sLightSymbol,
+			&sOnPaintSymbol,
 			&sOnCountSymbol, &sOnGetValueSymbol, &sOnSetValueSymbol, &sOnSelectionChangedSymbol,
 			&sOnSetColorSymbol, &sIsItemEditableSymbol, &sIsDragAndDropEnabledSymbol, &sOnDragSelectionToRowSymbol,
 			&sSelectionSymbol, &sColumnsSymbol, &sRefreshSymbol, &sHasPopUpMenuSymbol, &sOnPopUpMenuSelectedSymbol
@@ -2178,10 +2607,14 @@ RubyDialogInitClass(void)
 			"vertical_align", "bottom", "margin", "padding",
 			"subitems", "hfill", "vfill", "flex",
 			"is_processing_action",
-			"foreground_color", "background_color",
-			"font", "default", "roman", "swiss",
+			"color", "foreground_color", "background_color",
+			"style", "solid", "transparent", "dot",
+			"long_dash", "short_dash", "dot_dash",
+			"font", "family", "weight",
+			"default", "roman", "swiss",
 			"fixed", "normal", "slant", "italic",
 			"medium", "bold", "light",
+			"on_paint",
 			"on_count", "on_get_value", "on_set_value", "on_selection_changed",
 			"on_set_color", "is_item_editable", "is_drag_and_drop_enabled", "on_drag_selection_to_row",
 			"selection", "columns", "refresh", "has_popup_menu", "on_popup_menu_selected"

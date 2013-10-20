@@ -56,6 +56,7 @@ extern void RubyDialog_doTimerAction(RubyValue self);
 extern void RubyDialog_doKeyAction(RubyValue self, int keyCode);
 extern int RubyDialog_getFlexFlags(RubyValue self, RDItem *ip);
 extern void RubyDialog_doCloseWindow(RubyValue self, int isModal);
+extern void RubyDialog_doPaintAction(RubyValue self, RDItem *ip);
 
 extern int RubyDialog_GetTableItemCount(RubyValue self, RDItem *ip);
 extern void RubyDialog_GetTableItemText(RubyValue self, RDItem *ip, int row, int column, char *buf, int blen);
@@ -67,7 +68,7 @@ extern void RubyDialog_OnTableSelectionChanged(RubyValue self, RDItem *ip);
 extern int RubyDialog_SetTableItemColor(RubyValue self, RDItem *ip, int row, int column, float *fg, float *bg);
 extern int RubyDialog_HasPopUpMenu(RubyValue self, RDItem *ip, int row, int column, char ***menu_titles);
 extern void RubyDialog_OnPopUpMenuSelected(RubyValue self, RDItem *ip, int row, int column, int selected_index);
-	
+
 extern void RubyDialogInitClass(void);
 
 /*  Stub routines  */
@@ -92,8 +93,15 @@ STUB void RubyDialogCallback_setWindowSize(RubyDialog *dref, RDSize size);
 STUB void RubyDialogCallback_setAutoResizeEnabled(RubyDialog *dref, int flag);
 STUB int RubyDialogCallback_isAutoResizeEnabled(RubyDialog *dref);
 STUB int RubyDialogCallback_Listen(RubyDialog *dref, void *obj, const char *objtype, const char *msg, RubyValue oval, RubyValue pval);
+STUB void RubyDialogCallback_clear(RubyDialog *dref);
+STUB void RubyDialogCallback_drawEllipse(RubyDialog *dref, float x, float y, float rad1, float rad2);
+STUB void RubyDialogCallback_drawLine(RubyDialog *dref, int ncoords, float *coords);
+STUB void RubyDialogCallback_drawRectangle(RubyDialog *dref, float x, float y, float width, float height, float round);
+STUB void RubyDialogCallback_drawText(RubyDialog *dref, const char *s, float x, float y);
+STUB void RubyDialogCallback_setFont(RubyDialog *dref, void **args);
+STUB void RubyDialogCallback_setPen(RubyDialog *dref, void **args);
+STUB void RubyDialogCallback_setBrush(RubyDialog *dref, void **args);
 
-	
 STUB void RubyDialogCallback_createStandardButtons(RubyDialog *dref, const char *oktitle, const char *canceltitle);
 STUB RDItem *RubyDialogCallback_createItem(RubyDialog *dref, const char *type, const char *title, RDRect frame);
 STUB RDItem *RubyDialogCallback_dialogItemAtIndex(RubyDialog *dref, int idx);
@@ -118,6 +126,7 @@ STUB int RubyDialogCallback_getStateForItem(RDItem *item);
 STUB void RubyDialogCallback_setHiddenForItem(RDItem *item, int flag);
 STUB int RubyDialogCallback_isItemHidden(RDItem *item);
 STUB void RubyDialogCallback_setNeedsDisplay(RDItem *item, int flag);
+STUB void RubyDialogCallback_setNeedsDisplayInRect(RDItem *item, RDRect rect, int eraseBackground);
 STUB void RubyDialogCallback_setFontForItem(RDItem *item, int size, int family, int style, int weight);
 STUB int RubyDialogCallback_getFontForItem(RDItem *item, int *size, int *family, int *style, int *weight);
 STUB void RubyDialogCallback_setForegroundColorForItem(RDItem *item, const double *col);

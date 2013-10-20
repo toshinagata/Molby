@@ -34,6 +34,8 @@
 #include "MyMBConv.h"
 #include "MyDocument.h"
 
+IMPLEMENT_DYNAMIC_CLASS(MyLayoutPanel, wxPanel)
+
 BEGIN_EVENT_TABLE(RubyDialogFrame, wxDialog)
   EVT_TIMER(-1, RubyDialogFrame::OnTimerEvent)
   EVT_BUTTON(wxID_OK, RubyDialogFrame::OnDefaultButtonPressed)
@@ -54,6 +56,8 @@ RubyDialogFrame::RubyDialogFrame(wxWindow* parent, wxWindowID wid, const wxStrin
 	messageData = NULL;
 	countMessageData = 0;
 	onKeyHandlerEnabled = false;
+	currentContext = NULL;
+	currentDrawingItem = NULL;
 	
 	//  Create a vertical box sizer that contains a panel containing all controls and a sizer containing
 	//  OK/Cancel buttons
@@ -107,14 +111,14 @@ RubyDialogFrame::AddDialogItem(RDItem *item)
 			ditems = (RDItem **)realloc(ditems, sizeof(RDItem *) * (nditems + 8));
 	}
 	ditems[nditems++] = item;
-	if (item != NULL && ((wxWindow *)item)->IsKindOf(CLASSINFO(wxPanel))) {
-		wxSize size = ((wxPanel *)item)->GetSize();
+	if (item != NULL && ((wxWindow *)item)->IsKindOf(CLASSINFO(MyLayoutPanel))) {
+		wxSize size = ((MyLayoutPanel *)item)->GetSize();
 		if (contentPanel == NULL)
-			contentSizer->Add((wxPanel *)item, 1, wxEXPAND);
+			contentSizer->Add((MyLayoutPanel *)item, 1, wxEXPAND);
 		else
-			contentSizer->Replace(contentPanel, (wxPanel *)item);
-		contentSizer->SetItemMinSize((wxPanel *)item, size.GetWidth(), size.GetHeight());
-		contentPanel = (wxPanel *)item;
+			contentSizer->Replace(contentPanel, (MyLayoutPanel *)item);
+		contentSizer->SetItemMinSize((MyLayoutPanel *)item, size.GetWidth(), size.GetHeight());
+		contentPanel = (MyLayoutPanel *)item;
 		boxSizer->Layout();
 		Fit();
 	}
@@ -436,6 +440,20 @@ RubyDialogFrame::HandleDocumentEvent(wxCommandEvent &event)
 	event.Skip();
 }
 
+void
+RubyDialogFrame::HandlePaintEvent(wxPaintEvent &event)
+{
+	wxWindow *win = wxDynamicCast(event.GetEventObject(), wxWindow);
+	if (win == NULL)
+		return;
+	wxPaintDC dc(win);
+	currentContext = &dc;
+	currentDrawingItem = win;
+	RubyDialog_doPaintAction((RubyValue)dval, (RDItem *)win);
+	currentContext = NULL;
+	currentDrawingItem = NULL;
+}
+
 #pragma mark ====== MyListCtrlDataSource methods ======
 
 int
@@ -668,6 +686,166 @@ RubyDialogCallback_Listen(RubyDialog *dref, void *obj, const char *objtype, cons
 }
 
 void
+RubyDialogCallback_clear(RubyDialog *dref)
+{
+	wxDC *dcp = ((RubyDialogFrame *)dref)->currentContext;
+	if (dcp == NULL)
+		return;
+	dcp->Clear();
+}
+
+void
+RubyDialogCallback_drawEllipse(RubyDialog *dref, float x, float y, float rad1, float rad2)
+{
+	wxDC *dcp = ((RubyDialogFrame *)dref)->currentContext;
+	if (dcp == NULL)
+		return;
+	dcp->DrawEllipse(x, y, rad1 * 2, rad2 * 2);
+}
+
+void
+RubyDialogCallback_drawLine(RubyDialog *dref, int ncoords, float *coords)
+{
+	wxDC *dcp = ((RubyDialogFrame *)dref)->currentContext;
+	if (dcp == NULL)
+		return;
+	wxPoint *pts = new wxPoint[ncoords];
+	int i;
+	for (i = 0; i < ncoords; i++) {
+		pts[i].x = (int)coords[i * 2];
+		pts[i].y = (int)coords[i * 2 + 1];
+	}
+	dcp->DrawLines(ncoords, pts);
+	delete [] pts;
+}
+
+void
+RubyDialogCallback_drawRectangle(RubyDialog *dref, float x, float y, float width, float height, float round)
+{
+	wxDC *dcp = ((RubyDialogFrame *)dref)->currentContext;
+	if (dcp == NULL)
+		return;
+	if (round > 0.0)
+		dcp->DrawRoundedRectangle(x, y, width, height, round);
+	else
+		dcp->DrawRectangle(x, y, width, height);
+}
+
+void
+RubyDialogCallback_drawText(RubyDialog *dref, const char *s, float x, float y)
+{
+	wxDC *dcp = ((RubyDialogFrame *)dref)->currentContext;
+	if (dcp == NULL)
+		return;
+	wxString str(s, WX_DEFAULT_CONV);
+	dcp->DrawText(str, (int)x, (int)y);
+}
+
+void
+RubyDialogCallback_setFont(RubyDialog *dref, void **args)
+{
+	int i, j;
+	wxDC *dcp = ((RubyDialogFrame *)dref)->currentContext;
+	if (dcp == NULL)
+		return;
+	wxFont font = dcp->GetFont();
+	for (i = 0; args[i] != NULL; i += 2) {
+		if (strcmp((const char *)args[i], "size") == 0) {
+			float size = *((float *)(args[i + 1]));
+			font.SetPointSize((int)size);
+		} else if (strcmp((const char *)args[i], "style") == 0) {
+			int style = (int)(args[i + 1]);
+			switch (style) {
+				case 0: style = wxFONTSTYLE_NORMAL; break;
+				case 1: style = wxFONTSTYLE_ITALIC; break;
+				case 2: style = wxFONTSTYLE_SLANT; break;
+				default: style = wxFONTSTYLE_NORMAL; break;
+			}
+			font.SetStyle(style);
+		} else if (strcmp((const char *)args[i], "family") == 0) {
+			wxFontFamily family;
+			j = (int)(args[i + 1]);
+			switch (j) {
+				case 0: family = wxFONTFAMILY_DEFAULT; break;
+				case 1: family = wxFONTFAMILY_ROMAN; break;
+				case 2: family = wxFONTFAMILY_SWISS; break;
+				case 3: family = wxFONTFAMILY_MODERN; break;
+				default: family = wxFONTFAMILY_DEFAULT; break;
+			}
+			font.SetFamily(family);
+		} else if (strcmp((const char *)args[i], "weight") == 0) {
+			wxFontWeight weight;
+			j = (int)(args[i + 1]);
+			switch (j) {
+				case 0: weight = wxFONTWEIGHT_NORMAL; break;
+				case 1: weight = wxFONTWEIGHT_LIGHT; break;
+				case 2: weight = wxFONTWEIGHT_BOLD; break;
+				default: weight = wxFONTWEIGHT_NORMAL; break;
+			}
+			font.SetWeight(weight);
+		}
+	}
+	dcp->SetFont(font);
+}
+
+void
+RubyDialogCallback_setPen(RubyDialog *dref, void **args)
+{
+	int i;
+	wxDC *dcp = ((RubyDialogFrame *)dref)->currentContext;
+	if (dcp == NULL)
+		return;
+	wxPen pen = wxNullPen;
+	if (args != NULL) {
+		pen = dcp->GetPen();
+		for (i = 0; args[i] != NULL; i += 2) {
+			if (strcmp((const char *)args[i], "color") == 0) {
+				float *fp = (float *)args[i + 1];
+				wxColour col((int)(fp[0] * 255.0), (int)(fp[1] * 255.0), (int)(fp[2] * 255.0), (int)(fp[3] * 255.0));
+				pen.SetColour(col);
+			} else if (strcmp((const char *)args[i], "width") == 0) {
+				float width = *((float *)(args[i + 1]));
+				pen.SetWidth((int)width);
+			} else if (strcmp((const char *)args[i], "style") == 0) {
+				int style = (int)(args[i + 1]);
+				switch (style) {
+					case 0: style = wxSOLID; break;
+					case 1: style = wxTRANSPARENT; break;
+					case 2: style = wxDOT; break;
+					case 3: style = wxLONG_DASH; break; 
+					case 4: style = wxSHORT_DASH; break;
+					case 5: style = wxDOT_DASH; break;
+					default: style = wxSOLID; break;
+				}
+				pen.SetStyle(style);
+			}
+		}
+	}
+	dcp->SetPen(pen);
+}
+
+void
+RubyDialogCallback_setBrush(RubyDialog *dref, void **args)
+{
+	int i;
+	wxDC *dcp = ((RubyDialogFrame *)dref)->currentContext;
+	if (dcp == NULL)
+		return;
+	wxBrush brush = wxNullBrush;
+	if (args != NULL) {
+		brush = dcp->GetBrush();
+		for (i = 0; args[i] != NULL; i += 2) {
+			if (strcmp((const char *)args[i], "color") == 0) {
+				float *fp = (float *)args[i + 1];
+				wxColour col((int)(fp[0] * 255.0), (int)(fp[1] * 255.0), (int)(fp[2] * 255.0), (int)(fp[3] * 255.0));
+				brush.SetColour(col);
+			}
+		}
+	}
+	dcp->SetBrush(brush);
+}
+
+void
 RubyDialogCallback_createStandardButtons(RubyDialog *dref, const char *oktitle, const char *canceltitle)
 {
 	((RubyDialogFrame *)dref)->CreateStandardButtons(oktitle, canceltitle);
@@ -739,6 +917,11 @@ RubyDialogCallback_createItem(RubyDialog *dref, const char *type, const char *ti
 		/*  Panel  */
 		wxPanel *pn = new wxPanel(parent, -1, rect.GetPosition(), rect.GetSize());
 		control = pn;
+		pn->Connect(-1, wxEVT_PAINT, wxPaintEventHandler(RubyDialogFrame::HandlePaintEvent), NULL, parent);
+	} else if (strcmp(type, "layout_view") == 0) {
+		/*  Panel (for layout only)  */
+		MyLayoutPanel *mpn = new MyLayoutPanel(parent, -1, rect.GetPosition(), rect.GetSize());
+		control = mpn;
 	} else if (strcmp(type, "line") == 0) {
 		/*  Separator line  */
 		int direction = (rect.width > rect.height ? wxLI_HORIZONTAL : wxLI_VERTICAL);
@@ -1123,6 +1306,13 @@ RubyDialogCallback_setNeedsDisplay(RDItem *item, int flag)
 {
 	if (flag)
 		((wxWindow *)item)->Refresh();
+}
+
+void
+RubyDialogCallback_setNeedsDisplayInRect(RDItem *item, RDRect rect, int eraseBackground)
+{
+	wxRect wrect = wxRectFromRDRect(rect);
+	((wxWindow *)item)->RefreshRect(wrect, eraseBackground);
 }
 
 int

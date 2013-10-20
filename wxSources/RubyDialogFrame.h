@@ -25,6 +25,16 @@
 #include "../Mollib/Ruby_bind/ruby_dialog.h"
 #include "MyListCtrl.h"
 
+/*  MyLayoutPanel: an empty subclass of wxPanel exclusively used in Dialog#layout  */
+class MyLayoutPanel: public wxPanel {
+public:
+	MyLayoutPanel(): wxPanel() {}
+	MyLayoutPanel(wxWindow *parent, wxWindowID winid = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize): wxPanel(parent, winid, pos, size) {}
+	virtual ~MyLayoutPanel() {}		
+private:
+	DECLARE_DYNAMIC_CLASS(MyLayoutPanel)
+};
+
 class RubyDialogFrame: public wxDialog, public MyListCtrlDataSource {	
 public:
 	RDItem **ditems;
@@ -37,6 +47,9 @@ public:
 	wxBoxSizer *boxSizer;
 	wxTimer *myTimer;
 	
+	wxWindow *currentDrawingItem;
+	wxDC *currentContext;
+
 	/*  Auto resizing  */
 	RDSize mySize;  /*  Previous size  */
 	bool autoResizeEnabled;  /*  true if auto resizing is enabled  */
@@ -59,7 +72,8 @@ public:
 	
 	int ListenToObject(void *obj, const char *objtype, const char *msg, RubyValue oval, RubyValue pval);
 	void HandleDocumentEvent(wxCommandEvent &event);
-	
+	void HandlePaintEvent(wxPaintEvent &event);
+
 	int AddDialogItem(RDItem *item);
 	RDItem *DialogItemAtIndex(int index);
 	int SearchDialogItem(RDItem *item);
