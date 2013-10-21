@@ -700,7 +700,7 @@ RubyDialogCallback_drawEllipse(RubyDialog *dref, float x, float y, float rad1, f
 	wxDC *dcp = ((RubyDialogFrame *)dref)->currentContext;
 	if (dcp == NULL)
 		return;
-	dcp->DrawEllipse(x, y, rad1 * 2, rad2 * 2);
+	dcp->DrawEllipse(x - rad1, y - rad2, rad1 * 2, rad2 * 2);
 }
 
 void
