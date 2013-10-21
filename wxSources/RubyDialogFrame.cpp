@@ -627,7 +627,7 @@ RDRectFromwxRect(const wxRect &frame)
 static inline wxRect
 wxRectFromRDRect(RDRect rframe)
 {
-	wxRect frame(rframe.origin.x, rframe.origin.y, rframe.size.width, rframe.size.height);
+	wxRect frame((int)rframe.origin.x, (int)rframe.origin.y, (int)rframe.size.width, (int)rframe.size.height);
 	return frame;
 }
 
@@ -645,8 +645,8 @@ void
 RubyDialogCallback_setWindowMinSize(RubyDialog *dref, RDSize size)
 {
 	wxSize minSize;
-	minSize.x = size.width;
-	minSize.y = size.height;
+	minSize.x = (int)size.width;
+	minSize.y = (int)size.height;
 	((RubyDialogFrame *)dref)->SetMinSize(minSize);
 }
 
@@ -662,7 +662,7 @@ RubyDialogCallback_windowSize(RubyDialog *dref)
 void
 RubyDialogCallback_setWindowSize(RubyDialog *dref, RDSize size)
 {
-	wxSize wsize(size.width, size.height);
+	wxSize wsize((int)size.width, (int)size.height);
 	((RubyDialogFrame *)dref)->SetSize(wsize);
 	((RubyDialogFrame *)dref)->CentreOnScreen();
 }
@@ -695,12 +695,12 @@ RubyDialogCallback_clear(RubyDialog *dref)
 }
 
 void
-RubyDialogCallback_drawEllipse(RubyDialog *dref, float x, float y, float rad1, float rad2)
+RubyDialogCallback_drawEllipse(RubyDialog *dref, float x, float y, float r1, float r2)
 {
 	wxDC *dcp = ((RubyDialogFrame *)dref)->currentContext;
 	if (dcp == NULL)
 		return;
-	dcp->DrawEllipse(x - rad1, y - rad2, rad1 * 2, rad2 * 2);
+	dcp->DrawEllipse(x - r1, y - r2, r1 * 2, r2 * 2);
 }
 
 void
@@ -726,9 +726,9 @@ RubyDialogCallback_drawRectangle(RubyDialog *dref, float x, float y, float width
 	if (dcp == NULL)
 		return;
 	if (round > 0.0)
-		dcp->DrawRoundedRectangle(x, y, width, height, round);
+		dcp->DrawRoundedRectangle((int)x, (int)y, (int)width, (int)height, (int)round);
 	else
-		dcp->DrawRectangle(x, y, width, height);
+		dcp->DrawRectangle((int)x, (int)y, (int)width, (int)height);
 }
 
 void
@@ -1260,14 +1260,14 @@ RubyDialogCallback_getFontForItem(RDItem *item, int *size, int *family, int *sty
 void
 RubyDialogCallback_setForegroundColorForItem(RDItem *item, const double *col)
 {
-	wxColour wcol(col[0] * 255, col[1] * 255, col[2] * 255, col[3] * 255);
+	wxColour wcol((int)(col[0] * 255), (int)(col[1] * 255), (int)(col[2] * 255), (int)(col[3] * 255));
 	((wxWindow *)item)->SetForegroundColour(wcol);
 }
 
 void
 RubyDialogCallback_setBackgroundColorForItem(RDItem *item, const double *col)
 {
-	wxColour wcol(col[0] * 255, col[1] * 255, col[2] * 255, col[3] * 255);
+	wxColour wcol((int)(col[0] * 255), (int)(col[1] * 255), (int)(col[2] * 255), (int)(col[3] * 255));
 	((wxWindow *)item)->SetBackgroundColour(wcol);
 }
 

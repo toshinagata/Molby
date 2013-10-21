@@ -94,7 +94,7 @@ STUB void RubyDialogCallback_setAutoResizeEnabled(RubyDialog *dref, int flag);
 STUB int RubyDialogCallback_isAutoResizeEnabled(RubyDialog *dref);
 STUB int RubyDialogCallback_Listen(RubyDialog *dref, void *obj, const char *objtype, const char *msg, RubyValue oval, RubyValue pval);
 STUB void RubyDialogCallback_clear(RubyDialog *dref);
-STUB void RubyDialogCallback_drawEllipse(RubyDialog *dref, float x, float y, float rad1, float rad2);
+STUB void RubyDialogCallback_drawEllipse(RubyDialog *dref, float x, float y, float r1, float r2);
 STUB void RubyDialogCallback_drawLine(RubyDialog *dref, int ncoords, float *coords);
 STUB void RubyDialogCallback_drawRectangle(RubyDialog *dref, float x, float y, float width, float height, float round);
 STUB void RubyDialogCallback_drawText(RubyDialog *dref, const char *s, float x, float y);

@@ -142,11 +142,11 @@ MyListCtrl::OnGetItemAttr(long item) const
 	if (ret == 0)
 		return NULL;
 	if (ret & 1) {
-		wxColour fgcol(fg[0] * 255, fg[1] * 255, fg[2] * 255);
+		wxColour fgcol((int)(fg[0] * 255), (int)(fg[1] * 255), (int)(fg[2] * 255));
 		subTitleRowAttr->SetTextColour(fgcol);
 	} else subTitleRowAttr->SetTextColour(*wxBLACK);
 	if (ret & 2) {
-		wxColour bgcol(bg[0] * 255, bg[1] * 255, bg[2] * 255);
+		wxColour bgcol((int)(bg[0] * 255), (int)(bg[1] * 255), (int)(bg[2] * 255));
 		subTitleRowAttr->SetBackgroundColour(bgcol);
 	} else subTitleRowAttr->SetBackgroundColour(*wxWHITE);
 	return subTitleRowAttr;
