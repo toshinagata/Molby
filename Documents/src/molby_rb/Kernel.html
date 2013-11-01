@@ -106,6 +106,9 @@ Ring the bell.
 Call a subprocess by the given command line. A progress window is shown, and the argument <code>cmdname</code> is used to show an appropriate message. If <code>callback</code> is given (as a Proc object), it will be called periodically during execution; if <code>callback</code> returns <code>nil</code> or <code>false</code>, execution of the subprocess is interrupted.
 </p>
 <p>
+The standard output/error stream is directed to the Ruby Console. If stdout_file or stderr_file is given as a filename, the stdout/stderr output will be directed to that file. (If the filename begins with ">>", then the output will be appended to the end of the file; otherwise, the existing file will be replaced.) If it is "/dev/null" or "NUL", then the output will be lost.
+</p>
+<p>
 Returns an integer value with the same meaning as <code>Kernel.system</code>.
 </p>
 <p>

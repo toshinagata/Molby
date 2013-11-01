@@ -732,7 +732,7 @@ Calculate the dihedral angle defined by the four atoms. The result is in degree.
 <div id="call_subprocess_async" class="method-detail">
 <a name="call_subprocess_async"></a>
 <div class="method-heading">
-<span class="method-name">call_subprocess_async(cmd, end_callback = nil, timer_callback = nil) &rarr; Integer</span>
+<span class="method-name">call_subprocess_async(cmd, end_callback = nil, timer_callback = nil, stdout_file = nil, stderr_file = nil) &rarr; Integer</span>
 </div>
 <div class="method-description">
 <p>
@@ -741,6 +741,9 @@ If <code>end_callback</code> is given, it will be called (with two arguments sel
 If <code>timer_callback</code> is given, it will be called (also with two arguments, self and timer count) periodically during execution of the subprocess.
 If <code>timer_callback</code> returns nil or false, then the subprocess will be interrupted.
 Returns the process ID as an integer.
+</p>
+<p>
+The standard output/error stream is directed to the Ruby Console. If stdout_file or stderr_file is given as a filename, the stdout/stderr output will be directed to that file. (If the filename begins with ">>", then the output will be appended to the end of the file; otherwise, the existing file will be replaced.) If it is "/dev/null" or "NUL", then the output will be lost.
 </p>
 <p>
 <i>See Also:</i> <a href="Kernel.html#call_subprocess">Kernel#call_subprocess</a>

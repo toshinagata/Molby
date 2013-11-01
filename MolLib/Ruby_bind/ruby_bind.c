@@ -761,21 +761,76 @@ s_Kernel_CallSubProcess_Callback(void *data)
 
 /*
  *  call-seq:
- *     call_subprocess(cmd, process_name [, callback_proc])
+ *     call_subprocess(cmd, process_name [, callback_proc [, stdout_file [, stderr_file]]])
  *
  *  Call subprocess. A progress dialog window is displayed, with a message
  *  "Running #{process_name}...".
  *  A callback proc can be given, which is called periodically during execution. If the proc returns
  *  nil or false, then the execution will be interrupted.
+ *  If stdout_file or stderr_file is a filename, then the message will be sent to the file; if the
+ *  filename begins with ">>", then the message will be appended to the file.
+ *  If the filename is "/dev/null" or "NUL", then the message will be lost.
+ *  If the argument is nil, then the message will be sent to the Ruby console.
  */
 static VALUE
 s_Kernel_CallSubProcess(int argc, VALUE *argv, VALUE self)
 {
-	VALUE cmd, procname, cproc;
+	VALUE cmd, procname, cproc, stdout_val, stderr_val;
 	int n;
-	rb_scan_args(argc, argv, "21", &cmd, &procname, &cproc);
-	n = MyAppCallback_callSubProcess(StringValuePtr(cmd), StringValuePtr(procname), (cproc == Qnil ? NULL : s_Kernel_CallSubProcess_Callback), (cproc == Qnil ? NULL : (void *)cproc));
+	char *sout, *serr;
+	FILE *fpout, *fperr;
+
+	rb_scan_args(argc, argv, "23", &cmd, &procname, &cproc, &stdout_val, &stderr_val);
+
+	if (stdout_val == Qnil) {
+		fpout = (FILE *)1;
+	} else {
+		sout = StringValuePtr(stdout_val);
+		if (strcmp(sout, "/dev/null") == 0 || strcmp(sout, "NUL") == 0)
+			fpout = NULL;
+		else {
+			if (strncmp(sout, ">>", 2) == 0) {
+				sout += 2;
+				fpout = fopen(sout, "a");
+			} else {
+				if (*sout == '>')
+					sout++;
+				fpout = fopen(sout, "w");
+			}
+			if (fpout == NULL)
+				rb_raise(rb_eMolbyError, "Cannot open file for standard output (%s)", sout);
+		}
+	}
+	if (stderr_val == Qnil) {
+		fperr = (FILE *)1;
+	} else {
+		serr = StringValuePtr(stderr_val);
+		if (strcmp(serr, "/dev/null") == 0 || strcmp(serr, "NUL") == 0)
+			fperr = NULL;
+		else {
+			if (strncmp(serr, ">>", 2) == 0) {
+				serr += 2;
+				fpout = fopen(serr, "a");
+			} else {
+				if (*serr == '>')
+					serr++;
+				fperr = fopen(serr, "w");
+			}
+			if (fperr == NULL)
+				rb_raise(rb_eMolbyError, "Cannot open file for standard output (%s)", serr);
+		}
+	}
+
+	n = MyAppCallback_callSubProcess(StringValuePtr(cmd), StringValuePtr(procname), (cproc == Qnil ? NULL : s_Kernel_CallSubProcess_Callback), (cproc == Qnil ? NULL : (void *)cproc), fpout, fperr);
+	
+	if (fpout != NULL && fpout != (FILE *)1)
+		fclose(fpout);
+	if (fperr != NULL && fperr != (FILE *)1)
+		fclose(fperr);
+
 	return INT2NUM(n);
+
+	
 }
 
 /*
@@ -790,7 +845,7 @@ s_Kernel_Backquote(VALUE self, VALUE cmd)
 	char *buf;
 	int n;
 	VALUE val;
-	n = MyAppCallback_callSubProcess(StringValuePtr(cmd), NULL, DUMMY_CALLBACK, &buf);
+	n = MyAppCallback_callSubProcess(StringValuePtr(cmd), NULL, DUMMY_CALLBACK, &buf, NULL, NULL);
 	if (n != 0)
 		rb_raise(rb_eMolbyError, "Cannot invoke command '%s'", StringValuePtr(cmd));
 	if (buf != NULL) {
@@ -10180,28 +10235,77 @@ s_Molecule_CallSubProcessAsync_TimerCallback(Molecule *mol, int tcount)
 
 /*
  *  call-seq:
- *     call_subprocess_async(cmd [, end_callback [, timer_callback]])
+ *     call_subprocess_async(cmd [, end_callback [, timer_callback [, standard_output_file [, error_output_file]]]])
  *
  *  Call subprocess asynchronically.
  *  If end_callback is given, it will be called (with two arguments self and termination status)
  *  when the subprocess terminated.
  *  If timer_callback is given, it will be called (also with two arguments, self and timer count).
  *  If timer_callback returns nil or false, then the subprocess will be interrupted.
+ *  If stdout_file or stderr_file is a filename, then the message will be sent to the file; if the
+ *  filename begins with ">>", then the message will be appended to the file.
+ *  If the filename is "/dev/null" or "NUL", then the message will be lost.
+ *  If the argument is nil, then the message will be sent to the Ruby console.
  *  Returns the process ID as an integer.
  */
 static VALUE
 s_Molecule_CallSubProcessAsync(int argc, VALUE *argv, VALUE self)
 {
-	VALUE cmd, end_proc, timer_proc;
+	VALUE cmd, end_proc, timer_proc, stdout_val, stderr_val;
 	Molecule *mol;
+	char *sout, *serr;
 	int n;
-	rb_scan_args(argc, argv, "12", &cmd, &end_proc, &timer_proc);
+	FILE *fpout, *fperr;
+	rb_scan_args(argc, argv, "14", &cmd, &end_proc, &timer_proc, &stdout_val, &stderr_val);
 	Data_Get_Struct(self, Molecule, mol);
 
+	if (stdout_val == Qnil) {
+		fpout = (FILE *)1;
+	} else {
+		sout = StringValuePtr(stdout_val);
+		if (strcmp(sout, "/dev/null") == 0 || strcmp(sout, "NUL") == 0)
+			fpout = NULL;
+		else {
+			if (strncmp(sout, ">>", 2) == 0) {
+				sout += 2;
+				fpout = fopen(sout, "a");
+			} else {
+				if (*sout == '>')
+					sout++;
+				fpout = fopen(sout, "w");
+			}
+			if (fpout == NULL)
+				rb_raise(rb_eMolbyError, "Cannot open file for standard output (%s)", sout);
+		}
+	}
+	if (stderr_val == Qnil) {
+		fperr = (FILE *)1;
+	} else {
+		serr = StringValuePtr(stderr_val);
+		if (strcmp(serr, "/dev/null") == 0 || strcmp(serr, "NUL") == 0)
+			fperr = NULL;
+		else {
+			if (strncmp(serr, ">>", 2) == 0) {
+				serr += 2;
+				fpout = fopen(serr, "a");
+			} else {
+				if (*serr == '>')
+					serr++;
+				fperr = fopen(serr, "w");
+			}
+			if (fperr == NULL)
+				rb_raise(rb_eMolbyError, "Cannot open file for standard output (%s)", serr);
+		}
+	}
+	
 	/*  Register procs as instance variables  */
 	rb_ivar_set(self, rb_intern("end_proc"), end_proc);
 	rb_ivar_set(self, rb_intern("timer_proc"), timer_proc);
-	n = MoleculeCallback_callSubProcessAsync(mol, StringValuePtr(cmd), s_Molecule_CallSubProcessAsync_EndCallback, (timer_proc == Qnil ? NULL : s_Molecule_CallSubProcessAsync_TimerCallback), (FILE *)1, (FILE *)1);
+	n = MoleculeCallback_callSubProcessAsync(mol, StringValuePtr(cmd), s_Molecule_CallSubProcessAsync_EndCallback, (timer_proc == Qnil ? NULL : s_Molecule_CallSubProcessAsync_TimerCallback), fpout, fperr);
+	if (fpout != NULL && fpout != (FILE *)1)
+		fclose(fpout);
+	if (fperr != NULL && fperr != (FILE *)1)
+		fclose(fperr);
 	return INT2NUM(n);
 }
 
