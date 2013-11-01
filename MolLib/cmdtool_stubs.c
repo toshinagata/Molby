@@ -161,7 +161,7 @@ MyAppCallback_getTextWithPrompt(const char *prompt, char *buf, int bufsize)
 }
 
 int
-MyAppCallback_callSubProcess(const char *cmdline, const char *procname, int (*callback)(void *), void *callback_data)
+MyAppCallback_callSubProcess(const char *cmdline, const char *procname, int (*callback)(void *), void *callback_data, FILE *output, FILE *errout)
 {
 	return system(cmdline);
 }

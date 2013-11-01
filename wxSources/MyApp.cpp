@@ -1225,7 +1225,7 @@ MyApp::OnEndProcess(wxProcessEvent &event)
 }
 
 int
-MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)(void *), void *callback_data)
+MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)(void *), void *callback_data, FILE *fpout, FILE *fperr)
 {
 	int status = 0;
 	int callback_result = 0;
@@ -1308,7 +1308,9 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
 							memsize = len_total + 1;
 						}
 					}
-				} else {
+				} else if (fpout != NULL && fpout != (FILE *)1) {
+					fputs(buf, fpout);
+				} else if (fpout == (FILE *)1) {
 					MyAppCallback_setConsoleColor(0);
 					MyAppCallback_showScriptMessage("%s", buf);
 				}
@@ -1323,9 +1325,13 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
 				fprintf(fplog, "%s", buf);
 				fflush(fplog);
 #endif
-				MyAppCallback_setConsoleColor(1);
-				MyAppCallback_showScriptMessage("\n%s", buf);
-				MyAppCallback_setConsoleColor(0); 
+				if (fperr != NULL && fperr != (FILE *)1) {
+					fputs(buf, fperr);
+				} else if (fpout == (FILE *)1) {
+					MyAppCallback_setConsoleColor(1);
+					MyAppCallback_showScriptMessage("\n%s", buf);
+					MyAppCallback_setConsoleColor(0); 
+				}
 			}
 		}
 		if (++count == 100) {
@@ -1880,9 +1886,9 @@ void MyAppCallback_endUndoGrouping(void)
 	}
 }
 
-int MyAppCallback_callSubProcess(const char *cmdline, const char *procname, int (*callback)(void *), void *callback_data)
+int MyAppCallback_callSubProcess(const char *cmdline, const char *procname, int (*callback)(void *), void *callback_data, FILE *output, FILE *errout)
 {
-	return wxGetApp().CallSubProcess(cmdline, procname, callback, callback_data);
+	return wxGetApp().CallSubProcess(cmdline, procname, callback, callback_data, output, errout);
 }
 
 void MyAppCallback_showConsoleWindow(void)
