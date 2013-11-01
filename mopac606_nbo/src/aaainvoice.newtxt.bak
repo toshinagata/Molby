@@ -1,0 +1,28 @@
+   MOPAC 6.00:   Table of Contents for DEC-3100 Version
+
+  Item   Description                    Name of File(s)
+
+   1     Table of Contents              aaainvoice.txt
+   2     Complete FORTRAN Source code   <filename>.f  
+   3     SIZES file to dimension MOPAC  SIZES       
+   4     MOPAC Manual                   mopac.man
+   5     UPDATE Manual (Version 5 -> 6) update.man
+   6     MOPAC on-line help             MOHELP   
+   7     MOPAC command file             mopac.csh
+   8     Electrostatic Potential        esp.for
+   9     On-line HELP program           help.for
+  10     Porting suggestions            validation.mem
+
+  All the above files, or their equivalents, are contained in 
+  QCPE 455 (MOPAC).  In addition to the above files, a set of 
+  test-data is available for use in testing MOPAC ported to other 
+  machines.  This test-data consists of the following files. 
+
+  1scf.dat   elements.dat   force.dat   geometry.dat   keys.dat   
+  oldgeo.dat PARAS.DAT      mnrsd1.dat  testdata.dat
+
+  For each file, there is a <filename>.out which contains the output from
+the file, run on a DEC-3100.  The <filename>.out files can be deleted if
+space is at a premium.  To test the SETUP and EXTERNAL options, you
+will need to use: mnrsd3.key, PARAS.DAT, and testdata.dat.
+         

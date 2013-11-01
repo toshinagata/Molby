@@ -1,0 +1,35 @@
+#  Usage: make -f Makefile_mopac606_nbo (in XXXX_build directory)
+#  Copy source files to ./build/mopac-build and build mopac606 executable there
+
+ifeq ($(TARGET_PLATFORM),)
+ifeq ($(findstring darwin,$(OSTYPE)),darwin)
+export TARGET_PLATFORM=MAC
+else
+export TARGET_PLATFORM=MSW
+endif
+endif
+
+ifeq ($(TARGET_PLATFORM),MAC)
+FFLAGS=-std=legacy -isysroot /Developer/SDKs/MacOSX10.4u.sdk -mmacosx-version-min=10.4 -arch ppc -arch i386
+FLDFLAGS=-nodefaultlibs -lgfortran-static -lgcc -lc -m -lSystem -lSystemStubs -lgfortranbegin
+EXE_SUFFIX=
+else
+FFLAGS=-std=legacy 
+FLDFLAGS=-mno-cygwin -Wl,--stack=33554432
+EXE_SUFFIX=.exe
+endif
+export FFLAGS
+export FLDFLAGS
+
+OPWD = $(PWD)
+MOPDIR = $(OPWD)/../mopac606_nbo/src
+
+build/mopac-build/mopac/mopac606$(EXE_SUFFIX) : build/mopac-build/mopac606$(EXE_SUFFIX)
+	(mkdir -p build/mopac-build/mopac; cp -p build/mopac-build/mopac606$(EXE_SUFFIX) build/mopac-build/mopac)
+
+build/mopac-build/mopac606$(EXE_SUFFIX) : $(MOPDIR)/*.f $(MOPDIR)/SIZES $(MOPDIR)/mopnbo.f.in
+	(cd ../mopac606_nbo/src; mkdir -p $(OPWD)/build/mopac-build; cp -p * $(OPWD)/build/mopac-build/)
+	(cd build/mopac-build && $(MAKE))
+
+clean :
+	rm -rf build/mopac-build

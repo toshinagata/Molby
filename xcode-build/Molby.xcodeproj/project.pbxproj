@@ -84,6 +84,7 @@
 		E4D5ADA611808A2C00B1D8A4 /* cmdtool_stubs.c in Sources */ = {isa = PBXBuildFile; fileRef = E4D5ADA511808A2C00B1D8A4 /* cmdtool_stubs.c */; };
 		E4E2D5C510A249820007644A /* GlobalParameterFrame.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E4E2D5C410A249820007644A /* GlobalParameterFrame.cpp */; };
 		E4E470C910AE6F8600F72B68 /* GlobalParameterFilesFrame.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E4E470C810AE6F8600F72B68 /* GlobalParameterFilesFrame.cpp */; };
+		E4E9F2641823651E0039A43D /* mopac in Resources */ = {isa = PBXBuildFile; fileRef = E4E9F2611823651E0039A43D /* mopac */; };
 		E4ED76E516256FC5006A1820 /* MyIPCSupport.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E4ED76E316256FC5006A1820 /* MyIPCSupport.cpp */; };
 		E4FFA9050EE960650045EDF9 /* RubyDialogFrame.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E4FFA9040EE960650045EDF9 /* RubyDialogFrame.cpp */; };
 		E4FFA95E0EEAADCA0045EDF9 /* ruby_dialog.c in Sources */ = {isa = PBXBuildFile; fileRef = E433CE770EC7099B00675985 /* ruby_dialog.c */; };
@@ -190,6 +191,7 @@
 		E4E2D5C410A249820007644A /* GlobalParameterFrame.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = GlobalParameterFrame.cpp; path = ../wxSources/GlobalParameterFrame.cpp; sourceTree = SOURCE_ROOT; wrapsLines = 1; };
 		E4E470C710AE6F8600F72B68 /* GlobalParameterFilesFrame.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = GlobalParameterFilesFrame.h; path = ../wxSources/GlobalParameterFilesFrame.h; sourceTree = SOURCE_ROOT; };
 		E4E470C810AE6F8600F72B68 /* GlobalParameterFilesFrame.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = GlobalParameterFilesFrame.cpp; path = ../wxSources/GlobalParameterFilesFrame.cpp; sourceTree = SOURCE_ROOT; wrapsLines = 1; };
+		E4E9F2611823651E0039A43D /* mopac */ = {isa = PBXFileReference; lastKnownFileType = folder; name = mopac; path = "build/mopac-build/mopac"; sourceTree = "<group>"; };
 		E4ED76E316256FC5006A1820 /* MyIPCSupport.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = MyIPCSupport.cpp; path = ../wxSources/MyIPCSupport.cpp; sourceTree = SOURCE_ROOT; };
 		E4ED76E416256FC5006A1820 /* MyIPCSupport.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MyIPCSupport.h; path = ../wxSources/MyIPCSupport.h; sourceTree = SOURCE_ROOT; };
 		E4FFA9030EE960650045EDF9 /* RubyDialogFrame.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RubyDialogFrame.h; path = ../wxSources/RubyDialogFrame.h; sourceTree = SOURCE_ROOT; };
@@ -409,6 +411,7 @@
 				E4A02346106B65640094DBF8 /* molby_icon.icns */,
 				E4A0234A106B657D0094DBF8 /* Scripts */,
 				E4CFBB16111096CF0081C481 /* amber11 */,
+				E4E9F2611823651E0039A43D /* mopac */,
 				E4A0233F106B652F0094DBF8 /* InfoPlist.strings */,
 				E4A0233B106B651C0094DBF8 /* Info.plist */,
 			);
@@ -497,6 +500,7 @@
 				E4A02347106B65640094DBF8 /* molby_icon.icns in Resources */,
 				E4A02357106B657D0094DBF8 /* Scripts in Resources */,
 				E4CFBB3B111096CF0081C481 /* amber11 in Resources */,
+				E4E9F2641823651E0039A43D /* mopac in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -514,7 +518,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "export TARGET_PLATFORM=MAC\nexport PATH=/usr/local/bin:$PATH\n(cd $PROJECT_DIR; sh ../record_build_date.sh --with-svn-status)\nif [ \"$BUILD_STYLE\" = \"Release\" ]; then\n  (cd $PROJECT_DIR/..; /usr/bin/ruby \"update_version.rb\")\n  (cd $PROJECT_DIR/../Documents; /usr/bin/ruby \"makedoc.rb\")\nfi\n(cd $PROJECT_DIR; make -f ../Makefile_amber11)\n";
+			shellScript = "export TARGET_PLATFORM=MAC\nexport PATH=/usr/local/bin:$PATH\n(cd $PROJECT_DIR; sh ../record_build_date.sh --with-svn-status)\nif [ \"$BUILD_STYLE\" = \"Release\" ]; then\n  (cd $PROJECT_DIR/..; /usr/bin/ruby \"update_version.rb\")\n  (cd $PROJECT_DIR/../Documents; /usr/bin/ruby \"makedoc.rb\")\nfi\n(cd $PROJECT_DIR; make -f ../Makefile_amber11)\n(cd $PROJECT_DIR; make -f ../Makefile_mopac606_nbo)\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 

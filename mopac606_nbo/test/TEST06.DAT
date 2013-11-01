@@ -1,0 +1,3 @@
+    nointer  noxyz + mndo dump=8
+    t=2000 + thermo(298,298) force isotope
+    ROT=2 

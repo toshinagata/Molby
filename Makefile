@@ -6,6 +6,7 @@ ifeq ($(TARGET_PLATFORM),MAC)
  RUBY_CFLAGS = -I$(RUBY_DIR)
  RUBY_LDFLAGS = -L$(RUBY_DIR) -lruby-static
  EXECUTABLE = Molby
+ EXE_SUFFIX =
 endif
 
 ifeq ($(TARGET_PLATFORM),MSW)
@@ -18,6 +19,7 @@ ifeq ($(TARGET_PLATFORM),MSW)
  RUBY_LDFLAGS = -L$(RUBY_DIR) -lmsvcrt-ruby18-static -lws2_32
  EXECUTABLE = _Molby.exe_
  FINAL_EXECUTABLE = Molby.exe
+ EXE_SUFFIX = .exe
 endif
 
 WXLIB_LIST = core,base,gl,adv
@@ -48,6 +50,9 @@ $(DESTPREFIX) :
 
 amber11 : ../amber11/src/antechamber/*.[ch] ../amber11/src/sqm/*.f ../amber11/src/config.h
 	make -f ../Makefile_amber11
+
+$(DESTPREFIX)/mopac-build/mopac/mopac606$(EXE_SUFFIX) : 
+	make -f ../Makefile_mopac606_nbo
 
 ifeq ($(TARGET_PLATFORM),MSW)
 EXTRA_OBJECTS = listctrl.o event.o
@@ -103,7 +108,7 @@ endif
 	$(CC) -c $(DESTPREFIX)/buildInfo.c -o $(DESTPREFIX)/buildInfo.o
 	$(CC) -o $@ $(DESTOBJECTS) $(DESTPREFIX)/buildInfo.o $(CFLAGS) $(LDFLAGS)
 
-$(DESTPREFIX)/$(PRODUCT) : $(DESTPREFIX)/$(EXECUTABLE) ../Scripts/*.rb amber11
+$(DESTPREFIX)/$(PRODUCT) : $(DESTPREFIX)/$(EXECUTABLE) ../Scripts/*.rb amber11 $(DESTPREFIX)/mopac-build/mopac/mopac606$(EXE_SUFFIX)
 ifeq ($(TARGET_PLATFORM),MAC)
 	rm -rf $(DESTPREFIX)/$(PRODUCT)
 	mkdir -p $(DESTPREFIX)/$(PRODUCT)/Contents/MacOS
@@ -112,6 +117,7 @@ ifeq ($(TARGET_PLATFORM),MAC)
 	echo -n "APPL????" > $(DESTPREFIX)/$(PRODUCT)/Contents/PkgInfo
 	cp -r ../Scripts $(DESTPREFIX)/$(PRODUCT)/Contents/Resources
 	cp -r amber11 $(DESTPREFIX)/$(PRODUCT)/Contents/Resources
+	cp -r $(DESTPREFIX)/mopac-build/mopac $(DESTPREFIX)/$(PRODUCT)/Contents/Resources
 	mkdir -p $(DESTPREFIX)/$(PRODUCT)/Contents/Resources/Scripts/lib
 	for i in $(RUBY_EXTLIB); do cp $(RUBY_DIR)/lib/$$i $(DESTPREFIX)/$(PRODUCT)/Contents/Resources/Scripts/lib; done
 	cp $(DESTPREFIX)/$(EXECUTABLE) $(DESTPREFIX)/$(PRODUCT)/Contents/MacOS
@@ -123,6 +129,7 @@ ifeq ($(TARGET_PLATFORM),MSW)
 	cp `which mingwm10.dll` $(DESTPREFIX)/$(PRODUCT_DIR)
 	cp -r ../Scripts $(DESTPREFIX)/$(PRODUCT_DIR)
 	cp -r amber11 $(DESTPREFIX)/$(PRODUCT_DIR)
+	cp -r $(DESTPREFIX)/mopac-build/mopac $(DESTPREFIX)/$(PRODUCT_DIR)
 	mkdir -p $(DESTPREFIX)/$(PRODUCT_DIR)/Scripts/lib
 	for i in $(RUBY_EXTLIB); do cp $(RUBY_DIR)/lib/$$i $(DESTPREFIX)/$(PRODUCT_DIR)/Scripts/lib; done
 endif

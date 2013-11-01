@@ -459,15 +459,21 @@ class Molecule
     }
 
     if $platform == "win"
-      pid = mol.call_subprocess_async("cmd.exe /c \"mpiexec -configfile #{procfil} >>#{logname}\"", term_callback, timer_callback)
-    else
+	  cmdline = "cmd.exe /c \"mpiexec -configfile #{procfil} >>#{logname}\""
+	else
 	  hosts = "localhost " * ncpus
-      pid = mol.call_subprocess_async("/bin/sh -c '#{gmsdir}/ddikick.x #{gmsdir}/gamess.#{gmsvers}.x #{inpbody} -ddi #{ncpus} #{ncpus} #{hosts} -scr #{scrdir} < /dev/null >>#{logname}'", term_callback, timer_callback)
-    end
-
-	if pid < 0
-	  error_message_box("GAMESS failed to start. Please examine GAMESS installation.")
-	  return
+	  cmdline = "/bin/sh -c '#{gmsdir}/ddikick.x #{gmsdir}/gamess.#{gmsvers}.x #{inpbody} -ddi #{ncpus} #{ncpus} #{hosts} -scr #{scrdir} < /dev/null >>#{logname}'"
+	end
+	
+	if mol
+	  pid = mol.call_subprocess_async(cmdline, term_callback, timer_callback)
+	  if pid < 0
+	    error_message_box("GAMESS failed to start. Please examine GAMESS installation.")
+	    return
+	  end
+	else
+	  pid = call_subprocess(cmdline, "Running GAMESS")
+	  term_callback(nil, pid)
 	end
 
   end
