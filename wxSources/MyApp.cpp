@@ -471,6 +471,7 @@ MyApp::CreateMenuBar(int kind, wxMenu **out_file_history_menu, wxMenu **out_edit
 
 	wxMenu *qc_menu = new wxMenu;
 	qc_menu->Append(myMenuID_CreateGamessInput, _T("Create GAMESS input..."));
+	qc_menu->Append(myMenuID_CreateMOPACInput, _T("Create MOPAC input..."));
 	qc_menu->Append(myMenuID_CreateMOCube, _T("Create MO cube..."));
 	
 	wxMenu *script_menu = new wxMenu;

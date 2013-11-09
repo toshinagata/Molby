@@ -142,6 +142,7 @@ public:
 	void	OnImportAmberFrcmod(wxCommandEvent &event);
 
 	void	OnCreateGamessInput(wxCommandEvent &event);
+	void	OnCreateMOPACInput(wxCommandEvent &event);
 	void	OnCreateMOCube(wxCommandEvent &event);
 	
 	void	OnInsertFrameFromMD(wxCommandEvent &event);

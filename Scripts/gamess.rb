@@ -395,6 +395,7 @@ class Molecule
 		  File.delete("#{scrdir}#{sep}#{file}")
 	    end
 	  }
+	  erase_old_logs(scrdir, "latest", 5)
 	  message_box(msg, hmsg, :ok, icon)
     }
 	

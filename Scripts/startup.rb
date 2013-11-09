@@ -82,5 +82,6 @@ load "md.rb"
 load "uff.rb"
 load "gamess.rb"
 load "crystal.rb"
+load "mopac6.rb"
 
 GC.start

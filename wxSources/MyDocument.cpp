@@ -107,6 +107,7 @@ BEGIN_EVENT_TABLE(MyDocument, wxDocument)
 	EVT_MENU(myMenuID_CreateSanderInput, MyDocument::OnCreateSanderInput)
 	EVT_MENU(myMenuID_ImportAmberFrcmod, MyDocument::OnImportAmberFrcmod)
 	EVT_MENU(myMenuID_CreateGamessInput, MyDocument::OnCreateGamessInput)
+	EVT_MENU(myMenuID_CreateMOPACInput, MyDocument::OnCreateMOPACInput)
 	EVT_MENU(myMenuID_CreateMOCube, MyDocument::OnCreateMOCube)
 	EVT_MENU(myMenuID_ShowAllAtoms, MyDocument::OnShowAllAtoms)
 	EVT_MENU(myMenuID_HideReverse, MyDocument::OnHideReverse)
@@ -1427,6 +1428,12 @@ MyDocument::OnCreateGamessInput(wxCommandEvent &event)
 }
 
 void
+MyDocument::OnCreateMOPACInput(wxCommandEvent &event)
+{
+	MolActionCreateAndPerform(mol, SCRIPT_ACTION(""), "cmd_create_mopac_input");
+}
+
+void
 MyDocument::OnCreateMOCube(wxCommandEvent &event)
 {
 	MolActionCreateAndPerform(mol, SCRIPT_ACTION(""), "cmd_create_cube");	
@@ -1536,6 +1543,7 @@ MyDocument::OnUpdateUI(wxUpdateUIEvent& event)
 			else event.Enable(false);
 			return;			
 		case myMenuID_CreateGamessInput:
+		case myMenuID_CreateMOPACInput:
 			if (mol != NULL && mol->natoms > 0)
 				event.Enable(true);
 			else event.Enable(false);
