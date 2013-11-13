@@ -686,17 +686,9 @@ end_of_header
 	  sym
 	end
 	def find_atom_by_name(name)
+	  name = name.delete(" ()")
 	  ap = self.atoms[name] rescue ap = nil
-	  if ap != nil
-	    return ap
-	  end
-	  name = name.delete(" ()").upcase
-	  each_atom { |ap|
-	    if ap.name.delete(" ()").upcase == name
-		  return ap
-	    end
-	  }
-	  return nil
+	  return ap
 	end
 	warn_message = ""
 	verbose = nil
@@ -805,6 +797,7 @@ end_of_header
 			  biso = d[hlabel["_atom_site_B_iso_or_equiv"]]
 			  occ = d[hlabel["_atom_site_occupancy"]]
 			  calc = d[hlabel["_atom_site_calc_flag"]]
+			  name = name.delete(" ()")
 			  if elem == nil || elem == ""
 			    if name =~ /[A-Za-z]{1,2}/
 				  elem = $&.capitalize
