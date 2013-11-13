@@ -699,7 +699,7 @@ end_of_header
 	  return nil
 	end
 	warn_message = ""
-	verbose = 0
+	verbose = nil
 	bond_defined = false
 	@tokens = []
 	special_positions = []

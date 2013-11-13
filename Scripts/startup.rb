@@ -72,6 +72,45 @@ module Kernel
   end
 end
 
+class IO
+  alias :gets_original :gets
+  def gets(rs = $/)
+    if rs != $/
+	  return gets_original(rs)
+	end
+    if @end_of_line
+	  s = gets_original(@end_of_line)
+	  if s && s.chomp!(@end_of_line)
+	    s += $/
+	  end
+	else
+	  s = ""
+	  while c = getc
+	    if c == 13
+		  #  \r or \r\n
+		  if (c = getc) && c != 10
+		    ungetc(c)
+		    @end_of_line = "\r"
+		  else
+		    @end_of_line = "\r\n"
+		  end
+		  break
+		elsif c == 10
+		  #  \n
+		  @end_of_line = "\n"
+		  break
+		else
+		  s += c.chr
+		end
+	  end
+	  if @end_of_line
+	    s += $/
+	  end
+    end
+	return s
+  end
+end
+
 load "transform.rb"
 load "molecule.rb"
 load "loadsave.rb"
