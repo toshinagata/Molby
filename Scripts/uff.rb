@@ -279,7 +279,7 @@ def guess_uff_parameters
   arena.prepare(true)
   xatoms = IntGroup[]
   xbonds = xangles = xdihedrals = xfragments = []
-  h = Dialog.new("Uncommon MM/MD Parameters: #{mol.name}", nil, nil, :resizable=>true) {
+  h = Dialog.new("Guess UFF Parameters: #{mol.name}", nil, nil, :resizable=>true) {
     update_xatoms = proc {
       xatoms = mol.atom_group { |ap| !exclude.member?(ap.atomic_number) }
       xfragments = mol.fragments(xatoms)
@@ -740,8 +740,14 @@ def guess_uff_parameters
       name = mol.name
       xfragments.each_with_index { |frag, i|
         fmol = mol.extract(frag)
-        n = fmol.invoke_antechamber(true, "Guess MM/MD Parameters for #{mol.name}.fragment.#{i}")
-        break if n != 0
+		mol.selection = frag
+		frag_str = frag.to_s[9..-2]  #  Remove "IntGroup[" and "]"
+		mes = "Guess MM/MD Parameters for #{mol.name}.fragment #{i}"
+		n = fmol.ambertools_dialog("antechamber", mes, frag_str)
+		break if n == 0
+		next if n == -1
+        n = fmol.invoke_antechamber(false, mes)
+        break if n == 1
         calc_charge = get_global_settings("antechamber.calc_charge").to_i
         guess_atom_types = get_global_settings("antechamber.guess_atom_types").to_i
         if calc_charge
@@ -1014,9 +1020,9 @@ def guess_uff_parameters
 	  item_with_tag("table")[:refresh] = true
     }
     layout(1,
-      layout(2,
-        item(:text, :title=>"Total charge: "),
-        item(:textfield, :width=>"80", :tag=>"total_charge")),
+#      layout(2,
+#        item(:text, :title=>"Total charge: "),
+#        item(:textfield, :width=>"80", :tag=>"total_charge")),
       layout(5,
         item(:togglebutton, :width=>80, :height=>24, :title=>"Atoms", :tag=>"atoms",
           :value=>1,

@@ -346,7 +346,7 @@ class Molecule
 	end
   end
   
-  def ambertools_dialog(tool, msg = nil)
+  def ambertools_dialog(tool, msg = nil, block = nil)
 	log_dir = get_global_settings("antechamber.log_dir")
 	if !log_dir
 	  log_dir = document_home + "/antechamber"
@@ -370,6 +370,13 @@ class Molecule
 	    FileTest.exist?(s + "/" + @toolname)
   	  end
 	  layout(2,
+	    (block ?
+		  layout(3,
+		    item(:text, :title=>"Atoms to process: "),
+			item(:text, :title=>block, :width=>120),
+			item(:button, :title=>"Skip this block", :action=>proc { end_modal(2) } )) :
+		  -1),
+		-1,
 		item(:text, :title=>"Net Molecular Charge:"),
 		item(:textfield, :width=>"80", :tag=>"nc", :value=>(get_global_settings("antechamber.nc") || "0")),
 		(tool == "resp" ?
@@ -441,8 +448,7 @@ class Molecule
     }
 
 	#  The hash values are set in the action() method
-#	print "retval = #{hash ? 1 : 0}\n"
-	return (hash[:status] == 0 ? 1 : 0)
+	return 1 - hash[:status]  #  1: OK, 0: Cancel, -1: Skip
   end
   
   def create_ante_log_dir(name, key)
