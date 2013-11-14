@@ -7931,7 +7931,7 @@ MoleculeAddBonds(Molecule *mp, Int nbonds, const Int *bonds, IntGroup *where, In
 {
 	Int nangles, ndihedrals;
 	Int *angles, *dihedrals;
-	Int i, j, k, kk, n1, n2;
+	Int i, j, k, kk, n1, n2, cn1, cn2;
 	Int *cp1, *cp2;
 	Int temp[4];
 	Atom *ap1, *ap2, *ap3;
@@ -7994,7 +7994,8 @@ MoleculeAddBonds(Molecule *mp, Int nbonds, const Int *bonds, IntGroup *where, In
 						case 3: if (ap1->anchor == NULL) continue; else ac1 = &ap1->anchor->connect; break; /* N2-N1-Y */
 					}
 					cp1 = AtomConnectData(ac1);
-					for (k = 0; k < ac1->count; k++) {
+					cn1 = ac1->count;
+					for (k = 0; k < cn1; k++) {
 						temp[2] = cp1[k];
 						if (temp[2] == temp[0])
 							continue;
@@ -8006,7 +8007,7 @@ MoleculeAddBonds(Molecule *mp, Int nbonds, const Int *bonds, IntGroup *where, In
 						}
 						if (AssignArray(&angles, &nangles, sizeof(Int) * 3, nangles, temp) == NULL)
 							goto panic;
-						/*  Dihedrals N1-N2-X-X or N2-N1-X-X  */
+						/*  Dihedrals N1-N2-X-{XY} or N2-N1-X-{XY}  */
 						if (j == 1 || j == 3)
 							continue;
 						cp2 = AtomConnectData(&ap3->connect);
@@ -8017,31 +8018,47 @@ MoleculeAddBonds(Molecule *mp, Int nbonds, const Int *bonds, IntGroup *where, In
 							if (AssignArray(&dihedrals, &ndihedrals, sizeof(Int) * 4, ndihedrals, temp) == NULL)
 								goto panic;
 						}
+						if (ap3->anchor != NULL) {
+							/*  N1-N2-X-Y or N2-N1-X-Y  */
+							/*  for Y, only the first constitute atom is considered  */
+							cp2 = AtomConnectData(&ap3->anchor->connect);
+							temp[3] = cp2[0];
+							if (temp[3] == temp[0] || temp[3] == temp[1])
+								continue;
+							if (AssignArray(&dihedrals, &ndihedrals, sizeof(Int) * 4, ndihedrals, temp) == NULL)
+								goto panic;
+						}
 					}
 				}
 			}
-			/*  X-N1-N2-X angles  */
-			if (ap1->anchor == NULL)
+			/*  X-N1-N2-X dihedrals  */
+			/*  Y-N1-N2-anchor is allowed, but the force may be zero if the angle N1-N2-anchor is */
+			/*  close to 180 deg (e.g. in ferrocene, C-anchor-Fe-anchor dihedral should be k=0)  */
+			if (ap1->anchor == NULL) {
 				ac1 = &ap1->connect;
-			else ac1 = &ap1->anchor->connect;
-			if (ap2->anchor == NULL)
+				cn1 = ac1->count;
+			} else {
+				ac1 = &ap1->anchor->connect;
+				cn1 = 1;  /*  Only the first constitute atom of pi-anchor is considered  */
+			}
+			if (ap2->anchor == NULL) {
 				ac2 = &ap2->connect;
-			else ac2 = &ap2->anchor->connect;
+				cn2 = ac2->count;
+			} else {
+				ac2 = &ap2->anchor->connect;
+				cn2 = 1;  /*  Only the first constitute atom of pi-anchor is considered  */
+			}
 			temp[1] = n1;
 			temp[2] = n2;
 			cp1 = AtomConnectData(ac1);
 			cp2 = AtomConnectData(ac2);
-			for (j = 0; j < ac1->count; j++) {
+			for (j = 0; j < cn1; j++) {
 				temp[0] = cp1[j];
 				if (temp[0] == temp[2])
 					continue;
-				if (ATOM_AT_INDEX(mp->atoms, temp[0])->anchor != NULL)
-					continue;
-				for (k = 0; k < ac2->count; k++) {
+				for (k = 0; k < cn2; k++) {
 					temp[3] = cp2[k];
 					if (temp[3] == temp[0] || temp[3] == temp[1])
-						continue;
-					if (ATOM_AT_INDEX(mp->atoms, temp[3])->anchor != NULL)
 						continue;
 					if (AssignArray(&dihedrals, &ndihedrals, sizeof(Int) * 4, ndihedrals, temp) == NULL)
 						goto panic;
@@ -8128,7 +8145,8 @@ MoleculeDeleteBonds(Molecule *mp, Int *bonds, IntGroup *where, Int **outRemoved,
 	}
 	
 	/*  Remove bonds, angles, dihedrals, impropers  */
-	ag = dg = ig = NULL;
+	ag = IntGroupNew();
+	dg = ig = NULL;
 	na = nd = ni = 0;
 	
 	nw = IntGroupGetCount(where);
@@ -8149,8 +8167,6 @@ MoleculeDeleteBonds(Molecule *mp, Int *bonds, IntGroup *where, Int **outRemoved,
 				|| (ip[1] == n1 && ip[0] == n2)
 				|| (ip[1] == n1 && ip[2] == n2)
 				|| (ip[2] == n1 && ip[1] == n2)) {
-				if (ag == NULL)
-					ag = IntGroupNew();
 				if (IntGroupAdd(ag, i, 1) != 0)
 					goto panic;
 				na++;
@@ -8233,6 +8249,11 @@ MoleculeDeleteBonds(Molecule *mp, Int *bonds, IntGroup *where, Int **outRemoved,
 		IntGroupRelease(ig);
 	}
 
+	if (IntGroupGetCount(ag) == 0) {
+		IntGroupRelease(ag);
+		ag = NULL;
+	}
+	
 	*outRemoved = ip;
 	*outRemovedPos = ag;
 

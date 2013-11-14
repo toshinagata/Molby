@@ -399,14 +399,18 @@ def guess_uff_parameters
     uff_title_for_type[""] = "-- select --"
     uff_popup = proc { |an|
       if uff_popup_titles[an] == nil
-        titles = []
-        Molby::Molecule::UFFParams.each { |u|
-          if u[1] == an
-            titles.push(u[13])
-            uff_type_for_title[u[13]] = u[0]
-            uff_title_for_type[u[0]] = u[13]
-          end
-        }
+	    if an == 0
+		  titles = ["(no type)"]
+		else
+          titles = []
+          Molby::Molecule::UFFParams.each { |u|
+            if u[1] == an
+              titles.push(u[13])
+              uff_type_for_title[u[13]] = u[0]
+              uff_title_for_type[u[0]] = u[13]
+            end
+          }
+		end
         uff_popup_titles[an] = titles
       end
       uff_popup_titles[an]
@@ -443,7 +447,7 @@ def guess_uff_parameters
         when 4
           return ap0.int_charge.to_s
         when 5
-          return uff_title_for_type[ap0.uff_type] || "..."
+          return (ap0.atomic_number == 0 ? "(no type)" : (uff_title_for_type[ap0.uff_type] || "..."))
         when 6
           return sprintf("%.3f", ap0.weight)
         when 7
@@ -678,7 +682,7 @@ def guess_uff_parameters
       return if tab != "atoms" || col != 5
       ap = mol.atoms[xatoms[row]]
       title = uff_popup.call(ap.atomic_number)[sel]
-      ap.uff_type = uff_type_for_title[title]
+      ap.uff_type = (uff_type_for_title[title] || "")
     }
     guess_uff_types = proc { |recalc_all|
       xatoms.each { |idx|
@@ -686,7 +690,7 @@ def guess_uff_parameters
         next if !recalc_all && ap.uff_type != ""
         u = uff_popup.call(ap.atomic_number)
         if u.length == 1
-          ap.uff_type = uff_type_for_title[u[0]]
+          ap.uff_type = (uff_type_for_title[u[0]] || "")
           next
         end
         case ap.atom_type
@@ -994,11 +998,11 @@ def guess_uff_parameters
 			if met != nil
 			  case mol.atoms[met].atomic_number
 			  when 0..36
-			    force = 0.36 / 25   #  Actually should be divided by ring-size-1 * ring-size-2
+			    force = 0.36
 		      when 37..54
-			    force = 3.4 / 25
+			    force = 3.4
 			  else
-			    force = 3.4 / 25
+			    force = 3.4
 			  end
 			  pref = mol.parameter.lookup(:dihedral, ["X", d[1], d[2], "X"], :local, :missing, :create)
 			  pref.atom_types = ["X", d[1], d[2], "X"]
