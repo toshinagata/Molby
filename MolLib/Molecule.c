@@ -10473,23 +10473,43 @@ MoleculeFlushFrames(Molecule *mp)
 
 #pragma mark ====== Pi Atoms ======
 
+static inline void
+sMoleculeCalculatePiAnchorPosition(Atom *ap, Atom *atoms)
+{
+	Int *cp, j, n;
+	Atom *ap2;
+	cp = AtomConnectData(&ap->anchor->connect);
+	n = ap->anchor->connect.count;
+	VecZero(ap->r);
+	for (j = 0; j < n; j++) {
+		Double w = ap->anchor->coeffs[j];
+		ap2 = ATOM_AT_INDEX(atoms, cp[j]);
+		VecScaleInc(ap->r, ap2->r, w);
+	}	
+}
+
+void
+MoleculeUpdatePiAnchorPositions(Molecule *mol)
+{
+	Int i;
+	Atom *ap;
+	for (i = 0, ap = mol->atoms; i < mol->natoms; i++, ap = ATOM_NEXT(ap)) {
+		if (ap->anchor == NULL)
+			continue;
+		sMoleculeCalculatePiAnchorPosition(ap, mol->atoms);
+	}
+}
+
 void
 MoleculeCalculatePiAnchorPosition(Molecule *mol, int idx)
 {
-	Atom *ap, *ap2;
-	Int i, n, *ip;
+	Atom *ap;
 	if (mol == NULL || idx < 0 || idx >= mol->natoms)
 		return;
 	ap = ATOM_AT_INDEX(mol->atoms, idx);
 	if (ap->anchor == NULL)
 		return;
-	ip = AtomConnectData(&ap->anchor->connect);
-	n = ap->anchor->connect.count;
-	VecZero(ap->r);
-	for (i = 0; i < ap->anchor->connect.count; i++) {
-		ap2 = ATOM_AT_INDEX(mol->atoms, ip[i]);
-		VecScaleInc(ap->r, ap2->r, ap->anchor->coeffs[i]);
-	}
+	sMoleculeCalculatePiAnchorPosition(ap, mol->atoms);
 }
 
 int

@@ -2198,23 +2198,8 @@ md_update_positions(MDArena *arena)
 	}
 
 	/*  Update the anchor positions  */
-	if (count_anchors > 0) {
-		Int *cp, n, j;
-		Atom *ap2;
-		ap = arena->mol->atoms;
-		for (i = 0; i < natoms; i++, ap++) {
-			if (ap->anchor == NULL)
-				continue;
-			cp = AtomConnectData(&ap->anchor->connect);
-			n = ap->anchor->connect.count;
-			VecZero(ap->r);
-			for (j = 0; j < n; j++) {
-				Double w = ap->anchor->coeffs[j];
-				ap2 = arena->mol->atoms + cp[j];
-				VecScaleInc(ap->r, ap2->r, w);
-			}
-		}
-	}
+	if (count_anchors > 0)
+		MoleculeUpdatePiAnchorPositions(arena->mol);
 	
 	/*  Update the abnormal bond parameters  */
 	if (arena->anbond_thres > 0.0) {
@@ -2505,7 +2490,7 @@ md_minimize_atoms_step(MDArena *arena)
 	Double bk, w1, w2, w3, dump;
 	Double low, mid, high, low_energy, mid_energy, high_energy, lambda;
 	Double low_limit, high_limit;
-	Int i, j, retval, natoms_movable;
+	Int i, j, retval, natoms_movable, nanchors;
 	Atom *atoms = arena->mol->atoms;
 	Atom *ap;
 	Int natoms = arena->mol->natoms;
@@ -2517,9 +2502,14 @@ md_minimize_atoms_step(MDArena *arena)
 	w1 = w2 = 0.0;
 	retval = 0;
 	natoms_movable = 0;
+	nanchors = 0;
 	for (i = 0, ap = atoms, vp = arena->old_forces; i < natoms; i++, ap++, vp++) {
 		if (ap->fix_force < 0)
 			continue;
+		if (ap->anchor != NULL) {
+			nanchors++;
+			continue;
+		}
 		w1 += VecLength2(ap->f);
 		w2 += VecDot(ap->f, *vp);
 		natoms_movable++;
@@ -2549,7 +2539,7 @@ md_minimize_atoms_step(MDArena *arena)
 	}
 	dump = sqrt(dump);
 	for (i = 0, ap = atoms, vp = arena->old_forces; i < natoms; i++, ap++, vp++) {
-		if (ap->fix_force < 0)
+		if (ap->fix_force < 0 || ap->anchor != NULL)
 			continue;
 		*vp = ap->f;
 		*(vp + natoms) = ap->r;
@@ -2563,6 +2553,8 @@ md_minimize_atoms_step(MDArena *arena)
 		if (w1 > w3)
 			w3 = w1;
 	}
+	if (nanchors > 0)
+		MoleculeUpdatePiAnchorPositions(arena->mol);
 	w3 = sqrt(w3);
 	arena->max_gradient = w3;
 	arena->v_len2 = w2;
@@ -2580,7 +2572,7 @@ md_minimize_atoms_step(MDArena *arena)
 	high = lambda;
 	while (1) {
 		for (j = 0, ap = atoms, vp = arena->old_pos, vdr = arena->verlets_dr; j < natoms; j++, ap++, vp++, vdr++) {
-			if (ap->fix_force < 0)
+			if (ap->fix_force < 0 || ap->anchor != NULL)
 				continue;
 			r = ap->r;
 			ap->r.x = vp->x + ap->v.x * lambda;
@@ -2589,6 +2581,8 @@ md_minimize_atoms_step(MDArena *arena)
 			VecDec(r, ap->r);
 			VecInc(*vdr, r);
 		}
+		if (nanchors > 0)
+			MoleculeUpdatePiAnchorPositions(arena->mol);
 		calc_force(arena);
 		mid = lambda;
 		mid_energy = arena->total_energy;
@@ -2608,13 +2602,15 @@ md_minimize_atoms_step(MDArena *arena)
 			/*  Cannot find point with lower energy than the starting point  */
 			/*  Restore the original position  */
 			for (j = 0, ap = atoms, vp = arena->old_pos, vdr = arena->verlets_dr; j < natoms; j++, ap++, vp++, vdr++) {
-				if (ap->fix_force < 0)
+				if (ap->fix_force < 0 || ap->anchor != NULL)
 					continue;
 				r = ap->r;
 				ap->r = *vp;
 				VecDec(r, ap->r);
 				VecInc(*vdr, r);
 			}
+			if (nanchors > 0)
+				MoleculeUpdatePiAnchorPositions(arena->mol);
 			calc_force(arena);
 			lambda = 0.0;
 			if (bk == 0.0)
@@ -2629,7 +2625,7 @@ md_minimize_atoms_step(MDArena *arena)
 		if (high - mid > mid - low) {
 			lambda = high - (high - mid) * phi;
 			for (j = 0, ap = atoms, vp = arena->old_pos, vdr = arena->verlets_dr; j < natoms; j++, ap++, vp++, vdr++) {
-				if (ap->fix_force < 0)
+				if (ap->fix_force < 0 || ap->anchor != NULL)
 					continue;
 				r = ap->r;
 				ap->r.x = vp->x + ap->v.x * lambda;
@@ -2638,6 +2634,8 @@ md_minimize_atoms_step(MDArena *arena)
 				VecDec(r, ap->r);
 				VecInc(*vdr, r);
 			}	
+			if (nanchors > 0)
+				MoleculeUpdatePiAnchorPositions(arena->mol);
 			calc_force(arena);
 			if (arena->total_energy < mid_energy) {
 				low = mid;
@@ -2651,7 +2649,7 @@ md_minimize_atoms_step(MDArena *arena)
 		} else {
 			lambda = mid - (mid - low) * phi;
 			for (j = 0, ap = atoms, vp = arena->old_pos, vdr = arena->verlets_dr; j < natoms; j++, ap++, vp++, vdr++) {
-				if (ap->fix_force < 0)
+				if (ap->fix_force < 0 || ap->anchor != NULL)
 					continue;
 				r = ap->r;
 				ap->r.x = vp->x + ap->v.x * lambda;
@@ -2660,6 +2658,8 @@ md_minimize_atoms_step(MDArena *arena)
 				VecDec(r, ap->r);
 				VecInc(*vdr, r);
 			}	
+			if (nanchors > 0)
+				MoleculeUpdatePiAnchorPositions(arena->mol);
 			calc_force(arena);
 			if (arena->total_energy < mid_energy) {
 				high = mid;

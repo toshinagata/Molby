@@ -522,6 +522,7 @@ int MoleculeRemoveFrames(Molecule *mp, IntGroup *group, Vector *outFrame, Vector
 int MoleculeSelectFrame(Molecule *mp, int frame, int copyback);
 int MoleculeFlushFrames(Molecule *mp);
 
+void MoleculeUpdatePiAnchorPositions(Molecule *mol);
 void MoleculeCalculatePiAnchorPosition(Molecule *mol, int idx);
 int MoleculeSetPiAnchorList(Molecule *mol, Int idx, Int nentries, Int *entries, Double *weights, Int *nUndoActions, struct MolAction ***undoActions);
 	
