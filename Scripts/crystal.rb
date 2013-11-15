@@ -265,7 +265,7 @@ end
 #  Ref. W. C. Hamilton, Acta Cryst. 1961, 14, 185-189
 #       T. Ito, Acta Cryst 1981, A37, 621-624
 
-#  An object to described the best-fit plane
+#  An object to describe the best-fit plane
 #  
 #  Contains the plane coefficients and the constant (a, b, c, d for ax + by + cz + d = 0),
 #  the error matrix, and the metric tensor.
@@ -504,18 +504,20 @@ def plane(group)
 
 end
 
-def cmd_plane
+def self.cmd_plane(mol)
   plane_settings = @plane_settings || Hash.new
-  mol = self
-  h = Dialog.run("Best-Fit Planes", "Close", nil) {
+  h = Dialog.new("Best-Fit Planes", "Close", nil) {
     refresh_proc = proc { |it|
       n = it[:tag][/\d/].to_i
       g = plane_settings["group#{n}"]
+	  moln = (plane_settings["mol#{n}"] ||= Molecule.current)
+	  name = (moln ? moln.name : "")
+	  item_with_tag("mol#{n}")[:title] = "Molecule: " + name
       if g
         str = g.inspect.sub!("IntGroup[", "").sub!("]", "")
         set_value("group#{n}", str)
         if n == 1 || n == 2
-          p = mol.plane(g) rescue p = nil
+          p = moln.plane(g) rescue p = nil
           plane_settings["plane#{n}"] = p
           if p
             coeff = p.coeff
@@ -544,7 +546,7 @@ def cmd_plane
           p = plane_settings["plane1"]
           if p
             str = ""
-            mol.each_atom(g) { |ap|
+            moln.each_atom(g) { |ap|
               d, sig = p.distance(ap)
               str += sprintf("%d %f(%f)\n", ap.index, d, sig)
             }
@@ -561,6 +563,8 @@ def cmd_plane
     }
     set_proc = proc { |it|
       n = it[:tag][/\d/].to_i
+	  mol = Molecule.current
+	  return if mol == nil
       sel = mol.selection
       if sel.count > 0
         str = sel.inspect.sub!("IntGroup[", "").sub!("]", "")
@@ -569,6 +573,7 @@ def cmd_plane
       else
         plane_settings["group#{n}"] = nil
       end
+	  plane_settings["mol#{n}"] = mol
       refresh_proc.call(it)
     }
     text_proc = proc { |it|
@@ -581,6 +586,8 @@ def cmd_plane
     layout(3,
       item(:text, :title=>"Plane 1 (ax + by + cz + d = 0)"),
       -1, -1,
+	  item(:text, :title=>"Molecule: ", :tag=>"mol1"),
+	  -1, -1,
       item(:text, :title=>"Atoms"),
       item(:textfield, :width=>240, :height=>32, :tag=>"group1", :action=>text_proc),
       item(:button, :title=>"Set Current Selection", :tag=>"button1", :action=>set_proc),
@@ -591,6 +598,8 @@ def cmd_plane
       -1, -1,
       item(:text, :title=>"Plane 2 (a'x + b'y + c'z + d' = 0)"),
       -1, -1,
+	  item(:text, :title=>"Molecule: ", :tag=>"mol2"),
+	  -1, -1,
       item(:text, :title=>"Atoms"),
       item(:textfield, :width=>240, :height=>32, :tag=>"group2", :action=>text_proc),
       item(:button, :title=>"Set Current Selection", :tag=>"button2", :action=>set_proc),
@@ -603,6 +612,7 @@ def cmd_plane
       item(:line),
       -1, -1,
       item(:text, :title=>"Distance from Plane 1"), -1, -1,
+	  item(:text, :title=>"Molecule: ", :tag=>"mol3"), -1, -1,
       item(:text, :title=>"Atoms"),
       item(:textfield, :width=>240, :height=>32, :tag=>"group3", :action=>text_proc),
       item(:button, :title=>"Set Current Selection", :tag=>"button3", :action=>set_proc),
@@ -613,6 +623,7 @@ def cmd_plane
     refresh_proc.call(item_with_tag("refresh1"))
     refresh_proc.call(item_with_tag("refresh2"))
     refresh_proc.call(item_with_tag("refresh3"))
+	show
   }
   @plane_settings = plane_settings
 end
