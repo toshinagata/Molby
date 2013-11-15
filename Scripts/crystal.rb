@@ -847,7 +847,7 @@ def bond_angle_with_sigma(*args)
       printf " dr/d{alpha,beta,gamma} est %10.5g %10.5g %10.5g\n", dd[3], dd[4], dd[5]
     end
     sig = sqrt(sig)
-    results.push([i, j, nil, notate_with_sigma.call(p[0], sig), symcode[i], symcode[j]])
+    results.push([[i, j], notate_with_sigma.call(p[0], sig), symcode[i], symcode[j], nil])
   }
 
   angles.each { |ang|
@@ -912,12 +912,79 @@ def bond_angle_with_sigma(*args)
     dd = dtdr12 * p0[9] + dtdr23 * p1[9] + dtdr13 * p2[9] + dtdr24 * p3[9]
     sig += dd * dd * cell[11] * cell[11]
     sig = sqrt(sig)
-    results.push([i, j, k, notate_with_sigma.call(t123*180/PI, sig), symcode[i], symcode[j], symcode[k]])
+    results.push([[i, j, k], notate_with_sigma.call(t123*180/PI, sig), symcode[i], symcode[j], symcode[k]])
   }
   results
 end
 
 def cmd_bond_angle_with_sigma
+  mol = self
+  Dialog.new("Bond & Angle with Sigma:" + self.name, "Close", nil) {
+    values = []
+	clicked = []
+	sel = mol.selection
+	on_get_value = proc { |it, row, col|
+	  val = values[row][col]
+	  if col == 0
+	    val = val.collect { |i| ap = mol.atoms[i]; "#{ap.res_seq}:#{ap.name}" }.join("-")
+	  elsif col >= 2 && col <= 4
+	    val ||= "."
+	  end
+	  val
+	}
+    layout(1,
+	  item(:table, :width=>480, :height=>300, :tag=>"table",
+	    :columns=>["Bond/Angle", "value(sigma)", "symop1", "symop2", "symop3"],
+		:on_count=> proc { values.count },
+		:on_get_value=> on_get_value)
+	)
+	on_document_modified = proc {
+	  newsel = mol.selection
+	  puts "newsel = #{newsel}"
+	  if sel != newsel
+	    n0 = sel.count
+	    n1 = newsel.count
+	    if n1 == 1      #  New atom is clicked
+		  clicked[0] = newsel[0]
+		  clicked[1..-1] = []
+		  if n0 == 1
+		    values[-1][0] = [clicked[0]]
+		  else
+		    values.push([[clicked[0]], "---", nil, nil, nil])
+		  end
+		elsif n1 == 2   #  Bond
+		  puts "new bond"
+		  if newsel.include?(clicked[0])
+		    if newsel[0] == clicked[0]
+			  clicked[1] = newsel[1]
+			else
+			  clicked[1] = newsel[0]
+			end
+		  else
+		    clicked[0] = newsel[0]
+			clicked[1] = newsel[1]
+		  end
+		  clicked[2..-1] = []
+		  puts "clicked = #{clicked.inspect}"
+		  val = mol.bond_angle_with_sigma(clicked)
+		  puts "val = #{val.inspect}"
+		  if n0 == 1
+		    values[-1] = val[0]
+		  else
+		    values.push(val[0])
+		  end
+		end
+		sel = newsel
+		item_with_tag("table")[:refresh] = true
+	  end
+	}
+    listen(mol, "documentModified", on_document_modified)
+	listen(mol, "documentWillClose", proc { hide } )
+	show
+  }
+end
+
+def cmd_bond_angle_with_sigma_old
   if self.cell == nil
     error_message_box "Unit cell is not defined"
   elsif self.cell.length < 12
