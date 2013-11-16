@@ -6720,6 +6720,34 @@ s_Molecule_GetBondOrder(VALUE self, VALUE idxval)
 
 /*
  *  call-seq:
+ *     bond_exist?(idx1, idx2) -> bool
+ *
+ *  Returns true if bond exists between atoms idx1 and idx2, otherwise returns false.
+ *  Imaginary bonds between a pi-anchor and member atoms are not considered.
+ */
+static VALUE
+s_Molecule_BondExist(VALUE self, VALUE ival1, VALUE ival2)
+{
+	Molecule *mol;
+	Int idx1, idx2, i;
+	Atom *ap;
+	Int *cp;
+    Data_Get_Struct(self, Molecule, mol);
+	idx1 = NUM2INT(rb_Integer(ival1));
+	idx2 = NUM2INT(rb_Integer(ival2));
+	if (idx1 < 0 || idx1 >= mol->natoms || idx2 < 0 || idx2 >= mol->natoms)
+		rb_raise(rb_eMolbyError, "Atom index (%d or %d) out of range", idx1, idx2);
+	ap = ATOM_AT_INDEX(mol->atoms, idx1);
+	cp = AtomConnectData(&ap->connect);
+	for (i = 0; i < ap->connect.count; i++) {
+		if (cp[i] == idx2)
+			return Qtrue;
+	}
+	return Qfalse;
+}
+
+/*
+ *  call-seq:
  *     add_angle(n1, n2, n3)       -> Molecule
  *
  *  Add angle n1-n2-n3. Returns self. Usually, angles are automatically added
@@ -10416,6 +10444,7 @@ Init_Molby(void)
 	rb_define_alias(rb_cMolecule, "assign_bond_orders", "assign_bond_order");
 	rb_define_method(rb_cMolecule, "get_bond_order", s_Molecule_GetBondOrder, 1);
 	rb_define_alias(rb_cMolecule, "get_bond_orders", "get_bond_order");
+	rb_define_method(rb_cMolecule, "bond_exist?", s_Molecule_BondExist, 2);
 	rb_define_method(rb_cMolecule, "add_angle", s_Molecule_AddAngle, 3);
 	rb_define_method(rb_cMolecule, "remove_angle", s_Molecule_RemoveAngle, 3);
 	rb_define_method(rb_cMolecule, "add_dihedral", s_Molecule_AddDihedral, 4);

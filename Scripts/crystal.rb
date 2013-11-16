@@ -703,6 +703,9 @@ def bond_angle_with_sigma(*args)
 
   #  Unit cell parameter
   cell = self.cell
+  if cell.length == 6
+    cell.push(0.0, 0.0, 0.0, 0.0, 0.0, 0.0)  #  No sigma information
+  end
   # $a, $b, $c, $alpha, $beta, $gamma, $sig_a, $sig_b, $sig_c, $sig_alpha, $sig_beta, $sig_gamma = self.cell
   cos_a = cos(cell[3] * PI / 180.0)
   cos_b = cos(cell[4] * PI / 180.0)
@@ -826,26 +829,6 @@ def bond_angle_with_sigma(*args)
     6.times { |n|
       sig += (p[4 + n] * cell[6 + n]) ** 2
     }
-    #  Test
-    if nil
-      ncell = cell.dup
-      d0 = calc_bond(i, j)
-      dd = [0, 0, 0, 0, 0, 0]
-      6.times { |n|
-        ncell[n] += 0.0001
-        set_cell(ncell, true)
-        amend_by_symmetry(p[10])
-        d1 = calc_bond(i, j)
-        dd[n] = (d1 - d0) / 0.0001
-        ncell[n] = cell[n]
-      }
-      set_cell(ncell, true)
-      amend_by_symmetry(p[10])
-      printf " dr/d{a,b,c} cal %10.5g %10.5g %10.5g\n", p[4], p[5], p[6]
-      printf " dr/d{a,b,c} est %10.5g %10.5g %10.5g\n", dd[0], dd[1], dd[2]
-      printf " dr/d{alpha,beta,gamma} cal %10.5g %10.5g %10.5g\n", p[7], p[8], p[9]
-      printf " dr/d{alpha,beta,gamma} est %10.5g %10.5g %10.5g\n", dd[3], dd[4], dd[5]
-    end
     sig = sqrt(sig)
     results.push([[i, j], notate_with_sigma.call(p[0], sig), symcode[i], symcode[j], nil])
   }
@@ -861,9 +844,6 @@ def bond_angle_with_sigma(*args)
     t123 = acos_safe((p0[0] ** 2 + p1[0] ** 2 - p2[0] ** 2) / (2 * p0[0] * p1[0]))
     t124 = acos_safe((p0[0] ** 2 + p3[0] ** 2 - p2[0] ** 2 * 0.25) / (2 * p0[0] * p3[0]))
     t324 = acos_safe((p1[0] ** 2 + p3[0] ** 2 - p2[0] ** 2 * 0.25) / (2 * p1[0] * p3[0]))
-    if nil
-      printf "t123 = %.2f t124+t324 = %.2f t124 = %.2f t324 = %.2f\n", t123*180/PI, (t124+t324)*180/PI, t124*180/PI, t324*180/PI
-    end
     dtdr12 = -(p0[0] ** 2 - p3[0] ** 2 + p2[0] ** 2 * 0.25) / (2 * p3[0] * (p0[0] ** 2) * sin(t124))
     dtdr23 = -(p1[0] ** 2 - p3[0] ** 2 + p2[0] ** 2 * 0.25) / (2 * p3[0] * (p1[0] ** 2) * sin(t324))
     dtdr13 = p2[0] / (sin(t124) * 4 * p0[0] * p3[0]) + p2[0] / (sin(t324) * 4 * p1[0] * p3[0])
@@ -878,25 +858,6 @@ def bond_angle_with_sigma(*args)
       c += diff_by_rn.call(p1, n, false) * (dtdr23 * 180.0 / PI)
       c += diff_by_rn.call(p2, n, false) * (dtdr13 * 180.0 / PI)
       c += diff_by_rn.call(p3, n, true) * (dtdr24 * 180.0 / PI)
-      #  Test
-      if nil
-        apn = atoms[n]
-        r = apn.fract_r
-        t0 = calc_angle(i, j, k)
-        apn.fract_r = r + Vector3D[0.00001, 0, 0]
-        amend_by_symmetry(pp)
-        t1 = calc_angle(i, j, k)
-        apn.fract_r = r + Vector3D[0, 0.00001, 0]
-        amend_by_symmetry(pp)
-        t2 = calc_angle(i, j, k)
-        apn.fract_r = r + Vector3D[0, 0, 0.00001]
-        amend_by_symmetry(pp)
-        t3 = calc_angle(i, j, k)
-        apn.fract_r = r
-        amend_by_symmetry(pp)
-        printf " dt/dv[%d] cal %10.5g %10.5g %10.5g\n", n, c[0], c[1], c[2]
-        printf " dt/dv[%d] est %10.5g %10.5g %10.5g\n", n, (t1 - t0) / 0.00001, (t2 - t0) / 0.00001, (t3 - t0) / 0.00001
-      end
       sig += c[0] * c[0] * s[0] * s[0] + c[1] * c[1] * s[1] * s[1] + c[2] * c[2] * s[2] * s[2]
     }
     dd = dtdr12 * p0[4] + dtdr23 * p1[4] + dtdr13 * p2[4] + dtdr24 * p3[4]
@@ -919,63 +880,79 @@ end
 
 def cmd_bond_angle_with_sigma
   mol = self
-  Dialog.new("Bond & Angle with Sigma:" + self.name, "Close", nil) {
+  Dialog.new("Bond & Angle with Sigma:" + self.name, nil, nil) {
     values = []
 	clicked = []
 	sel = mol.selection
-	on_get_value = proc { |it, row, col|
-	  val = values[row][col]
-	  if col == 0
-	    val = val.collect { |i| ap = mol.atoms[i]; "#{ap.res_seq}:#{ap.name}" }.join("-")
-	  elsif col >= 2 && col <= 4
-	    val ||= "."
-	  end
-	  val
+	on_get_value = proc { |it, row, col| values[row][col + 2] }
+	atom_name = proc { |ap|
+	  (ap.molecule.nresidues >= 2 ? "#{ap.res_seq}:" : "") + ap.name
 	}
     layout(1,
 	  item(:table, :width=>480, :height=>300, :tag=>"table",
-	    :columns=>["Bond/Angle", "value(sigma)", "symop1", "symop2", "symop3"],
+	    :columns=>[["Bond/Angle", 140], "value(sigma)", "symop1", "symop2", "symop3"],
 		:on_count=> proc { values.count },
-		:on_get_value=> on_get_value)
+		:on_get_value=> on_get_value),
+	  layout(2,
+	    item(:view, :width=>480, :height=>1), -1,
+	    item(:button, :title=>"Dump to Console", :tag=>"dump",
+		  :action=>proc { print "\n"; values.each { |val| print val[2..-1].join("  ") + "\n" } },
+		  :enabled=>false),
+		[item(:button, :title=>"Close", :action=>proc { hide }), {:align=>:right}])
 	)
 	on_document_modified = proc {
 	  newsel = mol.selection
-	  puts "newsel = #{newsel}"
+	  val1 = val2 = nil
 	  if sel != newsel
-	    n0 = sel.count
 	    n1 = newsel.count
-	    if n1 == 1      #  New atom is clicked
+		if n1 == 0
+		  #  Clear selection
+		  clicked.clear
+		elsif n1 == 1 && !clicked.include?(newsel[0])
+		  #  New atom
+		  clicked.clear
 		  clicked[0] = newsel[0]
-		  clicked[1..-1] = []
-		  if n0 == 1
-		    values[-1][0] = [clicked[0]]
-		  else
-		    values.push([[clicked[0]], "---", nil, nil, nil])
-		  end
-		elsif n1 == 2   #  Bond
-		  puts "new bond"
-		  if newsel.include?(clicked[0])
-		    if newsel[0] == clicked[0]
-			  clicked[1] = newsel[1]
-			else
-			  clicked[1] = newsel[0]
-			end
+		  val1 = [[clicked[0]], "---", "", "", ""]
+		elsif n1 == 2 && clicked.length == 1
+		  #  New bond
+		  if newsel[0] == clicked[0]
+		    clicked[1] = newsel[1]
+		  elsif newsel[1] == clicked[0]
+		    clicked[1] = newsel[0]
 		  else
 		    clicked[0] = newsel[0]
 			clicked[1] = newsel[1]
 		  end
-		  clicked[2..-1] = []
-		  puts "clicked = #{clicked.inspect}"
-		  val = mol.bond_angle_with_sigma(clicked)
-		  puts "val = #{val.inspect}"
-		  if n0 == 1
-		    values[-1] = val[0]
-		  else
-		    values.push(val[0])
-		  end
+		  val1 = mol.bond_angle_with_sigma(clicked)[0]
+		elsif n1 == 3 && clicked.length == 2 && newsel.include?(clicked[0]) && newsel.include?(clicked[1])
+		  #  New angle
+		  clicked[2] = (newsel - clicked)[0]
+		  val1 = mol.bond_angle_with_sigma(clicked[1..2])[0]
+		  val2 = mol.bond_angle_with_sigma(clicked)[0]
+		else
+		  return
 		end
+		[val1, val2].each { |val|
+		  next unless val
+		  label = ""
+		  n = val[0].length
+		  n.times { |i|
+		    label += atom_name.call(mol.atoms[val[0][i]])
+			if val[0][i + 1]
+			  label += (mol.bond_exist?(val[0][i], val[0][i + 1]) ? "-" : "...")
+			end
+		  }
+		  val[1, 0] = label
+		  val.unshift(n)  #  val = [count, indices, label, value(sigma), symop1, symop2, symop3]
+		}
+	    if values[-1] && values[-1][0] == 1
+		  values.pop
+		end
+		values.push(val1) if val1
+		values.push(val2) if val2
 		sel = newsel
 		item_with_tag("table")[:refresh] = true
+		item_with_tag("dump")[:enabled] = (values.length > 0)
 	  end
 	}
     listen(mol, "documentModified", on_document_modified)
