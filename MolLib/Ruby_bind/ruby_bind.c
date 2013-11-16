@@ -307,6 +307,51 @@ s_Kernel_StopSound(VALUE self)
 
 /*
  *  call-seq:
+ *     export_to_clipboard(str)
+ *
+ *  Export the given string to clipboard.
+ */
+static VALUE
+s_Kernel_ExportToClipboard(VALUE self, VALUE sval)
+{
+	const char *s = StringValuePtr(sval);
+	char *ns;
+#if __WXMSW__
+	/*  Convert the end-of-line characters  */
+	{	const char *p; int nc; char *np;
+		nc = 0;
+		for (p = s; *p != 0; p++) {
+			if (*p == '\n')
+				nc++;
+		}	
+		ns = (char *)malloc(strlen(s) + nc + 1);
+		for (np = ns, p = s; *p != 0; p++, np++) {
+			if (*p == '\n')
+				*np++ = '\r';
+			*np = *p;
+		}
+		*np = 0;
+	}
+#else
+	ns = (char *)malloc(strlen(s) + 1);
+	strcpy(ns, s);
+#if __WXMAC__
+	{	char *np;
+		/*  wxMac still has Carbon code. Oops.  */
+		for (np = ns; *np != 0; np++) {
+			if (*np == '\n')
+				*np = '\r';
+		}
+	}
+#endif
+#endif
+	if (MoleculeCallback_writeToPasteboard("TEXT", ns, strlen(ns) + 1))
+		rb_raise(rb_eMolbyError, "Cannot export string to clipboard");
+	return Qnil;
+}
+
+/*
+ *  call-seq:
  *     stdout.write(str)
  *
  *  Put the message in the main text view in black color.
@@ -10727,6 +10772,7 @@ Init_Molby(void)
 	rb_define_method(rb_mKernel, "bell", s_Kernel_Bell, 0);
 	rb_define_method(rb_mKernel, "play_sound", s_Kernel_PlaySound, -1);
 	rb_define_method(rb_mKernel, "stop_sound", s_Kernel_StopSound, 0);
+	rb_define_method(rb_mKernel, "export_to_clipboard", s_Kernel_ExportToClipboard, 1);
 
 	s_ID_equal = rb_intern("==");
 	g_RubyID_call = rb_intern("call");

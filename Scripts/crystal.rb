@@ -504,20 +504,18 @@ def plane(group)
 
 end
 
-def self.cmd_plane(mol)
+def cmd_plane
   plane_settings = @plane_settings || Hash.new
-  h = Dialog.new("Best-Fit Planes", "Close", nil) {
+  mol = self
+  h = Dialog.new("Best-Fit Planes: " + mol.name, "Close", nil) {
     refresh_proc = proc { |it|
       n = it[:tag][/\d/].to_i
       g = plane_settings["group#{n}"]
-	  moln = (plane_settings["mol#{n}"] ||= Molecule.current)
-	  name = (moln ? moln.name : "")
-	  item_with_tag("mol#{n}")[:title] = "Molecule: " + name
       if g
         str = g.inspect.sub!("IntGroup[", "").sub!("]", "")
         set_value("group#{n}", str)
         if n == 1 || n == 2
-          p = moln.plane(g) rescue p = nil
+          p = mol.plane(g) rescue p = nil
           plane_settings["plane#{n}"] = p
           if p
             coeff = p.coeff
@@ -546,7 +544,7 @@ def self.cmd_plane(mol)
           p = plane_settings["plane1"]
           if p
             str = ""
-            moln.each_atom(g) { |ap|
+            mol.each_atom(g) { |ap|
               d, sig = p.distance(ap)
               str += sprintf("%d %f(%f)\n", ap.index, d, sig)
             }
@@ -563,8 +561,6 @@ def self.cmd_plane(mol)
     }
     set_proc = proc { |it|
       n = it[:tag][/\d/].to_i
-	  mol = Molecule.current
-	  return if mol == nil
       sel = mol.selection
       if sel.count > 0
         str = sel.inspect.sub!("IntGroup[", "").sub!("]", "")
@@ -573,7 +569,6 @@ def self.cmd_plane(mol)
       else
         plane_settings["group#{n}"] = nil
       end
-	  plane_settings["mol#{n}"] = mol
       refresh_proc.call(it)
     }
     text_proc = proc { |it|
@@ -586,8 +581,6 @@ def self.cmd_plane(mol)
     layout(3,
       item(:text, :title=>"Plane 1 (ax + by + cz + d = 0)"),
       -1, -1,
-	  item(:text, :title=>"Molecule: ", :tag=>"mol1"),
-	  -1, -1,
       item(:text, :title=>"Atoms"),
       item(:textfield, :width=>240, :height=>32, :tag=>"group1", :action=>text_proc),
       item(:button, :title=>"Set Current Selection", :tag=>"button1", :action=>set_proc),
@@ -598,8 +591,6 @@ def self.cmd_plane(mol)
       -1, -1,
       item(:text, :title=>"Plane 2 (a'x + b'y + c'z + d' = 0)"),
       -1, -1,
-	  item(:text, :title=>"Molecule: ", :tag=>"mol2"),
-	  -1, -1,
       item(:text, :title=>"Atoms"),
       item(:textfield, :width=>240, :height=>32, :tag=>"group2", :action=>text_proc),
       item(:button, :title=>"Set Current Selection", :tag=>"button2", :action=>set_proc),
@@ -612,7 +603,6 @@ def self.cmd_plane(mol)
       item(:line),
       -1, -1,
       item(:text, :title=>"Distance from Plane 1"), -1, -1,
-	  item(:text, :title=>"Molecule: ", :tag=>"mol3"), -1, -1,
       item(:text, :title=>"Atoms"),
       item(:textfield, :width=>240, :height=>32, :tag=>"group3", :action=>text_proc),
       item(:button, :title=>"Set Current Selection", :tag=>"button3", :action=>set_proc),
@@ -895,8 +885,8 @@ def cmd_bond_angle_with_sigma
 		:on_get_value=> on_get_value),
 	  layout(2,
 	    item(:view, :width=>480, :height=>1), -1,
-	    item(:button, :title=>"Dump to Console", :tag=>"dump",
-		  :action=>proc { print "\n"; values.each { |val| print val[2..-1].join("  ") + "\n" } },
+	    item(:button, :title=>"Export to Clipboard", :tag=>"dump",
+		  :action=>proc { s = ""; values.each { |val| s += val[2..-1].join("  ") + "\n" }; export_to_clipboard(s) },
 		  :enabled=>false),
 		[item(:button, :title=>"Close", :action=>proc { hide }), {:align=>:right}])
 	)
@@ -961,34 +951,10 @@ def cmd_bond_angle_with_sigma
   }
 end
 
-def cmd_bond_angle_with_sigma_old
-  if self.cell == nil
-    error_message_box "Unit cell is not defined"
-  elsif self.cell.length < 12
-    error_message_box "Sigmas are not assigned for the unit cell parameters"
-  else
-    if selection.count == 0
-	  a = bond_angle_with_sigma
-	else
-	  a = bond_angle_with_sigma(selection)
-	end
-	s = ""
-	a.each { |e|
-	  if e[2] == nil
-	    ss = sprintf("%s %s  %s  %s %s\n", atoms[e[0]].name, atoms[e[1]].name, e[3], e[4], e[5])
-	  else
-	    ss = sprintf("%s %s %s  %s  %s %s %s\n", atoms[e[0]].name, atoms[e[1]].name, atoms[e[2]].name, e[3], e[4], e[5], e[6])
-	  end
-	  s += ss
-	}
-	print s
-  end
-end
-
 if lookup_menu("Best-fit Planes...") < 0
   register_menu("", "")
   register_menu("Best-fit Planes...", :cmd_plane)
-  register_menu("Bonds and angles with sigma", :cmd_bond_angle_with_sigma)
+  register_menu("Bonds and Angles with Sigma...", :cmd_bond_angle_with_sigma)
 end
 
 end
