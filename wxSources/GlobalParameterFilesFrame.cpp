@@ -38,7 +38,7 @@ enum {
 	myID_removeFileButton
 };
 
-BEGIN_EVENT_TABLE(GlobalParameterFilesFrame, wxMDIChildFrame)
+BEGIN_EVENT_TABLE(GlobalParameterFilesFrame, wxFrame)
 EVT_CLOSE(GlobalParameterFilesFrame::OnCloseWindow)
 EVT_MENU(wxID_CLOSE, GlobalParameterFilesFrame::OnClose)
 EVT_UPDATE_UI(wxID_CLOSE, GlobalParameterFilesFrame::OnUpdateUI)
@@ -48,8 +48,8 @@ END_EVENT_TABLE()
 
 #pragma mark ====== Static utility functions ======
 									
-GlobalParameterFilesFrame::GlobalParameterFilesFrame(wxMDIParentFrame *parent, const wxString& title, const wxPoint& pos, const wxSize& size, long type):
-wxMDIChildFrame(parent, wxID_ANY, title, pos, size, type)
+GlobalParameterFilesFrame::GlobalParameterFilesFrame(wxWindow *parent, const wxString& title, const wxPoint& pos, const wxSize& size, long type):
+wxFrame(parent, wxID_ANY, title, pos, size, type)
 {
 }
 
@@ -90,7 +90,7 @@ GlobalParameterFilesFrame::OnCreate()
 }
 
 GlobalParameterFilesFrame *
-GlobalParameterFilesFrame::CreateGlobalParameterFilesFrame(wxMDIParentFrame *parent)
+GlobalParameterFilesFrame::CreateGlobalParameterFilesFrame(wxWindow *parent)
 {
 #ifdef __WXMSW__
 	wxPoint origin(16, 16);
@@ -111,6 +111,8 @@ GlobalParameterFilesFrame::OnCloseWindow(wxCloseEvent &event)
 {
 	//  Do not delete this window; it may be reopened later
 	this->Hide();
+	//  Check if all windows are gone
+	wxGetApp().CheckIfAllWindowsAreGone();
 }
 
 void

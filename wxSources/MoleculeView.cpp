@@ -100,7 +100,7 @@ MoleculeView::OnCreate(wxDocument *doc, long WXUNUSED(flags) )
 
 	
 	// Make a document frame
-	frame = new wxDocMDIChildFrame(doc, this, GetMainFrame(), wxID_ANY, _T("New Molby Document"),
+	frame = new wxDocChildFrame(doc, this, GetMainFrame(), wxID_ANY, _T("New Molby Document"),
 						   wxPoint(10, 24), wxSize(680, 400),
 						   wxDEFAULT_FRAME_STYLE |
 						   wxNO_FULL_REPAINT_ON_RESIZE);
@@ -401,6 +401,9 @@ MoleculeView::OnClose(bool deleteWindow)
 
 	if (deleteWindow)
 		frame->Destroy();
+
+	//  Check if all windows are gone, and if so show the console window
+	wxGetApp().CheckIfAllWindowsAreGone();
 
 	return true;
 }

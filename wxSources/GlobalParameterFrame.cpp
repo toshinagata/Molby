@@ -26,14 +26,14 @@
 #include "../MolLib/Ruby_bind/Molby_extern.h"
 #include "MyMBConv.h"
 
-BEGIN_EVENT_TABLE(GlobalParameterFrame, wxMDIChildFrame)
+BEGIN_EVENT_TABLE(GlobalParameterFrame, wxFrame)
 	EVT_CLOSE(GlobalParameterFrame::OnCloseWindow)
 	EVT_MENU(wxID_CLOSE, GlobalParameterFrame::OnClose)
 	EVT_UPDATE_UI(wxID_CLOSE, GlobalParameterFrame::OnUpdateUI)
 END_EVENT_TABLE()
 
-GlobalParameterFrame::GlobalParameterFrame(wxMDIParentFrame *parent, const wxString& title, const wxPoint& pos, const wxSize& size, long type):
-	wxMDIChildFrame(parent, wxID_ANY, title, pos, size, type)
+GlobalParameterFrame::GlobalParameterFrame(wxWindow *parent, const wxString& title, const wxPoint& pos, const wxSize& size, long type):
+	wxFrame(parent, wxID_ANY, title, pos, size, type)
 {
 }
 
@@ -58,7 +58,7 @@ GlobalParameterFrame::OnCreate()
 }
 
 GlobalParameterFrame *
-GlobalParameterFrame::CreateGlobalParameterFrame(wxMDIParentFrame *parent)
+GlobalParameterFrame::CreateGlobalParameterFrame(wxWindow *parent)
 {
 #ifdef __WXMSW__
 	wxPoint origin(16, 16);
@@ -78,6 +78,8 @@ GlobalParameterFrame::OnCloseWindow(wxCloseEvent &event)
 {
 	//  Do not delete this window; it may be reopened later
 	this->Hide();
+	//  Check if all windows are gone
+	wxGetApp().CheckIfAllWindowsAreGone();
 }
 
 void

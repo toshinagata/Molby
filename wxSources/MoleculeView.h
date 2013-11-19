@@ -34,7 +34,7 @@ class MyProgressIndicator;
 class MoleculeView: public wxView, public MyListCtrlDataSource
 {
 public:
-    wxMDIChildFrame *frame;
+    wxDocChildFrame *frame;
     MyGLCanvas *canvas;
     MainView *mview;
 	wxChoice *listmenu;
@@ -51,7 +51,7 @@ public:
 	bool isRebuildingTable;
 
 	
-    MoleculeView() { canvas = (MyGLCanvas *) NULL; frame = (wxMDIChildFrame *) NULL; }
+    MoleculeView() { canvas = (MyGLCanvas *) NULL; frame = (wxDocChildFrame *) NULL; }
     ~MoleculeView() {}
 
     MyDocument *MolDocument() { return (MyDocument *)m_viewDocument; }

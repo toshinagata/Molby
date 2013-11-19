@@ -23,7 +23,7 @@
 
 class wxMenu;
 
-class GlobalParameterFrame: public wxMDIChildFrame, public MyListCtrlDataSource
+class GlobalParameterFrame: public wxFrame, public MyListCtrlDataSource
 {
 
 public:
@@ -31,14 +31,14 @@ public:
 	wxMenu *file_history_menu;
 	wxMenu *edit_menu;
 
-	GlobalParameterFrame(wxMDIParentFrame *parent, const wxString& title, const wxPoint& pos, const wxSize& size, long type);
+	GlobalParameterFrame(wxWindow *parent, const wxString& title, const wxPoint& pos, const wxSize& size, long type);
 	virtual ~GlobalParameterFrame();
 
 	MyListCtrl *GetListCtrl() { return listCtrl; }
 
 	void OnCreate();
 
-	static GlobalParameterFrame *CreateGlobalParameterFrame(wxMDIParentFrame *parent);
+	static GlobalParameterFrame *CreateGlobalParameterFrame(wxWindow *parent);
 	
 	void OnCloseWindow(wxCloseEvent &event);
 	void OnClose(wxCommandEvent &event);

@@ -338,6 +338,9 @@ void
 RubyDialogFrame::OnCloseWindow(wxCloseEvent &event)
 {
 	RubyDialog_doCloseWindow((RubyValue)dval, IsModal());
+
+	//  Check if all windows are gone
+	wxGetApp().CheckIfAllWindowsAreGone();
 }
 
 int

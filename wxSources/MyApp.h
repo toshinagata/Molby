@@ -112,7 +112,8 @@ enum {
 	myMenuID_EmptyConsoleWindow = 302,
 	myMenuID_CustomScript = 303,
 	myMenuID_PredefinedFragment = 350,
-	myMenuID_MyLastMenuItem = 499
+	myMenuID_MyLastMenuItem = 499,
+	myMenuID_Internal_CheckIfAllWindowsAreGone = 900
 };
 
 enum {
@@ -196,6 +197,9 @@ class MyApp: public wxApp
 	void DisableTimerForDocument(MyDocument *doc);
 	void TimerInvoked(wxTimerEvent &event);
 
+	void CheckIfAllWindowsAreGoneHandler(wxCommandEvent &event);
+	void CheckIfAllWindowsAreGone();
+
 protected:
     MyDocManager* m_docManager;
 	ProgressFrame *m_progressFrame;
@@ -240,7 +244,7 @@ private:
 DECLARE_APP(MyApp)
 
 // Define a new frame
-class MyFrame: public wxDocMDIParentFrame
+class MyFrame: public wxDocParentFrame
 {
 	DECLARE_CLASS(MyFrame)
 public:

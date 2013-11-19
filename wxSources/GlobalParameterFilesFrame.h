@@ -23,7 +23,7 @@
 #include "wx/sizer.h"
 
 class wxMenu;
-class GlobalParameterFilesFrame: public wxMDIChildFrame, public MyListCtrlDataSource
+class GlobalParameterFilesFrame: public wxFrame, public MyListCtrlDataSource
 {
 public:
 	MyListCtrl *listctrl;
@@ -31,14 +31,14 @@ public:
 	wxMenu *file_history_menu;
 	wxMenu *edit_menu;
 	
-	GlobalParameterFilesFrame(wxMDIParentFrame *parent, const wxString& title, const wxPoint& pos, const wxSize& size, long type);
+	GlobalParameterFilesFrame(wxWindow *parent, const wxString& title, const wxPoint& pos, const wxSize& size, long type);
 	virtual ~GlobalParameterFilesFrame();
 	
 	MyListCtrl *GetListCtrl() { return listctrl; }
 	
 	void OnCreate();
 	
-	static GlobalParameterFilesFrame *CreateGlobalParameterFilesFrame(wxMDIParentFrame *parent);
+	static GlobalParameterFilesFrame *CreateGlobalParameterFilesFrame(wxWindow *parent);
 	
 	void OnCloseWindow(wxCloseEvent &event);
 	void OnClose(wxCommandEvent &event);

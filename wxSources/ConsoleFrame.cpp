@@ -39,7 +39,7 @@
 #include <richedit.h>
 #endif
 
-BEGIN_EVENT_TABLE(ConsoleFrame, wxMDIChildFrame)
+BEGIN_EVENT_TABLE(ConsoleFrame, wxFrame)
 	EVT_UPDATE_UI(-1, ConsoleFrame::OnUpdateUI)
 	EVT_CLOSE(ConsoleFrame::OnCloseWindow)
 	EVT_MENU(wxID_CLOSE, ConsoleFrame::OnClose)
@@ -51,8 +51,8 @@ BEGIN_EVENT_TABLE(ConsoleFrame, wxMDIChildFrame)
 	EVT_MENU(wxID_REDO, ConsoleFrame::OnRedo)
 END_EVENT_TABLE()
 
-ConsoleFrame::ConsoleFrame(wxMDIParentFrame *parent, const wxString& title, const wxPoint& pos, const wxSize& size, long type):
-	wxMDIChildFrame(parent, wxID_ANY, title, pos, size, type)
+ConsoleFrame::ConsoleFrame(wxFrame *parent, const wxString& title, const wxPoint& pos, const wxSize& size, long type):
+	wxFrame(parent, wxID_ANY, title, pos, size, type)
 {
 	valueHistory = commandHistory = NULL;
 	nValueHistory = nCommandHistory = 0;
@@ -128,7 +128,7 @@ ConsoleFrame::OnCreate()
 }
 
 ConsoleFrame *
-ConsoleFrame::CreateConsoleFrame(wxMDIParentFrame *parent)
+ConsoleFrame::CreateConsoleFrame(wxFrame *parent)
 {
 #ifdef __WXMSW__
 	wxPoint origin(0, 0);
@@ -137,7 +137,7 @@ ConsoleFrame::CreateConsoleFrame(wxMDIParentFrame *parent)
 	wxPoint origin(10, 24);
 	wxSize size(640, 200);
 #endif
-	ConsoleFrame *frame = new ConsoleFrame(parent, _T("Console"), origin, wxDefaultSize, wxDEFAULT_FRAME_STYLE | wxNO_FULL_REPAINT_ON_RESIZE);
+	ConsoleFrame *frame = new ConsoleFrame(parent, _T("Molby Console"), origin, wxDefaultSize, wxDEFAULT_FRAME_STYLE | wxNO_FULL_REPAINT_ON_RESIZE);
 
 	frame->OnCreate();
 	frame->SetClientSize(size);
@@ -191,6 +191,8 @@ ConsoleFrame::OnCloseWindow(wxCloseEvent &event)
 {
 	//  Do not delete this window; it may be reopened later
 	this->Hide();
+	//  Check if all windows are gone
+	wxGetApp().CheckIfAllWindowsAreGone();
 }
 
 void

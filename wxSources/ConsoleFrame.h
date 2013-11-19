@@ -19,6 +19,7 @@
 #define __ConsoleFrame_h__
 
 #include "wx/mdi.h"
+#include "wx/docview.h"
 //#include "wx/richtext/richtextctrl.h"
 #include "wx/textctrl.h"
 
@@ -26,7 +27,7 @@
 
 class wxMenu;
 
-class ConsoleFrame: public wxMDIChildFrame
+class ConsoleFrame: public wxFrame
 {
 
 public:
@@ -45,7 +46,7 @@ public:
 
 	long selectionFrom, selectionTo;
 	
-	ConsoleFrame(wxMDIParentFrame *parent, const wxString& title, const wxPoint& pos, const wxSize& size, long type);
+	ConsoleFrame(wxFrame *parent, const wxString& title, const wxPoint& pos, const wxSize& size, long type);
 	virtual ~ConsoleFrame();
 
 	int AppendConsoleMessage(const char *mes);
@@ -56,7 +57,7 @@ public:
 	void OnEnterPressed(wxKeyEvent& event);
 	void OnKeyDown(wxKeyEvent &event);
 
-	static ConsoleFrame *CreateConsoleFrame(wxMDIParentFrame *parent);
+	static ConsoleFrame *CreateConsoleFrame(wxFrame *parent);
 	void OnCloseWindow(wxCloseEvent &event);
 	void OnClose(wxCommandEvent &event);
 	void OnUpdateUI(wxUpdateUIEvent& event);

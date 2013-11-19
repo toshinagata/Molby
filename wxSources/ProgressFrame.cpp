@@ -117,11 +117,11 @@ ProgressFrame::CheckInterrupt()
 	::wxYield();
 #else
 	{
-		wxWindow *activeWin;
+		wxWindow *activeWin = NULL;
 		if (this != NULL)
 			activeWin = this;
-		else
-			activeWin = GetMainFrame()->GetActiveChild();
+		// else
+		//	activeWin = GetMainFrame()->GetActiveChild();
 		::wxSafeYield(activeWin);
 	}
 #endif

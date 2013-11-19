@@ -97,6 +97,7 @@ BEGIN_EVENT_TABLE(MyApp, wxApp)
 #endif
 	EVT_END_PROCESS(-1, MyApp::OnEndProcess)
 	EVT_TIMER(-1, MyApp::TimerInvoked)
+	EVT_COMMAND(myMenuID_Internal_CheckIfAllWindowsAreGone, MyDocumentEvent, MyApp::CheckIfAllWindowsAreGoneHandler)
 END_EVENT_TABLE()
 
 //  Find the path of the directory where the relevant resources are to be found.
@@ -271,7 +272,7 @@ bool MyApp::OnInit(void)
 
 	frame->Centre(wxBOTH);
 
-#if defined(__WXMAC__)
+#if defined(__WXMAC__) || defined(__WXMSW__)
 	frame->Move(-10000, -10000);  //  Set invisible
 	frame->Show(false);
 #else
@@ -279,7 +280,7 @@ bool MyApp::OnInit(void)
 #endif
 
 	SetTopWindow(frame);
-
+	
 	//  Load default settings from the preference file
 	LoadDefaultSettings();
 	
@@ -316,7 +317,7 @@ bool MyApp::OnInit(void)
 		
 		/*  Build the predefined fragments menu  */
 		m_NamedFragments = NULL;
-		UpdatePredefinedFragmentMenu(GetMainFrame()->GetMenuBar());
+	//	UpdatePredefinedFragmentMenu(GetMainFrame()->GetMenuBar());
 		UpdatePredefinedFragmentMenu(consoleFrame->GetMenuBar());
 
 	}
@@ -476,7 +477,7 @@ MyApp::CreateMenuBar(int kind, wxMenu **out_file_history_menu, wxMenu **out_edit
 	
 	wxMenu *script_menu = new wxMenu;
 	script_menu->Append(myMenuID_ExecuteScript, _T("Execute Script..."));
-	script_menu->Append(myMenuID_OpenConsoleWindow, _T("Open Console Window..."));
+	script_menu->Append(myMenuID_OpenConsoleWindow, _T("Open Console Window"));
 	script_menu->Append(myMenuID_EmptyConsoleWindow, _T("Empty Console Window"));
 	script_menu->AppendSeparator();
 	countNonCustomScriptMenu = script_menu->GetMenuItemCount();
@@ -856,7 +857,7 @@ void
 MyApp::OnScriptMenuModified(wxCommandEvent& event)
 {
 	scriptMenuModifiedEventPosted = false;
-	UpdateScriptMenu(GetMainFrame()->GetMenuBar());
+//	UpdateScriptMenu(GetMainFrame()->GetMenuBar());
 	UpdateScriptMenu(consoleFrame->GetMenuBar());
 	event.Skip();
 }
@@ -1070,7 +1071,7 @@ MyApp::OnExecuteScript(wxCommandEvent &event)
 void
 MyApp::OnActivate(wxActivateEvent &event)
 {
-#if defined(__WXMAC__)
+#if defined(__WXMAC__) || defined(__WXMSW__)
 	MyFrame *frame = GetMainFrame();
 	frame->Show(false);  /*  Sometimes this "parent" frame gets visible and screw up the menus  */
 #endif
@@ -1515,20 +1516,57 @@ MyApp::TimerInvoked(wxTimerEvent &event)
 	}
 }
 
+void
+MyApp::CheckIfAllWindowsAreGoneHandler(wxCommandEvent &event)
+{
+	int m = 0;
+	wxWindowList::iterator iter;
+	wxTopLevelWindow *win;
+    for (iter = wxTopLevelWindows.begin(); iter != wxTopLevelWindows.end(); ++iter) {
+        win = (wxTopLevelWindow *)(*iter);
+		if (win->IsShown())
+			m++;
+    }
+	if (m == 0) {
+		if (MyAppCallback_messageBox("Do you want to quit Molby?", "Quit Molby", 3, 2)) {
+			for (iter = wxTopLevelWindows.begin(); iter != wxTopLevelWindows.end(); ++iter) {
+				win = (wxTopLevelWindow *)(*iter);
+				win->Destroy();
+			}
+		} else {
+			//  Show console window to avoid window-less state
+			consoleFrame->Show();
+		}
+	}
+}
+
+void
+MyApp::CheckIfAllWindowsAreGone()
+{
+#if defined(__WXMSW__)
+	/*  On Windows, we should avoid the situation where all windows are hidden and
+	    still the program is running. So that we check whether all windows are gone
+	    and if so ask the user to quit the program. If user chooses not to quit, then
+	    the console window is reopened and the program continues to run.  */
+	wxCommandEvent myEvent(MyDocumentEvent, myMenuID_Internal_CheckIfAllWindowsAreGone);
+	this->AddPendingEvent(myEvent);
+#endif
+}
+
 #pragma mark ====== MyFrame (top-level window) ======
 
 /*
  * This is the top-level window of the application.
  */
  
-IMPLEMENT_CLASS(MyFrame, wxDocMDIParentFrame)
-BEGIN_EVENT_TABLE(MyFrame, wxDocMDIParentFrame)
+IMPLEMENT_CLASS(MyFrame, wxDocParentFrame)
+BEGIN_EVENT_TABLE(MyFrame, wxDocParentFrame)
     EVT_MENU(wxID_ABOUT, MyFrame::OnAbout)
 END_EVENT_TABLE()
 
 MyFrame::MyFrame(wxDocManager *manager, wxFrame *frame, const wxString& title,
     const wxPoint& pos, const wxSize& size, long type):
-  wxDocMDIParentFrame(manager, frame, wxID_ANY, title, pos, size, type, _T("myFrame"))
+  wxDocParentFrame(manager, frame, wxID_ANY, title, pos, size, type, _T("myFrame"))
 {
 	editMenu = (wxMenu *) NULL;
 #if defined(__WXMAC__)
