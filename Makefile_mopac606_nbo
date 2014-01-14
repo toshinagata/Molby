@@ -15,7 +15,7 @@ FLDFLAGS=-nodefaultlibs -lgfortran-static -lgcc -lc -m -lSystem -lSystemStubs -l
 EXE_SUFFIX=
 else
 FFLAGS=-std=legacy 
-FLDFLAGS=-mno-cygwin -Wl,--stack=33554432
+FLDFLAGS=-Wl,--stack=33554432
 EXE_SUFFIX=.exe
 endif
 export FFLAGS

@@ -17,8 +17,6 @@
 #ifndef __mainview_h__
 #define __mainview_h__
 
-#include "MolLib.h"
-
 /*  The OpenGL header location may be different for different platform  */
 #if defined(__WXMAC__) || defined(__CMDMAC__)
 #include <OpenGL/gl.h>
@@ -29,6 +27,8 @@
 #include <GL/glu.h>
 #include <GL/glext.h>
 #endif
+
+#include "MolLib.h"
 
 #ifdef __cplusplus
 extern "C" {

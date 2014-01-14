@@ -349,7 +349,7 @@ class Molecule
   def ambertools_dialog(tool, msg = nil, block = nil)
 	log_dir = get_global_settings("antechamber.log_dir")
 	if !log_dir
-	  log_dir = document_home + "/antechamber"
+	  log_dir = $home_directory + "/molby/antechamber"
 	end
 	if $platform == "win"
 	  suffix = ".exe"
@@ -456,7 +456,7 @@ class Molecule
 	msg = ""
 	begin
 	  if !FileTest.directory?(log_dir)
-	    Dir.mkdir(log_dir) rescue ((msg = "Cannot create directory #{log_dir}") && raise)
+	    mkdir_recursive(log_dir) rescue ((msg = "Cannot create directory #{log_dir}") && raise)
 	  end
 	  n = 1
 	  while FileTest.exist?(dname = log_dir + "/#{name}_#{key}.#{n}")
@@ -556,10 +556,10 @@ class Molecule
 	name = (self.name || "unknown").sub(/\.\w*$/, "")  #  Remove the extension
 	log_dir = get_global_settings("antechamber.log_dir")
 	if log_dir == nil
-	  log_dir = document_home + "/antechamber"
+	  log_dir = document_home + "/molby/antechamber"
 	end
 	if !File.directory?(log_dir)
-	  Dir.mkdir(log_dir)
+	  mkdir_recursive(log_dir)
 	end
 	tdir = nil
 	1000.times { |i|

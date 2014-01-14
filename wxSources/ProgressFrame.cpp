@@ -70,7 +70,7 @@ ProgressFrame::ProgressFrame(const wxString &title, const wxString &mes):
 	this->Show();
 	
 #if __WXMAC__
-	::SetWindowModality(((WindowRef)MacGetWindowRef()), kWindowModalityAppModal, NULL);
+//	::SetWindowModality(((WindowRef)MacGetWindowRef()), kWindowModalityAppModal, NULL);
 #endif
 }
 

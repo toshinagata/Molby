@@ -62,9 +62,15 @@ int MyGLAttributes[20] = { WX_GL_RGBA, WX_GL_MIN_RED, 1, WX_GL_MIN_GREEN, 1,
 
 // Define a constructor for my canvas
 MyGLCanvas::MyGLCanvas(MoleculeView *v, wxWindow *frame, const wxPoint& pos, const wxSize& size, long style):
-  wxGLCanvas(frame, wxID_ANY, pos, size, style, _T("TestGLCanvas"), MyGLAttributes)
+  wxGLCanvas(frame, wxID_ANY, MyGLAttributes, pos, size, style)
 {
 	view = v;
+	context = new wxGLContext(this);
+}
+
+MyGLCanvas::~MyGLCanvas()
+{
+	delete context;
 }
 
 // Define the repainting behaviour
@@ -74,10 +80,10 @@ MyGLCanvas::OnPaint( wxPaintEvent &WXUNUSED(event) )
     wxPaintDC dc(this);
 
 #ifndef __WXMOTIF__
-    if (!GetContext()) return;
+//    if (!GetContext()) return;
 #endif
 
-    SetCurrent();
+    context->SetCurrent(*this);
     if (view)
       view->OnDraw(&dc);
 	else {
@@ -129,12 +135,14 @@ MyGLCanvas::OnMouseEvent(wxMouseEvent &event)
 	clickCount = MainViewCallback_clickCount(&event);
 
 	if (event.LeftUp() /* || (mview->isDragging && event.Entering() && !event.LeftIsDown()) */) {
-		ReleaseMouse();
+		if (HasCapture())
+			ReleaseMouse();
 		MoleculeLock(mview->mol);
 		MainView_mouseUp(mview, p, modifierFlags, clickCount);
 		MoleculeUnlock(mview->mol);
 	} else if (event.LeftDClick()) {
-		ReleaseMouse();
+		if (HasCapture())
+			ReleaseMouse();
 		MoleculeLock(mview->mol);
 		MainView_mouseUp(mview, p, modifierFlags, 2);
 		MoleculeUnlock(mview->mol);
@@ -162,10 +170,10 @@ MyGLCanvas::OnSize(wxSizeEvent &event)
     int w, h;
     GetClientSize(&w, &h);
 #ifndef __WXMOTIF__
-    if (GetContext())
+//    if (GetContext())
 #endif
     {
-        SetCurrent();
+        context->SetCurrent(*this);
         glViewport(0, 0, (GLint) w, (GLint) h);
     }
 #if defined(__WXMSW__)

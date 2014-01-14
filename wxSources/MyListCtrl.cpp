@@ -40,6 +40,13 @@ END_EVENT_TABLE()
 
 MyListCtrl::MyListCtrl()
 {
+	editText = NULL;
+#if defined(__WXMAC__)
+	//  On OSX, the default font seems to be 14-point, which is too big.
+	wxFont font = this->GetFont();
+	font.SetPointSize(12);
+	this->SetFont(font);
+#endif
 }
 
 MyListCtrl::~MyListCtrl()
@@ -90,8 +97,12 @@ MyListCtrl::OnPaintCallback(wxDC *dc)
 		wxRect r;
 		wxPen pen = *wxCYAN_PEN;
 		int dx, dy, y;
-		/*  m_mainWin is a protected member in wxGenericListCtrl  */
-		((wxScrolledWindow *)m_mainWin)->CalcScrolledPosition(0, 0, &dx, &dy);	
+#if defined(__WXMSW__)
+		static const int offset_y = -6;
+#else
+		static const int offset_y = 0;
+#endif
+		CalcScrolledPosition(0, 0, &dx, &dy);	
 		pen.SetWidth(3);
 		dc->SetPen(pen);
 		if (dragTargetRow == GetItemCount()) {
@@ -101,14 +112,9 @@ MyListCtrl::OnPaintCallback(wxDC *dc)
 			GetItemRect(dragTargetRow, r);
 			y = r.y - dy - r.height;
 		}
-	/*	printf("dragTargetRow = %d, r.y = %d, y = %d\n", dragTargetRow, r.y, y); */
+		y += offset_y;
+	//	printf("dragTargetRow = %d, r.y = %d, y = %d, r.x-dx = %d, r.width = %d\n", dragTargetRow, r.y, y, r.x - dx, r.width);
 		dc->DrawLine(r.x - dx, y, r.x - dx + r.width, y);
-		
-	/*	r.Inflate(-1);
-		dc->DrawLine(r.x, r.y, r.x + r.width, r.y);
-		dc->DrawLine(r.x + r.width, r.y, r.x + r.width, r.y - r.height);
-		dc->DrawLine(r.x + r.width, r.y - r.height, r.x, r.y - r.height);
-		dc->DrawLine(r.x, r.y - r.height, r.x, r.y); */
 	}
 }
 
@@ -204,13 +210,16 @@ MyListCtrl::OnBeginDrag(wxListEvent &event)
 					EnsureVisible(0);
 				else {
 					GetItemRect(count - 1, r);
-					if (pt.y > r.y) {
+					if (pt.y >= r.y) {
 						EnsureVisible(count - 1);
 						if (pt.y < r.y + r.height)
 							newRow = count;
-					}
+					} else if (count > 0 && pt.y >= r.y - r.height)
+						newRow = count - 1;
 				}
 			}
+		}
+		if (newRow != dragTargetRow) {
 			if (newRow >= 0) {
 				if (newRow == count) {
 					GetItemRect(newRow - 1, r);
@@ -234,7 +243,7 @@ MyListCtrl::OnBeginDrag(wxListEvent &event)
 			dragTargetRow = newRow;
 			Update();
 		}
-		if (!mstate.LeftDown()) {
+		if (!mstate.LeftIsDown()) {
 			//  If the mouse cursor is outside the item rect, then dragging should be discarded
 			if (dragTargetRow >= 0) {
 				r = GetClientRect();
@@ -270,13 +279,14 @@ MyListCtrl::GetItemRectForRowAndColumn(wxRect &rect, int row, int column)
 void
 MyListCtrl::GetScrollPixelsPerUnit(int *xunit, int *yunit)
 {
-	int x, y;
-	/*  m_mainWin is a protected member in wxGenericListCtrl  */
-	((wxScrolledWindow *)m_mainWin)->GetScrollPixelsPerUnit(&x, &y);	
-	if (xunit != NULL)
-		*xunit = x;
-	if (yunit != NULL)
-		*yunit = y;
+	wxGenericListCtrl::GetScrollPixelsPerUnit(xunit, yunit);
+//	int x, y;
+//	/*  m_mainWin is a protected member in wxGenericListCtrl  */
+//	/*((wxScrolledWindow *)m_mainWin)->*/GetScrollPixelsPerUnit(&x, &y);	
+//	if (xunit != NULL)
+//		*xunit = x;
+//	if (yunit != NULL)
+//		*yunit = y;
 }
 
 bool
@@ -312,6 +322,17 @@ MyListCtrl::StartEditText(int row, int column)
 	if (dataSource == NULL || !dataSource->IsItemEditable(this, row, column))
 		return;
 
+	/*  Select only this row  */
+	x1 = GetItemCount();
+	for (x0 = 0; x0 < x1; x0++)
+		SetItemState(x0, (x0 == row ? wxLIST_STATE_SELECTED : 0), wxLIST_STATE_SELECTED);
+	
+	//  Call the event handler directly
+	//  (Otherwise, the table selection may be updated from the "current" selection in the molecule
+	//  before the selection is updated from the table)
+	wxCommandEvent dummyEvent;
+	OnTableSelectionChanged(dummyEvent);
+
 	/*  Scroll the list so that the editing item is visible  */
 	EnsureVisible(row);
 	GetItemRectForRowAndColumn(rect, row, column);
@@ -334,19 +355,25 @@ MyListCtrl::StartEditText(int row, int column)
 	} else dx = 0;
 	if (dx != 0) {
 		/*  m_mainWin is a protected member in wxGenericListCtrl  */
-		((wxScrolledWindow *)m_mainWin)->Scroll(xpos + dx, -1);
+		/*((wxScrolledWindow *)m_mainWin)->*/Scroll(xpos + dx, -1);
 		Refresh();
 	}
 
 	/*  Reposition the rect relative to the origin of the scrolling area  */
-	yorigin = ((wxScrolledWindow *)m_mainWin)->GetPosition().y;
+	yorigin = /*((wxScrolledWindow *)m_mainWin)->*/GetPosition().y;
 	GetItemRectForRowAndColumn(rect, row, column);
 	rect.Inflate(1, 2);
 	rect.Offset(0, -yorigin);
-
+#if defined(__WXMSW__)
+	//  wxMSW seems to require that rect.y >= 0
+	if (rect.y < 0)
+		rect.y = 0;
+#endif
+	
 	wxString str = dataSource->GetItemText(this, editRow, editColumn);
 	if (editText == NULL) {
-		editText = new wxTextCtrl(((wxScrolledWindow *)m_mainWin), -1, wxT(""), rect.GetPosition(), rect.GetSize(), wxTE_PROCESS_ENTER | wxTE_PROCESS_TAB);
+		/*  m_mainWin is a protected member in wxGenericListCtrl  */
+		editText = new wxTextCtrl((wxWindow *)m_mainWin, -1, wxT(""), rect.GetPosition(), rect.GetSize(), wxTE_PROCESS_ENTER | wxTE_PROCESS_TAB);
 		editText->Connect(wxID_ANY, wxEVT_KEY_DOWN, wxKeyEventHandler(MyListCtrl::OnKeyDownOnEditText), NULL, this);
 		editText->Connect(wxID_ANY, wxEVT_KILL_FOCUS, wxFocusEventHandler(MyListCtrl::OnKillFocusOnEditText), NULL, this);
 	} else {
@@ -359,17 +386,6 @@ MyListCtrl::StartEditText(int row, int column)
 //	editText->Connect(wxID_ANY, wxEVT_IDLE, wxIdleEventHandler(MyListCtrl::OnIdle), NULL, this);
 
 	editText->SetSelection(-1, -1);  //  Select all text
-
-	/*  Select only this row  */
-	x1 = GetItemCount();
-	for (x0 = 0; x0 < x1; x0++)
-		SetItemState(x0, (x0 == row ? wxLIST_STATE_SELECTED : 0), wxLIST_STATE_SELECTED);
-
-	//  Call the event handler directly
-	//  (Otherwise, the table selection may be updated from the "current" selection in the molecule
-	//  before the selection is updated from the table)
-	wxCommandEvent dummyEvent;
-	OnTableSelectionChanged(dummyEvent);
 }
 
 void

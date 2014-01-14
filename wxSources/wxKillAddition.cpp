@@ -15,10 +15,12 @@
 #pragma hdrstop
 #endif
 
+#include <wx/msw/private.h>     // includes <windows.h>
+
 #ifndef WX_PRECOMP
 #include <wx/msw/missing.h>     // CHARSET_HANGUL
 #include <wx/utils.h>
-#include <wx/app.h>
+// #include <wx/app.h>
 #include <wx/intl.h>
 #include <wx/log.h>
 #include <wx/timer.h>
@@ -31,8 +33,6 @@
 #include <wx/scopeguard.h>
 
 #include <wx/confbase.h>        // for wxExpandEnvVars()
-
-#include <wx/msw/private.h>     // includes <windows.h>
 
 #if defined(__CYGWIN__)
 //CYGWIN gives annoying warning about runtime stuff if we don't do this

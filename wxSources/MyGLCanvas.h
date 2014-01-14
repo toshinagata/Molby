@@ -27,8 +27,11 @@ class MyGLCanvas: public wxGLCanvas
 {
 public:
     MoleculeView *view;
+	wxGLContext *context;
 
     MyGLCanvas(MoleculeView *v, wxWindow *frame, const wxPoint& pos, const wxSize& size, long style = 0);
+	~MyGLCanvas();
+	void SetCurrent() { context->SetCurrent(*this); }
     void OnPaint(wxPaintEvent &event);
     void OnMouseEvent(wxMouseEvent &event);
     void OnEraseBackground(wxEraseEvent &event);

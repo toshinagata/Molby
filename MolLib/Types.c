@@ -716,6 +716,7 @@ ReadLine(char *buf, int size, FILE *stream, int *lineNumber)
 			if (c != '\n')
 				ungetc(c, stream);
 			c = '\n';
+			buf[i - 1] = c;
 			break;
 		}
 	}

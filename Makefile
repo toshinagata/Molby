@@ -10,20 +10,23 @@ ifeq ($(TARGET_PLATFORM),MAC)
 endif
 
 ifeq ($(TARGET_PLATFORM),MSW)
- WXCONFIG_PREFIX = $(HOME)/wxMSW-2.8.9/msw-build/
- CPP_EXTRA_FLAGS = -O2 -I/lib/clapack -I$(PWD)/../../fftw-3.3.2/msw-build/include -g
- LD_EXTRA_FLAGS = -L/lib/clapack  -L$(PWD)/../../fftw-3.3.2/msw-build/lib -llapack -lblas -lf2c_nomain -lfftw3
- RUBY_DIR = $(HOME)/ruby-1.8.7-static
- RUBY_CFLAGS = -I$(RUBY_DIR)
-# RUBY_LDFLAGS = -L$(RUBY_DIR) -lruby-static /c/Ruby/bin/msvcrt-ruby18.dll
- RUBY_LDFLAGS = -L$(RUBY_DIR) -lmsvcrt-ruby18-static -lws2_32
+ WX_DIR = $(PWD)/../../wxWidgets-3.0.0
+ WX_LIB_DIR = $(WX_DIR)/msw-build-3/lib
+ WX_ARCH_DIR = $(WX_LIB_DIR)/wx/include/msw-unicode-static-3.0
+ WX_CPPFLAGS = -I$(WX_ARCH_DIR) -I$(WX_DIR)/include -D_LARGEFIILE_SOURCE=unknown -D__WXMSW__
+ WX_LDFLAGS = -L$(WX_LIB_DIR) -Wl,--subsystem,windows -mwindows -lwx_mswu_gl-3.0 -lopengl32 -lglu32 -lwx_mswu-3.0 -lwxregexu-3.0 -lwxexpat-3.0 -lwxtiff-3.0 -lwxjpeg-3.0 -lwxpng-3.0 -lwxzlib-3.0 -lrpcrt4 -loleaut32 -lole32 -luuid -lwinspool -lwinmm -lshell32 -lcomctl32 -lcomdlg32 -ladvapi32 -lwsock32 -lgdi32
+ CPP_EXTRA_FLAGS = -O2 -I$(PWD)/../../CLAPACK-3.1.1.1-mingw/INCLUDE -I$(PWD)/../../fftw-3.3.2/msw-build-3/include
+ LD_EXTRA_FLAGS = -L$(PWD)/../../CLAPACK-3.1.1.1-mingw/lib -L$(PWD)/../../fftw-3.3.2/msw-build-3/lib -llapackMinGW -lblasMinGW -lf2c_nomain -lfftw3
+ RUBY_DIR = $(PWD)/../../ruby-1.8.7-p160
+ RUBY_CFLAGS = -I$(RUBY_DIR)/msw-build-3/include
+ RUBY_LDFLAGS = -L$(RUBY_DIR)/msw-build-3/lib -lmsvcrt-ruby18-static -lws2_32
  EXECUTABLE = _Molby.exe_
  FINAL_EXECUTABLE = Molby.exe
  EXE_SUFFIX = .exe
 endif
 
 WXLIB_LIST = core,base,gl,adv
-OBJECTS = ConsoleFrame.o GlobalParameterFrame.o GlobalParameterFilesFrame.o MoleculeView.o MyApp.o MyCommand.o MyDocument.o MyGLCanvas.o MySlider.o MyClipboardData.o ProgressFrame.o MyListCtrl.o MyDocManager.o wxKillAddition.o docview.o RubyDialogFrame.o MyIPCSupport.o MyVersion.o MyThread.o MyProgressIndicator.o
+OBJECTS = ConsoleFrame.o GlobalParameterFrame.o GlobalParameterFilesFrame.o MoleculeView.o MyApp.o MyCommand.o MyDocument.o MyGLCanvas.o MySlider.o MyClipboardData.o ProgressFrame.o MyListCtrl.o MyDocManager.o wxKillAddition.o RubyDialogFrame.o MyIPCSupport.o MyVersion.o MyThread.o MyProgressIndicator.o
 LIBS = MolLib.a Ruby_bind.a
 RUBY_EXTLIB = scanf.rb
 
@@ -34,14 +37,16 @@ PRODUCT_DIR = Molby
 PRODUCT = $(PRODUCT_DIR)/$(EXECUTABLE)
 endif
 
-CC = g++
-CFLAGS = $(CPPFLAGS) $(CPP_EXTRA_FLAGS) $(RUBY_CFLAGS) $(shell $(WXCONFIG_PREFIX)wx-config --cppflags)
-LDFLAGS = $(shell $(WXCONFIG_PREFIX)wx-config --libs $(WXLIB_LIST)) $(LD_EXTRA_FLAGS) $(RUBY_LDFLAGS)
+CPP = g++
+CC = gcc
+CFLAGS = $(CPPFLAGS) $(CPP_EXTRA_FLAGS) $(RUBY_CFLAGS) $(WX_CPPFLAGS)
+LDFLAGS = $(WX_LDFLAGS) $(LD_EXTRA_FLAGS) $(RUBY_LDFLAGS)
 DESTPREFIX = build
 DESTDIR = $(PWD)/$(DESTPREFIX)
 export CFLAGS
 export LDFLAGS
 export DESTDIR
+export CC
 
 all: $(DESTPREFIX) $(DESTPREFIX)/$(PRODUCT)
 
@@ -55,7 +60,7 @@ $(DESTPREFIX)/mopac-build/mopac/mopac606$(EXE_SUFFIX) :
 	make -f ../Makefile_mopac606_nbo
 
 ifeq ($(TARGET_PLATFORM),MSW)
-EXTRA_OBJECTS = listctrl.o event.o
+EXTRA_OBJECTS = listctrl.o window_msw.o textctrl_msw.o
 RESOURCE = molby_rc.o
 #  The following HOMETEMP kludges are to work around a bug where '#include "..."' 
 #  does not work when the include path is on the C: drive whereas the source is 
@@ -65,7 +70,7 @@ $(DESTPREFIX)/$(RESOURCE) : molby.rc
 	mkdir -p $(HOMETEMP)/msw_build $(HOMETEMP)/bitmaps
 	cp molby.rc $(HOMETEMP)/msw_build
 	cp ../bitmaps/*.ico $(HOMETEMP)/bitmaps
-	(cd $(HOMETEMP)/msw_build; windres -i molby.rc -o molby_rc.o -I$(HOME)/wxMSW-2.8.9/include)
+	(cd $(HOMETEMP)/msw_build; windres -i molby.rc -o molby_rc.o -I$(WX_DIR)/include)
 	cp $(HOMETEMP)/msw_build/molby_rc.o $@
 	rm -rf $(HOMETEMP)
 endif
@@ -79,13 +84,13 @@ cleandep:
 -include $(DESTPREFIX)/Makefile.depend
 
 $(DESTPREFIX)/%.d : ../wxSources/%.cpp
-	$(CC) -MM $< >$@ $(subst -arch ppc,,$(CFLAGS))
+	$(CPP) -MM $< >$@ $(subst -arch ppc,,$(CFLAGS))
 
 $(DESTPREFIX)/%.d : ../wxSources/%.c
 	$(CC) -MM $< >$@ $(subst -arch ppc,,$(CFLAGS))
 
 $(DESTPREFIX)/%.o : ../wxSources/%.cpp
-	$(CC) -c $< -o $@ $(CFLAGS)
+	$(CPP) -c $< -o $@ $(CFLAGS)
 
 $(DESTPREFIX)/%.o : ../wxSources/%.c
 	$(CC) -c $< -o $@ $(CFLAGS)
@@ -106,7 +111,7 @@ ifeq ($(TARGET_PLATFORM),MSW)
 	sh ../record_build_date.sh
 endif
 	$(CC) -c $(DESTPREFIX)/buildInfo.c -o $(DESTPREFIX)/buildInfo.o
-	$(CC) -o $@ $(DESTOBJECTS) $(DESTPREFIX)/buildInfo.o $(CFLAGS) $(LDFLAGS)
+	$(CPP) -o $@ $(DESTOBJECTS) $(DESTPREFIX)/buildInfo.o $(CFLAGS) $(LDFLAGS)
 
 $(DESTPREFIX)/$(PRODUCT) : $(DESTPREFIX)/$(EXECUTABLE) ../Scripts/*.rb amber11 $(DESTPREFIX)/mopac-build/mopac/mopac606$(EXE_SUFFIX)
 ifeq ($(TARGET_PLATFORM),MAC)
@@ -136,11 +141,16 @@ endif
 
 ifeq ($(TARGET_PLATFORM),MSW)
 setup: $(DESTPREFIX)/$(PRODUCT_DIR)/$(FINAL_EXECUTABLE)
-	/c/Program\ Files/Inno\ Setup\ 5/iscc molby.iss
+	/c/Program\ Files\ \(x86\)/Inno\ Setup\ 5/iscc molby.iss
 endif
 
 clean:
-	rm -rf $(DESTPREFIX)
+	rm -f $(DESTPREFIX)/*.o $(DESTPREFIX)/*.a $(DESTPREFIX)/$(EXECUTABLE)
+	rm -rf $(DESTPREFIX)/$(PRODUCT_DIR)
+	rm -f $(DESTPREFIX)/MolLib/*.o
+	rm -f $(DESTPREFIX)/MolLib/MD/*.o
+	rm -f $(DESTPREFIX)/MolLib/Ruby_bind/*.o
+
 #	rm -f $(EXECUTABLE) $(OBJECTS)
 #	rm -rf $(PRODUCT)
 #	cd ../MolLib; $(MAKE) clean

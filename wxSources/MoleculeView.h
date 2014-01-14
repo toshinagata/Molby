@@ -50,9 +50,8 @@ public:
 
 	bool isRebuildingTable;
 
-	
     MoleculeView() { canvas = (MyGLCanvas *) NULL; frame = (wxDocChildFrame *) NULL; }
-    ~MoleculeView() {}
+    virtual ~MoleculeView();
 
     MyDocument *MolDocument() { return (MyDocument *)m_viewDocument; }
 	MyListCtrl *GetListCtrl() { return listctrl; }
@@ -63,6 +62,8 @@ public:
     void OnUpdate(wxView *sender, wxObject *hint = (wxObject *) NULL);
     bool OnClose(bool deleteWindow = true);
 
+	virtual void Activate (bool activate);
+	
 	void OnButtonPressed(wxCommandEvent &event);
 	void OnSliderAction(wxCommandEvent &event);
 

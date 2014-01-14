@@ -19,13 +19,11 @@
 #define __MyListCtrl_h__
 
 #include "wx/listctrl.h"
+#include "wx/generic/listctrl.h"
+
 #include "wx/string.h"
 #include "wx/textctrl.h"
 #include "wx/dc.h"
-
-#if __WXMSW__
-#include <wx/generic/listctrl.h>
-#endif
 
 class MyListCtrl;
 extern const wxEventType MyListCtrlEvent;

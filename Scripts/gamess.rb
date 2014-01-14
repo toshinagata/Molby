@@ -145,19 +145,14 @@ class Molecule
 	
     #  Prepare the scratch directory in the home directory
     #  (Not in the document home to avoid space-containing path in Windows)
-    scrdir = document_home.sub(/\/My Documents/, "") + "/gamess"
-    n = 0
-    while File.exist?(scrdir) && !File.directory?(scrdir)
-      if n == 0
-        scrdir += ".1"
-      else
-        scrdir = scrdir.sub(".#{n}", ".#{n + 1}")
-      end
-      n += 1
-    end
-    if !File.exist?(scrdir)
-      Dir.mkdir(scrdir)
-    end
+    scrdir = $home_directory + "/molby/gamess"
+	begin
+	  mkdir_recursive(scrdir)
+	rescue
+	  error_message_box("Cannot create directory #{scrdir}: " + $!.to_s)
+	  return
+	end
+
     scrdir = scrdir + "/" + inpbody + "." + $$.to_s + ".0"
     n = 0
     while File.exist?(scrdir)
@@ -706,6 +701,7 @@ class Molecule
   end
   
   def cmd_create_gamess_input
+
     if natoms == 0
       raise MolbyError, "cannot create GAMESS input; the molecule is empty"
     end

@@ -27,7 +27,7 @@ END_EVENT_TABLE()
 const wxEventType MySliderEvent = wxNewEventType();
 
 MySlider::MySlider(wxWindow* parent, wxWindowID id, int direction, const wxPoint& pos, const wxSize& size, long style, const wxValidator& validator, const wxString& name):
-	wxToggleButton(parent, id, wxEmptyString, pos, size, style, validator, name)
+	wxToggleButton(parent, id, wxEmptyString, pos, size, style | wxTOGGLEBUTTON_STYLE, validator, name)
 {
 	m_direction = direction;
 	SetCursor(wxCursor(wxCURSOR_HAND));

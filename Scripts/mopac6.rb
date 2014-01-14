@@ -146,6 +146,7 @@ class Molecule
 		)
 	  )
 	  radio_group("save_only", "save_and_run")
+	  item_with_tag("mopac_commands")[:font] = [:fixed, 10]
 	  item_with_tag("mopac_commands")[:value] = mol.create_mopac
 	}
 	#  Record the command lines for next invocation

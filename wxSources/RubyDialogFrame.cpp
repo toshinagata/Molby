@@ -340,7 +340,7 @@ RubyDialogFrame::OnCloseWindow(wxCloseEvent &event)
 	RubyDialog_doCloseWindow((RubyValue)dval, IsModal());
 
 	//  Check if all windows are gone
-	wxGetApp().CheckIfAllWindowsAreGone();
+	wxGetApp().CheckIfAllWindowsAreGone(NULL);
 }
 
 int
@@ -528,9 +528,9 @@ RubyDialog *
 RubyDialogCallback_new(int style)
 {
 	RubyDialogFrame *dref;
-	int fstyle = wxCAPTION | wxSYSTEM_MENU;
+	int fstyle = wxCAPTION | wxSYSTEM_MENU | wxDIALOG_NO_PARENT;
 	if (style & rd_Resizable)
-		fstyle |= wxRESIZE_BOX | wxRESIZE_BORDER;
+		fstyle |= wxMAXIMIZE_BOX | wxRESIZE_BORDER;
 	if (style & rd_HasCloseBox)
 		fstyle |= wxCLOSE_BOX;
 	dref = new RubyDialogFrame(GetMainFrame(), -1, _T("Ruby Dialog"), wxDefaultPosition, wxDefaultSize, fstyle);
@@ -938,7 +938,7 @@ RubyDialogCallback_createItem(RubyDialog *dref, const char *type, const char *ti
 		bn->Connect(-1, wxEVT_COMMAND_BUTTON_CLICKED, wxCommandEventHandler(RubyDialogFrame::OnDialogItemAction), NULL, parent);
 	} else if (strcmp(type, "togglebutton") == 0) {
 		/*  Button  */
-		wxToggleButton *bn = new wxToggleButton(parent, -1, tstr, rect.GetPosition(), rect.GetSize());
+		wxToggleButton *bn = new wxToggleButton(parent, -1, tstr, rect.GetPosition(), rect.GetSize(), wxTOGGLEBUTTON_STYLE);
 		control = bn;
 		bn->Connect(-1, wxEVT_COMMAND_TOGGLEBUTTON_CLICKED, wxCommandEventHandler(RubyDialogFrame::OnDialogItemAction), NULL, parent);
 	} else if (strcmp(type, "popup") == 0) {
@@ -954,7 +954,7 @@ RubyDialogCallback_createItem(RubyDialog *dref, const char *type, const char *ti
 		cb->Connect(-1, wxEVT_COMMAND_CHECKBOX_CLICKED, wxCommandEventHandler(RubyDialogFrame::OnDialogItemAction), NULL, parent);
 	} else if (strcmp(type, "radio") == 0) {
 		/*  Radio button (not grouped)  */
-		wxRadioButton *rb = new wxRadioButton(parent, -2, tstr, rect.GetPosition(), rect.GetSize(), wxRB_SINGLE);
+		wxRadioButton *rb = new wxRadioButton(parent, -1, tstr, rect.GetPosition(), rect.GetSize(), wxRB_SINGLE);
 		control = rb;
 		rb->Connect(-1, wxEVT_COMMAND_RADIOBUTTON_SELECTED, wxCommandEventHandler(RubyDialogFrame::OnDialogItemAction), NULL, parent);
 	} else if (strcmp(type, "table") == 0) {
@@ -980,7 +980,7 @@ RubyDialogCallback_createItem(RubyDialog *dref, const char *type, const char *ti
 	
 	if (wxDynamicCast(control, wxTextCtrl) != NULL) {
 		/*  Set default font  */
-		wxTextAttr attr;
+		wxTextAttr attr = ((wxTextCtrl *)control)->GetDefaultStyle();
 		attr.SetFont(wxSystemSettings::GetFont(wxSYS_SYSTEM_FONT));
 		((wxTextCtrl *)control)->SetDefaultStyle(attr);
 	}
@@ -1053,7 +1053,8 @@ RubyDialogCallback_setStringToItem(RDItem *item, const char *s)
 {
 	wxString str(s, WX_DEFAULT_CONV);
 	if (wxDynamicCast((wxWindow *)item, wxTextCtrl) != NULL) {
-		((wxTextCtrl *)item)->SetValue(str);
+		((wxTextCtrl *)item)->Clear();
+		((wxTextCtrl *)item)->AppendText(str);
 	} else if (wxDynamicCast((wxWindow *)item, wxStaticText) != NULL) {
 		((wxStaticText *)item)->SetLabel(str);
 	}
@@ -1383,7 +1384,7 @@ RubyDialogCallback_sizeOfString(RDItem *item, const char *s)
 {
 	RDSize size;
 	wxCoord w, h, descent, leading;
-	wxPaintDC dc((wxWindow *)item);
+	wxClientDC dc((wxWindow *)item);
 	int len;
 	const char *s1, *s2, *sfin;
 	size.width = size.height = 0;

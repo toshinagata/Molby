@@ -261,6 +261,12 @@ end
 
 end
 
+module Math
+  def sqrt_safe(arg)
+    arg <= 0.0 ? 0.0 : sqrt(arg)
+  end
+end
+
 #  Best-fit planes
 #  Ref. W. C. Hamilton, Acta Cryst. 1961, 14, 185-189
 #       T. Ito, Acta Cryst 1981, A37, 621-624
@@ -282,7 +288,7 @@ class Molby::Plane
     self
   end
   def sigma
-    [sqrt(@error_matrix[0, 0]), sqrt(@error_matrix[1, 1]), sqrt(@error_matrix[2, 2]), sqrt(@error_matrix[3, 3])]
+    [sqrt_safe(@error_matrix[0, 0]), sqrt_safe(@error_matrix[1, 1]), sqrt_safe(@error_matrix[2, 2]), sqrt_safe(@error_matrix[3, 3])]
   end
   def inspect
     s = sprintf("Molby::Plane[\n coeff, const = [[%f, %f, %f], %f],\n", @coeff.x, @coeff.y, @coeff.z, @const)
@@ -321,7 +327,7 @@ class Molby::Plane
     else
       sig0 = sig1 + sig2
     end  
-    return d, sqrt(sig0)
+    return d, sqrt_safe(sig0)
   end
   def dihedral(plane)
     e1 = @error_matrix.submatrix(0, 0, 3, 3)
@@ -341,7 +347,7 @@ class Molby::Plane
       sig_t = w * w * (c.dot(LAMatrix.multiply(m, e1, m, c)) + @coeff.dot(LAMatrix.multiply(m, e2, m, @coeff)))
     end
     t *= 180.0 / PI
-    sig_t = sqrt(sig_t) * 180.0 / PI
+    sig_t = sqrt_safe(sig_t) * 180.0 / PI
     return t, sig_t
   end
 end
@@ -732,7 +738,7 @@ def bond_angle_with_sigma(*args)
     _xij = _vij.x
     _yij = _vij.y
     _zij = _vij.z
-    _dij = sqrt(aa * _xij * _xij + bb * _yij * _yij + cc * _zij * _zij + 2 * bca * _yij * _zij + 2 * cab * _zij * _xij + 2 * abc * _xij * _yij)
+    _dij = sqrt_safe(aa * _xij * _xij + bb * _yij * _yij + cc * _zij * _zij + 2 * bca * _yij * _zij + 2 * cab * _zij * _xij + 2 * abc * _xij * _yij)
     _p[0] = _dij
     _p[1] = (aa * _xij + abc * _yij + cab * _zij) / _dij
     _p[2] = (bb * _yij + bca * _zij + abc * _xij) / _dij
@@ -819,7 +825,7 @@ def bond_angle_with_sigma(*args)
     6.times { |n|
       sig += (p[4 + n] * cell[6 + n]) ** 2
     }
-    sig = sqrt(sig)
+    sig = sqrt_safe(sig)
     results.push([[i, j], notate_with_sigma.call(p[0], sig), symcode[i], symcode[j], nil])
   }
 
@@ -862,7 +868,7 @@ def bond_angle_with_sigma(*args)
     sig += dd * dd * cell[10] * cell[10]
     dd = dtdr12 * p0[9] + dtdr23 * p1[9] + dtdr13 * p2[9] + dtdr24 * p3[9]
     sig += dd * dd * cell[11] * cell[11]
-    sig = sqrt(sig)
+    sig = sqrt_safe(sig)
     results.push([[i, j, k], notate_with_sigma.call(t123*180/PI, sig), symcode[i], symcode[j], symcode[k]])
   }
   results

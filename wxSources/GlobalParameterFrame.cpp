@@ -79,7 +79,7 @@ GlobalParameterFrame::OnCloseWindow(wxCloseEvent &event)
 	//  Do not delete this window; it may be reopened later
 	this->Hide();
 	//  Check if all windows are gone
-	wxGetApp().CheckIfAllWindowsAreGone();
+	wxGetApp().CheckIfAllWindowsAreGone(NULL);
 }
 
 void

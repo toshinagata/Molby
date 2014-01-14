@@ -20,6 +20,7 @@ Source: "build\Molby\Scripts\mbsf\heterocyclic\*"; DestDir: {app}\Scripts\mbsf\h
 Source: "build\Molby\Scripts\mbsf\solvents\*"; DestDir: {app}\Scripts\mbsf\solvents
 Source: "build\Molby\Scripts\lib\*"; DestDir: {app}\Scripts\lib
 Source: "build\Molby\Scripts\basis_sets\*"; DestDir: {app}\Scripts\basis_sets
+Source: "build\Molby\mopac\*"; DestDir: {app}\mopac
 
 [Icons]
 Name: "{group}\Molby"; Filename: "{app}\Molby.exe"

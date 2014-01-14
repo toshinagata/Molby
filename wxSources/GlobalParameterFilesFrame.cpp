@@ -27,7 +27,7 @@
 #include "MyApp.h"
 #include "MyListCtrl.h"
 #include "../MolLib/MolLib.h"
-#include "../MolLib/Ruby_bind/Molby.h"
+#include "../MolLib/Ruby_bind/Molby_extern.h"
 #include "../MolLib/Missing.h"
 #include "MyMBConv.h"
 
@@ -112,7 +112,7 @@ GlobalParameterFilesFrame::OnCloseWindow(wxCloseEvent &event)
 	//  Do not delete this window; it may be reopened later
 	this->Hide();
 	//  Check if all windows are gone
-	wxGetApp().CheckIfAllWindowsAreGone();
+	wxGetApp().CheckIfAllWindowsAreGone(NULL);
 }
 
 void

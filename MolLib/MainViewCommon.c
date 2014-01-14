@@ -14,6 +14,10 @@
  GNU General Public License for more details.
  */
 
+/*  On MinGW, #include of <GL/gl.h> should be before something in MolLib.h.
+    Therefore, we include MainView.h first separately and then include
+    the rest of MolLib.h.  */
+#include "MainView.h"
 #include "MolLib.h"
 
 #include <stdlib.h>

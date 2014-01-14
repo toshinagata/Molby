@@ -50,6 +50,12 @@ class GlobalParameterFilesFrame;
 class MyListCtrl;
 class MyDocument;
 
+#if defined(__WXOSX_COCOA__)
+#define wxTOGGLEBUTTON_STYLE wxBORDER_SIMPLE
+#else
+#define wxTOGGLEBUTTON_STYLE 0
+#endif
+
 enum {
 	myMenuID_MyFirstMenuItem = 100,
 	myMenuID_Import = 101,
@@ -125,6 +131,9 @@ enum {
 	myMenuIndex_Script = 5
 };
 
+//  Global Setting Keys
+extern const char *gSettingQuitOnCloseLastWindow;
+
 WX_DECLARE_STRING_HASH_MAP( wxString, MyStringHash );
 
 // Define a new application
@@ -198,7 +207,7 @@ class MyApp: public wxApp
 	void TimerInvoked(wxTimerEvent &event);
 
 	void CheckIfAllWindowsAreGoneHandler(wxCommandEvent &event);
-	void CheckIfAllWindowsAreGone();
+	void CheckIfAllWindowsAreGone(wxTopLevelWindow *frame);
 
 protected:
     MyDocManager* m_docManager;
@@ -229,6 +238,8 @@ protected:
 
 	wxString *m_pendingFilesToOpen;  /*  Files to be processed by OnOpenFilesByIPC()  */
 
+	wxTopLevelWindow *m_frameToBeDestroyed;   /*  Used in CheckIfAllWindowsAreGone()  */
+	
 #if defined(__WXMSW__)
 public:
 	wxSingleInstanceChecker *m_checker;

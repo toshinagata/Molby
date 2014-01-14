@@ -24,11 +24,14 @@ case RUBY_PLATFORM
   when /mswin|mingw|cygwin|bccwin/
     $platform = "win"
 	$KCODE="SJIS"
+	$home_directory = ENV['USERPROFILE'].gsub(/\\/, "/")
   when /darwin/
     $platform = "mac"
 	$KCODE="UTF8"
+	$home_directory = ENV['HOME']
   else
     $platform = "other"
+	$home_directory = ENV['HOME']
 end
 
 $backtrace = nil
@@ -69,6 +72,17 @@ module Kernel
     fpin.close
     fpout.close
     return true
+  end
+  def mkdir_recursive(path)
+    if FileTest.directory?(path)
+	  return 0
+    else
+	  dir = File.dirname(path)
+	  if !FileTest.exist?(dir)
+	    mkdir_recursive(dir)
+	  end
+      return Dir.mkdir(path)
+	end
   end
 end
 

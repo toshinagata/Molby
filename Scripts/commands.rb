@@ -440,6 +440,11 @@ end_of_header
 	end
   end
   
+  #  DEBUG
+  def cmd_test
+    $test_dialog = Dialog.new("Test") { item(:text, :title=>"test"); show }
+  end
+  
 end
 
 register_menu("Assign residue...", :cmd_assign_residue)
@@ -452,3 +457,4 @@ register_menu("Load remote...", :cmd_load_remote)
 register_menu("", "")
 register_menu("Delete Frames...", :cmd_delete_frames)
 register_menu("Solvate...", :cmd_solvate)
+#register_menu("cmd test", :cmd_test)

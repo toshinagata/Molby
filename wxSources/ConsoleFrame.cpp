@@ -70,7 +70,7 @@ ConsoleFrame::~ConsoleFrame()
 	for (i = 0; i < nCommandHistory; i++)
 		free(commandHistory[i]);
 	free(commandHistory);	
-	wxGetApp().DocManager()->FileHistoryRemoveMenu(file_history_menu);
+//	wxGetApp().DocManager()->FileHistoryRemoveMenu(file_history_menu);
 }
 
 void
@@ -192,7 +192,7 @@ ConsoleFrame::OnCloseWindow(wxCloseEvent &event)
 	//  Do not delete this window; it may be reopened later
 	this->Hide();
 	//  Check if all windows are gone
-	wxGetApp().CheckIfAllWindowsAreGone();
+	wxGetApp().CheckIfAllWindowsAreGone(NULL);
 }
 
 void

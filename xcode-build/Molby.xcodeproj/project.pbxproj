@@ -3,199 +3,178 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 42;
+	objectVersion = 45;
 	objects = {
 
 /* Begin PBXBuildFile section */
-		9E12580F119EC42E00E95DC3 /* docview.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 9E12580E119EC42E00E95DC3 /* docview.cpp */; };
-		9ECE828311A191A2001B435E /* Trackball.c in Sources */ = {isa = PBXBuildFile; fileRef = E433CE8B0EC709BD00675985 /* Trackball.c */; };
-		E4299DA70F2A191600780B44 /* ruby_types.c in Sources */ = {isa = PBXBuildFile; fileRef = E4299DA60F2A191600780B44 /* ruby_types.c */; };
-		E42D8AF81030193F00C20247 /* MDGraphite.c in Sources */ = {isa = PBXBuildFile; fileRef = E42D8AEF1030193F00C20247 /* MDGraphite.c */; };
-		E42D8AF91030193F00C20247 /* MDCore.c in Sources */ = {isa = PBXBuildFile; fileRef = E42D8AF11030193F00C20247 /* MDCore.c */; };
-		E42D8AFA1030193F00C20247 /* MDForce.c in Sources */ = {isa = PBXBuildFile; fileRef = E42D8AF31030193F00C20247 /* MDForce.c */; };
-		E42D8AFB1030193F00C20247 /* MDPressure.c in Sources */ = {isa = PBXBuildFile; fileRef = E42D8AF61030193F00C20247 /* MDPressure.c */; };
-		E42D8BB31031BB2900C20247 /* ruby_md.c in Sources */ = {isa = PBXBuildFile; fileRef = E42D8BB21031BB2900C20247 /* ruby_md.c */; };
-		E43226E30ECE8681004963D7 /* MySlider.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E43226E20ECE8681004963D7 /* MySlider.cpp */; };
-		E433CE790EC7099B00675985 /* ruby_bind.c in Sources */ = {isa = PBXBuildFile; fileRef = E433CE760EC7099B00675985 /* ruby_bind.c */; };
-		E433CE900EC709BD00675985 /* IntGroup.c in Sources */ = {isa = PBXBuildFile; fileRef = E433CE7C0EC709BD00675985 /* IntGroup.c */; };
-		E433CE910EC709BD00675985 /* MainView.c in Sources */ = {isa = PBXBuildFile; fileRef = E433CE7E0EC709BD00675985 /* MainView.c */; };
-		E433CE920EC709BD00675985 /* Missing.c in Sources */ = {isa = PBXBuildFile; fileRef = E433CE800EC709BD00675985 /* Missing.c */; };
-		E433CE930EC709BD00675985 /* MolAction.c in Sources */ = {isa = PBXBuildFile; fileRef = E433CE820EC709BD00675985 /* MolAction.c */; };
-		E433CE940EC709BD00675985 /* Molecule.c in Sources */ = {isa = PBXBuildFile; fileRef = E433CE840EC709BD00675985 /* Molecule.c */; };
-		E433CE950EC709BD00675985 /* Object.c in Sources */ = {isa = PBXBuildFile; fileRef = E433CE870EC709BD00675985 /* Object.c */; };
-		E433CE960EC709BD00675985 /* Parameter.c in Sources */ = {isa = PBXBuildFile; fileRef = E433CE890EC709BD00675985 /* Parameter.c */; };
-		E433CE970EC709BD00675985 /* Trackball.c in Sources */ = {isa = PBXBuildFile; fileRef = E433CE8B0EC709BD00675985 /* Trackball.c */; };
-		E433CE980EC709BD00675985 /* Types.c in Sources */ = {isa = PBXBuildFile; fileRef = E433CE8D0EC709BD00675985 /* Types.c */; };
-		E433CEA50EC709D300675985 /* ConsoleFrame.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E433CE990EC709D300675985 /* ConsoleFrame.cpp */; };
-		E433CEA60EC709D300675985 /* MoleculeView.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E433CE9B0EC709D300675985 /* MoleculeView.cpp */; };
-		E433CEA70EC709D300675985 /* MyApp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E433CE9D0EC709D300675985 /* MyApp.cpp */; };
-		E433CEA80EC709D300675985 /* MyCommand.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E433CE9F0EC709D300675985 /* MyCommand.cpp */; };
-		E433CEA90EC709D300675985 /* MyDocument.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E433CEA10EC709D300675985 /* MyDocument.cpp */; };
-		E433CEAA0EC709D300675985 /* MyGLCanvas.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E433CEA30EC709D300675985 /* MyGLCanvas.cpp */; };
-		E43CCDDA0EB20F0F00108D2D /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E43CCDD10EB20F0F00108D2D /* Accelerate.framework */; };
-		E43CCDDB0EB20F0F00108D2D /* AGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E43CCDD20EB20F0F00108D2D /* AGL.framework */; };
-		E43CCDDC0EB20F0F00108D2D /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E43CCDD30EB20F0F00108D2D /* Carbon.framework */; };
-		E43CCDDD0EB20F0F00108D2D /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E43CCDD40EB20F0F00108D2D /* Cocoa.framework */; };
-		E43CCDDE0EB20F0F00108D2D /* GLUT.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E43CCDD50EB20F0F00108D2D /* GLUT.framework */; };
-		E43CCDDF0EB20F0F00108D2D /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E43CCDD60EB20F0F00108D2D /* IOKit.framework */; };
-		E43CCDE00EB20F0F00108D2D /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E43CCDD70EB20F0F00108D2D /* OpenGL.framework */; };
-		E43CCDE10EB20F0F00108D2D /* QuickTime.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E43CCDD80EB20F0F00108D2D /* QuickTime.framework */; };
-		E43CCDE20EB20F0F00108D2D /* System.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E43CCDD90EB20F0F00108D2D /* System.framework */; };
-		E445145315F1DA5B0050171E /* MainViewCommon.c in Sources */ = {isa = PBXBuildFile; fileRef = E445145215F1DA5B0050171E /* MainViewCommon.c */; };
-		E445145415F1DA5B0050171E /* MainViewCommon.c in Sources */ = {isa = PBXBuildFile; fileRef = E445145215F1DA5B0050171E /* MainViewCommon.c */; };
-		E44CEED6100E1E9C0040BD51 /* ProgressFrame.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E44CEED4100E1E9C0040BD51 /* ProgressFrame.cpp */; };
-		E4513F550EED72C0009DF1F7 /* MyListCtrl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E4513F540EED72C0009DF1F7 /* MyListCtrl.cpp */; };
-		E4622E9B1649201400A0AA4D /* MDEwald.c in Sources */ = {isa = PBXBuildFile; fileRef = E4622E9A1649201400A0AA4D /* MDEwald.c */; };
-		E4622E9C1649201400A0AA4D /* MDEwald.c in Sources */ = {isa = PBXBuildFile; fileRef = E4622E9A1649201400A0AA4D /* MDEwald.c */; };
-		E46C904A108F491E000E984D /* MyThread.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E46C9049108F491E000E984D /* MyThread.cpp */; };
-		E472B7C51087F63200F931F3 /* MyVersion.c in Sources */ = {isa = PBXBuildFile; fileRef = E472B7C41087F63200F931F3 /* MyVersion.c */; };
-		E496A76F0EDD392F00499646 /* MyClipboardData.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E496A76E0EDD392F00499646 /* MyClipboardData.cpp */; };
-		E49D17F3107753DF00C4841E /* MDSurface.c in Sources */ = {isa = PBXBuildFile; fileRef = E49D17F1107753DF00C4841E /* MDSurface.c */; };
-		E4A02341106B652F0094DBF8 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = E4A0233F106B652F0094DBF8 /* InfoPlist.strings */; };
-		E4A02347106B65640094DBF8 /* molby_icon.icns in Resources */ = {isa = PBXBuildFile; fileRef = E4A02346106B65640094DBF8 /* molby_icon.icns */; };
-		E4A02357106B657D0094DBF8 /* Scripts in Resources */ = {isa = PBXBuildFile; fileRef = E4A0234A106B657D0094DBF8 /* Scripts */; };
-		E4A1802811897F8600B394E7 /* wxKillAddition.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E4A1802711897F8600B394E7 /* wxKillAddition.cpp */; };
-		E4A4667610C15B4300E40A9D /* listctrl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E4A4667410C15B4300E40A9D /* listctrl.cpp */; };
-		E4A66F0F16365653003EE03A /* buildInfo.c in Sources */ = {isa = PBXBuildFile; fileRef = E4A66F0E16365653003EE03A /* buildInfo.c */; };
-		E4A66F1016365653003EE03A /* buildInfo.c in Sources */ = {isa = PBXBuildFile; fileRef = E4A66F0E16365653003EE03A /* buildInfo.c */; };
-		E4C0C4960F25734B00161EC2 /* Dcd.c in Sources */ = {isa = PBXBuildFile; fileRef = E4C0C4950F25734B00161EC2 /* Dcd.c */; };
-		E4C86B94177B3006005BA7AC /* MyProgressIndicator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E4C86B91177B3006005BA7AC /* MyProgressIndicator.cpp */; };
-		E4C8CBDF10B83060006C4692 /* MyDocManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E4C8CBDE10B83060006C4692 /* MyDocManager.cpp */; };
-		E4CFBB3B111096CF0081C481 /* amber11 in Resources */ = {isa = PBXBuildFile; fileRef = E4CFBB16111096CF0081C481 /* amber11 */; };
-		E4D5AD6A1180868A00B1D8A4 /* MyVersion.c in Sources */ = {isa = PBXBuildFile; fileRef = E472B7C41087F63200F931F3 /* MyVersion.c */; };
-		E4D5AD6B1180869500B1D8A4 /* MDGraphite.c in Sources */ = {isa = PBXBuildFile; fileRef = E42D8AEF1030193F00C20247 /* MDGraphite.c */; };
-		E4D5AD72118086A100B1D8A4 /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E43CCDD10EB20F0F00108D2D /* Accelerate.framework */; };
-		E4D5AD73118086A200B1D8A4 /* AGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E43CCDD20EB20F0F00108D2D /* AGL.framework */; };
-		E4D5AD74118086BF00B1D8A4 /* IntGroup.c in Sources */ = {isa = PBXBuildFile; fileRef = E433CE7C0EC709BD00675985 /* IntGroup.c */; };
-		E4D5AD76118086D500B1D8A4 /* MDCore.c in Sources */ = {isa = PBXBuildFile; fileRef = E42D8AF11030193F00C20247 /* MDCore.c */; };
-		E4D5AD77118086D600B1D8A4 /* MDForce.c in Sources */ = {isa = PBXBuildFile; fileRef = E42D8AF31030193F00C20247 /* MDForce.c */; };
-		E4D5AD78118086D800B1D8A4 /* MDPressure.c in Sources */ = {isa = PBXBuildFile; fileRef = E42D8AF61030193F00C20247 /* MDPressure.c */; };
-		E4D5AD79118086DB00B1D8A4 /* MDSurface.c in Sources */ = {isa = PBXBuildFile; fileRef = E49D17F1107753DF00C4841E /* MDSurface.c */; };
-		E4D5AD7A118086DC00B1D8A4 /* Missing.c in Sources */ = {isa = PBXBuildFile; fileRef = E433CE800EC709BD00675985 /* Missing.c */; };
-		E4D5AD7B118086DE00B1D8A4 /* MolAction.c in Sources */ = {isa = PBXBuildFile; fileRef = E433CE820EC709BD00675985 /* MolAction.c */; };
-		E4D5AD7C118086E300B1D8A4 /* Molecule.c in Sources */ = {isa = PBXBuildFile; fileRef = E433CE840EC709BD00675985 /* Molecule.c */; };
-		E4D5AD7D118086ED00B1D8A4 /* Object.c in Sources */ = {isa = PBXBuildFile; fileRef = E433CE870EC709BD00675985 /* Object.c */; };
-		E4D5AD7E118086EF00B1D8A4 /* Parameter.c in Sources */ = {isa = PBXBuildFile; fileRef = E433CE890EC709BD00675985 /* Parameter.c */; };
-		E4D5AD7F118086F500B1D8A4 /* ruby_bind.c in Sources */ = {isa = PBXBuildFile; fileRef = E433CE760EC7099B00675985 /* ruby_bind.c */; };
-		E4D5AD80118086FA00B1D8A4 /* ruby_md.c in Sources */ = {isa = PBXBuildFile; fileRef = E42D8BB21031BB2900C20247 /* ruby_md.c */; };
-		E4D5AD81118086FB00B1D8A4 /* ruby_types.c in Sources */ = {isa = PBXBuildFile; fileRef = E4299DA60F2A191600780B44 /* ruby_types.c */; };
-		E4D5AD841180870900B1D8A4 /* Types.c in Sources */ = {isa = PBXBuildFile; fileRef = E433CE8D0EC709BD00675985 /* Types.c */; };
-		E4D5AD9C1180890A00B1D8A4 /* Dcd.c in Sources */ = {isa = PBXBuildFile; fileRef = E4C0C4950F25734B00161EC2 /* Dcd.c */; };
-		E4D5ADA611808A2C00B1D8A4 /* cmdtool_stubs.c in Sources */ = {isa = PBXBuildFile; fileRef = E4D5ADA511808A2C00B1D8A4 /* cmdtool_stubs.c */; };
-		E4E2D5C510A249820007644A /* GlobalParameterFrame.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E4E2D5C410A249820007644A /* GlobalParameterFrame.cpp */; };
-		E4E470C910AE6F8600F72B68 /* GlobalParameterFilesFrame.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E4E470C810AE6F8600F72B68 /* GlobalParameterFilesFrame.cpp */; };
-		E4E9F2641823651E0039A43D /* mopac in Resources */ = {isa = PBXBuildFile; fileRef = E4E9F2611823651E0039A43D /* mopac */; };
-		E4ED76E516256FC5006A1820 /* MyIPCSupport.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E4ED76E316256FC5006A1820 /* MyIPCSupport.cpp */; };
-		E4FFA9050EE960650045EDF9 /* RubyDialogFrame.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E4FFA9040EE960650045EDF9 /* RubyDialogFrame.cpp */; };
-		E4FFA95E0EEAADCA0045EDF9 /* ruby_dialog.c in Sources */ = {isa = PBXBuildFile; fileRef = E433CE770EC7099B00675985 /* ruby_dialog.c */; };
+		E420BDEF1885746700A2B983 /* ConsoleFrame.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BDE81885746700A2B983 /* ConsoleFrame.cpp */; };
+		E420BDF01885746700A2B983 /* filedlg.mm in Sources */ = {isa = PBXBuildFile; fileRef = E420BDEA1885746700A2B983 /* filedlg.mm */; };
+		E420BDF11885746700A2B983 /* GlobalParameterFilesFrame.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BDEB1885746700A2B983 /* GlobalParameterFilesFrame.cpp */; };
+		E420BDF21885746700A2B983 /* GlobalParameterFrame.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BDED1885746700A2B983 /* GlobalParameterFrame.cpp */; };
+		E420BDFD1885749000A2B983 /* listctrl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BDF41885749000A2B983 /* listctrl.cpp */; };
+		E420BDFE1885749000A2B983 /* MoleculeView.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BDF51885749000A2B983 /* MoleculeView.cpp */; };
+		E420BDFF1885749000A2B983 /* MyApp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BDF71885749000A2B983 /* MyApp.cpp */; };
+		E420BE001885749000A2B983 /* MyClipboardData.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BDF91885749000A2B983 /* MyClipboardData.cpp */; };
+		E420BE011885749000A2B983 /* MyCommand.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BDFB1885749000A2B983 /* MyCommand.cpp */; };
+		E420BE0C188574AD00A2B983 /* MyDocManager.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BE02188574AD00A2B983 /* MyDocManager.cpp */; };
+		E420BE0D188574AD00A2B983 /* MyDocument.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BE04188574AD00A2B983 /* MyDocument.cpp */; };
+		E420BE0E188574AD00A2B983 /* MyGLCanvas.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BE06188574AD00A2B983 /* MyGLCanvas.cpp */; };
+		E420BE0F188574AD00A2B983 /* MyIPCSupport.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BE08188574AD00A2B983 /* MyIPCSupport.cpp */; };
+		E420BE10188574AD00A2B983 /* MyListCtrl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BE0A188574AD00A2B983 /* MyListCtrl.cpp */; };
+		E420BE19188574D700A2B983 /* MyProgressIndicator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BE12188574D700A2B983 /* MyProgressIndicator.cpp */; };
+		E420BE1A188574D700A2B983 /* MySlider.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BE14188574D700A2B983 /* MySlider.cpp */; };
+		E420BE1B188574D700A2B983 /* MyThread.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BE16188574D700A2B983 /* MyThread.cpp */; };
+		E420BE1C188574D700A2B983 /* MyVersion.c in Sources */ = {isa = PBXBuildFile; fileRef = E420BE18188574D700A2B983 /* MyVersion.c */; };
+		E420BE22188574F600A2B983 /* ProgressFrame.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BE1D188574F600A2B983 /* ProgressFrame.cpp */; };
+		E420BE23188574F600A2B983 /* RubyDialogFrame.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BE1F188574F600A2B983 /* RubyDialogFrame.cpp */; };
+		E420BE24188574F600A2B983 /* wxKillAddition.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BE21188574F600A2B983 /* wxKillAddition.cpp */; };
+		E4FC77A9183E4F3F0064FB2E /* Dcd.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC777B183E4F3F0064FB2E /* Dcd.c */; };
+		E4FC77AA183E4F3F0064FB2E /* IntGroup.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC777D183E4F3F0064FB2E /* IntGroup.c */; };
+		E4FC77AB183E4F3F0064FB2E /* MainView.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC777F183E4F3F0064FB2E /* MainView.c */; };
+		E4FC77AC183E4F3F0064FB2E /* MainViewCommon.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC7781183E4F3F0064FB2E /* MainViewCommon.c */; };
+		E4FC77AE183E4F3F0064FB2E /* MDCore.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC7784183E4F3F0064FB2E /* MDCore.c */; };
+		E4FC77AF183E4F3F0064FB2E /* MDEwald.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC7786183E4F3F0064FB2E /* MDEwald.c */; };
+		E4FC77B0183E4F3F0064FB2E /* MDForce.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC7788183E4F3F0064FB2E /* MDForce.c */; };
+		E4FC77B1183E4F3F0064FB2E /* MDGraphite.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC778A183E4F3F0064FB2E /* MDGraphite.c */; };
+		E4FC77B2183E4F3F0064FB2E /* MDPressure.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC778C183E4F3F0064FB2E /* MDPressure.c */; };
+		E4FC77B3183E4F3F0064FB2E /* MDSurface.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC778E183E4F3F0064FB2E /* MDSurface.c */; };
+		E4FC77B4183E4F3F0064FB2E /* Missing.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC7790183E4F3F0064FB2E /* Missing.c */; };
+		E4FC77B5183E4F3F0064FB2E /* MolAction.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC7792183E4F3F0064FB2E /* MolAction.c */; };
+		E4FC77B6183E4F3F0064FB2E /* Molecule.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC7794183E4F3F0064FB2E /* Molecule.c */; };
+		E4FC77B7183E4F3F0064FB2E /* Object.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC7797183E4F3F0064FB2E /* Object.c */; };
+		E4FC77B8183E4F3F0064FB2E /* Parameter.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC7799183E4F3F0064FB2E /* Parameter.c */; };
+		E4FC77BA183E4F3F0064FB2E /* ruby_bind.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC779F183E4F3F0064FB2E /* ruby_bind.c */; };
+		E4FC77BB183E4F3F0064FB2E /* ruby_dialog.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC77A0183E4F3F0064FB2E /* ruby_dialog.c */; };
+		E4FC77BC183E4F3F0064FB2E /* ruby_md.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC77A2183E4F3F0064FB2E /* ruby_md.c */; };
+		E4FC77BD183E4F3F0064FB2E /* ruby_types.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC77A3183E4F3F0064FB2E /* ruby_types.c */; };
+		E4FC77BE183E4F3F0064FB2E /* Trackball.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC77A4183E4F3F0064FB2E /* Trackball.c */; };
+		E4FC77BF183E4F3F0064FB2E /* Types.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC77A6183E4F3F0064FB2E /* Types.c */; };
+		E4FC77D7183E4FFE0064FB2E /* Scripts in Resources */ = {isa = PBXBuildFile; fileRef = E4FC77D6183E4FFE0064FB2E /* Scripts */; };
+		E4FC7802183E503E0064FB2E /* amber11 in Resources */ = {isa = PBXBuildFile; fileRef = E4FC77D8183E503E0064FB2E /* amber11 */; };
+		E4FC7809183E50710064FB2E /* mopac in Resources */ = {isa = PBXBuildFile; fileRef = E4FC7806183E50710064FB2E /* mopac */; };
+		E4FC7811183E50DC0064FB2E /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E4FC7810183E50DC0064FB2E /* Accelerate.framework */; };
+		E4FC7838183E50F00064FB2E /* AGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E4FC7837183E50F00064FB2E /* AGL.framework */; };
+		E4FC784C183E51180064FB2E /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E4FC7845183E51180064FB2E /* Carbon.framework */; };
+		E4FC784D183E51180064FB2E /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E4FC7846183E51180064FB2E /* Cocoa.framework */; };
+		E4FC784E183E51180064FB2E /* GLUT.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E4FC7847183E51180064FB2E /* GLUT.framework */; };
+		E4FC784F183E51180064FB2E /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E4FC7848183E51180064FB2E /* IOKit.framework */; };
+		E4FC7850183E51180064FB2E /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E4FC7849183E51180064FB2E /* OpenGL.framework */; };
+		E4FC7851183E51180064FB2E /* QuickTime.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E4FC784A183E51180064FB2E /* QuickTime.framework */; };
+		E4FC7852183E51180064FB2E /* System.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E4FC784B183E51180064FB2E /* System.framework */; };
+		E4FC7A17183E51570064FB2E /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E4FC7A15183E51570064FB2E /* AppKit.framework */; };
+		E4FC7A18183E51570064FB2E /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E4FC7A16183E51570064FB2E /* Foundation.framework */; };
+		E4FC7B59183E53710064FB2E /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E4FC7B58183E53710064FB2E /* WebKit.framework */; };
+		E4FC7CA6183F94D30064FB2E /* buildInfo.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC7CA5183F94D30064FB2E /* buildInfo.c */; };
+		E4FC7CAD183F953E0064FB2E /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E4FC7CAC183F953E0064FB2E /* AudioToolbox.framework */; };
+		E4FC7F821840C22B0064FB2E /* molby_icon.icns in Resources */ = {isa = PBXBuildFile; fileRef = E4FC77D4183E4FF20064FB2E /* molby_icon.icns */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		13E42FB307B3F0F600E4EEF1 /* CoreData.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreData.framework; path = /System/Library/Frameworks/CoreData.framework; sourceTree = "<absolute>"; };
-		29B97324FDCFA39411CA2CEA /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = /System/Library/Frameworks/AppKit.framework; sourceTree = "<absolute>"; };
-		29B97325FDCFA39411CA2CEA /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = /System/Library/Frameworks/Foundation.framework; sourceTree = "<absolute>"; };
 		8D1107320486CEB800E47090 /* Molby.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Molby.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		9E12580E119EC42E00E95DC3 /* docview.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = docview.cpp; path = ../wxSources/docview.cpp; sourceTree = SOURCE_ROOT; };
-		E40DDC6C1435C03E000F0E81 /* MyMBConv.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MyMBConv.h; path = ../wxSources/MyMBConv.h; sourceTree = SOURCE_ROOT; };
-		E4299DA60F2A191600780B44 /* ruby_types.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ruby_types.c; sourceTree = "<group>"; };
-		E42D8AEF1030193F00C20247 /* MDGraphite.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = MDGraphite.c; sourceTree = "<group>"; wrapsLines = 1; };
-		E42D8AF01030193F00C20247 /* MDGraphite.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MDGraphite.h; sourceTree = "<group>"; };
-		E42D8AF11030193F00C20247 /* MDCore.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = MDCore.c; sourceTree = "<group>"; wrapsLines = 1; };
-		E42D8AF21030193F00C20247 /* MDCore.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MDCore.h; sourceTree = "<group>"; };
-		E42D8AF31030193F00C20247 /* MDForce.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = MDForce.c; sourceTree = "<group>"; wrapsLines = 1; };
-		E42D8AF41030193F00C20247 /* MDForce.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MDForce.h; sourceTree = "<group>"; };
-		E42D8AF61030193F00C20247 /* MDPressure.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = MDPressure.c; sourceTree = "<group>"; };
-		E42D8AF71030193F00C20247 /* MDPressure.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MDPressure.h; sourceTree = "<group>"; };
-		E42D8BB21031BB2900C20247 /* ruby_md.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = ruby_md.c; sourceTree = "<group>"; };
-		E43226E10ECE8681004963D7 /* MySlider.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MySlider.h; path = ../wxSources/MySlider.h; sourceTree = SOURCE_ROOT; };
-		E43226E20ECE8681004963D7 /* MySlider.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = MySlider.cpp; path = ../wxSources/MySlider.cpp; sourceTree = SOURCE_ROOT; };
-		E433CE740EC7099B00675985 /* Molby_extern.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Molby_extern.h; path = ../MolLib/Ruby_bind/Molby_extern.h; sourceTree = SOURCE_ROOT; };
-		E433CE750EC7099B00675985 /* Molby.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Molby.h; path = ../MolLib/Ruby_bind/Molby.h; sourceTree = SOURCE_ROOT; };
-		E433CE760EC7099B00675985 /* ruby_bind.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ruby_bind.c; path = ../MolLib/Ruby_bind/ruby_bind.c; sourceTree = SOURCE_ROOT; wrapsLines = 1; };
-		E433CE770EC7099B00675985 /* ruby_dialog.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ruby_dialog.c; path = ../MolLib/Ruby_bind/ruby_dialog.c; sourceTree = SOURCE_ROOT; wrapsLines = 1; };
-		E433CE780EC7099B00675985 /* ruby_dialog.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ruby_dialog.h; path = ../MolLib/Ruby_bind/ruby_dialog.h; sourceTree = SOURCE_ROOT; };
-		E433CE7C0EC709BD00675985 /* IntGroup.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = IntGroup.c; path = ../MolLib/IntGroup.c; sourceTree = SOURCE_ROOT; };
-		E433CE7D0EC709BD00675985 /* IntGroup.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = IntGroup.h; path = ../MolLib/IntGroup.h; sourceTree = SOURCE_ROOT; };
-		E433CE7E0EC709BD00675985 /* MainView.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = MainView.c; path = ../MolLib/MainView.c; sourceTree = SOURCE_ROOT; wrapsLines = 1; };
-		E433CE7F0EC709BD00675985 /* MainView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MainView.h; path = ../MolLib/MainView.h; sourceTree = SOURCE_ROOT; };
-		E433CE800EC709BD00675985 /* Missing.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = Missing.c; path = ../MolLib/Missing.c; sourceTree = SOURCE_ROOT; };
-		E433CE810EC709BD00675985 /* Missing.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Missing.h; path = ../MolLib/Missing.h; sourceTree = SOURCE_ROOT; };
-		E433CE820EC709BD00675985 /* MolAction.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = MolAction.c; path = ../MolLib/MolAction.c; sourceTree = SOURCE_ROOT; wrapsLines = 1; };
-		E433CE830EC709BD00675985 /* MolAction.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MolAction.h; path = ../MolLib/MolAction.h; sourceTree = SOURCE_ROOT; };
-		E433CE840EC709BD00675985 /* Molecule.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = Molecule.c; path = ../MolLib/Molecule.c; sourceTree = SOURCE_ROOT; wrapsLines = 1; };
-		E433CE850EC709BD00675985 /* Molecule.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Molecule.h; path = ../MolLib/Molecule.h; sourceTree = SOURCE_ROOT; wrapsLines = 1; };
-		E433CE860EC709BD00675985 /* MolLib.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MolLib.h; path = ../MolLib/MolLib.h; sourceTree = SOURCE_ROOT; };
-		E433CE870EC709BD00675985 /* Object.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = Object.c; path = ../MolLib/Object.c; sourceTree = SOURCE_ROOT; };
-		E433CE880EC709BD00675985 /* Object.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Object.h; path = ../MolLib/Object.h; sourceTree = SOURCE_ROOT; };
-		E433CE890EC709BD00675985 /* Parameter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = Parameter.c; path = ../MolLib/Parameter.c; sourceTree = SOURCE_ROOT; wrapsLines = 1; };
-		E433CE8A0EC709BD00675985 /* Parameter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Parameter.h; path = ../MolLib/Parameter.h; sourceTree = SOURCE_ROOT; wrapsLines = 1; };
-		E433CE8B0EC709BD00675985 /* Trackball.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = Trackball.c; path = ../MolLib/Trackball.c; sourceTree = SOURCE_ROOT; };
-		E433CE8C0EC709BD00675985 /* Trackball.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Trackball.h; path = ../MolLib/Trackball.h; sourceTree = SOURCE_ROOT; };
-		E433CE8D0EC709BD00675985 /* Types.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = Types.c; path = ../MolLib/Types.c; sourceTree = SOURCE_ROOT; };
-		E433CE8E0EC709BD00675985 /* Types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Types.h; path = ../MolLib/Types.h; sourceTree = SOURCE_ROOT; };
-		E433CE990EC709D300675985 /* ConsoleFrame.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ConsoleFrame.cpp; path = ../wxSources/ConsoleFrame.cpp; sourceTree = SOURCE_ROOT; };
-		E433CE9A0EC709D300675985 /* ConsoleFrame.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ConsoleFrame.h; path = ../wxSources/ConsoleFrame.h; sourceTree = SOURCE_ROOT; };
-		E433CE9B0EC709D300675985 /* MoleculeView.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = MoleculeView.cpp; path = ../wxSources/MoleculeView.cpp; sourceTree = SOURCE_ROOT; wrapsLines = 1; };
-		E433CE9C0EC709D300675985 /* MoleculeView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MoleculeView.h; path = ../wxSources/MoleculeView.h; sourceTree = SOURCE_ROOT; };
-		E433CE9D0EC709D300675985 /* MyApp.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = MyApp.cpp; path = ../wxSources/MyApp.cpp; sourceTree = SOURCE_ROOT; };
-		E433CE9E0EC709D300675985 /* MyApp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MyApp.h; path = ../wxSources/MyApp.h; sourceTree = SOURCE_ROOT; };
-		E433CE9F0EC709D300675985 /* MyCommand.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = MyCommand.cpp; path = ../wxSources/MyCommand.cpp; sourceTree = SOURCE_ROOT; };
-		E433CEA00EC709D300675985 /* MyCommand.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MyCommand.h; path = ../wxSources/MyCommand.h; sourceTree = SOURCE_ROOT; };
-		E433CEA10EC709D300675985 /* MyDocument.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = MyDocument.cpp; path = ../wxSources/MyDocument.cpp; sourceTree = SOURCE_ROOT; };
-		E433CEA20EC709D300675985 /* MyDocument.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MyDocument.h; path = ../wxSources/MyDocument.h; sourceTree = SOURCE_ROOT; };
-		E433CEA30EC709D300675985 /* MyGLCanvas.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = MyGLCanvas.cpp; path = ../wxSources/MyGLCanvas.cpp; sourceTree = SOURCE_ROOT; };
-		E433CEA40EC709D300675985 /* MyGLCanvas.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MyGLCanvas.h; path = ../wxSources/MyGLCanvas.h; sourceTree = SOURCE_ROOT; };
-		E436C97F164A05560005D964 /* MDEwald.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MDEwald.h; sourceTree = "<group>"; };
-		E43CCDD10EB20F0F00108D2D /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = /System/Library/Frameworks/Accelerate.framework; sourceTree = "<absolute>"; };
-		E43CCDD20EB20F0F00108D2D /* AGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AGL.framework; path = /System/Library/Frameworks/AGL.framework; sourceTree = "<absolute>"; };
-		E43CCDD30EB20F0F00108D2D /* Carbon.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Carbon.framework; path = /System/Library/Frameworks/Carbon.framework; sourceTree = "<absolute>"; };
-		E43CCDD40EB20F0F00108D2D /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = /System/Library/Frameworks/Cocoa.framework; sourceTree = "<absolute>"; };
-		E43CCDD50EB20F0F00108D2D /* GLUT.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GLUT.framework; path = /System/Library/Frameworks/GLUT.framework; sourceTree = "<absolute>"; };
-		E43CCDD60EB20F0F00108D2D /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = /System/Library/Frameworks/IOKit.framework; sourceTree = "<absolute>"; };
-		E43CCDD70EB20F0F00108D2D /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = /System/Library/Frameworks/OpenGL.framework; sourceTree = "<absolute>"; };
-		E43CCDD80EB20F0F00108D2D /* QuickTime.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuickTime.framework; path = /System/Library/Frameworks/QuickTime.framework; sourceTree = "<absolute>"; };
-		E43CCDD90EB20F0F00108D2D /* System.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = System.framework; path = /System/Library/Frameworks/System.framework; sourceTree = "<absolute>"; };
-		E445145215F1DA5B0050171E /* MainViewCommon.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = MainViewCommon.c; sourceTree = "<group>"; };
-		E44CEED4100E1E9C0040BD51 /* ProgressFrame.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ProgressFrame.cpp; path = ../wxSources/ProgressFrame.cpp; sourceTree = SOURCE_ROOT; };
-		E44CEED5100E1E9C0040BD51 /* ProgressFrame.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ProgressFrame.h; path = ../wxSources/ProgressFrame.h; sourceTree = SOURCE_ROOT; };
-		E4513F530EED72C0009DF1F7 /* MyListCtrl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MyListCtrl.h; path = ../wxSources/MyListCtrl.h; sourceTree = SOURCE_ROOT; };
-		E4513F540EED72C0009DF1F7 /* MyListCtrl.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = MyListCtrl.cpp; path = ../wxSources/MyListCtrl.cpp; sourceTree = SOURCE_ROOT; };
-		E4622E9A1649201400A0AA4D /* MDEwald.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = MDEwald.c; sourceTree = "<group>"; wrapsLines = 1; };
-		E46C9048108F491E000E984D /* MyThread.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MyThread.h; path = ../wxSources/MyThread.h; sourceTree = SOURCE_ROOT; };
-		E46C9049108F491E000E984D /* MyThread.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = MyThread.cpp; path = ../wxSources/MyThread.cpp; sourceTree = SOURCE_ROOT; };
-		E472B7C41087F63200F931F3 /* MyVersion.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = MyVersion.c; path = ../wxSources/MyVersion.c; sourceTree = SOURCE_ROOT; };
-		E496A76D0EDD392F00499646 /* MyClipboardData.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MyClipboardData.h; path = ../wxSources/MyClipboardData.h; sourceTree = SOURCE_ROOT; };
-		E496A76E0EDD392F00499646 /* MyClipboardData.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = MyClipboardData.cpp; path = ../wxSources/MyClipboardData.cpp; sourceTree = SOURCE_ROOT; };
-		E49D17F1107753DF00C4841E /* MDSurface.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = MDSurface.c; sourceTree = "<group>"; wrapsLines = 1; };
-		E49D17F2107753DF00C4841E /* MDSurface.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MDSurface.h; sourceTree = "<group>"; };
-		E4A0233B106B651C0094DBF8 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		E4A02340106B652F0094DBF8 /* English */ = {isa = PBXFileReference; fileEncoding = 10; lastKnownFileType = text.plist.strings; name = English; path = English.lproj/InfoPlist.strings; sourceTree = "<group>"; };
-		E4A02346106B65640094DBF8 /* molby_icon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = molby_icon.icns; path = ../bitmaps/molby_icon.icns; sourceTree = SOURCE_ROOT; };
-		E4A0234A106B657D0094DBF8 /* Scripts */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Scripts; path = ../Scripts; sourceTree = SOURCE_ROOT; };
-		E4A1802711897F8600B394E7 /* wxKillAddition.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = wxKillAddition.cpp; path = ../wxSources/wxKillAddition.cpp; sourceTree = SOURCE_ROOT; };
-		E4A4667410C15B4300E40A9D /* listctrl.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = listctrl.cpp; path = ../wxSources/listctrl.cpp; sourceTree = SOURCE_ROOT; };
-		E4A66F0E16365653003EE03A /* buildInfo.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = buildInfo.c; path = build/buildInfo.c; sourceTree = "<group>"; };
-		E4C0C4940F25734B00161EC2 /* Dcd.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Dcd.h; sourceTree = "<group>"; };
-		E4C0C4950F25734B00161EC2 /* Dcd.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = Dcd.c; sourceTree = "<group>"; };
-		E4C86B91177B3006005BA7AC /* MyProgressIndicator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = MyProgressIndicator.cpp; path = ../wxSources/MyProgressIndicator.cpp; sourceTree = SOURCE_ROOT; };
-		E4C86B92177B3006005BA7AC /* MyProgressIndicator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MyProgressIndicator.h; path = ../wxSources/MyProgressIndicator.h; sourceTree = SOURCE_ROOT; };
-		E4C8CBDD10B83060006C4692 /* MyDocManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MyDocManager.h; path = ../wxSources/MyDocManager.h; sourceTree = SOURCE_ROOT; };
-		E4C8CBDE10B83060006C4692 /* MyDocManager.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = MyDocManager.cpp; path = ../wxSources/MyDocManager.cpp; sourceTree = SOURCE_ROOT; };
-		E4CBF38C10A91EAC00C7C74A /* doc_source.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; name = doc_source.html; path = ../Documents/src/doc_source.html; sourceTree = SOURCE_ROOT; };
-		E4CBF39510A91ED500C7C74A /* style.css */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.css; name = style.css; path = ../Documents/etc/style.css; sourceTree = SOURCE_ROOT; };
-		E4CBF39710A91EDA00C7C74A /* makedoc.rb */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.ruby; name = makedoc.rb; path = ../Documents/makedoc.rb; sourceTree = SOURCE_ROOT; };
-		E4CFBB16111096CF0081C481 /* amber11 */ = {isa = PBXFileReference; lastKnownFileType = folder; path = amber11; sourceTree = "<group>"; };
-		E4D5AD651180852F00B1D8A4 /* Molby_command */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Molby_command; sourceTree = BUILT_PRODUCTS_DIR; };
-		E4D5ADA511808A2C00B1D8A4 /* cmdtool_stubs.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = cmdtool_stubs.c; sourceTree = "<group>"; };
-		E4E2D5C310A249820007644A /* GlobalParameterFrame.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = GlobalParameterFrame.h; path = ../wxSources/GlobalParameterFrame.h; sourceTree = SOURCE_ROOT; };
-		E4E2D5C410A249820007644A /* GlobalParameterFrame.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = GlobalParameterFrame.cpp; path = ../wxSources/GlobalParameterFrame.cpp; sourceTree = SOURCE_ROOT; wrapsLines = 1; };
-		E4E470C710AE6F8600F72B68 /* GlobalParameterFilesFrame.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = GlobalParameterFilesFrame.h; path = ../wxSources/GlobalParameterFilesFrame.h; sourceTree = SOURCE_ROOT; };
-		E4E470C810AE6F8600F72B68 /* GlobalParameterFilesFrame.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = GlobalParameterFilesFrame.cpp; path = ../wxSources/GlobalParameterFilesFrame.cpp; sourceTree = SOURCE_ROOT; wrapsLines = 1; };
-		E4E9F2611823651E0039A43D /* mopac */ = {isa = PBXFileReference; lastKnownFileType = folder; name = mopac; path = "build/mopac-build/mopac"; sourceTree = "<group>"; };
-		E4ED76E316256FC5006A1820 /* MyIPCSupport.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = MyIPCSupport.cpp; path = ../wxSources/MyIPCSupport.cpp; sourceTree = SOURCE_ROOT; };
-		E4ED76E416256FC5006A1820 /* MyIPCSupport.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MyIPCSupport.h; path = ../wxSources/MyIPCSupport.h; sourceTree = SOURCE_ROOT; };
-		E4FFA9030EE960650045EDF9 /* RubyDialogFrame.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RubyDialogFrame.h; path = ../wxSources/RubyDialogFrame.h; sourceTree = SOURCE_ROOT; };
-		E4FFA9040EE960650045EDF9 /* RubyDialogFrame.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = RubyDialogFrame.cpp; path = ../wxSources/RubyDialogFrame.cpp; sourceTree = SOURCE_ROOT; };
+		E420BDE81885746700A2B983 /* ConsoleFrame.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ConsoleFrame.cpp; sourceTree = "<group>"; };
+		E420BDE91885746700A2B983 /* ConsoleFrame.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ConsoleFrame.h; sourceTree = "<group>"; };
+		E420BDEA1885746700A2B983 /* filedlg.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = filedlg.mm; sourceTree = "<group>"; };
+		E420BDEB1885746700A2B983 /* GlobalParameterFilesFrame.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = GlobalParameterFilesFrame.cpp; sourceTree = "<group>"; };
+		E420BDEC1885746700A2B983 /* GlobalParameterFilesFrame.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GlobalParameterFilesFrame.h; sourceTree = "<group>"; };
+		E420BDED1885746700A2B983 /* GlobalParameterFrame.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = GlobalParameterFrame.cpp; sourceTree = "<group>"; };
+		E420BDEE1885746700A2B983 /* GlobalParameterFrame.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GlobalParameterFrame.h; sourceTree = "<group>"; };
+		E420BDF31885749000A2B983 /* listctrl_private.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = listctrl_private.h; sourceTree = "<group>"; };
+		E420BDF41885749000A2B983 /* listctrl.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = listctrl.cpp; sourceTree = "<group>"; };
+		E420BDF51885749000A2B983 /* MoleculeView.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MoleculeView.cpp; sourceTree = "<group>"; };
+		E420BDF61885749000A2B983 /* MoleculeView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MoleculeView.h; sourceTree = "<group>"; };
+		E420BDF71885749000A2B983 /* MyApp.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MyApp.cpp; sourceTree = "<group>"; };
+		E420BDF81885749000A2B983 /* MyApp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MyApp.h; sourceTree = "<group>"; };
+		E420BDF91885749000A2B983 /* MyClipboardData.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MyClipboardData.cpp; sourceTree = "<group>"; };
+		E420BDFA1885749000A2B983 /* MyClipboardData.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MyClipboardData.h; sourceTree = "<group>"; };
+		E420BDFB1885749000A2B983 /* MyCommand.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MyCommand.cpp; sourceTree = "<group>"; };
+		E420BDFC1885749000A2B983 /* MyCommand.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MyCommand.h; sourceTree = "<group>"; };
+		E420BE02188574AD00A2B983 /* MyDocManager.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MyDocManager.cpp; sourceTree = "<group>"; };
+		E420BE03188574AD00A2B983 /* MyDocManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MyDocManager.h; sourceTree = "<group>"; };
+		E420BE04188574AD00A2B983 /* MyDocument.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MyDocument.cpp; sourceTree = "<group>"; };
+		E420BE05188574AD00A2B983 /* MyDocument.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MyDocument.h; sourceTree = "<group>"; };
+		E420BE06188574AD00A2B983 /* MyGLCanvas.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MyGLCanvas.cpp; sourceTree = "<group>"; };
+		E420BE07188574AD00A2B983 /* MyGLCanvas.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MyGLCanvas.h; sourceTree = "<group>"; };
+		E420BE08188574AD00A2B983 /* MyIPCSupport.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MyIPCSupport.cpp; sourceTree = "<group>"; };
+		E420BE09188574AD00A2B983 /* MyIPCSupport.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MyIPCSupport.h; sourceTree = "<group>"; };
+		E420BE0A188574AD00A2B983 /* MyListCtrl.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MyListCtrl.cpp; sourceTree = "<group>"; };
+		E420BE0B188574AD00A2B983 /* MyListCtrl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MyListCtrl.h; sourceTree = "<group>"; };
+		E420BE11188574D700A2B983 /* MyMBConv.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MyMBConv.h; sourceTree = "<group>"; };
+		E420BE12188574D700A2B983 /* MyProgressIndicator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MyProgressIndicator.cpp; sourceTree = "<group>"; };
+		E420BE13188574D700A2B983 /* MyProgressIndicator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MyProgressIndicator.h; sourceTree = "<group>"; };
+		E420BE14188574D700A2B983 /* MySlider.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MySlider.cpp; sourceTree = "<group>"; };
+		E420BE15188574D700A2B983 /* MySlider.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MySlider.h; sourceTree = "<group>"; };
+		E420BE16188574D700A2B983 /* MyThread.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MyThread.cpp; sourceTree = "<group>"; };
+		E420BE17188574D700A2B983 /* MyThread.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MyThread.h; sourceTree = "<group>"; };
+		E420BE18188574D700A2B983 /* MyVersion.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = MyVersion.c; sourceTree = "<group>"; };
+		E420BE1D188574F600A2B983 /* ProgressFrame.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ProgressFrame.cpp; sourceTree = "<group>"; };
+		E420BE1E188574F600A2B983 /* ProgressFrame.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ProgressFrame.h; sourceTree = "<group>"; };
+		E420BE1F188574F600A2B983 /* RubyDialogFrame.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = RubyDialogFrame.cpp; sourceTree = "<group>"; };
+		E420BE20188574F600A2B983 /* RubyDialogFrame.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RubyDialogFrame.h; sourceTree = "<group>"; };
+		E420BE21188574F600A2B983 /* wxKillAddition.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = wxKillAddition.cpp; sourceTree = "<group>"; };
+		E4FC777A183E4F3F0064FB2E /* cmdtool_stubs.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = cmdtool_stubs.c; path = ../MolLib/cmdtool_stubs.c; sourceTree = SOURCE_ROOT; };
+		E4FC777B183E4F3F0064FB2E /* Dcd.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = Dcd.c; path = ../MolLib/Dcd.c; sourceTree = SOURCE_ROOT; };
+		E4FC777C183E4F3F0064FB2E /* Dcd.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Dcd.h; path = ../MolLib/Dcd.h; sourceTree = SOURCE_ROOT; };
+		E4FC777D183E4F3F0064FB2E /* IntGroup.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = IntGroup.c; path = ../MolLib/IntGroup.c; sourceTree = SOURCE_ROOT; };
+		E4FC777E183E4F3F0064FB2E /* IntGroup.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = IntGroup.h; path = ../MolLib/IntGroup.h; sourceTree = SOURCE_ROOT; };
+		E4FC777F183E4F3F0064FB2E /* MainView.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = MainView.c; path = ../MolLib/MainView.c; sourceTree = SOURCE_ROOT; };
+		E4FC7780183E4F3F0064FB2E /* MainView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MainView.h; path = ../MolLib/MainView.h; sourceTree = SOURCE_ROOT; };
+		E4FC7781183E4F3F0064FB2E /* MainViewCommon.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = MainViewCommon.c; path = ../MolLib/MainViewCommon.c; sourceTree = SOURCE_ROOT; };
+		E4FC7784183E4F3F0064FB2E /* MDCore.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = MDCore.c; path = ../MolLib/MD/MDCore.c; sourceTree = SOURCE_ROOT; };
+		E4FC7785183E4F3F0064FB2E /* MDCore.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MDCore.h; path = ../MolLib/MD/MDCore.h; sourceTree = SOURCE_ROOT; };
+		E4FC7786183E4F3F0064FB2E /* MDEwald.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = MDEwald.c; path = ../MolLib/MD/MDEwald.c; sourceTree = SOURCE_ROOT; };
+		E4FC7787183E4F3F0064FB2E /* MDEwald.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MDEwald.h; path = ../MolLib/MD/MDEwald.h; sourceTree = SOURCE_ROOT; };
+		E4FC7788183E4F3F0064FB2E /* MDForce.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = MDForce.c; path = ../MolLib/MD/MDForce.c; sourceTree = SOURCE_ROOT; };
+		E4FC7789183E4F3F0064FB2E /* MDForce.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MDForce.h; path = ../MolLib/MD/MDForce.h; sourceTree = SOURCE_ROOT; };
+		E4FC778A183E4F3F0064FB2E /* MDGraphite.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = MDGraphite.c; path = ../MolLib/MD/MDGraphite.c; sourceTree = SOURCE_ROOT; };
+		E4FC778B183E4F3F0064FB2E /* MDGraphite.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MDGraphite.h; path = ../MolLib/MD/MDGraphite.h; sourceTree = SOURCE_ROOT; };
+		E4FC778C183E4F3F0064FB2E /* MDPressure.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = MDPressure.c; path = ../MolLib/MD/MDPressure.c; sourceTree = SOURCE_ROOT; };
+		E4FC778D183E4F3F0064FB2E /* MDPressure.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MDPressure.h; path = ../MolLib/MD/MDPressure.h; sourceTree = SOURCE_ROOT; };
+		E4FC778E183E4F3F0064FB2E /* MDSurface.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = MDSurface.c; path = ../MolLib/MD/MDSurface.c; sourceTree = SOURCE_ROOT; };
+		E4FC778F183E4F3F0064FB2E /* MDSurface.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MDSurface.h; path = ../MolLib/MD/MDSurface.h; sourceTree = SOURCE_ROOT; };
+		E4FC7790183E4F3F0064FB2E /* Missing.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = Missing.c; path = ../MolLib/Missing.c; sourceTree = SOURCE_ROOT; };
+		E4FC7791183E4F3F0064FB2E /* Missing.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Missing.h; path = ../MolLib/Missing.h; sourceTree = SOURCE_ROOT; };
+		E4FC7792183E4F3F0064FB2E /* MolAction.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = MolAction.c; path = ../MolLib/MolAction.c; sourceTree = SOURCE_ROOT; };
+		E4FC7793183E4F3F0064FB2E /* MolAction.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MolAction.h; path = ../MolLib/MolAction.h; sourceTree = SOURCE_ROOT; };
+		E4FC7794183E4F3F0064FB2E /* Molecule.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = Molecule.c; path = ../MolLib/Molecule.c; sourceTree = SOURCE_ROOT; };
+		E4FC7795183E4F3F0064FB2E /* Molecule.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Molecule.h; path = ../MolLib/Molecule.h; sourceTree = SOURCE_ROOT; };
+		E4FC7796183E4F3F0064FB2E /* MolLib.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MolLib.h; path = ../MolLib/MolLib.h; sourceTree = SOURCE_ROOT; };
+		E4FC7797183E4F3F0064FB2E /* Object.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = Object.c; path = ../MolLib/Object.c; sourceTree = SOURCE_ROOT; };
+		E4FC7798183E4F3F0064FB2E /* Object.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Object.h; path = ../MolLib/Object.h; sourceTree = SOURCE_ROOT; };
+		E4FC7799183E4F3F0064FB2E /* Parameter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = Parameter.c; path = ../MolLib/Parameter.c; sourceTree = SOURCE_ROOT; };
+		E4FC779A183E4F3F0064FB2E /* Parameter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Parameter.h; path = ../MolLib/Parameter.h; sourceTree = SOURCE_ROOT; };
+		E4FC779D183E4F3F0064FB2E /* Molby.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Molby.h; path = ../MolLib/Ruby_bind/Molby.h; sourceTree = SOURCE_ROOT; };
+		E4FC779E183E4F3F0064FB2E /* Molby_extern.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Molby_extern.h; path = ../MolLib/Ruby_bind/Molby_extern.h; sourceTree = SOURCE_ROOT; };
+		E4FC779F183E4F3F0064FB2E /* ruby_bind.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ruby_bind.c; path = ../MolLib/Ruby_bind/ruby_bind.c; sourceTree = SOURCE_ROOT; };
+		E4FC77A0183E4F3F0064FB2E /* ruby_dialog.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ruby_dialog.c; path = ../MolLib/Ruby_bind/ruby_dialog.c; sourceTree = SOURCE_ROOT; };
+		E4FC77A1183E4F3F0064FB2E /* ruby_dialog.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ruby_dialog.h; path = ../MolLib/Ruby_bind/ruby_dialog.h; sourceTree = SOURCE_ROOT; };
+		E4FC77A2183E4F3F0064FB2E /* ruby_md.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ruby_md.c; path = ../MolLib/Ruby_bind/ruby_md.c; sourceTree = SOURCE_ROOT; };
+		E4FC77A3183E4F3F0064FB2E /* ruby_types.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ruby_types.c; path = ../MolLib/Ruby_bind/ruby_types.c; sourceTree = SOURCE_ROOT; };
+		E4FC77A4183E4F3F0064FB2E /* Trackball.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = Trackball.c; path = ../MolLib/Trackball.c; sourceTree = SOURCE_ROOT; };
+		E4FC77A5183E4F3F0064FB2E /* Trackball.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Trackball.h; path = ../MolLib/Trackball.h; sourceTree = SOURCE_ROOT; };
+		E4FC77A6183E4F3F0064FB2E /* Types.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = Types.c; path = ../MolLib/Types.c; sourceTree = SOURCE_ROOT; };
+		E4FC77A7183E4F3F0064FB2E /* Types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Types.h; path = ../MolLib/Types.h; sourceTree = SOURCE_ROOT; };
+		E4FC77C5183E4FB00064FB2E /* makedoc.rb */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.ruby; name = makedoc.rb; path = ../Documents/makedoc.rb; sourceTree = SOURCE_ROOT; };
+		E4FC77C7183E4FBA0064FB2E /* doc_source.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; name = doc_source.html; path = ../Documents/src/doc_source.html; sourceTree = SOURCE_ROOT; };
+		E4FC77C9183E4FCD0064FB2E /* style.css */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.css; name = style.css; path = ../Documents/etc/style.css; sourceTree = SOURCE_ROOT; };
+		E4FC77D4183E4FF20064FB2E /* molby_icon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = molby_icon.icns; path = ../bitmaps/molby_icon.icns; sourceTree = SOURCE_ROOT; };
+		E4FC77D6183E4FFE0064FB2E /* Scripts */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Scripts; path = ../Scripts; sourceTree = SOURCE_ROOT; };
+		E4FC77D8183E503E0064FB2E /* amber11 */ = {isa = PBXFileReference; lastKnownFileType = folder; path = amber11; sourceTree = "<group>"; };
+		E4FC7806183E50710064FB2E /* mopac */ = {isa = PBXFileReference; lastKnownFileType = folder; name = mopac; path = "build/mopac-build/mopac"; sourceTree = SOURCE_ROOT; };
+		E4FC7810183E50DC0064FB2E /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = /System/Library/Frameworks/Accelerate.framework; sourceTree = "<absolute>"; };
+		E4FC7837183E50F00064FB2E /* AGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AGL.framework; path = /System/Library/Frameworks/AGL.framework; sourceTree = "<absolute>"; };
+		E4FC7845183E51180064FB2E /* Carbon.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Carbon.framework; path = /System/Library/Frameworks/Carbon.framework; sourceTree = "<absolute>"; };
+		E4FC7846183E51180064FB2E /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = /System/Library/Frameworks/Cocoa.framework; sourceTree = "<absolute>"; };
+		E4FC7847183E51180064FB2E /* GLUT.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GLUT.framework; path = /System/Library/Frameworks/GLUT.framework; sourceTree = "<absolute>"; };
+		E4FC7848183E51180064FB2E /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = /System/Library/Frameworks/IOKit.framework; sourceTree = "<absolute>"; };
+		E4FC7849183E51180064FB2E /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = /System/Library/Frameworks/OpenGL.framework; sourceTree = "<absolute>"; };
+		E4FC784A183E51180064FB2E /* QuickTime.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuickTime.framework; path = /System/Library/Frameworks/QuickTime.framework; sourceTree = "<absolute>"; };
+		E4FC784B183E51180064FB2E /* System.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = System.framework; path = /System/Library/Frameworks/System.framework; sourceTree = "<absolute>"; };
+		E4FC7A15183E51570064FB2E /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = ../../../../../../System/Library/Frameworks/AppKit.framework; sourceTree = SOURCE_ROOT; };
+		E4FC7A16183E51570064FB2E /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = ../../../../../../System/Library/Frameworks/Foundation.framework; sourceTree = SOURCE_ROOT; };
+		E4FC7B58183E53710064FB2E /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = /System/Library/Frameworks/WebKit.framework; sourceTree = "<absolute>"; };
+		E4FC7C16183E54730064FB2E /* Molby-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "Molby-Info.plist"; sourceTree = SOURCE_ROOT; };
+		E4FC7CA5183F94D30064FB2E /* buildInfo.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = buildInfo.c; path = build/buildInfo.c; sourceTree = SOURCE_ROOT; };
+		E4FC7CAC183F953E0064FB2E /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = /System/Library/Frameworks/AudioToolbox.framework; sourceTree = "<absolute>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -203,230 +182,228 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E43CCDDA0EB20F0F00108D2D /* Accelerate.framework in Frameworks */,
-				E43CCDDB0EB20F0F00108D2D /* AGL.framework in Frameworks */,
-				E43CCDDC0EB20F0F00108D2D /* Carbon.framework in Frameworks */,
-				E43CCDDD0EB20F0F00108D2D /* Cocoa.framework in Frameworks */,
-				E43CCDDE0EB20F0F00108D2D /* GLUT.framework in Frameworks */,
-				E43CCDDF0EB20F0F00108D2D /* IOKit.framework in Frameworks */,
-				E43CCDE00EB20F0F00108D2D /* OpenGL.framework in Frameworks */,
-				E43CCDE10EB20F0F00108D2D /* QuickTime.framework in Frameworks */,
-				E43CCDE20EB20F0F00108D2D /* System.framework in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		E4D5AD631180852F00B1D8A4 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				E4D5AD72118086A100B1D8A4 /* Accelerate.framework in Frameworks */,
-				E4D5AD73118086A200B1D8A4 /* AGL.framework in Frameworks */,
+				E4FC7811183E50DC0064FB2E /* Accelerate.framework in Frameworks */,
+				E4FC7838183E50F00064FB2E /* AGL.framework in Frameworks */,
+				E4FC784C183E51180064FB2E /* Carbon.framework in Frameworks */,
+				E4FC784D183E51180064FB2E /* Cocoa.framework in Frameworks */,
+				E4FC784E183E51180064FB2E /* GLUT.framework in Frameworks */,
+				E4FC784F183E51180064FB2E /* IOKit.framework in Frameworks */,
+				E4FC7850183E51180064FB2E /* OpenGL.framework in Frameworks */,
+				E4FC7851183E51180064FB2E /* QuickTime.framework in Frameworks */,
+				E4FC7852183E51180064FB2E /* System.framework in Frameworks */,
+				E4FC7A17183E51570064FB2E /* AppKit.framework in Frameworks */,
+				E4FC7A18183E51570064FB2E /* Foundation.framework in Frameworks */,
+				E4FC7B59183E53710064FB2E /* WebKit.framework in Frameworks */,
+				E4FC7CAD183F953E0064FB2E /* AudioToolbox.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		1058C7A2FEA54F0111CA2CBB /* Other Frameworks */ = {
-			isa = PBXGroup;
-			children = (
-				29B97324FDCFA39411CA2CEA /* AppKit.framework */,
-				13E42FB307B3F0F600E4EEF1 /* CoreData.framework */,
-				29B97325FDCFA39411CA2CEA /* Foundation.framework */,
-			);
-			name = "Other Frameworks";
-			sourceTree = "<group>";
-		};
 		19C28FACFE9D520D11CA2CBB /* Products */ = {
 			isa = PBXGroup;
 			children = (
 				8D1107320486CEB800E47090 /* Molby.app */,
-				E4D5AD651180852F00B1D8A4 /* Molby_command */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		29B97314FDCFA39411CA2CEA /* MyWxOpenGLDoc2 */ = {
+		29B97314FDCFA39411CA2CEA /* Molby */ = {
 			isa = PBXGroup;
 			children = (
-				29B97315FDCFA39411CA2CEA /* Sources */,
-				E4CBF39010A91EBA00C7C74A /* Document_source */,
-				E4A02338106B64F80094DBF8 /* Resources */,
+				E4888B0B183E4BD800DF5749 /* Sources */,
+				E4888BC2183E4D6400DF5749 /* Document_source */,
+				E4FC77CD183E4FDD0064FB2E /* Resources */,
 				29B97323FDCFA39411CA2CEA /* Frameworks */,
 				19C28FACFE9D520D11CA2CBB /* Products */,
 			);
-			name = MyWxOpenGLDoc2;
-			sourceTree = "<group>";
-		};
-		29B97315FDCFA39411CA2CEA /* Sources */ = {
-			isa = PBXGroup;
-			children = (
-				E43CCF150EB3229800108D2D /* wxSources */,
-				E4A66F0E16365653003EE03A /* buildInfo.c */,
-			);
-			name = Sources;
+			name = Molby;
 			sourceTree = "<group>";
 		};
 		29B97323FDCFA39411CA2CEA /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				E43CCDCA0EB20E9E00108D2D /* Linked Frameworks */,
-				1058C7A2FEA54F0111CA2CBB /* Other Frameworks */,
+				E4FC780D183E50AF0064FB2E /* Linked Frameworks */,
+				E4FC7A13183E51330064FB2E /* Other Frameworks */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		E42D8AEC1030192900C20247 /* MD */ = {
+		E4888B0B183E4BD800DF5749 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
-				E42D8AEF1030193F00C20247 /* MDGraphite.c */,
-				E42D8AF01030193F00C20247 /* MDGraphite.h */,
-				E42D8AF11030193F00C20247 /* MDCore.c */,
-				E42D8AF21030193F00C20247 /* MDCore.h */,
-				E4622E9A1649201400A0AA4D /* MDEwald.c */,
-				E436C97F164A05560005D964 /* MDEwald.h */,
-				E42D8AF31030193F00C20247 /* MDForce.c */,
-				E42D8AF41030193F00C20247 /* MDForce.h */,
-				E42D8AF61030193F00C20247 /* MDPressure.c */,
-				E42D8AF71030193F00C20247 /* MDPressure.h */,
-				E49D17F1107753DF00C4841E /* MDSurface.c */,
-				E49D17F2107753DF00C4841E /* MDSurface.h */,
+				E4FC7C28183E55820064FB2E /* wxSources */,
+				E4FC7779183E4F3F0064FB2E /* MolLib */,
+				E4FC7CA5183F94D30064FB2E /* buildInfo.c */,
 			);
-			path = MD;
+			name = Sources;
 			sourceTree = "<group>";
 		};
-		E43CCD8E0EB20BC800108D2D /* MolLib */ = {
+		E4888BC2183E4D6400DF5749 /* Document_source */ = {
 			isa = PBXGroup;
 			children = (
-				E42D8AEC1030192900C20247 /* MD */,
-				E433CE7D0EC709BD00675985 /* IntGroup.h */,
-				E433CE7C0EC709BD00675985 /* IntGroup.c */,
-				E433CE7F0EC709BD00675985 /* MainView.h */,
-				E433CE7E0EC709BD00675985 /* MainView.c */,
-				E445145215F1DA5B0050171E /* MainViewCommon.c */,
-				E433CE810EC709BD00675985 /* Missing.h */,
-				E433CE800EC709BD00675985 /* Missing.c */,
-				E433CE830EC709BD00675985 /* MolAction.h */,
-				E433CE820EC709BD00675985 /* MolAction.c */,
-				E433CE850EC709BD00675985 /* Molecule.h */,
-				E433CE840EC709BD00675985 /* Molecule.c */,
-				E433CE860EC709BD00675985 /* MolLib.h */,
-				E433CE880EC709BD00675985 /* Object.h */,
-				E433CE870EC709BD00675985 /* Object.c */,
-				E4C0C4940F25734B00161EC2 /* Dcd.h */,
-				E4C0C4950F25734B00161EC2 /* Dcd.c */,
-				E433CE8A0EC709BD00675985 /* Parameter.h */,
-				E433CE890EC709BD00675985 /* Parameter.c */,
-				E433CE8C0EC709BD00675985 /* Trackball.h */,
-				E433CE8B0EC709BD00675985 /* Trackball.c */,
-				E433CE8E0EC709BD00675985 /* Types.h */,
-				E433CE8D0EC709BD00675985 /* Types.c */,
-				E4D5ADA511808A2C00B1D8A4 /* cmdtool_stubs.c */,
-				E43CCE0F0EB210DD00108D2D /* Ruby_bind */,
+				E4FC77C7183E4FBA0064FB2E /* doc_source.html */,
+				E4FC77C9183E4FCD0064FB2E /* style.css */,
+				E4FC77C5183E4FB00064FB2E /* makedoc.rb */,
+			);
+			name = Document_source;
+			sourceTree = "<group>";
+		};
+		E4FC7779183E4F3F0064FB2E /* MolLib */ = {
+			isa = PBXGroup;
+			children = (
+				E4FC7783183E4F3F0064FB2E /* MD */,
+				E4FC777D183E4F3F0064FB2E /* IntGroup.c */,
+				E4FC777E183E4F3F0064FB2E /* IntGroup.h */,
+				E4FC777F183E4F3F0064FB2E /* MainView.c */,
+				E4FC7780183E4F3F0064FB2E /* MainView.h */,
+				E4FC7781183E4F3F0064FB2E /* MainViewCommon.c */,
+				E4FC7790183E4F3F0064FB2E /* Missing.c */,
+				E4FC7791183E4F3F0064FB2E /* Missing.h */,
+				E4FC7792183E4F3F0064FB2E /* MolAction.c */,
+				E4FC7793183E4F3F0064FB2E /* MolAction.h */,
+				E4FC7794183E4F3F0064FB2E /* Molecule.c */,
+				E4FC7795183E4F3F0064FB2E /* Molecule.h */,
+				E4FC7796183E4F3F0064FB2E /* MolLib.h */,
+				E4FC7797183E4F3F0064FB2E /* Object.c */,
+				E4FC7798183E4F3F0064FB2E /* Object.h */,
+				E4FC777B183E4F3F0064FB2E /* Dcd.c */,
+				E4FC777C183E4F3F0064FB2E /* Dcd.h */,
+				E4FC7799183E4F3F0064FB2E /* Parameter.c */,
+				E4FC779A183E4F3F0064FB2E /* Parameter.h */,
+				E4FC77A4183E4F3F0064FB2E /* Trackball.c */,
+				E4FC77A5183E4F3F0064FB2E /* Trackball.h */,
+				E4FC77A6183E4F3F0064FB2E /* Types.c */,
+				E4FC77A7183E4F3F0064FB2E /* Types.h */,
+				E4FC777A183E4F3F0064FB2E /* cmdtool_stubs.c */,
+				E4FC779B183E4F3F0064FB2E /* Ruby_bind */,
 			);
 			name = MolLib;
 			path = ../MolLib;
 			sourceTree = SOURCE_ROOT;
 		};
-		E43CCDCA0EB20E9E00108D2D /* Linked Frameworks */ = {
+		E4FC7783183E4F3F0064FB2E /* MD */ = {
 			isa = PBXGroup;
 			children = (
-				E43CCDD10EB20F0F00108D2D /* Accelerate.framework */,
-				E43CCDD20EB20F0F00108D2D /* AGL.framework */,
-				E43CCDD30EB20F0F00108D2D /* Carbon.framework */,
-				E43CCDD40EB20F0F00108D2D /* Cocoa.framework */,
-				E43CCDD50EB20F0F00108D2D /* GLUT.framework */,
-				E43CCDD60EB20F0F00108D2D /* IOKit.framework */,
-				E43CCDD70EB20F0F00108D2D /* OpenGL.framework */,
-				E43CCDD80EB20F0F00108D2D /* QuickTime.framework */,
-				E43CCDD90EB20F0F00108D2D /* System.framework */,
+				E4FC7784183E4F3F0064FB2E /* MDCore.c */,
+				E4FC7785183E4F3F0064FB2E /* MDCore.h */,
+				E4FC7786183E4F3F0064FB2E /* MDEwald.c */,
+				E4FC7787183E4F3F0064FB2E /* MDEwald.h */,
+				E4FC7788183E4F3F0064FB2E /* MDForce.c */,
+				E4FC7789183E4F3F0064FB2E /* MDForce.h */,
+				E4FC778A183E4F3F0064FB2E /* MDGraphite.c */,
+				E4FC778B183E4F3F0064FB2E /* MDGraphite.h */,
+				E4FC778C183E4F3F0064FB2E /* MDPressure.c */,
+				E4FC778D183E4F3F0064FB2E /* MDPressure.h */,
+				E4FC778E183E4F3F0064FB2E /* MDSurface.c */,
+				E4FC778F183E4F3F0064FB2E /* MDSurface.h */,
 			);
-			name = "Linked Frameworks";
-			sourceTree = "<group>";
+			name = MD;
+			path = ../MolLib/MD;
+			sourceTree = SOURCE_ROOT;
 		};
-		E43CCE0F0EB210DD00108D2D /* Ruby_bind */ = {
+		E4FC779B183E4F3F0064FB2E /* Ruby_bind */ = {
 			isa = PBXGroup;
 			children = (
-				E433CE740EC7099B00675985 /* Molby_extern.h */,
-				E433CE750EC7099B00675985 /* Molby.h */,
-				E433CE760EC7099B00675985 /* ruby_bind.c */,
-				E42D8BB21031BB2900C20247 /* ruby_md.c */,
-				E4299DA60F2A191600780B44 /* ruby_types.c */,
-				E433CE780EC7099B00675985 /* ruby_dialog.h */,
-				E433CE770EC7099B00675985 /* ruby_dialog.c */,
+				E4FC779E183E4F3F0064FB2E /* Molby_extern.h */,
+				E4FC779D183E4F3F0064FB2E /* Molby.h */,
+				E4FC779F183E4F3F0064FB2E /* ruby_bind.c */,
+				E4FC77A2183E4F3F0064FB2E /* ruby_md.c */,
+				E4FC77A3183E4F3F0064FB2E /* ruby_types.c */,
+				E4FC77A0183E4F3F0064FB2E /* ruby_dialog.c */,
+				E4FC77A1183E4F3F0064FB2E /* ruby_dialog.h */,
 			);
-			path = Ruby_bind;
-			sourceTree = "<group>";
+			name = Ruby_bind;
+			path = ../MolLib/Ruby_bind;
+			sourceTree = SOURCE_ROOT;
 		};
-		E43CCF150EB3229800108D2D /* wxSources */ = {
+		E4FC77CD183E4FDD0064FB2E /* Resources */ = {
 			isa = PBXGroup;
 			children = (
-				E4A4667410C15B4300E40A9D /* listctrl.cpp */,
-				9E12580E119EC42E00E95DC3 /* docview.cpp */,
-				E40DDC6C1435C03E000F0E81 /* MyMBConv.h */,
-				E4513F530EED72C0009DF1F7 /* MyListCtrl.h */,
-				E4513F540EED72C0009DF1F7 /* MyListCtrl.cpp */,
-				E4C8CBDD10B83060006C4692 /* MyDocManager.h */,
-				E4C8CBDE10B83060006C4692 /* MyDocManager.cpp */,
-				E4FFA9030EE960650045EDF9 /* RubyDialogFrame.h */,
-				E4FFA9040EE960650045EDF9 /* RubyDialogFrame.cpp */,
-				E433CE9A0EC709D300675985 /* ConsoleFrame.h */,
-				E433CE990EC709D300675985 /* ConsoleFrame.cpp */,
-				E4E2D5C310A249820007644A /* GlobalParameterFrame.h */,
-				E4E2D5C410A249820007644A /* GlobalParameterFrame.cpp */,
-				E4E470C710AE6F8600F72B68 /* GlobalParameterFilesFrame.h */,
-				E4E470C810AE6F8600F72B68 /* GlobalParameterFilesFrame.cpp */,
-				E433CE9C0EC709D300675985 /* MoleculeView.h */,
-				E433CE9B0EC709D300675985 /* MoleculeView.cpp */,
-				E4C86B92177B3006005BA7AC /* MyProgressIndicator.h */,
-				E4C86B91177B3006005BA7AC /* MyProgressIndicator.cpp */,
-				E433CE9E0EC709D300675985 /* MyApp.h */,
-				E433CE9D0EC709D300675985 /* MyApp.cpp */,
-				E433CEA00EC709D300675985 /* MyCommand.h */,
-				E433CE9F0EC709D300675985 /* MyCommand.cpp */,
-				E433CEA20EC709D300675985 /* MyDocument.h */,
-				E433CEA10EC709D300675985 /* MyDocument.cpp */,
-				E46C9048108F491E000E984D /* MyThread.h */,
-				E46C9049108F491E000E984D /* MyThread.cpp */,
-				E433CEA40EC709D300675985 /* MyGLCanvas.h */,
-				E433CEA30EC709D300675985 /* MyGLCanvas.cpp */,
-				E43226E10ECE8681004963D7 /* MySlider.h */,
-				E43226E20ECE8681004963D7 /* MySlider.cpp */,
-				E496A76D0EDD392F00499646 /* MyClipboardData.h */,
-				E496A76E0EDD392F00499646 /* MyClipboardData.cpp */,
-				E44CEED5100E1E9C0040BD51 /* ProgressFrame.h */,
-				E44CEED4100E1E9C0040BD51 /* ProgressFrame.cpp */,
-				E4ED76E316256FC5006A1820 /* MyIPCSupport.cpp */,
-				E4ED76E416256FC5006A1820 /* MyIPCSupport.h */,
-				E472B7C41087F63200F931F3 /* MyVersion.c */,
-				E4A1802711897F8600B394E7 /* wxKillAddition.cpp */,
-				E43CCD8E0EB20BC800108D2D /* MolLib */,
-			);
-			name = wxSources;
-			sourceTree = "<group>";
-		};
-		E4A02338106B64F80094DBF8 /* Resources */ = {
-			isa = PBXGroup;
-			children = (
-				E4A02346106B65640094DBF8 /* molby_icon.icns */,
-				E4A0234A106B657D0094DBF8 /* Scripts */,
-				E4CFBB16111096CF0081C481 /* amber11 */,
-				E4E9F2611823651E0039A43D /* mopac */,
-				E4A0233F106B652F0094DBF8 /* InfoPlist.strings */,
-				E4A0233B106B651C0094DBF8 /* Info.plist */,
+				E4FC77D4183E4FF20064FB2E /* molby_icon.icns */,
+				E4FC77D6183E4FFE0064FB2E /* Scripts */,
+				E4FC77D8183E503E0064FB2E /* amber11 */,
+				E4FC7806183E50710064FB2E /* mopac */,
+				E4FC7C16183E54730064FB2E /* Molby-Info.plist */,
 			);
 			name = Resources;
 			sourceTree = "<group>";
 		};
-		E4CBF39010A91EBA00C7C74A /* Document_source */ = {
+		E4FC780D183E50AF0064FB2E /* Linked Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				E4CBF38C10A91EAC00C7C74A /* doc_source.html */,
-				E4CBF39510A91ED500C7C74A /* style.css */,
-				E4CBF39710A91EDA00C7C74A /* makedoc.rb */,
+				E4FC7CAC183F953E0064FB2E /* AudioToolbox.framework */,
+				E4FC7810183E50DC0064FB2E /* Accelerate.framework */,
+				E4FC7837183E50F00064FB2E /* AGL.framework */,
+				E4FC7845183E51180064FB2E /* Carbon.framework */,
+				E4FC7846183E51180064FB2E /* Cocoa.framework */,
+				E4FC7847183E51180064FB2E /* GLUT.framework */,
+				E4FC7848183E51180064FB2E /* IOKit.framework */,
+				E4FC7849183E51180064FB2E /* OpenGL.framework */,
+				E4FC784A183E51180064FB2E /* QuickTime.framework */,
+				E4FC784B183E51180064FB2E /* System.framework */,
+				E4FC7B58183E53710064FB2E /* WebKit.framework */,
 			);
-			name = Document_source;
+			name = "Linked Frameworks";
 			sourceTree = "<group>";
+		};
+		E4FC7A13183E51330064FB2E /* Other Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				E4FC7A15183E51570064FB2E /* AppKit.framework */,
+				E4FC7A16183E51570064FB2E /* Foundation.framework */,
+			);
+			name = "Other Frameworks";
+			sourceTree = "<group>";
+		};
+		E4FC7C28183E55820064FB2E /* wxSources */ = {
+			isa = PBXGroup;
+			children = (
+				E420BDE81885746700A2B983 /* ConsoleFrame.cpp */,
+				E420BDE91885746700A2B983 /* ConsoleFrame.h */,
+				E420BDEA1885746700A2B983 /* filedlg.mm */,
+				E420BDEB1885746700A2B983 /* GlobalParameterFilesFrame.cpp */,
+				E420BDEC1885746700A2B983 /* GlobalParameterFilesFrame.h */,
+				E420BDED1885746700A2B983 /* GlobalParameterFrame.cpp */,
+				E420BDEE1885746700A2B983 /* GlobalParameterFrame.h */,
+				E420BDF31885749000A2B983 /* listctrl_private.h */,
+				E420BDF41885749000A2B983 /* listctrl.cpp */,
+				E420BDF51885749000A2B983 /* MoleculeView.cpp */,
+				E420BDF61885749000A2B983 /* MoleculeView.h */,
+				E420BDF71885749000A2B983 /* MyApp.cpp */,
+				E420BDF81885749000A2B983 /* MyApp.h */,
+				E420BDF91885749000A2B983 /* MyClipboardData.cpp */,
+				E420BDFA1885749000A2B983 /* MyClipboardData.h */,
+				E420BDFB1885749000A2B983 /* MyCommand.cpp */,
+				E420BDFC1885749000A2B983 /* MyCommand.h */,
+				E420BE02188574AD00A2B983 /* MyDocManager.cpp */,
+				E420BE03188574AD00A2B983 /* MyDocManager.h */,
+				E420BE04188574AD00A2B983 /* MyDocument.cpp */,
+				E420BE05188574AD00A2B983 /* MyDocument.h */,
+				E420BE06188574AD00A2B983 /* MyGLCanvas.cpp */,
+				E420BE07188574AD00A2B983 /* MyGLCanvas.h */,
+				E420BE08188574AD00A2B983 /* MyIPCSupport.cpp */,
+				E420BE09188574AD00A2B983 /* MyIPCSupport.h */,
+				E420BE0A188574AD00A2B983 /* MyListCtrl.cpp */,
+				E420BE0B188574AD00A2B983 /* MyListCtrl.h */,
+				E420BE11188574D700A2B983 /* MyMBConv.h */,
+				E420BE12188574D700A2B983 /* MyProgressIndicator.cpp */,
+				E420BE13188574D700A2B983 /* MyProgressIndicator.h */,
+				E420BE14188574D700A2B983 /* MySlider.cpp */,
+				E420BE15188574D700A2B983 /* MySlider.h */,
+				E420BE16188574D700A2B983 /* MyThread.cpp */,
+				E420BE17188574D700A2B983 /* MyThread.h */,
+				E420BE18188574D700A2B983 /* MyVersion.c */,
+				E420BE1D188574F600A2B983 /* ProgressFrame.cpp */,
+				E420BE1E188574F600A2B983 /* ProgressFrame.h */,
+				E420BE1F188574F600A2B983 /* RubyDialogFrame.cpp */,
+				E420BE20188574F600A2B983 /* RubyDialogFrame.h */,
+				E420BE21188574F600A2B983 /* wxKillAddition.cpp */,
+			);
+			name = wxSources;
+			path = ../wxSources;
+			sourceTree = SOURCE_ROOT;
 		};
 /* End PBXGroup section */
 
@@ -435,7 +412,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = C01FCF4A08A954540054247B /* Build configuration list for PBXNativeTarget "Molby" */;
 			buildPhases = (
-				E472B79C1087EFAC00F931F3 /* ShellScript */,
+				E4FC7B57183E516E0064FB2E /* ShellScript */,
 				8D1107290486CEB800E47090 /* Resources */,
 				8D11072C0486CEB800E47090 /* Sources */,
 				8D11072E0486CEB800E47090 /* Frameworks */,
@@ -446,25 +423,9 @@
 			);
 			name = Molby;
 			productInstallPath = "$(HOME)/Applications";
-			productName = MyWxOpenGLDoc2;
+			productName = Molby;
 			productReference = 8D1107320486CEB800E47090 /* Molby.app */;
 			productType = "com.apple.product-type.application";
-		};
-		E4D5AD641180852F00B1D8A4 /* Molby_command */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = E4D5AD691180854D00B1D8A4 /* Build configuration list for PBXNativeTarget "Molby_command" */;
-			buildPhases = (
-				E4D5AD621180852F00B1D8A4 /* Sources */,
-				E4D5AD631180852F00B1D8A4 /* Frameworks */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			name = Molby_command;
-			productName = Molby_command;
-			productReference = E4D5AD651180852F00B1D8A4 /* Molby_command */;
-			productType = "com.apple.product-type.tool";
 		};
 /* End PBXNativeTarget section */
 
@@ -472,7 +433,7 @@
 		29B97313FDCFA39411CA2CEA /* Project object */ = {
 			isa = PBXProject;
 			buildConfigurationList = C01FCF4E08A954540054247B /* Build configuration list for PBXProject "Molby" */;
-			compatibilityVersion = "Xcode 2.4";
+			compatibilityVersion = "Xcode 3.1";
 			developmentRegion = English;
 			hasScannedForEncodings = 1;
 			knownRegions = (
@@ -481,12 +442,11 @@
 				French,
 				German,
 			);
-			mainGroup = 29B97314FDCFA39411CA2CEA /* MyWxOpenGLDoc2 */;
+			mainGroup = 29B97314FDCFA39411CA2CEA /* Molby */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
 				8D1107260486CEB800E47090 /* Molby */,
-				E4D5AD641180852F00B1D8A4 /* Molby_command */,
 			);
 		};
 /* End PBXProject section */
@@ -496,18 +456,17 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E4A02341106B652F0094DBF8 /* InfoPlist.strings in Resources */,
-				E4A02347106B65640094DBF8 /* molby_icon.icns in Resources */,
-				E4A02357106B657D0094DBF8 /* Scripts in Resources */,
-				E4CFBB3B111096CF0081C481 /* amber11 in Resources */,
-				E4E9F2641823651E0039A43D /* mopac in Resources */,
+				E4FC7F821840C22B0064FB2E /* molby_icon.icns in Resources */,
+				E4FC77D7183E4FFE0064FB2E /* Scripts in Resources */,
+				E4FC7802183E503E0064FB2E /* amber11 in Resources */,
+				E4FC7809183E50710064FB2E /* mopac in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		E472B79C1087EFAC00F931F3 /* ShellScript */ = {
+		E4FC7B57183E516E0064FB2E /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -527,383 +486,190 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E433CE790EC7099B00675985 /* ruby_bind.c in Sources */,
-				E433CE900EC709BD00675985 /* IntGroup.c in Sources */,
-				E433CE910EC709BD00675985 /* MainView.c in Sources */,
-				E433CE920EC709BD00675985 /* Missing.c in Sources */,
-				E433CE930EC709BD00675985 /* MolAction.c in Sources */,
-				E433CE940EC709BD00675985 /* Molecule.c in Sources */,
-				E433CE950EC709BD00675985 /* Object.c in Sources */,
-				E433CE960EC709BD00675985 /* Parameter.c in Sources */,
-				E433CE970EC709BD00675985 /* Trackball.c in Sources */,
-				E433CE980EC709BD00675985 /* Types.c in Sources */,
-				E433CEA50EC709D300675985 /* ConsoleFrame.cpp in Sources */,
-				E433CEA60EC709D300675985 /* MoleculeView.cpp in Sources */,
-				E433CEA70EC709D300675985 /* MyApp.cpp in Sources */,
-				E433CEA80EC709D300675985 /* MyCommand.cpp in Sources */,
-				E433CEA90EC709D300675985 /* MyDocument.cpp in Sources */,
-				E433CEAA0EC709D300675985 /* MyGLCanvas.cpp in Sources */,
-				E43226E30ECE8681004963D7 /* MySlider.cpp in Sources */,
-				E496A76F0EDD392F00499646 /* MyClipboardData.cpp in Sources */,
-				E4FFA9050EE960650045EDF9 /* RubyDialogFrame.cpp in Sources */,
-				E4FFA95E0EEAADCA0045EDF9 /* ruby_dialog.c in Sources */,
-				E4513F550EED72C0009DF1F7 /* MyListCtrl.cpp in Sources */,
-				E4C0C4960F25734B00161EC2 /* Dcd.c in Sources */,
-				E4299DA70F2A191600780B44 /* ruby_types.c in Sources */,
-				E44CEED6100E1E9C0040BD51 /* ProgressFrame.cpp in Sources */,
-				E42D8AF81030193F00C20247 /* MDGraphite.c in Sources */,
-				E42D8AF91030193F00C20247 /* MDCore.c in Sources */,
-				E42D8AFA1030193F00C20247 /* MDForce.c in Sources */,
-				E42D8AFB1030193F00C20247 /* MDPressure.c in Sources */,
-				E42D8BB31031BB2900C20247 /* ruby_md.c in Sources */,
-				E49D17F3107753DF00C4841E /* MDSurface.c in Sources */,
-				E472B7C51087F63200F931F3 /* MyVersion.c in Sources */,
-				E46C904A108F491E000E984D /* MyThread.cpp in Sources */,
-				E4E2D5C510A249820007644A /* GlobalParameterFrame.cpp in Sources */,
-				E4E470C910AE6F8600F72B68 /* GlobalParameterFilesFrame.cpp in Sources */,
-				E4C8CBDF10B83060006C4692 /* MyDocManager.cpp in Sources */,
-				E4A4667610C15B4300E40A9D /* listctrl.cpp in Sources */,
-				E4A1802811897F8600B394E7 /* wxKillAddition.cpp in Sources */,
-				9E12580F119EC42E00E95DC3 /* docview.cpp in Sources */,
-				E445145415F1DA5B0050171E /* MainViewCommon.c in Sources */,
-				E4ED76E516256FC5006A1820 /* MyIPCSupport.cpp in Sources */,
-				E4A66F0F16365653003EE03A /* buildInfo.c in Sources */,
-				E4622E9B1649201400A0AA4D /* MDEwald.c in Sources */,
-				E4C86B94177B3006005BA7AC /* MyProgressIndicator.cpp in Sources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		E4D5AD621180852F00B1D8A4 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				E4D5AD6A1180868A00B1D8A4 /* MyVersion.c in Sources */,
-				E4D5AD6B1180869500B1D8A4 /* MDGraphite.c in Sources */,
-				E4D5AD74118086BF00B1D8A4 /* IntGroup.c in Sources */,
-				E4D5AD76118086D500B1D8A4 /* MDCore.c in Sources */,
-				E4D5AD77118086D600B1D8A4 /* MDForce.c in Sources */,
-				E4D5AD78118086D800B1D8A4 /* MDPressure.c in Sources */,
-				E4D5AD79118086DB00B1D8A4 /* MDSurface.c in Sources */,
-				E4D5AD7A118086DC00B1D8A4 /* Missing.c in Sources */,
-				E4D5AD7B118086DE00B1D8A4 /* MolAction.c in Sources */,
-				E4D5AD7C118086E300B1D8A4 /* Molecule.c in Sources */,
-				E4D5AD7D118086ED00B1D8A4 /* Object.c in Sources */,
-				E4D5AD7E118086EF00B1D8A4 /* Parameter.c in Sources */,
-				E4D5AD7F118086F500B1D8A4 /* ruby_bind.c in Sources */,
-				E4D5AD80118086FA00B1D8A4 /* ruby_md.c in Sources */,
-				E4D5AD81118086FB00B1D8A4 /* ruby_types.c in Sources */,
-				E4D5AD841180870900B1D8A4 /* Types.c in Sources */,
-				E4D5AD9C1180890A00B1D8A4 /* Dcd.c in Sources */,
-				E4D5ADA611808A2C00B1D8A4 /* cmdtool_stubs.c in Sources */,
-				9ECE828311A191A2001B435E /* Trackball.c in Sources */,
-				E445145315F1DA5B0050171E /* MainViewCommon.c in Sources */,
-				E4A66F1016365653003EE03A /* buildInfo.c in Sources */,
-				E4622E9C1649201400A0AA4D /* MDEwald.c in Sources */,
+				E4FC77A9183E4F3F0064FB2E /* Dcd.c in Sources */,
+				E4FC77AA183E4F3F0064FB2E /* IntGroup.c in Sources */,
+				E4FC77AB183E4F3F0064FB2E /* MainView.c in Sources */,
+				E4FC77AC183E4F3F0064FB2E /* MainViewCommon.c in Sources */,
+				E4FC77AE183E4F3F0064FB2E /* MDCore.c in Sources */,
+				E4FC77AF183E4F3F0064FB2E /* MDEwald.c in Sources */,
+				E4FC77B0183E4F3F0064FB2E /* MDForce.c in Sources */,
+				E4FC77B1183E4F3F0064FB2E /* MDGraphite.c in Sources */,
+				E4FC77B2183E4F3F0064FB2E /* MDPressure.c in Sources */,
+				E4FC77B3183E4F3F0064FB2E /* MDSurface.c in Sources */,
+				E4FC77B4183E4F3F0064FB2E /* Missing.c in Sources */,
+				E4FC77B5183E4F3F0064FB2E /* MolAction.c in Sources */,
+				E4FC77B6183E4F3F0064FB2E /* Molecule.c in Sources */,
+				E4FC77B7183E4F3F0064FB2E /* Object.c in Sources */,
+				E4FC77B8183E4F3F0064FB2E /* Parameter.c in Sources */,
+				E4FC77BA183E4F3F0064FB2E /* ruby_bind.c in Sources */,
+				E4FC77BB183E4F3F0064FB2E /* ruby_dialog.c in Sources */,
+				E4FC77BC183E4F3F0064FB2E /* ruby_md.c in Sources */,
+				E4FC77BD183E4F3F0064FB2E /* ruby_types.c in Sources */,
+				E4FC77BE183E4F3F0064FB2E /* Trackball.c in Sources */,
+				E4FC77BF183E4F3F0064FB2E /* Types.c in Sources */,
+				E4FC7CA6183F94D30064FB2E /* buildInfo.c in Sources */,
+				E420BDEF1885746700A2B983 /* ConsoleFrame.cpp in Sources */,
+				E420BDF01885746700A2B983 /* filedlg.mm in Sources */,
+				E420BDF11885746700A2B983 /* GlobalParameterFilesFrame.cpp in Sources */,
+				E420BDF21885746700A2B983 /* GlobalParameterFrame.cpp in Sources */,
+				E420BDFD1885749000A2B983 /* listctrl.cpp in Sources */,
+				E420BDFE1885749000A2B983 /* MoleculeView.cpp in Sources */,
+				E420BDFF1885749000A2B983 /* MyApp.cpp in Sources */,
+				E420BE001885749000A2B983 /* MyClipboardData.cpp in Sources */,
+				E420BE011885749000A2B983 /* MyCommand.cpp in Sources */,
+				E420BE0C188574AD00A2B983 /* MyDocManager.cpp in Sources */,
+				E420BE0D188574AD00A2B983 /* MyDocument.cpp in Sources */,
+				E420BE0E188574AD00A2B983 /* MyGLCanvas.cpp in Sources */,
+				E420BE0F188574AD00A2B983 /* MyIPCSupport.cpp in Sources */,
+				E420BE10188574AD00A2B983 /* MyListCtrl.cpp in Sources */,
+				E420BE19188574D700A2B983 /* MyProgressIndicator.cpp in Sources */,
+				E420BE1A188574D700A2B983 /* MySlider.cpp in Sources */,
+				E420BE1B188574D700A2B983 /* MyThread.cpp in Sources */,
+				E420BE1C188574D700A2B983 /* MyVersion.c in Sources */,
+				E420BE22188574F600A2B983 /* ProgressFrame.cpp in Sources */,
+				E420BE23188574F600A2B983 /* RubyDialogFrame.cpp in Sources */,
+				E420BE24188574F600A2B983 /* wxKillAddition.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
-/* Begin PBXVariantGroup section */
-		E4A0233F106B652F0094DBF8 /* InfoPlist.strings */ = {
-			isa = PBXVariantGroup;
-			children = (
-				E4A02340106B652F0094DBF8 /* English */,
-			);
-			name = InfoPlist.strings;
-			sourceTree = "<group>";
-		};
-/* End PBXVariantGroup section */
-
 /* Begin XCBuildConfiguration section */
 		C01FCF4B08A954540054247B /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_32_BIT_PRE_XCODE_3_1)";
-				ARCHS_STANDARD_32_BIT_PRE_XCODE_3_1 = "ppc i386";
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
 				COPY_PHASE_STRIP = NO;
-				GCC_DEBUGGING_SYMBOLS = full;
 				GCC_DYNAMIC_NO_PIC = NO;
-				GCC_ENABLE_FIX_AND_CONTINUE = NO;
+				GCC_ENABLE_FIX_AND_CONTINUE = YES;
 				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
 				GCC_MODEL_TUNING = G5;
 				GCC_OPTIMIZATION_LEVEL = 0;
-				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
-				GCC_VERSION = 4.0;
+				GCC_PRECOMPILE_PREFIX_HEADER = NO;
+				GCC_PREFIX_HEADER = "";
+				GCC_REUSE_STRINGS = NO;
+				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				HEADER_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/../../fftw-3.3.2/osx-build/include",
-					"$(HOME)/Development/wxMac/include",
-					"$(HOME)/Development/wxMac/osx-build/lib/wx/include/mac-unicode-release-static-2.8",
-					"$(HOME)/Development/ruby-1.8.7-static",
+					"$(PROJECT_DIR)/../../fftw-3.3.2/osx-build-3/include",
+					"$(PROJECT_DIR)/../../wxWidgets-3.0.0/include",
+					"$(PROJECT_DIR)/../../wxWidgets-3.0.0/osx-build/lib/wx/include/osx_cocoa-unicode-static-3.0",
+					"$(PROJECT_DIR)/../../ruby-1.8.7-p160/osx-build-3/include",
 				);
-				INFOPLIST_FILE = Info.plist;
+				INFOPLIST_FILE = "Molby-Info.plist";
 				INSTALL_PATH = "$(HOME)/Applications";
 				LIBRARY_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/../../fftw-3.3.2/osx-build/lib",
-					"$(HOME)/Development/wxMac/osx-build/lib",
-					"$(HOME)/Development/ruby-1.8.7-static",
+					"$(PROJECT_DIR)/../../fftw-3.3.2/osx-build-3/lib",
+					"$(PROJECT_DIR)/../../wxWidgets-3.0.0/osx-build/lib",
+					"$(PROJECT_DIR)/../../ruby-1.8.7-p160/osx-build-3/lib",
 				);
 				OTHER_CFLAGS = (
 					"-D_FILE_OFFSET_BITS=64",
-					"-D_LARGE_FILES",
 					"-D__WXMAC__",
-					"-DDEBUG",
+					"-D__WXOSX__",
+					"-D__WXOSX_COCOA__",
 				);
 				OTHER_LDFLAGS = (
-					"-lfftw3",
-					"-lwx_macu_html-2.8",
-					"-lwx_macu_richtext-2.8",
-					"-lwx_macu_core-2.8",
-					"-lwx_base_carbonu-2.8",
-					"-lwx_macu_gl-2.8",
-					"-lwx_macu_adv-2.8",
-					"-lwxregexu-2.8",
-					"-lwxexpat-2.8",
-					"-lwxtiff-2.8",
-					"-lwxjpeg-2.8",
-					"-lwxpng-2.8",
+					"-L$(PROJECT_DIR)/../../wxWidgets-3.0.0/osx-build/lib",
+					"-lwx_osx_cocoau-3.0",
+					"-lwx_osx_cocoau_gl-3.0",
+					"-lwxregexu-3.0",
+					"-lwxtiff-3.0",
+					"-lwxjpeg-3.0",
+					"-lwxpng-3.0",
 					"-lz",
 					"-lpthread",
 					"-liconv",
+					"-lfftw3",
 					"-lruby-static",
 				);
 				PRODUCT_NAME = Molby;
-				SDKROOT = /Developer/SDKs/MacOSX10.4u.sdk;
-				WRAPPER_EXTENSION = app;
-				ZERO_LINK = NO;
+				SDKROOT = macosx10.5;
 			};
 			name = Debug;
 		};
 		C01FCF4C08A954540054247B /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
 				ARCHS = (
-					i386,
 					ppc,
+					i386,
 				);
-				COPY_PHASE_STRIP = NO;
-				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
 				GCC_MODEL_TUNING = G5;
-				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
-				GCC_VERSION = 4.0;
+				GCC_PRECOMPILE_PREFIX_HEADER = NO;
+				GCC_PREFIX_HEADER = "";
+				GCC_REUSE_STRINGS = NO;
+				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				HEADER_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/../../fftw-3.3.2/osx-build/include",
-					"$(HOME)/Development/wxMac/include",
-					"$(HOME)/Development/wxMac/osx-build/lib/wx/include/mac-unicode-release-static-2.8",
-					"$(HOME)/Development/ruby-1.8.7-static",
+					"$(PROJECT_DIR)/../../fftw-3.3.2/osx-build-3/include",
+					"$(PROJECT_DIR)/../../wxWidgets-3.0.0/include",
+					"$(PROJECT_DIR)/../../wxWidgets-3.0.0/osx-build/lib/wx/include/osx_cocoa-unicode-static-3.0",
+					"$(PROJECT_DIR)/../../ruby-1.8.7-p160/osx-build-3/include",
 				);
-				INFOPLIST_FILE = Info.plist;
+				INFOPLIST_FILE = "Molby-Info.plist";
 				INSTALL_PATH = "$(HOME)/Applications";
 				LIBRARY_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/../../fftw-3.3.2/osx-build/lib",
-					"$(HOME)/Development/wxMac/osx-build/lib",
-					"$(HOME)/Development/ruby-1.8.7-static",
+					"$(PROJECT_DIR)/../../fftw-3.3.2/osx-build-3/lib",
+					"$(PROJECT_DIR)/../../wxWidgets-3.0.0/osx-build/lib",
+					"$(PROJECT_DIR)/../../ruby-1.8.7-p160/osx-build-3/lib",
 				);
 				OTHER_CFLAGS = (
 					"-D_FILE_OFFSET_BITS=64",
-					"-D_LARGE_FILES",
 					"-D__WXMAC__",
+					"-D__WXOSX__",
+					"-D__WXOSX_COCOA__",
 				);
 				OTHER_LDFLAGS = (
-					"-lfftw3",
-					"-lwx_macu_html-2.8",
-					"-lwx_macu_richtext-2.8",
-					"-lwx_macu_core-2.8",
-					"-lwx_base_carbonu-2.8",
-					"-lwx_macu_gl-2.8",
-					"-lwx_macu_adv-2.8",
-					"-lwxregexu-2.8",
-					"-lwxexpat-2.8",
-					"-lwxtiff-2.8",
-					"-lwxjpeg-2.8",
-					"-lwxpng-2.8",
+					"-L$(PROJECT_DIR)/../../wxWidgets-3.0.0/osx-build/lib",
+					"-lwx_osx_cocoau-3.0",
+					"-lwx_osx_cocoau_gl-3.0",
+					"-lwxregexu-3.0",
+					"-lwxtiff-3.0",
+					"-lwxjpeg-3.0",
+					"-lwxpng-3.0",
 					"-lz",
 					"-lpthread",
 					"-liconv",
+					"-lfftw3",
 					"-lruby-static",
 				);
 				PRODUCT_NAME = Molby;
-				WRAPPER_EXTENSION = app;
-				ZERO_LINK = NO;
+				SDKROOT = macosx10.5;
 			};
 			name = Release;
 		};
 		C01FCF4F08A954540054247B /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ARCHS = (
+					ppc,
+					i386,
+				);
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				ONLY_ACTIVE_ARCH = YES;
 				PREBINDING = NO;
-				SDKROOT = /Developer/SDKs/MacOSX10.4u.sdk;
+				SDKROOT = macosx10.5;
 			};
 			name = Debug;
 		};
 		C01FCF5008A954540054247B /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				GCC_WARN_ABOUT_RETURN_TYPE = YES;
-				GCC_WARN_UNUSED_VARIABLE = YES;
-				PREBINDING = NO;
-				SDKROOT = /Developer/SDKs/MacOSX10.4u.sdk;
-			};
-			name = Release;
-		};
-		E4971BD014284BA900558C03 /* Debug PPC */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ARCHS = ppc;
-				GCC_WARN_ABOUT_RETURN_TYPE = YES;
-				GCC_WARN_UNUSED_VARIABLE = YES;
-				PREBINDING = NO;
-				SDKROOT = /Developer/SDKs/MacOSX10.4u.sdk;
-			};
-			name = "Debug PPC";
-		};
-		E4971BD114284BA900558C03 /* Debug PPC */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ARCHS = ppc;
-				COPY_PHASE_STRIP = NO;
-				GCC_DEBUGGING_SYMBOLS = full;
-				GCC_DYNAMIC_NO_PIC = NO;
-				GCC_ENABLE_FIX_AND_CONTINUE = NO;
-				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
-				GCC_MODEL_TUNING = G5;
-				GCC_OPTIMIZATION_LEVEL = 0;
-				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
-				GCC_VERSION = 4.0;
-				HEADER_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/../../fftw-3.3.2/osx-build/include",
-					"$(HOME)/Development/wxMac/include",
-					"$(HOME)/Development/wxMac/osx-build/lib/wx/include/mac-unicode-release-static-2.8",
-					"$(HOME)/Development/ruby-1.8.7-static",
-				);
-				INFOPLIST_FILE = Info.plist;
-				INSTALL_PATH = "$(HOME)/Applications";
-				LIBRARY_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/../../fftw-3.3.2/osx-build/lib",
-					"$(HOME)/Development/wxMac/osx-build/lib",
-					"$(HOME)/Development/ruby-1.8.7-static",
-				);
-				OTHER_CFLAGS = (
-					"-D_FILE_OFFSET_BITS=64",
-					"-D_LARGE_FILES",
-					"-D__WXMAC__",
-				);
-				OTHER_LDFLAGS = (
-					"-lfftw3",
-					"-lwx_macu_html-2.8",
-					"-lwx_macu_richtext-2.8",
-					"-lwx_macu_core-2.8",
-					"-lwx_base_carbonu-2.8",
-					"-lwx_macu_gl-2.8",
-					"-lwx_macu_adv-2.8",
-					"-lwxregexu-2.8",
-					"-lwxexpat-2.8",
-					"-lwxtiff-2.8",
-					"-lwxjpeg-2.8",
-					"-lwxpng-2.8",
-					"-lz",
-					"-lpthread",
-					"-liconv",
-					"-lruby-static",
-				);
-				PRODUCT_NAME = Molby;
-				SDKROOT = /Developer/SDKs/MacOSX10.4u.sdk;
-				WRAPPER_EXTENSION = app;
-				ZERO_LINK = NO;
-			};
-			name = "Debug PPC";
-		};
-		E4971BD214284BA900558C03 /* Debug PPC */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				COPY_PHASE_STRIP = NO;
-				GCC_DYNAMIC_NO_PIC = NO;
-				GCC_ENABLE_FIX_AND_CONTINUE = YES;
-				GCC_MODEL_TUNING = G5;
-				GCC_OPTIMIZATION_LEVEL = 0;
-				GCC_VERSION = 4.0;
-				HEADER_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/../../fftw-3.3.2/osx-build/include",
-					"$(HOME)/Development/ruby-1.8.7-static",
-				);
-				INSTALL_PATH = /usr/local/bin;
-				LIBRARY_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/../../fftw-3.3.2/osx-build/lib",
-					"$(HOME)/Development/ruby-1.8.7-static",
-				);
-				OTHER_CFLAGS = "-D__CMDMAC__=1";
-				OTHER_LDFLAGS = (
-					"-lfftw3",
-					"-lruby-static",
-				);
-				PREBINDING = NO;
-				PRODUCT_NAME = Molby_command;
-			};
-			name = "Debug PPC";
-		};
-		E4D5AD671180852F00B1D8A4 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				COPY_PHASE_STRIP = NO;
-				GCC_DYNAMIC_NO_PIC = NO;
-				GCC_ENABLE_FIX_AND_CONTINUE = YES;
-				GCC_MODEL_TUNING = G5;
-				GCC_OPTIMIZATION_LEVEL = 0;
-				GCC_VERSION = 4.0;
-				HEADER_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/../../fftw-3.3.2/osx-build/include",
-					"$(HOME)/Development/ruby-1.8.7-static",
-				);
-				INSTALL_PATH = /usr/local/bin;
-				LIBRARY_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/../../fftw-3.3.2/osx-build/lib",
-					"$(HOME)/Development/ruby-1.8.7-static",
-				);
-				OTHER_CFLAGS = "-D__CMDMAC__=1";
-				OTHER_LDFLAGS = (
-					"-lfftw3",
-					"-lruby-static",
-				);
-				PREBINDING = NO;
-				PRODUCT_NAME = Molby_command;
-			};
-			name = Debug;
-		};
-		E4D5AD681180852F00B1D8A4 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
 				ARCHS = (
 					ppc,
 					i386,
 				);
-				COPY_PHASE_STRIP = NO;
-				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				GCC_ENABLE_FIX_AND_CONTINUE = NO;
-				GCC_MODEL_TUNING = G5;
-				GCC_VERSION = 4.0;
-				HEADER_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/../../fftw-3.3.2/osx-build/include",
-					"$(HOME)/Development/ruby-1.8.7-static",
-				);
-				INSTALL_PATH = /usr/local/bin;
-				LIBRARY_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/../../fftw-3.3.2/osx-build/lib",
-					"$(HOME)/Development/ruby-1.8.7-static",
-				);
-				OTHER_CFLAGS = "-D__CMDMAC__=1";
-				OTHER_LDFLAGS = (
-					"-lfftw3",
-					"-lruby-static",
-				);
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
 				PREBINDING = NO;
-				PRODUCT_NAME = Molby_command;
-				ZERO_LINK = NO;
+				SDKROOT = macosx10.5;
 			};
 			name = Release;
 		};
@@ -914,7 +680,6 @@
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				C01FCF4B08A954540054247B /* Debug */,
-				E4971BD114284BA900558C03 /* Debug PPC */,
 				C01FCF4C08A954540054247B /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
@@ -924,18 +689,7 @@
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				C01FCF4F08A954540054247B /* Debug */,
-				E4971BD014284BA900558C03 /* Debug PPC */,
 				C01FCF5008A954540054247B /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		E4D5AD691180854D00B1D8A4 /* Build configuration list for PBXNativeTarget "Molby_command" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				E4D5AD671180852F00B1D8A4 /* Debug */,
-				E4971BD214284BA900558C03 /* Debug PPC */,
-				E4D5AD681180852F00B1D8A4 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

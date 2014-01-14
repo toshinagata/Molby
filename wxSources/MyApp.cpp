@@ -58,7 +58,7 @@
 #endif
 
 #include "../MolLib/MolLib.h"
-#include "../MolLib/Ruby_bind/Molby.h"
+#include "../MolLib/Ruby_bind/Molby_extern.h"
 #include "../MolLib/Missing.h"
 
 #include <wchar.h>
@@ -68,11 +68,13 @@
 #include <CoreFoundation/CoreFoundation.h>
 #undef T_DATA
 #include <Carbon/Carbon.h>
-#include "wx/mac/carbon/private.h"
+// #include "wx/mac/carbon/private.h"
 #include <sys/wait.h>  /* for waitpid()  */
 #endif
 
 #pragma mark ====== MyApp ======
+
+const char *gSettingQuitOnCloseLastWindow = "quit_on_close_last_window";
 
 MyFrame *frame = (MyFrame *) NULL;
 
@@ -188,6 +190,7 @@ bool MyApp::OnInit(void)
 	//  Set defaults
 #ifdef __WXMAC__
 	wxSystemOptions::SetOption(wxT("mac.listctrl.always_use_generic"), 1);
+	wxSystemOptions::SetOption(wxT("osx.openfiledialog.always-show-types"), 1);
 #endif
 
 #if __WXMSW__
@@ -204,11 +207,10 @@ bool MyApp::OnInit(void)
 			//  Make a connection with the other instance and ask for opening the file(s)
 			wxString files;
 			wxConnectionBase *connection;
-			while (argc > 1) {
-				files.append(argv[1]);
+			int i;
+			for (i = 1; i < argc; i++) {
+				files.append(argv[i]);
 				files.append(wxT("\n"));
-				argc--;
-				argv++;
 			}
 			m_client = new MyClient;
 			connection = m_client->MakeConnection(wxT("localhost"), *m_ipcServiceName, MOLBY_IPC_TOPIC);
@@ -260,7 +262,7 @@ bool MyApp::OnInit(void)
 #ifdef __X__
 	frame->SetIcon(wxIcon(_T("doc.xbm")));
 #endif
-
+	
 	wxMenuBar *menu_bar = CreateMenuBar(0);
 	
 #ifdef __WXMAC__
@@ -278,7 +280,7 @@ bool MyApp::OnInit(void)
 #else
 	frame->Show(true);
 #endif
-
+	
 	SetTopWindow(frame);
 	
 	//  Load default settings from the preference file
@@ -333,8 +335,6 @@ bool MyApp::OnInit(void)
 		for (i = 1; i < argc; i++) {
 			files.append(argv[i]);
 			files.append(wxT("\n"));
-			argc--;
-			argv++;
 		}
 		OnOpenFiles(files);
 	}
@@ -532,6 +532,8 @@ MyApp::MacHandleAEODoc(const WXEVENTREF event, WXEVENTREF WXUNUSED(reply))
     OSErr err;
     short i;
 	
+	return noErr;  /*  TODO: handle open Apple event  */
+	
     err = AEGetParamDesc((AppleEvent *)event, keyDirectObject, typeAEList, &docList);
     if (err != noErr)
         return err;
@@ -553,7 +555,7 @@ MyApp::MacHandleAEODoc(const WXEVENTREF event, WXEVENTREF WXUNUSED(reply))
         AEGetNthPtr(
 					&docList, i, typeFSRef, &keywd, &returnedType,
 					(Ptr)&theRef, sizeof(theRef), &actualSize);
-        fName = wxMacFSRefToPath( &theRef ) ;
+    //    fName = wxMacFSRefToPath( &theRef ) ;
 		fNameList.append(fName);
 		fNameList.append(wxT("\n"));
     }
@@ -850,7 +852,8 @@ MyApp::UpdateScriptMenu(wxMenuBar *mbar)
 			smenu->Append(item);
 		}
 	}
-	Connect(myMenuID_CustomScript, myMenuID_CustomScript + countScriptMenu - 1, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler(MyApp::OnScriptMenuSelected), NULL, this);
+	if (countScriptMenu > 0)
+		Connect(myMenuID_CustomScript, myMenuID_CustomScript + countScriptMenu - 1, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler(MyApp::OnScriptMenuSelected), NULL, this);
 }
 
 void
@@ -1073,7 +1076,8 @@ MyApp::OnActivate(wxActivateEvent &event)
 {
 #if defined(__WXMAC__) || defined(__WXMSW__)
 	MyFrame *frame = GetMainFrame();
-	frame->Show(false);  /*  Sometimes this "parent" frame gets visible and screw up the menus  */
+	if (frame != NULL)
+		frame->Show(false);  /*  Sometimes this "parent" frame gets visible and screw up the menus  */
 #endif
 	event.Skip();
 }
@@ -1524,14 +1528,20 @@ MyApp::CheckIfAllWindowsAreGoneHandler(wxCommandEvent &event)
 	wxTopLevelWindow *win;
     for (iter = wxTopLevelWindows.begin(); iter != wxTopLevelWindows.end(); ++iter) {
         win = (wxTopLevelWindow *)(*iter);
-		if (win->IsShown())
+		if (win != m_frameToBeDestroyed && win->IsShown())
 			m++;
     }
 	if (m == 0) {
-		if (MyAppCallback_messageBox("Do you want to quit Molby?", "Quit Molby", 3, 2)) {
+		const char *p = MyAppCallback_getGlobalSettings(gSettingQuitOnCloseLastWindow);
+		int quitFlag = 1;
+		if (p != NULL && *p != 0)
+			quitFlag = (atoi(p) != 0);
+		if (quitFlag || MyAppCallback_messageBox("Do you want to quit Molby?", "Quit Molby", 3, 2)) {
+			
 			for (iter = wxTopLevelWindows.begin(); iter != wxTopLevelWindows.end(); ++iter) {
 				win = (wxTopLevelWindow *)(*iter);
-				win->Destroy();
+				if (win != m_frameToBeDestroyed)
+					win->Destroy();  //  Avoid double destruction
 			}
 		} else {
 			//  Show console window to avoid window-less state
@@ -1541,13 +1551,14 @@ MyApp::CheckIfAllWindowsAreGoneHandler(wxCommandEvent &event)
 }
 
 void
-MyApp::CheckIfAllWindowsAreGone()
+MyApp::CheckIfAllWindowsAreGone(wxTopLevelWindow *frame)
 {
-#if defined(__WXMSW__)
+#if 1 || defined(__WXMSW__)
 	/*  On Windows, we should avoid the situation where all windows are hidden and
 	    still the program is running. So that we check whether all windows are gone
 	    and if so ask the user to quit the program. If user chooses not to quit, then
 	    the console window is reopened and the program continues to run.  */
+	m_frameToBeDestroyed = frame;
 	wxCommandEvent myEvent(MyDocumentEvent, myMenuID_Internal_CheckIfAllWindowsAreGone);
 	this->AddPendingEvent(myEvent);
 #endif
@@ -1574,7 +1585,7 @@ MyFrame::MyFrame(wxDocManager *manager, wxFrame *frame, const wxString& title,
 	    It should not happen because MyApp::OnActivate() tries to hide this window,
 	    but this is still here just in case.  */
 	OSStatus sts;
-	sts = ChangeWindowAttributes((WindowRef)m_macWindow, 0, kWindowInWindowMenuAttribute);
+//	sts = ChangeWindowAttributes((WindowRef)m_macWindow, 0, kWindowInWindowMenuAttribute);
 /*	printf("m_macWindow = %p, status = %d\n", m_macWindow, (int)sts); */
 #endif
 }
@@ -1605,8 +1616,9 @@ MyAppCallback_getGUIDescriptionString(void)
 			"  Copyright (C) Junmei Wang, Ross C. Walker, \n"
 			"  Michael F. Crowley, Scott Brozell and David A. Case\n"
 			"wxWidgets %d.%d.%d, http://www.wxwidgets.org/\n"
-		    "  Copyright (C) 1992-2008 Julian Smart, Robert Roebling,\n"
-			"  Vadim Zeitlin and other members of the wxWidgets team\n"
+		    "  Copyright (C) 1992-2013 Julian Smart, Vadim Zeitlin,\n"
+			"  Stefan Csomor, Robert Roebling,\n"
+			"  and other members of the wxWidgets team\n"
 			"  Portions (C) 1996 Artificial Intelligence Applications Institute\n",
 			wxMAJOR_VERSION, wxMINOR_VERSION, wxRELEASE_NUMBER);
 	}
