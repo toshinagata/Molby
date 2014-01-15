@@ -1,25 +1,29 @@
 ifeq ($(TARGET_PLATFORM),MAC)
- WXCONFIG_PREFIX = $(HOME)/Development/wxMac/osx-build/
- CPP_EXTRA_FLAGS = -isysroot /Developer/SDKs/MacOSX10.4u.sdk -mmacosx-version-min=10.4 -arch ppc -arch i386 -DUSE_RUBY=1 -g -I$(PWD)/../../fftw-3.3.2/osx-build/include
+ WX_DIR = $(PWD)/../../wxWidgets-3.0.0
+ WX_LIB_DIR = $(WX_DIR)/osx-build/lib
+ WX_ARCH_DIR = $(WX_LIB_DIR)/wx/include/osx_cocoa-unicode-static-3.0
+ WX_CPPFLAGS = -isystem $(WX_ARCH_DIR) -isystem $(WX_DIR)/include -D_FILE_OFFSET_BITS=64 -D__WXMAC__ -D__WXOSX__ -D__WXOSX_COCOA__
+ WX_LDFLAGS = -L$(WX_LIB_DIR)  -framework IOKit -framework Carbon -framework Cocoa -framework AudioToolbox -framework System -framework OpenGL -framework QuickTime -lwx_osx_cocoau-3.0 -lwx_osx_cocoau_gl-3.0 -framework WebKit -lwxregexu-3.0 -lwxtiff-3.0 -lwxjpeg-3.0 -lwxpng-3.0 -lz -lpthread -liconv 
+ CPP_EXTRA_FLAGS = -isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.5 -arch ppc -arch i386 -DUSE_RUBY=1 -g -isystem $(PWD)/../../fftw-3.3.2/osx-build/include
  LD_EXTRA_FLAGS = -framework Accelerate -framework GLUT -L$(PWD)/../../fftw-3.3.2/osx-build/lib -lfftw3
- RUBY_DIR = $(HOME)/Development/ruby-1.8.7-static
- RUBY_CFLAGS = -I$(RUBY_DIR)
- RUBY_LDFLAGS = -L$(RUBY_DIR) -lruby-static
+ RUBY_DIR = $(PWD)/../../ruby-1.8.7-p160
+ RUBY_CFLAGS = -isystem $(RUBY_DIR)/osx-build/include
+ RUBY_LDFLAGS = -L$(RUBY_DIR)/osx-build/lib -lruby-static
  EXECUTABLE = Molby
  EXE_SUFFIX =
 endif
 
 ifeq ($(TARGET_PLATFORM),MSW)
  WX_DIR = $(PWD)/../../wxWidgets-3.0.0
- WX_LIB_DIR = $(WX_DIR)/msw-build-3/lib
+ WX_LIB_DIR = $(WX_DIR)/msw-build/lib
  WX_ARCH_DIR = $(WX_LIB_DIR)/wx/include/msw-unicode-static-3.0
- WX_CPPFLAGS = -I$(WX_ARCH_DIR) -I$(WX_DIR)/include -D_LARGEFIILE_SOURCE=unknown -D__WXMSW__
+ WX_CPPFLAGS = -isystem $(WX_ARCH_DIR) -isystem $(WX_DIR)/include -D_LARGEFIILE_SOURCE=unknown -D__WXMSW__
  WX_LDFLAGS = -L$(WX_LIB_DIR) -Wl,--subsystem,windows -mwindows -lwx_mswu_gl-3.0 -lopengl32 -lglu32 -lwx_mswu-3.0 -lwxregexu-3.0 -lwxexpat-3.0 -lwxtiff-3.0 -lwxjpeg-3.0 -lwxpng-3.0 -lwxzlib-3.0 -lrpcrt4 -loleaut32 -lole32 -luuid -lwinspool -lwinmm -lshell32 -lcomctl32 -lcomdlg32 -ladvapi32 -lwsock32 -lgdi32
- CPP_EXTRA_FLAGS = -O2 -I$(PWD)/../../CLAPACK-3.1.1.1-mingw/INCLUDE -I$(PWD)/../../fftw-3.3.2/msw-build-3/include
- LD_EXTRA_FLAGS = -L$(PWD)/../../CLAPACK-3.1.1.1-mingw/lib -L$(PWD)/../../fftw-3.3.2/msw-build-3/lib -llapackMinGW -lblasMinGW -lf2c_nomain -lfftw3
+ CPP_EXTRA_FLAGS = -isystem $(PWD)/../../CLAPACK-3.1.1.1-mingw/INCLUDE -isystem $(PWD)/../../fftw-3.3.2/msw-build/include
+ LD_EXTRA_FLAGS = -L$(PWD)/../../CLAPACK-3.1.1.1-mingw/lib -L$(PWD)/../../fftw-3.3.2/msw-build/lib -llapackMinGW -lblasMinGW -lf2c_nomain -lfftw3
  RUBY_DIR = $(PWD)/../../ruby-1.8.7-p160
- RUBY_CFLAGS = -I$(RUBY_DIR)/msw-build-3/include
- RUBY_LDFLAGS = -L$(RUBY_DIR)/msw-build-3/lib -lmsvcrt-ruby18-static -lws2_32
+ RUBY_CFLAGS = -isystem $(RUBY_DIR)/msw-build/include
+ RUBY_LDFLAGS = -L$(RUBY_DIR)/msw-build/lib -lmsvcrt-ruby18-static -lws2_32
  EXECUTABLE = _Molby.exe_
  FINAL_EXECUTABLE = Molby.exe
  EXE_SUFFIX = .exe
@@ -39,14 +43,30 @@ endif
 
 CPP = g++
 CC = gcc
-CFLAGS = $(CPPFLAGS) $(CPP_EXTRA_FLAGS) $(RUBY_CFLAGS) $(WX_CPPFLAGS)
-LDFLAGS = $(WX_LDFLAGS) $(LD_EXTRA_FLAGS) $(RUBY_LDFLAGS)
-DESTPREFIX = build
+
+ifeq ($(MAKECMDGOALS),debug)
+ DEBUG = 1
+endif
+
+ifeq ($(DEBUG),1)
+ DESTPREFIX = build/debug
+ COPT = -O0 -g
+else
+ DESTPREFIX = build/release
+ COPT = -O2
+endif
 DESTDIR = $(PWD)/$(DESTPREFIX)
+CFLAGS = $(CPPFLAGS) $(COPT) $(CPP_EXTRA_FLAGS) $(RUBY_CFLAGS) $(WX_CPPFLAGS)
+LDFLAGS = $(WX_LDFLAGS) $(LD_EXTRA_FLAGS) $(RUBY_LDFLAGS)
 export CFLAGS
 export LDFLAGS
 export DESTDIR
 export CC
+export TARGET_PLATFORM
+
+release: all
+
+debug: all
 
 all: $(DESTPREFIX) $(DESTPREFIX)/$(PRODUCT)
 
@@ -56,7 +76,7 @@ $(DESTPREFIX) :
 amber11 : ../amber11/src/antechamber/*.[ch] ../amber11/src/sqm/*.f ../amber11/src/config.h
 	make -f ../Makefile_amber11
 
-$(DESTPREFIX)/mopac-build/mopac/mopac606$(EXE_SUFFIX) : 
+mopac/mopac606$(EXE_SUFFIX) : 
 	make -f ../Makefile_mopac606_nbo
 
 ifeq ($(TARGET_PLATFORM),MSW)
@@ -76,12 +96,12 @@ $(DESTPREFIX)/$(RESOURCE) : molby.rc
 endif
 
 depend: cleandep $(DESTPREFIX) $(OBJECTS:%.o=$(DESTPREFIX)/%.d) $(EXTRA_OBJECTS:%.o=$(DESTPREFIX)/%.d)
-	cat $(DESTPREFIX)/*.d > $(DESTPREFIX)/Makefile.depend
+	cat $(DESTPREFIX)/*.d > build/Makefile.depend
 
 cleandep:
-	rm -f $(DESTPREFIX)/Makefile.depend
+	rm -f build/Makefile.depend
 
--include $(DESTPREFIX)/Makefile.depend
+-include build/Makefile.depend
 
 $(DESTPREFIX)/%.d : ../wxSources/%.cpp
 	$(CPP) -MM $< >$@ $(subst -arch ppc,,$(CFLAGS))
@@ -110,10 +130,10 @@ endif
 ifeq ($(TARGET_PLATFORM),MSW)
 	sh ../record_build_date.sh
 endif
-	$(CC) -c $(DESTPREFIX)/buildInfo.c -o $(DESTPREFIX)/buildInfo.o
+	$(CC) -c buildInfo.c -o $(DESTPREFIX)/buildInfo.o $(CFLAGS)
 	$(CPP) -o $@ $(DESTOBJECTS) $(DESTPREFIX)/buildInfo.o $(CFLAGS) $(LDFLAGS)
 
-$(DESTPREFIX)/$(PRODUCT) : $(DESTPREFIX)/$(EXECUTABLE) ../Scripts/*.rb amber11 $(DESTPREFIX)/mopac-build/mopac/mopac606$(EXE_SUFFIX)
+$(DESTPREFIX)/$(PRODUCT) : $(DESTPREFIX)/$(EXECUTABLE) ../Scripts/*.rb amber11 mopac/mopac606$(EXE_SUFFIX)
 ifeq ($(TARGET_PLATFORM),MAC)
 	rm -rf $(DESTPREFIX)/$(PRODUCT)
 	mkdir -p $(DESTPREFIX)/$(PRODUCT)/Contents/MacOS
@@ -122,7 +142,7 @@ ifeq ($(TARGET_PLATFORM),MAC)
 	echo -n "APPL????" > $(DESTPREFIX)/$(PRODUCT)/Contents/PkgInfo
 	cp -r ../Scripts $(DESTPREFIX)/$(PRODUCT)/Contents/Resources
 	cp -r amber11 $(DESTPREFIX)/$(PRODUCT)/Contents/Resources
-	cp -r $(DESTPREFIX)/mopac-build/mopac $(DESTPREFIX)/$(PRODUCT)/Contents/Resources
+	cp -r mopac $(DESTPREFIX)/$(PRODUCT)/Contents/Resources
 	mkdir -p $(DESTPREFIX)/$(PRODUCT)/Contents/Resources/Scripts/lib
 	for i in $(RUBY_EXTLIB); do cp $(RUBY_DIR)/lib/$$i $(DESTPREFIX)/$(PRODUCT)/Contents/Resources/Scripts/lib; done
 	cp $(DESTPREFIX)/$(EXECUTABLE) $(DESTPREFIX)/$(PRODUCT)/Contents/MacOS
@@ -134,13 +154,13 @@ ifeq ($(TARGET_PLATFORM),MSW)
 	cp `which mingwm10.dll` $(DESTPREFIX)/$(PRODUCT_DIR)
 	cp -r ../Scripts $(DESTPREFIX)/$(PRODUCT_DIR)
 	cp -r amber11 $(DESTPREFIX)/$(PRODUCT_DIR)
-	cp -r $(DESTPREFIX)/mopac-build/mopac $(DESTPREFIX)/$(PRODUCT_DIR)
+	cp -r mopac $(DESTPREFIX)/$(PRODUCT_DIR)
 	mkdir -p $(DESTPREFIX)/$(PRODUCT_DIR)/Scripts/lib
 	for i in $(RUBY_EXTLIB); do cp $(RUBY_DIR)/lib/$$i $(DESTPREFIX)/$(PRODUCT_DIR)/Scripts/lib; done
 endif
 
 ifeq ($(TARGET_PLATFORM),MSW)
-setup: $(DESTPREFIX)/$(PRODUCT_DIR)/$(FINAL_EXECUTABLE)
+setup: build/release/$(PRODUCT_DIR)/$(FINAL_EXECUTABLE)
 	/c/Program\ Files\ \(x86\)/Inno\ Setup\ 5/iscc molby.iss
 endif
 

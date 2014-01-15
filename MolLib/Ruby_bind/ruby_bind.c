@@ -314,6 +314,7 @@ s_Kernel_StopSound(VALUE self)
 static VALUE
 s_Kernel_ExportToClipboard(VALUE self, VALUE sval)
 {
+#if !defined(__CMDMAC__)
 	const char *s = StringValuePtr(sval);
 	char *ns;
 #if __WXMSW__
@@ -347,6 +348,7 @@ s_Kernel_ExportToClipboard(VALUE self, VALUE sval)
 #endif
 	if (MoleculeCallback_writeToPasteboard("TEXT", ns, strlen(ns) + 1))
 		rb_raise(rb_eMolbyError, "Cannot export string to clipboard");
+#endif
 	return Qnil;
 }
 

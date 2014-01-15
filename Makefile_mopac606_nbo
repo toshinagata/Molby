@@ -1,4 +1,4 @@
-#  Usage: make -f Makefile_mopac606_nbo (in XXXX_build directory)
+#  Usage: make -f ../Makefile_mopac606_nbo (in XXXX_build directory)
 #  Copy source files to ./build/mopac-build and build mopac606 executable there
 
 ifeq ($(TARGET_PLATFORM),)
@@ -23,13 +23,14 @@ export FLDFLAGS
 
 OPWD = $(PWD)
 MOPDIR = $(OPWD)/../mopac606_nbo/src
+BUILDDIR = build/mopac-build
 
-build/mopac-build/mopac/mopac606$(EXE_SUFFIX) : build/mopac-build/mopac606$(EXE_SUFFIX)
-	(mkdir -p build/mopac-build/mopac; cp -p build/mopac-build/mopac606$(EXE_SUFFIX) build/mopac-build/mopac)
+mopac/mopac606$(EXE_SUFFIX) : $(BUILDDIR)/mopac606$(EXE_SUFFIX)
+	(mkdir -p mopac; cp -p $(BUILDDIR)/mopac606$(EXE_SUFFIX) mopac)
 
-build/mopac-build/mopac606$(EXE_SUFFIX) : $(MOPDIR)/*.f $(MOPDIR)/SIZES $(MOPDIR)/mopnbo.f.in
-	(cd ../mopac606_nbo/src; mkdir -p $(OPWD)/build/mopac-build; cp -p * $(OPWD)/build/mopac-build/)
-	(cd build/mopac-build && $(MAKE))
+$(BUILDDIR)/mopac606$(EXE_SUFFIX) : $(MOPDIR)/*.f $(MOPDIR)/SIZES $(MOPDIR)/mopnbo.f.in
+	(cd ../mopac606_nbo/src; mkdir -p $(OPWD)/$(BUILDDIR); cp -p * $(OPWD)/$(BUILDDIR)/)
+	(cd $(BUILDDIR) && $(MAKE))
 
 clean :
-	rm -rf build/mopac-build
+	rm -rf $(BUILDDIR)

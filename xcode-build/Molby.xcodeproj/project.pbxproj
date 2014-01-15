@@ -28,6 +28,29 @@
 		E420BE22188574F600A2B983 /* ProgressFrame.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BE1D188574F600A2B983 /* ProgressFrame.cpp */; };
 		E420BE23188574F600A2B983 /* RubyDialogFrame.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BE1F188574F600A2B983 /* RubyDialogFrame.cpp */; };
 		E420BE24188574F600A2B983 /* wxKillAddition.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BE21188574F600A2B983 /* wxKillAddition.cpp */; };
+		E49BFBFA1886E72000188237 /* MyVersion.c in Sources */ = {isa = PBXBuildFile; fileRef = E420BE18188574D700A2B983 /* MyVersion.c */; };
+		E49BFBFB1886E74600188237 /* IntGroup.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC777D183E4F3F0064FB2E /* IntGroup.c */; };
+		E49BFBFF1886E74600188237 /* MainViewCommon.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC7781183E4F3F0064FB2E /* MainViewCommon.c */; };
+		E49BFC001886E74600188237 /* Missing.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC7790183E4F3F0064FB2E /* Missing.c */; };
+		E49BFC021886E74600188237 /* MolAction.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC7792183E4F3F0064FB2E /* MolAction.c */; };
+		E49BFC041886E74600188237 /* Molecule.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC7794183E4F3F0064FB2E /* Molecule.c */; };
+		E49BFC071886E74600188237 /* Object.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC7797183E4F3F0064FB2E /* Object.c */; };
+		E49BFC091886E74600188237 /* Dcd.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC777B183E4F3F0064FB2E /* Dcd.c */; };
+		E49BFC0B1886E74600188237 /* Parameter.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC7799183E4F3F0064FB2E /* Parameter.c */; };
+		E49BFC0D1886E74600188237 /* Trackball.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC77A4183E4F3F0064FB2E /* Trackball.c */; };
+		E49BFC0F1886E74600188237 /* Types.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC77A6183E4F3F0064FB2E /* Types.c */; };
+		E49BFC111886E74600188237 /* cmdtool_stubs.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC777A183E4F3F0064FB2E /* cmdtool_stubs.c */; };
+		E49BFC121886E75700188237 /* MDCore.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC7784183E4F3F0064FB2E /* MDCore.c */; };
+		E49BFC131886E75C00188237 /* MDEwald.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC7786183E4F3F0064FB2E /* MDEwald.c */; };
+		E49BFC141886E75D00188237 /* MDForce.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC7788183E4F3F0064FB2E /* MDForce.c */; };
+		E49BFC151886E75D00188237 /* MDGraphite.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC778A183E4F3F0064FB2E /* MDGraphite.c */; };
+		E49BFC161886E75E00188237 /* MDPressure.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC778C183E4F3F0064FB2E /* MDPressure.c */; };
+		E49BFC171886E75F00188237 /* MDSurface.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC778E183E4F3F0064FB2E /* MDSurface.c */; };
+		E49BFC191886E76F00188237 /* ruby_bind.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC779F183E4F3F0064FB2E /* ruby_bind.c */; };
+		E49BFC1B1886E77000188237 /* ruby_md.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC77A2183E4F3F0064FB2E /* ruby_md.c */; };
+		E49BFC1C1886E77100188237 /* ruby_types.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC77A3183E4F3F0064FB2E /* ruby_types.c */; };
+		E49BFC1F1886E78600188237 /* buildInfo.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC7CA5183F94D30064FB2E /* buildInfo.c */; };
+		E49BFC2C1886E88A00188237 /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E4FC7810183E50DC0064FB2E /* Accelerate.framework */; };
 		E4FC77A9183E4F3F0064FB2E /* Dcd.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC777B183E4F3F0064FB2E /* Dcd.c */; };
 		E4FC77AA183E4F3F0064FB2E /* IntGroup.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC777D183E4F3F0064FB2E /* IntGroup.c */; };
 		E4FC77AB183E4F3F0064FB2E /* MainView.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC777F183E4F3F0064FB2E /* MainView.c */; };
@@ -111,6 +134,7 @@
 		E420BE1F188574F600A2B983 /* RubyDialogFrame.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = RubyDialogFrame.cpp; sourceTree = "<group>"; };
 		E420BE20188574F600A2B983 /* RubyDialogFrame.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RubyDialogFrame.h; sourceTree = "<group>"; };
 		E420BE21188574F600A2B983 /* wxKillAddition.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = wxKillAddition.cpp; sourceTree = "<group>"; };
+		E49BFB761886E2E400188237 /* Molby_command */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Molby_command; sourceTree = BUILT_PRODUCTS_DIR; };
 		E4FC777A183E4F3F0064FB2E /* cmdtool_stubs.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = cmdtool_stubs.c; path = ../MolLib/cmdtool_stubs.c; sourceTree = SOURCE_ROOT; };
 		E4FC777B183E4F3F0064FB2E /* Dcd.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = Dcd.c; path = ../MolLib/Dcd.c; sourceTree = SOURCE_ROOT; };
 		E4FC777C183E4F3F0064FB2E /* Dcd.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Dcd.h; path = ../MolLib/Dcd.h; sourceTree = SOURCE_ROOT; };
@@ -158,8 +182,8 @@
 		E4FC77C9183E4FCD0064FB2E /* style.css */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.css; name = style.css; path = ../Documents/etc/style.css; sourceTree = SOURCE_ROOT; };
 		E4FC77D4183E4FF20064FB2E /* molby_icon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = molby_icon.icns; path = ../bitmaps/molby_icon.icns; sourceTree = SOURCE_ROOT; };
 		E4FC77D6183E4FFE0064FB2E /* Scripts */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Scripts; path = ../Scripts; sourceTree = SOURCE_ROOT; };
-		E4FC77D8183E503E0064FB2E /* amber11 */ = {isa = PBXFileReference; lastKnownFileType = folder; path = amber11; sourceTree = "<group>"; };
-		E4FC7806183E50710064FB2E /* mopac */ = {isa = PBXFileReference; lastKnownFileType = folder; name = mopac; path = "build/mopac-build/mopac"; sourceTree = SOURCE_ROOT; };
+		E4FC77D8183E503E0064FB2E /* amber11 */ = {isa = PBXFileReference; lastKnownFileType = folder; path = amber11; sourceTree = SOURCE_ROOT; };
+		E4FC7806183E50710064FB2E /* mopac */ = {isa = PBXFileReference; lastKnownFileType = folder; path = mopac; sourceTree = SOURCE_ROOT; };
 		E4FC7810183E50DC0064FB2E /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = /System/Library/Frameworks/Accelerate.framework; sourceTree = "<absolute>"; };
 		E4FC7837183E50F00064FB2E /* AGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AGL.framework; path = /System/Library/Frameworks/AGL.framework; sourceTree = "<absolute>"; };
 		E4FC7845183E51180064FB2E /* Carbon.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Carbon.framework; path = /System/Library/Frameworks/Carbon.framework; sourceTree = "<absolute>"; };
@@ -173,7 +197,7 @@
 		E4FC7A16183E51570064FB2E /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = ../../../../../../System/Library/Frameworks/Foundation.framework; sourceTree = SOURCE_ROOT; };
 		E4FC7B58183E53710064FB2E /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = /System/Library/Frameworks/WebKit.framework; sourceTree = "<absolute>"; };
 		E4FC7C16183E54730064FB2E /* Molby-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "Molby-Info.plist"; sourceTree = SOURCE_ROOT; };
-		E4FC7CA5183F94D30064FB2E /* buildInfo.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = buildInfo.c; path = build/buildInfo.c; sourceTree = SOURCE_ROOT; };
+		E4FC7CA5183F94D30064FB2E /* buildInfo.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = buildInfo.c; sourceTree = SOURCE_ROOT; };
 		E4FC7CAC183F953E0064FB2E /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = /System/Library/Frameworks/AudioToolbox.framework; sourceTree = "<absolute>"; };
 /* End PBXFileReference section */
 
@@ -198,6 +222,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E49BFB741886E2E400188237 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E49BFC2C1886E88A00188237 /* Accelerate.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -205,6 +237,7 @@
 			isa = PBXGroup;
 			children = (
 				8D1107320486CEB800E47090 /* Molby.app */,
+				E49BFB761886E2E400188237 /* Molby_command */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -427,6 +460,22 @@
 			productReference = 8D1107320486CEB800E47090 /* Molby.app */;
 			productType = "com.apple.product-type.application";
 		};
+		E49BFB751886E2E400188237 /* Molby_command */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E49BFB7A1886E30200188237 /* Build configuration list for PBXNativeTarget "Molby_command" */;
+			buildPhases = (
+				E49BFB731886E2E400188237 /* Sources */,
+				E49BFB741886E2E400188237 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Molby_command;
+			productName = Molby_command;
+			productReference = E49BFB761886E2E400188237 /* Molby_command */;
+			productType = "com.apple.product-type.tool";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -447,6 +496,7 @@
 			projectRoot = "";
 			targets = (
 				8D1107260486CEB800E47090 /* Molby */,
+				E49BFB751886E2E400188237 /* Molby_command */,
 			);
 		};
 /* End PBXProject section */
@@ -532,6 +582,35 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		E49BFB731886E2E400188237 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				E49BFBFA1886E72000188237 /* MyVersion.c in Sources */,
+				E49BFBFB1886E74600188237 /* IntGroup.c in Sources */,
+				E49BFBFF1886E74600188237 /* MainViewCommon.c in Sources */,
+				E49BFC001886E74600188237 /* Missing.c in Sources */,
+				E49BFC021886E74600188237 /* MolAction.c in Sources */,
+				E49BFC041886E74600188237 /* Molecule.c in Sources */,
+				E49BFC071886E74600188237 /* Object.c in Sources */,
+				E49BFC091886E74600188237 /* Dcd.c in Sources */,
+				E49BFC0B1886E74600188237 /* Parameter.c in Sources */,
+				E49BFC0D1886E74600188237 /* Trackball.c in Sources */,
+				E49BFC0F1886E74600188237 /* Types.c in Sources */,
+				E49BFC111886E74600188237 /* cmdtool_stubs.c in Sources */,
+				E49BFC121886E75700188237 /* MDCore.c in Sources */,
+				E49BFC131886E75C00188237 /* MDEwald.c in Sources */,
+				E49BFC141886E75D00188237 /* MDForce.c in Sources */,
+				E49BFC151886E75D00188237 /* MDGraphite.c in Sources */,
+				E49BFC161886E75E00188237 /* MDPressure.c in Sources */,
+				E49BFC171886E75F00188237 /* MDSurface.c in Sources */,
+				E49BFC191886E76F00188237 /* ruby_bind.c in Sources */,
+				E49BFC1B1886E77000188237 /* ruby_md.c in Sources */,
+				E49BFC1C1886E77100188237 /* ruby_types.c in Sources */,
+				E49BFC1F1886E78600188237 /* buildInfo.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
@@ -551,17 +630,17 @@
 				GCC_REUSE_STRINGS = NO;
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				HEADER_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/../../fftw-3.3.2/osx-build-3/include",
+					"$(PROJECT_DIR)/../../fftw-3.3.2/osx-build/include",
 					"$(PROJECT_DIR)/../../wxWidgets-3.0.0/include",
 					"$(PROJECT_DIR)/../../wxWidgets-3.0.0/osx-build/lib/wx/include/osx_cocoa-unicode-static-3.0",
-					"$(PROJECT_DIR)/../../ruby-1.8.7-p160/osx-build-3/include",
+					"$(PROJECT_DIR)/../../ruby-1.8.7-p160/osx-build/include",
 				);
 				INFOPLIST_FILE = "Molby-Info.plist";
 				INSTALL_PATH = "$(HOME)/Applications";
 				LIBRARY_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/../../fftw-3.3.2/osx-build-3/lib",
+					"$(PROJECT_DIR)/../../fftw-3.3.2/osx-build/lib",
 					"$(PROJECT_DIR)/../../wxWidgets-3.0.0/osx-build/lib",
-					"$(PROJECT_DIR)/../../ruby-1.8.7-p160/osx-build-3/lib",
+					"$(PROJECT_DIR)/../../ruby-1.8.7-p160/osx-build/lib",
 				);
 				OTHER_CFLAGS = (
 					"-D_FILE_OFFSET_BITS=64",
@@ -604,17 +683,17 @@
 				GCC_REUSE_STRINGS = NO;
 				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
 				HEADER_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/../../fftw-3.3.2/osx-build-3/include",
+					"$(PROJECT_DIR)/../../fftw-3.3.2/osx-build/include",
 					"$(PROJECT_DIR)/../../wxWidgets-3.0.0/include",
 					"$(PROJECT_DIR)/../../wxWidgets-3.0.0/osx-build/lib/wx/include/osx_cocoa-unicode-static-3.0",
-					"$(PROJECT_DIR)/../../ruby-1.8.7-p160/osx-build-3/include",
+					"$(PROJECT_DIR)/../../ruby-1.8.7-p160/osx-build/include",
 				);
 				INFOPLIST_FILE = "Molby-Info.plist";
 				INSTALL_PATH = "$(HOME)/Applications";
 				LIBRARY_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/../../fftw-3.3.2/osx-build-3/lib",
+					"$(PROJECT_DIR)/../../fftw-3.3.2/osx-build/lib",
 					"$(PROJECT_DIR)/../../wxWidgets-3.0.0/osx-build/lib",
-					"$(PROJECT_DIR)/../../ruby-1.8.7-p160/osx-build-3/lib",
+					"$(PROJECT_DIR)/../../ruby-1.8.7-p160/osx-build/lib",
 				);
 				OTHER_CFLAGS = (
 					"-D_FILE_OFFSET_BITS=64",
@@ -649,6 +728,7 @@
 					i386,
 				);
 				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_MODEL_TUNING = G5;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
@@ -666,10 +746,63 @@
 					i386,
 				);
 				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_MODEL_TUNING = G5;
+				GCC_OPTIMIZATION_LEVEL = 2;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				PREBINDING = NO;
 				SDKROOT = macosx10.5;
+			};
+			name = Release;
+		};
+		E49BFB781886E2E400188237 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COPY_PHASE_STRIP = NO;
+				GCC_VERSION = 4.2;
+				HEADER_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/../../fftw-3.3.2/osx-build/include",
+					"$(PROJECT_DIR)/../../ruby-1.8.7-p160/osx-build/include",
+				);
+				INSTALL_PATH = /usr/local/bin;
+				LIBRARY_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/../../fftw-3.3.2/osx-build/lib",
+					"$(PROJECT_DIR)/../../ruby-1.8.7-p160/osx-build/lib",
+				);
+				OTHER_CFLAGS = "-D__CMDMAC__=1";
+				OTHER_LDFLAGS = (
+					"-lfftw3",
+					"-lruby-static",
+				);
+				PREBINDING = NO;
+				PRODUCT_NAME = Molby_command;
+			};
+			name = Debug;
+		};
+		E49BFB791886E2E400188237 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_VERSION = 4.2;
+				HEADER_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/../../fftw-3.3.2/osx-build/include",
+					"$(PROJECT_DIR)/../../ruby-1.8.7-p160/osx-build/include",
+				);
+				INSTALL_PATH = /usr/local/bin;
+				LIBRARY_SEARCH_PATHS = (
+					"$(PROJECT_DIR)/../../fftw-3.3.2/osx-build/lib",
+					"$(PROJECT_DIR)/../../ruby-1.8.7-p160/osx-build/lib",
+				);
+				OTHER_CFLAGS = "-D__CMDMAC__=1";
+				OTHER_LDFLAGS = (
+					"-lfftw3",
+					"-lruby-static",
+				);
+				PREBINDING = NO;
+				PRODUCT_NAME = Molby_command;
 			};
 			name = Release;
 		};
@@ -690,6 +823,15 @@
 			buildConfigurations = (
 				C01FCF4F08A954540054247B /* Debug */,
 				C01FCF5008A954540054247B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		E49BFB7A1886E30200188237 /* Build configuration list for PBXNativeTarget "Molby_command" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E49BFB781886E2E400188237 /* Debug */,
+				E49BFB791886E2E400188237 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

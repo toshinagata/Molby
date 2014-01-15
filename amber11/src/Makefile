@@ -9,7 +9,10 @@ export AMBERHOME=$(PWD:/src=)
 endif
 
 ifeq ($(TARGET_PLATFORM),)
-ifeq ($(findstring darwin,$(OSTYPE)),darwin)
+ifeq ($(OSTYPE),)
+OSTYPE=`uname | tr A-Z a-z`
+endif
+ifeq (($findstring darwin $(OSTYPE)),darwin)
 export TARGET_PLATFORM=MAC
 else
 export TARGET_PLATFORM=MSW
@@ -21,6 +24,7 @@ include $(CONFIG_FILE)
 install: serial
 
 serial: configured_serial
+	@echo "TARGET_PLATFORM=${TARGET_PLATFORM}, OSTYPE=$(OSTYPE) FINDSTRING=$(FINDSTRING)"
 	@echo "Starting installation of ${AMBERTOOLS} at `date`".
 	mkdir -p $(LIBDIR)
 #	utility routines and libraries:
