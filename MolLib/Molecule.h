@@ -377,10 +377,13 @@ void MoleculeSetCell(Molecule *mp, Double a, Double b, Double c, Double alpha, D
 void MoleculeSetAniso(Molecule *mp, int n1, int type, Double x11, Double x22, Double x33, Double x12, Double x13, Double x23, const Double *sigmap);
 void MoleculeSetAnisoBySymop(Molecule *mp, int idx);
 int MoleculeSetPeriodicBox(Molecule *mp, const Vector *ax, const Vector *ay, const Vector *az, const Vector *ao, const char *periodic, int convertCoordinates);
+int MoleculeCalculateCellFromAxes(XtalCell *cp, int calc_abc);
 
 int MoleculeReadCoordinatesFromFile(Molecule *mp, const char *fname, const char *ftype, char **errbuf);
 int MoleculeReadCoordinatesFromPdbFile(Molecule *mp, const char *fname, char **errbuf);
 int MoleculeReadCoordinatesFromDcdFile(Molecule *mp, const char *fname, char **errbuf);
+
+int MoleculeLoadGamessDatFile(Molecule *mol, const char *fname, char **errbuf);
 
 int MoleculeReadExtendedInfo(Molecule *mp, const char *fname, char **errbuf);
 int MoleculeWriteExtendedInfo(Molecule *mp, const char *fname, char **errbuf);
@@ -390,6 +393,7 @@ int MoleculeWriteToPsfFile(Molecule *mp, const char *fname, char **errbuf);
 int MoleculeWriteToPdbFile(Molecule *mp, const char *fname, char **errbuf);
 int MoleculeWriteToDcdFile(Molecule *mp, const char *fname, char **errbuf);
 int MoleculeWriteToTepFile(Molecule *mp, const char *fname, char **errbuf);
+int MoleculeWriteToMbsfFile(Molecule *mp, const char *fname, char **errbuf);
 void MoleculeDump(Molecule *mol);
 
 int MoleculePrepareMDArena(Molecule *mol, int check_only, char **retmsg);
@@ -461,7 +465,7 @@ int MoleculeLookupAtomInResidue(Molecule *mp, int n1, int resno);
 int MoleculeAnalyzeAtomName(const char *s, char *resName, int *resSeq, char *atomName);
 int MoleculeAtomIndexFromString(Molecule *mp, const char *s);
 
-int MoleculeFindCloseAtoms(Molecule *mp, Int index, Double limit, Int *outNbonds, Int **outBonds, Int triangle);
+int MoleculeFindCloseAtoms(Molecule *mp, const Vector *vp, Double radius, Double limit, Int *outNbonds, Int **outBonds, Int triangle);
 int MoleculeGuessBonds(Molecule *mp, Double limit, Int *outNbonds, Int **outBonds);
 int MoleculeRebuildTablesFromConnects(Molecule *mp);
 int MoleculeAreAtomsConnected(Molecule *mol, int idx1, int idx2);

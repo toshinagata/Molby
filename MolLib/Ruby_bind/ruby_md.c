@@ -1027,7 +1027,7 @@ s_MDArena_VdwPar(VALUE self, VALUE val)
 static VALUE
 s_MDArena_testPME(int argc, VALUE *argv, VALUE self)
 {
-	extern pme_test(MDArena *);
+	extern int pme_test(MDArena *);
 	MDArena *arena;
 	if (rb_obj_is_kind_of(self, rb_cMDArena)) {
 		Data_Get_Struct(self, MDArena, arena);

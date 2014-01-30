@@ -574,7 +574,7 @@ s_MolActionLog(Molecule *mol, MolAction *action, FILE *fp)
 			case 'i': lastIval = argp->u.ival; fprintf(fp, " %d", lastIval); break;
 			case 'd': fprintf(fp, " %g", argp->u.dval); break;
 			case 's':
-			case 'C': fprintf(fp, " %.*s", argp->u.arval.nitems, argp->u.arval.ptr); break;
+			case 'C': fprintf(fp, " %.*s", argp->u.arval.nitems, (char *)argp->u.arval.ptr); break;
 			case 'v': case 't': case 'u': case 'I': case 'D': case 'V': case 'T': case 'U': {
 				char *pp = (char *)argp->u.arval.ptr;
 				int n = argp->u.arval.nitems;
@@ -630,7 +630,7 @@ s_MolActionLog(Molecule *mol, MolAction *action, FILE *fp)
 				MoleculeCallback_displayName(argp->u.mval, buf, sizeof buf);
 				if (buf[0] == 0) {
 					/*  No associated document  */
-					snprintf(buf, sizeof buf, "#<Molecule:0x%lx>", argp->u.mval);
+					snprintf(buf, sizeof buf, "#<Molecule:0x%lx>", (long unsigned)(void *)argp->u.mval);
 				}
 				fprintf(fp, "%s", buf);
 				break;

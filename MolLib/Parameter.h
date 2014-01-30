@@ -196,6 +196,7 @@ int ParameterDeleteAllEntriesForSource(Parameter *par, int src_idx);
 
 int ParameterGlobalParIndexForSrcIndex(int src);
 int ParameterCommentIndexForGlobalFileName(const char *p);
+int ParameterCompare(const UnionPar *up1, const UnionPar *up2, int type);
 int ParameterCommentIndex(const char *comment);
 const char *ParameterGetComment(int idx);
 	

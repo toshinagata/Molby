@@ -40,4 +40,5 @@ MyThread::Entry()
 	if (m_exit_func)
 		(*m_exit_func)(m_argptr, m_argnum);
 	Exit(code);
+	return 0;
 }

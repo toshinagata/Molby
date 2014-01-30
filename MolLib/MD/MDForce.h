@@ -25,7 +25,8 @@ extern "C" {
 	
 void calc_force(MDArena *arena);
 void calc_pair_interaction(MDArena *arena, const MDGroupFlags *group_flags_1, const MDGroupFlags *group_flags_2);
-
+void calc_surface_force(MDArena *arena);
+	
 #ifdef __cplusplus
 }
 #endif

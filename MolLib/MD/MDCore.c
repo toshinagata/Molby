@@ -18,6 +18,8 @@
 #include "MDGraphite.h"
 #include "MDPressure.h"
 #include "MDEwald.h"
+#include "MDSurface.h"
+#include "MDForce.h"
 
 #include <stdlib.h>
 #include <string.h>

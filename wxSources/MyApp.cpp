@@ -1584,7 +1584,7 @@ MyFrame::MyFrame(wxDocManager *manager, wxFrame *frame, const wxString& title,
 	/*  Avoid this "dummy" top-level window to appear in the window menu.
 	    It should not happen because MyApp::OnActivate() tries to hide this window,
 	    but this is still here just in case.  */
-	OSStatus sts;
+//	OSStatus sts;
 //	sts = ChangeWindowAttributes((WindowRef)m_macWindow, 0, kWindowInWindowMenuAttribute);
 /*	printf("m_macWindow = %p, status = %d\n", m_macWindow, (int)sts); */
 #endif

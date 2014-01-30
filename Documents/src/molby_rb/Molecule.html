@@ -1397,7 +1397,13 @@ are not selected but are connected to any selected atoms are also included as du
 </div>
 <div class="method-description">
 <p>
-Find atoms that are within the threshold distance from the given atom. If limit is a positive number, the threshold distance is the sum of the vdw radii times limit. If limit is a negative number, its absolute value is used for the threshold distance in angstrom. If limit is not given, a default value of 1.2 is used. The number of the newly created bonds is returned. An array of atom indices is returned. If no atoms are found, an empty array is returned.
+Find atoms that are within the threshold distance from the given atom. If limit is a positive number, the threshold distance is the sum of the vdw radii times limit. If limit is a negative number, its absolute value is used for the threshold distance in angstrom. If limit is not given, a default value of 1.2 is used.
+</p>
+<p>
+An array of atom indices is returned. If no atoms are found, an empty array is returned.
+</p>
+<p>
+The atom argument can also be a <a href="Vector3D.html">Vector3D</a> (or any other object that can be converted to a <a href="Vector3D.html">Vector3D</a>), representing cartesian coordinates.
 </p>
 </div>
 </div>

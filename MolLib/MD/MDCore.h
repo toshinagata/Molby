@@ -431,6 +431,7 @@ void md_transform_vec_by_symmetry(MDArena *arena, Vector *dst, const Vector *src
 
 void md_init_for_positions(MDArena *arena);
 const char *md_prepare(MDArena *arena, int check_only);
+int md_set_external_forces(MDArena *arena, int nexforces, const Vector *exforces);
 int md_check_abnormal_bond(MDArena *arena, Molecule *mol, int idx);
 int md_check_abnormal_angle(MDArena *arena, Molecule *mol, int idx);
 int md_check_abnormal_dihedral(MDArena *arena, Molecule *mol, int idx);
@@ -452,6 +453,7 @@ void md_calc_kinetic_energy(MDArena *arena);
 int md_output_results(MDArena *arena);
 
 int md_copy_coordinates_from_internal(MDArena *arena);
+int md_copy_coordinates_to_internal(MDArena *arena);
 
 int md_is_running(MDArena *arena);
 	

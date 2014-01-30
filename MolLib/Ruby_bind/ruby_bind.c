@@ -7088,9 +7088,10 @@ s_Molecule_RenumberAtoms(VALUE self, VALUE array)
 
 /*
  *  call-seq:
- *     find_close_atoms(atom, limit = 1.2)       -> array of Integers (atom indices)
+ *     find_close_atoms(atom, limit = 1.2, radius = 0.77)   -> array of Integers (atom indices)
  *
  *  Find atoms that are within the threshold distance from the given atom.
+ *  (The atom argument can also be a vector, representing a cartesian coordinate. In that case, the van der Waals of the atom can also be specified.)
  *  If limit is a positive number, the threshold distance is the sum of the vdw radii times limit.
  *  If limit is a negative number, its absolute value is used for the threshold distance in angstrom.
  *  If limit is not given, a default value of 1.2 is used.
@@ -7100,19 +7101,34 @@ static VALUE
 s_Molecule_FindCloseAtoms(int argc, VALUE *argv, VALUE self)
 {
     Molecule *mol;
-	VALUE aval, limval;
-	double limit;
-	Int n1, nbonds, *bonds;
+	VALUE aval, limval, radval;
+	double limit, radius;
+	Int n1, nbonds, *bonds, an;
+	Vector v;
     Data_Get_Struct(self, Molecule, mol);
-	rb_scan_args(argc, argv, "11", &aval, &limval);
-	n1 = s_Molecule_AtomIndexFromValue(mol, aval);
+	rb_scan_args(argc, argv, "12", &aval, &limval, &radval);
+	if (rb_obj_is_kind_of(aval, rb_cVector3D) || rb_obj_is_kind_of(aval, rb_cLAMatrix) || rb_obj_is_kind_of(aval, rb_mEnumerable)) {
+		VectorFromValue(aval, &v);
+		if (radval == Qnil)
+			radius = gElementParameters[6].radius;
+		else
+			radius = NUM2DBL(rb_Float(radval));
+		n1 = 0;
+	} else {
+		n1 = s_Molecule_AtomIndexFromValue(mol, aval);
+		v = ATOM_AT_INDEX(mol->atoms, n1)->r;
+		an = ATOM_AT_INDEX(mol->atoms, n1)->atomicNumber;
+		if (an >= 0 && an < gCountElementParameters)
+			radius = gElementParameters[an].radius;
+		else radius = gElementParameters[6].radius;
+	}
 	if (limval == Qnil)
 		limit = 1.2;
 	else
 		limit = NUM2DBL(rb_Float(limval));
 	nbonds = 0;  /*  This initialization is necessary: see comments in MoleculeFindCloseAtoms()  */
 	bonds = NULL;
-	MoleculeFindCloseAtoms(mol, n1, limit, &nbonds, &bonds, 0);
+	MoleculeFindCloseAtoms(mol, &v, radius, limit, &nbonds, &bonds, n1);
 	aval = rb_ary_new();
 	if (nbonds > 0) {
 		for (n1 = 0; n1 < nbonds; n1++)

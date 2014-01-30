@@ -16,6 +16,7 @@
  */
 
 #include "MDPressure.h"
+#include "MDForce.h"
 
 #include <stdlib.h>
 #include <math.h>

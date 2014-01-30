@@ -164,7 +164,7 @@ void
 MyGLCanvas::OnSize(wxSizeEvent &event)
 {
     // this is also necessary to update the context on some platforms
-    wxGLCanvas::OnSize(event);
+//    wxGLCanvas::OnSize(event);
 
     // set GL viewport (not called by wxGLCanvas::OnSize on all platforms...)
     int w, h;

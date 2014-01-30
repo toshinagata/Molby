@@ -69,6 +69,7 @@ extern VALUE ValueFromMolecule(Molecule *mol);
 extern VALUE ValueFromIntGroup(IntGroup *ig);
 extern VALUE ValueFromVector(const Vector *vp);
 extern VALUE ValueFromTransform(Transform *tp);
+extern VALUE ValueFromMoleculeWithParameterTypeAndIndex(Molecule *mol, int type, int idx1);
 
 extern void VectorFromValue(VALUE val, Vector *vp);
 extern void TransformFromValue(VALUE val, Transform *tp);
