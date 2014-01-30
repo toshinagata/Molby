@@ -1392,7 +1392,7 @@ are not selected but are connected to any selected atoms are also included as du
 <div id="method-M000261" class="method-detail">
 <a name="find_close_atoms"></a>
 <div class="method-heading">
-<span class="method-name">find_close_atoms(atom, limit = 1.2)       &rarr; Array of Integers<br />
+<span class="method-name">find_close_atoms(atom, limit = 1.2, radius = 0.77)       &rarr; Array of Integers<br />
 </span>
 </div>
 <div class="method-description">
@@ -1403,7 +1403,7 @@ Find atoms that are within the threshold distance from the given atom. If limit 
 An array of atom indices is returned. If no atoms are found, an empty array is returned.
 </p>
 <p>
-The atom argument can also be a <a href="Vector3D.html">Vector3D</a> (or any other object that can be converted to a <a href="Vector3D.html">Vector3D</a>), representing cartesian coordinates.
+The atom argument can also be a <a href="Vector3D.html">Vector3D</a> (or any other object that can be converted to a <a href="Vector3D.html">Vector3D</a>), representing cartesian coordinates. In this case, the van der Waals of the atom can also be specified (the default value = 0.77 represents the van der Waals radius of carbon).
 </p>
 </div>
 </div>
