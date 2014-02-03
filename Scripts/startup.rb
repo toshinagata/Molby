@@ -23,11 +23,11 @@ $startup_dir = Dir.pwd
 case RUBY_PLATFORM
   when /mswin|mingw|cygwin|bccwin/
     $platform = "win"
-	$KCODE="SJIS"
+#	$KCODE="SJIS"
 	$home_directory = ENV['USERPROFILE'].gsub(/\\/, "/")
   when /darwin/
     $platform = "mac"
-	$KCODE="UTF8"
+#	$KCODE="UTF8"
 	$home_directory = ENV['HOME']
   else
     $platform = "other"
@@ -100,21 +100,21 @@ class IO
 	else
 	  s = ""
 	  while c = getc
-	    if c == 13
+	    if c == "\r"
 		  #  \r or \r\n
-		  if (c = getc) && c != 10
+		  if (c = getc) && c != "\n"
 		    ungetc(c)
 		    @end_of_line = "\r"
 		  else
 		    @end_of_line = "\r\n"
 		  end
 		  break
-		elsif c == 10
+		elsif c == "\n"
 		  #  \n
 		  @end_of_line = "\n"
 		  break
 		else
-		  s += c.chr
+		  s += c
 		end
 	  end
 	  if @end_of_line

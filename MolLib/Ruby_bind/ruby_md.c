@@ -20,7 +20,7 @@
 #include "../MD/MDSurface.h"
 #include "../MD/MDPressure.h"
 
-#include "env.h"  /*  For ruby_frame  */
+//#include "env.h"  /*  For ruby_frame  */
 
 #include <errno.h>
 #include <string.h>
@@ -490,7 +490,8 @@ s_MDArena_Get(VALUE self, VALUE attr)
 static VALUE
 s_MDArena_GetAttr(VALUE self)
 {
-	return s_MDArena_Get(self, ID2SYM(ruby_frame->last_func));
+	ID aid = rb_frame_this_func();
+	return s_MDArena_Get(self, ID2SYM(aid));
 }
 
 /*
@@ -636,7 +637,8 @@ s_MDArena_SetAttr(VALUE self, VALUE val)
 {
 	int i;
 	struct s_MDArenaAttrDef *dp;
-	ID aid = ruby_frame->last_func;
+//	ID aid = ruby_frame->last_func;
+	ID aid = rb_frame_this_func();
 	for (i = 0, dp = s_MDArenaAttrDefTable; dp->name != NULL; i++, dp++) {
 		if (dp->sid == aid)
 			return s_MDArena_Set(self, *(dp->symref), val);

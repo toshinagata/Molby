@@ -25,8 +25,9 @@
 #include <ctype.h>
 #include <limits.h>
 
-#include <version.h>  /*  for Ruby version  */
-#include <node.h>     /*  for rb_add_event_hook()  */
+#include "version.h"       /*  for Ruby version  */
+#include "ruby/version.h"  /*  for RUBY_BIRTH_YEAR etc.  */
+/*#include <node.h>     *//*  for rb_add_event_hook()  */
 
 #if defined(__WXMAC__) || defined(__CMDMAC__)
 #define USE_PTHREAD_FOR_TIMER 1
@@ -675,7 +676,8 @@ s_GetTimerCount(void)
 }
 
 static void
-s_Event_Callback(rb_event_t event, NODE *node, VALUE self, ID rid, VALUE klass)
+//s_Event_Callback(rb_event_t event, NODE *node, VALUE self, ID rid, VALUE klass)
+s_Event_Callback(rb_event_flag_t evflag, VALUE data, VALUE self, ID mid, VALUE klass)
 {
 	if (s_interrupt_flag != Qfalse) {
 		static unsigned long sLastTime = 0;
@@ -10805,8 +10807,14 @@ s_evalRubyScriptOnMoleculeSub(VALUE val)
 {
 	void **ptr = (void **)val;
 	Molecule *mol = (Molecule *)ptr[1];
-	VALUE sval = rb_str_new2((char *)ptr[0]);
-	VALUE fnval;
+	VALUE sval, fnval;
+	char *scr;
+
+	/*  We need to specify string encoding  */
+	asprintf(&scr, "#coding:utf-8\n%s", (char *)ptr[0]);
+	sval = rb_str_new2(scr);
+	free(scr);
+
 	if (s_ruby_top_self == Qfalse) {
 		s_ruby_top_self = rb_eval_string("eval(\"self\",TOPLEVEL_BINDING)");
 	}
@@ -10834,8 +10842,8 @@ Molby_evalRubyScriptOnMolecule(const char *script, Molecule *mol, const char *fn
 	RubyValue retval;
 	void *args[3];
 	VALUE save_interrupt_flag;
-	char *save_ruby_sourcefile;
-	int save_ruby_sourceline;
+/*	char *save_ruby_sourcefile;
+	int save_ruby_sourceline; */
 	if (gMolbyIsCheckingInterrupt) {
 		MolActionAlertRubyIsRunning();
 		*status = -1;
@@ -10846,8 +10854,8 @@ Molby_evalRubyScriptOnMolecule(const char *script, Molecule *mol, const char *fn
 	args[1] = (void *)mol;
 	args[2] = (void *)fname;
 	save_interrupt_flag = s_SetInterruptFlag(Qnil, Qtrue);
-	save_ruby_sourcefile = ruby_sourcefile;
-	save_ruby_sourceline = ruby_sourceline;
+/*	save_ruby_sourcefile = ruby_sourcefile;
+	save_ruby_sourceline = ruby_sourceline; */
 	retval = (RubyValue)rb_protect(s_evalRubyScriptOnMoleculeSub, (VALUE)args, status);
 	if (*status != 0) {
 		/*  Is this 'exit' exception?  */
@@ -10859,8 +10867,8 @@ Molby_evalRubyScriptOnMolecule(const char *script, Molecule *mol, const char *fn
 		}
 	}
 	s_SetInterruptFlag(Qnil, save_interrupt_flag);
-	ruby_sourcefile = save_ruby_sourcefile;
-	ruby_sourceline = save_ruby_sourceline;
+/*	ruby_sourcefile = save_ruby_sourcefile;
+	ruby_sourceline = save_ruby_sourceline; */
 	gMolbyRunLevel--;
 	return retval;
 }
@@ -10894,7 +10902,8 @@ Molby_showError(int status)
 	VALUE val, backtrace;
 	int interrupted = 0;
 	if (status == tag_raise) {
-		VALUE eclass = CLASS_OF(ruby_errinfo);
+		VALUE errinfo = rb_errinfo();
+		VALUE eclass = CLASS_OF(errinfo);
 		if (eclass == rb_eInterrupt) {
 			msg = "Interrupt";
 			interrupted = 1;
@@ -11093,7 +11102,7 @@ Molby_startup(const char *script, const char *dir)
 
 #if !__CMDMAC__
 	/*  Register interrupt check code  */
-	rb_add_event_hook(s_Event_Callback, RUBY_EVENT_ALL);
+//	rb_add_event_hook(s_Event_Callback, RUBY_EVENT_ALL, Qnil);
 #endif
 	
 #if !__CMDMAC__

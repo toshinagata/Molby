@@ -319,10 +319,10 @@ class Molecule
 	valence = f.dummies.length
 	if valence == 2 && c != nil && c >= ?0 && c <= ?9
 	  #  Concatenate the fragment n times (like (CH2)8)
-	  n = c - ?0
+	  n = c.ord - 48
 	  idx += 1
 	  while (c = str[idx]) != nil && c >= ?0 && c <= ?9
-		n = n * 10 + c - ?0
+		n = n * 10 + c.ord - 48
 		idx += 1
 	  end
 	  if n == 0
@@ -349,10 +349,10 @@ class Molecule
 	  ff, idx = from_formula_sub(str, idx)
 	  if (c = str[idx]) != nil && (c >= ?0 && c <= ?9)
 		#  The same fragment is added multiple times
-	    n = c - ?0
+	    n = c.ord - 48
 	    idx += 1
 	    while (c = str[idx]) != nil && c >= ?0 && c <= ?9
-		  n = n * 10 + c - ?0
+		  n = n * 10 + c.ord - 48
 		  idx += 1
 	    end
 	    if n == 0

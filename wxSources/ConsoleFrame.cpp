@@ -80,7 +80,8 @@ ConsoleFrame::OnCreate()
 	int width, height;
 
 	GetClientSize(&width, &height);
-	textCtrl = new wxTextCtrl(this, wxID_ANY, _T(""), wxPoint(0, 0), wxSize(100, 100), wxTE_MULTILINE | wxTE_RICH);
+	textCtrl = new wxTextCtrl(this, wxID_ANY, _T(""), wxPoint(0, 0), wxSize(100, 100), wxTE_MULTILINE | wxTE_RICH | wxTE_PROCESS_ENTER
+							  );
 
 #if defined(__WXMSW__)
 	{
@@ -118,6 +119,7 @@ ConsoleFrame::OnCreate()
 
 	//  Connect textCtrl event handler
 	textCtrl->Connect(-1, wxEVT_KEY_DOWN, wxKeyEventHandler(ConsoleFrame::OnKeyDown), NULL, this);
+	textCtrl->Connect(-1, wxEVT_TEXT_ENTER, wxCommandEventHandler(ConsoleFrame::OnTextEnter), NULL, this);
 	textCtrl->Connect(-1, wxEVT_SET_FOCUS, wxFocusEventHandler(ConsoleFrame::OnSetFocus), NULL, this);
 	textCtrl->Connect(-1, wxEVT_KILL_FOCUS, wxFocusEventHandler(ConsoleFrame::OnKillFocus), NULL, this);
 
@@ -257,19 +259,26 @@ ConsoleFrame::OnUpdateUI(wxUpdateUIEvent& event)
 }
 
 void
-ConsoleFrame::OnEnterPressed(wxKeyEvent& event)
+ConsoleFrame::OnEnterPressed()
 {
+	int start, pos, end, veryend, lastpos;
+	wxChar startChar;
+	
 	if (::wxGetKeyState(WXK_ALT)) {
 		textCtrl->WriteText(wxT("\n> "));
 		return;
 	}
 	
-	int start, pos, end, veryend, lastpos;
-	wxChar startChar;
-
-	//  Get the block of script to be executed
 	pos = textCtrl->GetInsertionPoint();
 	lastpos = textCtrl->GetLastPosition();
+	
+	//  Get the block of script to be executed
+	if (pos < lastpos) {
+		//  The inserted newline character should be removed
+		textCtrl->Remove(pos - 1, pos);
+		lastpos = textCtrl->GetLastPosition();
+		pos--;
+	}
 	veryend = -1;
 	while (pos >= 0) {
 		if (!GetLineIncludingPosition(textCtrl, pos, &start, &end) || start == end) {
@@ -333,7 +342,8 @@ ConsoleFrame::OnEnterPressed(wxKeyEvent& event)
 		string.Append(wxT("\n"));  //  To avoid choking Ruby interpreter
 		wxRegEx re3(wxT("\n>"));
 		re3.Replace(&string, wxT("\n"));
-		if (textCtrl->GetRange(lastpos - 1, lastpos).GetChar(0) != '\n')
+		ch = textCtrl->GetRange(lastpos - 1, lastpos).GetChar(0);
+		if (ch != '\n')
 			textCtrl->AppendText(wxT("\n"));
 		textCtrl->Update();
 		MyAppCallback_setConsoleColor(0);
@@ -443,12 +453,19 @@ void
 ConsoleFrame::OnKeyDown(wxKeyEvent &event)
 {
 	int code = event.GetKeyCode();
-	if (code == WXK_RETURN || code == WXK_NUMPAD_ENTER)
-		OnEnterPressed(event);
-	else if ((code == WXK_UP || code == WXK_DOWN) && (textCtrl->GetInsertionPoint() == textCtrl->GetLastPosition()))
+//	if (code == WXK_RETURN || code == WXK_NUMPAD_ENTER)
+//		OnEnterPressed();
+//	else
+	if ((code == WXK_UP || code == WXK_DOWN) && (textCtrl->GetInsertionPoint() == textCtrl->GetLastPosition()))
 		ShowHistory(code == WXK_UP, event.GetModifiers() == wxMOD_ALT);
 	else
 		event.Skip();
+}
+
+void
+ConsoleFrame::OnTextEnter(wxCommandEvent &event)
+{
+	OnEnterPressed();
 }
 
 int

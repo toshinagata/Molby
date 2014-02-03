@@ -78,6 +78,8 @@ const char *gSettingQuitOnCloseLastWindow = "quit_on_close_last_window";
 
 MyFrame *frame = (MyFrame *) NULL;
 
+bool gInitCompleted = false;
+
 IMPLEMENT_APP(MyApp)
 
 //IMPLEMENT_CLASS(MyApp, wxApp)
@@ -338,6 +340,8 @@ bool MyApp::OnInit(void)
 		}
 		OnOpenFiles(files);
 	}
+	
+	gInitCompleted = true;
 	
 	return true;
 }
@@ -1758,6 +1762,12 @@ int
 MyAppCallback_messageBox(const char *message, const char *title, int flags, int icon)
 {
 	int wxflags, wxicon, retval;
+	if (!wxGetApp().IsMainLoopRunning()) {
+		MyAppCallback_setConsoleColor(1);
+		MyAppCallback_showScriptMessage("*** %s ***\n%s\n", message, title);
+		MyAppCallback_setConsoleColor(0);
+		return 1;
+	}
 	if (flags == 0)
 		flags = 1;
 	wxflags = ((flags & 1) ? wxOK : 0) | ((flags & 2) ? wxCANCEL : 0);

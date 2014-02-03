@@ -54,9 +54,10 @@ public:
 	void SetConsoleColor(int color);
 	
 	void OnCreate();
-	void OnEnterPressed(wxKeyEvent& event);
+	void OnEnterPressed();
 	void OnKeyDown(wxKeyEvent &event);
-
+	void OnTextEnter(wxCommandEvent &event);
+	
 	static ConsoleFrame *CreateConsoleFrame(wxFrame *parent);
 	void OnCloseWindow(wxCloseEvent &event);
 	void OnClose(wxCommandEvent &event);

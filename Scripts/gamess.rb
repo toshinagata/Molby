@@ -473,7 +473,7 @@ class Molecule
 	end
 
   end
-  
+
   def export_gamess(fname, hash)
 
     def reorder_array(ary, ordered_sub_ary)

@@ -1,0 +1,179 @@
+--------------------------------------------------------
+  How to build Molby
+  Version 0.6.5
+  Toshi Nagata
+--------------------------------------------------------
+
+Building Molby is somewhat complicated because you need static libraries of wxWidgets and Ruby (and CLAPACK in Windows). The procedures are described below for each platform.
+In the following, $MOLBY represents the Molby source directory, which should reside within a directory like $HOME/Development or something like that.
+
+(1) Mac OS X
+
+(i) Xcode, gfortran
+
+Install Xcode, if you have not done so yet. The Xcode project included in the source distribution is for Xcode 3.0 and later, thus you need Mac OS 10.5.
+
+To build AmberTools, you need to have gfortran installed. The author uses a binary build available at the "R for Mac OS X" website (http://r.research.att.com/tools/, gfortran-4.2.3.dmg).
+
+We need static linking of libgfortran.a. For that purpose, the following modification should be done after installation of gfortran.
+
+% cd /usr/local/lib
+% sudo cp libgfortran.a libgfortran-static.a  #  Copy as a different name
+% sudo strip -S libgfortran-static.a  #  Remove the symbols
+% sudo ranlib libgfortran-static.a
+
+The last two lines are necessary to avoid linker warnings saying "Can't find atom for N_GSYM stabs."
+
+(ii) wxWidgets
+
+Get wxWidgets-3.0.0 from the wxWidgets official page in sourceforge.net (http://sourceforge.net/projects/wxwindows/files/). Newer versions may work, but they are not tested.
+
+Unpack wxWidgets-3.0.0.tar.gz. Move the resulting directory wxWidgets-3.0.0 to $MOLBY/../.
+
+Build wxWidgets. The commands will be as follows. Take care of the configure options.
+$ cd $MOLBY/../wxWidgets-3.0.0
+$ mkdir osx-build
+$ cd osx-build
+$ ../configure --with-macosx-sdk=/Developer/SDKs/MacOSX10.5.sdk --with-macosx-version-min=10.5 --enable-universal_binary=ppc,i386 --disable-shared --with-opengl --enable-monolithic
+$ make
+(It will take quite long. You do not need to do "sudo make install".)
+
+(iii) Ruby
+
+Get ruby-2.0.0-p353.tar.gz, unpack it, and move the resulting directory ruby-2.0.0-p353 to $MOLBY/../.
+$ cd $MOLBY/../ruby-2.0.0-p353
+$ CFLAGS='-isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.5 -O2' ./configure --prefix=$PWD/osx-build --with-arch=i386,ppc --disable-shared --with-ext=date --disable-install-rdoc
+$ make && make install
+
+The osx-build directory contains lib (which contains libruby-static.a) and include (which contains include files). (There are also bin and share directories, but these are not used for building Molby.)
+$ make clean  #  Remove configure files and intermediates
+
+---- Old description (ruby 1.8.7) ----
+Get ruby-1.8.7-p160.tar.gz from the Molby source distribution site. Unpack it, and move the resulting directory ruby-1.8.7-p160 to $MOLBY/../. Rename it to ruby-1.8.7-static (or make a symbolic link).
+$ cd $MOLBY/..
+$ mv somewhere/ruby-1.8.7-p160.tar.gz ./
+$ tar xvzf ruby-1.8.7-p160.tar.gz
+$ ln -s ruby-1.8.7-p160 ruby-1.8.7-static
+
+If you want to place ruby-1.8.7-static in another place (and/or another name) than $MOLBY/../, you will need to change the build settings in Xcode.
+
+Patch the Ruby source.
+$ cd $MOLBY/../ruby-1.8.7-static
+$ patch --backup -p1 < $MOLBY/ruby-1.8.7-p160-tn.patch
+($MOLBY is the location of the Molby source.)
+
+Build Ruby with --disable-shared option.
+$ CFLAGS='-isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.5 -arch i386 -arch ppc -O2' ./configure --disable-shared --disable-thread
+$ make
+---- end old description (ruby 1.8.7) ----
+
+(iv) FFTW
+
+Get fftw-3.3.2.tar.gz, unpack it, and move the resulting directory fftw-3.3.2 to $MOLBY/../. $ cd $MOLBY/../fftw-3.3.2
+$ ./configure --prefix=$PWD/osx-build --disable-fortran CFLAGS="-isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.5 -arch i386 -O2"
+$ make && make install  #  sudo is not necessary
+$ ./configure --prefix=$PWD/osx-ppc-build --disable-fortran CFLAGS="-isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.5 -arch ppc -O2"
+$ make && make install  #  sudo is not necessary
+$ cd osx-build/lib
+$ mv libfftw3.a libfftw3.i386.a
+$ lipo -create libfftw3.i386.a ../../osx-ppc-build/lib/libfftw3.a -output libfftw3.a
+ranlib libfftw3.a
+
+(v) Build on Xcode
+
+Open xcode-build/Molby.xcodeproj, and build. Note that there are two configurations, Debug and Release. In the "Release" build, the Ruby scripts update_version.rb and Documents/makedoc.rb are executed before compilation; update_version.rb modifies the version strings in the source files (by looking up the file Version), and makedoc.rb creates the HTML docments in the doc directory.
+
+(2) Windows
+
+The Windows binary is built by using tdm-gcc/msys. If you use VC++ or Cygwin, you need to help yourself. I use Windows only occasionally, so there may be errors and misunderstandings in the following descriptions. Feedback is welcome!
+
+(i) MinGW, MSYS, gfortran
+
+Install msys and tdm-gcc. The author uses msys-1.0.11, tdm-gcc-4.7.1-2, and gcc-4.7.1-tdm-1-fortran.tar.lzma.
+Read instructions carefully in installing tdm-gcc. 
+In installing msys-1.0.11, please make sure findutils is installed. Otherwise, find.exe of Windows is invoked from make and cause strange errors.
+
+(ii) wxWidgets
+
+Get wxWidgets-3.0.0 from the wxWidgets official page in sourceforge.net (http://sourceforge.net/projects/wxwindows/files/). Newer versions may work, but they are not tested.
+
+Unpack wxWidgets-3.0.0.tar.gz. Move the resulting directory wxWidgets-3.0.0 to $MOLBY/../.
+
+Build wxWidgets. The commands will be as follows. Take care of the configure options.
+$ cd $MOLBY/../wxWidgets-3.0.0
+$ mkdir msw-build
+$ cd msw-build
+$ ../configure --with-msw --with-opengl --disable-shared --with-libjpeg=builtin --with-zlib=builtin --enable-monolithic
+$ make
+(It will take quite long. You do not need to do "sudo make install".)
+
+(iii) Ruby
+
+Get ruby-1.8.7-p160.tar.gz from the Molby source distribution site. Unpack it, and move the resulting directory ruby-1.8.7-p160 to $HOME. Rename it to ruby-1.8.7-static.
+$ cd $HOME
+$ mv somewhere/ruby-1.8.7-p160.tar.gz ./
+$ tar xvzf ruby-1.8.7-p160.tar.gz
+$ mv ruby-1.8.7-p160 ruby-1.8.7-static
+
+Patch the Ruby source.
+$ cd $HOME/ruby-1.8.7-static
+$ patch --backup -p1 < $MOLBY/ruby-1.8.7-p160-tn.patch
+($MOLBY is the location of the Molby source.)
+
+Build Ruby with --disable-shared option.
+$ ./configure --disable-shared --disable-thread
+$ make
+
+(iv) CLAPACK
+
+Get clapack-3.1.1.1.tar.gz from the CLAPACK official site (http://www.netlib.org/clapack/) and unpack it. (clapack-3.2.1 may cause trouble because it uses symbolic links.)
+$ cd $MOLBY/..
+$ mv somewhere/clapack-3.1.1.1.tgz ./
+$ tar xvzf clapack-3.1.1.1.tgz
+
+Patch the clapack source.
+$ patch -p0 <$MOLBY/clapack-3.1.1.1-mingw.patch
+
+Build CLAPACK.
+$ cd CLAPACK-3.1.1.1
+$ make
+
+In my case, uninit.c caused an error. It turned out that float.h in GCC needed modification. In c:/tdm-gcc-32-471/lib/gcc/mingw32/4.7.1/include/float.h, a line "#include_next <float.h>" was inserted just before the last "#endif".
+
+Modify libf2c.a, so that the 'main' entry does not interfere the main program.
+$ cd F2CLIBS
+$ cp libf2c.a libf2c_nomain.a
+$ ar d libf2c_nomain.a main.o
+$ cd ..
+
+Copy the library and header files to CLAPACK-3.1.1.1/lib
+$ mkdir lib
+$ cp F2CLIBS/libf2c_nomain.a lib
+$ cp blasMinGW.a lib/libblasMinGW.a
+$ cp lapackMinGW.a lib/liblapackMinGW.a
+
+(v) FFTW
+
+Get fftw-3.3.2.tar.gz and unpack it. Move the resulting directory fftw-3.3.2 to $MOLBY/../. $ ./configure --prefix=$PWD/msw-build --disable-fortran CFLAGS="-O2"
+$ make
+$ make install  #  sudo is not necessary
+
+(vi) Inno Setup 5
+
+Install Inno Setup 5 (http://www.jrsoftware.org/isinfo.php). This is necessary to create the Molby Installer.
+
+(vii) Build
+
+Now you can start building Molby! Go to the project directory and do make.
+$ cd somewhere/Molby/msw-build
+$ make
+$ make setup  #  To make the installer
+
+
+2010.1.21.
+2010.1.31. Added notice on AmberTools1.3
+2010.4.29. Update description for MinGW/MSYS
+2011.8.3.  Added notice on static linking of libgfortran for Mac
+2012.11.23. Added notice on FFTW
+
+Toshi Nagata
