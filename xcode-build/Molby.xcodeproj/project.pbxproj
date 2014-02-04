@@ -51,8 +51,6 @@
 		E49BFC1C1886E77100188237 /* ruby_types.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC77A3183E4F3F0064FB2E /* ruby_types.c */; };
 		E49BFC1F1886E78600188237 /* buildInfo.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC7CA5183F94D30064FB2E /* buildInfo.c */; };
 		E49BFC2C1886E88A00188237 /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E4FC7810183E50DC0064FB2E /* Accelerate.framework */; };
-		E4BB714B189D48AB00DE8DFD /* textctrl.mm in Sources */ = {isa = PBXBuildFile; fileRef = E4BB714A189D48AB00DE8DFD /* textctrl.mm */; };
-		E4BB7169189D4B8400DE8DFD /* textctrl_osx.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E4BB7168189D4B8400DE8DFD /* textctrl_osx.cpp */; };
 		E4FC77A9183E4F3F0064FB2E /* Dcd.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC777B183E4F3F0064FB2E /* Dcd.c */; };
 		E4FC77AA183E4F3F0064FB2E /* IntGroup.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC777D183E4F3F0064FB2E /* IntGroup.c */; };
 		E4FC77AB183E4F3F0064FB2E /* MainView.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC777F183E4F3F0064FB2E /* MainView.c */; };
@@ -137,9 +135,6 @@
 		E420BE20188574F600A2B983 /* RubyDialogFrame.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RubyDialogFrame.h; sourceTree = "<group>"; };
 		E420BE21188574F600A2B983 /* wxKillAddition.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = wxKillAddition.cpp; sourceTree = "<group>"; };
 		E49BFB761886E2E400188237 /* Molby_command */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Molby_command; sourceTree = BUILT_PRODUCTS_DIR; };
-		E4BB714A189D48AB00DE8DFD /* textctrl.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = textctrl.mm; sourceTree = "<group>"; };
-		E4BB7168189D4B8400DE8DFD /* textctrl_osx.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = textctrl_osx.cpp; sourceTree = "<group>"; };
-		E4BB7178189D4C1300DE8DFD /* window.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = window.mm; sourceTree = "<group>"; };
 		E4FC777A183E4F3F0064FB2E /* cmdtool_stubs.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = cmdtool_stubs.c; path = ../MolLib/cmdtool_stubs.c; sourceTree = SOURCE_ROOT; };
 		E4FC777B183E4F3F0064FB2E /* Dcd.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = Dcd.c; path = ../MolLib/Dcd.c; sourceTree = SOURCE_ROOT; };
 		E4FC777C183E4F3F0064FB2E /* Dcd.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Dcd.h; path = ../MolLib/Dcd.h; sourceTree = SOURCE_ROOT; };
@@ -173,7 +168,7 @@
 		E4FC779A183E4F3F0064FB2E /* Parameter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Parameter.h; path = ../MolLib/Parameter.h; sourceTree = SOURCE_ROOT; };
 		E4FC779D183E4F3F0064FB2E /* Molby.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Molby.h; path = ../MolLib/Ruby_bind/Molby.h; sourceTree = SOURCE_ROOT; };
 		E4FC779E183E4F3F0064FB2E /* Molby_extern.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Molby_extern.h; path = ../MolLib/Ruby_bind/Molby_extern.h; sourceTree = SOURCE_ROOT; };
-		E4FC779F183E4F3F0064FB2E /* ruby_bind.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ruby_bind.c; path = ../MolLib/Ruby_bind/ruby_bind.c; sourceTree = SOURCE_ROOT; };
+		E4FC779F183E4F3F0064FB2E /* ruby_bind.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ruby_bind.c; path = ../MolLib/Ruby_bind/ruby_bind.c; sourceTree = SOURCE_ROOT; wrapsLines = 1; };
 		E4FC77A0183E4F3F0064FB2E /* ruby_dialog.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ruby_dialog.c; path = ../MolLib/Ruby_bind/ruby_dialog.c; sourceTree = SOURCE_ROOT; };
 		E4FC77A1183E4F3F0064FB2E /* ruby_dialog.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ruby_dialog.h; path = ../MolLib/Ruby_bind/ruby_dialog.h; sourceTree = SOURCE_ROOT; };
 		E4FC77A2183E4F3F0064FB2E /* ruby_md.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = ruby_md.c; path = ../MolLib/Ruby_bind/ruby_md.c; sourceTree = SOURCE_ROOT; };
@@ -407,9 +402,6 @@
 				E420BDEE1885746700A2B983 /* GlobalParameterFrame.h */,
 				E420BDF31885749000A2B983 /* listctrl_private.h */,
 				E420BDF41885749000A2B983 /* listctrl.cpp */,
-				E4BB714A189D48AB00DE8DFD /* textctrl.mm */,
-				E4BB7168189D4B8400DE8DFD /* textctrl_osx.cpp */,
-				E4BB7178189D4C1300DE8DFD /* window.mm */,
 				E420BDF51885749000A2B983 /* MoleculeView.cpp */,
 				E420BDF61885749000A2B983 /* MoleculeView.h */,
 				E420BDF71885749000A2B983 /* MyApp.cpp */,
@@ -587,8 +579,6 @@
 				E420BE22188574F600A2B983 /* ProgressFrame.cpp in Sources */,
 				E420BE23188574F600A2B983 /* RubyDialogFrame.cpp in Sources */,
 				E420BE24188574F600A2B983 /* wxKillAddition.cpp in Sources */,
-				E4BB714B189D48AB00DE8DFD /* textctrl.mm in Sources */,
-				E4BB7169189D4B8400DE8DFD /* textctrl_osx.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

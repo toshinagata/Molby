@@ -453,10 +453,9 @@ void
 ConsoleFrame::OnKeyDown(wxKeyEvent &event)
 {
 	int code = event.GetKeyCode();
-//	if (code == WXK_RETURN || code == WXK_NUMPAD_ENTER)
-//		OnEnterPressed();
-//	else
-	if ((code == WXK_UP || code == WXK_DOWN) && (textCtrl->GetInsertionPoint() == textCtrl->GetLastPosition()))
+	if (code == WXK_RETURN || code == WXK_NUMPAD_ENTER)
+		OnEnterPressed();
+	else if ((code == WXK_UP || code == WXK_DOWN) && (textCtrl->GetInsertionPoint() == textCtrl->GetLastPosition()))
 		ShowHistory(code == WXK_UP, event.GetModifiers() == wxMOD_ALT);
 	else
 		event.Skip();

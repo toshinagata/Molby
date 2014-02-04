@@ -10801,39 +10801,73 @@ Init_Molby(void)
 #pragma mark ====== External functions ======
 
 static VALUE s_ruby_top_self = Qfalse;
+static VALUE s_ruby_get_binding_for_molecule = Qfalse;
+static VALUE s_ruby_export_local_variables = Qfalse;
 
 static VALUE
 s_evalRubyScriptOnMoleculeSub(VALUE val)
 {
 	void **ptr = (void **)val;
 	Molecule *mol = (Molecule *)ptr[1];
-	VALUE sval, fnval;
-	char *scr;
-
-	/*  We need to specify string encoding  */
-	asprintf(&scr, "#coding:utf-8\n%s", (char *)ptr[0]);
-	sval = rb_str_new2(scr);
-	free(scr);
+	VALUE sval, fnval, lnval, retval;
+	VALUE binding;
 
 	if (s_ruby_top_self == Qfalse) {
 		s_ruby_top_self = rb_eval_string("eval(\"self\",TOPLEVEL_BINDING)");
 	}
+	if (s_ruby_get_binding_for_molecule == Qfalse) {
+		const char *s1 =
+		 "proc { |_mol_, _bind_| \n"
+		 "  _proc_ = eval(\"proc { |__mol__| __mol__.instance_eval { binding } } \", _bind_) \n"
+		 "  _proc_.call(_mol_) } ";
+		s_ruby_get_binding_for_molecule = rb_eval_string(s1);
+		rb_define_variable("_get_binding_for_molecule", &s_ruby_get_binding_for_molecule);
+	}
+	if (s_ruby_export_local_variables == Qfalse) {
+		const char *s2 =
+		"proc { |_bind_| \n"
+		" _a_ = _bind_.eval(\"local_variables\") - TOPLEVEL_BINDING.eval(\"local_variables\"); \n"
+		" _i_ = 0; \n"
+		" while _i_ < _a_.length \n"
+		"   # define local variables \n"
+		"   TOPLEVEL_BINDING.eval(_a_[_i_].to_s + \" = nil\") \n"
+		"   _i_ += 1 \n"
+		" end \n"
+		" _a_.each { |_vsym_| \n"
+		"   _vname_ = _vsym_.to_s \n"
+		"   _vval_ = _bind_.eval(_vname_) \n"
+		"   #  Define local variable \n"
+		"   TOPLEVEL_BINDING.eval(_vname_ + \" = nil\") \n"
+		"   #  Then set value  \n"
+		"   TOPLEVEL_BINDING.eval(\"proc { |_m_| \" + _vname_ + \" = _m_ }\").call(_vval_) \n"
+		" } \n"
+		"}";
+		s_ruby_export_local_variables = rb_eval_string(s2);
+		rb_define_variable("_export_local_variables", &s_ruby_export_local_variables);
+	}
 	if (ptr[2] == NULL) {
-		fnval = Qnil;
+		char *scr;
+		/*  String literal: we need to specify string encoding  */
+		asprintf(&scr, "#coding:utf-8\n%s", (char *)ptr[0]);
+		sval = rb_str_new2(scr);
+		free(scr);
+		fnval = rb_str_new2("(eval)");
+		lnval = INT2FIX(0);
 	} else {
+		sval = rb_str_new2((char *)ptr[0]);
 		fnval = Ruby_NewFileStringValue((char *)ptr[2]);
+		lnval = INT2FIX(1);
 	}
-	if (mol == NULL) {
-		if (fnval == Qnil)
-			return rb_funcall(s_ruby_top_self, rb_intern("eval"), 1, sval);
-		else
-			return rb_funcall(s_ruby_top_self, rb_intern("eval"), 4, sval, Qnil, fnval, INT2FIX(1));
-	} else {
+	binding = rb_const_get(rb_cObject, rb_intern("TOPLEVEL_BINDING"));
+	if (mol != NULL) {
 		VALUE mval = ValueFromMolecule(mol);
-		if (fnval == Qnil)
-			return rb_funcall(mval, rb_intern("instance_eval"), 1, sval);
-		else return rb_funcall(mval, rb_intern("instance_eval"), 3, sval, fnval, INT2FIX(1));
+		binding = rb_funcall(s_ruby_get_binding_for_molecule, rb_intern("call"), 2, mval, binding);
 	}
+	retval = rb_funcall(binding, rb_intern("eval"), 3, sval, fnval, lnval);
+	if (mol != NULL) {
+		rb_funcall(s_ruby_export_local_variables, rb_intern("call"), 1, binding);
+	}
+	return retval;
 }
 
 RubyValue
@@ -11102,7 +11136,7 @@ Molby_startup(const char *script, const char *dir)
 
 #if !__CMDMAC__
 	/*  Register interrupt check code  */
-//	rb_add_event_hook(s_Event_Callback, RUBY_EVENT_ALL, Qnil);
+	rb_add_event_hook(s_Event_Callback, RUBY_EVENT_ALL, Qnil);
 #endif
 	
 #if !__CMDMAC__
