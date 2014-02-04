@@ -272,13 +272,6 @@ ConsoleFrame::OnEnterPressed()
 	pos = textCtrl->GetInsertionPoint();
 	lastpos = textCtrl->GetLastPosition();
 	
-	//  Get the block of script to be executed
-	if (pos < lastpos) {
-		//  The inserted newline character should be removed
-		textCtrl->Remove(pos - 1, pos);
-		lastpos = textCtrl->GetLastPosition();
-		pos--;
-	}
 	veryend = -1;
 	while (pos >= 0) {
 		if (!GetLineIncludingPosition(textCtrl, pos, &start, &end) || start == end) {
@@ -453,6 +446,18 @@ void
 ConsoleFrame::OnKeyDown(wxKeyEvent &event)
 {
 	int code = event.GetKeyCode();
+
+#if __WXOSX_COCOA__
+	//  in wxCocoa, the key down event is fired even when the input method still has
+	//  marked text. We need to avoid doing our own work when the input method is expecting
+	//  key events.
+	extern bool textCtrl_hasMarkedText();
+	if (textCtrl_hasMarkedText()) {
+		event.Skip();
+		return;
+	}
+#endif
+	
 	if (code == WXK_RETURN || code == WXK_NUMPAD_ENTER)
 		OnEnterPressed();
 	else if ((code == WXK_UP || code == WXK_DOWN) && (textCtrl->GetInsertionPoint() == textCtrl->GetLastPosition()))

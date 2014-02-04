@@ -10826,13 +10826,8 @@ s_evalRubyScriptOnMoleculeSub(VALUE val)
 	if (s_ruby_export_local_variables == Qfalse) {
 		const char *s2 =
 		"proc { |_bind_| \n"
+		"   # find local variables newly defined in _bind_ \n"
 		" _a_ = _bind_.eval(\"local_variables\") - TOPLEVEL_BINDING.eval(\"local_variables\"); \n"
-		" _i_ = 0; \n"
-		" while _i_ < _a_.length \n"
-		"   # define local variables \n"
-		"   TOPLEVEL_BINDING.eval(_a_[_i_].to_s + \" = nil\") \n"
-		"   _i_ += 1 \n"
-		" end \n"
 		" _a_.each { |_vsym_| \n"
 		"   _vname_ = _vsym_.to_s \n"
 		"   _vval_ = _bind_.eval(_vname_) \n"
