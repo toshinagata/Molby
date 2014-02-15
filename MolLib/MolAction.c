@@ -57,7 +57,7 @@ const char *gMolActionChangeResidueNames = "changeResNames:IC";
 const char *gMolActionOffsetResidueNumbers = "offsetResSeq:Gii";
 const char *gMolActionChangeNumberOfResidues = "changeNres:i";
 const char *gMolActionRenumberAtoms    = "renumberAtoms:I";
-const char *gMolActionExpandBySymmetry = "expandSym:Giiii;I";
+const char *gMolActionExpandBySymmetry = "expandSym:Giiiii;I";
 const char *gMolActionDeleteSymmetryOperation = "deleteSymop";
 const char *gMolActionAddSymmetryOperation = "addSymop:t";
 const char *gMolActionSetCell         = "setCell:Di";
@@ -1419,7 +1419,7 @@ s_MolActionChangeNumberOfResidues(Molecule *mol, MolAction *action, MolAction **
 static int
 s_MolActionExpandBySymmetry(Molecule *mol, MolAction *action, MolAction **actp)
 {
-	Int n1, *ip, count;
+	Int n1, *ip, count, allow_overlap;
 	Symop symop;
 	IntGroup *ig = action->args[0].u.igval;
 	count = IntGroupGetCount(ig);
@@ -1430,11 +1430,12 @@ s_MolActionExpandBySymmetry(Molecule *mol, MolAction *action, MolAction **actp)
 	symop.dz = action->args[3].u.ival;
 	symop.sym = action->args[4].u.ival;
 	symop.alive = (symop.dx != 0 || symop.dy != 0 || symop.dz != 0 || symop.sym != 0);
-	if (action->args[5].u.retval.ptr != NULL) {
+	allow_overlap = action->args[5].u.ival;
+	if (action->args[6].u.retval.ptr != NULL) {
 		/*  Request the indices of the atoms  */
 		ip = (Int *)calloc(sizeof(Int), count);
 	} else ip = NULL;
-	n1 = MoleculeAddExpandedAtoms(mol, symop, ig, ip, 0);
+	n1 = MoleculeAddExpandedAtoms(mol, symop, ig, ip, allow_overlap);
 	if (n1 > 0) {
 		ig = IntGroupNew();
 		IntGroupAdd(ig, mol->natoms - n1, n1);
@@ -1447,8 +1448,8 @@ s_MolActionExpandBySymmetry(Molecule *mol, MolAction *action, MolAction **actp)
 			ip = NULL;
 			count = 0;
 		}
-		*((Int **)(action->args[5].u.retval.ptr)) = ip;
-		*(action->args[5].u.retval.nptr) = count;
+		*((Int **)(action->args[6].u.retval.ptr)) = ip;
+		*(action->args[6].u.retval.nptr) = count;
 	}
 	return (n1 >= 0 ? 0 : n1);
 }

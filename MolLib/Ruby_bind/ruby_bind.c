@@ -7115,7 +7115,7 @@ s_Molecule_FindCloseAtoms(int argc, VALUE *argv, VALUE self)
 			radius = gElementParameters[6].radius;
 		else
 			radius = NUM2DBL(rb_Float(radval));
-		n1 = 0;
+		n1 = mol->natoms;
 	} else {
 		n1 = s_Molecule_AtomIndexFromValue(mol, aval);
 		v = ATOM_AT_INDEX(mol->atoms, n1)->r;
@@ -8235,33 +8235,38 @@ s_Molecule_MeasureDihedral(VALUE self, VALUE nval1, VALUE nval2, VALUE nval3, VA
 
 /*
  *  call-seq:
- *     expand_by_symmetry(group, sym, dx=0, dy=0, dz=0) -> Array
+ *     expand_by_symmetry(group, sym, dx=0, dy=0, dz=0, allow_overlap = false) -> Array
  *
  *  Expand the specified part of the molecule by the given symmetry operation.
  *  Returns the array of atom indices corresponding to the expanded atoms.
+ *  If allow_overlap is true, then new atoms are created even when the
+ *  coordinates coincide with the some other atom (special position) of the
+ *  same element; otherwise, such atom will not be created and the index of the
+ *  existing atom is given in the returned array.
  */
 static VALUE
 s_Molecule_ExpandBySymmetry(int argc, VALUE *argv, VALUE self)
 {
     Molecule *mol;
-	VALUE gval, sval, xval, yval, zval, rval;
+	VALUE gval, sval, xval, yval, zval, rval, oval;
 	IntGroup *ig;
-	Int n[4];
+	Int n[4], allow_overlap;
 	Int natoms;
 	Int nidx, *idx;
 
     Data_Get_Struct(self, Molecule, mol);
-	rb_scan_args(argc, argv, "23", &gval, &sval, &xval, &yval, &zval);
+	rb_scan_args(argc, argv, "24", &gval, &sval, &xval, &yval, &zval, &oval);
 	n[0] = NUM2INT(rb_Integer(sval));
 	n[1] = (xval == Qnil ? 0 : NUM2INT(rb_Integer(xval)));
 	n[2] = (yval == Qnil ? 0 : NUM2INT(rb_Integer(yval)));
 	n[3] = (zval == Qnil ? 0 : NUM2INT(rb_Integer(zval)));
+	allow_overlap = (RTEST(oval) ? 1 : 0);
 	ig = s_Molecule_AtomGroupFromValue(self, gval);
 	if (n[0] < 0 || (n[0] > 0 && n[0] >= mol->nsyms))
 		rb_raise(rb_eMolbyError, "symmetry index is out of bounds");
 	natoms = mol->natoms;
 	
-	MolActionCreateAndPerform(mol, gMolActionExpandBySymmetry, ig, n[1], n[2], n[3], n[0], &nidx, &idx);
+	MolActionCreateAndPerform(mol, gMolActionExpandBySymmetry, ig, n[1], n[2], n[3], n[0], allow_overlap, &nidx, &idx);
 
 	rval = rb_ary_new2(nidx);
 	while (--nidx >= 0) {

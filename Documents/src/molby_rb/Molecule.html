@@ -1362,12 +1362,18 @@ present, then returns nil.
 <div id="method-M000292" class="method-detail">
 <a name="expand_by_symmetry"></a>
 <div class="method-heading">
-<span class="method-name">expand_by_symmetry(group, sym, dx=0, dy=0, dz=0) &rarr; Array<br />
+<span class="method-name">expand_by_symmetry(group, sym, dx=0, dy=0, dz=0, allow_overlap = false) &rarr; Array<br />
 </span>
 </div>
 <div class="method-description">
 <p>
-Expand the specified part of the molecule by the given symmetry operation. Sym is the index to the <a href="Molecule.html#M000331">symmetries</a> array, and dx/dy/dz are the integers representing the translational operations along the unit cell axes. Returns an array of indices of the expanded atoms (corresponding the atoms in group).  This operation is undoable.
+Expand the specified part of the molecule by the given symmetry operation. Sym is the index to the <a href="Molecule.html#M000331">symmetries</a> array, and dx/dy/dz are the integers representing the translational operations along the unit cell axes. Returns an array of indices of the expanded atoms (corresponding the atoms in group).
+</p>
+<p>
+If allow_overlap is true, then new atoms are created even when the coordinates coincide with the some other atom (special position) of the same element; otherwise, such atom will not be created and the index of the existing atom is given in the returned array.
+</p>
+<p>
+This operation is undoable.
 </p>
 </div>
 </div>
