@@ -931,6 +931,7 @@ IntGroupInspect(const IntGroup *pset)
 			if (s == NULL)
 				return NULL;  /*  Out of memory  */
 		}
+		len += len2;
 		strcat(s, buf);
 	}
 	return s;  /*  The caller needs to free the return value  */
