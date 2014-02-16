@@ -915,13 +915,13 @@ MyApp::UpdatePredefinedFragmentMenu(wxMenuBar *mbar)
 	}
 	m_NamedFragments = NULL;
 	m_CountNamedFragments = 0;
-	if (MolActionCreateAndPerform(NULL, SCRIPT_ACTION(";i"), "proc { $named_fragments.length }", &n) != 0 || n <= 0)
+	if (MolActionCreateAndPerform(NULL, SCRIPT_ACTION(";i"), "lambda { $named_fragments.length }", &n) != 0 || n <= 0)
 		return;
 	m_CountNamedFragments = n;
 	m_NamedFragments = (char **)calloc(sizeof(char *), n * 2);
 	for (i = 0; i < n; i++) {
-		if (MolActionCreateAndPerform(NULL, SCRIPT_ACTION("i;s"), "proc { |i| $named_fragments[i][0] }", i, &m_NamedFragments[i * 2]) != 0 ||
-			MolActionCreateAndPerform(NULL, SCRIPT_ACTION("i;s"), "proc { |i| $named_fragments[i][1] }", i, &m_NamedFragments[i * 2 + 1]) != 0)
+		if (MolActionCreateAndPerform(NULL, SCRIPT_ACTION("i;s"), "lambda { |i| $named_fragments[i][0] }", i, &m_NamedFragments[i * 2]) != 0 ||
+			MolActionCreateAndPerform(NULL, SCRIPT_ACTION("i;s"), "lambda { |i| $named_fragments[i][1] }", i, &m_NamedFragments[i * 2 + 1]) != 0)
 			break;
 	}
 	if (i < n) {

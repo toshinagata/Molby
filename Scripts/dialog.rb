@@ -45,7 +45,7 @@ class Dialog
       def self.write(s)  #  Override standard output
         item_with_tag("text").append_string(s)
       end
-      button_action = proc {
+      button_action = lambda { |item|
         names = Dialog.open_panel("Select file(s) to process", nil, nil, false, true)
         if names
 		  begin
@@ -63,7 +63,7 @@ class Dialog
         item(:text, :title=>description),
         item(:button, :title=>"Select Files...", :action=>button_action),
         item(:textview, :width=>320, :height=>200, :editable=>false, :tag=>"text", :font=>[:fixed, 10]),
-        item(:button, :title=>"Exit", :action=>proc { hide }, :align=>:center))
+        item(:button, :title=>"Exit", :action=>lambda { |item| hide }, :align=>:center))
       show
     }
     nil

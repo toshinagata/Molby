@@ -53,7 +53,7 @@ class Molecule
 	#  Copy the input file to the scratch directory
 	cwd = Dir.pwd
 	filecopy(inpname, scrdir + "/FOR005")
-	term_callback = proc { |m, n|
+	term_callback = lambda { |m, n|
 	    if File.exist?("#{scrdir}/FOR006")
 		  filecopy("#{scrdir}/FOR006", "#{inpdir}/#{inpbody}.out")
 		end

@@ -366,7 +366,7 @@ class Molecule
     last_line = ""
     
     #  Callback procs
-	term_callback = proc { |m, n|
+	term_callback = lambda { |m, n|
 	  msg = "GAMESS execution on #{inpbase} "
 	  hmsg = "GAMESS "
 	  if n == 0
@@ -394,7 +394,7 @@ class Molecule
 	  message_box(msg, hmsg, :ok, icon)
     }
 	
-    timer_callback = proc { |m, n|
+    timer_callback = lambda { |m, n|
       fplog.seek(0, IO::SEEK_END)
       sizec = fplog.tell
       if sizec > size
@@ -749,7 +749,7 @@ class Molecule
 		item(:popup, :subitems=>["RHF", "ROHF", "UHF"], :tag=>"scftype"),
 	    item(:text, :title=>"Run type"),
 		item(:popup, :subitems=>["Energy", "Property", "Optimize"], :tag=>"runtype",
-		  :action=>proc { |it| set_attr("use_internal", :enabled=>(it[:value] == 2)) } ),
+		  :action=>lambda { |it| set_attr("use_internal", :enabled=>(it[:value] == 2)) } ),
 
 		item(:checkbox, :title=>"Use internal coordinates for structure optimization", :tag=>"use_internal"),
 		-1, -1, -1,
@@ -760,7 +760,7 @@ class Molecule
 		item(:textfield, :width=>80, :tag=>"mult"),
 
 		item(:checkbox, :title=>"Use DFT", :tag=>"dft",
-		  :action=>proc { |it| set_attr("dfttype", :enabled=>(it[:value] != 0)) } ),
+		  :action=>lambda { |it| set_attr("dfttype", :enabled=>(it[:value] != 0)) } ),
 		-1,
 		item(:text, :title=>"DFT type"),
 		item(:popup, :subitems=>dft_desc, :tag=>"dfttype"),
@@ -777,7 +777,7 @@ class Molecule
 		-1, -1, -1,
 		
 		item(:checkbox, :title=>"Use secondary basis set", :tag=>"use_secondary_basis",
-		  :action=>proc { |it|
+		  :action=>lambda { |it|
 		    flag = (it[:value] != 0)
 			set_attr("secondary_elements", :enabled=>flag)
 			set_attr("secondary_basis", :enabled=>flag)
@@ -799,7 +799,7 @@ class Molecule
 		-1, -1, -1,
 		
 		item(:checkbox, :title=>"Execute GAMESS on this machine", :tag=>"execute_local",
-		  :action=>proc { |it|
+		  :action=>lambda { |it|
 		    flag = (it[:value] != 0)
 			set_attr("executable_path", :enabled=>flag)
 			set_attr("select_path", :enabled=>flag)

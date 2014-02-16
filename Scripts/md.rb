@@ -70,11 +70,11 @@ class Molecule
 		layout(1,
 		  item(:text, :title=>"Some MM/MD parameters are missing.\nPlease select one of the following options."),
 		  item(:button, :title=>"Auto Guess", :align=>:center,
-		    :action=>proc { |it| end_modal(2) } ),
+		    :action=>lambda { |it| end_modal(2) } ),
 		  item(:button, :title=>"Run Antechamber Manually...", :align=>:center,
-		    :action=>proc { |it| end_modal(3) } ),
+		    :action=>lambda { |it| end_modal(3) } ),
 		  item(:button, :title=>"Cancel", :align=>:center,
-		    :action=>proc { |it| end_modal(1) } ))
+		    :action=>lambda { |it| end_modal(1) } ))
 	  }
 	  status = h[:status]
 	  if status == 2
@@ -138,7 +138,7 @@ class Molecule
 	  items.push item(:text, :title=>"Log file")
 	  items.push item(:textfield, :width=>120, :value=>(arena.log_file || ""), :tag=>"log_file")
 	  items.push item(:button, :title=>"Advanced...",
-		     :action=>proc { |it|
+		     :action=>lambda { |it|
 			   if mol.cmd_md_sub
 			     if !minimize
 			       set_value("timestep", arena[:timestep].to_s)
@@ -235,7 +235,7 @@ class Molecule
 		item(:button, :title=>"Set", :action=>:set_box_value),
 		item(:text, :title=>"(Ruby expressions are allowed as the values)"),
 		-1, -1)
-	  set_attr(0, :action=>proc { |it| set_box_value(it) && end_modal(it) })
+	  set_attr(0, :action=>lambda { |it| set_box_value(it) && end_modal(it) })
 	}
   end
 
@@ -260,7 +260,7 @@ class Molecule
 	  flag = @mol.show_periodic_image?
 	  layout(4,
 	    item(:checkbox, :title=>"Show Periodic Image", :tag=>"show_flag", :value=>(flag ? 1 : 0),
-		  :action=>proc { |it| @mol.show_periodic_image = (it[:value] == 1 ? true : false) } ),
+		  :action=>lambda { |it| @mol.show_periodic_image = (it[:value] == 1 ? true : false) } ),
 		-1, -1, -1,
 		item(:text, :title=>"a-axis"),
 		item(:textfield, :width=>80, :tag=>"amin", :value=>pimage[0].to_s),
@@ -275,7 +275,7 @@ class Molecule
 		item(:text, :title=>"to"),
 		item(:textfield, :width=>80, :tag=>"cmax", :value=>pimage[5].to_s),
 		item(:button, :title=>"Set", :action=>:set_periodic_image))
-	  set_attr(0, :action=>proc { |it| set_periodic_image(it); end_modal(it) } )
+	  set_attr(0, :action=>lambda { |it| set_periodic_image(it); end_modal(it) } )
 	}
   end
 
@@ -374,7 +374,7 @@ class Molecule
 		  layout(3,
 		    item(:text, :title=>"Atoms to process: "),
 			item(:text, :title=>block, :width=>120),
-			item(:button, :title=>"Skip this block", :action=>proc { end_modal(2) } )) :
+			item(:button, :title=>"Skip this block", :action=>lambda { |it| end_modal(2) } )) :
 		  -1),
 		-1,
 		item(:text, :title=>"Net Molecular Charge:"),
@@ -382,7 +382,7 @@ class Molecule
 		(tool == "resp" ?
 		  -1 :
 		  item(:checkbox, :title=>"Calculate partial charges", :tag=>"calc_charge",
-		    :action=>proc { |it|
+		    :action=>lambda { |it|
 			  set_attr("optimize_structure", :enabled=>(it[:value] != 0)) } )),
 		-1,
 		(tool == "resp" ?
@@ -400,13 +400,13 @@ class Molecule
 		-1,
 		item(:checkbox, :title=>"Use the residue information for connection analysis", :tag=>"use_residue",
 		  :value=>(get_global_settings("antechamber.use_residue") || 0),
-		  :action=>proc { |it| valid_antechamber_dir(it[:value]) && set_attr(0, :enabled=>true) } ),
+		  :action=>lambda { |it| valid_antechamber_dir(it[:value]) && set_attr(0, :enabled=>true) } ),
 		-1,
 		item(:line),
 		-1,
 		item(:text, :title=>"Log directory:"),
 		[ item(:button, :title=>"Choose...",
-			:action=>proc { |it|
+			:action=>lambda { |it|
 			  dir = Dialog.open_panel(nil, nil, nil, true)
 			  if dir
 				set_value("log_dir", dir)
@@ -1536,7 +1536,7 @@ class Molecule
 	  layout(1,
 	    item(:text, :title=>"Step 1:\nCreate GAMESS input for ESP calculation"),
 		[item(:button, :title=>"Create GAMESS Input...",
-		  :action=>proc { |it|
+		  :action=>lambda { |it|
 		    esp_save = get_global_settings("gamess.esp")
 			set_global_settings("gamess.esp", 1)
 			mol.cmd_create_gamess_input
@@ -1546,7 +1546,7 @@ class Molecule
 		item(:line),
 		item(:text, :title=>"Step 2:\nImport GAMESS .dat file"),
 		[item(:button, :title=>"Import GAMESS dat...",
-		  :action=>proc { |it|
+		  :action=>lambda { |it|
 		    fname = Dialog.open_panel("Select GAMESS .dat file", nil, "*.dat")
 			if fname
 			  errmsg = nil
@@ -1567,7 +1567,7 @@ class Molecule
 		item(:line),
 		item(:text, :title=>"Step 3:\nRun RESP for charge fitting"),
 		[item(:button, :title=>"Run RESP...", :tag=>"resp",
-		  :action=>proc { |it|
+		  :action=>lambda { |it|
 		    if mol.cmd_run_resp
 			  if get_global_settings("antechamber.log_level") == "latest"
 			    mol.clean_ante_log_dir(Integer(get_global_settings("antechamber.log_keep_number")))
@@ -1577,7 +1577,7 @@ class Molecule
 		  }),
 		  {:align=>:right}],
 		item(:line),
-		[item(:button, :title=>"Close", :action=>proc { |it| end_modal(1) }),
+		[item(:button, :title=>"Close", :action=>lambda { |it| end_modal(1) }),
 		  {:align=>:center}]
 	  )
 	  if mol.nelpots == 0
@@ -1624,7 +1624,7 @@ class Molecule
 		),
 		(ptype == "bond" || ptype == "angle" ?
 		  item(:button, :title=>"Guess k by UFF...", :align=>:right,
-		    :action=>proc { |it|
+		    :action=>lambda { |it|
 			  guess, cval = mol.guess_uff_parameter_dialog(value(k[1]), indices)
 			  if guess
 			    set_value("k", guess)

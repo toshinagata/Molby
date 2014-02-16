@@ -642,7 +642,7 @@ MyDocument::OnCreatePiAnchor(wxCommandEvent &event)
 	if (ig == NULL || IntGroupGetCount(ig) < 2)
 		return;  /*  Do nothing  */
 	if (MolActionCreateAndPerform(mol, SCRIPT_ACTION("G;i"),
-			"proc { |g| create_pi_anchor('AN', atom_group(g) { |ap| ap.atomic_number != 1 }, nil, nil, g.max + 1).index rescue -1 }",
+			"lambda { |g| create_pi_anchor('AN', atom_group(g) { |ap| ap.atomic_number != 1 }, nil, nil, g.max + 1).index rescue -1 }",
 			ig, &idx) != 0)
 		return;
 	MainViewCallback_selectTable(mview, kMainViewAtomTableIndex);

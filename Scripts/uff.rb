@@ -200,7 +200,7 @@ def guess_uff_parameter_dialog(current_value, indices)
   utypes = indices.map { |i| atoms[i].uff_type }
   names_str = names.join("-")
   types_str = types.join("-")
-  recalc = proc { |i1, i2, i3, b1, b2|
+  recalc = lambda { |i1, i2, i3, b1, b2|
     i1 = uff_types[0][i1] rescue 0
 	i2 = uff_types[1][i2] rescue 0
 	i3 = uff_types[2][i3] rescue 0
@@ -212,7 +212,7 @@ def guess_uff_parameter_dialog(current_value, indices)
     sprintf("%.5f", k)
   }
   hash = Dialog.run("Guess UFF Force", "Accept", "Cancel") {
-    action_proc = proc { |it|
+    action_proc = lambda { |it|
 	  t1 = value("uff_type_0").to_i rescue 0
 	  t2 = value("uff_type_1").to_i rescue 0
 	  t3 = value("uff_type_2").to_i rescue 0
@@ -280,7 +280,7 @@ def guess_uff_parameters
   xatoms = IntGroup[]
   xbonds = xangles = xdihedrals = xfragments = []
   h = Dialog.new("Guess UFF Parameters: #{mol.name}", nil, nil, :resizable=>true) {
-    update_xatoms = proc {
+    update_xatoms = lambda {
       xatoms = mol.atom_group { |ap| !exclude.member?(ap.atomic_number) }
       xfragments = mol.fragments(xatoms)
       xbonds = (0...mol.nbonds).select { |i| b = mol.bonds[i]; xatoms.include?(b[0]) || xatoms.include?(b[1]) }
@@ -314,7 +314,7 @@ def guess_uff_parameters
       "fragments"=>[["no", 40], ["fragment", 360]]
     }
     tab = "atoms"
-    update_selection = proc {
+    update_selection = lambda {
       g = mol.selection
       sel = IntGroup[]
       case tab
@@ -348,7 +348,7 @@ def guess_uff_parameters
         it[:selection] = sel
       end
     }
-    selection_changed = proc { |it|
+    selection_changed = lambda { |it|
       if @dont_change_mol_selection
         @dont_change_mol_selection = false
         return
@@ -379,14 +379,14 @@ def guess_uff_parameters
       end
       mol.selection = g
     }
-    select_tab = proc { |tag|
+    select_tab = lambda { |tag|
       table = item_with_tag("table")
       table[:columns] = columns[tag]
       tab = tag
       table[:refresh] = true
       update_selection.call
     }
-    tab_button_pressed = proc { |it|
+    tab_button_pressed = lambda { |it|
       ["atoms", "bonds", "angles", "dihedrals", "fragments"].each { |tag|
         next if tag == it[:tag]
         item_with_tag(tag)[:value] = 0
@@ -397,7 +397,7 @@ def guess_uff_parameters
     uff_type_for_title = Hash.new
     uff_title_for_type = Hash.new
     uff_title_for_type[""] = "-- select --"
-    uff_popup = proc { |an|
+    uff_popup = lambda { |an|
       if uff_popup_titles[an] == nil
 	    if an == 0
 		  titles = ["(no type)"]
@@ -415,7 +415,7 @@ def guess_uff_parameters
       end
       uff_popup_titles[an]
     }
-    get_count = proc { |it|
+    get_count = lambda { |it|
       case tab
       when "atoms"
         return xatoms.count
@@ -430,7 +430,7 @@ def guess_uff_parameters
       end
       return 0
     }
-    get_value = proc { |it, row, col|
+    get_value = lambda { |it, row, col|
       case tab
       when "atoms"
         idx = xatoms[row]
@@ -548,7 +548,7 @@ def guess_uff_parameters
       end
       return "..."
     }
-    is_item_editable = proc { |it, row, col|
+    is_item_editable = lambda { |it, row, col|
       case tab
       when "atoms"
         case col
@@ -573,7 +573,7 @@ def guess_uff_parameters
       end
       return false
     }
-    modify_parameter = proc { |mol, partype, idx, attr, val|
+    modify_parameter = lambda { |mol, partype, idx, attr, val|
       arena = mol.md_arena
       case partype
       when "vdw"
@@ -603,7 +603,7 @@ def guess_uff_parameters
       end
       return pref_new
     }
-    set_value = proc { |it, row, col, val|
+    set_value = lambda { |it, row, col, val|
       case tab
       when "atoms"
         idx = xatoms[row]
@@ -668,7 +668,7 @@ def guess_uff_parameters
         end
       end
     }
-    has_popup_menu = proc { |it, row, col|
+    has_popup_menu = lambda { |it, row, col|
       if tab == "atoms" && col == 5
         #  UFF type popup
         ap = mol.atoms[xatoms[row]]
@@ -678,13 +678,13 @@ def guess_uff_parameters
         return nil
       end
     }
-    popup_menu_selected = proc { |it, row, col, sel|
+    popup_menu_selected = lambda { |it, row, col, sel|
       return if tab != "atoms" || col != 5
       ap = mol.atoms[xatoms[row]]
       title = uff_popup.call(ap.atomic_number)[sel]
       ap.uff_type = (uff_type_for_title[title] || "")
     }
-    guess_uff_types = proc { |recalc_all|
+    guess_uff_types = lambda { |recalc_all|
       xatoms.each { |idx|
         ap = mol.atoms[idx]
         next if !recalc_all && ap.uff_type != ""
@@ -717,7 +717,7 @@ def guess_uff_parameters
         end
       }
     }
-    set_color = proc { |it, row, col|
+    set_color = lambda { |it, row, col|
       @red_color ||= [1.0, 0.2, 0.2]
       @yellow_color ||= [1.0, 1.0, 0.6]
       arena = mol.md_arena
@@ -740,7 +740,7 @@ def guess_uff_parameters
         return nil
       end
     }
-    guess_parameters_for_fragments = proc {
+    guess_parameters_for_fragments = lambda { |*d|
       name = mol.name
       xfragments.each_with_index { |frag, i|
         fmol = mol.extract(frag)
@@ -793,7 +793,7 @@ def guess_uff_parameters
         end
       }
     }
-    guess_parameters_for_metals = proc {
+    guess_parameters_for_metals = lambda { |*d|
       catch(:exit) {
         #  Atoms
         xatoms.each { |idx|
@@ -903,7 +903,7 @@ def guess_uff_parameters
 			  end
 			}
 		    if is[i] == nil
-			  error_message_box("The UFF type for atom #{b[i]} (#{aps[i].name}) is not defined.")
+			  error_message_box("The UFF type for atom #{a[i]} (#{aps[i].name}) is not defined.")
 			  throw(:exit)
 			end
 		  }
@@ -1054,14 +1054,14 @@ def guess_uff_parameters
         :action=>guess_parameters_for_fragments, :flex=>[1,1,1,0,0,0], :align=>:center),
       item(:button, :title=>"Guess UFF Parameters for Metal Atoms",
         :action=>guess_parameters_for_metals, :flex=>[1,1,1,0,0,0], :align=>:center),
-      item(:button, :title=>"Close", :action=>proc { hide }, :flex=>[1,1,1,0,0,0], :align=>:center),
+      item(:button, :title=>"Close", :action=>lambda { |it| hide }, :flex=>[1,1,1,0,0,0], :align=>:center),
       :flex=>[0,0,0,0,1,1]
     )
     size = self.size
     set_min_size(size)
     set_size(size[0] + 100, size[1] + 50);
-    listen(mol, "documentModified", proc { update_xatoms.call; update_selection.call })
-    listen(mol, "documentWillClose", proc { hide })
+    listen(mol, "documentModified", lambda { |d| update_xatoms.call; update_selection.call })
+    listen(mol, "documentWillClose", lambda { |d| hide })
     update_xatoms.call
     guess_uff_types.call(true)
     show

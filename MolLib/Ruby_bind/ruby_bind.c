@@ -10822,15 +10822,15 @@ s_evalRubyScriptOnMoleculeSub(VALUE val)
 	}
 	if (s_ruby_get_binding_for_molecule == Qfalse) {
 		const char *s1 =
-		 "proc { |_mol_, _bind_| \n"
-		 "  _proc_ = eval(\"proc { |__mol__| __mol__.instance_eval { binding } } \", _bind_) \n"
+		 "lambda { |_mol_, _bind_| \n"
+		 "  _proc_ = eval(\"lambda { |__mol__| __mol__.instance_eval { binding } } \", _bind_) \n"
 		 "  _proc_.call(_mol_) } ";
 		s_ruby_get_binding_for_molecule = rb_eval_string(s1);
 		rb_define_variable("_get_binding_for_molecule", &s_ruby_get_binding_for_molecule);
 	}
 	if (s_ruby_export_local_variables == Qfalse) {
 		const char *s2 =
-		"proc { |_bind_| \n"
+		"lambda { |_bind_| \n"
 		"   # find local variables newly defined in _bind_ \n"
 		" _a_ = _bind_.eval(\"local_variables\") - TOPLEVEL_BINDING.eval(\"local_variables\"); \n"
 		" _a_.each { |_vsym_| \n"
@@ -10839,7 +10839,7 @@ s_evalRubyScriptOnMoleculeSub(VALUE val)
 		"   #  Define local variable \n"
 		"   TOPLEVEL_BINDING.eval(_vname_ + \" = nil\") \n"
 		"   #  Then set value  \n"
-		"   TOPLEVEL_BINDING.eval(\"proc { |_m_| \" + _vname_ + \" = _m_ }\").call(_vval_) \n"
+		"   TOPLEVEL_BINDING.eval(\"lambda { |_m_| \" + _vname_ + \" = _m_ }\").call(_vval_) \n"
 		" } \n"
 		"}";
 		s_ruby_export_local_variables = rb_eval_string(s2);

@@ -284,7 +284,7 @@ end_of_header
 		item(:textview, :width=>280, :height=>80, :tag=>"list", :editable=>false),
 		nil,
 		[ item(:button, :title=>"Update",
-			:action=>proc { |it| 
+			:action=>lambda { |it| 
 			  list = Dialog.list_remote_files(value("host"), value("directory"))
 			  set_value("list", list)
 			}
@@ -295,7 +295,7 @@ end_of_header
 		item(:textfield, :width=>280, :height=>20, :tag=>"local"),
 		nil,
 		[ item(:button, :title=>"Choose...",
-		    :action=>proc { |it|
+		    :action=>lambda { |it|
 			  dir = Dialog.open_panel(nil, nil, nil, true)
 			  if dir
 			    set_value("local", dir)
@@ -430,7 +430,7 @@ end_of_header
 	hash = Dialog.run("Show Graphite") {
       layout(1,
 	    item(:checkbox, :title=>"Show graphite", :tag=>"show_graphite", :value=>(flag ? 1 : 0),
-		  :action=>proc { |it| set_attr("graphite", :enabled=>(it[:value] == 1)) } ),
+		  :action=>lambda { |it| set_attr("graphite", :enabled=>(it[:value] == 1)) } ),
 	    item(:text, :title=>"Number of graphite rings for each direction:"),
 	    item(:textfield, :width=>120, :tag=>"graphite", :value=>n.to_s, :enabled=>flag))
 	}
