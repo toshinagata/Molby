@@ -191,6 +191,8 @@ end_of_header
 		  item(:textfield, :width=>100, :height=>20, :tag=>"stepz", :value=>grid[6].to_s)))
 	}
 	if hash[:status] == 0
+	  path = self.path || self.name
+	  dir = self.dir || Dir.pwd
 	  origin = Vector3D[hash["originx"], hash["originy"], hash["originz"]]
 	  dx = hash["deltax"]
 	  dy = hash["deltay"]
@@ -198,16 +200,16 @@ end_of_header
 	  nx = hash["stepx"]
 	  ny = hash["stepy"]
 	  nz = hash["stepz"]
-	  basename = File.basename(self.path, ".*")
+	  basename = File.basename(path, ".*")
 	  filenames = []
 	  mo_type = self.mo_type
 	  mos.each { |n|
 	    fname1 = fname2 = nil
 	    alpha = (mo_type != "UHF" ? "" : "alpha ")
 		a = (mo_type != "UHF" ? "" : "a")
-	    fname1 = Dialog.save_panel("Cube file name for #{alpha}MO #{n}", self.dir, basename + "_#{n}#{a}.cube", "Gaussian cube file (*.cube)|*.cube")
+	    fname1 = Dialog.save_panel("Cube file name for #{alpha}MO #{n}", dir, basename + "_#{n}#{a}.cube", "Gaussian cube file (*.cube)|*.cube")
 		if (mo_type == "UHF")
-		  fname2 = Dialog.save_panel("Cube file name for beta MO #{n}", self.dir, basename + "_#{n}b.cube", "Gaussian cube file (*.cube)|*.cube")
+		  fname2 = Dialog.save_panel("Cube file name for beta MO #{n}", dir, basename + "_#{n}b.cube", "Gaussian cube file (*.cube)|*.cube")
 		end
 		filenames.push([n, fname1, fname2])
 	  }
