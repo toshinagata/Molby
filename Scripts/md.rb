@@ -173,12 +173,14 @@ class Molecule
 	  @mol = mol
 	  def set_box_value(item1)
 	    h = Hash.new
+		enabled = false
 		["o0", "o1", "o2", "a0", "a1", "a2", "b0", "b1", "b2", "c0", "c1", "c2"].each { |k|
 		  begin
 		    s = value(k)
 			if s == nil || s == ""
 			  h[k] = 0.0
 			else
+			  enabled = true
 		      h[k] = Float(eval(s))
 			  set_value(k, h[k].to_s)
 			end
@@ -191,49 +193,87 @@ class Molecule
 			return nil
 		  end
 		}
-		ax = Vector3D[h["a0"], h["a1"], h["a2"]]
-		bx = Vector3D[h["b0"], h["b1"], h["b2"]]
-		cx = Vector3D[h["c0"], h["c1"], h["c2"]]
-		ox = Vector3D[h["o0"], h["o1"], h["o2"]]
-		fx = [value("aflag").to_i, value("bflag").to_i, value("cflag").to_i]
-		@mol.set_box(ax, bx, cx, ox, fx)
+		if enabled
+		  ax = Vector3D[h["a0"], h["a1"], h["a2"]]
+		  bx = Vector3D[h["b0"], h["b1"], h["b2"]]
+		  cx = Vector3D[h["c0"], h["c1"], h["c2"]]
+		  ox = Vector3D[h["o0"], h["o1"], h["o2"]]
+		  fx = [1, 1, 1]
+		  if ax.length2 < 1e-8
+		    fx[0] = 0
+		    ax = Vector3D[1, 0, 0]
+		  end
+		  if bx.length2 < 1e-8
+		    fx[1] = 0
+		    bx = Vector3D[0, 1, 0]
+		  end
+		  if cx.length2 < 1e-8
+		    fx[2] = 0
+		    cx = Vector3D[0, 0, 1]
+		  end
+		  @mol.set_box(ax, bx, cx, ox, fx)
+		else
+		  @mol.set_box(nil)
+		end
 		return @mol
 	  end
-#	  def action(item1)
-#	    if item1[:index] == 0
-#		  if !set_box_value(item1)
-#		    return  #  Cannot set box: dialog is not dismissed
-#		  end
-#		end
-#		super
-#	  end
+	  def clear_box(item1)
+	    @hash = Hash.new
+		["o0", "o1", "o2", "a0", "a1", "a2", "b0", "b1", "b2", "c0", "c1", "c2"].each { |k|
+		  @hash[k] = value(k)
+          set_value(k, "")
+		}
+		set_attr("restore", :enabled=>true)
+	  end
+	  def restore_box(item1)
+	    if @hash
+		  ["o0", "o1", "o2", "a0", "a1", "a2", "b0", "b1", "b2", "c0", "c1", "c2"].each { |k|
+            set_value(k, @hash[k])
+		  }
+		end
+		set_attr("restore", :enabled=>false)
+	  end
 	  box = @mol.box
-	  layout(5,
+	  if box
+	    if box[4][0] == 0
+	      box[0] = Vector3D[0, 0, 0]
+		end
+		if box[4][1] == 0
+		  box[1] = Vector3D[0, 0, 0]
+		end
+		if box[4][2] == 0
+		  box[2] = Vector3D[0, 0, 0]
+		end
+	  end
+	  layout(4,
 	    item(:text, :title=>"Unit cell:"),
 		-1, -1, -1,
-		item(:text, :title=>"Enable"),
+
 	    item(:text, :title=>"origin"),
 		item(:textfield, :width=>140, :tag=>"o0", :value=>(box ? box[3].x.to_s : "")),
 		item(:textfield, :width=>140, :tag=>"o1", :value=>(box ? box[3].y.to_s : "")),
 		item(:textfield, :width=>140, :tag=>"o2", :value=>(box ? box[3].z.to_s : "")),
-		-1,
+
 	    item(:text, :title=>"a-axis"),
 		item(:textfield, :width=>140, :tag=>"a0", :value=>(box ? box[0].x.to_s : "")),
 		item(:textfield, :width=>140, :tag=>"a1", :value=>(box ? box[0].y.to_s : "")),
 		item(:textfield, :width=>140, :tag=>"a2", :value=>(box ? box[0].z.to_s : "")),
-		item(:checkbox, :title=>"", :tag=>"aflag", :value=>(box ? box[4][0] : 0)),
+
 	    item(:text, :title=>"b-axis"),
 		item(:textfield, :width=>140, :tag=>"b0", :value=>(box ? box[1].x.to_s : "")),
 		item(:textfield, :width=>140, :tag=>"b1", :value=>(box ? box[1].y.to_s : "")),
 		item(:textfield, :width=>140, :tag=>"b2", :value=>(box ? box[1].z.to_s : "")),
-		item(:checkbox, :title=>"", :tag=>"bflag", :value=>(box ? box[4][1] : 0)),
+
 	    item(:text, :title=>"c-axis"),
 		item(:textfield, :width=>140, :tag=>"c0", :value=>(box ? box[2].x.to_s : "")),
 		item(:textfield, :width=>140, :tag=>"c1", :value=>(box ? box[2].y.to_s : "")),
 		item(:textfield, :width=>140, :tag=>"c2", :value=>(box ? box[2].z.to_s : "")),
-		item(:checkbox, :title=>"", :tag=>"cflag", :value=>(box ? box[4][2] : 0)),
-		item(:button, :title=>"Set", :action=>:set_box_value),
-		item(:text, :title=>"(Ruby expressions are allowed as the values)"),
+
+		item(:text, :title=>"(Ruby expressions are allowed as the values; e.g. 12.0*cos(60*PI/180))"),
+		-1, -1, -1,
+
+		item(:button, :title=>"Clear Cell", :tag=>"clear", :action=>:clear_box),
+		item(:button, :title=>"Restore Cell", :tag=>"restore", :action=>:restore_box, :enabled=>false),
 		-1, -1)
 	  set_attr(0, :action=>lambda { |it| set_box_value(it) && end_modal(it) })
 	}
