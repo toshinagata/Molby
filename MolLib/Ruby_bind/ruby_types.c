@@ -2805,6 +2805,52 @@ s_IntGroup_Offset(VALUE self, VALUE ofs)
 
 /*
  *  call-seq:
+ *     index(val) -> Integer
+ *     index {|item| ...} -> Integer
+ *
+ *  Returns the index of the first element that is equal to the given value.
+ *  In the second form, returns the index of the first element for which the
+ *  associated block returns true.
+ *  If no element was found, returns nil.
+ */
+static VALUE
+s_IntGroup_Index(int argc, VALUE *argv, VALUE self)
+{
+	IntGroup *ig;
+	VALUE val;
+	int ival, idx;
+	Data_Get_Struct(self, IntGroup, ig);
+	if (argc == 1) {
+		/*  First form  */
+		ival = NUM2INT(rb_Integer(argv[0]));
+		idx = IntGroupLookupPoint(ig, ival);
+		if (idx >= 0)
+			return INT2NUM(idx);
+		else return Qnil;
+	} else if (argc == 0 && rb_block_given_p()) {
+		IntGroupIterator iter;
+		IntGroupIteratorInit(ig, &iter);
+		idx = 0;
+		while ((ival = IntGroupIteratorNext(&iter)) >= 0) {
+			val = rb_yield(INT2NUM(ival));
+			if (RTEST(val)) {
+				val = INT2NUM(idx);
+				break;
+			}
+			idx++;
+		}
+		IntGroupIteratorRelease(&iter);
+		if (RTEST(val))
+			return val;
+		else return Qnil;
+	} else {
+		rb_raise(rb_eArgError, "should be called as index(val) or index {|item| ...}");
+		return Qnil;  /*  Not reached  */
+	}
+}
+
+/*
+ *  call-seq:
  *     inspect -> String
  *
  *  Create a String in the form "IntGroup[...]".
@@ -2979,6 +3025,7 @@ Init_MolbyTypes(void)
 	rb_define_alias(rb_cIntGroup, "^", "sym_difference");
 	rb_define_method(rb_cIntGroup, "range_at", s_IntGroup_RangeAt, 1);
 	rb_define_method(rb_cIntGroup, "each_range", s_IntGroup_Equal, 0);
+	rb_define_method(rb_cIntGroup, "index", s_IntGroup_Index, -1);
 	rb_define_method(rb_cIntGroup, "inspect", s_IntGroup_Inspect, 0);
 	rb_define_alias(rb_cIntGroup, "to_s", "inspect");
 	rb_define_singleton_method(rb_cIntGroup, "[]", s_IntGroup_Create, -1);
