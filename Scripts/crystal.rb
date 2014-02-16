@@ -194,7 +194,7 @@ def export_ortep(fp)
   #  Output bond specifications
   #  Avoid including too many ADCs in a single 811/821 instruction
   #  (Upper limit is 140. Here we divide at every 36 ADCs)
-  output_bonds = proc { |icode|
+  output_bonds = lambda { |icode|
     bond_inst.each_with_index { |inst, ii|
       next if inst.length == 0
       inst.each_with_index { |b, i|
@@ -514,7 +514,7 @@ def cmd_plane
   plane_settings = @plane_settings || Hash.new
   mol = self
   h = Dialog.new("Best-Fit Planes: " + mol.name, "Close", nil) {
-    refresh_proc = proc { |it|
+    refresh_proc = lambda { |it|
       n = it[:tag][/\d/].to_i
       g = plane_settings["group#{n}"]
       if g
@@ -565,7 +565,7 @@ def cmd_plane
         set_value("result#{n}", "")
       end
     }
-    set_proc = proc { |it|
+    set_proc = lambda { |it|
       n = it[:tag][/\d/].to_i
       sel = mol.selection
       if sel.count > 0
@@ -577,7 +577,7 @@ def cmd_plane
       end
       refresh_proc.call(it)
     }
-    text_proc = proc { |it|
+    text_proc = lambda { |it|
       n = it[:tag][/\d/].to_i
       str = it[:value].gsub(/[^-.,0-9]/, "")  #  Remove unsane characters
       g = eval("IntGroup[#{str}]") rescue g = nil
@@ -713,7 +713,7 @@ def bond_angle_with_sigma(*args)
   bb = cell[1] * cell[1]
   cc = cell[2] * cell[2]
 
-  get_dlist = proc { |_i, _j, _k|
+  get_dlist = lambda { |_i, _j, _k|
     if _k != nil
       if _j > _k
         _j, _k = _k, _j
@@ -729,7 +729,7 @@ def bond_angle_with_sigma(*args)
         _i, _j = _j, _i
       end
       _p = dlist[[_i, _j]]
-      return _p if _p != nil
+	  return _p if _p != nil
       _p = (dlist[[_i, _j]] = [])
       _vij = fract[_i] - fract[_j]
       _p[10] = [bases[_i], bases[_j]]
@@ -752,7 +752,7 @@ def bond_angle_with_sigma(*args)
     return _p
   }
 
-  diff_by_rn = proc { |_dl, _n, _ijk|
+  diff_by_rn = lambda { |_dl, _n, _ijk|
     #  dl = dlist(i, j)
     #  return value: Vector3D[ d(rij)/d(xn), d(rij)/d(yn), d(rij)/d(zn) ]
     #  If ijk is true, then dl is dlist(i, j, k)
@@ -773,10 +773,10 @@ def bond_angle_with_sigma(*args)
         _c -= _dl[11][1] * _dv
       end
     end
-    return _c
+	return _c
   }
 
-  notate_with_sigma = proc { |_val, _sig|
+  notate_with_sigma = lambda { |_val, _sig|
     if _sig == 0.0
       return sprintf "%.4f", _val
     end
@@ -880,23 +880,26 @@ def cmd_bond_angle_with_sigma
     values = []
 	clicked = []
 	sel = mol.selection
-	on_get_value = proc { |it, row, col| values[row][col + 2] }
-	atom_name = proc { |ap|
+	on_get_value = lambda { |it, row, col| values[row][col + 2] }
+	atom_name = lambda { |ap|
 	  (ap.molecule.nresidues >= 2 ? "#{ap.res_seq}:" : "") + ap.name
 	}
     layout(1,
 	  item(:table, :width=>480, :height=>300, :tag=>"table",
 	    :columns=>[["Bond/Angle", 140], "value(sigma)", "symop1", "symop2", "symop3"],
-		:on_count=> proc { values.count },
+		:on_count=> lambda { |it| values.count },
 		:on_get_value=> on_get_value),
 	  layout(2,
 	    item(:view, :width=>480, :height=>1), -1,
 	    item(:button, :title=>"Export to Clipboard", :tag=>"dump",
-		  :action=>proc { s = ""; values.each { |val| s += val[2..-1].join("  ") + "\n" }; export_to_clipboard(s) },
+		  :action=>lambda { |item|
+		    s = ""; values.each { |val| s += val[2..-1].join("  ") + "\n" }; export_to_clipboard(s)
+		  },
 		  :enabled=>false),
-		[item(:button, :title=>"Close", :action=>proc { hide }), {:align=>:right}])
+		[item(:button, :title=>"Close", :action=>lambda { |item| hide }), {:align=>:right}])
 	)
-	on_document_modified = proc {
+	on_document_modified = lambda { |*d|
+	  puts "on_document_modified called: newsel = #{mol.selection}, sel = #{sel}"
 	  newsel = mol.selection
 	  val1 = val2 = nil
 	  if sel != newsel
@@ -952,15 +955,179 @@ def cmd_bond_angle_with_sigma
 	  end
 	}
     listen(mol, "documentModified", on_document_modified)
-	listen(mol, "documentWillClose", proc { hide } )
+	listen(mol, "documentWillClose", lambda { |*d| hide } )
+	on_document_modified.call
 	show
   }
+end
+
+def find_expanded_atom(base, symop)
+  return base unless symop
+  symopb = symop + [base]
+  self.each_atom { |ap|
+    if ap.symop == symopb
+      return ap.index
+    end
+  }
+  nil
+end
+
+def complete_by_symmetry
+  if self.box == nil
+    raise "Unit cell should be given"
+  end
+  verbose = false
+  avec, bvec, cvec = self.box
+  syms = []
+  self.nsymmetries.times { |n|
+    syms.push(transform_for_symop([n, 0, 0, 0], true))
+  }
+  frags = []
+  self.each_fragment { |f|
+    frags.push(f)
+  }
+  close_pairs = []
+  self.each_atom { |ap|
+    #  Find if ap is contained in expansion
+	next if ap.symop != nil  #  Already expanded
+    rad = Parameter.builtin.elements[ap.atomic_number].radius
+    syms.each_with_index { |sym, sym_idx|
+      27.times { |n|
+        dx = n % 3 - 1
+        dy = (n / 3) % 3 - 1
+        dz = (n / 9) % 3 - 1
+        next if dx == 0 && dy == 0 && dz == 0 && sym_idx == 0
+        symop = [sym_idx, dx, dy, dz]
+		next if self.find_expanded_atom(ap.index, symop)
+        r = sym * ap.r + avec * dx + bvec * dy + cvec * dz
+        close_atoms = self.find_close_atoms(r, 1.2, rad)
+        if close_atoms.length > 0
+          #  ap * [sym, dx, dy, dz] is included in the expansion
+          close_atoms.each { |ca|
+            next if ca > ap.index
+            i1 = frags.index { |f| f.include?(ca) }
+            i2 = frags.index { |f| f.include?(ap.index) }
+            pp = close_pairs.find { |p1| p1[0] == i1 && p1[1] == i2 && p1[2] == symop }
+			if pp == nil
+			  pp = [i1, i2, symop, [], [], [], []]
+			  close_pairs.push(pp)
+		    end
+            if (r - atoms[ca].r).length2 > 0.0001
+			  #  Normal case (bond between ca and ap)
+			  pp[3].push(ca)
+			  pp[4].push(ap.index)
+			else
+              #  Special position
+              pp[5].push(ca)
+              pp[6].push(ap.index)
+            end
+          }
+        end
+      }
+    }
+  }
+  puts "close_pairs = #{close_pairs}" if verbose
+  expand_pairs = lambda { |i1, symop, depth|
+    #  Find expanded fragment that is close to fragment [i1, symop]
+    next [] if depth > 16
+    retval = []
+    close_pairs.each { |pp|
+      next if i1 != nil && pp[0] != i1
+	  next if pp[3].count == 0   #  No real expansion
+      #  Multiply two symops
+      if symop
+        symop2 = symop_for_transform(transform_for_symop(pp[2]) * transform_for_symop(symop))
+        puts "multiply two symops: #{pp[2].inspect} * #{symop.inspect} -> #{symop2.inspect}" if verbose
+      else
+        symop2 = pp[2]
+      end
+      if symop2[0] == 0
+        #  Translation only
+        if symop2[1] == 0 && symop2[2] == 0 && symop2[3] == 0
+		  #  No expansion, but pp[3] and pp[4] are still needed to make bonds
+		  symop2 = nil
+	    end
+		#  Expand the atoms only at the marginal
+	    retval.push([nil, symop, symop2, pp[3], pp[4], pp[5], pp[6]])
+      else
+        #  Expand fragment
+        retval.push([pp[1], symop, symop2, pp[3], pp[4], pp[5], pp[6]])
+        retval.concat(expand_pairs.call(pp[1], symop2, depth + 1))
+      end
+    }
+    next retval
+  }
+  ex_pairs = expand_pairs.call(nil, nil, 0)
+  puts "ex_pairs = #{ex_pairs}" if verbose
+
+  #  Expand fragments
+  duplicates = []
+  ex_pairs.each { |ex|
+    #  ex[0]: fragment to expand, ex[1], ex[2]: symop,
+    #  ex[3], ex[4]: atoms to make bonds, ex[5], ex[6]: duplicate atoms
+    n1 = self.natoms
+    if ex[0] == nil
+      f = IntGroup[ex[4]]
+    else
+      f = frags[ex[0]]
+    end
+	if ex[2] != nil
+      self.expand_by_symmetry(f, ex[2][0], ex[2][1], ex[2][2], ex[2][3], true)
+      puts "expand(#{f}, #{ex[2]}) -> atoms[#{n1}..#{self.natoms - n1}]" if verbose
+	end
+    ex[3].each_with_index { |x, i|
+      x1 = self.find_expanded_atom(x, ex[1])
+	  if ex[2] != nil
+        x2 = f.index(ex[4][i]) + n1  #  New index of the expanded atom
+	  else
+	    x2 = ex[4][i]   #  Base atom
+	  end
+      create_bond(x1, x2)
+      puts "create_bond(#{x1}, #{x2})" if verbose
+    }
+    #  Register duplicate atoms
+	if ex[2] != nil
+      ex[5].each_with_index { |x, i|
+        x1 = self.find_expanded_atom(x, ex[1])
+        x2 = f.index(ex[6][i]) + n1
+        duplicates.each { |d|
+          if d.include?(x1)
+            d.push(x2)
+            x2 = nil
+            break
+          end
+        }
+        if x2
+          duplicates.push([x1, x2])
+        end
+      }
+    end
+  }
+  puts "duplicates = #{duplicates}" if verbose
+  
+  #  Remove duplicate atoms
+  rem = []
+  duplicates.each { |d|
+    d.each_with_index { |dn, i|
+      next if i == 0
+      #  Remake bonds
+      self.atoms[dn].connects.each { |nn|
+        create_bond(d[0], nn)
+        puts "create_bond(#{d[0]}, #{nn})" if verbose
+      }
+      rem.push(dn)
+    }
+  }
+  remove(rem)
+  puts "remove(#{rem})" if verbose
+  
 end
 
 if lookup_menu("Best-fit Planes...") < 0
   register_menu("", "")
   register_menu("Best-fit Planes...", :cmd_plane)
   register_menu("Bonds and Angles with Sigma...", :cmd_bond_angle_with_sigma)
+  register_menu("Complete by Symmetry", :complete_by_symmetry)
 end
 
 end
