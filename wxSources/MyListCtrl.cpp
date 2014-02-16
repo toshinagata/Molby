@@ -553,7 +553,7 @@ void
 MyListCtrl::OnPopUpMenuSelected(wxCommandEvent &event)
 {
 	if (dataSource != NULL)
-		dataSource->OnPopUpMenuSelected(this, lastPopUpRow, lastPopUpColumn, event.GetId());
+		dataSource->OnPopUpMenuSelected(this, lastPopUpRow, lastPopUpColumn, event.GetId() - 1);
 }
 
 void
@@ -590,7 +590,7 @@ MyListCtrl::OnMouseDown(wxMouseEvent &event)
 		wxMenu mnu;
 		for (i = 0; i < n; i++) {
 			wxString itemStr(items[i], WX_DEFAULT_CONV);
-			mnu.Append(i, itemStr);
+			mnu.Append(i + 1, itemStr);
 			free(items[i]);
 			items[i] = NULL;
 		}
