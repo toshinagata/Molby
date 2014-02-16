@@ -386,6 +386,19 @@ s_StandardErrorOutput(VALUE self, VALUE str)
 
 /*
  *  call-seq:
+ *     stdout.flush
+ *     stderr.flush
+ *
+ *  Flush the standard (error) output. Actually do nothing.
+ */
+static VALUE
+s_FlushConsoleOutput(VALUE self)
+{
+	return self;
+}
+
+/*
+ *  call-seq:
  *     stdin.gets(rs = $/)
  *
  *  Read one line message via dialog box.
@@ -11117,9 +11130,11 @@ Molby_startup(const char *script, const char *dir)
 	/*  Create objects for stdout and stderr  */
 	val = rb_funcall(rb_cObject, rb_intern("new"), 0);
 	rb_define_singleton_method(val, "write", s_StandardOutput, 1);
+	rb_define_singleton_method(val, "flush", s_FlushConsoleOutput, 0);
 	rb_gv_set("$stdout", val);
 	val = rb_funcall(rb_cObject, rb_intern("new"), 0);
 	rb_define_singleton_method(val, "write", s_StandardErrorOutput, 1);
+	rb_define_singleton_method(val, "flush", s_FlushConsoleOutput, 0);
 	rb_gv_set("$stderr", val);
 
 	/*  Create objects for stdin  */
