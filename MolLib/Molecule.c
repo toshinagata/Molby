@@ -6518,9 +6518,10 @@ MoleculeAddExpandedAtoms(Molecule *mp, Symop symop, IntGroup *group, Int *indice
 		ap = ATOM_AT_INDEX(mp->atoms, n);
 		if (SYMOP_ALIVE(ap->symop)) {
 			/*  Calculate the cumulative symop  */
+			Transform tr2;
 			MoleculeGetTransformForSymop(mp, ap->symop, &t1, 0);
-			TransformMul(tr, tr, t1);
-			if (MoleculeGetSymopForTransform(mp, tr, &symop1, 0) != 0) {
+			TransformMul(tr2, tr, t1);
+			if (MoleculeGetSymopForTransform(mp, tr2, &symop1, 0) != 0) {
 				if (indices != NULL)
 					indices[i] = -1;
 				continue;  /*  Skip this atom  */
@@ -6559,9 +6560,9 @@ MoleculeAddExpandedAtoms(Molecule *mp, Symop symop, IntGroup *group, Int *indice
 			AtomClean(&newAtom);
 			ap2 = ATOM_AT_INDEX(mp->atoms, mp->natoms - 1);
 			ap2->r = nr;
-			ap2->symbase = n;
-			ap2->symop = symop;
-			ap2->symop.alive = (symop.dx != 0 || symop.dy != 0 || symop.dz != 0 || symop.sym != 0);
+			ap2->symbase = base;
+			ap2->symop = symop1;
+			ap2->symop.alive = (symop1.dx != 0 || symop1.dy != 0 || symop1.dz != 0 || symop1.sym != 0);
 			table[n] = n1;  /*  The index of the new atom  */
 			MoleculeSetAnisoBySymop(mp, n1);  /*  Recalculate anisotropic parameters according to symop  */
 			if (indices != NULL)
@@ -6575,20 +6576,22 @@ MoleculeAddExpandedAtoms(Molecule *mp, Symop symop, IntGroup *group, Int *indice
 	for (i = n0; i < n1; i++) {
 		Int b[2], j;
 		ap = ATOM_AT_INDEX(mp->atoms, i);
-		if (MoleculeGetSymopForTransform(mp, tr, &ap->symop, 0) == 0) {
+		if (SYMOP_ALIVE(ap->symop) && MoleculeGetTransformForSymop(mp, ap->symop, &tr, 1) == 0) {
 			/*  For each connected atom, look for the transformed atom  */
 			Int *cp;
 			ap2 = ATOM_AT_INDEX(mp->atoms, ap->symbase);
 			cp = AtomConnectData(&ap2->connect);
 			n2 = ap2->connect.count;
 			for (n = 0; n < n2; n++) {
-				nr = ATOM_AT_INDEX(mp->atoms, cp[n])->r;
+				Atom *apn = ATOM_AT_INDEX(mp->atoms, cp[n]);
+				nr = apn->r;
 				TransformVec(&nr, tr, &nr);
+				/*  Look for the bonded atom transformed by ap->symop  */
 				for (j = 0, ap2 = mp->atoms; j < mp->natoms; j++, ap2 = ATOM_NEXT(ap2)) {
 					if (ap2->symbase == cp[n] && SYMOP_EQUAL(ap->symop, ap2->symop))
 						break;
 					VecSub(dr, nr, ap2->r);
-					if (ap2->atomicNumber == ap->atomicNumber && VecLength2(dr) < 1e-6)
+					if (ap2->atomicNumber == apn->atomicNumber && VecLength2(dr) < 1e-6)
 						break;
 				}
 				if (j < mp->natoms) {
