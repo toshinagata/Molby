@@ -1123,11 +1123,64 @@ def complete_by_symmetry
   
 end
 
+def create_packing_diagram
+  #  Enumerate all atoms in the unit cell
+  syms = self.symmetries
+  h = Hash.new
+  xmin = 0.0
+  xmax = 1.0
+  ymin = 0.0
+  ymax = 1.0
+  zmin = 0.0
+  zmax = 1.0
+  xmin_d = xmin.floor
+  xmax_d = xmax.floor - 1
+  ymin_d = ymin.floor
+  ymax_d = ymax.floor - 1
+  zmin_d = zmin.floor
+  zmax_d = zmax.floor - 1
+  syms.each_with_index { |sym, i|
+    each_atom { |ap|
+      fr = sym * ap.fract_r
+	  dx = fr.x.floor
+	  dy = fr.y.floor
+	  dz = fr.z.floor
+	  fr.x -= dx
+	  fr.y -= dy
+	  fr.z -= dz
+	  symopi = i * 1000000 + (50 - dx) * 10000 + (50 - dy) * 100 + 50 - dz
+	  (h[symopi] ||= []).push(ap.index)
+	  xmin_d.upto(xmax_d) { |xd|
+	    next if fr.x + xd < xmin || fr.x + xd > xmax
+	    ymin_d.upto(ymax_d) { |yd|
+	      next if fr.y + yd < ymin || fr.y + yd > ymax
+		  zmin_d.upto(zmax_d) { |zd|
+		    next if fr.z + zd < zmin || fr.z + zd > zmax
+			next if xd == 0 && yd == 0 && zd == 0
+		    symopid = symopi + xd * 10000 + yd * 100 + zd
+			(h[symopid] ||= []).push(ap.index)
+		  }
+		}
+	  }
+	}
+  }
+  h.keys.sort.each { |key|
+    sym = key / 1000000
+	dx = key % 1000000 / 10000 - 50
+	dy = key % 10000 / 100 - 50
+	dz = key % 100 - 50
+	next if sym == 0 && dx == 0 && dy == 0 && dz == 0
+	puts "[#{sym},#{dx},#{dy},#{dz}]: #{h[key].inspect}"
+	expand_by_symmetry(IntGroup[h[key]], sym, dx, dy, dz)
+  }
+end
+
 if lookup_menu("Best-fit Planes...") < 0
   register_menu("", "")
   register_menu("Best-fit Planes...", :cmd_plane)
   register_menu("Bonds and Angles with Sigma...", :cmd_bond_angle_with_sigma)
   register_menu("Complete by Symmetry", :complete_by_symmetry)
+  register_menu("Create Packing Diagram", :create_packing_diagram)
 end
 
 end
