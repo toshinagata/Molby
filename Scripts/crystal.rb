@@ -1124,15 +1124,44 @@ def complete_by_symmetry
 end
 
 def create_packing_diagram
-  #  Enumerate all atoms in the unit cell
+  expansion_box = (@expansion_box ||= [0.0, 1.0, 0.0, 1.0, 0.0, 1.0])
+  h = Dialog.run("Create Packing Diagram") {
+    layout(4,
+	  item(:text, :title=>"Specify the expansion limits for each axis:"),
+	  -1, -1, -1,
+	  item(:text, :title=>"x"),
+	  item(:textfield, :width=>80, :tag=>"xmin", :value=>sprintf("%.1f", expansion_box[0].to_f)),
+	  item(:text, :title=>"..."),
+	  item(:textfield, :width=>80, :tag=>"xmax", :value=>sprintf("%.1f", expansion_box[1].to_f)),
+	  item(:text, :title=>"y"),
+	  item(:textfield, :width=>80, :tag=>"ymin", :value=>sprintf("%.1f", expansion_box[2].to_f)),
+	  item(:text, :title=>"..."),
+	  item(:textfield, :width=>80, :tag=>"ymax", :value=>sprintf("%.1f", expansion_box[3].to_f)),
+	  item(:text, :title=>"z"),
+	  item(:textfield, :width=>80, :tag=>"zmin", :value=>sprintf("%.1f", expansion_box[4].to_f)),
+	  item(:text, :title=>"..."),
+	  item(:textfield, :width=>80, :tag=>"zmax", :value=>sprintf("%.1f", expansion_box[5].to_f)))
+  }
+  if h[:status] == 0
+    @expansion_box[0] = h["xmin"].to_f
+    @expansion_box[1] = h["xmax"].to_f
+    @expansion_box[2] = h["ymin"].to_f
+    @expansion_box[3] = h["ymax"].to_f
+    @expansion_box[4] = h["zmin"].to_f
+    @expansion_box[5] = h["zmax"].to_f
+  else
+    return
+  end
+  
+  #  Enumerate all atoms within the expansion box
   syms = self.symmetries
   h = Hash.new
-  xmin = 0.0
-  xmax = 1.0
-  ymin = 0.0
-  ymax = 1.0
-  zmin = 0.0
-  zmax = 1.0
+  xmin = @expansion_box[0]
+  xmax = @expansion_box[1]
+  ymin = @expansion_box[2]
+  ymax = @expansion_box[3]
+  zmin = @expansion_box[4]
+  zmax = @expansion_box[5]
   xmin_d = xmin.floor
   xmax_d = xmax.floor - 1
   ymin_d = ymin.floor
@@ -1170,7 +1199,7 @@ def create_packing_diagram
 	dy = key % 10000 / 100 - 50
 	dz = key % 100 - 50
 	next if sym == 0 && dx == 0 && dy == 0 && dz == 0
-	puts "[#{sym},#{dx},#{dy},#{dz}]: #{h[key].inspect}"
+#	puts "[#{sym},#{dx},#{dy},#{dz}]: #{h[key].inspect}"
 	expand_by_symmetry(IntGroup[h[key]], sym, dx, dy, dz)
   }
 end
@@ -1180,7 +1209,7 @@ if lookup_menu("Best-fit Planes...") < 0
   register_menu("Best-fit Planes...", :cmd_plane)
   register_menu("Bonds and Angles with Sigma...", :cmd_bond_angle_with_sigma)
   register_menu("Complete by Symmetry", :complete_by_symmetry)
-  register_menu("Create Packing Diagram", :create_packing_diagram)
+  register_menu("Create Packing Diagram...", :create_packing_diagram)
 end
 
 end
