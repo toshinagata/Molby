@@ -1124,6 +1124,10 @@ def complete_by_symmetry
 end
 
 def create_packing_diagram
+  if self.box == nil
+    error_message_box "Unit cell is not defined."
+	return
+  end
   expansion_box = (@expansion_box ||= [0.0, 1.0, 0.0, 1.0, 0.0, 1.0])
   h = Dialog.run("Create Packing Diagram") {
     layout(4,
