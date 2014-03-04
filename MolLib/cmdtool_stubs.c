@@ -18,7 +18,7 @@
 /*  Empty stub functions for command-line tool  */
 
 #include "MolLib.h"
-#include "Molby_extern.h"
+#include "Ruby_bind/Molby_extern.h"
 #include "Missing.h"
 #include <stdio.h>
 #include <stdlib.h>

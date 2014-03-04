@@ -21,9 +21,9 @@ ifeq ($(TARGET_PLATFORM),MSW)
  WX_LDFLAGS = -L$(WX_LIB_DIR) -Wl,--subsystem,windows -mwindows -lwx_mswu_gl-3.0 -lopengl32 -lglu32 -lwx_mswu-3.0 -lwxregexu-3.0 -lwxexpat-3.0 -lwxtiff-3.0 -lwxjpeg-3.0 -lwxpng-3.0 -lwxzlib-3.0 -lrpcrt4 -loleaut32 -lole32 -luuid -lwinspool -lwinmm -lshell32 -lcomctl32 -lcomdlg32 -ladvapi32 -lwsock32 -lgdi32
  CPP_EXTRA_FLAGS = -isystem $(PWD)/../../CLAPACK-3.1.1.1-mingw/INCLUDE -isystem $(PWD)/../../fftw-3.3.2/msw-build/include
  LD_EXTRA_FLAGS = -L$(PWD)/../../CLAPACK-3.1.1.1-mingw/lib -L$(PWD)/../../fftw-3.3.2/msw-build/lib -llapackMinGW -lblasMinGW -lf2c_nomain -lfftw3
- RUBY_DIR = $(PWD)/../../ruby-1.8.7-p160
- RUBY_CFLAGS = -isystem $(RUBY_DIR)/msw-build/include
- RUBY_LDFLAGS = -L$(RUBY_DIR)/msw-build/lib -lmsvcrt-ruby18-static -lws2_32
+ RUBY_DIR = $(PWD)/../../ruby-2.0.0-p353
+ RUBY_CFLAGS = -isystem $(RUBY_DIR)/msw-build/include/ruby-2.0.0 -I$(RUBY_DIR) -I$(RUBY_DIR)/msw-build/include/ruby-2.0.0/i386-mingw32
+ RUBY_LDFLAGS = -L$(RUBY_DIR)/msw-build/lib -lmsvcrt-ruby200-static -lmsvcrt-ruby200 -lws2_32 -lshlwapi -limagehlp
  EXECUTABLE = _Molby.exe_
  FINAL_EXECUTABLE = Molby.exe
  EXE_SUFFIX = .exe

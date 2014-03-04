@@ -46,7 +46,7 @@ $ CFLAGS='-isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.5 -O2
 $ make && make install
 
 The osx-build directory contains lib (which contains libruby-static.a) and include (which contains include files). (There are also bin and share directories, but these are not used for building Molby.)
-$ make clean  #  Remove configure files and intermediates
+$ make clean  #  Remove configure files and intermediates; the osx-build directory remains intact
 
 ---- Old description (ruby 1.8.7) ----
 Get ruby-1.8.7-p160.tar.gz from the Molby source distribution site. Unpack it, and move the resulting directory ruby-1.8.7-p160 to $MOLBY/../. Rename it to ruby-1.8.7-static (or make a symbolic link).
@@ -109,6 +109,20 @@ $ make
 
 (iii) Ruby
 
+Get ruby-2.0.0-p353.tar.gz, unpack it, and move the resulting directory ruby-2.0.0-p353 to $MOLBY/../.
+$ cd $MOLBY/../ruby-2.0.0-p353
+
+If you use gcc 4.6 or later, comment out the following line in cygwin/GNUmakefile.in
+#  DLLWRAP += -mno-cygwin
+(gcc 4.x deprecates the -mno-cygwin option, and from 4.6 it causes 'unrecognized option' error.)
+
+$ ./configure --prefix=$PWD/msw-build --disable-shared --with-ext=date --disable-install-rdoc --with-static-linked-ext
+$ make && make install
+
+The msw-build directory contains lib (which contains libmsvcrt-ruby200-static.a and libmsvcrt-rubuy200.a) and include (which contains include files). (There are also bin and share directories, but these are not used for building Molby.)
+$ make clean  #  Remove configure files and intermediates; the msw-build directory remains intact
+
+--- Old description (ruby 1.8.7) ---
 Get ruby-1.8.7-p160.tar.gz from the Molby source distribution site. Unpack it, and move the resulting directory ruby-1.8.7-p160 to $HOME. Rename it to ruby-1.8.7-static.
 $ cd $HOME
 $ mv somewhere/ruby-1.8.7-p160.tar.gz ./

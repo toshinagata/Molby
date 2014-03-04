@@ -11085,6 +11085,17 @@ Molby_startup(const char *script, const char *dir)
 	}
 		
 	/*  Initialize Ruby interpreter  */
+#if __WXMSW__
+	{
+		/*  On Windows, fileno(stdin|stdout|stderr) returns -2 and
+		    it causes rb_bug() (= fatal error) during ruby_init().
+		    As a workaround, these standard streams are reopend as
+		    NUL stream.  */
+		freopen("NUL", "r", stdin);
+		freopen("NUL", "w", stdout);
+		freopen("NUL", "w", stderr);
+	}
+#endif
 	ruby_init();
 	
 	/*  Initialize loadpath; the specified directory, "lib" subdirectory, and "."  */

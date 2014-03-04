@@ -19,7 +19,7 @@
  the rest of MolLib.h.  */
 #include "MainView.h"
 #include "MolLib.h"
-#include "Molby_extern.h"
+#include "Ruby_bind/Molby_extern.h"
 
 #include "MD/MDCore.h"
 #include "MD/MDGraphite.h"
