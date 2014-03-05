@@ -1052,7 +1052,7 @@ def guess_uff_parameters
         :on_set_color=>set_color),
       item(:button, :title=>"Run Antechamber for Non-Metal Fragments",
         :action=>guess_parameters_for_fragments, :flex=>[1,1,1,0,0,0], :align=>:center),
-      item(:button, :title=>"Guess UFF Parameters for Metal Atoms",
+      item(:button, :title=>"Guess UFF Parameters for Bonds and Angles Including Metal Atoms",
         :action=>guess_parameters_for_metals, :flex=>[1,1,1,0,0,0], :align=>:center),
       item(:button, :title=>"Close", :action=>lambda { |it| hide }, :flex=>[1,1,1,0,0,0], :align=>:center),
       :flex=>[0,0,0,0,1,1]
