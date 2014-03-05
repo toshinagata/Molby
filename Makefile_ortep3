@@ -1,0 +1,37 @@
+#  Usage: make -f ../Makefile_ortep3 (in XXXX_build directory)
+#  Copy source files to ./build/ortep-build and build ortep executable there
+
+ifeq ($(TARGET_PLATFORM),)
+ifeq ($(findstring darwin,$(OSTYPE)),darwin)
+export TARGET_PLATFORM=MAC
+else
+export TARGET_PLATFORM=MSW
+endif
+endif
+
+ifeq ($(TARGET_PLATFORM),MAC)
+FFLAGS=-std=legacy -isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.5 -arch ppc -arch i386
+FLDFLAGS=-nodefaultlibs -lgfortran-static -lgcc -lc -m -lSystem -lSystemStubs -lgfortranbegin
+EXE_SUFFIX=
+else
+FFLAGS=-std=legacy 
+FLDFLAGS=-Wl,--stack=33554432
+EXE_SUFFIX=.exe
+endif
+export FFLAGS
+export FLDFLAGS
+
+OPWD = $(PWD)
+TEPDIR = $(OPWD)/../ortep3
+BUILDDIR = build/ortep-build
+TEPNAME = ortep3_modified
+
+ortep3/ortep3$(EXE_SUFFIX) : $(BUILDDIR)/ortep3$(EXE_SUFFIX)
+	(mkdir -p ortep3; cp -p $(BUILDDIR)/ortep3$(EXE_SUFFIX) ortep3)
+
+$(BUILDDIR)/ortep3$(EXE_SUFFIX) : $(TEPDIR)/$(TEPNAME).f
+	(mkdir -p $(OPWD)/$(BUILDDIR); cp -p $(TEPDIR)/$(TEPNAME).f $(OPWD)/$(BUILDDIR)/)
+	(cd $(OPWD)/$(BUILDDIR) && gfortran $(FFLAGS) -fno-automatic -O -w -c $(TEPNAME).f && gfortran $(FFLAGS) $(FLDFLAGS) -O -w -o ortep3$(EXE_SUFFIX) $(TEPNAME).o)
+
+clean :
+	rm -rf $(BUILDDIR)
