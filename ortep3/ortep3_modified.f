@@ -66,7 +66,10 @@ c *** NOUT is set in subroutine UINPUT
       write (6,1)
     1 format(' ORTEP-III Version 1.0.3 Jan. 25, 2000')
 
-      call uinput(in,nout)
+c     2014.3.10. Toshi Nagata
+c     call uinput(in,nout)
+      call uinptn(in,nout)
+c     End Toshi Nagata
 
     2 CALL PRIME
 
@@ -140,7 +143,10 @@ C     ***** READ NEW INSTRUCTION CARD *****
       NF1=NF
       IF(NF1)28,8,30
 c *** run editor?
-   28 call go2edtr
+c     2014.3.10. Toshi Nagata; do not run editor
+c  28 call go2edtr
+   28 continue
+c     End Toshi Nagata
       if (next.lt.nque) go to 8
       IF(NF1+2)2,2,3000
    30 CONTINUE
@@ -5171,6 +5177,29 @@ C     Z(3,3)=X(3,3)*Y(3,3)
       Z(3,3)=X13*Y13+X23*Y23+X33*Y33
       RETURN
       END
+c     
+c     2014.3.10. Toshi Nagata
+c     Dummy uinput alternative
+c
+      subroutine uinptn(in,nout)
+c *** user input routine
+      common /ns/ npf,ndraw,norient,nvar
+      common /dfl/ infile,idraw,iorient,iout,ext,atomfi,fpaplen
+      character*60 fname,txtans,infile,atomfi
+      character*4 ext
+      character*1 answer
+      fname='TEP.IN'
+      open(in,file=fname,status='old')
+      ndraw=2
+      norient=2
+      nvar=11000
+      nou=0
+      nout=-4
+      return
+      end
+c     
+c     End Toshi Nagata
+c     
       subroutine uinput(in,nout)
 c *** user input routine
       common /ns/ npf,ndraw,norient,nvar
@@ -5178,7 +5207,6 @@ c *** user input routine
       character*60 fname,txtans,infile,atomfi
       character*4 ext
       character*1 answer
-
       call dflts
       iflag=0
 c *** get the input file name and open the file or "exit" ***
