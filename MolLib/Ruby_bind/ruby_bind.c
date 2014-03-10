@@ -11130,6 +11130,15 @@ Molby_startup(const char *script, const char *dir)
 	rb_define_const(rb_mMolby, "MbsfPath", val);	
 	free(p);
 	
+	p = MyAppCallback_getHomeDir();
+	val = (p == NULL ? Qnil : Ruby_NewFileStringValue(p));
+	rb_define_const(rb_mMolby, "HomeDirectory", val);
+	free(p);
+	p = MyAppCallback_getDocumentHomeDir();
+	val = (p == NULL ? Qnil : Ruby_NewFileStringValue(p));
+	rb_define_const(rb_mMolby, "DocumentDirectory", val);
+	free(p);
+	
 #if defined(__CMDMAC__)
 	rb_define_const(rb_mMolby, "HasGUI", Qfalse);
 #else

@@ -74,6 +74,8 @@ s_RubyDialog_GetController(VALUE self)
 	else return NULL;
 }
 
+/*  Deallocate handler: may be called when the Ruby object is deallocated while the RubyDialogFrame is not
+    deallocated yet.  */
 static void
 s_RubyDialog_Release(void *p)
 {
@@ -86,6 +88,16 @@ s_RubyDialog_Release(void *p)
 		}
 		free(p);
 	}
+}
+
+/*  Deallocate the RubyDialogFrame while the Ruby object is still alive  */
+static void
+s_RubyDialog_Forget(VALUE self)
+{
+	RubyDialogInfo *di;
+	Data_Get_Struct(self, RubyDialogInfo, di);
+	if (di != NULL)
+		di->dref = NULL;
 }
 
 static VALUE
@@ -648,6 +660,9 @@ s_RubyDialog_Initialize(int argc, VALUE *argv, VALUE self)
 	
 	rb_iv_set(self, "_items", items);
 	
+	if (rb_ary_includes(gRubyDialogList, self) == Qfalse)
+		rb_ary_push(gRubyDialogList, self);
+
 	return Qnil;
 }
 
@@ -774,30 +789,9 @@ s_RubyDialog_Run(VALUE self)
 	iflag = Ruby_SetInterruptFlag(Qfalse);
 	retval = RubyDialogCallback_runModal(dref);
 	Ruby_SetInterruptFlag(iflag);
-	RubyDialogCallback_close(dref);
+	RubyDialogCallback_destroy(dref);
+	s_RubyDialog_Forget(self);
 	return rb_iv_get(self, "_retval");
-#if 0
-	if (retval == 0) {
-		VALUE items = rb_iv_get(self, "_items");
-		int len = RARRAY_LEN(items);
-		VALUE *ptr = RARRAY_PTR(items);
-		VALUE hash = rb_hash_new();
-		int i;
-		/*  Get values for controls with defined tags  */
-		for (i = 2; i < len; i++) {
-			/*  Items 0, 1 are OK/Cancel buttons  */
-		/*	VALUE type = rb_hash_aref(ptr[i], sTypeSymbol); */
-			VALUE tag = rb_ivar_get(ptr[i], SYM2ID(sTagSymbol));
-			if (tag != Qnil) {
-				VALUE val;
-				val = s_RubyDialogItem_Attr(ptr[i], sValueSymbol);
-				rb_hash_aset(hash, tag, val);
-			}
-		}
-		return hash;
-	} else
-		return Qfalse;
-#endif
 }
 
 /*
@@ -814,8 +808,8 @@ s_RubyDialog_Show(VALUE self)
 {
 	RubyDialog *dref = s_RubyDialog_GetController(self);
 	RubyDialogCallback_show(dref);
-	if (rb_ary_includes(gRubyDialogList, self) == Qfalse)
-		rb_ary_push(gRubyDialogList, self);
+//	if (rb_ary_includes(gRubyDialogList, self) == Qfalse)
+//		rb_ary_push(gRubyDialogList, self);
 	return self;
 }
 
@@ -824,7 +818,6 @@ s_RubyDialog_Show(VALUE self)
  *     hide
  *
  *  Hide the modeless dialog. This is to be used with Dialog#show in pairs.
- *  If the dialog is registered in the ruby_dialog_list global variable, it becomes unregistered.
  *  Mixing Dialog#hide and Dialog#run will lead to unpredictable results, including crash.
  */
 static VALUE
@@ -832,11 +825,24 @@ s_RubyDialog_Hide(VALUE self)
 {
 	RubyDialog *dref = s_RubyDialog_GetController(self);
 	RubyDialogCallback_hide(dref);
-	if (rb_ary_includes(gRubyDialogList, self) == Qtrue)
-		rb_ary_delete(gRubyDialogList, self);
 	return self;
 }
 
+/*
+ *  call-seq:
+ *     close
+ *
+ *  Close the modeless dialog. The normal close handler of the platform is invoked.
+ *  If the dialog is registered in the ruby_dialog_list global variable, it becomes unregistered.
+ *  If force is true, or this method is called recursively, the window will be destroyed unconditionally.
+ */
+static VALUE
+s_RubyDialog_Close(VALUE self)
+{
+	RubyDialog *dref = s_RubyDialog_GetController(self);
+	RubyDialogCallback_close(dref);
+	return self;
+}
 
 /*
  *  call-seq:
@@ -1350,6 +1356,8 @@ s_RubyDialog_EndModal(int argc, VALUE *argv, VALUE self)
 	}
 	rb_iv_set(self, "_retval", retval);
 	RubyDialogCallback_endModal(s_RubyDialog_GetController(self), (flag ? 1 : 0));
+	if (rb_ary_includes(gRubyDialogList, self) == Qtrue)
+		rb_ary_delete(gRubyDialogList, self);
 	return Qnil;
 }
 
@@ -2495,18 +2503,42 @@ RubyDialog_getFlexFlags(RubyValue self, RDItem *ip)
 	else return (int)args[2];
 }
 
-/*  Handle close box.  Invokes Dialog.end_modal or Dialog.hide in Ruby world  */
+static VALUE
+s_RubyDialog_doCloseWindow(VALUE val)
+{
+	void **values = (void **)val;
+	VALUE self = (VALUE)values[0];
+	int isModal = (int)values[1];
+	if (isModal) {
+		rb_funcall(self, rb_intern("end_modal"), 1, INT2NUM(1));
+		return Qnil;
+	} else {
+		VALUE rval;
+		VALUE actval = rb_iv_get(self, "@on_close");
+		if (actval != Qnil) {
+			if (TYPE(actval) == T_SYMBOL)
+				rval = rb_funcall(self, SYM2ID(actval), 0);
+			else
+				rval = rb_funcall(actval, rb_intern("call"), 0);
+		} else rval = Qtrue;
+		if (RTEST(rval)) {
+			if (rb_ary_includes(gRubyDialogList, self) == Qtrue)
+				rb_ary_delete(gRubyDialogList, self);
+			RubyDialogCallback_destroy(s_RubyDialog_GetController(self));
+			s_RubyDialog_Forget(self);
+		}
+		return rval;
+	}
+}
+
+/*  Handle close box.  Invokes Dialog.end_modal or Dialog.close in Ruby world  */
 void
 RubyDialog_doCloseWindow(RubyValue self, int isModal)
 {
 	int status;
-	VALUE val;
-	if (isModal) {
-		val = INT2NUM(1);
-		Ruby_funcall2_protect((VALUE)self, rb_intern("end_modal"), 1, &val, &status);
-	} else {
-		Ruby_funcall2_protect((VALUE)self, rb_intern("hide"), 0, NULL, &status);
-	}
+	VALUE rval;
+	void *args[2] = { (void *)self, (void *)isModal };
+	rval = rb_protect(s_RubyDialog_doCloseWindow, (VALUE)args, &status);
 	if (status != 0) {
 		Molby_showError(status);
 	}
@@ -2538,6 +2570,7 @@ RubyDialogInitClass(void)
 	rb_define_method(rb_cDialog, "end_modal", s_RubyDialog_EndModal, -1);
 	rb_define_method(rb_cDialog, "show", s_RubyDialog_Show, 0);
 	rb_define_method(rb_cDialog, "hide", s_RubyDialog_Hide, 0);
+	rb_define_method(rb_cDialog, "close", s_RubyDialog_Close, 0);
 	rb_define_method(rb_cDialog, "start_timer", s_RubyDialog_StartTimer, -1);
 	rb_define_method(rb_cDialog, "stop_timer", s_RubyDialog_StopTimer, 0);
 	rb_define_method(rb_cDialog, "on_key", s_RubyDialog_OnKey, -1);
@@ -2624,7 +2657,7 @@ RubyDialogInitClass(void)
 			*(sTable1[i]) = ID2SYM(rb_intern(sTable2[i]));
 	}
 	
-	/*  Global variable to hold open non-modal dialogs */
-	rb_define_variable("$non_modal_dialogs", &gRubyDialogList);
+	/*  Global variable to hold open dialogs */
+	rb_define_variable("$ruby_dialogs", &gRubyDialogList);
 	gRubyDialogList = rb_ary_new();
 }
