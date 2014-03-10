@@ -84,6 +84,64 @@ module Kernel
       return Dir.mkdir(path)
 	end
   end
+  def create_temp_dir(tag, name = nil)
+    #  Create a temporary directory like HomeDirectory/Molby/tag/name.xxxxxx
+	name ||= "temp"
+	base = $home_directory + "/Molby/" + tag
+	mkdir_recursive(base)
+	10000.times { |n|
+	  p = sprintf("%s/%s.%05d", base, name, n)
+	  if !FileTest.exist?(p)
+	    Dir.mkdir(p)
+		return p
+	  end
+	}
+	raise "Cannot create temporary directory in #{base}"
+  end
+  def rm_recursive(path)
+    if FileTest.directory?(path)
+	  Dir.foreach(path) { |en|
+	    next if en == "." || en == ".."
+		rm_recursive(path + "/" + en)
+	  }
+	  Dir.rmdir(path)
+	else
+	  File.unlink(path)
+	end
+  end
+  def cleanup_temp_dir(path, option = nil)
+    #  Clean-up temporary directories
+	#  If option is nil, then the directory at path is removed
+	#  If option is a number, then the directories that are in the same parent directory as path
+	#  are removed except for the newest ones
+	if path.index($home_directory + "/Molby/") != 0
+	  raise "Bad cleanup_temp_dir call: the path does not begin with $HOME/Molby/ (#{path})"
+	end
+	if !FileTest.directory?(path)
+	  raise "Bad cleanup_temp_dir call: the path is not a directory (#{path})"
+	end
+	option = option.to_i
+	if option <= 0
+	  rm_recursive(path)
+	else
+	  base = File.dirname(path)
+	  ent = Dir.entries.sort_by { |en| File.mtime("#{base}/#{en}").to_i * (-1) } - [".", ".."]
+	  if $platform == "mac"
+	    ent -= [".DS_Store"]
+	  end
+	  ent[0, option] = []  #  Remove newest #{option} entries
+	  #  Mark this directory to be ready to remove (see below)
+	  open("#{path}/.done", "w") { |fp| }
+	  #  Remove the older directories
+	  ent.each { |en|
+	    #  Check the existence of ".done" file (otherwise, we may accidentarily remove a directory
+	    #  that is still in use in other threads)
+	    if File.exist?("#{base}/#{en}/.done")
+	      rm_recursive("#{base}/#{en}")
+		end
+	  }
+	end
+  end
 end
 
 class IO

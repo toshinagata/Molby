@@ -1208,6 +1208,99 @@ def create_packing_diagram
   }
 end
 
+def cmd_show_ortep
+  mol = self
+  tmp = create_temp_dir("ortep", mol.name)
+  tepexe = "#{ResourcePath}/ortep3/ortep3"
+  if $platform == "win"
+    tepexe += ".exe"
+  end
+  tepdata = []
+  tepbounds = [0, 0, 400, 400]
+  Dialog.new("Show ORTEP:" + mol.name, nil, nil, :resizable=>true, :has_close_box=>true) {
+    tepview = nil  #  Forward declaration
+    on_update_ortep = lambda { |it|
+	  #  Create ORTEP input in the temporary directory
+	  open(tmp + "/TEP.IN", "w") { |fp| mol.export_ortep(fp) }
+	  #  Run ORTEP
+	  cwd = Dir.pwd
+	  Dir.chdir(tmp)
+	  if FileTest.exist?("TEP001.PRN")
+	    File.unlink("TEP001.PRN")
+	  end
+	  pid = call_subprocess(tepexe, "Running ORTEP", nil, "NUL", "NUL")
+	  if FileTest.exist?("TEP001.PRN")
+	    File.rename("TEP001.PRN", "TEP001.ps")
+	  end
+	  Dir.chdir(cwd)
+	  if pid != 0
+	    msg = "ORTEP execution in #{tmp} failed with status #{pid}."
+	    message_box(msg, "ORTEP Failed", :ok, :warning)
+	  else
+	    open(tmp + "/TEP001.ps", "r") { |fp|
+		  tepdata.clear
+		  tepbounds = [100000, 100000, -100000, -100000]
+		  fp.each_line { |ln|
+		    ln.chomp!
+		    x, y, c = ln.split
+			x = x.to_i
+			y = y.to_i
+			if c == "m"
+			  tepdata.push([x, y])
+			elsif c == "l"
+			  tepdata[-1].push(x, y)
+			else
+			  next
+			end
+			tepbounds[0] = x if x < tepbounds[0]
+			tepbounds[1] = y if y < tepbounds[1]
+			tepbounds[2] = x if x > tepbounds[2]
+			tepbounds[3] = y if y > tepbounds[3]
+		  }
+		}
+		tepview.refresh_rect(tepview[:frame])
+	  end
+	}
+	on_draw_ortep = lambda { |it|
+	  clear
+	  frame = it[:frame]
+	  rx = (frame[2] - 10.0) / (tepbounds[2] - tepbounds[0])
+	  ry = (frame[3] - 10.0) / (tepbounds[3] - tepbounds[1])
+	  rx = ry if rx > ry
+	  dx = (frame[2] - (tepbounds[2] - tepbounds[0]) * rx) * 0.5
+	  dy = (frame[3] + (tepbounds[3] - tepbounds[1]) * rx) * 0.5
+	  tepdata.each { |d|
+	    x0 = (dx + (d[0] - tepbounds[0]) * rx).to_i
+		y0 = (dy - (d[1] - tepbounds[1]) * rx).to_i
+		(d.length / 2 - 1).times { |i|
+		  x1 = (dx + (d[i * 2 + 2] - tepbounds[0]) * rx).to_i
+		  y1 = (dy - (d[i * 2 + 3] - tepbounds[1]) * rx).to_i
+		  draw_line(x0, y0, x1, y1)
+		  x0 = x1
+		  y0 = y1
+		}
+	  }
+	}
+	@on_close = lambda { |*d|
+	  puts "#{self}: on_close invoked"
+	  cleanup_temp_dir(tmp)
+	  tmp = nil
+	  true
+	}
+	layout(1,
+	  item(:view, :width=>400, :height=>400, :tag=>"ortep", :on_paint=>on_draw_ortep, :flex=>[0,0,0,0,1,1]),
+	  layout(2,
+	    item(:button, :title=>"Refresh", :action=>on_update_ortep, :align=>:left),
+		-1,
+		:flex=>[0,1,0,0,1,0]),
+	  :flex=>[0,0,0,0,1,1])
+	tepview = item_with_tag("ortep")
+	listen(mol, "documentWillClose", :close )
+    on_update_ortep.call(nil)
+	show
+  }
+end
+
 if lookup_menu("Best-fit Planes...") < 0
   register_menu("", "")
   register_menu("Best-fit Planes...", :cmd_plane)
