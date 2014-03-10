@@ -571,14 +571,27 @@ RubyDialogCallback_endModal(RubyDialog *dref, int status)
 	((RubyDialogFrame *)dref)->StopIntervalTimer();
 	if (((RubyDialogFrame *)dref)->IsModal())
 		((RubyDialogFrame *)dref)->EndModal(status == 0 ? wxID_OK : wxID_CANCEL);
-	else ((RubyDialogFrame *)dref)->Close();
+	else {
+	/*  This function should not be used with non-modal dialogs, but just in case  */
+		((RubyDialogFrame *)dref)->Close();
+	}
+}
+
+void
+RubyDialogCallback_destroy(RubyDialog *dref)
+{
+	((RubyDialogFrame *)dref)->StopIntervalTimer();  /*  May be unnecessary  */
+	((RubyDialogFrame *)dref)->Destroy();
 }
 
 void
 RubyDialogCallback_close(RubyDialog *dref)
 {
 	((RubyDialogFrame *)dref)->StopIntervalTimer();
-	((RubyDialogFrame *)dref)->Close();
+	/*  This function should not be used with modal dialogs, but just in case  */
+	if (((RubyDialogFrame *)dref)->IsModal())
+		((RubyDialogFrame *)dref)->EndModal(wxID_CANCEL);
+	else ((RubyDialogFrame *)dref)->Close();
 }
 
 void
