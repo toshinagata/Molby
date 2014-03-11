@@ -590,8 +590,25 @@ MyListCtrl::OnMouseDown(wxMouseEvent &event)
 	if (FindItemAtPosition(pos, &row, &col) && dataSource != NULL && (n = dataSource->HasPopUpMenu(this, row, col, &items)) > 0) {
 		wxMenu mnu;
 		for (i = 0; i < n; i++) {
-			wxString itemStr(items[i], WX_DEFAULT_CONV);
-			mnu.Append(i + 1, itemStr);
+			char *p = items[i];
+			bool enabled = true;
+			if (*p == '-') {
+				if (p[1] == 0) {
+					//  Separator
+					mnu.AppendSeparator();
+					p = NULL;
+				} else {
+					//  Disabled item
+					p++;
+					enabled = false;
+				}
+			}
+			if (p != NULL) {
+				wxString itemStr(p, WX_DEFAULT_CONV);
+				mnu.Append(i + 1, itemStr);
+				if (!enabled)
+					mnu.Enable(i + 1, false);
+			}
 			free(items[i]);
 			items[i] = NULL;
 		}
