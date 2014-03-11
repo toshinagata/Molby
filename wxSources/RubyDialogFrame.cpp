@@ -346,15 +346,26 @@ RubyDialogFrame::OnCloseWindow(wxCloseEvent &event)
 	wxGetApp().CheckIfAllWindowsAreGone(NULL);
 }
 
+static wxEvtHandler *
+sGetEventHandlerFromObjectAndType(void *obj, wxEventType eventType)
+{
+	if (eventType == MyDocumentEvent)
+		return MyDocumentFromMolecule((Molecule *)obj);
+	else return NULL;
+}
+
 int
 RubyDialogFrame::ListenToObject(void *obj, const char *objtype, const char *msg, RubyValue oval, RubyValue pval)
 {
-	int i, j, eventId;
-	wxEventType eventType;
-	wxEvtHandler *handler;
-	if (strcmp(objtype, "Molecule") == 0) {
+	int i, j, eventId = -1;
+	wxEventType eventType = -1;
+	wxEvtHandler *handler = NULL;
+	if (objtype == NULL) {
+		if (pval != NULL && pval != RubyNil)
+			return -1;  /*  The object type must be specified unless we are removing the registration  */
+	} else if (strcmp(objtype, "Molecule") == 0) {
 		eventType = MyDocumentEvent;
-		handler = MyDocumentFromMolecule((Molecule *)obj);
+		handler = sGetEventHandlerFromObjectAndType(obj, eventType);
 		if (handler == NULL)
 			return -1;  /*  obj is not an event handler  */
 		if (msg == NULL)
@@ -368,20 +379,23 @@ RubyDialogFrame::ListenToObject(void *obj, const char *objtype, const char *msg,
 	
 	if (pval == NULL || pval == RubyNil) {
 		/*  Remove the registration  */
+		int ii = -3;
 		for (i = 0; i < countMessageData; i++) {
-			if (messageData[i * 5] == obj && 
-				messageData[i * 5 + 1] == (void *)eventId &&
-				messageData[i * 5 + 2] == (void *)eventType) {
-				handler->Disconnect(eventId, eventType, wxCommandEventHandler(RubyDialogFrame::HandleDocumentEvent), NULL, this);
-				if (eventType == MyDocumentEvent)
-					MoleculeRelease((Molecule *)obj);
-				break;
-			}
+			if ((messageData[i * 5] == obj || obj == NULL) && 
+				(messageData[i * 5 + 1] == (void *)eventId || eventId == -1) &&
+				(messageData[i * 5 + 2] == (void *)eventType || eventType == -1)) {
+					if (obj == NULL)
+						handler = sGetEventHandlerFromObjectAndType(messageData[i * 5], (wxEventType)messageData[i * 5 + 2]);
+					handler->Disconnect(eventId, eventType, wxCommandEventHandler(RubyDialogFrame::HandleDocumentEvent), NULL, this);
+					if ((wxEventType)messageData[i * 5 + 2] == MyDocumentEvent)
+						MoleculeRelease((Molecule *)obj);
+					messageData[i * 5] = NULL;  /*  Disabled entry  */
+					ii = i;
+				}
 		}
 		if (i == countMessageData)
 			return -3;  /*  No such message  */
-		messageData[i * 5] = NULL;
-		return i;
+		return ii;
 	} else {
 		/*  Check the duplicate  */
 		j = countMessageData;  /*  The position to store info if it is new  */

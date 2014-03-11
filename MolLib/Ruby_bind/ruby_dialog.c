@@ -96,8 +96,13 @@ s_RubyDialog_Forget(VALUE self)
 {
 	RubyDialogInfo *di;
 	Data_Get_Struct(self, RubyDialogInfo, di);
-	if (di != NULL)
+	if (di != NULL) {
+		if (di->dref != NULL) {
+			/*  Unregister all messages  */
+			RubyDialogCallback_Listen(di->dref, NULL, NULL, NULL, NULL, NULL);
+		}
 		di->dref = NULL;
+	}
 }
 
 static VALUE
