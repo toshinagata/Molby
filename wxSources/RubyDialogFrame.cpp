@@ -293,6 +293,9 @@ sResizeSubWindows(RubyValue dval, wxWindow *win, int dx, int dy)
 					d2 = d;
 					d1 = d3 = 0;
 					break;
+				default:  /*  no resize  */
+					d1 = d2 = d3 = 0;
+					break;
 			}
 			if (i == 0) {
 				frame.x += d1;
