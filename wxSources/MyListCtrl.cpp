@@ -316,7 +316,7 @@ void
 MyListCtrl::StartEditText(int row, int column)
 {
 	wxRect rect;
-	int x0, x1, dx, size, xpos, ypos, xunit, yunit, yorigin;
+	int x0, x1, y0, dx, size, xpos, ypos, xunit, yunit;
 	if (editText != NULL && editText->IsShown())
 		EndEditText(true);
 	if (dataSource == NULL || !dataSource->IsItemEditable(this, row, column))
@@ -354,20 +354,21 @@ MyListCtrl::StartEditText(int row, int column)
 		dx = ((x1 - size) / xunit) + 1;
 	} else dx = 0;
 	if (dx != 0) {
-		/*  m_mainWin is a protected member in wxGenericListCtrl  */
-		/*((wxScrolledWindow *)m_mainWin)->*/Scroll(xpos + dx, -1);
-		Refresh();
+		Scroll(xpos + dx, -1);
+	//	Refresh();
+		rect.x += dx * xunit;
 	}
 
 	/*  Reposition the rect relative to the origin of the scrolling area  */
-	yorigin = /*((wxScrolledWindow *)m_mainWin)->*/GetPosition().y;
 	GetItemRectForRowAndColumn(rect, row, column);
 	rect.Inflate(1, 2);
-	rect.Offset(0, -yorigin);
+	ClientToScreen(&rect.x, &rect.y);
+	((wxWindow *)m_mainWin)->ScreenToClient(&rect.x, &rect.y);
+	
 #if defined(__WXMSW__)
 	//  wxMSW seems to require that rect.y >= 0
-	if (rect.y < 0)
-		rect.y = 0;
+//	if (rect.y < 0)
+//		rect.y = 0;
 #endif
 	
 	wxString str = dataSource->GetItemText(this, editRow, editColumn);
@@ -377,7 +378,7 @@ MyListCtrl::StartEditText(int row, int column)
 		editText->Connect(wxID_ANY, wxEVT_KEY_DOWN, wxKeyEventHandler(MyListCtrl::OnKeyDownOnEditText), NULL, this);
 		editText->Connect(wxID_ANY, wxEVT_KILL_FOCUS, wxFocusEventHandler(MyListCtrl::OnKillFocusOnEditText), NULL, this);
 	} else {
-		editText->SetSize(rect);
+		editText->SetSize(rect.x, rect.y, rect.width, rect.height, wxSIZE_ALLOW_MINUS_ONE);
 		editText->Clear();
 		editText->Show();
 	}
