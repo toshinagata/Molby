@@ -45,10 +45,11 @@ class Molecule
 
 #  Export ortep to File fp
 #  If attr is a hash, it represents options for drawing.
-#  "atoms"=>[[group, type, color], [group, type, color], ...]
+#  "atoms"=>[[group, type, color, rad], [group, type, color, rad], ...]
 #    group is an IntGroup, representing a group of atoms.
-#    type is an atom type: 0 = boundary, 1 = boundary + principal, 2 = 1 + axes, 3 = 2 + shades
+#    type is an atom type: 0 = boundary, 1 = boundary + principal, 2 = 1 + axes, 3 = 2 + shades, 4 = fixed size
 #    color is 0..7 (0,1=black, 2=red, 3=green, 4=blue, 5=cyan, 6=magenta, 7=yellow)
+#    rad is the radius of the atom (in Angstrom) whose type is fixed size
 #    If an atom appears in multiple entries, the later entry is valid.
 #  "bonds"=>[[group1, group2, type, color], [group1, group2, type, color], ...]
 #    group1 and group2 are IntGroups, reprensenting the atoms constituting the bonds.
@@ -90,16 +91,35 @@ def export_ortep(fp, attr = nil)
 
   #  Atoms (all symmetry unique atoms regardless they are visible or not)
   n = 0
+  aattr = (attr ? attr["atoms"] : nil)
   each_atom { |ap|
     break if ap.symop != nil
     fp.printf " %4.4s%22s%9.4f%9.4f%9.4f%9d\n", ap.name, "", ap.fract_x, ap.fract_y, ap.fract_z, 0
+	rad = -1.0
+	if aattr
+	  aattr.reverse_each { |at|
+	    if at[0].include?(ap.index)
+		  if at[1] == 4
+		    rad = at[3].to_f
+		    if rad == 0.0
+		      rad = 0.1
+		    end
+		  end
+		  break
+		end
+	  }
+	end
     an = ap.aniso
-    if an != nil
+    if an != nil && rad < 0.0
       fp.printf " %8.5f%9.6f%9.6f%9.6f%9.6f%9.6f%9d\n", an[0], an[1], an[2], an[3], an[4], an[5], 0
     else
-      t = ap.temp_factor
-      t = 1.2 if t <= 0
-      fp.printf " %8.3f%9g%9g%9g%9g%9g%9d\n", t, 0.0, 0.0, 0.0, 0.0, 0.0, 6
+	  type = 7
+	  if rad < 0.0
+        rad = ap.temp_factor
+        rad = 1.2 if rad <= 0
+	    type = 6
+	  end
+      fp.printf " %8.3f%9g%9g%9g%9g%9g%9d\n", rad, 0.0, 0.0, 0.0, 0.0, 0.0, type
     end
     n += 1
   }
@@ -1264,42 +1284,91 @@ def cmd_show_ortep
   tepdata = []
   tepbounds = [0, 0, 400, 400]
   descs = {
-	"atoms"=>[],
-	"bonds"=>[]
+	"Atoms"=>[
+	  ["all", "Shaded", "black", ""],
+	  ["Li-Ar", "Principals", "black", ""],
+	  ["C", "Boundary", "black", ""],
+	  ["H", "Fixed", "black", "0.1"]
+	],
+	"Bonds"=>[
+	  ["all", "all", "4 Shades", "black"],
+	  ["Li-Ar", "Li-Ar", "3 Shades", "black"],
+	  ["C", "Li-Ar", "2 Shades", "black"],
+	  ["H", "all", "Open", "black"]
+	]
   }
   Dialog.new("Show ORTEP:" + mol.name, nil, nil, :resizable=>true, :has_close_box=>true) {
     tepview = nil  #  Forward declaration
+	tab = "Atoms"
+	columns = {
+	  "Atoms"=>[["atom list", 65], ["type", 80], ["color", 40], ["radius", 50]],
+	  "Bonds"=>[["list1", 65], ["list2", 65], ["type", 80], ["color", 40]]
+	}
+	atom_types = ["Boundary", "Principals", "Axes", "Shaded", "Fixed"]
+	bond_types = ["Open", "1 Shade", "2 Shades", "3 Shades", "4 Shades"]
+	colors = ["black", "red", "green", "blue", "cyan", "magenta", "yellow"]
+	#  ORTEP attributes
+	get_ortep_attr = lambda {
+	  attr = Hash.new
+	  make_atom_list = lambda { |s, ln|
+	    ss = s.scan(/[-.0-9A-Za-z]+/)
+		puts ss.inspect
+		ss.inject(IntGroup[]) { |r, it|
+		  if it == "all"
+		    r.add(mol.all)
+			next r
+		  elsif it =~ /-|(\.\.)/
+		    s0 = Regexp.last_match.pre_match
+			s1 = Regexp.last_match.post_match
+		  else
+		    s0 = s1 = it
+		  end
+		  if s0 =~ /^[0-9]+$/
+		    #  Atomic numbers
+			s0 = s0.to_i
+			if s1 !~ /^[0-9]+$/ || (s1 = s1.to_i) < s0
+			  raise "Bad atom list specification: #{s} in line #{ln}"
+			end
+			r.add(s0..s1)
+		  else
+		    #  Atomic symbols
+			s0 = Parameter.builtin.elements.find_index { |p| p.name == s0.capitalize }
+			s1 = Parameter.builtin.elements.find_index { |p| p.name == s1.capitalize }
+			if s0 == nil || s1 == nil
+			  raise "Bad element symbol specification: #{s} in line #{ln}"
+			end
+			(s0..s1).each { |an|
+			  r.add(mol.atom_group { |ap| ap.atomic_number == an } )
+			}
+		  end
+		  r
+		}
+      }
+	  #  Atoms
+	  at = []
+	  descs["Atoms"].each_with_index { |d, idx|
+		list = make_atom_list.call(d[0], idx)
+		type = atom_types.find_index { |it| it == d[1] } || 0
+		col = (colors.find_index { |it| it == d[2] } || 0) + 1
+		rad = d[3]
+		at.push([list, type, col, rad])
+	  }
+	  attr["atoms"] = at
+	  #  Bonds
+	  bd = []
+	  descs["Bonds"].each_with_index { |d, idx|
+		list1 = make_atom_list.call(d[0], idx)
+		list2 = make_atom_list.call(d[1], idx)
+		type = bond_types.find_index { |it| it == d[2] } || 0
+		col = (colors.find_index { |it| it == d[3] } || 0) + 1
+		bd.push([list1, list2, type, col])
+	  }
+	  attr["bonds"] = bd
+	  attr
+	}
     on_update_ortep = lambda { |it|
 	  #  ORTEP attributes
-	  attr = Hash.new
-	  at = []
-	  atom_type = lambda { |an|
-	    if an <= 1
-		  0
-		elsif an == 6
-		  1
-		elsif an <= 9
-		  2
-		else
-		  3
-		end
-	  }
-	  mol.each_atom { |ap|
-	    a = (at[ap.atomic_number] ||= [IntGroup[], atom_type.call(ap.atomic_number), ap.atomic_number % 6 + 2])
-		a[0].add(ap.index)
-	  }
-	  attr["atoms"] = at.compact
-	  attr["bonds"] = []
-	  ans = (0...at.count).select { |i| at[i] != nil }  #  Array of valid atomic numbers
-	  ans.each_with_index { |ai, i|
-	    next if ai <= 6
-	    i.times { |j|
-		  aj = ans[j]
-		  next if aj <= 6
-		  attr["bonds"].push([at[ai][0], at[aj][0], 4, (i + j) % 6 + 2])
-		}
-	  }
-	  puts attr.inspect
+	  attr = get_ortep_attr.call
 	  #  Create ORTEP input in the temporary directory
 	  open(tmp + "/TEP.IN", "w") { |fp| mol.export_ortep(fp, attr) }
 	  #  Run ORTEP
@@ -1323,6 +1392,14 @@ def cmd_show_ortep
 		  fp.each_line { |ln|
 		    ln.chomp!
 		    x, y, c = ln.split
+			if ln =~ /setrgbcolor/
+			  tepdata.push(["color", x.to_f, y.to_f, c.to_f])
+			  next
+			elsif ln =~ /setgray/
+			  x = x.to_f
+			  tepdata.push(["color", x, x, x])
+			  next
+			end
 			x = x.to_i
 			y = y.to_i
 			if c == "m"
@@ -1337,6 +1414,9 @@ def cmd_show_ortep
 			tepbounds[2] = x if x > tepbounds[2]
 			tepbounds[3] = y if y > tepbounds[3]
 		  }
+		  #  [x, y, width, height]
+		  tepbounds[2] -= tepbounds[0]
+		  tepbounds[3] -= tepbounds[1]
 		}
 		tepview.refresh_rect(tepview[:frame])
 	  end
@@ -1348,12 +1428,16 @@ def cmd_show_ortep
 	  pen(:color=>[1, 1, 1, 1])
 	  draw_rectangle(frame)
 	  pen(:color=>[0, 0, 0, 1])
-	  rx = (frame[2] - 10.0) / (tepbounds[2] - tepbounds[0])
-	  ry = (frame[3] - 10.0) / (tepbounds[3] - tepbounds[1])
+	  rx = (frame[2] - 10.0) / tepbounds[2]
+	  ry = (frame[3] - 10.0) / tepbounds[3]
 	  rx = ry if rx > ry
-	  dx = (frame[2] - (tepbounds[2] - tepbounds[0]) * rx) * 0.5
-	  dy = (frame[3] + (tepbounds[3] - tepbounds[1]) * rx) * 0.5
+	  dx = (frame[2] - tepbounds[2] * rx) * 0.5
+	  dy = (frame[3] + tepbounds[3] * rx) * 0.5
 	  tepdata.each { |d|
+	    if d[0] == "color"
+		  pen(:color=>[d[1], d[2], d[3], 1])
+		  next
+		end
 	    x0 = (dx + (d[0] - tepbounds[0]) * rx).to_i
 		y0 = (dy - (d[1] - tepbounds[1]) * rx).to_i
 		(d.length / 2 - 1).times { |i|
@@ -1365,105 +1449,164 @@ def cmd_show_ortep
 		}
 	  }
 	}
+	on_export_eps = lambda { |fname|
+	  frame = item_with_tag("ortep")[:frame].dup
+	  dx = dy = 5
+	  rx = (frame[2] - dx * 2) / tepbounds[2]
+	  ry = (frame[3] - dy * 2) / tepbounds[3]
+	  rx = ry if rx > ry
+	  frame[2] = (rx * tepbounds[2] + dx * 2).to_i
+	  frame[3] = (rx * tepbounds[3] + dy * 2).to_i
+	  #  Assumes A4 paper and center the bounding box
+	  frame[0] = (595 - frame[2]) / 2
+	  frame[1] = (842 - frame[3]) / 2
+	  xmax = frame[0] + frame[2]
+	  ymax = frame[1] + frame[3]
+	  open(fname, "w") { |fp|
+	    fp.print "%!PS-Adobe-3.0 EPSF-3.0
+%%Creator: Molby
+%%BoundingBox: #{frame[0]} #{frame[1]} #{xmax} #{ymax}
+%%Pages: 1
+%%Orientation: Landscape
+%%BeginProlog
+/m {moveto} def
+/l {lineto} def
+%%EndProlog
+%%Page: 1 1
+%%BeginPageSetup
+0 setgray 1 setlinecap 1 setlinewidth
+%%EndPageSetup
+"
+	    tepdata.each { |d|
+	      if d[0] == "color"
+		    fp.printf "%.3f %.3f %.3f setrgbcolor\n", d[1], d[2], d[3]
+		    next
+		  end
+	      x0 = frame[0] + dx + (d[0] - tepbounds[0]) * rx
+		  y0 = frame[1] + dy + (d[1] - tepbounds[1]) * rx
+		  fp.printf "%.2f %.2f m\n", x0, y0
+		  (d.length / 2 - 1).times { |i|
+		    x1 = frame[0] + dx + (d[i * 2 + 2] - tepbounds[0]) * rx
+		    y1 = frame[1] + dy + (d[i * 2 + 3] - tepbounds[1]) * rx
+		    fp.printf "%.2f %.2f l\n", x1, y1
+		    x0 = x1
+		    y0 = y1
+		  }
+		  fp.print "stroke\n"
+	    }
+        fp.print "showpage\n%%Trailer\n%%EOF\n"
+	  }
+	}
+	on_export = lambda { |it|
+	  basename = (mol.path ? File.basename(mol.path, ".*") : mol.name)
+      fname = Dialog.save_panel("Export ORTEP file:", mol.dir, basename + ".eps",
+	    "Encapsulated PostScript (*.eps)|*.eps|ORTEP Instruction (*.tep)|*.tep|All files|*.*")
+	  return if !fname
+	  ext = File.extname(fname)
+	  if ext == ".eps"
+	    on_export_eps.call(fname)
+	  elsif ext == ".tep"
+	    filecopy("#{tmp}/TEP.IN", fname)
+      end
+	}
+	on_document_modified = lambda { |m|
+	}
 	#  Close handler (called when the close box is pressed or the document is closed)
 	@on_close = lambda { |*d|
 	  cleanup_temp_dir(tmp)
 	  tmp = nil
 	  true
 	}
-	#  Internal info (dependent on the molecule contents)
-	elements = []
-	update_internal = lambda { |m|
-	  elements.clear
-	  mol.each_atom { |ap|
-	    e = ap.element
-		if !elements.include?(e)
-		  elements.push(e)
-		end
-	  }
-	  elements.push((mol.selection.count == 0 ? "-" : "") + "Current Selection")
+	on_select_tab = lambda { |it|
+	  tab = ["Atoms", "Bonds"][it[:value]]
+	  puts "tab = #{tab}"
+	  table = item_with_tag("table")
+	  table[:columns] = columns[tab]
+	  table[:selection] = IntGroup[]
+	  table[:refresh] = true
 	}
-	tab = "atoms"
-	columns = {
-	  "atoms"=>[["atom list", 70], ["type", 90], ["color", 40]],
-	  "bonds"=>[["list1", 70], ["list2", 70], ["type", 90], ["color", 40]]
-	}
-	atom_types = ["Boundary", "Principals", "Axes", "Shaded"]
-	bond_types = ["Open", "1 Shade", "2 Shades", "3 Shades", "4 Shades", "5 Shades"]
 	get_count = lambda { |it| descs[tab].count }
 	get_value = lambda { |it, row, col| descs[tab][row][col] }
-	is_item_editable = lambda { |it, row, col| false }
 	has_popup_menu = lambda { |it, row, col|
-	  if tab == "atoms"
-	    if col == 0
-		  return elements
-	    elsif col == 1
+	  if tab == "Atoms"
+	    if col == 1
 	      return atom_types
-		end
-	  elsif tab == "bonds"
-	    if col == 0 || col == 1
-		  return elements
 		elsif col == 2
+		  return colors
+		end
+	  elsif tab == "Bonds"
+		if col == 2
 	      return bond_types
+		elsif col == 3
+		  return colors
 		end
 	  end
 	  return nil
 	}
+	on_selection_changed = lambda { |it|
+	  sel = it[:selection]
+	  item_with_tag("remove")[:enabled] = (sel == nil || sel.count == 0 ? false : true)
+	}
+	is_item_editable = lambda { |it, row, col|
+	  return has_popup_menu.call(it, row, col) == nil
+	}
 	popup_menu_selected = lambda { |it, row, col, sel|
 	  titles = has_popup_menu.call(it, row, col)
 	  return nil if titles == nil
-	  t = titles[sel]
-	  if t == "Current Selection"
-	    t = mol.selection.inspect[9..-2].gsub(" ", "")
-	  end
-	  descs[tab][row][col] = t
-	  item_with_tag("table")[:refresh] = true
+	  descs[tab][row][col] = titles[sel]
+	  it[:refresh] = true
 	}
 	set_value = lambda { |it, row, col, val|
+	  descs[tab][row][col] = val
+	  it[:refresh] = true	  
 	}
 	add_to_table = lambda { |it|
-	  if tab == "atoms"
-	    n = [elements[0], atom_types[0], ""]
-	  elsif tab == "bonds"
-	    n = [elements[0], elements[0], bond_types[0], ""]
-	  else
-	    return nil
-	  end
-	  descs[tab].push(n)
-	  item_with_tag("table")[:refresh] = true
+	  table = item_with_tag("table")
+	  d = descs[tab][-1].dup
+	  descs[tab].push(d)
+	  table[:refresh] = true
+	  table[:selection] = IntGroup[descs[tab].count - 1]
+	  puts descs[tab].inspect
 	}
 	remove_from_table = lambda { |it|
+	  table = item_with_tag("table")
+	  sel = table[:selection]
+	  sel.reverse_each { |n|
+	    descs[tab][n, 1] = []
+	  }
+	  table[:refresh] = true
 	}
 	layout(2,
 	  layout(1,
-	    item(:popup, :subitems=>["Atoms", "Bonds"]),
+	    item(:popup, :subitems=>["Atoms", "Bonds"], :action=>on_select_tab),
 		item(:table, :width=>240, :height=>380, :flex=>[0,0,0,0,1,1], :tag=>"table",
-		  :columns=>columns["atoms"],
+		  :columns=>columns["Atoms"],
 		  :on_count=>get_count,
 		  :on_get_value=>get_value,
 		  :on_set_value=>set_value,
+		  :on_selection_changed=>on_selection_changed,
 		  :is_item_editable=>is_item_editable,
 		  :has_popup_menu=>has_popup_menu,
 		  :on_popup_menu_selected=>popup_menu_selected),
 		layout(2,
-		  item(:button, :title=>"Add", :action=>add_to_table),
-		  item(:button, :title=>"Remove", :action=>remove_from_table),
+		  item(:button, :title=>"Add", :tag=>"add", :action=>add_to_table),
+		  item(:button, :title=>"Remove", :tag=>"remove", :action=>remove_from_table, :enabled=>false),
 		  :flex=>[0,1,0,0,0,0]),
 	    :flex=>[0,0,0,0,0,1]),
 	  layout(1,
 	    item(:view, :width=>400, :height=>400, :tag=>"ortep", :on_paint=>on_draw_ortep, :flex=>[0,0,0,0,1,1]),
 	    layout(2,
 	      item(:button, :title=>"Refresh", :action=>on_update_ortep, :align=>:left),
-		  -1,
+		  item(:button, :title=>"Export as...", :action=>on_export, :align=>:right),
 		  :flex=>[0,1,0,0,0,0]),
 	    :flex=>[0,0,0,0,1,1]),
 	  :flex=>[0,0,0,0,1,1]
 	)
 	set_min_size(480, 200)
 	tepview = item_with_tag("ortep")
-	listen(mol, "documentModified", update_internal)
+	listen(mol, "documentModified", on_document_modified)
 	listen(mol, "documentWillClose", lambda { |m| close } )
-	update_internal.call(nil)
+	on_document_modified.call(nil)
     on_update_ortep.call(nil)
 	show
   }
