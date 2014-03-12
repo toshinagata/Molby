@@ -28,6 +28,7 @@
 #include "wx/radiobut.h"
 #include "wx/statline.h"
 #include "wx/settings.h"
+#include "wx/dcmemory.h"
 
 #include "RubyDialogFrame.h"
 #include "MyApp.h"
@@ -719,166 +720,6 @@ RubyDialogCallback_Listen(RubyDialog *dref, void *obj, const char *objtype, cons
 }
 
 void
-RubyDialogCallback_clear(RubyDialog *dref)
-{
-	wxDC *dcp = ((RubyDialogFrame *)dref)->currentContext;
-	if (dcp == NULL)
-		return;
-	dcp->Clear();
-}
-
-void
-RubyDialogCallback_drawEllipse(RubyDialog *dref, float x, float y, float r1, float r2)
-{
-	wxDC *dcp = ((RubyDialogFrame *)dref)->currentContext;
-	if (dcp == NULL)
-		return;
-	dcp->DrawEllipse(x - r1, y - r2, r1 * 2, r2 * 2);
-}
-
-void
-RubyDialogCallback_drawLine(RubyDialog *dref, int ncoords, float *coords)
-{
-	wxDC *dcp = ((RubyDialogFrame *)dref)->currentContext;
-	if (dcp == NULL)
-		return;
-	wxPoint *pts = new wxPoint[ncoords];
-	int i;
-	for (i = 0; i < ncoords; i++) {
-		pts[i].x = (int)coords[i * 2];
-		pts[i].y = (int)coords[i * 2 + 1];
-	}
-	dcp->DrawLines(ncoords, pts);
-	delete [] pts;
-}
-
-void
-RubyDialogCallback_drawRectangle(RubyDialog *dref, float x, float y, float width, float height, float round)
-{
-	wxDC *dcp = ((RubyDialogFrame *)dref)->currentContext;
-	if (dcp == NULL)
-		return;
-	if (round > 0.0)
-		dcp->DrawRoundedRectangle((int)x, (int)y, (int)width, (int)height, (int)round);
-	else
-		dcp->DrawRectangle((int)x, (int)y, (int)width, (int)height);
-}
-
-void
-RubyDialogCallback_drawText(RubyDialog *dref, const char *s, float x, float y)
-{
-	wxDC *dcp = ((RubyDialogFrame *)dref)->currentContext;
-	if (dcp == NULL)
-		return;
-	wxString str(s, WX_DEFAULT_CONV);
-	dcp->DrawText(str, (int)x, (int)y);
-}
-
-void
-RubyDialogCallback_setFont(RubyDialog *dref, void **args)
-{
-	int i, j;
-	wxDC *dcp = ((RubyDialogFrame *)dref)->currentContext;
-	if (dcp == NULL)
-		return;
-	wxFont font = dcp->GetFont();
-	for (i = 0; args[i] != NULL; i += 2) {
-		if (strcmp((const char *)args[i], "size") == 0) {
-			float size = *((float *)(args[i + 1]));
-			font.SetPointSize((int)size);
-		} else if (strcmp((const char *)args[i], "style") == 0) {
-			int style = (int)(args[i + 1]);
-			switch (style) {
-				case 0: style = wxFONTSTYLE_NORMAL; break;
-				case 1: style = wxFONTSTYLE_ITALIC; break;
-				case 2: style = wxFONTSTYLE_SLANT; break;
-				default: style = wxFONTSTYLE_NORMAL; break;
-			}
-			font.SetStyle(style);
-		} else if (strcmp((const char *)args[i], "family") == 0) {
-			wxFontFamily family;
-			j = (int)(args[i + 1]);
-			switch (j) {
-				case 0: family = wxFONTFAMILY_DEFAULT; break;
-				case 1: family = wxFONTFAMILY_ROMAN; break;
-				case 2: family = wxFONTFAMILY_SWISS; break;
-				case 3: family = wxFONTFAMILY_MODERN; break;
-				default: family = wxFONTFAMILY_DEFAULT; break;
-			}
-			font.SetFamily(family);
-		} else if (strcmp((const char *)args[i], "weight") == 0) {
-			wxFontWeight weight;
-			j = (int)(args[i + 1]);
-			switch (j) {
-				case 0: weight = wxFONTWEIGHT_NORMAL; break;
-				case 1: weight = wxFONTWEIGHT_LIGHT; break;
-				case 2: weight = wxFONTWEIGHT_BOLD; break;
-				default: weight = wxFONTWEIGHT_NORMAL; break;
-			}
-			font.SetWeight(weight);
-		}
-	}
-	dcp->SetFont(font);
-}
-
-void
-RubyDialogCallback_setPen(RubyDialog *dref, void **args)
-{
-	int i;
-	wxDC *dcp = ((RubyDialogFrame *)dref)->currentContext;
-	if (dcp == NULL)
-		return;
-	wxPen pen = wxNullPen;
-	if (args != NULL) {
-		pen = dcp->GetPen();
-		for (i = 0; args[i] != NULL; i += 2) {
-			if (strcmp((const char *)args[i], "color") == 0) {
-				float *fp = (float *)args[i + 1];
-				wxColour col((int)(fp[0] * 255.0), (int)(fp[1] * 255.0), (int)(fp[2] * 255.0), (int)(fp[3] * 255.0));
-				pen.SetColour(col);
-			} else if (strcmp((const char *)args[i], "width") == 0) {
-				float width = *((float *)(args[i + 1]));
-				pen.SetWidth((int)width);
-			} else if (strcmp((const char *)args[i], "style") == 0) {
-				int style = (int)(args[i + 1]);
-				switch (style) {
-					case 0: style = wxSOLID; break;
-					case 1: style = wxTRANSPARENT; break;
-					case 2: style = wxDOT; break;
-					case 3: style = wxLONG_DASH; break; 
-					case 4: style = wxSHORT_DASH; break;
-					case 5: style = wxDOT_DASH; break;
-					default: style = wxSOLID; break;
-				}
-				pen.SetStyle(style);
-			}
-		}
-	}
-	dcp->SetPen(pen);
-}
-
-void
-RubyDialogCallback_setBrush(RubyDialog *dref, void **args)
-{
-	int i;
-	wxDC *dcp = ((RubyDialogFrame *)dref)->currentContext;
-	if (dcp == NULL)
-		return;
-	wxBrush brush = wxNullBrush;
-	if (args != NULL) {
-		brush = dcp->GetBrush();
-		for (i = 0; args[i] != NULL; i += 2) {
-			if (strcmp((const char *)args[i], "color") == 0) {
-				float *fp = (float *)args[i + 1];
-				wxColour col((int)(fp[0] * 255.0), (int)(fp[1] * 255.0), (int)(fp[2] * 255.0), (int)(fp[3] * 255.0));
-				brush.SetColour(col);
-			}
-		}
-	}
-	dcp->SetBrush(brush);
-}
-
-void
 RubyDialogCallback_createStandardButtons(RubyDialog *dref, const char *oktitle, const char *canceltitle)
 {
 	((RubyDialogFrame *)dref)->CreateStandardButtons(oktitle, canceltitle);
@@ -1565,4 +1406,231 @@ RubyDialogCallback_openPanel(const char *title, const char *dirname, const char 
 	if (old_focus != NULL)
 		old_focus->SetFocus();
 	return result;
+}
+
+#pragma mark ====== Plain C Interface (Device Context) ======
+
+RDDeviceContext *
+RubyDialogCallback_getDeviceContextForRubyDialog(RubyDialog *dref)
+{
+	return (RDDeviceContext *)(((RubyDialogFrame *)dref)->currentContext);
+}
+
+void
+RubyDialogCallback_clear(RDDeviceContext *dc)
+{
+	wxDC *dcp = (wxDC *)dc;
+	if (dcp == NULL)
+		return;
+	dcp->Clear();
+}
+
+void
+RubyDialogCallback_drawEllipse(RDDeviceContext *dc, float x, float y, float r1, float r2)
+{
+	wxDC *dcp = (wxDC *)dc;
+	if (dcp == NULL)
+		return;
+	dcp->DrawEllipse(x - r1, y - r2, r1 * 2, r2 * 2);
+}
+
+void
+RubyDialogCallback_drawLine(RDDeviceContext *dc, int ncoords, float *coords)
+{
+	wxDC *dcp = (wxDC *)dc;
+	if (dcp == NULL)
+		return;
+	wxPoint *pts = new wxPoint[ncoords];
+	int i;
+	for (i = 0; i < ncoords; i++) {
+		pts[i].x = (int)coords[i * 2];
+		pts[i].y = (int)coords[i * 2 + 1];
+	}
+	dcp->DrawLines(ncoords, pts);
+	delete [] pts;
+}
+
+void
+RubyDialogCallback_drawRectangle(RDDeviceContext *dc, float x, float y, float width, float height, float round)
+{
+	wxDC *dcp = (wxDC *)dc;
+	if (dcp == NULL)
+		return;
+	if (round > 0.0)
+		dcp->DrawRoundedRectangle((int)x, (int)y, (int)width, (int)height, (int)round);
+	else
+		dcp->DrawRectangle((int)x, (int)y, (int)width, (int)height);
+}
+
+void
+RubyDialogCallback_drawText(RDDeviceContext *dc, const char *s, float x, float y)
+{
+	wxDC *dcp = (wxDC *)dc;
+	if (dcp == NULL)
+		return;
+	wxString str(s, WX_DEFAULT_CONV);
+	dcp->DrawText(str, (int)x, (int)y);
+}
+
+void
+RubyDialogCallback_setFont(RDDeviceContext *dc, void **args)
+{
+	int i, j;
+	wxDC *dcp = (wxDC *)dc;
+	if (dcp == NULL)
+		return;
+	wxFont font = dcp->GetFont();
+	for (i = 0; args[i] != NULL; i += 2) {
+		if (strcmp((const char *)args[i], "size") == 0) {
+			float size = *((float *)(args[i + 1]));
+			font.SetPointSize((int)size);
+		} else if (strcmp((const char *)args[i], "style") == 0) {
+			int style = (int)(args[i + 1]);
+			switch (style) {
+				case 0: style = wxFONTSTYLE_NORMAL; break;
+				case 1: style = wxFONTSTYLE_ITALIC; break;
+				case 2: style = wxFONTSTYLE_SLANT; break;
+				default: style = wxFONTSTYLE_NORMAL; break;
+			}
+			font.SetStyle(style);
+		} else if (strcmp((const char *)args[i], "family") == 0) {
+			wxFontFamily family;
+			j = (int)(args[i + 1]);
+			switch (j) {
+				case 0: family = wxFONTFAMILY_DEFAULT; break;
+				case 1: family = wxFONTFAMILY_ROMAN; break;
+				case 2: family = wxFONTFAMILY_SWISS; break;
+				case 3: family = wxFONTFAMILY_MODERN; break;
+				default: family = wxFONTFAMILY_DEFAULT; break;
+			}
+			font.SetFamily(family);
+		} else if (strcmp((const char *)args[i], "weight") == 0) {
+			wxFontWeight weight;
+			j = (int)(args[i + 1]);
+			switch (j) {
+				case 0: weight = wxFONTWEIGHT_NORMAL; break;
+				case 1: weight = wxFONTWEIGHT_LIGHT; break;
+				case 2: weight = wxFONTWEIGHT_BOLD; break;
+				default: weight = wxFONTWEIGHT_NORMAL; break;
+			}
+			font.SetWeight(weight);
+		}
+	}
+	dcp->SetFont(font);
+}
+
+void
+RubyDialogCallback_setPen(RDDeviceContext *dc, void **args)
+{
+	int i;
+	wxDC *dcp = (wxDC *)dc;
+	if (dcp == NULL)
+		return;
+	wxPen pen = wxNullPen;
+	if (args != NULL) {
+		pen = dcp->GetPen();
+		for (i = 0; args[i] != NULL; i += 2) {
+			if (strcmp((const char *)args[i], "color") == 0) {
+				float *fp = (float *)args[i + 1];
+				wxColour col((int)(fp[0] * 255.0), (int)(fp[1] * 255.0), (int)(fp[2] * 255.0), (int)(fp[3] * 255.0));
+				pen.SetColour(col);
+			} else if (strcmp((const char *)args[i], "width") == 0) {
+				float width = *((float *)(args[i + 1]));
+				pen.SetWidth((int)width);
+			} else if (strcmp((const char *)args[i], "style") == 0) {
+				int style = (int)(args[i + 1]);
+				switch (style) {
+					case 0: style = wxSOLID; break;
+					case 1: style = wxTRANSPARENT; break;
+					case 2: style = wxDOT; break;
+					case 3: style = wxLONG_DASH; break; 
+					case 4: style = wxSHORT_DASH; break;
+					case 5: style = wxDOT_DASH; break;
+					default: style = wxSOLID; break;
+				}
+				pen.SetStyle(style);
+			}
+		}
+	}
+	dcp->SetPen(pen);
+}
+
+void
+RubyDialogCallback_setBrush(RDDeviceContext *dc, void **args)
+{
+	int i;
+	wxDC *dcp = (wxDC *)dc;
+	if (dcp == NULL)
+		return;
+	wxBrush brush = wxNullBrush;
+	if (args != NULL) {
+		brush = dcp->GetBrush();
+		for (i = 0; args[i] != NULL; i += 2) {
+			if (strcmp((const char *)args[i], "color") == 0) {
+				float *fp = (float *)args[i + 1];
+				wxColour col((int)(fp[0] * 255.0), (int)(fp[1] * 255.0), (int)(fp[2] * 255.0), (int)(fp[3] * 255.0));
+				brush.SetColour(col);
+			}
+		}
+	}
+	dcp->SetBrush(brush);
+}
+
+#pragma mark ====== Bitmap ======
+
+RDBitmap *
+RubyDialogCallback_createBitmap(int width, int height, int depth)
+{
+	wxBitmap *bitmap = new wxBitmap(width, height, depth);
+	return (RDBitmap *)bitmap;
+}
+
+void
+RubyDialogCallback_releaseBitmap(RDBitmap *bitmap)
+{
+	if (bitmap != NULL)
+		delete (wxBitmap *)bitmap;
+}
+
+
+/*  Set focus on a bitmap and execute the given function  */
+static RDBitmap *s_temp_dc_pointer = NULL;
+int
+RubyDialogCallback_executeWithFocusOnBitmap(RDBitmap *bitmap, void (*callback)(void *), void *ptr)
+{
+	wxMemoryDC temp_dc;
+	if (s_temp_dc_pointer != NULL)
+		return -1;  /*  Recursive call is not allowed  */
+	s_temp_dc_pointer = (RDBitmap *)(&temp_dc);
+	temp_dc.SelectObject(*((wxBitmap *)bitmap));
+	(*callback)(ptr);
+	temp_dc.SelectObject(wxNullBitmap);
+	s_temp_dc_pointer = NULL;
+	return 0;
+}
+
+RDDeviceContext *
+RubyDialogCallback_getDeviceContextForBitmap(RDBitmap *bitmap)
+{
+	return (RDDeviceContext *)s_temp_dc_pointer;
+}
+
+int
+RubyDialogCallback_saveBitmapToFile(RDBitmap *bitmap, const char *fname)
+{
+	int len = strlen(fname);
+	wxBitmapType type = wxBITMAP_TYPE_PNG;
+	static bool handlers_init = false;
+	if (!handlers_init) {
+		wxInitAllImageHandlers();
+		handlers_init = true;
+	}
+	if (len >= 4) {
+		if (strcasecmp(fname + len - 4, ".png") == 0)
+			type = wxBITMAP_TYPE_PNG;
+		else if (strcasecmp(fname + len - 4, ".tif") == 0 || (len >= 5 && strcasecmp(fname + len - 5, ".tiff") == 0))
+			type = wxBITMAP_TYPE_TIF;
+	}
+	wxString fn(fname, wxConvFile);
+	return ((wxBitmap *)bitmap)->SaveFile(fname, type);
 }

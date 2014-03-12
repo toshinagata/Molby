@@ -39,6 +39,8 @@ extern int gRubyDialogIsFlipped;
 /*  Opaque structures (actually they are used only as pointers)  */
 typedef struct RubyDialog RubyDialog;
 typedef struct RDItem RDItem;
+typedef struct RDDeviceContect RDDeviceContext;
+typedef struct RDBitmap RDBitmap;
 
 /*  Non-opaque structures  */
 typedef struct RDPoint { float x, y; } RDPoint;
@@ -94,14 +96,6 @@ STUB void RubyDialogCallback_setWindowSize(RubyDialog *dref, RDSize size);
 STUB void RubyDialogCallback_setAutoResizeEnabled(RubyDialog *dref, int flag);
 STUB int RubyDialogCallback_isAutoResizeEnabled(RubyDialog *dref);
 STUB int RubyDialogCallback_Listen(RubyDialog *dref, void *obj, const char *objtype, const char *msg, RubyValue oval, RubyValue pval);
-STUB void RubyDialogCallback_clear(RubyDialog *dref);
-STUB void RubyDialogCallback_drawEllipse(RubyDialog *dref, float x, float y, float r1, float r2);
-STUB void RubyDialogCallback_drawLine(RubyDialog *dref, int ncoords, float *coords);
-STUB void RubyDialogCallback_drawRectangle(RubyDialog *dref, float x, float y, float width, float height, float round);
-STUB void RubyDialogCallback_drawText(RubyDialog *dref, const char *s, float x, float y);
-STUB void RubyDialogCallback_setFont(RubyDialog *dref, void **args);
-STUB void RubyDialogCallback_setPen(RubyDialog *dref, void **args);
-STUB void RubyDialogCallback_setBrush(RubyDialog *dref, void **args);
 
 STUB void RubyDialogCallback_createStandardButtons(RubyDialog *dref, const char *oktitle, const char *canceltitle);
 STUB RDItem *RubyDialogCallback_createItem(RubyDialog *dref, const char *type, const char *title, RDRect frame);
@@ -157,6 +151,22 @@ STUB void RubyDialogCallback_refreshTable(RDItem *item);
 STUB int RubyDialogCallback_savePanel(const char *title, const char *dirname, const char *wildcard, char *buf, int bufsize);
 STUB int RubyDialogCallback_openPanel(const char *title, const char *dirname, const char *wildcard, char ***array, int for_directories, int multiple_selection);
 
+STUB RDDeviceContext *RubyDialogCallback_getDeviceContextForRubyDialog(RubyDialog *dref);
+STUB void RubyDialogCallback_clear(RDDeviceContext *dc);
+STUB void RubyDialogCallback_drawEllipse(RDDeviceContext *dc, float x, float y, float r1, float r2);
+STUB void RubyDialogCallback_drawLine(RDDeviceContext *dc, int ncoords, float *coords);
+STUB void RubyDialogCallback_drawRectangle(RDDeviceContext *dc, float x, float y, float width, float height, float round);
+STUB void RubyDialogCallback_drawText(RDDeviceContext *dc, const char *s, float x, float y);
+STUB void RubyDialogCallback_setFont(RDDeviceContext *dc, void **args);
+STUB void RubyDialogCallback_setPen(RDDeviceContext *dc, void **args);
+STUB void RubyDialogCallback_setBrush(RDDeviceContext *dc, void **args);
+
+STUB RDBitmap *RubyDialogCallback_createBitmap(int width, int height, int depth);
+STUB void RubyDialogCallback_releaseBitmap(RDBitmap *bitmap);
+STUB RDDeviceContext *RubyDialogCallback_getDeviceContextForBitmap(RDBitmap *bitmap);
+STUB int RubyDialogCallback_executeWithFocusOnBitmap(RDBitmap *bitmap, void (*callback)(void *), void *ptr);
+STUB int RubyDialogCallback_saveBitmapToFile(RDBitmap *bitmap, const char *fname);
+	
 #ifdef __cplusplus
 }
 #endif
