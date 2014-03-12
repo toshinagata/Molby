@@ -1497,14 +1497,47 @@ def cmd_show_ortep
         fp.print "showpage\n%%Trailer\n%%EOF\n"
 	  }
 	}
+	on_export_bitmap = lambda { |fname|
+	  frame = item_with_tag("ortep")[:frame].dup
+	  dx = dy = 5
+	  scale = 4.0
+	  rx = (frame[2] - dx * 2) * scale / tepbounds[2]
+	  ry = (frame[3] - dy * 2) * scale / tepbounds[3]
+	  rx = ry if rx > ry
+	  frame[2] = (rx * tepbounds[2] + dx * 2).to_i
+	  frame[3] = (rx * tepbounds[3] + dy * 2).to_i
+      bmp = Bitmap.new(frame[2], frame[3], 32)
+	  bmp.focus_exec {
+	    clear
+	    pen(:color=>[0, 0, 0, 1], :width=>scale)
+	    tepdata.each { |d|
+	      if d[0] == "color"
+		    pen(:color=>[d[1], d[2], d[3], 1])
+		    next
+		  end
+	      x0 = (dx + (d[0] - tepbounds[0]) * rx).to_i
+		  y0 = (dy + (tepbounds[3] - d[1] + tepbounds[1]) * rx).to_i
+		  (d.length / 2 - 1).times { |i|
+		    x1 = (dx + (d[i * 2 + 2] - tepbounds[0]) * rx).to_i
+		    y1 = (dy + (tepbounds[3] - d[i * 2 + 3] + tepbounds[1]) * rx).to_i
+		    draw_line(x0, y0, x1, y1)
+		    x0 = x1
+		    y0 = y1
+		  }
+	    }
+	  }
+	  bmp.save_to_file(fname)
+	}
 	on_export = lambda { |it|
 	  basename = (mol.path ? File.basename(mol.path, ".*") : mol.name)
       fname = Dialog.save_panel("Export ORTEP file:", mol.dir, basename + ".eps",
-	    "Encapsulated PostScript (*.eps)|*.eps|ORTEP Instruction (*.tep)|*.tep|All files|*.*")
+	    "Encapsulated PostScript (*.eps)|*.eps|PNG (*.png)|*.png|ORTEP Instruction (*.tep)|*.tep|All files|*.*")
 	  return if !fname
-	  ext = File.extname(fname)
+	  ext = File.extname(fname).downcase
 	  if ext == ".eps"
 	    on_export_eps.call(fname)
+	  elsif ext == ".png"
+	    on_export_bitmap.call(fname)
 	  elsif ext == ".tep"
 	    filecopy("#{tmp}/TEP.IN", fname)
       end
