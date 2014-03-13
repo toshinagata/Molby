@@ -1619,11 +1619,16 @@ MyAppCallback_getGUIDescriptionString(void)
 			"AmberTools 1.3, http://ambermd.org/\n"
 			"  Copyright (C) Junmei Wang, Ross C. Walker, \n"
 			"  Michael F. Crowley, Scott Brozell and David A. Case\n"
+			"ORTEP-III, http://web.ornl.gov/sci/ortep/\n"
+			"  Michael N. Burnett and Carroll K. Johnson, \n"
+			"  Oak Ridge National Laboratory Report ORNL-6895,\n"
+			"  1996.\n"
 			"wxWidgets %d.%d.%d, http://www.wxwidgets.org/\n"
-		    "  Copyright (C) 1992-2013 Julian Smart, Vadim Zeitlin,\n"
-			"  Stefan Csomor, Robert Roebling,\n"
+		    "  Copyright (C) 1992-2013 Julian Smart, Vadim\n"
+			"  Zeitlin, Stefan Csomor, Robert Roebling,\n"
 			"  and other members of the wxWidgets team\n"
-			"  Portions (C) 1996 Artificial Intelligence Applications Institute\n",
+			"  Portions (C) 1996 Artificial Intelligence \n"
+			"  Applications Institute\n",
 			wxMAJOR_VERSION, wxMINOR_VERSION, wxRELEASE_NUMBER);
 	}
 	return desc;
