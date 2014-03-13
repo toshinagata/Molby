@@ -1531,12 +1531,12 @@ def cmd_show_ortep
 	on_export = lambda { |it|
 	  basename = (mol.path ? File.basename(mol.path, ".*") : mol.name)
       fname = Dialog.save_panel("Export ORTEP file:", mol.dir, basename + ".eps",
-	    "Encapsulated PostScript (*.eps)|*.eps|PNG (*.png)|*.png|ORTEP Instruction (*.tep)|*.tep|All files|*.*")
+	    "Encapsulated PostScript (*.eps)|*.eps|PNG (*.png)|*.png|TIFF (*.tif)|*.tif|ORTEP Instruction (*.tep)|*.tep|All files|*.*")
 	  return if !fname
 	  ext = File.extname(fname).downcase
 	  if ext == ".eps"
 	    on_export_eps.call(fname)
-	  elsif ext == ".png"
+	  elsif ext == ".png" || ext == ".tif" || ext == ".tiff"
 	    on_export_bitmap.call(fname)
 	  elsif ext == ".tep"
 	    filecopy("#{tmp}/TEP.IN", fname)
