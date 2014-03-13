@@ -618,7 +618,7 @@ def cmd_plane
             str = ""
             mol.each_atom(g) { |ap|
               d, sig = p.distance(ap)
-              str += sprintf("%d %f(%f)\n", ap.index, d, sig)
+              str += sprintf("%s  %f(%f)\n", ap.name, d, sig)
             }
             str.chomp!
           else
@@ -671,7 +671,7 @@ def cmd_plane
       item(:button, :title=>"Recalculate", :tag=>"refresh2", :action=>refresh_proc),
       item(:text, :title=>"Dihedral angle with Plane 1"), -1, -1,
       -1,
-      item(:textfield, :width=>240, :height=>16, :tag=>"dihedral"), -1,
+      item(:textfield, :width=>240, :height=>20, :tag=>"dihedral"), -1,
       item(:line),
       -1, -1,
       item(:text, :title=>"Distance from Plane 1"), -1, -1,
