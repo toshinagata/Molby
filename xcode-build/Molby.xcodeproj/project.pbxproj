@@ -772,15 +772,19 @@
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				COPY_PHASE_STRIP = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				GCC_VERSION = 4.2;
 				HEADER_SEARCH_PATHS = (
 					"$(PROJECT_DIR)/../../fftw-3.3.2/osx-build/include",
-					"$(PROJECT_DIR)/../../ruby-1.8.7-p160/osx-build/include",
+					"$(PROJECT_DIR)/../../ruby-2.0.0-p353",
+					"$(PROJECT_DIR)/../../ruby-2.0.0-p353/osx-build/include/ruby-2.0.0",
+					"$(PROJECT_DIR)/../../ruby-2.0.0-p353/osx-build/include/ruby-2.0.0/universal-darwin10.8.0",
 				);
 				INSTALL_PATH = /usr/local/bin;
 				LIBRARY_SEARCH_PATHS = (
 					"$(PROJECT_DIR)/../../fftw-3.3.2/osx-build/lib",
-					"$(PROJECT_DIR)/../../ruby-1.8.7-p160/osx-build/lib",
+					"$(PROJECT_DIR)/../../ruby-2.0.0-p353/osx-build/lib",
 				);
 				OTHER_CFLAGS = "-D__CMDMAC__=1";
 				OTHER_LDFLAGS = (
@@ -798,15 +802,19 @@
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				COPY_PHASE_STRIP = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				GCC_VERSION = 4.2;
 				HEADER_SEARCH_PATHS = (
 					"$(PROJECT_DIR)/../../fftw-3.3.2/osx-build/include",
-					"$(PROJECT_DIR)/../../ruby-1.8.7-p160/osx-build/include",
+					"$(PROJECT_DIR)/../../ruby-2.0.0-p353",
+					"$(PROJECT_DIR)/../../ruby-2.0.0-p353/osx-build/include/ruby-2.0.0",
+					"$(PROJECT_DIR)/../../ruby-2.0.0-p353/osx-build/include/ruby-2.0.0/universal-darwin10.8.0",
 				);
 				INSTALL_PATH = /usr/local/bin;
 				LIBRARY_SEARCH_PATHS = (
 					"$(PROJECT_DIR)/../../fftw-3.3.2/osx-build/lib",
-					"$(PROJECT_DIR)/../../ruby-1.8.7-p160/osx-build/lib",
+					"$(PROJECT_DIR)/../../ruby-2.0.0-p353/osx-build/lib",
 				);
 				OTHER_CFLAGS = "-D__CMDMAC__=1";
 				OTHER_LDFLAGS = (

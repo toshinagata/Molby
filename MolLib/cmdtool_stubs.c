@@ -25,6 +25,9 @@
 #include <stdarg.h>
 #include <string.h>
 #include <fcntl.h>
+#include <unistd.h>
+
+#include <ruby.h>
 
 Molecule *
 MoleculeCallback_moleculeAtOrderedIndex(int idx)
@@ -91,6 +94,14 @@ MyAppCallback_showScriptMessage(const char *fmt, ...)
 
 char *
 MyAppCallback_getDocumentHomeDir(void)
+{
+	char *s;
+	s = getenv("HOME");
+	return (s == NULL ? NULL : strdup(s));
+}
+
+char *
+MyAppCallback_getHomeDir(void)
 {
 	char *s;
 	s = getenv("HOME");
@@ -299,7 +310,7 @@ MolActionCallback_registerUndo(Molecule *mol, MolAction *action)
 }
 
 int
-main(int argc, const char **argv)
+main(int argc, char **argv)
 {
 	int fd;
 	char *scriptdir;
@@ -320,7 +331,7 @@ main(int argc, const char **argv)
 	
 	free(scriptdir);
 	
-	ruby_options(argc, argv);
-	ruby_run();
+	ruby_run_node(ruby_options(argc, argv));
+
 	return 0;
 }
