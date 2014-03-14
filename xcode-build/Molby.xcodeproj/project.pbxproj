@@ -168,7 +168,7 @@
 		E4FC7796183E4F3F0064FB2E /* MolLib.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = MolLib.h; path = ../MolLib/MolLib.h; sourceTree = SOURCE_ROOT; };
 		E4FC7797183E4F3F0064FB2E /* Object.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = Object.c; path = ../MolLib/Object.c; sourceTree = SOURCE_ROOT; };
 		E4FC7798183E4F3F0064FB2E /* Object.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Object.h; path = ../MolLib/Object.h; sourceTree = SOURCE_ROOT; };
-		E4FC7799183E4F3F0064FB2E /* Parameter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = Parameter.c; path = ../MolLib/Parameter.c; sourceTree = SOURCE_ROOT; };
+		E4FC7799183E4F3F0064FB2E /* Parameter.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = Parameter.c; path = ../MolLib/Parameter.c; sourceTree = SOURCE_ROOT; wrapsLines = 1; };
 		E4FC779A183E4F3F0064FB2E /* Parameter.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Parameter.h; path = ../MolLib/Parameter.h; sourceTree = SOURCE_ROOT; };
 		E4FC779D183E4F3F0064FB2E /* Molby.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Molby.h; path = ../MolLib/Ruby_bind/Molby.h; sourceTree = SOURCE_ROOT; };
 		E4FC779E183E4F3F0064FB2E /* Molby_extern.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Molby_extern.h; path = ../MolLib/Ruby_bind/Molby_extern.h; sourceTree = SOURCE_ROOT; };
@@ -636,7 +636,7 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = NO;
 				GCC_PREFIX_HEADER = "";
 				GCC_REUSE_STRINGS = NO;
-				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				HEADER_SEARCH_PATHS = (
 					"$(PROJECT_DIR)/../../fftw-3.3.2/osx-build/include",
 					"$(PROJECT_DIR)/../../wxWidgets-3.0.0/include",
@@ -691,7 +691,7 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = NO;
 				GCC_PREFIX_HEADER = "";
 				GCC_REUSE_STRINGS = NO;
-				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				HEADER_SEARCH_PATHS = (
 					"$(PROJECT_DIR)/../../fftw-3.3.2/osx-build/include",
 					"$(PROJECT_DIR)/../../wxWidgets-3.0.0/include",
