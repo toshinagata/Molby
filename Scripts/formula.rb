@@ -685,3 +685,68 @@ class Molecule
   end
 
 end
+
+module Kernel
+  #  Calculate formula weight
+  def fw_sub(str, idx = 0)
+    idx0 = idx
+    f = 0.0
+	c = str[idx]
+	rp = nil
+	case c
+	when ?(
+	  rp = ?)
+	when ?{
+	  rp = ?}
+	when ?[
+	  rp = ?]
+	end
+	if rp
+	  f, idx = fw_sub(str, idx + 1)
+	  if str[idx] != rp
+	    raise "Missing right parenthesis"
+	  end
+	  idx += 1
+	else
+	  s = str[idx..-1]
+	  p = Parameter.builtin.elements.find { |pp| s.rindex(pp.name, 0) == 0 }
+	  if p
+	    f = p.weight
+		idx += p.name.length
+	  else
+	    key = Molecule.lookup_fragment_from_string(s)
+	    if key != nil
+	      f = Molecule.known_fragment(key).atoms.sum { |ap| Parameter.builtin.elements[ap.atomic_number].weight }
+		  idx += key.length
+	    else
+	      ss = str[0..idx - 1] + "<?>" + str[idx..-1]
+	      raise "Cannot find atom/fragment that matches \"#{s}\": #{ss}"
+	    end
+	  end
+	end
+	c = str[idx]
+	if c && c >= ?0 && c <= ?9
+	  n = c.ord - 48
+	  idx += 1
+	  while (c = str[idx]) != nil && c >= ?0 && c <= ?9
+		n = n * 10 + c.ord - 48
+		idx += 1
+	  end
+	  f *= n
+	end
+	return f, idx
+  end
+  def fw(str)
+    idx = 0
+	ff = 0.0
+	while idx < str.length
+	  fff, idx = fw_sub(str, idx)
+	  ff += fff
+	  c = str[idx]
+	  while (c = str[idx]) == "." || c == "+" || c == "_" || c == " "
+	    idx += 1
+	  end
+	end
+	ff
+  end
+end
