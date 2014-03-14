@@ -965,7 +965,7 @@ def cmd_bond_angle_with_sigma
 		[item(:button, :title=>"Close", :action=>lambda { |item| hide }), {:align=>:right}])
 	)
 	on_document_modified = lambda { |*d|
-	  puts "on_document_modified called: newsel = #{mol.selection}, sel = #{sel}"
+	  # puts "on_document_modified called: newsel = #{mol.selection}, sel = #{sel}"
 	  newsel = mol.selection
 	  val1 = val2 = nil
 	  if sel != newsel
@@ -1312,7 +1312,7 @@ def cmd_show_ortep
 	  attr = Hash.new
 	  make_atom_list = lambda { |s, ln|
 	    ss = s.scan(/[-.0-9A-Za-z]+/)
-		puts ss.inspect
+		# puts ss.inspect
 		ss.inject(IntGroup[]) { |r, it|
 		  if it == "all"
 		    r.add(mol.all)
@@ -1500,7 +1500,7 @@ def cmd_show_ortep
 	on_export_bitmap = lambda { |fname|
 	  frame = item_with_tag("ortep")[:frame].dup
 	  dx = dy = 5
-	  scale = 4.0
+	  scale = 5.0
 	  rx = (frame[2] - dx * 2) * scale / tepbounds[2]
 	  ry = (frame[3] - dy * 2) * scale / tepbounds[3]
 	  rx = ry if rx > ry
@@ -1552,7 +1552,7 @@ def cmd_show_ortep
 	}
 	on_select_tab = lambda { |it|
 	  tab = ["Atoms", "Bonds"][it[:value]]
-	  puts "tab = #{tab}"
+	  # puts "tab = #{tab}"
 	  table = item_with_tag("table")
 	  table[:columns] = columns[tab]
 	  table[:selection] = IntGroup[]
@@ -1599,7 +1599,7 @@ def cmd_show_ortep
 	  descs[tab].push(d)
 	  table[:refresh] = true
 	  table[:selection] = IntGroup[descs[tab].count - 1]
-	  puts descs[tab].inspect
+	  # puts descs[tab].inspect
 	}
 	remove_from_table = lambda { |it|
 	  table = item_with_tag("table")
