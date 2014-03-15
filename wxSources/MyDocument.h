@@ -129,8 +129,8 @@ public:
 	void	OnEndSubProcess(wxProcessEvent &event);
 	void	FlushSubProcessOutput();
 
-	void	OnDefinePeriodicBox(wxCommandEvent &event);
-	void	OnShowPeriodicImage(wxCommandEvent &event);
+//	void	OnDefinePeriodicBox(wxCommandEvent &event);
+//	void	OnShowPeriodicImage(wxCommandEvent &event);
 	void	OnPressureControl(wxCommandEvent &event);
 	void	OnDefineSymmetry(wxCommandEvent &event);
 	void	OnExpandBySymmetry(wxCommandEvent &event);
@@ -141,9 +141,9 @@ public:
 	void	OnCreateSanderInput(wxCommandEvent &event);
 	void	OnImportAmberFrcmod(wxCommandEvent &event);
 
-	void	OnCreateGamessInput(wxCommandEvent &event);
-	void	OnCreateMOPACInput(wxCommandEvent &event);
-	void	OnCreateMOCube(wxCommandEvent &event);
+//	void	OnCreateGamessInput(wxCommandEvent &event);
+//	void	OnCreateMOPACInput(wxCommandEvent &event);
+//	void	OnCreateMOCube(wxCommandEvent &event);
 	
 	void	OnInsertFrameFromMD(wxCommandEvent &event);
 	void	OnUpdateDisplay(wxCommandEvent &event);

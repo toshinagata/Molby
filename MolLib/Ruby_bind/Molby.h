@@ -100,7 +100,7 @@ STUB void MyAppCallback_setProgressValue(double dval);
 STUB void MyAppCallback_setProgressMessage(const char *msg);
 STUB int MyAppCallback_processUIWithTimeout(double seconds);
 STUB int MyAppCallback_getTextWithPrompt(const char *prompt, char *buf, int bufsize);
-STUB void MyAppCallback_registerScriptMenu(const char *cmd, const char *title);
+STUB int MyAppCallback_registerScriptMenu(const char *title);
 */
 
 #ifdef __cplusplus

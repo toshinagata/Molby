@@ -876,3 +876,4 @@ $gamess_basis_keys = ["PM3", "STO3G", "321G", "631G"]
 ["631Gd", "631Gdp", "631+Gd", "631++Gdp", "6311Gdp", "6311+Gd", "6311++Gdp", "6311++G2d2p", "6311++G3df3pd", "LanL2DZ"].each { |n|
   Molecule.read_gamess_basis_sets("basis_sets/#{n}.txt")
 }
+

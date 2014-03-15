@@ -117,8 +117,9 @@ enum {
 	myMenuID_OpenConsoleWindow = 301,
 	myMenuID_EmptyConsoleWindow = 302,
 	myMenuID_CustomScript = 303,
-	myMenuID_PredefinedFragment = 350,
 	myMenuID_MyLastMenuItem = 499,
+	myMenuID_PredefinedFragment = 500,
+	myMenuID_MyLastFragment = 699,
 	myMenuID_Internal_CheckIfAllWindowsAreGone = 900
 };
 
@@ -168,7 +169,7 @@ class MyApp: public wxApp
 	wxString& GetDefaultSetting(const wxString& key);
 
 	int LookupScriptMenu(const char *title);
-	void RegisterScriptMenu(const char *cmd, const char *title);
+	int RegisterScriptMenu(const char *title);
 	void UpdateScriptMenu(wxMenuBar *mbar);
 	void OnScriptMenuModified(wxCommandEvent& event);
 	void OnScriptMenuSelected(wxCommandEvent& event);
@@ -225,8 +226,8 @@ protected:
 	
 	int countNonCustomScriptMenu;
 	int countScriptMenu;
-	char **scriptMenuCommands;
 	char **scriptMenuTitles;
+	int *scriptMenuPositions;
 	bool scriptMenuModifiedEventPosted;
 
 	int m_CountNamedFragments;

@@ -96,8 +96,8 @@ BEGIN_EVENT_TABLE(MyDocument, wxDocument)
 	EVT_MENU(myMenuID_MolecularDynamics, MyDocument::OnMolecularDynamics)
 	EVT_MENU(myMenuID_Minimize, MyDocument::OnMinimize)
 	EVT_MENU(myMenuID_StopMDRun, MyDocument::OnStopMDRun)
-	EVT_MENU(myMenuID_DefinePeriodicBox, MyDocument::OnDefinePeriodicBox)
-	EVT_MENU(myMenuID_ShowPeriodicImage, MyDocument::OnShowPeriodicImage)
+//	EVT_MENU(myMenuID_DefinePeriodicBox, MyDocument::OnDefinePeriodicBox)
+//	EVT_MENU(myMenuID_ShowPeriodicImage, MyDocument::OnShowPeriodicImage)
 	EVT_MENU(myMenuID_PressureControl, MyDocument::OnPressureControl)
 	EVT_MENU(myMenuID_DefineSymmetry, MyDocument::OnDefineSymmetry)
 	EVT_MENU(myMenuID_ExpandBySymmetry, MyDocument::OnExpandBySymmetry)
@@ -106,9 +106,9 @@ BEGIN_EVENT_TABLE(MyDocument, wxDocument)
 	EVT_MENU(myMenuID_RunResp, MyDocument::OnInvokeResp)
 	EVT_MENU(myMenuID_CreateSanderInput, MyDocument::OnCreateSanderInput)
 	EVT_MENU(myMenuID_ImportAmberFrcmod, MyDocument::OnImportAmberFrcmod)
-	EVT_MENU(myMenuID_CreateGamessInput, MyDocument::OnCreateGamessInput)
-	EVT_MENU(myMenuID_CreateMOPACInput, MyDocument::OnCreateMOPACInput)
-	EVT_MENU(myMenuID_CreateMOCube, MyDocument::OnCreateMOCube)
+//	EVT_MENU(myMenuID_CreateGamessInput, MyDocument::OnCreateGamessInput)
+//	EVT_MENU(myMenuID_CreateMOPACInput, MyDocument::OnCreateMOPACInput)
+//	EVT_MENU(myMenuID_CreateMOCube, MyDocument::OnCreateMOCube)
 	EVT_MENU(myMenuID_ShowAllAtoms, MyDocument::OnShowAllAtoms)
 	EVT_MENU(myMenuID_HideReverse, MyDocument::OnHideReverse)
 	EVT_MENU(myMenuID_HideSelected, MyDocument::OnHideSelected)
@@ -1208,6 +1208,7 @@ MyDocument::OnEndSubProcess(wxProcessEvent &event)
 	}	
 }
 
+/*
 void
 MyDocument::OnDefinePeriodicBox(wxCommandEvent &event)
 {
@@ -1221,6 +1222,7 @@ MyDocument::OnShowPeriodicImage(wxCommandEvent &event)
 {
 	MolActionCreateAndPerform(mol, SCRIPT_ACTION(""), "cmd_show_periodic_image");
 }
+*/
 
 void
 MyDocument::OnPressureControl(wxCommandEvent &event)
@@ -1421,6 +1423,7 @@ MyDocument::OnImportAmberFrcmod(wxCommandEvent &event)
 	MolActionCreateAndPerform(mol, SCRIPT_ACTION(""), "cmd_import_frcmod");
 }
 
+/*
 void
 MyDocument::OnCreateGamessInput(wxCommandEvent &event)
 {
@@ -1438,6 +1441,7 @@ MyDocument::OnCreateMOCube(wxCommandEvent &event)
 {
 	MolActionCreateAndPerform(mol, SCRIPT_ACTION(""), "cmd_create_cube");	
 }
+*/
 
 void
 MyDocument::OnUpdateUI(wxUpdateUIEvent& event)

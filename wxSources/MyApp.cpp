@@ -166,8 +166,8 @@ MyApp::MyApp(void)
 	m_processTerminated = false;
 	m_processExitCode = 0;
 	countScriptMenu = 0;
-	scriptMenuCommands = NULL;
 	scriptMenuTitles = NULL;
+	scriptMenuPositions = NULL;
 	scriptMenuModifiedEventPosted = false;
 	parameterFrame = NULL;
 	parameterFilesFrame = NULL;
@@ -458,9 +458,9 @@ MyApp::CreateMenuBar(int kind, wxMenu **out_file_history_menu, wxMenu **out_edit
 	md_menu->Append(myMenuID_GuessUFFParameters, _T("Guess UFF Parameters..."));
 	md_menu->Append(myMenuID_ViewGlobalParameters, _T("View Global Parameters..."));
 	md_menu->Append(myMenuID_ViewParameterFilesList, _T("Load/Unload Global Parameters..."));
-	md_menu->AppendSeparator();
-	md_menu->Append(myMenuID_DefinePeriodicBox, _T("Define Unit Cell..."));
-	md_menu->Append(myMenuID_ShowPeriodicImage, _T("Show Periodic Image..."));
+//	md_menu->AppendSeparator();
+//	md_menu->Append(myMenuID_DefinePeriodicBox, _T("Define Unit Cell..."));
+//	md_menu->Append(myMenuID_ShowPeriodicImage, _T("Show Periodic Image..."));
 /*	md_menu->Append(myMenuID_PressureControl, _T("Pressure Control...")); */
 /*	md_menu->Append(myMenuID_DefineSymmetry, _T("Define Symmetry Operations..."));
 	md_menu->Append(myMenuID_ExpandBySymmetry, _T("Expand by Symmetry...")); */
@@ -474,10 +474,10 @@ MyApp::CreateMenuBar(int kind, wxMenu **out_file_history_menu, wxMenu **out_edit
 	md_tools_menu->Append(myMenuID_ImportAmberFrcmod, _T("Import AMBER Frcmod..."));
 	md_menu->Append(myMenuID_MDTools, _T("Tools"), md_tools_menu);
 
-	wxMenu *qc_menu = new wxMenu;
-	qc_menu->Append(myMenuID_CreateGamessInput, _T("Create GAMESS input..."));
-	qc_menu->Append(myMenuID_CreateMOPACInput, _T("Create MOPAC input..."));
-	qc_menu->Append(myMenuID_CreateMOCube, _T("Create MO cube..."));
+//	wxMenu *qc_menu = new wxMenu;
+//	qc_menu->Append(myMenuID_CreateGamessInput, _T("Create GAMESS input..."));
+//	qc_menu->Append(myMenuID_CreateMOPACInput, _T("Create MOPAC input..."));
+//	qc_menu->Append(myMenuID_CreateMOCube, _T("Create MO cube..."));
 	
 	wxMenu *script_menu = new wxMenu;
 	script_menu->Append(myMenuID_ExecuteScript, _T("Execute Script..."));
@@ -495,7 +495,7 @@ MyApp::CreateMenuBar(int kind, wxMenu **out_file_history_menu, wxMenu **out_edit
 	menu_bar->Append(edit_menu, _T("&Edit"));
 	menu_bar->Append(show_menu, _T("Show"));
 	menu_bar->Append(md_menu, _T("MM/MD"));
-	menu_bar->Append(qc_menu, _T("QChem"));
+//	menu_bar->Append(qc_menu, _T("QChem"));
 	menu_bar->Append(script_menu, _T("&Script"));
 	menu_bar->Append(help_menu, _T("&Help"));
 	
@@ -787,77 +787,123 @@ MyApp::LookupScriptMenu(const char *title)
 	return -1;
 }
 
-void
-MyApp::RegisterScriptMenu(const char *cmd, const char *title)
+int
+MyApp::RegisterScriptMenu(const char *title)
 {
 	int i;
-	if (cmd[0] == 0 && title[0] == 0)
-		i = countScriptMenu;  /*  A sepearator */
-	else {
+
+	//  Already registered? (If it is not a separator item)
+	if (title[0] != 0 && title[0] != '-') {
 		for (i = 0; i < countScriptMenu; i++) {
-			if (strcmp(cmd, scriptMenuCommands[i]) == 0) {
-				free(scriptMenuTitles[i]);
-				scriptMenuTitles[i] = strdup(title);
-				break;
-			} else if (strcmp(title, scriptMenuTitles[i]) == 0) {
-				free(scriptMenuCommands[i]);
-				scriptMenuCommands[i] = strdup(cmd);
-				break;
+			if (strcmp(title, scriptMenuTitles[i]) == 0) {
+				return i;
 			}
 		}
 	}
-	if (i >= countScriptMenu) {
-		if (countScriptMenu == 0) {
-			scriptMenuTitles = (char **)malloc(sizeof(char *));
-			scriptMenuCommands = (char **)malloc(sizeof(char *));
-		} else {
-			scriptMenuTitles = (char **)realloc(scriptMenuTitles, sizeof(char *) * (countScriptMenu + 1));
-			scriptMenuCommands = (char **)realloc(scriptMenuCommands, sizeof(char *) * (countScriptMenu + 1));
-		}
-		scriptMenuTitles[countScriptMenu] = strdup(title);
-		scriptMenuCommands[countScriptMenu] = strdup(cmd);
-		countScriptMenu++;
+	
+	//  Not yet
+	if (countScriptMenu == 0) {
+		scriptMenuTitles = (char **)malloc(sizeof(char *));
+		scriptMenuPositions = (int *)malloc(sizeof(int));
+	} else {
+		scriptMenuTitles = (char **)realloc(scriptMenuTitles, sizeof(char *) * (countScriptMenu + 1));
+		scriptMenuPositions = (int *)realloc(scriptMenuPositions, sizeof(int) * (countScriptMenu + 1));
 	}
+	scriptMenuTitles[countScriptMenu] = strdup(title);
+	scriptMenuPositions[countScriptMenu] = -1;
+	countScriptMenu++;
+
 	if (!scriptMenuModifiedEventPosted) {
 		wxCommandEvent myEvent(MyDocumentEvent, MyDocumentEvent_scriptMenuModified);
 		wxPostEvent(this, myEvent);	
 		scriptMenuModifiedEventPosted = true;
 	}
+	
+	return countScriptMenu - 1;
 }
 
 void
 MyApp::UpdateScriptMenu(wxMenuBar *mbar)
 {
-	int i;
-
-	wxMenu *smenu = mbar->GetMenu(myMenuIndex_Script);
-	if (smenu == NULL)
-		return;
-	
-	//  Remove all custom items
-	for (i = smenu->GetMenuItemCount() - 1; i >= countNonCustomScriptMenu; i--) {
-		wxMenuItem *item = smenu->FindItemByPosition(i);
-		if (!item->IsSeparator()) {
-			int n = item->GetId();
-			Disconnect(n, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler(MyApp::OnScriptMenuSelected), NULL, this);
-		}
-		smenu->Remove(item);
-		delete item;
-	}
-	
-	//  Build script menu from internal array
+	int i, mid;
 	for (i = 0; i < countScriptMenu; i++) {
-		const char *title = scriptMenuTitles[i];
-		if (title == NULL || title[0] == 0) {
-			smenu->AppendSeparator();
-		} else {
-			wxString stitle(scriptMenuTitles[i], WX_DEFAULT_CONV);
-			wxMenuItem *item = new wxMenuItem(smenu, myMenuID_CustomScript + i, stitle);
-			smenu->Append(item);
+		//  Find Menu to be inserted
+		const char *s = scriptMenuTitles[i], *p;
+		wxMenu *menu = NULL;
+		int depth = 1;
+		while ((p = strchr(s, '\t')) != NULL) {
+			//  Find existing menu
+			wxString menuTitle(s, WX_DEFAULT_CONV, p - s);
+			if (menu == NULL) {
+				mid = mbar->FindMenu(menuTitle);
+				if (mid == wxNOT_FOUND) {
+					//  Create a new menu before "Script" menu
+					wxMenu *newMenu = new wxMenu;
+					int sid = mbar->FindMenu(_T("Script"));
+					if (sid == wxNOT_FOUND) {
+						mbar->Append(newMenu, menuTitle);
+						sid = mbar->GetMenuCount() - 1;
+					} else {
+						mbar->Insert(sid, newMenu, menuTitle);
+					}
+					menu = mbar->GetMenu(sid);
+				} else {
+					menu = mbar->GetMenu(mid);
+				}
+			} else {
+				mid = menu->FindItem(menuTitle);
+				if (mid == wxNOT_FOUND) {
+					//  Create a new menu at the end
+					wxMenu *newMenu1 = new wxMenu;
+					menu->Append(myMenuID_CustomScript + i + depth * 1000, menuTitle, newMenu1);
+					menu = newMenu1;
+				} else {
+					menu->FindItem(mid, &menu);
+				}
+			}
+			s = p + 1;
+			depth++;
 		}
+		if (menu == NULL) {
+			//  The new item should be under "Script" menu
+			mid = mbar->FindMenu(_T("Script"));
+			menu = mbar->GetMenu(mid);
+		}
+		if (*s == 0 || *s == '-') {
+			//  Separator item
+			wxMenuItem *sitem;
+			int count = menu->GetMenuItemCount();
+			if (scriptMenuPositions[i] >= 0 && scriptMenuPositions[i] < count) {
+				sitem = menu->FindItemByPosition(scriptMenuPositions[i]);
+				if (sitem != NULL && sitem->IsSeparator())
+					continue;  //  Already present
+			}
+			if (count != 0 && !menu->FindItemByPosition(count - 1)->IsSeparator()) {
+				menu->AppendSeparator();
+				scriptMenuPositions[i] = count;
+			}
+			continue;
+		}
+		//  Check if the item is already existing
+		wxString itemTitle(s, WX_DEFAULT_CONV);
+		wxMenu *omenu;
+		wxMenuItem *item;
+		item = mbar->FindItem(myMenuID_CustomScript + i, &omenu);
+		if (item != NULL) {
+			if (omenu == menu && item->GetItemLabel() == itemTitle) {
+				//  The menu is already existing with correct position and title
+				continue;
+			}
+			//  The menu title does not match; remove this menu item
+			Disconnect(myMenuID_CustomScript + i, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler(MyApp::OnScriptMenuSelected), NULL, this);
+			omenu->Remove(item);
+			delete item;
+		}
+		//  Create menu item
+		menu->Append(myMenuID_CustomScript + i, itemTitle);
+		scriptMenuPositions[i] = menu->GetMenuItemCount() - 1;
+		Connect(myMenuID_CustomScript + i, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler(MyApp::OnScriptMenuSelected), NULL, this);
 	}
-	if (countScriptMenu > 0)
-		Connect(myMenuID_CustomScript, myMenuID_CustomScript + countScriptMenu - 1, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler(MyApp::OnScriptMenuSelected), NULL, this);
 }
 
 void
@@ -872,26 +918,27 @@ MyApp::OnScriptMenuModified(wxCommandEvent& event)
 void
 MyApp::OnScriptMenuSelected(wxCommandEvent& event)
 {
-	char *cmd;
-	int methodType;
+//	char *cmd;
+//	int methodType;
 	MainView *mview;
 	Molecule *mol;
 	int index = event.GetId() - myMenuID_CustomScript;
 	if (index < 0 || index >= countScriptMenu)
 		return;
-	cmd = scriptMenuCommands[index];
-	methodType = Ruby_methodType("Molecule", cmd);
-	if (methodType == 0)
-		return;
+//	cmd = scriptMenuCommands[index];
+//	methodType = Ruby_methodType("Molecule", cmd);
+//	if (methodType == 0)
+//		return;
 	mview = MainViewCallback_activeView();
 	if (mview == NULL)
 		mol = NULL;
 	else mol = mview->mol;
-	if (methodType == 1 && mol != NULL)  /*  Instance method (with no arguments)  */
-		MolActionCreateAndPerform(mol, SCRIPT_ACTION(""), cmd);
-	else if (methodType == 2)  /*  Class method (with molecule as an only argument)  */
-		MolActionCreateAndPerform(NULL, SCRIPT_ACTION("M"), cmd, mol);
-	else return;
+	MolActionCreateAndPerform(NULL, SCRIPT_ACTION("iM"), "lambda { |n, m| $script_menu_commands[n].call(m) }", index, mol);
+//	if (methodType == 1 && mol != NULL)  /*  Instance method (with no arguments)  */
+//		MolActionCreateAndPerform(mol, SCRIPT_ACTION(""), cmd);
+//	else if (methodType == 2)  /*  Class method (with molecule as an only argument)  */
+//		MolActionCreateAndPerform(NULL, SCRIPT_ACTION("M"), cmd, mol);
+//	else return;
 }
 
 void
@@ -1008,22 +1055,30 @@ MyApp::OnUpdateUI(wxUpdateUIEvent& event)
 	MainView *mview = MainViewCallback_activeView();
 	if (uid >= myMenuID_CustomScript && uid < myMenuID_CustomScript + countScriptMenu) {
 		//  Check the script menu
-		char *cmd;
-		int methodType;
 		Molecule *mol;
+		RubyValue retval;
 		int index = uid - myMenuID_CustomScript;
-		cmd = scriptMenuCommands[index];
-		methodType = Ruby_methodType("Molecule", cmd);
-		event.Enable(false);
-		if (methodType != 0) {
-			if (mview == NULL)
-				mol = NULL;
-			else mol = mview->mol;
-			if (methodType == 1 && mol != NULL)  /*  Instance method (with no arguments)  */
-				event.Enable(true);
-			else if (methodType == 2)  /*  Class method (with molecule as an only argument)  */
-				event.Enable(true);
-		}
+		if (mview == NULL)
+			mol = NULL;
+		else mol = mview->mol;
+		MolActionCreateAndPerform(NULL, SCRIPT_ACTION("iM;r"), "lambda { |n, m| $script_menu_enablers[n].call(m) }", index, mol, &retval);
+		event.Enable(retval != NULL && retval != RubyNil);
+	//	char *cmd;
+	//	int methodType;
+	//	Molecule *mol;
+	//	int index = uid - myMenuID_CustomScript;
+	//	cmd = scriptMenuCommands[index];
+	//	methodType = Ruby_methodType("Molecule", cmd);
+	//	event.Enable(false);
+	//	if (methodType != 0) {
+	//		if (mview == NULL)
+	//			mol = NULL;
+	//		else mol = mview->mol;
+	//		if (methodType == 1 && mol != NULL)  /*  Instance method (with no arguments)  */
+	//			event.Enable(true);
+	//		else if (methodType == 2)  /*  Class method (with molecule as an only argument)  */
+	//			event.Enable(true);
+	//	}
 	} else if (uid >= myMenuID_PredefinedFragment && uid <= myMenuID_PredefinedFragment + m_CountNamedFragments) {
 		event.Enable(true);
 	} else {
@@ -1835,10 +1890,10 @@ MyAppCallback_getDocumentHomeDir(void)
 #endif
 }
 
-void
-MyAppCallback_registerScriptMenu(const char *cmd, const char *title)
+int
+MyAppCallback_registerScriptMenu(const char *title)
 {
-	wxGetApp().RegisterScriptMenu(cmd, title);
+	return wxGetApp().RegisterScriptMenu(title);
 }
 
 int

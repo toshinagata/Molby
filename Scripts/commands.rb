@@ -460,3 +460,10 @@ register_menu("", "")
 register_menu("Delete Frames...", :cmd_delete_frames)
 register_menu("Solvate...", :cmd_solvate)
 #register_menu("cmd test", :cmd_test)
+
+register_menu("QChem\tCreate GAMESS Input...",
+  :cmd_create_gamess_input, :non_empty)   # gamess.rb
+register_menu("QChem\tCreate MOPAC6 Input...",
+  :cmd_create_mopac_input, :non_empty)    # mopac6.rb
+register_menu("QChem\tCreate MO Cube...",
+  :cmd_create_cube, lambda { |m| m && m.mo_type } )

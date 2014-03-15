@@ -52,6 +52,8 @@ VALUE rb_cMolecule, rb_cMolEnumerable, rb_cAtomRef;
 VALUE rb_cParameter, rb_cParEnumerable, rb_cParameterRef;
 
 VALUE gMolbyBacktrace;
+VALUE gScriptMenuCommands;
+VALUE gScriptMenuEnablers;
 
 int gMolbyRunLevel = 0;
 int gMolbyIsCheckingInterrupt = 0;
@@ -714,24 +716,79 @@ s_Event_Callback(rb_event_flag_t evflag, VALUE data, VALUE self, ID mid, VALUE k
 
 /*
  *  call-seq:
- *     register_menu(title, method)
+ *     register_menu(title, method, enable_proc = nil)
  *
  *  Register the method (specified as a symbol) in the script menu.
  *  The method must be either an instance method of Molecule with no argument,
- *  or a class method of Molecule with one argument (the current molecule).
+ *  or a class method of Molecule with one argument (the current molecule),
+ *  or a proc object with one argument (the current molecule).
  *  The menu associated with the class method can be invoked even when no document
  *  is open (the argument is set to Qnil in this case). On the other hand, the
  *  menu associated with the instance method can only be invoked when at least one 
  *  document is active.
+ *  If enable_proc is non-nil, then it is called whenever the availability of
+ *  the menu command is tested. It is usually a proc object with one argument
+ *  (the current molecule or nil). As a special case, the following symbols can
+ *  be given; :mol (enabled when any molecule is open), :non_empty (enabled when
+ *  the top-level molecule has at least one atom), :selection (enabled when
+ *  the top-level molecule has one or more selected atoms).
  */
 static VALUE
-s_Kernel_RegisterMenu(VALUE self, VALUE title, VALUE method)
+s_Kernel_RegisterMenu(int argc, VALUE *argv, VALUE self)
 {
-	if (TYPE(method) == T_SYMBOL) {
-		method = rb_funcall(method, rb_intern("to_s"), 0);
+	int n, mtype = 0;
+	VALUE tval, mval, pval;
+	static VALUE sMolSym, sNonEmptySym, sSelectionSym;
+	static VALUE sMolProc, sNonEmptyProc, sSelectionProc, sTrueProc;
+	rb_scan_args(argc, argv, "21", &tval, &mval, &pval);
+	tval = rb_str_to_str(tval);
+	n = MyAppCallback_registerScriptMenu(StringValuePtr(tval));
+	if (n < 0)
+		return Qnil;
+	if (TYPE(mval) == T_SYMBOL) {
+		/*  Create an appropriate proc object  */
+		const char *name = rb_id2name(SYM2ID(mval));
+		char *s;
+		if (rb_funcall(rb_cMolecule, rb_intern("method_defined?"), 1, mval) != Qfalse) {
+			/*  Defined as a Molecule method  */
+			asprintf(&s, "lambda { |m| m.%s }", name);
+			mtype = 1;
+		} else if (rb_respond_to(rb_cMolecule, SYM2ID(mval))) {
+			/*  Defined as a Molecule class method  */
+			asprintf(&s, "lambda { |m| Molecule.%s(m) }", name);
+			mtype = 2;
+		} else rb_raise(rb_eMolbyError, "The method %s is not defined in Molecule", name);
+		mval = rb_eval_string(s);
+		free(s);
 	}
-	MyAppCallback_registerScriptMenu(StringValuePtr(method), StringValuePtr(title));
-	return self;
+	if (sMolSym == Qfalse) {
+		sMolSym = ID2SYM(rb_intern("mol"));
+		sNonEmptySym = ID2SYM(rb_intern("non_empty"));
+		sSelectionSym = ID2SYM(rb_intern("selection"));
+		sMolProc = rb_eval_string("lambda { |m| m != nil }");
+		sNonEmptyProc = rb_eval_string("lambda { |m| m.is_a?(Molecule) && m.natoms > 0 }");
+		sSelectionProc = rb_eval_string("lambda { |m| m.is_a?(Molecule) && m.selection.count > 0 }");
+		sTrueProc = rb_eval_string("lambda { |m| true }");
+		rb_global_variable(&sMolProc);
+		rb_global_variable(&sNonEmptyProc);
+		rb_global_variable(&sSelectionProc);
+		rb_global_variable(&sTrueProc);
+	}
+	
+	if (pval == Qnil) {
+		if (mtype == 1)
+			pval = sMolProc;
+		else
+			pval = sTrueProc;
+	} else if (pval == sMolSym)
+		pval = sMolProc;
+	else if (pval == sNonEmptySym)
+		pval = sNonEmptyProc;
+	else if (pval == sSelectionSym)
+		pval = sSelectionProc;
+	rb_ary_store(gScriptMenuCommands, n, mval);
+	rb_ary_store(gScriptMenuEnablers, n, pval);
+	return INT2NUM(n);
 }
 
 static VALUE
@@ -10795,7 +10852,7 @@ Init_Molby(void)
 	rb_define_method(rb_mKernel, "set_progress_value", s_SetProgressValue, 1);
 	rb_define_method(rb_mKernel, "set_progress_message", s_SetProgressMessage, 1);
 	rb_define_method(rb_mKernel, "ask", s_Kernel_Ask, -1);
-	rb_define_method(rb_mKernel, "register_menu", s_Kernel_RegisterMenu, 2);
+	rb_define_method(rb_mKernel, "register_menu", s_Kernel_RegisterMenu, -1);
 	rb_define_method(rb_mKernel, "lookup_menu", s_Kernel_LookupMenu, 1);
 	rb_define_method(rb_mKernel, "get_global_settings", s_Kernel_GetGlobalSettings, 1);
 	rb_define_method(rb_mKernel, "set_global_settings", s_Kernel_SetGlobalSettings, 2);
@@ -11169,6 +11226,12 @@ Molby_startup(const char *script, const char *dir)
 	/*  Global variable to hold backtrace  */
 	rb_define_variable("$backtrace", &gMolbyBacktrace);
 
+	/*  Global variables for script menus  */
+	rb_define_variable("$script_menu_commands", &gScriptMenuCommands);
+	rb_define_variable("$script_menu_enablers", &gScriptMenuEnablers);
+	gScriptMenuCommands = rb_ary_new();
+	gScriptMenuEnablers = rb_ary_new();
+	
 #if !__CMDMAC__
 	/*  Register interrupt check code  */
 	rb_add_event_hook(s_Event_Callback, RUBY_EVENT_ALL, Qnil);

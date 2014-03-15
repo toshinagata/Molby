@@ -211,9 +211,10 @@ MyAppCallback_errorMessageBox(const char *fmt, ...)
 	vfprintf(stderr, fmt, ap);
 }
 
-void
-MyAppCallback_registerScriptMenu(const char *cmd, const char *title)
+int
+MyAppCallback_registerScriptMenu(const char *title)
 {
+	return -1;
 }
 
 int

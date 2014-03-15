@@ -188,11 +188,11 @@ load "molecule.rb"
 load "loadsave.rb"
 load "formula.rb"
 load "dialog.rb"
-load "commands.rb"
 load "md.rb"
 load "uff.rb"
 load "gamess.rb"
-load "crystal.rb"
 load "mopac6.rb"
+load "commands.rb"
+load "crystal.rb"
 
 GC.start
