@@ -85,8 +85,6 @@ IMPLEMENT_APP(MyApp)
 //IMPLEMENT_CLASS(MyApp, wxApp)
 
 BEGIN_EVENT_TABLE(MyApp, wxApp)
-	//EVT_KEY_DOWN(MyApp::OnChar)
-	//EVT_MOUSE_EVENTS(MyApp::OnMouseEvent)
 	EVT_COMMAND(MyDocumentEvent_scriptMenuModified, MyDocumentEvent, MyApp::OnScriptMenuModified)
 	EVT_COMMAND(MyDocumentEvent_openFilesByIPC, MyDocumentEvent, MyApp::OnOpenFilesByIPC)
 	EVT_UPDATE_UI_RANGE(myMenuID_MyFirstMenuItem, myMenuID_MyLastMenuItem, MyApp::OnUpdateUI)
@@ -95,7 +93,6 @@ BEGIN_EVENT_TABLE(MyApp, wxApp)
 	EVT_MENU(myMenuID_EmptyConsoleWindow, MyApp::OnEmptyConsoleWindow)
 	EVT_MENU(myMenuID_ViewGlobalParameters, MyApp::OnViewGlobalParameters)
 	EVT_MENU(myMenuID_ViewParameterFilesList, MyApp::OnViewParameterFilesList)
-//	EVT_MENU(myMenuID_ImportAmberLib, MyApp::OnImportAmberLib)
 #if defined(__WXMAC__)
 	EVT_ACTIVATE(MyApp::OnActivate)
 #endif
@@ -432,7 +429,6 @@ MyApp::CreateMenuBar(int kind, wxMenu **out_file_history_menu, wxMenu **out_edit
 	show_menu->Append(myMenuID_CenterSelection, _T("Center Selection"));
 	show_menu->AppendSeparator();
 	show_menu->Append(myMenuID_ShowUnitCell, _T("Show Unit Cell"), _T(""), wxITEM_CHECK);
-/*	show_menu->Append(myMenuID_ShowPeriodicBox, _T("Show Periodic Box"), _T(""), wxITEM_CHECK); */
 	show_menu->Append(myMenuID_ShowHydrogens, _T("Show Hydrogen Atoms"), _T(""), wxITEM_CHECK);
 	show_menu->Append(myMenuID_ShowDummyAtoms, _T("Show Dummy Atoms"), _T(""), wxITEM_CHECK);
 	show_menu->Append(myMenuID_ShowExpandedAtoms, _T("Show Expanded Atoms"), _T(""), wxITEM_CHECK);
@@ -453,31 +449,8 @@ MyApp::CreateMenuBar(int kind, wxMenu **out_file_history_menu, wxMenu **out_edit
 	md_menu->Append(myMenuID_Minimize, _T("Minimize..."));
 	md_menu->Append(myMenuID_StopMDRun, _T("Stop\tCtrl-."));
 	md_menu->AppendSeparator();
-//	md_menu->Append(myMenuID_ReadParameters, _T("Read Parameters..."));
-//	md_menu->Append(myMenuID_RunAntechamber, _T("Auto Guess MM/MD Parameters..."));
-//	md_menu->Append(myMenuID_GuessUFFParameters, _T("Guess UFF Parameters..."));
 	md_menu->Append(myMenuID_ViewGlobalParameters, _T("View Global Parameters..."));
 	md_menu->Append(myMenuID_ViewParameterFilesList, _T("Load/Unload Global Parameters..."));
-//	md_menu->AppendSeparator();
-//	md_menu->Append(myMenuID_DefinePeriodicBox, _T("Define Unit Cell..."));
-//	md_menu->Append(myMenuID_ShowPeriodicImage, _T("Show Periodic Image..."));
-/*	md_menu->Append(myMenuID_PressureControl, _T("Pressure Control...")); */
-/*	md_menu->Append(myMenuID_DefineSymmetry, _T("Define Symmetry Operations..."));
-	md_menu->Append(myMenuID_ExpandBySymmetry, _T("Expand by Symmetry...")); */
-//	md_menu->AppendSeparator();
-	
-//	wxMenu *md_tools_menu = new wxMenu;
-/*	md_tools_menu->Append(myMenuID_RunAntechamber, _T("Antechamber/parmchk...")); */
-//	md_tools_menu->Append(myMenuID_RunResp, _T("GAMESS/RESP..."));
-//	md_tools_menu->Append(myMenuID_CreateSanderInput, _T("Create SANDER input..."));
-//	md_tools_menu->Append(myMenuID_ImportAmberLib, _T("Import AMBER Lib..."));
-//	md_tools_menu->Append(myMenuID_ImportAmberFrcmod, _T("Import AMBER Frcmod..."));
-//	md_menu->Append(myMenuID_MDTools, _T("Tools"), md_tools_menu);
-
-//	wxMenu *qc_menu = new wxMenu;
-//	qc_menu->Append(myMenuID_CreateGamessInput, _T("Create GAMESS input..."));
-//	qc_menu->Append(myMenuID_CreateMOPACInput, _T("Create MOPAC input..."));
-//	qc_menu->Append(myMenuID_CreateMOCube, _T("Create MO cube..."));
 	
 	wxMenu *script_menu = new wxMenu;
 	script_menu->Append(myMenuID_ExecuteScript, _T("Execute Script..."));
@@ -495,7 +468,6 @@ MyApp::CreateMenuBar(int kind, wxMenu **out_file_history_menu, wxMenu **out_edit
 	menu_bar->Append(edit_menu, _T("&Edit"));
 	menu_bar->Append(show_menu, _T("Show"));
 	menu_bar->Append(md_menu, _T("MM/MD"));
-//	menu_bar->Append(qc_menu, _T("QChem"));
 	menu_bar->Append(script_menu, _T("&Script"));
 	menu_bar->Append(help_menu, _T("&Help"));
 	
@@ -710,29 +682,6 @@ MyApp::IsInterrupted()
 	}
 }
 
-/*
-#warning "TODO: Move this to MyDocument and 'import parameters' "
-
- void
-MyApp::OnReadParameters(wxCommandEvent& event)
-{
-	wxFileDialog *dialog = new wxFileDialog(NULL, _T("Choose Parameter File"), _T(""), _T(""), _T("All files (*.*)|*.*"), wxFD_OPEN | wxFD_CHANGE_DIR | wxFD_FILE_MUST_EXIST);
-	if (dialog->ShowModal() == wxID_OK) {
-		char *p = strdup((const char *)(dialog->GetPath().mb_str(wxConvFile)));
-		char *wbuf;
-		ParameterReadFromFile(NULL, p, &wbuf, NULL);
-		if (wbuf != NULL) {
-			SetConsoleColor(1);
-			AppendConsoleMessage(wbuf);
-			SetConsoleColor(0);
-			free(wbuf);
-		}
-		free(p);
-	}
-	dialog->Destroy();
-}
-*/
-
 void
 MyApp::OnOpenConsoleWindow(wxCommandEvent& event)
 {
@@ -767,14 +716,6 @@ MyApp::OnViewParameterFilesList(wxCommandEvent &event)
 	parameterFilesFrame->Show(true);
 	parameterFilesFrame->Raise();
 }
-
-/*
-void
-MyApp::OnImportAmberLib(wxCommandEvent &event)
-{
-	MolActionCreateAndPerform(NULL, SCRIPT_ACTION(""), "cmd_import_amberlib");
-}
-*/
 
 int
 MyApp::LookupScriptMenu(const char *title)
@@ -917,7 +858,6 @@ void
 MyApp::OnScriptMenuModified(wxCommandEvent& event)
 {
 	scriptMenuModifiedEventPosted = false;
-//	UpdateScriptMenu(GetMainFrame()->GetMenuBar());
 	UpdateScriptMenu(consoleFrame->GetMenuBar());
 	event.Skip();
 }
@@ -925,27 +865,16 @@ MyApp::OnScriptMenuModified(wxCommandEvent& event)
 void
 MyApp::OnScriptMenuSelected(wxCommandEvent& event)
 {
-//	char *cmd;
-//	int methodType;
 	MainView *mview;
 	Molecule *mol;
 	int index = event.GetId() - myMenuID_CustomScript;
 	if (index < 0 || index >= countScriptMenu)
 		return;
-//	cmd = scriptMenuCommands[index];
-//	methodType = Ruby_methodType("Molecule", cmd);
-//	if (methodType == 0)
-//		return;
 	mview = MainViewCallback_activeView();
 	if (mview == NULL)
 		mol = NULL;
 	else mol = mview->mol;
 	MolActionCreateAndPerform(NULL, SCRIPT_ACTION("iM"), "lambda { |n, m| $script_menu_commands[n].call(m) }", index, mol);
-//	if (methodType == 1 && mol != NULL)  /*  Instance method (with no arguments)  */
-//		MolActionCreateAndPerform(mol, SCRIPT_ACTION(""), cmd);
-//	else if (methodType == 2)  /*  Class method (with molecule as an only argument)  */
-//		MolActionCreateAndPerform(NULL, SCRIPT_ACTION("M"), cmd, mol);
-//	else return;
 }
 
 void
@@ -1070,22 +999,6 @@ MyApp::OnUpdateUI(wxUpdateUIEvent& event)
 		else mol = mview->mol;
 		MolActionCreateAndPerform(NULL, SCRIPT_ACTION("iM;r"), "lambda { |n, m| $script_menu_enablers[n].call(m) }", index, mol, &retval);
 		event.Enable(retval != NULL && retval != RubyNil);
-	//	char *cmd;
-	//	int methodType;
-	//	Molecule *mol;
-	//	int index = uid - myMenuID_CustomScript;
-	//	cmd = scriptMenuCommands[index];
-	//	methodType = Ruby_methodType("Molecule", cmd);
-	//	event.Enable(false);
-	//	if (methodType != 0) {
-	//		if (mview == NULL)
-	//			mol = NULL;
-	//		else mol = mview->mol;
-	//		if (methodType == 1 && mol != NULL)  /*  Instance method (with no arguments)  */
-	//			event.Enable(true);
-	//		else if (methodType == 2)  /*  Class method (with molecule as an only argument)  */
-	//			event.Enable(true);
-	//	}
 	} else if (uid >= myMenuID_PredefinedFragment && uid <= myMenuID_PredefinedFragment + m_CountNamedFragments) {
 		event.Enable(true);
 	} else {
@@ -1095,8 +1008,6 @@ MyApp::OnUpdateUI(wxUpdateUIEvent& event)
 			case myMenuID_EmptyConsoleWindow:
 			case myMenuID_ViewParameterFilesList:
 			case myMenuID_ViewGlobalParameters:
-			case myMenuID_MDTools:
-			case myMenuID_ImportAmberLib:
 				event.Enable(true);
 				return;
 			default:
@@ -1333,14 +1244,11 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
 	wxProcess *proc = new wxProcess(this, -1);
 	proc->Redirect();
 	int flag = wxEXEC_ASYNC;
-//#if !__WXMSW__
 	flag |= wxEXEC_MAKE_GROUP_LEADER;
-//#endif
 	m_processTerminated = false;
 	m_processExitCode = 0;
 	long pid = ::wxExecute(cmdstr, flag, proc);
 	if (pid == 0) {
-	//	MyAppCallback_errorMessageBox("Cannot start %s", procname);
 		proc->Detach();
 		if (procname != NULL)
 			HideProgressPanel();
@@ -1415,7 +1323,6 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
 		if (m_processTerminated || !wxProcess::Exists(pid)) {
 			if (m_processExitCode != 0) {
 				/*  Error from subprocess  */
-			//	MyAppCallback_errorMessageBox("%s failed with exit code %d.", procname, m_processExitCode);
 				status = (m_processExitCode & 255);
 			} else status = 0;
 			break;
@@ -1527,9 +1434,6 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
 		*((char **)callback_data) = membuf;
 	}
 	
-/*	if (len_total > 0)
-		MyAppCallback_showRubyPrompt(); */
-
 	return status;
 }
 
@@ -1619,7 +1523,6 @@ MyApp::CheckIfAllWindowsAreGoneHandler(wxCommandEvent &event)
 void
 MyApp::CheckIfAllWindowsAreGone(wxTopLevelWindow *frame)
 {
-#if 1 || defined(__WXMSW__)
 	/*  On Windows, we should avoid the situation where all windows are hidden and
 	    still the program is running. So that we check whether all windows are gone
 	    and if so ask the user to quit the program. If user chooses not to quit, then
@@ -1627,7 +1530,6 @@ MyApp::CheckIfAllWindowsAreGone(wxTopLevelWindow *frame)
 	m_frameToBeDestroyed = frame;
 	wxCommandEvent myEvent(MyDocumentEvent, myMenuID_Internal_CheckIfAllWindowsAreGone);
 	this->AddPendingEvent(myEvent);
-#endif
 }
 
 #pragma mark ====== MyFrame (top-level window) ======

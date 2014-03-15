@@ -96,19 +96,6 @@ BEGIN_EVENT_TABLE(MyDocument, wxDocument)
 	EVT_MENU(myMenuID_MolecularDynamics, MyDocument::OnMolecularDynamics)
 	EVT_MENU(myMenuID_Minimize, MyDocument::OnMinimize)
 	EVT_MENU(myMenuID_StopMDRun, MyDocument::OnStopMDRun)
-//	EVT_MENU(myMenuID_DefinePeriodicBox, MyDocument::OnDefinePeriodicBox)
-//	EVT_MENU(myMenuID_ShowPeriodicImage, MyDocument::OnShowPeriodicImage)
-//	EVT_MENU(myMenuID_PressureControl, MyDocument::OnPressureControl)
-//	EVT_MENU(myMenuID_DefineSymmetry, MyDocument::OnDefineSymmetry)
-//	EVT_MENU(myMenuID_ExpandBySymmetry, MyDocument::OnExpandBySymmetry)
-//	EVT_MENU(myMenuID_RunAntechamber, MyDocument::OnInvokeAntechamber)
-//    EVT_MENU(myMenuID_GuessUFFParameters, MyDocument::OnGuessUFFParameters)
-//	EVT_MENU(myMenuID_RunResp, MyDocument::OnInvokeResp)
-//	EVT_MENU(myMenuID_CreateSanderInput, MyDocument::OnCreateSanderInput)
-//	EVT_MENU(myMenuID_ImportAmberFrcmod, MyDocument::OnImportAmberFrcmod)
-//	EVT_MENU(myMenuID_CreateGamessInput, MyDocument::OnCreateGamessInput)
-//	EVT_MENU(myMenuID_CreateMOPACInput, MyDocument::OnCreateMOPACInput)
-//	EVT_MENU(myMenuID_CreateMOCube, MyDocument::OnCreateMOCube)
 	EVT_MENU(myMenuID_ShowAllAtoms, MyDocument::OnShowAllAtoms)
 	EVT_MENU(myMenuID_HideReverse, MyDocument::OnHideReverse)
 	EVT_MENU(myMenuID_HideSelected, MyDocument::OnHideSelected)
@@ -161,17 +148,6 @@ MyDocument::~MyDocument()
 	
 	wxGetApp().DisableTimerForDocument(this);
 }
-
-/*
-MainView *
-MyDocument::GetMainView()
-{
-	MoleculeView *view = (MoleculeView *)GetFirstView();
-	if (view != NULL)
-		return view->mview;
-	else return NULL;
-}
-*/
 
 void
 MyDocument::SetMolecule(Molecule *aMolecule)
@@ -421,7 +397,6 @@ MyDocument::PushUndoAction(MolAction *action)
 void
 MyDocument::UpdateModifyFlag()
 {
-//	printf("isDirty = %d\n", (GetCommandProcessor()->IsDirty()));
 	Modify(GetCommandProcessor()->IsDirty());
 }
 
@@ -511,7 +486,6 @@ MyDocument::OnNeedCleanUndoStack(wxCommandEvent& event)
 void
 MyDocument::OnDocumentModified(wxCommandEvent& event)
 {
-//	printf("MyDocument::OnDocumentModified invoked\n");
 	isModifyNotificationSent = false;
 	MoleculeClearModifyCount(GetMainView()->mol);
 	
@@ -523,7 +497,6 @@ void
 MyDocument::OnCopy(wxCommandEvent& event)
 {
 	wxWindow *focusWindow = wxWindow::FindFocus();
-/*	printf("focus window class = %ls\n", focusWindow->GetClassInfo()->GetClassName());  */
 	if (focusWindow->IsKindOf(CLASSINFO(wxTextCtrl))) {
 		event.Skip();
 		return;
@@ -629,7 +602,6 @@ MyDocument::OnCreateNewAtom(wxCommandEvent &event)
 	IntGroupRelease(ig);
 	MainView_refreshTable(mview);
 	row = MainView_indexToTableRow(mview, idx);
-/*	MainViewCallback_ensureVisible(mview, row); */ /* Invoked from startEditText */
 	MainViewCallback_startEditText(mview, row, 1);
 }
 
@@ -938,14 +910,6 @@ sDoMolecularDynamics(void *argptr, int argnum)
 						ring->count++;
 					MoleculeUnlock(mol);
 					
-					/*  Create a new frame and copy the new coordinates  */
-				/*	MoleculeLock(mol);
-					ig = IntGroupNewWithPoints(MoleculeGetNumberOfFrames(mol), 1, -1);
-					MolActionCreateAndPerform(mol, gMolActionInsertFrames, ig, 0, NULL);
-					IntGroupRelease(ig);					
-					md_copy_coordinates_from_internal(mol->arena);
-					MoleculeUnlock(mol); */
-
 					if (minimize && mol->arena->minimize_complete) {
 						r = -2;  /*  Minimization complete  */
 						break;
@@ -1208,45 +1172,9 @@ MyDocument::OnEndSubProcess(wxProcessEvent &event)
 	}	
 }
 
-/*
-void
-MyDocument::OnDefinePeriodicBox(wxCommandEvent &event)
-{
-	MoleculeLock(mol);
-	MolActionCreateAndPerform(mol, SCRIPT_ACTION(""), "cmd_define_unit_cell");
-	MoleculeUnlock(mol);
-}
-
-void
-MyDocument::OnShowPeriodicImage(wxCommandEvent &event)
-{
-	MolActionCreateAndPerform(mol, SCRIPT_ACTION(""), "cmd_show_periodic_image");
-}
-*/
-/*
-void
-MyDocument::OnPressureControl(wxCommandEvent &event)
-{
-	MoleculeLock(mol);
-	MolActionCreateAndPerform(mol, SCRIPT_ACTION(""), "cmd_pressure_control");
-	MoleculeUnlock(mol);
-}
-
-void
-MyDocument::OnDefineSymmetry(wxCommandEvent &event)
-{
-}
-
-void
-MyDocument::OnExpandBySymmetry(wxCommandEvent &event)
-{
-}
-*/
-
 static wxString
 sCreateTemporaryLogDirectoryForAC(const wxString& filename)
 {
-//	char *ante_dir;
 	char *log_dir;
 	int i, status;
 
@@ -1393,65 +1321,12 @@ sEraseLogFiles(const wxString& tdir, int status)
 	}
 }
 
-/*
-void
-MyDocument::OnGuessUFFParameters(wxCommandEvent &event)
-{
-	MolActionCreateAndPerform(mol, SCRIPT_ACTION(""), "guess_uff_parameters");
-}
-
-void
-MyDocument::OnInvokeAntechamber(wxCommandEvent &event)
-{
-	MolActionCreateAndPerform(mol, SCRIPT_ACTION(""), "cmd_antechamber");
-	MyAppCallback_showRubyPrompt();	
-}
-
-void
-MyDocument::OnInvokeResp(wxCommandEvent &event)
-{
-	MolActionCreateAndPerform(mol, SCRIPT_ACTION(""), "cmd_gamess_resp");
-}
-
-void
-MyDocument::OnCreateSanderInput(wxCommandEvent &event)
-{
-	MolActionCreateAndPerform(mol, SCRIPT_ACTION(""), "export_prmtop");
-}
-
-void
-MyDocument::OnImportAmberFrcmod(wxCommandEvent &event)
-{
-	MolActionCreateAndPerform(mol, SCRIPT_ACTION(""), "cmd_import_frcmod");
-}
-*/
-/*
-void
-MyDocument::OnCreateGamessInput(wxCommandEvent &event)
-{
-	MolActionCreateAndPerform(mol, SCRIPT_ACTION(""), "cmd_create_gamess_input");
-}
-
-void
-MyDocument::OnCreateMOPACInput(wxCommandEvent &event)
-{
-	MolActionCreateAndPerform(mol, SCRIPT_ACTION(""), "cmd_create_mopac_input");
-}
-
-void
-MyDocument::OnCreateMOCube(wxCommandEvent &event)
-{
-	MolActionCreateAndPerform(mol, SCRIPT_ACTION(""), "cmd_create_cube");	
-}
-*/
-
 void
 MyDocument::OnUpdateUI(wxUpdateUIEvent& event)
 {
 	int uid = event.GetId();
 	IntGroup *ig = MoleculeGetSelection(mol);
 	Int nselected = (ig == NULL ? 0 : IntGroupGetCount(ig));
-//	wxMenuItem *item = (wxMenuItem *)event.GetEventObject();
 	switch (uid) {
 		case wxID_COPY:
 		case wxID_CUT:
@@ -1526,8 +1401,6 @@ MyDocument::OnUpdateUI(wxUpdateUIEvent& event)
 			return;
 		case myMenuID_MolecularDynamics:
 		case myMenuID_Minimize:
-		case myMenuID_DefinePeriodicBox:
-		case myMenuID_PressureControl:
 			if (mol != NULL && mol->mutex == NULL)
 				event.Enable(true);
 			else event.Enable(false);
@@ -1536,29 +1409,6 @@ MyDocument::OnUpdateUI(wxUpdateUIEvent& event)
 			if (mol != NULL && mol->mutex != NULL)
 				event.Enable(true);
 			else event.Enable(false);
-			return;
-		case myMenuID_ShowPeriodicImage:
-			event.Enable(true);
-			return;
-		case myMenuID_RunAntechamber:
-		case myMenuID_RunResp:
-		case myMenuID_CreateSanderInput:
-		case myMenuID_GuessUFFParameters:
-			if (mol != NULL && mol->natoms > 0)
-				event.Enable(true);
-			else event.Enable(false);
-			return;			
-		case myMenuID_CreateGamessInput:
-		case myMenuID_CreateMOPACInput:
-			if (mol != NULL && mol->natoms > 0)
-				event.Enable(true);
-			else event.Enable(false);
-			return;
-		case myMenuID_CreateMOCube:
-			if (mol == NULL || mol->bset == NULL || mol->bset->natoms == 0)
-				event.Enable(false);
-			else
-				event.Enable(true);
 			return;
 	}
 	event.Skip();
@@ -1624,26 +1474,6 @@ MoleculeCallback_notifyModification(Molecule *mp, int now_flag)
 			wxPostEvent(doc, myEvent);
 	}
 }
-
-/*
-static NSString *
-sMoleculePasteboardType(const char *type)
-{
-	static NSMutableArray *array;
-	NSString *str;
-	unsigned int idx;
-	if (array == nil)
-		array = [[NSMutableArray array] retain];
-	str = [NSString stringWithUTF8String: type];
-	idx = [array indexOfObject: str];
-	if (idx == NSNotFound) {
-		[array addObject: str];
-		return str;
-	} else {
-		return [array objectAtIndex: idx];
-	}
-}
-*/
 
 static wxDataObject *
 sMoleculePasteboardObjectOfType(const char *type, const void *data, int length)

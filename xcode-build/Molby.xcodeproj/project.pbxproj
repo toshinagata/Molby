@@ -107,7 +107,7 @@
 		E420BDF41885749000A2B983 /* listctrl.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = listctrl.cpp; sourceTree = "<group>"; };
 		E420BDF51885749000A2B983 /* MoleculeView.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MoleculeView.cpp; sourceTree = "<group>"; };
 		E420BDF61885749000A2B983 /* MoleculeView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MoleculeView.h; sourceTree = "<group>"; };
-		E420BDF71885749000A2B983 /* MyApp.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MyApp.cpp; sourceTree = "<group>"; };
+		E420BDF71885749000A2B983 /* MyApp.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MyApp.cpp; sourceTree = "<group>"; wrapsLines = 1; };
 		E420BDF81885749000A2B983 /* MyApp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MyApp.h; sourceTree = "<group>"; };
 		E420BDF91885749000A2B983 /* MyClipboardData.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MyClipboardData.cpp; sourceTree = "<group>"; };
 		E420BDFA1885749000A2B983 /* MyClipboardData.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MyClipboardData.h; sourceTree = "<group>"; };

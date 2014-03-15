@@ -96,23 +96,8 @@ enum {
 	myMenuID_MolecularDynamics = 200,
 	myMenuID_Minimize = 201,
 	myMenuID_StopMDRun = 202,
-	myMenuID_RunAntechamber = 203,
-	myMenuID_GuessUFFParameters = 204,
 	myMenuID_ViewGlobalParameters = 205,
 	myMenuID_ViewParameterFilesList = 206,
-	myMenuID_DefinePeriodicBox = 207,
-	myMenuID_ShowPeriodicImage = 208,
-	myMenuID_PressureControl = 209,
-	myMenuID_DefineSymmetry = 210,
-	myMenuID_ExpandBySymmetry = 211,
-	myMenuID_MDTools = 212,
-	myMenuID_RunResp = 213,
-	myMenuID_CreateSanderInput = 214,
-	myMenuID_ImportAmberLib = 215,
-	myMenuID_ImportAmberFrcmod = 216,
-	myMenuID_CreateGamessInput = 250,
-	myMenuID_CreateMOPACInput = 251,
-	myMenuID_CreateMOCube = 252,
 	myMenuID_ExecuteScript = 300,
 	myMenuID_OpenConsoleWindow = 301,
 	myMenuID_EmptyConsoleWindow = 302,
@@ -128,8 +113,7 @@ enum {
 	myMenuIndex_Edit = 1,
 	myMenuIndex_Show = 2,
 	myMenuIndex_MMMD = 3,
-	myMenuIndex_QChem = 4,
-	myMenuIndex_Script = 5
+	myMenuIndex_Script = 4
 };
 
 //  Global Setting Keys
@@ -158,8 +142,6 @@ class MyApp: public wxApp
 
 	wxMenuBar *CreateMenuBar(int kind, wxMenu **out_file_history_menu = NULL, wxMenu **out_edit_menu = NULL);
 
-//	void OnReadParameters(wxCommandEvent& event);
-
 	static wxString FindResourcePath();
 	static wxString DefaultSettingsPath();
 
@@ -182,8 +164,6 @@ class MyApp: public wxApp
 	void OnEmptyConsoleWindow(wxCommandEvent &event);
 	void OnViewGlobalParameters(wxCommandEvent &event);
 	void OnViewParameterFilesList(wxCommandEvent &event);
-
-//	void OnImportAmberLib(wxCommandEvent &event);
 
 	void OnEndProcess(wxProcessEvent &event);
 	int CallSubProcess(const char *cmdline, const char *procname, int (*callback)(void *) = NULL, void *callback_data = NULL, FILE *fpout = NULL, FILE *fperr = NULL);
