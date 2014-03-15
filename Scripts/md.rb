@@ -946,7 +946,7 @@ class Molecule
 	puts msg
   end
   
-  def Molecule.cmd_import_amberlib
+  def Molecule.cmd_import_amberlib(mol)
     file = Dialog.open_panel("Select AMBER lib file", nil, "AMBER lib file (*.lib)|*.lib|All Files (*.*)|*.*")
 	import_amberlib(file) if file
   end
@@ -1687,4 +1687,177 @@ class Molecule
 	end
   end
   
+  #  Solvate the molecule with the given solvent box.
+  #  The first argument (box) must be a Molecule containing a unit cell information.
+  #  The second argument defines the size of the solvated system. A positive number represents
+  #  an offset to the bounding box of the solute, and a negative number represents an absolute size.
+  #  If it is given as an Array (or a Vector), the elements define the sizes in the x/y/z directions.
+  #  The third argument represents the limit distance to avoid conflict between the solute and
+  #  solvent. The solvent molecule containing atoms within this limit from the solute is removed.
+  #  The atom group containing added solvent molecule is returned.
+  def solvate(sbox, size = [10.0, 10.0, 10.0], limit = 3.0)
+
+	#  Sanity check
+    if sbox.box == nil
+	  raise MolbyError, "the solvent box does not have a unit cell information"
+    end
+	flags = sbox.box[4]
+	if flags[0] == 0 || flags[1] == 0 || flags[2] == 0
+	  raise MolbyError, "the solvent box does not have three-dimensional periodicity"
+	end
+
+	show_progress_panel("Adding a solvent box...")
+
+	#  Calculate the box size
+	b = self.bounds
+	bsize = b[1] - b[0]
+	if size.kind_of?(Numeric)
+	  size = [size, size, size]
+	end
+	size = size.collect { |s| Float(s) }
+	limit = Float(limit)
+	(0..2).each do |i|
+	  d = (size[i] >= 0 ? bsize[i] + size[i] * 2 : -size[i])
+	  if d < bsize[i]
+	    raise MolbyError, "the box size is too small"
+	  end
+	  bsize[i] = d;
+	end
+#	puts "Box size = #{bsize}"
+
+	#  Translate the solute to the center of the box
+	translate((b[0] + b[1]) * -0.5)
+	solute_natoms = self.natoms
+
+	#  Add solvents so that the target box is fully covered
+	set_progress_message("Duplicating the solvent box...")
+	rtr = sbox.cell_transform.inverse
+	min = Vector3D[1e30, 1e30, 1e30]
+	max = Vector3D[-1e30, -1e30, -1e30]
+	[[0,0,0],[1,0,0],[0,1,0],[0,0,1],[1,1,0],[1,0,1],[0,1,1],[1,1,1]].each do |pt|
+	  pt = Vector3D[(pt[0] - 0.5) * bsize[0], (pt[1] - 0.5) * bsize[1], (pt[2] - 0.5) * bsize[2]]
+	  rpt = rtr * pt
+	  min.x = rpt.x if min.x > rpt.x
+	  min.y = rpt.y if min.y > rpt.y
+	  min.z = rpt.z if min.z > rpt.z
+	  max.x = rpt.x if max.x < rpt.x
+	  max.y = rpt.y if max.y < rpt.y
+	  max.z = rpt.z if max.z < rpt.z
+	end
+	xmin = (min.x + 0.5).floor
+	xmax = (max.x + 0.5).floor
+	ymin = (min.y + 0.5).floor
+	ymax = (max.y + 0.5).floor
+	zmin = (min.z + 0.5).floor
+	zmax = (max.z + 0.5).floor
+	sbox_natoms = sbox.natoms
+	xv, yv, zv, ov, flags = sbox.box
+#	puts "xmin = #{xmin}, ymin = #{ymin}, zmin = #{zmin}"
+#	puts "xmax = #{xmax}, ymax = #{ymax}, zmax = #{zmax}"
+    newbox = Molecule.new
+	(xmin..xmax).each do |x|
+	  (ymin..ymax).each do |y|
+	    (zmin..zmax).each do |z|
+		  newbox.add(sbox)
+		  newbox.translate(xv * x + yv * y + zv * z, IntGroup[newbox.natoms - sbox_natoms..newbox.natoms - 1])
+		end
+	  end
+	end
+	
+	#  Remove out-of-bounds molecules
+	set_progress_message("Removing out-of-bounds molecules...")
+	g = newbox.atom_group do |ap|
+	  r = ap.r
+	  r.x < -(bsize[0] - limit) * 0.5 || r.y < -(bsize[1] - limit) * 0.5 || r.z < -(bsize[2] - limit) * 0.5 ||
+	  r.x > (bsize[0] - limit) * 0.5 || r.y > (bsize[1] - limit) * 0.5 || r.z > (bsize[2] - limit) * 0.5
+	end
+	g = newbox.fragment(g)  #  expand by fragment
+	newbox.remove(g)
+	
+	#  Add solvent molecules
+	self.line_mode(true)
+	self.add(newbox)
+#	puts "Removed atoms by bounds: #{g}"
+	
+	#  Find conflicts
+	set_progress_message("Removing conflicting molecules...")
+	conf = find_conflicts(limit, IntGroup[0..solute_natoms - 1], IntGroup[solute_natoms..self.natoms - 1])
+	g = atom_group(conf.map { |c| c[1] } )    #  atom group containing conflicting atoms
+	g = fragment(g)                           #  expand by fragment
+	remove(g)
+#	puts "Removed atoms by conflicts: #{g}"
+	
+	#  Renumber residue numbers of solvent molecules
+	rseq = max_residue_number(0..solute_natoms - 1)
+	rseq = 0 if rseq == nil
+	each_fragment do |g|
+	  next if g[0] < solute_natoms
+	  rseq += 1
+	  assign_residue(g, atoms[g[0]].res_name + ".#{rseq}")
+	end
+
+	#  Set the segment number and name (SOLV)
+	seg = (0..solute_natoms - 1).map { |n| self.atoms[n].seg_seq }.max + 1
+	each_atom(solute_natoms..self.natoms - 1) { |ap|
+	  ap.seg_seq = seg if ap.seg_seq < seg
+	  ap.seg_name = "SOLV"
+	}
+
+    #  Set the unit cell information
+	set_box(bsize[0], bsize[1], bsize[2])
+	
+	hide_progress_panel
+	resize_to_fit
+	
+	return IntGroup[solute_natoms..self.natoms - 1]
+
+  end	
+  
+  def cmd_solvate
+    #  Find molecule with unit cell defined
+    solv = []
+	solvnames = []
+	Molecule.list.each { |m|
+	  if m.cell != nil
+	    solv.push m
+		solvnames.push m.name
+	  end
+    }
+	if solvnames.length == 0
+	  Dialog.run {
+	    layout(1,
+		  item(:text, :title=>"Please open a molecule file containing a solvent box."))
+	  }
+	  return
+	end
+	hash = Dialog.run {
+	  layout(1,
+	    item(:text, :title=>"Choose solvent box:"),
+	    item(:popup, :subitems=>solvnames, :tag=>"solvent"),
+		item(:text, :title=>"Box offset\n(Negative numbers for absolute sizes)"),
+		layout(2,
+		  item(:text, :title=>"x"),
+		  item(:textfield, :width=>"120", :tag=>"x", :value=>"10.0"),
+		  item(:text, :title=>"y"),
+		  item(:textfield, :width=>"120", :tag=>"y", :value=>"10.0"),
+		  item(:text, :title=>"z"),
+		  item(:textfield, :width=>"120", :tag=>"z", :value=>"10.0")),
+		item(:text, :title=>"Exclusion limit distance:"),
+		item(:textfield, :width=>"120", :tag=>"limit", :value=>"3.0"))
+	}
+	if hash[:status] == 0
+	  solvate(solv[hash["solvent"]], [hash["x"], hash["y"], hash["z"]], hash["limit"])
+	end
+  end
+     
 end
+
+register_menu("MM/MD\tImport AMBER Lib...", :cmd_import_amberlib)
+register_menu("MM/MD\t-", nil)
+register_menu("MM/MD\tGuess UFF Parameters...", :guess_uff_parameters, :non_empty)
+register_menu("MM/MD\tGuess MM/MD Parameters...", :cmd_antechamber, :non_empty)
+register_menu("MM/MD\tGAMESS and RESP...", :cmd_gamess_resp, :non_empty)
+register_menu("MM/MD\tCreate SANDER Input...", :export_prmtop, :non_empty)
+register_menu("MM/MD\tImport AMBER Frcmod...", :cmd_import_frcmod, :non_empty)
+register_menu("MM/MD\t-", nil)
+register_menu("MM/MD\tSolvate...", :cmd_solvate, :non_empty)

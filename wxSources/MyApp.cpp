@@ -95,7 +95,7 @@ BEGIN_EVENT_TABLE(MyApp, wxApp)
 	EVT_MENU(myMenuID_EmptyConsoleWindow, MyApp::OnEmptyConsoleWindow)
 	EVT_MENU(myMenuID_ViewGlobalParameters, MyApp::OnViewGlobalParameters)
 	EVT_MENU(myMenuID_ViewParameterFilesList, MyApp::OnViewParameterFilesList)
-	EVT_MENU(myMenuID_ImportAmberLib, MyApp::OnImportAmberLib)
+//	EVT_MENU(myMenuID_ImportAmberLib, MyApp::OnImportAmberLib)
 #if defined(__WXMAC__)
 	EVT_ACTIVATE(MyApp::OnActivate)
 #endif
@@ -454,8 +454,8 @@ MyApp::CreateMenuBar(int kind, wxMenu **out_file_history_menu, wxMenu **out_edit
 	md_menu->Append(myMenuID_StopMDRun, _T("Stop\tCtrl-."));
 	md_menu->AppendSeparator();
 //	md_menu->Append(myMenuID_ReadParameters, _T("Read Parameters..."));
-	md_menu->Append(myMenuID_RunAntechamber, _T("Auto Guess MM/MD Parameters..."));
-	md_menu->Append(myMenuID_GuessUFFParameters, _T("Guess UFF Parameters..."));
+//	md_menu->Append(myMenuID_RunAntechamber, _T("Auto Guess MM/MD Parameters..."));
+//	md_menu->Append(myMenuID_GuessUFFParameters, _T("Guess UFF Parameters..."));
 	md_menu->Append(myMenuID_ViewGlobalParameters, _T("View Global Parameters..."));
 	md_menu->Append(myMenuID_ViewParameterFilesList, _T("Load/Unload Global Parameters..."));
 //	md_menu->AppendSeparator();
@@ -464,15 +464,15 @@ MyApp::CreateMenuBar(int kind, wxMenu **out_file_history_menu, wxMenu **out_edit
 /*	md_menu->Append(myMenuID_PressureControl, _T("Pressure Control...")); */
 /*	md_menu->Append(myMenuID_DefineSymmetry, _T("Define Symmetry Operations..."));
 	md_menu->Append(myMenuID_ExpandBySymmetry, _T("Expand by Symmetry...")); */
-	md_menu->AppendSeparator();
+//	md_menu->AppendSeparator();
 	
-	wxMenu *md_tools_menu = new wxMenu;
+//	wxMenu *md_tools_menu = new wxMenu;
 /*	md_tools_menu->Append(myMenuID_RunAntechamber, _T("Antechamber/parmchk...")); */
-	md_tools_menu->Append(myMenuID_RunResp, _T("GAMESS/RESP..."));
-	md_tools_menu->Append(myMenuID_CreateSanderInput, _T("Create SANDER input..."));
-	md_tools_menu->Append(myMenuID_ImportAmberLib, _T("Import AMBER Lib..."));
-	md_tools_menu->Append(myMenuID_ImportAmberFrcmod, _T("Import AMBER Frcmod..."));
-	md_menu->Append(myMenuID_MDTools, _T("Tools"), md_tools_menu);
+//	md_tools_menu->Append(myMenuID_RunResp, _T("GAMESS/RESP..."));
+//	md_tools_menu->Append(myMenuID_CreateSanderInput, _T("Create SANDER input..."));
+//	md_tools_menu->Append(myMenuID_ImportAmberLib, _T("Import AMBER Lib..."));
+//	md_tools_menu->Append(myMenuID_ImportAmberFrcmod, _T("Import AMBER Frcmod..."));
+//	md_menu->Append(myMenuID_MDTools, _T("Tools"), md_tools_menu);
 
 //	wxMenu *qc_menu = new wxMenu;
 //	qc_menu->Append(myMenuID_CreateGamessInput, _T("Create GAMESS input..."));
@@ -768,11 +768,13 @@ MyApp::OnViewParameterFilesList(wxCommandEvent &event)
 	parameterFilesFrame->Raise();
 }
 
+/*
 void
 MyApp::OnImportAmberLib(wxCommandEvent &event)
 {
 	MolActionCreateAndPerform(NULL, SCRIPT_ACTION(""), "cmd_import_amberlib");
 }
+*/
 
 int
 MyApp::LookupScriptMenu(const char *title)
@@ -793,7 +795,12 @@ MyApp::RegisterScriptMenu(const char *title)
 	int i;
 
 	//  Already registered? (If it is not a separator item)
-	if (title[0] != 0 && title[0] != '-') {
+	const char *p;
+	p = strrchr(title, '\t');
+	if (p == NULL)
+		p = title;
+	else p++;
+	if (p[0] != 0 && p[0] != '-') {
 		for (i = 0; i < countScriptMenu; i++) {
 			if (strcmp(title, scriptMenuTitles[i]) == 0) {
 				return i;

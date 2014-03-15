@@ -131,15 +131,15 @@ public:
 
 //	void	OnDefinePeriodicBox(wxCommandEvent &event);
 //	void	OnShowPeriodicImage(wxCommandEvent &event);
-	void	OnPressureControl(wxCommandEvent &event);
-	void	OnDefineSymmetry(wxCommandEvent &event);
-	void	OnExpandBySymmetry(wxCommandEvent &event);
+//	void	OnPressureControl(wxCommandEvent &event);
+//	void	OnDefineSymmetry(wxCommandEvent &event);
+//	void	OnExpandBySymmetry(wxCommandEvent &event);
 
-	void	OnGuessUFFParameters(wxCommandEvent &event);
-	void	OnInvokeResp(wxCommandEvent &event);
-	void    OnInvokeAntechamber(wxCommandEvent &event);
-	void	OnCreateSanderInput(wxCommandEvent &event);
-	void	OnImportAmberFrcmod(wxCommandEvent &event);
+//	void	OnGuessUFFParameters(wxCommandEvent &event);
+//	void	OnInvokeResp(wxCommandEvent &event);
+//	void    OnInvokeAntechamber(wxCommandEvent &event);
+//	void	OnCreateSanderInput(wxCommandEvent &event);
+//	void	OnImportAmberFrcmod(wxCommandEvent &event);
 
 //	void	OnCreateGamessInput(wxCommandEvent &event);
 //	void	OnCreateMOPACInput(wxCommandEvent &event);

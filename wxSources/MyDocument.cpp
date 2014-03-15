@@ -98,14 +98,14 @@ BEGIN_EVENT_TABLE(MyDocument, wxDocument)
 	EVT_MENU(myMenuID_StopMDRun, MyDocument::OnStopMDRun)
 //	EVT_MENU(myMenuID_DefinePeriodicBox, MyDocument::OnDefinePeriodicBox)
 //	EVT_MENU(myMenuID_ShowPeriodicImage, MyDocument::OnShowPeriodicImage)
-	EVT_MENU(myMenuID_PressureControl, MyDocument::OnPressureControl)
-	EVT_MENU(myMenuID_DefineSymmetry, MyDocument::OnDefineSymmetry)
-	EVT_MENU(myMenuID_ExpandBySymmetry, MyDocument::OnExpandBySymmetry)
-	EVT_MENU(myMenuID_RunAntechamber, MyDocument::OnInvokeAntechamber)
-    EVT_MENU(myMenuID_GuessUFFParameters, MyDocument::OnGuessUFFParameters)
-	EVT_MENU(myMenuID_RunResp, MyDocument::OnInvokeResp)
-	EVT_MENU(myMenuID_CreateSanderInput, MyDocument::OnCreateSanderInput)
-	EVT_MENU(myMenuID_ImportAmberFrcmod, MyDocument::OnImportAmberFrcmod)
+//	EVT_MENU(myMenuID_PressureControl, MyDocument::OnPressureControl)
+//	EVT_MENU(myMenuID_DefineSymmetry, MyDocument::OnDefineSymmetry)
+//	EVT_MENU(myMenuID_ExpandBySymmetry, MyDocument::OnExpandBySymmetry)
+//	EVT_MENU(myMenuID_RunAntechamber, MyDocument::OnInvokeAntechamber)
+//    EVT_MENU(myMenuID_GuessUFFParameters, MyDocument::OnGuessUFFParameters)
+//	EVT_MENU(myMenuID_RunResp, MyDocument::OnInvokeResp)
+//	EVT_MENU(myMenuID_CreateSanderInput, MyDocument::OnCreateSanderInput)
+//	EVT_MENU(myMenuID_ImportAmberFrcmod, MyDocument::OnImportAmberFrcmod)
 //	EVT_MENU(myMenuID_CreateGamessInput, MyDocument::OnCreateGamessInput)
 //	EVT_MENU(myMenuID_CreateMOPACInput, MyDocument::OnCreateMOPACInput)
 //	EVT_MENU(myMenuID_CreateMOCube, MyDocument::OnCreateMOCube)
@@ -1223,7 +1223,7 @@ MyDocument::OnShowPeriodicImage(wxCommandEvent &event)
 	MolActionCreateAndPerform(mol, SCRIPT_ACTION(""), "cmd_show_periodic_image");
 }
 */
-
+/*
 void
 MyDocument::OnPressureControl(wxCommandEvent &event)
 {
@@ -1241,6 +1241,7 @@ void
 MyDocument::OnExpandBySymmetry(wxCommandEvent &event)
 {
 }
+*/
 
 static wxString
 sCreateTemporaryLogDirectoryForAC(const wxString& filename)
@@ -1392,6 +1393,7 @@ sEraseLogFiles(const wxString& tdir, int status)
 	}
 }
 
+/*
 void
 MyDocument::OnGuessUFFParameters(wxCommandEvent &event)
 {
@@ -1422,7 +1424,7 @@ MyDocument::OnImportAmberFrcmod(wxCommandEvent &event)
 {
 	MolActionCreateAndPerform(mol, SCRIPT_ACTION(""), "cmd_import_frcmod");
 }
-
+*/
 /*
 void
 MyDocument::OnCreateGamessInput(wxCommandEvent &event)

@@ -183,7 +183,7 @@ class MyApp: public wxApp
 	void OnViewGlobalParameters(wxCommandEvent &event);
 	void OnViewParameterFilesList(wxCommandEvent &event);
 
-	void OnImportAmberLib(wxCommandEvent &event);
+//	void OnImportAmberLib(wxCommandEvent &event);
 
 	void OnEndProcess(wxProcessEvent &event);
 	int CallSubProcess(const char *cmdline, const char *procname, int (*callback)(void *) = NULL, void *callback_data = NULL, FILE *fpout = NULL, FILE *fperr = NULL);
