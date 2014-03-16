@@ -1645,16 +1645,15 @@ def cmd_show_ortep
   }
 end
 
+require_cell = lambda { |m| m && m.cell != nil }
+
 register_menu("Xtal\tDefine Unit Cell...", :cmd_define_unit_cell)
-register_menu("Xtal\tShow Periodic Image...", :cmd_show_periodic_image,
-  lambda { |m| m && m.cell != nil } )
-register_menu("Xtal\tComplete by Symmetry", :complete_by_symmetry,
-  lambda { |m| m && m.cell != nil } )
-register_menu("Xtal\tCreate Packing Diagram...", :create_packing_diagram,
-  lambda { |m| m && m.cell != nil } )
+register_menu("Xtal\tShow Periodic Image...", :cmd_show_periodic_image, require_cell)
+register_menu("Xtal\tComplete by Symmetry", :complete_by_symmetry, require_cell)
+register_menu("Xtal\tCreate Packing Diagram...", :create_packing_diagram, require_cell)
 register_menu("Xtal\t-", nil)
-register_menu("Xtal\tBest-fit Planes...", :cmd_plane)
-register_menu("Xtal\tBonds and Angles with Sigma...", :cmd_bond_angle_with_sigma)
-register_menu("Xtal\tShow ORTEP...", :cmd_show_ortep)
+register_menu("Xtal\tBest-fit Planes...", :cmd_plane, :non_empty)
+register_menu("Xtal\tBonds and Angles with Sigma...", :cmd_bond_angle_with_sigma, :non_empty)
+register_menu("Xtal\tShow ORTEP...", :cmd_show_ortep, :non_empty)
 
 end

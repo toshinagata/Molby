@@ -799,6 +799,54 @@ s_Kernel_LookupMenu(VALUE self, VALUE title)
 }
 
 static VALUE
+s_Ruby_UpdateUI_handler(VALUE data)
+{
+	void **p = (void **)data;
+	int index = (int)p[0];
+	Molecule *mol = (Molecule *)p[1];
+	int *outChecked = (int *)p[2];
+	char **outTitle = (char **)p[3];
+	VALUE mval = ValueFromMolecule(mol);
+	VALUE pval = rb_ary_entry(gScriptMenuEnablers, index);
+	static ID call_id = 0;
+	if (call_id == 0)
+		call_id = rb_intern("call");
+	if (pval == Qnil)
+		return Qnil;
+	pval = rb_funcall(pval, call_id, 1, mval);
+	if (rb_obj_is_kind_of(pval, rb_cArray)) {
+		VALUE val;
+		if (outChecked != NULL) {
+			val = rb_ary_entry(pval, 1);  /*  Checked or not  */
+			*outChecked = (RTEST(val) ? 1 : 0);
+		}
+		if (outTitle != NULL) {
+			val = rb_ary_entry(pval, 2);  /*  Text  */
+			if (TYPE(val) == T_STRING) {
+				*outTitle = strdup(StringValuePtr(val));
+			}
+		}
+		pval = rb_ary_entry(pval, 0);
+	}
+	return pval;
+}
+
+int
+Ruby_UpdateUI(int index, Molecule *mol, int *outChecked, char **outTitle)
+{
+	int status;
+	void *p[4];
+	VALUE retval;
+	p[0] = (void *)index;
+	p[1] = mol;
+	p[2] = outChecked;
+	p[3] = outTitle;
+	retval = rb_protect(s_Ruby_UpdateUI_handler, (VALUE)p, &status);
+	return (RTEST(retval) ? 1 : 0);
+}
+
+/*
+static VALUE
 s_Ruby_methodType_sub(VALUE data)
 {
 	const char **p = (const char **)data;
@@ -812,10 +860,10 @@ s_Ruby_methodType_sub(VALUE data)
 	else ival = 0;
 	return INT2FIX(ival);
 }
-	
+*/	
 /*  Returns 1 if the class defines the instance method with the given name, 2 if the class
     has the singleton method (class method) with the given name, 0 otherwise.  */
-int
+/*int
 Ruby_methodType(const char *className, const char *methodName)
 {
 	int status;
@@ -828,6 +876,7 @@ Ruby_methodType(const char *className, const char *methodName)
 		return FIX2INT(retval);
 	else return 0;
 }
+*/
 
 /*
  *  call-seq:
@@ -9206,6 +9255,29 @@ s_Molecule_ShowPeriodicImageFlag(VALUE self)
 
 /*
  *  call-seq:
+ *     show_rotation_center -> [amin, amax, bmin, bmax, cmin, cmax]
+ *     show_rotation_center = [amin, amax, bmin, bmax, cmin, cmax]
+ *     show_rotation_center = boolean
+ *
+ *  Set to show the rotation center of the screen.
+ *  If the argument is boolean, only the show/hide flag is modified.
+ */
+static VALUE
+s_Molecule_ShowRotationCenter(int argc, VALUE *argv, VALUE self)
+{
+    Molecule *mol;
+    Data_Get_Struct(self, Molecule, mol);
+	if (mol->mview == NULL)
+		return Qnil;
+	if (argc > 0) {
+		mol->mview->showRotationCenter = (RTEST(argv[0]) != 0);
+		MainViewCallback_setNeedsDisplay(mol->mview, 1);
+	}
+	return (mol->mview->showRotationCenter ? Qtrue : Qfalse);
+}
+
+/*
+ *  call-seq:
  *     line_mode
  *     line_mode(bool)
  *     line_mode = bool
@@ -10662,6 +10734,8 @@ Init_Molby(void)
 	rb_define_method(rb_cMolecule, "show_periodic_image", s_Molecule_ShowPeriodicImage, -1);
 	rb_define_method(rb_cMolecule, "show_periodic_image=", s_Molecule_ShowPeriodicImage, -1);
 	rb_define_method(rb_cMolecule, "show_periodic_image?", s_Molecule_ShowPeriodicImageFlag, 0);
+	rb_define_method(rb_cMolecule, "show_rotation_center", s_Molecule_ShowRotationCenter, -1);
+	rb_define_method(rb_cMolecule, "show_rotation_center=", s_Molecule_ShowRotationCenter, -1);
 	rb_define_alias(rb_cMolecule, "show_unitcell=", "show_unitcell");
 	rb_define_alias(rb_cMolecule, "show_unit_cell", "show_unitcell");
 	rb_define_alias(rb_cMolecule, "show_unit_cell=", "show_unitcell");
@@ -10671,6 +10745,7 @@ Init_Molby(void)
 	rb_define_alias(rb_cMolecule, "show_ellipsoids=", "show_ellipsoids");
 	rb_define_alias(rb_cMolecule, "show_graphite=", "show_graphite");
 	rb_define_alias(rb_cMolecule, "show_periodic_image=", "show_periodic_image");
+	rb_define_alias(rb_cMolecule, "show_rotation_center=", "show_rotation_center");
 	rb_define_method(rb_cMolecule, "line_mode", s_Molecule_LineMode, -1);
 	rb_define_alias(rb_cMolecule, "line_mode=", "line_mode");
 	rb_define_method(rb_cMolecule, "resize_to_fit", s_Molecule_ResizeToFit, 0);

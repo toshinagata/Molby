@@ -859,6 +859,79 @@ class Molecule
 	end
   end
   
+  def cmd_create_cube
+    grid = default_MO_grid
+	if grid == nil
+	  Dialog.run {
+	    layout(1,
+		  item(:text, :title=>"This molecule does not contain MO information."))
+	  }
+	  return
+	end
+    mos = selected_MO
+	if mos == nil || mos.length == 0
+      Dialog.run {
+	    layout(1,
+		  item(:text, :title=>"Please select MO(s) in the MO Info table."))
+      }
+	  return
+	end
+	hash = Dialog.run {
+	  layout(1,
+	    item(:text, :title=>"Please specify cube dimensions (in bohr unit):"),
+	    layout(4,
+		  item(:text, :title=>"Origin"),
+		  item(:textfield, :width=>100, :height=>20, :tag=>"originx", :value=>sprintf("%.6f", grid[0].x)),
+		  item(:textfield, :width=>100, :height=>20, :tag=>"originy", :value=>sprintf("%.6f", grid[0].y)),
+		  item(:textfield, :width=>100, :height=>20, :tag=>"originz", :value=>sprintf("%.6f", grid[0].z)),
+		  item(:text, :title=>"Delta"),
+		  item(:textfield, :width=>100, :height=>20, :tag=>"deltax", :value=>sprintf("%.6f", grid[1])),
+		  item(:textfield, :width=>100, :height=>20, :tag=>"deltay", :value=>sprintf("%.6f", grid[2])),
+		  item(:textfield, :width=>100, :height=>20, :tag=>"deltaz", :value=>sprintf("%.6f", grid[3])),
+		  item(:text, :title=>"Step"),
+		  item(:textfield, :width=>100, :height=>20, :tag=>"stepx", :value=>grid[4].to_s),
+		  item(:textfield, :width=>100, :height=>20, :tag=>"stepy", :value=>grid[5].to_s),
+		  item(:textfield, :width=>100, :height=>20, :tag=>"stepz", :value=>grid[6].to_s)))
+	}
+	if hash[:status] == 0
+	  path = self.path || self.name
+	  dir = self.dir || Dir.pwd
+	  origin = Vector3D[hash["originx"], hash["originy"], hash["originz"]]
+	  dx = hash["deltax"]
+	  dy = hash["deltay"]
+	  dz = hash["deltaz"]
+	  nx = hash["stepx"]
+	  ny = hash["stepy"]
+	  nz = hash["stepz"]
+	  basename = File.basename(path, ".*")
+	  filenames = []
+	  mo_type = self.mo_type
+	  mos.each { |n|
+	    fname1 = fname2 = nil
+	    alpha = (mo_type != "UHF" ? "" : "alpha ")
+		a = (mo_type != "UHF" ? "" : "a")
+	    fname1 = Dialog.save_panel("Cube file name for #{alpha}MO #{n}", dir, basename + "_#{n}#{a}.cube", "Gaussian cube file (*.cube)|*.cube")
+		if (mo_type == "UHF")
+		  fname2 = Dialog.save_panel("Cube file name for beta MO #{n}", dir, basename + "_#{n}b.cube", "Gaussian cube file (*.cube)|*.cube")
+		end
+		filenames.push([n, fname1, fname2])
+	  }
+	  filenames.each { |pair|
+	    n = pair[0]
+		alpha = (mo_type != "UHF" ? "" : "alpha ")
+	    show_progress_panel("Creating cube file for #{alpha}MO #{n}...")
+		if pair[1]
+		  cubegen(pair[1], n, origin, dx, dy, dz, nx, ny, nz, true)
+		end
+		if pair[2] && mo_type == "UHF"
+		  set_progress_message("Creating cube file for beta MO #{n}...")
+		  cubegen(pair[2], n, origin, dx, dy, dz, nx, ny, nz, true, true)
+		end
+	    hide_progress_panel
+ 	  }
+	end
+  end
+
 end
 
 $gamess_basis = {
@@ -877,3 +950,9 @@ $gamess_basis_keys = ["PM3", "STO3G", "321G", "631G"]
   Molecule.read_gamess_basis_sets("basis_sets/#{n}.txt")
 }
 
+register_menu("QChem\tCreate GAMESS Input...",
+  :cmd_create_gamess_input, :non_empty)
+register_menu("QChem\tCreate MOPAC6 Input...",
+  :cmd_create_mopac_input, :non_empty)    # mopac6.rb
+register_menu("QChem\tCreate MO Cube...",
+  :cmd_create_cube, lambda { |m| m && m.mo_type } )

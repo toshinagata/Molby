@@ -183,16 +183,20 @@ class IO
   end
 end
 
+#  Additional method definitions
 load "transform.rb"
 load "molecule.rb"
 load "loadsave.rb"
 load "formula.rb"
 load "dialog.rb"
+
+#  Menu commands
+load "view.rb"
 load "uff.rb"
 load "md.rb"
-load "gamess.rb"
 load "mopac6.rb"
-load "commands.rb"
+load "gamess.rb"
 load "crystal.rb"
+load "commands.rb"
 
 GC.start

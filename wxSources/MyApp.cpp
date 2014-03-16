@@ -424,25 +424,25 @@ MyApp::CreateMenuBar(int kind, wxMenu **out_file_history_menu, wxMenu **out_edit
 	if (out_edit_menu != NULL)
 		*out_edit_menu = edit_menu;	// Should be associated with the command processor if available
 	
-	wxMenu *show_menu = new wxMenu;
-	show_menu->Append(myMenuID_FitToScreen, _T("Fit To Screen\tCtrl-T"));
-	show_menu->Append(myMenuID_CenterSelection, _T("Center Selection"));
-	show_menu->AppendSeparator();
-	show_menu->Append(myMenuID_ShowUnitCell, _T("Show Unit Cell"), _T(""), wxITEM_CHECK);
-	show_menu->Append(myMenuID_ShowHydrogens, _T("Show Hydrogen Atoms"), _T(""), wxITEM_CHECK);
-	show_menu->Append(myMenuID_ShowDummyAtoms, _T("Show Dummy Atoms"), _T(""), wxITEM_CHECK);
-	show_menu->Append(myMenuID_ShowExpandedAtoms, _T("Show Expanded Atoms"), _T(""), wxITEM_CHECK);
-	show_menu->Append(myMenuID_ShowEllipsoids, _T("Show Ellipsoids"), _T(""), wxITEM_CHECK);
-	show_menu->Append(myMenuID_ShowRotationCenter, _T("Show Rotation Center"), _T(""), wxITEM_CHECK);
-	show_menu->AppendSeparator();
-	show_menu->Append(myMenuID_HideSelected, _T("Hide Selected"), _T(""));
-	show_menu->Append(myMenuID_HideUnselected, _T("Hide Unselected"), _T(""));
-	show_menu->Append(myMenuID_HideReverse, _T("Hide Reverse"), _T(""));
-	show_menu->Append(myMenuID_ShowAllAtoms, _T("Show All Atoms"), _T(""));
-	show_menu->AppendSeparator();
-	show_menu->Append(myMenuID_ShowGraphite, _T("Show Graphite..."));
-	show_menu->AppendSeparator();
-	show_menu->Append(myMenuID_LineMode, _T("Line Mode"), _T(""), wxITEM_CHECK);
+	wxMenu *view_menu = new wxMenu;
+	view_menu->Append(myMenuID_FitToScreen, _T("Fit To Screen\tCtrl-T"));
+	view_menu->Append(myMenuID_CenterSelection, _T("Center Selection"));
+/*	view_menu->AppendSeparator();
+	view_menu->Append(myMenuID_ShowUnitCell, _T("Show Unit Cell"), _T(""), wxITEM_CHECK);
+	view_menu->Append(myMenuID_ShowHydrogens, _T("Show Hydrogen Atoms"), _T(""), wxITEM_CHECK);
+	view_menu->Append(myMenuID_ShowDummyAtoms, _T("Show Dummy Atoms"), _T(""), wxITEM_CHECK);
+	view_menu->Append(myMenuID_ShowExpandedAtoms, _T("Show Expanded Atoms"), _T(""), wxITEM_CHECK);
+	view_menu->Append(myMenuID_ShowEllipsoids, _T("Show Ellipsoids"), _T(""), wxITEM_CHECK);
+	view_menu->Append(myMenuID_ShowRotationCenter, _T("Show Rotation Center"), _T(""), wxITEM_CHECK); */
+	view_menu->AppendSeparator();
+	view_menu->Append(myMenuID_HideSelected, _T("Hide Selected"), _T(""));
+	view_menu->Append(myMenuID_HideUnselected, _T("Hide Unselected"), _T(""));
+	view_menu->Append(myMenuID_HideReverse, _T("Hide Reverse"), _T(""));
+	view_menu->Append(myMenuID_ShowAllAtoms, _T("Show All Atoms"), _T(""));
+//	view_menu->AppendSeparator();
+//	view_menu->Append(myMenuID_ShowGraphite, _T("Show Graphite..."));
+//	view_menu->AppendSeparator();
+//	view_menu->Append(myMenuID_LineMode, _T("Line Mode"), _T(""), wxITEM_CHECK);
 
 	wxMenu *md_menu = new wxMenu;
 	md_menu->Append(myMenuID_MolecularDynamics, _T("Molecular Dynamics..."));
@@ -466,7 +466,7 @@ MyApp::CreateMenuBar(int kind, wxMenu **out_file_history_menu, wxMenu **out_edit
 	
 	menu_bar->Append(file_menu, _T("&File"));
 	menu_bar->Append(edit_menu, _T("&Edit"));
-	menu_bar->Append(show_menu, _T("Show"));
+	menu_bar->Append(view_menu, _T("View"));
 	menu_bar->Append(md_menu, _T("MM/MD"));
 	menu_bar->Append(script_menu, _T("&Script"));
 	menu_bar->Append(help_menu, _T("&Help"));
@@ -774,6 +774,7 @@ void
 MyApp::UpdateScriptMenu(wxMenuBar *mbar)
 {
 	int i, mid;
+	bool checkable;
 	for (i = 0; i < countScriptMenu; i++) {
 		//  Find Menu to be inserted
 		const char *s = scriptMenuTitles[i], *p;
@@ -832,6 +833,11 @@ MyApp::UpdateScriptMenu(wxMenuBar *mbar)
 			}
 			continue;
 		}
+		if (*s == '^') {
+			//  Checkable item
+			checkable = true;
+			s++;
+		} else checkable = false;
 		//  Check if the item is already existing
 		wxString itemTitle(s, WX_DEFAULT_CONV);
 		wxMenu *omenu;
@@ -848,7 +854,7 @@ MyApp::UpdateScriptMenu(wxMenuBar *mbar)
 			delete item;
 		}
 		//  Create menu item
-		menu->Append(myMenuID_CustomScript + i, itemTitle);
+		menu->Append(myMenuID_CustomScript + i, itemTitle, wxEmptyString, (checkable ? wxITEM_CHECK : wxITEM_NORMAL));
 		scriptMenuPositions[i] = menu->GetMenuItemCount() - 1;
 		Connect(myMenuID_CustomScript + i, wxEVT_COMMAND_MENU_SELECTED, wxCommandEventHandler(MyApp::OnScriptMenuSelected), NULL, this);
 	}
@@ -992,13 +998,23 @@ MyApp::OnUpdateUI(wxUpdateUIEvent& event)
 	if (uid >= myMenuID_CustomScript && uid < myMenuID_CustomScript + countScriptMenu) {
 		//  Check the script menu
 		Molecule *mol;
-		RubyValue retval;
+		int enabled, checked;
+		char *title;
 		int index = uid - myMenuID_CustomScript;
 		if (mview == NULL)
 			mol = NULL;
 		else mol = mview->mol;
-		MolActionCreateAndPerform(NULL, SCRIPT_ACTION("iM;r"), "lambda { |n, m| $script_menu_enablers[n].call(m) }", index, mol, &retval);
-		event.Enable(retval != NULL && retval != RubyNil);
+		checked = -1;
+		title = NULL;
+		enabled = Ruby_UpdateUI(index, mol, &checked, &title);
+		if (checked >= 0)
+			event.Check(checked != 0);
+		if (title != NULL) {
+			wxString wtext(title, WX_DEFAULT_CONV);
+			event.SetText(wtext);
+			free(title);
+		}
+		event.Enable(enabled != 0);
 	} else if (uid >= myMenuID_PredefinedFragment && uid <= myMenuID_PredefinedFragment + m_CountNamedFragments) {
 		event.Enable(true);
 	} else {

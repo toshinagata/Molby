@@ -82,15 +82,15 @@ BEGIN_EVENT_TABLE(MyDocument, wxDocument)
 	EVT_MENU(myMenuID_SelectReverse, MyDocument::OnSelectReverse)
 	EVT_MENU(myMenuID_FitToScreen, MyDocument::OnFitToScreen)
 	EVT_MENU(myMenuID_CenterSelection, MyDocument::OnCenterSelection)
-	EVT_MENU(myMenuID_ShowUnitCell, MyDocument::OnShowMenu)
-	EVT_MENU(myMenuID_ShowPeriodicBox, MyDocument::OnShowMenu)
-	EVT_MENU(myMenuID_ShowHydrogens, MyDocument::OnShowMenu)
-	EVT_MENU(myMenuID_ShowDummyAtoms, MyDocument::OnShowMenu)
-	EVT_MENU(myMenuID_ShowExpandedAtoms, MyDocument::OnShowMenu)
-	EVT_MENU(myMenuID_ShowEllipsoids, MyDocument::OnShowMenu)
-	EVT_MENU(myMenuID_ShowRotationCenter, MyDocument::OnShowMenu)
-	EVT_MENU(myMenuID_ShowGraphite, MyDocument::OnShowGraphite)
-	EVT_MENU(myMenuID_LineMode, MyDocument::OnToggleLineMode)
+//	EVT_MENU(myMenuID_ShowUnitCell, MyDocument::OnShowMenu)
+//	EVT_MENU(myMenuID_ShowPeriodicBox, MyDocument::OnShowMenu)
+//	EVT_MENU(myMenuID_ShowHydrogens, MyDocument::OnShowMenu)
+//	EVT_MENU(myMenuID_ShowDummyAtoms, MyDocument::OnShowMenu)
+//	EVT_MENU(myMenuID_ShowExpandedAtoms, MyDocument::OnShowMenu)
+//	EVT_MENU(myMenuID_ShowEllipsoids, MyDocument::OnShowMenu)
+//	EVT_MENU(myMenuID_ShowRotationCenter, MyDocument::OnShowMenu)
+//	EVT_MENU(myMenuID_ShowGraphite, MyDocument::OnShowGraphite)
+//	EVT_MENU(myMenuID_LineMode, MyDocument::OnToggleLineMode)
 	EVT_MENU_RANGE(myMenuID_AddHydrogenSp3, myMenuID_AddHydrogenBent, MyDocument::OnAddHydrogen)
 	EVT_UPDATE_UI_RANGE(myMenuID_MyFirstMenuItem, myMenuID_MyLastMenuItem, MyDocument::OnUpdateUI)
 	EVT_MENU(myMenuID_MolecularDynamics, MyDocument::OnMolecularDynamics)
@@ -756,6 +756,7 @@ MyDocument::OnCenterSelection(wxCommandEvent& event)
 	MoleculeUnlock(mol);
 }
 
+/*
 void
 MyDocument::OnShowMenu(wxCommandEvent& event)
 {
@@ -787,6 +788,7 @@ MyDocument::OnShowMenu(wxCommandEvent& event)
 	}
 	MainViewCallback_setNeedsDisplay(mol->mview, 1);
 }
+*/
 
 void
 MyDocument::OnShowAllAtoms(wxCommandEvent &event)
@@ -827,6 +829,7 @@ MyDocument::OnHideReverse(wxCommandEvent &event)
 	MoleculeShowReverse(mol);
 }
 
+/*
 void
 MyDocument::OnShowGraphite(wxCommandEvent &event)
 {
@@ -841,6 +844,7 @@ MyDocument::OnToggleLineMode(wxCommandEvent &event)
 	mol->mview->lineMode = !mol->mview->lineMode;
 	MainViewCallback_setNeedsDisplay(mol->mview, 1);
 }
+*/
 
 /*  Check whether subthread is running  */
 static int
@@ -1359,7 +1363,7 @@ MyDocument::OnUpdateUI(wxUpdateUIEvent& event)
 		case myMenuID_FitToScreen:
 			event.Enable(true);
 			return;
-		case myMenuID_ShowUnitCell:
+	/*	case myMenuID_ShowUnitCell:
 			event.Enable(true);
 			event.Check(mol != NULL && mol->mview != NULL && mol->mview->showUnitCell != 0);
 			return;
@@ -1387,6 +1391,7 @@ MyDocument::OnUpdateUI(wxUpdateUIEvent& event)
 			event.Enable(true);
 			event.Check(mol != NULL && mol->mview != NULL && mol->mview->showRotationCenter != 0);
 			return;
+	 */
 		case myMenuID_ShowAllAtoms:
 		case myMenuID_HideReverse:
 			event.Enable(mol->mview != NULL && mol->mview->countHidden > 0);
@@ -1395,10 +1400,11 @@ MyDocument::OnUpdateUI(wxUpdateUIEvent& event)
 		case myMenuID_HideUnselected:
 			event.Enable(nselected > 0);
 			return;
-		case myMenuID_LineMode:
+	/*	case myMenuID_LineMode:
 			event.Enable(true);
 			event.Check(mol != NULL && mol->mview != NULL && mol->mview->lineMode != 0);
 			return;
+	 */
 		case myMenuID_MolecularDynamics:
 		case myMenuID_Minimize:
 			if (mol != NULL && mol->mutex == NULL)

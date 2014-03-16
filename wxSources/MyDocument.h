@@ -111,9 +111,9 @@ public:
 
 	void	OnFitToScreen(wxCommandEvent& event);
 	void	OnCenterSelection(wxCommandEvent& event);
-	void	OnShowMenu(wxCommandEvent& event);
-	void	OnToggleLineMode(wxCommandEvent &event);
-	void	OnShowGraphite(wxCommandEvent &event);
+//	void	OnShowMenu(wxCommandEvent& event);
+//	void	OnToggleLineMode(wxCommandEvent &event);
+//	void	OnShowGraphite(wxCommandEvent &event);
 
 	void	OnShowAllAtoms(wxCommandEvent &event);
 	void	OnHideSelected(wxCommandEvent &event);
