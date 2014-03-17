@@ -52,16 +52,16 @@ typedef enum TrackballMode {
  *  view is (0, 0), and the half of the screen height (or width) is 1.0)  */
 typedef struct Trackball {
 	int refCount;
-    float start[2];     /*  Drag started here  */
-    float startQuat[4];	/*  Rotation from the start point to the center (of the trackball) */
+    double start[2];     /*  Drag started here  */
+    double startQuat[4];	/*  Rotation from the start point to the center (of the trackball) */
     TrackballMode   mode;
 
-    float quat[4];		/*  Rotation (in quaternion)  */
-    float tempQuat[4];	/*  Temporary rotation during dragging of trackball  */
-    float trans[3];		/*  Translation  */
-    float tempTrans[3];	/*  Temporary translation  */
-    float scale;		/*  Scale  */
-    float tempScale;	/*  Temporary scale */
+    double quat[4];		/*  Rotation (in quaternion)  */
+    double tempQuat[4];	/*  Temporary rotation during dragging of trackball  */
+    double trans[3];		/*  Translation  */
+    double tempTrans[3];	/*  Temporary translation  */
+    double scale;		/*  Scale  */
+    double tempScale;	/*  Temporary scale */
 	
 	int   modifyCount;
 } Trackball;
@@ -71,19 +71,19 @@ void TrackballRetain(Trackball *track);
 void TrackballRelease(Trackball *track);
 
 float TrackballGetScale(const Trackball *track);
-void TrackballGetRotate(const Trackball *track, float *a);
-void TrackballGetTranslate(const Trackball *track, float *a);
-void TrackballGetPerspective(const Trackball *track, float *a);
+void TrackballGetRotate(const Trackball *track, double *a);
+void TrackballGetTranslate(const Trackball *track, double *a);
+void TrackballGetPerspective(const Trackball *track, double *a);
 
 void TrackballReset(Trackball *track);
-void TrackballSetScale(Trackball *track, float scale);
-void TrackballSetRotate(Trackball *track, const float *a);
-void TrackballSetTranslate(Trackball *track, const float *a);
+void TrackballSetScale(Trackball *track, double scale);
+void TrackballSetRotate(Trackball *track, const double *a);
+void TrackballSetTranslate(Trackball *track, const double *a);
 
 int  TrackballGetModifyCount(Trackball *track);
 
 void TrackballStartDragging(Trackball *track, const float *mousePos, TrackballMode mode);
-void TrackballSetTemporaryRotation(Trackball *track, const float *q);
+void TrackballSetTemporaryRotation(Trackball *track, const double *q);
 void TrackballDrag(Trackball *track, const float *mousePos);
 void TrackballEndDragging(Trackball *track, const float *mousePos);
 

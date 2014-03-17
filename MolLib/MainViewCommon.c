@@ -34,8 +34,10 @@ MainView_new(void)
 		/*  Initialize common members (that are used both in GUI and CMD versions  */
 		memset(mview, 0, sizeof(MainView));
 		mview->track = TrackballNew();
-		mview->atomRadius = 0.4;
+		mview->atomRadius = 0.2;
 		mview->bondRadius = 0.1;
+		mview->atomResolution = 12;
+		mview->bondResolution = 8;
 		mview->probabilityScale = 1.5382;
 		mview->dimension = 10.0;
 		mview->showHydrogens = mview->showDummyAtoms = mview->showExpandedAtoms = 1;

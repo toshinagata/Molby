@@ -21,7 +21,7 @@
 #pragma mark ====== Internal functions ======
 
 static void
-multiplyQuat(const float *a, const float *b, float *c)
+multiplyQuat(const double *a, const double *b, double *c)
 {
     c[0] = a[0] * b[0] - (a[1] * b[1] + a[2] * b[2] + a[3] * b[3]);
     c[1] = b[0] * a[1] + a[0] * b[1] + (a[2] * b[3] - a[3] * b[2]);
@@ -30,7 +30,7 @@ multiplyQuat(const float *a, const float *b, float *c)
 }
 
 static void
-normalizeQuat(float *a)
+normalizeQuat(double *a)
 {
     float f;
     f = 1.0 / sqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2] + a[3] * a[3]);
@@ -41,7 +41,7 @@ normalizeQuat(float *a)
 }
 
 static void
-getRotationToCenter(float x, float y, float radius, float *quat)
+getRotationToCenter(double x, double y, double radius, double *quat)
 {
     const float sqrt2 = 1.41421356 / 2;
     float r, r2;
@@ -76,7 +76,7 @@ getRotationToCenter(float x, float y, float radius, float *quat)
 }
 
 static void
-rotation2Quat(const float *A, float *q)
+rotation2Quat(const double *A, double *q)
 {
     float ang2;  /* The half-angle */
     float sinAng2; /* sin(half-angle) */
@@ -125,11 +125,10 @@ TrackballGetScale(const Trackball *track)
 }
 
 /*  Get the current rotation (in GL format)  */
-//- (void)getRotate:(float *)a
 void
-TrackballGetRotate(const Trackball *track, float *a)
+TrackballGetRotate(const Trackball *track, double *a)
 {
-    float w[4], t, f;
+    double w[4], t, f;
 	NULL_CHECK(track, "TrackballGetRotate");	
     /*  Rotate: multiply the two quaternions and convert it to a GL rotater  */
     multiplyQuat(track->tempQuat, track->quat, w);
@@ -154,30 +153,21 @@ TrackballGetRotate(const Trackball *track, float *a)
 /*  Get the current translation.  The result values should be multiplied with
  * the dimension of the model.  */
 void
-TrackballGetTranslate(const Trackball *track, float *a)
-//- (void)getTranslate:(float *)a
+TrackballGetTranslate(const Trackball *track, double *a)
 {
 	NULL_CHECK(track, "TrackballGetTranslate");
     a[0] = track->tempTrans[0] + track->trans[0];
     a[1] = track->tempTrans[1] + track->trans[1];
     a[2] = track->tempTrans[2] + track->trans[2];
-/*    f = a[0] * a[0] + a[1] * a[1] + a[2] * a[2];
-    if (f > 1.0) {
-        f = 1.0 / sqrt(f);
-        a[0] *= f;
-        a[1] *= f;
-        a[2] *= f;
-    } */
 }
 
 /*  Get the perspective parameter (fovy and distance)
  *  Fovy (a[0]) is in degree.
  *  Distance (a[1]) should be multiplied with the dimension of the model. */
 void
-TrackballGetPerspective(const Trackball *track, float *a)
-//- (void)getPerspective:(float *)a
+TrackballGetPerspective(const Trackball *track, double *a)
 {
-    float f;
+    double f;
 	NULL_CHECK(track, "TrackballGetPerspective");
     /*  Get the current scale factor (-1.0 to 1.0 for x1/10 to x10)  */
     f = track->tempScale + track->scale;
@@ -217,7 +207,7 @@ TrackballReset(Trackball *track)
 }
 
 void
-TrackballSetScale(Trackball *track, float scale)
+TrackballSetScale(Trackball *track, double scale)
 {
 	NULL_CHECK(track, "TrackballSetScale");
 	track->tempScale = 0;
@@ -226,9 +216,9 @@ TrackballSetScale(Trackball *track, float scale)
 }
 
 void
-TrackballSetRotate(Trackball *track, const float *a)
+TrackballSetRotate(Trackball *track, const double *a)
 {
-	float k; 
+	double k; 
 	NULL_CHECK(track, "TrackballSetRotate");
 	track->tempQuat[0] = 1.0;
 	track->tempQuat[1] = track->tempQuat[2] = track->tempQuat[3] = 0.0;
@@ -241,7 +231,7 @@ TrackballSetRotate(Trackball *track, const float *a)
 }
 
 void
-TrackballSetTranslate(Trackball *track, const float *a)
+TrackballSetTranslate(Trackball *track, const double *a)
 {
 	NULL_CHECK(track, "TrackballSetTranslate");
 	track->tempTrans[0] = track->tempTrans[1] = track->tempTrans[2] = 0;
@@ -255,7 +245,6 @@ TrackballSetTranslate(Trackball *track, const float *a)
 
 void
 TrackballStartDragging(Trackball *track, const float *mousePos, TrackballMode mode)
-//- (void)startAt:(NSPoint)pt sender:(NSView *)sender mode:(int)inMode
 {
 	NULL_CHECK(track, "TrackballStartDragging");
     
@@ -275,18 +264,17 @@ TrackballStartDragging(Trackball *track, const float *mousePos, TrackballMode mo
 }
 
 void
-TrackballSetTemporaryRotation(Trackball *track, const float *q)
+TrackballSetTemporaryRotation(Trackball *track, const double *q)
 {
-	memmove(track->tempQuat, q, sizeof(float) * 4);
+	memmove(track->tempQuat, q, sizeof(double) * 4);
 }
 
 void
 TrackballDrag(Trackball *track, const float *mousePos)
-//- (void)dragTo:(NSPoint)pt sender:(NSView *)sender
 {
-    float rot[4];
-    float w1[4], w2[4];
-    float w;
+    double rot[4];
+    double w1[4], w2[4];
+    double w;
 	NULL_CHECK(track, "TrackballDrag");
 
     if (track->mode == kTrackballRotateMode) {
@@ -334,9 +322,8 @@ TrackballDrag(Trackball *track, const float *mousePos)
 
 void
 TrackballEndDragging(Trackball *track, const float *mousePos)
-//- (void)endAt:(NSPoint)pt sender:(NSView *)sender
 {
-    float w[4];
+    double w[4];
 	NULL_CHECK(track, "TrackballEndDragging");
 	if (mousePos != NULL)
 		TrackballDrag(track, mousePos);
@@ -351,13 +338,6 @@ TrackballEndDragging(Trackball *track, const float *mousePos)
     track->trans[0] += track->tempTrans[0];
     track->trans[1] += track->tempTrans[1];
     track->trans[2] += track->tempTrans[2];
-/*    f = track->trans[0] * track->trans[0] + track->trans[1] * track->trans[1] + track->trans[2] * track->trans[2];
-    if (f > 1.0) {
-        f = 1.0 / sqrt(f);
-        track->trans[0] *= f;
-        track->trans[1] *= f;
-        track->trans[2] *= f;
-    } */
     track->tempTrans[0] = track->tempTrans[1] = track->tempTrans[2] = 0.0;
     track->scale += track->tempScale;
     if (track->scale > 5.0)

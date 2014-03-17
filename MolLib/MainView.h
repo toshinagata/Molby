@@ -121,8 +121,10 @@ typedef struct MainView {
 	
 	Byte lineMode;     /*  Draw the model with lines  */
 	
-	float atomRadius; /* Scale the vdW radius by this value */
-	float bondRadius; /* in angstrom */
+	float atomRadius; /* Scale the vdW radius by this value (default: 0.2) */
+	float bondRadius; /* in angstrom (default: 0.1) */
+	int   atomResolution; /* Resolution in drawing atoms (default: 12) */
+	int   bondResolution; /* Resolution in drawing atoms (default: 8) */
 	float probabilityScale;
 	Byte  freezeScreen;
 	float dimension;

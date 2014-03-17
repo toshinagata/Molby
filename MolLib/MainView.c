@@ -223,7 +223,7 @@ void
 MainView_resizeToFit(MainView *mview)
 {
 	Vector p;
-	float f[4];
+	double f[4];
 	if (mview == NULL || mview->mol == NULL)
 		return;
 	if (mview->mol->natoms == 0) {
@@ -231,8 +231,6 @@ MainView_resizeToFit(MainView *mview)
 		return;
 	}
 	MoleculeCenterOfMass(mview->mol, &p, NULL);
-/*	if (mview->mol->is_xtal_coord)
-		TransformVec(&p, mview->mol->cell->tr, &p); */
 	f[0] = -p.x / mview->dimension;
 	f[1] = -p.y / mview->dimension;
 	f[2] = -p.z / mview->dimension;
@@ -250,8 +248,6 @@ MainView_resizeToFit(MainView *mview)
 		double r0 = 0.0, r1, scale;
 		for (i = 0, ap = mview->mol->atoms; i < mview->mol->natoms; i++, ap = ATOM_NEXT(ap)) {
 			q = ap->r;
-		/*	if (mview->mol->is_xtal_coord)
-				TransformVec(&q, mview->mol->cell->tr, &q); */
 			VecDec(q, p);
 			r1 = VecLength(q);
 			if (r1 > r0)
@@ -268,96 +264,10 @@ MainView_resizeToFit(MainView *mview)
 	}
 
 	MainViewCallback_setNeedsDisplay(mview, 1);
-
-#if 0
-	GLdouble mm[4][4];
-	GLdouble p0[4];
-	int i, j, natoms;
-	const Atom *ap;
-	const ElementPar *app;
-	GLdouble *pp, *p1;
-	GLdouble max[3], min[3], center[3];
-	float frame[4], width, height, cot15, rsin15, cot_th, rsin_th, d, trans[3];
-	Molecule *mol;
-	
-	if (mview == NULL || mview->mol == NULL)
-		return;
-	mol = mview->mol;
-	
-	/*  Transform the coordinates of all atoms with the rotation part of
-	 *  the model-view matrix  */
-	memmove((GLdouble *)mm, mview->modelview_matrix, sizeof(float) * 16);
-	natoms = mol->natoms;
-	pp = (GLdouble *)calloc(sizeof(GLdouble), 4 * natoms);
-	MALLOC_CHECK(pp, "resizing the model to fit");
-	for (i = 0; i < natoms; i++) {
-		ap = ATOM_AT_INDEX(mol->atoms, i);
-		if (ap == NULL)
-			continue;
-		p0[0] = ap->r.x; p0[1] = ap->r.y; p0[2] = ap->r.z;
-		p0[3] = 0.0;  /*  This disables the translation part  */
-		p1 = &pp[i * 4];
-		MAT_DOT_VEC_4X4(p1, mm, p0);  /* #define'd in GLUT/vvector.h */
-	}
-	
-	/*  Determine the center for each axis  */
-	max[0] = max[1] = max[2] = -1e20;
-	min[0] = min[1] = min[2] = 1e20;
-	for (i = 0; i < natoms; i++) {
-		p1 = &pp[i * 4];
-		for (j = 0; j < 3; j++) {
-			if (p1[j] > max[j])
-				max[j] = p1[j];
-			if (p1[j] < min[j])
-				min[j] = p1[j];
-		}
-	}
-	for (j = 0; j < 3; j++)
-		center[j] = (min[j] + max[j]) * 0.5;
-	
-	/*  Get the frame size  */
-	MainViewCallback_frame(mview, frame);
-	width = frame[2] - frame[0];
-	height = frame[3] - frame[1];
-
-	/*  Calculate the minimum distance from which the view angle of
-	 *  the atom becomes no more than 15 degree (for the y direction)
-	 *  and theta degree (for the x direction, theta = arctan(h/w*tan(15 deg))) */
-	cot15 = 3.73205080756888;
-	rsin15 = 3.86370330515628;
-	cot_th = width / height * cot15;
-	rsin_th = sqrt(1.0 + cot_th * cot_th);
-	d = 0;
-	for (i = 0; i < natoms; i++) {
-		float dx, dy, z, r;
-		ap = ATOM_AT_INDEX(mol->atoms, i);
-		if (ap == NULL)
-			continue;
-		app = &(gBuiltinParameters->atomPars[ap->atomicNumber]);
-		if (app == NULL)
-			continue;
-		r = app->radius * mview->atomRadius;
-		z = pp[i * 4 + 2] - center[2];
-		dx = pp[i * 4] * cot_th + r * rsin_th + z;
-		dy = pp[i * 4 + 1] * cot15 + r * rsin15 + z;
-		if (d < dx)
-			d = dx;
-		if (d < dy)
-			d = dy;
-	}
-	mview->dimension = d / cot15;
-	TrackballSetScale(mview->track, 1.0);
-	trans[0] = center[0] / mview->dimension;
-	trans[1] = center[1] / mview->dimension;
-	trans[2] = center[2] / mview->dimension;
-	TrackballSetTranslate(mview->track, trans);
-
-	free(pp);
-#endif
 }
 
 int
-MainView_convertScreenPositionToObjectPosition(MainView *mview, const GLfloat *screenPos, GLfloat *objectPos)
+MainView_convertScreenPositionToObjectPosition(MainView *mview, const GLfloat *screenPos, double *objectPos)
 {
 	float rect[4];
     GLint viewport[4], n;
@@ -387,7 +297,7 @@ MainView_convertScreenPositionToObjectPosition(MainView *mview, const GLfloat *s
 }
 
 int
-MainView_convertObjectPositionToScreenPosition(MainView *mview, const GLfloat *objectPos, GLfloat *screenPos)
+MainView_convertObjectPositionToScreenPosition(MainView *mview, const double *objectPos, GLfloat *screenPos)
 {
 	float rect[4];
     GLint viewport[4];
@@ -411,7 +321,8 @@ MainView_convertObjectPositionToScreenPosition(MainView *mview, const GLfloat *o
 int
 MainView_findObjectAtPoint(MainView *mview, const float *mousePos, int *outIndex1, int *outIndex2, int mouseCheck, int ignoreExpandedAtoms)
 {
-	float screenPos[3], op[3], oq[3], pqlen, pqlen2;
+	float screenPos[3];
+	double op[3], oq[3], pqlen, pqlen2;
 	Vector pq, pa, v1, r1, r2;
     int i, natoms, nbonds;
 	float r, d2, z;
@@ -428,7 +339,6 @@ MainView_findObjectAtPoint(MainView *mview, const float *mousePos, int *outIndex
 	}
 	mol = mview->mol;
 
-#if 1
 	screenPos[0] = mousePos[0];
 	screenPos[1] = mousePos[1];
 	screenPos[2] = -1.0;
@@ -450,7 +360,7 @@ MainView_findObjectAtPoint(MainView *mview, const float *mousePos, int *outIndex
 	minDepth = 100.0;
 	for (i = 0; i < natoms; i++) {
 		Vector pq1, pa1;
-		float pq1len2, pq1len;
+		double pq1len2, pq1len;
 		if (mouseCheck && i % 50 == 0 && MainViewCallback_mouseCheck(mview))
 			return 0;  /*  If mouse event is detected return immediately  */
 		/*  Examine if an atom is visible or not  */
@@ -470,7 +380,7 @@ MainView_findObjectAtPoint(MainView *mview, const float *mousePos, int *outIndex
 		pa.x = r1.x - op[0];
 		pa.y = r1.y - op[1];
 		pa.z = r1.z - op[2];
-		if (ap->aniso != NULL) {
+		if (mview->showEllipsoids && ap->aniso != NULL) {
 			/*  Convert to ellipsoid principal axes  */
 			Mat33 m1;
 			Aniso *anp = ap->aniso;
@@ -487,7 +397,7 @@ MainView_findObjectAtPoint(MainView *mview, const float *mousePos, int *outIndex
 				ep = &(gElementParameters[ap->atomicNumber]);
 				if (ep == NULL)
 					continue;
-				r = ep->radius * mview->atomRadius;
+				r = ep->radius * 2 * mview->atomRadius;
 			}
 			pa1 = pa;
 			pq1 = pq;
@@ -574,76 +484,6 @@ MainView_findObjectAtPoint(MainView *mview, const float *mousePos, int *outIndex
 	*outIndex1 = n1;
 	*outIndex2 = n2;
 	return (n1 >= 0 || n2 >= 0);
-		
-#else
-	/*  Examine if anything is drawn at the point  */
-	screenPos[0] = mousePos[0];
-	screenPos[1] = mousePos[1];
-	screenPos[2] = -1.0;
-	if (MainView_convertScreenPositionToObjectPosition(mview, screenPos, objectPos) == 0)
-		return 0;  /*  Nothing is here  */
-	op[0] = objectPos[0];
-	op[1] = objectPos[1];
-	op[2] = objectPos[2];
-
-	/*  Examine the distance from the atom center with op, and select the one
-	    with the smallest difference with the radius on the screen  */
-	atomRadius = mview->atomRadius;
-	bondRadius = mview->bondRadius;
-	natoms = mol->natoms;
-	mindr = 100.0;
-	n1 = n2 = -1;
-    for (i = 0; i < natoms; i++) {
-        ap = ATOM_AT_INDEX(mol->atoms, i);
-		if (ap == NULL)
-			continue;
-		dp = &(gBuiltinParameters->atomPars[ap->atomicNumber]);
-		if (dp == NULL)
-			continue;
-		p[0] = objectPos[0] - ap->r.x;
-		p[1] = objectPos[1] - ap->r.y;
-		p[2] = objectPos[2] - ap->r.z;
-		rr = sqrt(p[0]*p[0] + p[1]*p[1] + p[2]*p[2]) / (dp->radius * atomRadius);
-		dr = fabs(1.0 - rr);
-		if (dr < mindr) {
-			mindr = dr;
-			n1 = i;
-		}
-	}
-	if (mindr > 0.1)
-		n1 = -1;
-	nbonds = mol->nbonds;
-    for (i = 0; i < nbonds; i++) {
-		float q;
-		ip = &(mol->bonds[i * 2]);
-		ap = ATOM_AT_INDEX(mol->atoms, ip[0]);
-		bp = ATOM_AT_INDEX(mol->atoms, ip[1]);
-		p[0] = objectPos[0] - ap->r.x;
-		p[1] = objectPos[1] - ap->r.y;
-		p[2] = objectPos[2] - ap->r.z;
-		b[0] = bp->r.x - ap->r.x;
-		b[1] = bp->r.y - ap->r.y;
-		b[2] = bp->r.z - ap->r.z;
-		/*  ap.r + q*(b[0],b[1],b[2]) is the closest point on line AB to objectPos */
-		/*  If q is outside [0, 1] then the point is outside the line segment AB
-		    so it is ignored  */
-		q = (p[0]*b[0]+p[1]*b[1]+p[2]*b[2])/(b[0]*b[0]+b[1]*b[1]+b[2]*b[2]);
-		if (q < 0 || q > 1)
-			continue;
-		p[0] -= q * b[0];
-		p[1] -= q * b[1];
-		p[2] -= q * b[2];
-		dr = fabs(bondRadius - sqrt(p[0]*p[0] + p[1]*p[1] + p[2]*p[2]));
-		if (dr < mindr) {
-			mindr = dr;
-			n1 = ip[0];
-			n2 = ip[1];
-		}
-    }
-	*outIndex1 = n1;
-	*outIndex2 = n2;
-	return (n1 >= 0 || n2 >= 0);
-#endif
 }
 
 int
@@ -653,7 +493,7 @@ MainView_screenCenterPointOfAtom(MainView *mview, int index, float *outScreenPos
 	const ElementPar *dp;
 	Vector cv, pv, v;
 	Double rad, w;
-	float p[3];
+	double p[3];
 
 	if (mview == NULL || mview->mol == NULL || index < 0 || index >= mview->mol->natoms)
 		return 0;
@@ -696,7 +536,7 @@ MainView_screenCenterPointOfAtom(MainView *mview, int index, float *outScreenPos
 		}
 	} else {
 		dp = &(gElementParameters[ap->atomicNumber]);
-		rad = dp->radius * mview->atomRadius;
+		rad = dp->radius * 2 * mview->atomRadius;
 		w = rad / VecLength(pv) * 1.1;
 		VecScaleSelf(pv, w);
 	}
@@ -1021,7 +861,7 @@ temporarySelection(MainView *mview, int flags, int clickCount, int ignoreExpande
 				continue;
 			if (mview->draggingMode == kMainViewSelectingRegion) {
 				/*  Check if this atom is within the selection rectangle  */
-				GLfloat objectPos[3];
+				double objectPos[3];
 				GLfloat screenPos[3];
 				Vector r1;
 				r1 = ap->r;
@@ -1141,6 +981,7 @@ drawAtom(MainView *mview, int i1, int selected, const Vector *dragOffset, const 
 	int expanded = 0;
 	Vector r1;
 	GLfloat p[6];
+	double pp[3];
 	char label[16];
 	GLfloat rgba[4];
 	Transform *trp = NULL;
@@ -1211,21 +1052,24 @@ drawAtom(MainView *mview, int i1, int selected, const Vector *dragOffset, const 
 				for (i = 0; i < 9; i++)
 					elip[i] = ap->aniso->pmat[i] * mview->probabilityScale;
 			}
-			drawEllipsoid(p, elip, elip+3, elip+6, 15);
+			drawEllipsoid(p, elip, elip+3, elip+6, mview->atomResolution * 3 / 2); /* Use higher resolution than spheres */
 		} else {
 			Double rad;
 			if (ap != NULL) {
 				rad = biso2radius(ap->tempFactor);
 				rad *= mview->probabilityScale;
 			} else {
-				rad = dp->radius * mview->atomRadius;
+				rad = dp->radius * 2 * mview->atomRadius;
 			}
-			drawSphere(p, rad, 8);
+			drawSphere(p, rad, mview->atomResolution);
 		}
 	} else {
-		drawSphere(p, dp->radius * mview->atomRadius, 12);
+		drawSphere(p, dp->radius * 2 * mview->atomRadius, mview->atomResolution);
 	}
-	if (MainView_convertObjectPositionToScreenPosition(mview, p, p + 3)) {
+	pp[0] = p[0];
+	pp[1] = p[1];
+	pp[2] = p[2];
+	if (MainView_convertObjectPositionToScreenPosition(mview, pp, p + 3)) {
 	/*	fprintf(stderr, "atom %d: {%f, %f, %f}\n", i1, p[3], p[4], p[5]); */
 		float fp[3];
 		fp[0] = p[3]; fp[1] = p[4]; fp[2] = p[5];
@@ -1324,7 +1168,7 @@ drawBond(MainView *mview, int i1, int i2, int selected, int selected2, int draft
 		glEnd();
 	} else {
 		glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, rgba);
-		drawCylinder(p, p + 3, mview->bondRadius * rad_mul, 8, 0);
+		drawCylinder(p, p + 3, mview->bondRadius * rad_mul, mview->bondResolution, 0);
 	}
 	dp = &(gElementParameters[an[1]]);
 	if (dp == NULL)
@@ -1356,7 +1200,7 @@ drawBond(MainView *mview, int i1, int i2, int selected, int selected2, int draft
 static void
 calcDragOffset(MainView *mview, Vector *outVector)
 {
-	GLfloat p[6];
+	double p[6];
 	if (mview->draggingMode == kMainViewDraggingSelectedAtoms
 	&& MainView_convertScreenPositionToObjectPosition(mview, mview->dragStartPos, p)
 	&& MainView_convertScreenPositionToObjectPosition(mview, mview->dragEndPos, p + 3)) {
@@ -1684,9 +1528,9 @@ static void
 drawRotationCenter(MainView *mview)
 {
 	GLfloat ps[3], pe[3], col[4];
-	float fd[2];  /*  Fovy and distance  */
-	float tr[3];  /*  Translation  */
-	float r, rr;
+	double fd[2];  /*  Fovy and distance  */
+	double tr[3];  /*  Translation  */
+	double r, rr;
 	if (mview == NULL || !mview->showRotationCenter)
 		return;
 	TrackballGetTranslate(mview->track, tr);
@@ -1828,7 +1672,7 @@ drawLabels(MainView *mview)
 void
 MainView_drawModel(MainView *mview)
 {
-    float w[4], dimension, distance;
+    double w[4], dimension, distance;
 	float frame[4], width, height;
 	GLdouble *pp;
 	Transform mtr;
@@ -2098,8 +1942,10 @@ showAtomsInInfoText(MainView *mview, int n1, int n2)
 void
 MainView_mouseDown(MainView *mview, const float *mousePos, int flags)
 {
-	float p[3];
-	float screenPos[3], objectPos[3];
+	double p[3];
+	float fp[3];
+	float screenPos[3];
+	double objectPos[3];
 	int n1, n2, found;
 	Atom *ap;
 	mview->dragStartPos[0] = mousePos[0];
@@ -2127,11 +1973,11 @@ MainView_mouseDown(MainView *mview, const float *mousePos, int flags)
 				objectPos[0] = r2.x;
 				objectPos[1] = r2.y;
 				objectPos[2] = r2.z;
-				if (MainView_convertObjectPositionToScreenPosition(mview, objectPos, p)) {
+				if (MainView_convertObjectPositionToScreenPosition(mview, objectPos, fp)) {
 					Double w;
-					r1.x = p[0] - screenPos[0];
-					r1.y = p[1] - screenPos[1];
-					r1.z = p[2] - screenPos[2];
+					r1.x = fp[0] - screenPos[0];
+					r1.y = fp[1] - screenPos[1];
+					r1.z = fp[2] - screenPos[2];
 					NormalizeVec(&r1, &r1);
 					r2.x = mousePos[0] - screenPos[0];
 					r2.y = mousePos[1] - screenPos[1];
@@ -2161,8 +2007,8 @@ MainView_mouseDown(MainView *mview, const float *mousePos, int flags)
 		case kTrackballTranslateMode:
 		case kTrackballScaleMode:
 			if (!found) {
-				mousePosToTrackballPos(mview, mousePos, p);
-				TrackballStartDragging(mview->track, p, mview->mode);
+				mousePosToTrackballPos(mview, mousePos, fp);
+				TrackballStartDragging(mview->track, fp, mview->mode);
 				mview->draggingMode = kMainViewMovingTrackball;
 				break;
 			} else {
@@ -2277,7 +2123,8 @@ MainView_mouseDragged(MainView *mview, const float *mousePos, int flags)
 				mview->tempAtoms[1] = n1;
 				mview->tempAtomPos[1] = ap->r;
 			} else {
-				float screenPos[3], objectPos[3];
+				float screenPos[3];
+				double objectPos[3];
 				Vector r1;
 				mview->tempAtoms[1] = -1;
 				/*  Convert the position of temporary atom 0 to screen position */
@@ -2516,7 +2363,7 @@ MainView_rotateBySlider(MainView *mview, float angle, int mode, int mouseStatus,
 			} else return;
 		} else if ((modifierFlags & kAltKeyMask) != 0) {
 			/*  Rotate selection  */
-			float tr[3];
+			double tr[3];
 			if (mview->mol->selection == NULL)
 				return;
 			mview->rotateFragment = IntGroupNewFromIntGroup(mview->mol->selection);
@@ -2574,9 +2421,9 @@ MainView_rotateBySlider(MainView *mview, float angle, int mode, int mouseStatus,
 			}
 			
 		} else {
-			float quat[4];
-			float cs = cos(angle / 2);
-			float sn = sin(angle / 2);
+			double quat[4];
+			double cs = cos(angle / 2);
+			double sn = sin(angle / 2);
 			if (mouseStatus == 0) { /* mouseUp */
 				TrackballEndDragging(mview->track, NULL);
 			} else { /* mouseDragged */
@@ -2647,7 +2494,7 @@ MainView_centerSelection(MainView *mview)
 {
 	IntGroup *ig;
 	Vector c;
-	float tr[3];
+	double tr[3];
 	if (mview == NULL || mview->mol == NULL)
 		return;
 	ig = MoleculeGetSelection(mview->mol);

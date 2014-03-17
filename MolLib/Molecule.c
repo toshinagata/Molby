@@ -766,8 +766,8 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 	int ibuf[12];
 	Int iibuf[4];
 	double dbuf[12];
-	int mview_ibuf[16];
-	float mview_fbuf[8];
+	int mview_ibuf[18];
+	double mview_dbuf[10];
 	char cbuf[12][8];
 	const char **pp;
 	char *bufp, *valp, *comp;
@@ -788,9 +788,9 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 		s_append_asprintf(errbuf, "Cannot open file");
 		return 1;
 	}
-	for (i = 0; i < 8; i++)
-		mview_fbuf[i] = kUndefined;
-	for (i = 0; i < 16; i++)
+	for (i = 0; i < 10; i++)
+		mview_dbuf[i] = kUndefined;
+	for (i = 0; i < 18; i++)
 		mview_ibuf[i] = kUndefined;
 	/*	flockfile(fp); */
 	lineNumber = 0;
@@ -1581,11 +1581,11 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 				if (buf[0] == '\n')
 					break;
 				/* scale; trx try trz; theta_deg x y z */
-				if ((i == 0 && sscanf(buf, "%f", &mview_fbuf[0]) < 1)
-					|| (i == 1 && sscanf(buf, "%f %f %f",
-										 &mview_fbuf[1], &mview_fbuf[2], &mview_fbuf[3]) < 3)
-					|| (i == 2 && sscanf(buf, "%f %f %f %f",
-										 &mview_fbuf[4], &mview_fbuf[5], &mview_fbuf[6], &mview_fbuf[7]) < 4)) {
+				if ((i == 0 && sscanf(buf, "%lf", &mview_dbuf[0]) < 1)
+					|| (i == 1 && sscanf(buf, "%lf %lf %lf",
+										 &mview_dbuf[1], &mview_dbuf[2], &mview_dbuf[3]) < 3)
+					|| (i == 2 && sscanf(buf, "%lf %lf %lf %lf",
+										 &mview_dbuf[4], &mview_dbuf[5], &mview_dbuf[6], &mview_dbuf[7]) < 4)) {
 					s_append_asprintf(errbuf, "line %d: bad trackball format", lineNumber);
 					goto err_exit;
 				}
@@ -1615,12 +1615,17 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 					|| (strcmp(comp, "show_rotation_center") == 0 && (i = 7))
 					|| (strcmp(comp, "show_graphite_flag") == 0 && (i = 8))
 					|| (strcmp(comp, "show_periodic_image_flag") == 0 && (i = 9))
-					|| (strcmp(comp, "show_graphite") == 0 && (i = 10))) {
+					|| (strcmp(comp, "show_graphite") == 0 && (i = 10))
+					|| (strcmp(comp, "atom_resolution") == 0 && (i = 11))
+					|| (strcmp(comp, "bond_resolution") == 0 && (i = 12))) {
 					mview_ibuf[i - 1] = atoi(valp);
+				} else if ((strcmp(comp, "atom_radius") == 0 && (i = 8))
+					|| (strcmp(comp, "bond_radius") == 0 && (i = 9))) {
+					mview_dbuf[i] = strtod(valp, NULL);
 				} else if (strcmp(comp, "show_periodic_image") == 0) {
 					sscanf(valp, "%d %d %d %d %d %d",
-						   &mview_ibuf[10], &mview_ibuf[11], &mview_ibuf[12],
-						   &mview_ibuf[13], &mview_ibuf[14], &mview_ibuf[15]);
+						   &mview_ibuf[12], &mview_ibuf[13], &mview_ibuf[14],
+						   &mview_ibuf[15], &mview_ibuf[16], &mview_ibuf[17]);
 				}
 			}
 			continue;
@@ -1654,17 +1659,25 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 			mp->mview->showPeriodicImageFlag = mview_ibuf[8];
 		if (mview_ibuf[9] != kUndefined)
 			mp->mview->showGraphite = mview_ibuf[9];
+		if (mview_ibuf[10] != kUndefined && mview_ibuf[10] >= 6)
+			mp->mview->atomResolution = mview_ibuf[10];
+		if (mview_ibuf[11] != kUndefined && mview_ibuf[11] >= 4)
+			mp->mview->bondResolution = mview_ibuf[11];
 		for (i = 0; i < 6; i++) {
-			if (mview_ibuf[10 + i] != kUndefined)
-				mp->mview->showPeriodicImage[i] = mview_ibuf[10 + i];
+			if (mview_ibuf[12 + i] != kUndefined)
+				mp->mview->showPeriodicImage[i] = mview_ibuf[12 + i];
 		}
+		if (mview_dbuf[8] != kUndefined)
+			mp->mview->atomRadius = mview_dbuf[8];
+		if (mview_dbuf[9] != kUndefined)
+			mp->mview->bondRadius = mview_dbuf[9];		
 		if (mp->mview->track != NULL) {
-			if (mview_fbuf[0] != kUndefined)
-				TrackballSetScale(mp->mview->track, mview_fbuf[0]);
-			if (mview_fbuf[1] != kUndefined)
-				TrackballSetTranslate(mp->mview->track, mview_fbuf + 1);
-			if (mview_fbuf[4] != kUndefined)
-				TrackballSetRotate(mp->mview->track, mview_fbuf + 4);
+			if (mview_dbuf[0] != kUndefined)
+				TrackballSetScale(mp->mview->track, mview_dbuf[0]);
+			if (mview_dbuf[1] != kUndefined)
+				TrackballSetTranslate(mp->mview->track, mview_dbuf + 1);
+			if (mview_dbuf[4] != kUndefined)
+				TrackballSetRotate(mp->mview->track, mview_dbuf + 4);
 		}
 	}
 
@@ -4136,7 +4149,7 @@ MoleculeWriteToMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 	}
 	
 	if (mp->mview != NULL) {
-		float f[4];
+		double f[4];
 		if (mp->mview->track != NULL) {
 			fprintf(fp, "!:trackball\n");
 			fprintf(fp, "! scale; trx try trz; theta_deg x y z\n");
@@ -4163,6 +4176,14 @@ MoleculeWriteToMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 				mp->mview->showPeriodicImage[0], mp->mview->showPeriodicImage[1],
 				mp->mview->showPeriodicImage[2], mp->mview->showPeriodicImage[3],
 				mp->mview->showPeriodicImage[4], mp->mview->showPeriodicImage[5]);
+		if (mp->mview->atomRadius != 0.2)
+			fprintf(fp, "atom_radius %f\n", mp->mview->atomRadius);
+		if (mp->mview->bondRadius != 0.1)
+			fprintf(fp, "bond_radius %f\n", mp->mview->bondRadius);
+		if (mp->mview->atomResolution != 12)
+			fprintf(fp, "atom_resolution %d\n", mp->mview->atomResolution);
+		if (mp->mview->bondResolution != 8)
+			fprintf(fp, "bond_resolution %d\n", mp->mview->bondResolution);
 		fprintf(fp, "\n");
 	}
 

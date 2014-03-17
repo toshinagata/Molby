@@ -807,7 +807,7 @@ MyApp::UpdateScriptMenu(wxMenuBar *mbar)
 					menu->Append(myMenuID_CustomScript + i + depth * 1000, menuTitle, newMenu1);
 					menu = newMenu1;
 				} else {
-					menu->FindItem(mid, &menu);
+					menu = menu->FindItem(mid)->GetSubMenu();
 				}
 			}
 			s = p + 1;

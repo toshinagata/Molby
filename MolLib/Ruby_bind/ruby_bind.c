@@ -9301,6 +9301,113 @@ s_Molecule_LineMode(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
+ *     atom_radius = float
+ *     atom_radius
+ *
+ *  Set the atom radius (multiple of the vdw radius) used in drawing the model in normal (non-line) mode.
+ *  (Default = 0.4)
+ *  If no argument is given, the current value is returned.
+ */
+static VALUE
+s_Molecule_AtomRadius(int argc, VALUE *argv, VALUE self)
+{
+    Molecule *mol;
+    Data_Get_Struct(self, Molecule, mol);
+	if (mol->mview == NULL)
+		return Qnil;
+	if (argc > 0) {
+		double rad = NUM2DBL(rb_Float(argv[0]));
+		if (rad > 0.0) {
+			mol->mview->atomRadius = rad;
+			MainViewCallback_setNeedsDisplay(mol->mview, 1);
+		}
+		return argv[0];
+	}
+	return rb_float_new(mol->mview->atomRadius);
+}
+
+/*
+ *  call-seq:
+ *     bond_radius = float
+ *     bond_radius
+ *
+ *  Set the bond radius (in angstrom) used in drawing the model in normal (non-line) mode. (Default = 0.1)
+ *  If no argument is given, the current value is returned.
+ */
+static VALUE
+s_Molecule_BondRadius(int argc, VALUE *argv, VALUE self)
+{
+    Molecule *mol;
+    Data_Get_Struct(self, Molecule, mol);
+	if (mol->mview == NULL)
+		return Qnil;
+	if (argc > 0) {
+		double rad = NUM2DBL(rb_Float(argv[0]));
+		if (rad > 0.0) {
+			mol->mview->bondRadius = rad;
+			MainViewCallback_setNeedsDisplay(mol->mview, 1);
+		}
+		return argv[0];
+	}
+	return rb_float_new(mol->mview->bondRadius);
+}
+
+/*
+ *  call-seq:
+ *     atom_resolution = integer
+ *     atom_resolution
+ *
+ *  Set the atom resolution used in drawing the model in normal (non-line) mode.
+ *  (Default = 12; minimum = 6)
+ *  If no argument is given, the current value is returned.
+ */
+static VALUE
+s_Molecule_AtomResolution(int argc, VALUE *argv, VALUE self)
+{
+    Molecule *mol;
+    Data_Get_Struct(self, Molecule, mol);
+	if (mol->mview == NULL)
+		return Qnil;
+	if (argc > 0) {
+		int res = NUM2INT(rb_Integer(argv[0]));
+		if (res < 6)
+			rb_raise(rb_eRangeError, "The atom resolution (%d) less than 6 is not acceptable", res);
+		mol->mview->atomResolution = res;
+		MainViewCallback_setNeedsDisplay(mol->mview, 1);
+		return INT2NUM(res);
+	}
+	return INT2NUM(mol->mview->atomResolution);
+}
+
+/*
+ *  call-seq:
+ *     bond_resolution = integer
+ *     bond_resolution
+ *
+ *  Set the bond resolution used in drawing the model in normal (non-line) mode.
+ *  (Default = 8; minimum = 4)
+ *  If no argument is given, the current value is returned.
+ */
+static VALUE
+s_Molecule_BondResolution(int argc, VALUE *argv, VALUE self)
+{
+    Molecule *mol;
+    Data_Get_Struct(self, Molecule, mol);
+	if (mol->mview == NULL)
+		return Qnil;
+	if (argc > 0) {
+		int res = NUM2INT(rb_Integer(argv[0]));
+		if (res < 4)
+			rb_raise(rb_eRangeError, "The bond resolution (%d) less than 4 is not acceptable", res);
+		mol->mview->bondResolution = res;
+		MainViewCallback_setNeedsDisplay(mol->mview, 1);
+		return INT2NUM(res);
+	}
+	return INT2NUM(mol->mview->bondResolution);
+}
+
+/*
+ *  call-seq:
  *     resize_to_fit
  *
  *  Resize the model drawing to fit in the window.
@@ -9325,7 +9432,7 @@ static VALUE
 s_Molecule_GetViewRotation(VALUE self)
 {
     Molecule *mol;
-	float f[4];
+	double f[4];
 	Vector v;
     Data_Get_Struct(self, Molecule, mol);
 	if (mol->mview == NULL)
@@ -9364,7 +9471,7 @@ static VALUE
 s_Molecule_GetViewCenter(VALUE self)
 {
     Molecule *mol;
-	float f[4];
+	double f[4];
 	Vector v;
     Data_Get_Struct(self, Molecule, mol);
 	if (mol->mview == NULL)
@@ -9386,7 +9493,7 @@ static VALUE
 s_Molecule_SetViewRotation(VALUE self, VALUE aval, VALUE angval)
 {
     Molecule *mol;
-	float f[4];
+	double f[4];
 	Vector v;
     Data_Get_Struct(self, Molecule, mol);
 	if (mol->mview == NULL)
@@ -9432,7 +9539,7 @@ s_Molecule_SetViewCenter(VALUE self, VALUE aval)
 {
     Molecule *mol;
 	Vector v;
-	float f[4];
+	double f[4];
     Data_Get_Struct(self, Molecule, mol);
 	if (mol->mview == NULL)
 		return Qnil;
@@ -10748,6 +10855,14 @@ Init_Molby(void)
 	rb_define_alias(rb_cMolecule, "show_rotation_center=", "show_rotation_center");
 	rb_define_method(rb_cMolecule, "line_mode", s_Molecule_LineMode, -1);
 	rb_define_alias(rb_cMolecule, "line_mode=", "line_mode");
+	rb_define_method(rb_cMolecule, "atom_radius", s_Molecule_AtomRadius, -1);
+	rb_define_alias(rb_cMolecule, "atom_radius=", "atom_radius");
+	rb_define_method(rb_cMolecule, "bond_radius", s_Molecule_BondRadius, -1);
+	rb_define_alias(rb_cMolecule, "bond_radius=", "bond_radius");
+	rb_define_method(rb_cMolecule, "atom_resolution", s_Molecule_AtomResolution, -1);
+	rb_define_alias(rb_cMolecule, "atom_resolution=", "atom_resolution");
+	rb_define_method(rb_cMolecule, "bond_resolution", s_Molecule_BondResolution, -1);
+	rb_define_alias(rb_cMolecule, "bond_resolution=", "bond_resolution");
 	rb_define_method(rb_cMolecule, "resize_to_fit", s_Molecule_ResizeToFit, 0);
 #if 1 || !defined(__CMDMAC__)
 	rb_define_method(rb_cMolecule, "get_view_rotation", s_Molecule_GetViewRotation, 0);
