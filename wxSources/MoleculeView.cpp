@@ -39,6 +39,7 @@
 #include "MySlider.h"
 #include "MyListCtrl.h"
 #include "../MolLib/Missing.h"
+#include "../MolLib/Ruby_bind/Molby_extern.h"
 #include "MyMBConv.h"
 #include "MyProgressIndicator.h"
 
@@ -47,6 +48,10 @@
 #include "wx/splitter.h"
 #include "wx/choice.h"
 #include "wx/font.h"
+
+#if defined(__WXMSW__)
+#include "OpenGL_extensions.h"
+#endif
 
 //#include "../MolLib/Ruby_bind/Molby_extern.h"
 
@@ -373,7 +378,21 @@ MoleculeView::OnCreate(wxDocument *doc, long WXUNUSED(flags) )
 
 	//  Set data source for the list control
 	listctrl->SetDataSource(this);
-					
+				
+#if defined(__WXMSW__)
+	//  Initialize OpenGL extension
+	{
+		static int openGLExtension_inited = 0;
+		if (openGLExtension_inited == 0) {
+			if (InitializeOpenGLExtensions() != 0) {
+				MyAppCallback_errorMessageBox("Fatal internal error: cannot initialize OpenGL extensions");
+				openGLExtension_inited = -1;
+			} else openGLExtension_inited = 1;
+		}
+	}
+	
+#endif
+	
     return true;
 }
 

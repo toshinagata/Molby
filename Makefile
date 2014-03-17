@@ -83,7 +83,7 @@ ortep3/ortep3$(EXE_SUFFIX) :
 	make -f ../Makefile_ortep3
 
 ifeq ($(TARGET_PLATFORM),MSW)
-EXTRA_OBJECTS = listctrl.o window_msw.o textctrl_msw.o
+EXTRA_OBJECTS = listctrl.o window_msw.o textctrl_msw.o OpenGL_extensions.o
 RESOURCE = molby_rc.o
 #  The following HOMETEMP kludges are to work around a bug where '#include "..."' 
 #  does not work when the include path is on the C: drive whereas the source is 
