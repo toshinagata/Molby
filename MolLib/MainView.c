@@ -578,7 +578,7 @@ enableLighting(void)
 }
 
 void
-MainView_initializeOpenGLView(MainView *mview)
+MainView_initializeOpenGL(void)
 {
 	static GLfloat ambient[] = {0.6, 0.6, 0.6, 1.0};  // Some white ambient light.
 	static GLfloat diffuse[] = {1.0, 1.0, 1.0, 1.0};  // A white light.
@@ -596,9 +596,6 @@ MainView_initializeOpenGLView(MainView *mview)
 	//  Enable blending
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-	if (mview != NULL)
-		mview->isInitialized = 1;
 }
 
 /*  Get orthogonal unit vectors  */
@@ -1673,7 +1670,7 @@ void
 MainView_drawModel(MainView *mview)
 {
     double w[4], dimension, distance;
-	float frame[4], width, height;
+	float frame[4], width, height, scale;
 	GLdouble *pp;
 	Transform mtr;
 	
@@ -1683,27 +1680,32 @@ MainView_drawModel(MainView *mview)
 		return;
 
     if (!mview->isInitialized) {
-        MainView_initializeOpenGLView(mview);
+        MainView_initializeOpenGL();
+		mview->isInitialized = 1;
     }
     
-    /*  Clear the buffer  */
-    glClearColor(mview->background_color[0], mview->background_color[1], mview->background_color[2], 0);
-    glClear(GL_COLOR_BUFFER_BIT |
-            GL_DEPTH_BUFFER_BIT);
-
-	if (mview->mol == NULL)
-		return;
-
 	dimension = mview->dimension;
-/*    dimension = [model dimension];  */
+
+	if (mview->offline_scale == 0.0)
+		scale = 1.0;
+	else
+		scale = mview->offline_scale;
 
 	MainViewCallback_frame(mview, frame);
-	width = frame[2] - frame[0];
-	height = frame[3] - frame[1];
+	width = (frame[2] - frame[0]) * scale;
+	height = (frame[3] - frame[1]) * scale;
 
     glViewport(0, 0, width, height);
     
-    /*  Set up the projection  */
+	/*  Clear the buffer  */
+    glClearColor(mview->background_color[0], mview->background_color[1], mview->background_color[2], 0);
+    glClear(GL_COLOR_BUFFER_BIT |
+            GL_DEPTH_BUFFER_BIT);
+	
+	if (mview->mol == NULL)
+		return;
+
+	/*  Set up the projection  */
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
 	TrackballGetPerspective(mview->track, w);
@@ -1760,7 +1762,7 @@ MainView_drawModel(MainView *mview)
 	glLoadIdentity ();
 	glMatrixMode (GL_MODELVIEW);
 	glLoadIdentity ();
-	glOrtho(0, width, 0, -height, 0.0,-1.0);  /*  non-flipped view  */
+	glOrtho(0, width, 0, -height, 0.0, -1.0);  /*  non-flipped view  */
 	drawLabels(mview);
 #if __WXMAC__
 	glDisable (GL_TEXTURE_RECTANGLE_EXT);

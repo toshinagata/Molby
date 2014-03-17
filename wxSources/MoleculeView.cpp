@@ -380,11 +380,94 @@ MoleculeView::OnCreate(wxDocument *doc, long WXUNUSED(flags) )
 void
 MoleculeView::OnDraw(wxDC *dc)
 {
-	if (mview != NULL && mview->mol != NULL) {
+	if (mview != NULL) {
+		if (mview->isPrinting) {
+			float scale = 4.0;
+			wxImage *img = CaptureGLCanvas(scale);
+			if (img != NULL) {
+				wxBitmap bitmap(*img);
+				wxSize ppi = dc->GetPPI();
+				double sx, sy;
+				dc->GetUserScale(&sx, &sy);
+				dc->SetUserScale(sx / scale, sy / scale);
+				dc->DrawBitmap(bitmap, 0, 0);
+				delete img;
+			}
+			mview->isPrinting = 0;
+		} else {
+			if (mview->mol != NULL) {
+				MoleculeLock(mview->mol);
+				MainView_drawModel(mview);
+				MoleculeUnlock(mview->mol);
+			}
+		}
+	}
+}
+
+wxImage *
+MoleculeView::CaptureGLCanvas(float scale)
+{
+	if (canvas && mview->mol != NULL) {
+		int x, y, width, height;
+
+		canvas->SetCurrent();
+		canvas->GetClientSize(&width, &height);
+		width *= scale;
+		height *= scale;
+
+		//  Create OpenGL offscreen buffer
+		GLuint frame_buf, render_buf, depth_buf;
+		glGenFramebuffersEXT(1, &frame_buf);
+		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, frame_buf);
+		
+		glGenRenderbuffersEXT(1, &render_buf);
+		glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, render_buf);
+		glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_RGBA, width, height);
+
+		glGenRenderbuffersEXT(1, &depth_buf);
+		glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, depth_buf);
+		glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT, width, height);
+		
+		glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_RENDERBUFFER_EXT, render_buf);
+		glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, depth_buf);
+
+		MainView_initializeOpenGL();
+
+		mview->offline_scale = scale;
 		MoleculeLock(mview->mol);
 		MainView_drawModel(mview);
 		MoleculeUnlock(mview->mol);
+		mview->offline_scale = 0.0;
+
+		glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
+		unsigned char *glBitmapData = (unsigned char *)malloc(4 * width * height);
+		unsigned char *glRGBData = (unsigned char *)malloc(3 * width * height);
+		unsigned char *glAlphaData = (unsigned char *)malloc(width * height);
+		glReadPixels((GLint)0, (GLint)0, (GLint)width, (GLint)height, GL_RGBA, GL_UNSIGNED_BYTE, glBitmapData);
+		for (y = 0; y < height; y++) {
+			unsigned char *p1 = glBitmapData + 4 * y * width;
+			unsigned char *p2 = glRGBData + 3 * (height - 1 - y) * width;
+			unsigned char *p3 = glAlphaData + (height - 1 - y) * width;
+			for (x = 0; x < width; x++) {
+				//  Copy RGB data and Alpha data separately, with flipping vertically
+				*p2++ = *p1++;
+				*p2++ = *p1++;
+				*p2++ = *p1++;
+				*p3++ = *p1++;
+			}
+		}
+		wxImage *img = new wxImage(width, height, glRGBData, glAlphaData);
+		free(glBitmapData);  // glRGBData and glAlphaData are deallocated within wxImage constructor
+		
+		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+		glDeleteFramebuffersEXT(1, &frame_buf);
+		glDeleteRenderbuffersEXT(1, &render_buf);
+		
+		canvas->Refresh();
+	
+		return img;
 	}
+	return NULL;
 }
 
 void
@@ -450,6 +533,13 @@ MoleculeView::Activate(bool activate)
 	wxView::Activate(activate);
 }
 
+wxPrintout *
+MoleculeView::OnCreatePrintout()
+{
+	if (mview != NULL)
+		mview->isPrinting = 1;
+	return wxView::OnCreatePrintout();
+}
 
 void
 MoleculeView::UpdateFrameControlValues()

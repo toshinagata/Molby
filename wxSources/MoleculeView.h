@@ -61,9 +61,11 @@ public:
     void OnDraw(wxDC *dc);
     void OnUpdate(wxView *sender, wxObject *hint = (wxObject *) NULL);
     bool OnClose(bool deleteWindow = true);
+	wxImage *CaptureGLCanvas(float scale = 1.0);
 
 	virtual void Activate (bool activate);
-	
+	virtual wxPrintout *OnCreatePrintout();
+
 	void OnButtonPressed(wxCommandEvent &event);
 	void OnSliderAction(wxCommandEvent &event);
 

@@ -129,6 +129,8 @@ typedef struct MainView {
 	Byte  freezeScreen;
 	float dimension;
 	
+	float offline_scale;  /*  If non-zero, this is the expansion factor for offline-rendering  */
+
 #if !defined(__CMDMAC__)
 	/*  The following members are used in GUI version only  */
 	
@@ -182,6 +184,9 @@ typedef struct MainView {
 	struct IntGroup *tableCache;     /* Indices of atoms etc. that are shown in the table */
 	struct IntGroup *tableSelection; /* Selected rows in the table  */
 
+	/*  Print support  */
+	Byte  isPrinting;
+	
 #endif
 
 } MainView;
@@ -197,7 +202,7 @@ int MainView_removeGraphic(MainView *mview, int index);
 
 /*  GUI-only functions  */
 void MainView_setViewObject(MainView *mview, void *ref);
-void MainView_initializeOpenGLView(MainView *mview);
+void MainView_initializeOpenGL(void);
 void MainView_release(MainView *mview);
 void MainView_setMolecule(MainView *mview, struct Molecule *mol);
 void MainView_refreshCachedInfo(MainView *mview);

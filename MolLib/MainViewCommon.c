@@ -29,7 +29,7 @@
 MainView *
 MainView_new(void)
 {
-	MainView *mview = (MainView *)malloc(sizeof(MainView));
+	MainView *mview = (MainView *)calloc(sizeof(MainView), 1);
 	if (mview != NULL) {
 		/*  Initialize common members (that are used both in GUI and CMD versions  */
 		memset(mview, 0, sizeof(MainView));
