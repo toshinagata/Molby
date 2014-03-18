@@ -1760,6 +1760,43 @@ end
 	  @mol = mol
 	  @box = @mol.box
 	  @box_save = nil
+	  
+	  def set_cell_value(item1)
+		alpha = value("alpha").to_f * PI / 180.0
+		beta = value("beta").to_f * PI / 180.0
+		gamma = value("gamma").to_f * PI / 180.0
+		if alpha.abs < 1e-8 || beta.abs < 1e-8 || gamma.abs < 1e-8
+		  return
+		end
+	    if @box == nil
+		  @box = [Vector3D[1,0,0],Vector3D[0,1,0],Vector3D[0,0,1],Vector3D[0,0,0],[1,1,1]]
+		end
+		av = Vector3D[1, 0, 0]
+		bv = Vector3D[cos(gamma), sin(gamma), 0]
+		cx = cos(beta)
+		cy = (cos(alpha) - cos(beta) * cos(gamma)) / sin(gamma)
+		cz = sqrt(1.0 - cx * cx - cy * cy)
+		cv = Vector3D[cx, cy, cz]
+		x0 = @box[0].normalize
+		z0 = (@box[0].cross(@box[1])).normalize
+		y0 = (z0.cross(x0)).normalize
+		tr = Transform[x0, y0, z0, Vector3D[0, 0, 0]]
+		av = (tr * av) * value("a").to_f
+		bv = (tr * bv) * value("b").to_f
+		cv = (tr * cv) * value("c").to_f
+		@box[0] = av
+		@box[1] = bv
+		@box[2] = cv
+		3.times { |i|
+		  3.times { |j|
+		    if @box[i][j].abs < 1e-8
+			  @box[i][j] = 0.0
+			end
+		  }
+		}
+		update_values(item1)
+	  end
+	  
 	  def set_box_value(item1)
 	    h = Hash.new
 		enabled = false
@@ -1804,24 +1841,25 @@ end
 		else
 		  @box = nil
 		end
+		update_values(item1)
 	  end
 	  def clear_box(item1)
 	    @box_save = @box
 		@box = nil
 		set_attr("restore", :enabled=>true)
+		update_values(item1)
 	  end
 	  def restore_box(item1)
 	    @box = @box_save.dup
 		set_attr("restore", :enabled=>false)
+		update_values(item1)
 	  end
 	  def angle(v1, v2)
 	    acos(v1.dot(v2)/(v1.length * v2.length)) * 180.0 / PI
 	  end
 	  def update_values(it)
-	    it = (it != nil ? it[:tag] : nil)
 	    ["a0", "a1", "a2", "b0", "b1", "b2", "c0", "c1", "c2", "o0", "o1", "o2",
 		 "a", "b", "c", "alpha", "beta", "gamma"].each_with_index { |tag, i|
-		  next if it == tag
 		  if @box == nil
 		    set_value(tag, "")
 		  else
@@ -1839,119 +1877,66 @@ end
 		  end
 		}
 	  end
-	  def modify_values(it)
-	    val = it[:value].to_f
-	    if @box == nil
-		  if it[:value] != ""
-		    @box = [Vector3D[1,0,0],Vector3D[0,1,0],Vector3D[0,0,1],Vector3D[0,0,0],[1,1,1]]
-		  else
-		    return
-		  end
-		end
-		case it[:tag]
-		when "a"
-		  len = @box[0].length
-		  if len < 1e-8
-		    @box[0] = Vector3D[val, 0, 0]
-		  else
-		    @box[0] *= val / len
-		  end
-		when "b"
-		  len = @box[1].length
-		  if len < 1e-8
-		    @box[1] = Vector3D[0, val, 0]
-		  else
-		    @box[1] *= val / len
-		  end
-		when "c"
-		  len = @box[2].length
-		  if len < 1e-8
-		    @box[2] = Vector3D[0, 0, val]
-		  else
-		    @box[2] *= val / len
-		  end
-		when "alpha", "beta", "gamma"
-		  alpha = value("alpha").to_f * PI / 180.0
-		  beta = value("beta").to_f * PI / 180.0
-		  gamma = value("gamma").to_f * PI / 180.0
-		  a = Vector3D[1, 0, 0]
-		  b = Vector3D[cos(gamma), sin(gamma), 0]
-		  cx = cos(beta)
-		  cy = (cos(alpha) - cos(beta) * cos(gamma)) / sin(gamma)
-		  cz = sqrt(1.0 - cx * cx - cy * cy)
-		  c = Vector3D[cx, cy, cz]
-		  x0 = @box[0].normalize
-		  z0 = (@box[0].cross(@box[1])).normalize
-		  y0 = (z0.cross(x0)).normalize
-		  tr = Transform[x0, y0, z0, Vector3D[0, 0, 0]]
-		  a = (tr * a) * @box[0].length
-		  b = (tr * b) * @box[1].length
-		  c = (tr * c) * @box[2].length
-		  @box[0] = a
-		  @box[1] = b
-		  @box[2] = c
-		else
-		  i = "abco".index(it[:tag][0])
-		  j = it[:tag][1].to_i
-		  @box[i][j] = val
-		end
-		update_values(it)
-	  end
-	  if @box
-	    if @box[4][0] == 0
-	      @box[0] = Vector3D[0, 0, 0]
-		end
-		if @box[4][1] == 0
-		  @box[1] = Vector3D[0, 0, 0]
-		end
-		if @box[4][2] == 0
-		  @box[2] = Vector3D[0, 0, 0]
-		end
-	  end
+
 	  layout(4,
 	    item(:text, :title=>"Cell parameters:"),
 		-1, -1, -1,
 		
 		item(:text, :title=>"a/b/c"),
-		item(:textfield, :width=>140, :tag=>"a", :action=>:modify_values),
-		item(:textfield, :width=>140, :tag=>"b", :action=>:modify_values),
-		item(:textfield, :width=>140, :tag=>"c", :action=>:modify_values),
+		item(:textfield, :width=>140, :tag=>"a"),
+		item(:textfield, :width=>140, :tag=>"b"),
+		item(:textfield, :width=>140, :tag=>"c"),
 		
 		item(:text, :title=>"α/β/γ"),
-		item(:textfield, :width=>140, :tag=>"alpha", :action=>:modify_values),
-		item(:textfield, :width=>140, :tag=>"beta", :action=>:modify_values),
-		item(:textfield, :width=>140, :tag=>"gamma", :action=>:modify_values),
-	
+		item(:textfield, :width=>140, :tag=>"alpha"),
+		item(:textfield, :width=>140, :tag=>"beta"),
+		item(:textfield, :width=>140, :tag=>"gamma"),
+
+		-1, -1, -1,
+        item(:button, :title=>"Set Cell Parameters", :align=>:right, :action=>:set_cell_value),
+        item(:line),
+		-1, -1, -1,
+
 	    item(:text, :title=>"Axis vectors:"),
 		-1, -1, -1,
 
 	    item(:text, :title=>"origin"),
-		item(:textfield, :width=>140, :tag=>"o0", :action=>:modify_values),
-		item(:textfield, :width=>140, :tag=>"o1", :action=>:modify_values),
-		item(:textfield, :width=>140, :tag=>"o2", :action=>:modify_values),
+		item(:textfield, :width=>140, :tag=>"o0"),
+		item(:textfield, :width=>140, :tag=>"o1"),
+		item(:textfield, :width=>140, :tag=>"o2"),
 
 	    item(:text, :title=>"a-axis"),
-		item(:textfield, :width=>140, :tag=>"a0", :action=>:modify_values),
-		item(:textfield, :width=>140, :tag=>"a1", :action=>:modify_values),
-		item(:textfield, :width=>140, :tag=>"a2", :action=>:modify_values),
+		item(:textfield, :width=>140, :tag=>"a0"),
+		item(:textfield, :width=>140, :tag=>"a1"),
+		item(:textfield, :width=>140, :tag=>"a2"),
 
 	    item(:text, :title=>"b-axis"),
-		item(:textfield, :width=>140, :tag=>"b0", :action=>:modify_values),
-		item(:textfield, :width=>140, :tag=>"b1", :action=>:modify_values),
-		item(:textfield, :width=>140, :tag=>"b2", :action=>:modify_values),
+		item(:textfield, :width=>140, :tag=>"b0"),
+		item(:textfield, :width=>140, :tag=>"b1"),
+		item(:textfield, :width=>140, :tag=>"b2"),
 
 	    item(:text, :title=>"c-axis"),
-		item(:textfield, :width=>140, :tag=>"c0", :action=>:modify_values),
-		item(:textfield, :width=>140, :tag=>"c1", :action=>:modify_values),
-		item(:textfield, :width=>140, :tag=>"c2", :action=>:modify_values),
+		item(:textfield, :width=>140, :tag=>"c0"),
+		item(:textfield, :width=>140, :tag=>"c1"),
+		item(:textfield, :width=>140, :tag=>"c2"),
 
+        -1, -1, -1,
+        item(:button, :title=>"Set Axis Vectors", :align=>:right, :action=>:set_box_value),
+        item(:line),
+		-1, -1, -1,
+	
 		item(:text, :title=>"(Ruby expressions are allowed as the values; e.g. 12.0*cos(60*PI/180))"),
 		-1, -1, -1,
 
 		item(:button, :title=>"Clear Cell", :tag=>"clear", :action=>:clear_box),
 		item(:button, :title=>"Restore Cell", :tag=>"restore", :action=>:restore_box, :enabled=>false),
 		-1, -1)
-	  set_attr(0, :action=>lambda { |it| set_box_value(it) && end_modal(it) })
+	  set_attr(0, :action=>lambda { |it|
+	    if set_box_value(it)
+		  @mol.box = @box
+		  end_modal(it)
+		end
+	  } )
 	  update_values(nil)
 	}
   end
