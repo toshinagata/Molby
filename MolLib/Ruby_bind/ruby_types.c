@@ -21,6 +21,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <limits.h>
+#include <float.h>
 
 #pragma mark ====== Global Values ======
 
@@ -119,6 +120,15 @@ s_Vector3D_Initialize(int argc, VALUE *argv, VALUE self)
 	if (!NIL_P(val))
 		VectorFromValue(val, vp);
 	return Qnil;
+}
+
+static VALUE
+s_Vector3D_InitializeCopy(VALUE self, VALUE val)
+{
+	Vector *vp;
+	Data_Get_Struct(self, Vector, vp);
+	VectorFromValue(val, vp);
+	return self;
 }
 
 /*
@@ -658,6 +668,15 @@ s_Transform_NewFromTransform(Transform *tp)
 	return retval;
 }
 
+static VALUE
+s_Transform_InitializeCopy(VALUE self, VALUE val)
+{
+	Transform *tp1;
+	Data_Get_Struct(self, Transform, tp1);
+	TransformFromValue(val, tp1);
+	return self;
+}
+
 /*
  *  call-seq:
  *     from_columns(c1, c2, c3, c4)
@@ -802,6 +821,32 @@ s_Transform_IsEqual(VALUE self, VALUE val)
 	TransformFromValue(val, &tr);
 	for (i = 0; i < 12; i++) {
 		if ((*tp1)[i] != tr[i])
+			return Qfalse;
+	}
+	return Qtrue;
+}
+
+/*
+ *  call-seq:
+ *     self.nearly_equal?(val, limit = FLT_EPSILON) -> bool
+ *
+ *  Returns +true+ if the corresponding elements are "nearly equal", i.e. the absolute
+ *  value of the difference is less than limit.
+ */
+static VALUE
+s_Transform_IsNearlyEqual(int argc, VALUE *argv, VALUE self)
+{
+	VALUE vval, lval;
+	Double limit;
+	Transform *tp1, tr;
+	int i;
+	rb_scan_args(argc, argv, "11", &vval, &lval);
+	if (lval == Qnil)
+		limit = FLT_EPSILON;  /*  Not DBL_EPSILON  */
+	Data_Get_Struct(self, Transform, tp1);
+	TransformFromValue(vval, &tr);
+	for (i = 0; i < 12; i++) {
+		if (fabs((*tp1)[i] - tr[i]) > limit)
 			return Qfalse;
 	}
 	return Qtrue;
@@ -2894,6 +2939,7 @@ Init_MolbyTypes(void)
 	rb_cVector3D = rb_define_class_under(rb_mMolby, "Vector3D", rb_cObject);
 	rb_define_alloc_func(rb_cVector3D, s_Vector3D_Alloc);
 	rb_define_method(rb_cVector3D, "initialize", s_Vector3D_Initialize, -1);
+	rb_define_private_method(rb_cVector3D, "initialize_copy", s_Vector3D_InitializeCopy, 1);
 	rb_define_method(rb_cVector3D, "size", s_Vector3D_Size, 0);
 	rb_define_method(rb_cVector3D, "[]", s_Vector3D_ElementAtIndex, 1);
 	rb_define_method(rb_cVector3D, "[]=", s_Vector3D_SetElementAtIndex, 2);
@@ -2926,9 +2972,11 @@ Init_MolbyTypes(void)
 	rb_cTransform = rb_define_class_under(rb_mMolby, "Transform", rb_cObject);
 	rb_define_alloc_func(rb_cTransform, s_Transform_Alloc);
 	rb_define_method(rb_cTransform, "initialize", s_Transform_Initialize, -1);
+	rb_define_private_method(rb_cTransform, "initialize_copy", s_Transform_InitializeCopy, 1);
 	rb_define_method(rb_cTransform, "[]", s_Transform_ElementAtIndex, 2);
 	rb_define_method(rb_cTransform, "[]=", s_Transform_SetElementAtIndex, 3);
 	rb_define_method(rb_cTransform, "==", s_Transform_IsEqual, 1);
+	rb_define_method(rb_cTransform, "nearly_equal?", s_Transform_IsNearlyEqual, -1);
 	rb_define_method(rb_cTransform, "+", s_Transform_Add, 1);
 	rb_define_method(rb_cTransform, "-", s_Transform_Subtract, 1);
 	rb_define_method(rb_cTransform, "*", s_Transform_Multiply, 1);

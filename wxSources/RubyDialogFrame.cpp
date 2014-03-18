@@ -1250,7 +1250,9 @@ RubyDialogCallback_titleOfSubItem(RDItem *item, int pos)
 void
 RubyDialogCallback_setSelectedSubItem(RDItem *item, int pos)
 {
-	if (wxDynamicCast((wxWindow *)item, wxChoice) != NULL && pos >= 0 && pos < ((wxChoice *)item)->GetCount()) {
+	if (wxDynamicCast((wxWindow *)item, wxChoice) != NULL && pos >= -1 && pos < ((wxChoice *)item)->GetCount()) {
+		if (pos == -1)
+			pos = wxNOT_FOUND;
 		((wxChoice *)item)->SetSelection(pos);
 	}
 }

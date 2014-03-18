@@ -41,6 +41,115 @@ module Math
   end
 end
 
+module Kernel
+
+def symmetry_to_string(sym)
+  #  Sym is a Transform object defined in crystallographic coordinates
+  str = ""
+  3.times { |j|
+    s = ""
+	["x", "y", "z"].each_with_index { |t, i|
+	  a = sym[i, j]
+	  if a.abs < 1e-4
+	    next
+	  elsif (a - 1.0).abs < 1e-4
+	    s += (s == "" ? t : "+" + t)
+	  elsif (a + 1.0).abs < 1e-4
+	    s += "-" + t
+	  else
+	    if a > 0.0 && s != ""
+		  s += "+"
+		elsif a < 0.0
+		  s += "-"
+		end
+		s += sprintf("%.4f", a.abs) + t
+	  end
+	}
+	a = sym[3, j]
+	if a.abs > 1e-4
+	  if a > 0.0 && s != ""
+	    s += "+"
+	  elsif a < 0.0
+	    s += "-"
+	  end
+	  a = a.abs
+	  if (a - (n = (a + 0.5).floor)).abs < 1e-4
+	    #  integer
+		s += n.to_s
+	  elsif ((a * 2) - (n = (a * 2 + 0.5).floor)).abs < 1e-4
+	    #  n/2
+	    s += n.to_s + "/2"
+	  elsif ((a * 3) - (n = (a * 3 + 0.5).floor)).abs < 1e-4
+	    #  n/3
+		s += n.to_s + "/3"
+	  elsif ((a * 4) - (n = (a * 4 + 0.5).floor)).abs < 1e-4
+	    #  n/4
+		s += n.to_s + "/4"
+	  elsif ((a * 6) - (n = (a * 6 + 0.5).floor)).abs < 1e-4
+	    #  n/6
+		s += n.to_s + "/6"
+	  else
+	    s += sprintf("%.4f", a)
+	  end
+	end
+	str += s
+	if j < 2
+	  str += ", "
+	end
+  }
+  str
+end
+
+def string_to_symmetry(str)
+  begin
+    sary = str.split(/, */)
+    raise if sary.count != 3
+	a = []
+	sary.each_with_index { |s, j|
+	  if s[0] != "-"
+	    s = "+" + s
+	  end
+	  while s.length > 0
+	    raise if s !~ /^([-+][.0-9\/]*)([xyzXYZ]?)/
+		sa = Regexp.last_match[1]
+		st = Regexp.last_match[2]
+		s = Regexp.last_match.post_match
+	    case st
+		when "x", "X"
+		  i = 0
+		when "y", "Y"
+		  i = 1
+		when "z", "Z"
+		  i = 2
+		else
+		  i = 3
+		end
+		raise if a[i * 3 + j] != nil
+		if sa == "-"
+		  aa = -1
+		elsif sa == "+"
+		  aa = 1
+		elsif sa.index("/")
+		  sa0, sa1 = sa.split("/")
+		  aa = sa0.to_f / sa1.to_f
+		else
+		  aa = sa.to_f
+		end
+		a[i * 3 + j] = aa
+	  end
+	}
+	12.times { |i|
+	  a[i] ||= 0.0
+	}
+	return Transform.new(a)
+  rescue
+    error_message_box "Cannot convert to symmetry operation: #{str}"
+    return nil
+  end
+end
+
+end
+
 class Molecule
 
 #  Export ortep to File fp
@@ -1645,9 +1754,200 @@ def cmd_show_ortep
   }
 end
 
+#  For debug; check the symmetry data in space_groups.txt for self-consistency
+def Molecule.check_space_group
+  zero_transform = Transform.zero
+  group_member_p = lambda { |tr|
+	group.each_with_index { |tr2, idx|
+	  tr2 = tr2 - tr
+	  #  Wrap the translational part to [-0.5..0.5]
+	  3.times { |k| tr2[3, k] -= (tr2[3, k] + 0.5).floor }
+	  if tr2.nearly_equal?(zero_transform)
+		return idx
+	  end
+	}
+	return nil
+  }
+  @@space_groups.each { |g|
+    name = g[0]
+	group = g[1]
+	n = group.count
+	err = ""
+	n.times { |i|
+	  tri = group[i]
+	  trx = tri.inverse
+	  3.times { |k| trx[3, k] -= trx[3, k].floor }  #  Wrap the translation part to [0..1]
+	  if !group_member_p.call(trx)
+		err += "The element #{i + 1} has no inverse element; #{symmetry_to_string(trx)}\n"
+		next
+	  end
+	  n.times { |j|
+		trj = group[j]
+		trx = tri * trj
+		3.times { |k| trx[3, k] -= trx[3, k].floor }  #  Wrap the translation part to [0..1]
+		if !group_member_p.call(trx)
+		  err += "The element #{i + 1} * #{j + 1} is not in the group; "
+		  err += "#{symmetry_to_string(tri)} * #{symmetry_to_string(trj)} = #{symmetry_to_string(trx)}\n"
+		end
+	  }
+	}
+	if err == ""
+	  msg = "#{name} is a complete group\n"
+	else
+	  msg = "#{name} is NOT a complete group\n" + err
+	end
+	puts msg
+	break if err != ""
+  }
+end
+
+def cmd_define_symmetry
+
+  mol = self
+
+  if !defined?(@@space_groups)
+    @@space_groups = []
+	@@space_group_index = Hash.new
+    open(ScriptPath + "/space_groups.txt", "r") { |fp|
+	  while ln = fp.gets
+	    if ln =~ /\[(\w+)\]/
+		  label = $1
+		  @@space_group_index[label] ||= []
+		  next
+		end
+		if ln =~ /^(\d+) +(.*)$/
+		  name = "#" + $1 + ": " + $2
+		  group = []
+		  group_gen = []
+		  while ln = fp.gets
+		    ln.chomp!
+			if ln =~ /^\s*$/
+			  break
+			elsif ln =~ /^\+\(/
+			  lattice = ln.scan(/((^\+)|,)\(([\/,0-9]+)\)/).map {
+			    |a| a[2].split(/, */).map {
+				  |x| (x == "1/2" ? 0.5 : (x == "0" ? 0.0 : (raise "Cannot parse lattice generator: #{a[0]}"))) } }
+			  lattice.each { |lat|
+			    group.each { |tr|
+				  tr = tr.dup
+				  tr[3, 0] += lat[0]
+				  tr[3, 1] += lat[1]
+				  tr[3, 2] += lat[2]
+				  group_gen.push(tr)
+				}
+			  }
+			else
+			  group.push(string_to_symmetry(ln))
+			end
+		  end
+		  group.concat(group_gen)
+		  @@space_groups.push([name, group])
+		  @@space_group_index[label].push(@@space_groups.count - 1)
+		end
+	  end
+	}
+	Molecule.check_space_group if nil   #  For debug
+  end
+  
+  crystal_systems = ["Triclinic", "Monoclinic", "Orthorhombic", "Tetragonal", "Hexagonal", "Cubic"]
+  space_groups = []
+  
+  current_crystal_system = nil
+  current_space_group = nil
+  
+  #  Find current space group
+  guess_space_group = lambda {
+    current_space_group = nil
+	current_crystal_system = nil
+    s = mol.symmetries.map { |tr| tr = tr.dup; 3.times { |k| tr[3, k] -= tr[3, k].floor }; tr }
+	puts "s = #{s.inspect}"
+	@@space_groups.each_with_index { |g, i|
+	  next if g[1].count != s.count
+	  puts "g = #{g.inspect}"
+	  ss = s.dup
+	  g[1].each { |tr|
+	    idx = ss.find_index { |tr2| tr.nearly_equal?(tr2) }
+		break if idx == nil
+		ss.delete_at(idx)
+	  }
+	  if ss.empty?
+	    current_space_group = g[0]
+		@@space_group_index.each { |key, value|
+		  if value.include?(i)
+		    current_crystal_system = key
+			break
+		  end
+		}
+		break
+	  end
+	}
+  }
+  
+  select_space_group = lambda { |it|
+
+    h = Dialog.run("Select Space Group") {
+      crystal_system_popup_handler = lambda { |it|
+        title = crystal_systems[it[:value]].downcase
+	    if title != current_crystal_system
+	      current_crystal_system = title
+	      space_groups = @@space_group_index[title].map { |i| @@space_groups[i][0] }
+	      item_with_tag("space_group")[:subitems] = space_groups
+	      item_with_tag("operations")[:value] = ""
+	    end
+      }
+      space_group_popup_handler = lambda { |it|
+        idx = @@space_group_index[current_crystal_system][it[:value]]
+	    current_space_group = @@space_groups[idx][0]
+	    op = ""
+	    @@space_groups[idx][1].each { |tr|
+	      op += symmetry_to_string(tr) + "\n"
+	    }
+	    item_with_tag("operations")[:value] = op
+		puts "op = #{op}"
+      }
+	  layout(2,
+	    item(:text, :title=>"Crystal System"),
+		item(:popup, :subitems=>crystal_systems, :tag=>"crystal_system", :action=>crystal_system_popup_handler),
+		item(:text, :title=>"Space Group"),
+		item(:popup, :subitems=>[], :tag=>"space_group", :action=>space_group_popup_handler),
+		item(:textview, :width=>360, :height=>200, :editable=>false, :tag=>"operations"),
+		-1)
+	  item_with_tag("crystal_system")[:value] = -1
+	  item_with_tag("space_group")[:value] = -1
+	}
+  }
+  
+  syms = mol.symmetries
+  h = Dialog.run("Define Symmetry") {
+    layout(1,
+	  layout(3,
+	    item(:text, :title=>"Space Group"),
+		item(:textfield, :width=>80, :editable=>false, :tag=>"space_group"),
+		item(:button, :title=>"Select...", :action=>select_space_group)),
+	  item(:table, :tag=>"sym_table", :width=>300, :height=>300,
+		:columns=>[["Symmetry Operations", 280]],
+        :on_count=>lambda { |it| puts mol.symmetries.count; mol.symmetries.count },
+        :on_get_value=>lambda { |it, row, col| s = symmetry_to_string(mol.symmetries[row]); puts s; s },
+        :on_set_value=>lambda { |it, row, col, val| mol.symmetries[row] = string_to_symmetry(val) },
+        :is_item_editable=>lambda { |it, row, col| true },
+        :on_selection_changed=>lambda { |it| } ),
+	  layout(2,
+	    item(:button, :title=>"+", :width=>40),
+		item(:button, :title=>"-", :width=>40)))
+	item_with_tag("sym_table")[:refresh] = true
+	guess_space_group.call
+	item_with_tag("space_group")[:value] = (current_space_group || "")
+  }
+  
+end
+
+end
+
 require_cell = lambda { |m| m && m.cell != nil }
 
 register_menu("Xtal\tDefine Unit Cell...", :cmd_define_unit_cell)
+register_menu("Xtal\tDefine Symmetry...", :cmd_define_symmetry)
+register_menu("Xtal\t-", nil)
 register_menu("Xtal\tShow Periodic Image...", :cmd_show_periodic_image, require_cell)
 register_menu("Xtal\tComplete by Symmetry", :complete_by_symmetry, require_cell)
 register_menu("Xtal\tCreate Packing Diagram...", :create_packing_diagram, require_cell)
@@ -1655,5 +1955,3 @@ register_menu("Xtal\t-", nil)
 register_menu("Xtal\tBest-fit Planes...", :cmd_plane, :non_empty)
 register_menu("Xtal\tBonds and Angles with Sigma...", :cmd_bond_angle_with_sigma, :non_empty)
 register_menu("Xtal\tShow ORTEP...", :cmd_show_ortep, :non_empty)
-
-end
