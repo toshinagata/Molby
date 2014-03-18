@@ -37,6 +37,8 @@
 
 IMPLEMENT_DYNAMIC_CLASS(MyLayoutPanel, wxPanel)
 
+IMPLEMENT_DYNAMIC_CLASS(MyDrawingPanel, wxPanel)
+
 BEGIN_EVENT_TABLE(RubyDialogFrame, wxDialog)
   EVT_TIMER(-1, RubyDialogFrame::OnTimerEvent)
   EVT_BUTTON(wxID_OK, RubyDialogFrame::OnDefaultButtonPressed)
@@ -311,6 +313,12 @@ sResizeSubWindows(RubyValue dval, wxWindow *win, int dx, int dy)
 		if (ddx != 0 || ddy != 0)
 			sResizeSubWindows(dval, current, ddx, ddy);
 		current->SetSize(frame);
+#if defined(__WXMSW__)
+		if (current->IsKindOf(CLASSINFO(MyDrawingPanel))) {
+			//  Cause repaint
+			current->Refresh();
+		}
+#endif
 	}
 }
 
@@ -789,7 +797,7 @@ RubyDialogCallback_createItem(RubyDialog *dref, const char *type, const char *ti
 		tc->Connect(-1, wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler(RubyDialogFrame::OnDialogItemAction), NULL, parent);
 	} else if (strcmp(type, "view") == 0) {
 		/*  Panel  */
-		wxPanel *pn = new wxPanel(parent, -1, rect.GetPosition(), rect.GetSize());
+		MyDrawingPanel *pn = new MyDrawingPanel(parent, -1, rect.GetPosition(), rect.GetSize());
 		control = pn;
 		pn->Connect(-1, wxEVT_PAINT, wxPaintEventHandler(RubyDialogFrame::HandlePaintEvent), NULL, parent);
 	} else if (strcmp(type, "layout_view") == 0) {
@@ -834,6 +842,11 @@ RubyDialogCallback_createItem(RubyDialog *dref, const char *type, const char *ti
 		tb->Create(parent, -1, rect.GetPosition(), rect.GetSize());
 		control = tb;
 		tb->SetDataSource(parent);
+#if defined(__WXMSW__)
+		//  On Windows, extra resizing seems necessary to properly layout the subwindows
+		tb->SetSize(rect.width + 1, rect.height + 1);
+		tb->SetSize(rect.width, rect.height);
+#endif
 	} else return NULL;
 	
 	if (title[0] != 0 || strcmp(type, "textfield") == 0) {

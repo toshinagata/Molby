@@ -35,6 +35,16 @@ private:
 	DECLARE_DYNAMIC_CLASS(MyLayoutPanel)
 };
 
+/*  MyDrawingPanel: an empty subclass of wxPanel exclusively used as "view" dialog item  */
+class MyDrawingPanel: public wxPanel {
+public:
+	MyDrawingPanel(): wxPanel() {}
+	MyDrawingPanel(wxWindow *parent, wxWindowID winid = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize): wxPanel(parent, winid, pos, size) {}
+	virtual ~MyDrawingPanel() {}		
+private:
+	DECLARE_DYNAMIC_CLASS(MyDrawingPanel)
+};
+
 class RubyDialogFrame: public wxDialog, public MyListCtrlDataSource {	
 public:
 	RDItem **ditems;
