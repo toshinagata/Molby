@@ -1754,6 +1754,209 @@ def cmd_show_ortep
   }
 end
 
+  def cmd_unit_cell
+    mol = self
+    hash = Dialog.run("Unit Cell") {
+	  @mol = mol
+	  @box = @mol.box
+	  @box_save = nil
+	  def set_box_value(item1)
+	    h = Hash.new
+		enabled = false
+		["o0", "o1", "o2", "a0", "a1", "a2", "b0", "b1", "b2", "c0", "c1", "c2"].each { |k|
+		  begin
+		    s = value(k)
+			if s == nil || s == ""
+			  h[k] = 0.0
+			else
+			  enabled = true
+		      h[k] = Float(eval(s))
+			  set_value(k, h[k].to_s)
+			end
+		  rescue
+		    mes = "Cannot evaluate #{value(k)}: " + $!.to_s
+			Dialog.run("Value Error") {
+			  layout(1, item(:text, :title=>mes))
+			  set_attr(1, :hidden=>true)
+			}
+			return nil
+		  end
+		}
+		if enabled
+		  ax = Vector3D[h["a0"], h["a1"], h["a2"]]
+		  bx = Vector3D[h["b0"], h["b1"], h["b2"]]
+		  cx = Vector3D[h["c0"], h["c1"], h["c2"]]
+		  ox = Vector3D[h["o0"], h["o1"], h["o2"]]
+		  fx = [1, 1, 1]
+		  if ax.length2 < 1e-8
+		    fx[0] = 0
+		    ax = Vector3D[1, 0, 0]
+		  end
+		  if bx.length2 < 1e-8
+		    fx[1] = 0
+		    bx = Vector3D[0, 1, 0]
+		  end
+		  if cx.length2 < 1e-8
+		    fx[2] = 0
+		    cx = Vector3D[0, 0, 1]
+		  end
+		  @box = [ax, bx, cx, ox, fx]
+		else
+		  @box = nil
+		end
+	  end
+	  def clear_box(item1)
+	    @box_save = @box
+		@box = nil
+		set_attr("restore", :enabled=>true)
+	  end
+	  def restore_box(item1)
+	    @box = @box_save.dup
+		set_attr("restore", :enabled=>false)
+	  end
+	  def angle(v1, v2)
+	    acos(v1.dot(v2)/(v1.length * v2.length)) * 180.0 / PI
+	  end
+	  def update_values(it)
+	    it = (it != nil ? it[:tag] : nil)
+	    ["a0", "a1", "a2", "b0", "b1", "b2", "c0", "c1", "c2", "o0", "o1", "o2",
+		 "a", "b", "c", "alpha", "beta", "gamma"].each_with_index { |tag, i|
+		  next if it == tag
+		  if @box == nil
+		    set_value(tag, "")
+		  else
+		    if i < 12
+		      val = @box[i / 3][i % 3]
+			  fmt = "%.8g"
+		    elsif i < 15
+		      val = @box[i - 12].length
+			  fmt = "%g"
+		    else
+		      val = angle(@box[(i - 14) % 3], @box[(i - 13) % 3])
+			  fmt = "%g"
+			end
+			set_value(tag, sprintf(fmt, val))
+		  end
+		}
+	  end
+	  def modify_values(it)
+	    val = it[:value].to_f
+	    if @box == nil
+		  if it[:value] != ""
+		    @box = [Vector3D[1,0,0],Vector3D[0,1,0],Vector3D[0,0,1],Vector3D[0,0,0],[1,1,1]]
+		  else
+		    return
+		  end
+		end
+		case it[:tag]
+		when "a"
+		  len = @box[0].length
+		  if len < 1e-8
+		    @box[0] = Vector3D[val, 0, 0]
+		  else
+		    @box[0] *= val / len
+		  end
+		when "b"
+		  len = @box[1].length
+		  if len < 1e-8
+		    @box[1] = Vector3D[0, val, 0]
+		  else
+		    @box[1] *= val / len
+		  end
+		when "c"
+		  len = @box[2].length
+		  if len < 1e-8
+		    @box[2] = Vector3D[0, 0, val]
+		  else
+		    @box[2] *= val / len
+		  end
+		when "alpha", "beta", "gamma"
+		  alpha = value("alpha").to_f * PI / 180.0
+		  beta = value("beta").to_f * PI / 180.0
+		  gamma = value("gamma").to_f * PI / 180.0
+		  a = Vector3D[1, 0, 0]
+		  b = Vector3D[cos(gamma), sin(gamma), 0]
+		  cx = cos(beta)
+		  cy = (cos(alpha) - cos(beta) * cos(gamma)) / sin(gamma)
+		  cz = sqrt(1.0 - cx * cx - cy * cy)
+		  c = Vector3D[cx, cy, cz]
+		  x0 = @box[0].normalize
+		  z0 = (@box[0].cross(@box[1])).normalize
+		  y0 = (z0.cross(x0)).normalize
+		  tr = Transform[x0, y0, z0, Vector3D[0, 0, 0]]
+		  a = (tr * a) * @box[0].length
+		  b = (tr * b) * @box[1].length
+		  c = (tr * c) * @box[2].length
+		  @box[0] = a
+		  @box[1] = b
+		  @box[2] = c
+		else
+		  i = "abco".index(it[:tag][0])
+		  j = it[:tag][1].to_i
+		  @box[i][j] = val
+		end
+		update_values(it)
+	  end
+	  if @box
+	    if @box[4][0] == 0
+	      @box[0] = Vector3D[0, 0, 0]
+		end
+		if @box[4][1] == 0
+		  @box[1] = Vector3D[0, 0, 0]
+		end
+		if @box[4][2] == 0
+		  @box[2] = Vector3D[0, 0, 0]
+		end
+	  end
+	  layout(4,
+	    item(:text, :title=>"Cell parameters:"),
+		-1, -1, -1,
+		
+		item(:text, :title=>"a/b/c"),
+		item(:textfield, :width=>140, :tag=>"a", :action=>:modify_values),
+		item(:textfield, :width=>140, :tag=>"b", :action=>:modify_values),
+		item(:textfield, :width=>140, :tag=>"c", :action=>:modify_values),
+		
+		item(:text, :title=>"α/β/γ"),
+		item(:textfield, :width=>140, :tag=>"alpha", :action=>:modify_values),
+		item(:textfield, :width=>140, :tag=>"beta", :action=>:modify_values),
+		item(:textfield, :width=>140, :tag=>"gamma", :action=>:modify_values),
+	
+	    item(:text, :title=>"Axis vectors:"),
+		-1, -1, -1,
+
+	    item(:text, :title=>"origin"),
+		item(:textfield, :width=>140, :tag=>"o0", :action=>:modify_values),
+		item(:textfield, :width=>140, :tag=>"o1", :action=>:modify_values),
+		item(:textfield, :width=>140, :tag=>"o2", :action=>:modify_values),
+
+	    item(:text, :title=>"a-axis"),
+		item(:textfield, :width=>140, :tag=>"a0", :action=>:modify_values),
+		item(:textfield, :width=>140, :tag=>"a1", :action=>:modify_values),
+		item(:textfield, :width=>140, :tag=>"a2", :action=>:modify_values),
+
+	    item(:text, :title=>"b-axis"),
+		item(:textfield, :width=>140, :tag=>"b0", :action=>:modify_values),
+		item(:textfield, :width=>140, :tag=>"b1", :action=>:modify_values),
+		item(:textfield, :width=>140, :tag=>"b2", :action=>:modify_values),
+
+	    item(:text, :title=>"c-axis"),
+		item(:textfield, :width=>140, :tag=>"c0", :action=>:modify_values),
+		item(:textfield, :width=>140, :tag=>"c1", :action=>:modify_values),
+		item(:textfield, :width=>140, :tag=>"c2", :action=>:modify_values),
+
+		item(:text, :title=>"(Ruby expressions are allowed as the values; e.g. 12.0*cos(60*PI/180))"),
+		-1, -1, -1,
+
+		item(:button, :title=>"Clear Cell", :tag=>"clear", :action=>:clear_box),
+		item(:button, :title=>"Restore Cell", :tag=>"restore", :action=>:restore_box, :enabled=>false),
+		-1, -1)
+	  set_attr(0, :action=>lambda { |it| set_box_value(it) && end_modal(it) })
+	  update_values(nil)
+	}
+  end
+
+
 #  For debug; check the symmetry data in space_groups.txt for self-consistency
 def Molecule.check_space_group
   zero_transform = Transform.zero
@@ -1801,21 +2004,33 @@ def Molecule.check_space_group
   }
 end
 
-def cmd_define_symmetry
+def cmd_symmetry_operations
 
   mol = self
+  syms = mol.symmetries
 
   if !defined?(@@space_groups)
-    @@space_groups = []
-	@@space_group_index = Hash.new
+    @@space_groups = []       #  Sequential table of space groups (array of [name, array_of_transform])
+    @@space_group_list = []   #  [["Triclinic",    -> Crystal system
+	                          #     ["#1: P1",     -> Space group family
+							  #       [["P1", 0]]],-> Variations
+				              #     ...
+							  #   ["Monoclinic",
+							  #     ...
+							  #     ["#7: Pc",
+							  #       [["Pc", 6], ["Pa", 7], ["Pn", 8]]],
+							  #     ... ]]
+	last_group_code = 0
     open(ScriptPath + "/space_groups.txt", "r") { |fp|
 	  while ln = fp.gets
 	    if ln =~ /\[(\w+)\]/
 		  label = $1
-		  @@space_group_index[label] ||= []
+		  @@space_group_list.push([label, []])
 		  next
 		end
 		if ln =~ /^(\d+) +(.*)$/
+		  group_code = $1.to_i
+		  group_name = $2
 		  name = "#" + $1 + ": " + $2
 		  group = []
 		  group_gen = []
@@ -1842,28 +2057,34 @@ def cmd_define_symmetry
 		  end
 		  group.concat(group_gen)
 		  @@space_groups.push([name, group])
-		  @@space_group_index[label].push(@@space_groups.count - 1)
+		  group_index = @@space_groups.count - 1
+		  if last_group_code != group_code
+		    group_family_name = name[/^[^(]*/]  #  Remove parenthesized phrase
+			@@space_group_list[-1][1].push([group_family_name, []])
+			last_group_code = group_code
+		  end
+		  @@space_group_list[-1][1][-1][1].push([group_name, group_index])
 		end
 	  end
 	}
 	Molecule.check_space_group if nil   #  For debug
+	
   end
+
+  #  Menu titles
+  crystal_systems = @@space_group_list.map { |m| m[0] }
+  space_groups = @@space_group_list[0][1].map { |m| m[0] }
+  variations = @@space_group_list[0][1][0][1].map { |m| m[0] }
   
-  crystal_systems = ["Triclinic", "Monoclinic", "Orthorhombic", "Tetragonal", "Hexagonal", "Cubic"]
-  space_groups = []
-  
-  current_crystal_system = nil
+  #  The index (for @@space_groups) of the current space group (an integer or nil)
   current_space_group = nil
-  
+
   #  Find current space group
   guess_space_group = lambda {
     current_space_group = nil
-	current_crystal_system = nil
-    s = mol.symmetries.map { |tr| tr = tr.dup; 3.times { |k| tr[3, k] -= tr[3, k].floor }; tr }
-	puts "s = #{s.inspect}"
+    s = syms.map { |tr| tr = tr.dup; 3.times { |k| tr[3, k] -= tr[3, k].floor }; tr }
 	@@space_groups.each_with_index { |g, i|
 	  next if g[1].count != s.count
-	  puts "g = #{g.inspect}"
 	  ss = s.dup
 	  g[1].each { |tr|
 	    idx = ss.find_index { |tr2| tr.nearly_equal?(tr2) }
@@ -1871,13 +2092,7 @@ def cmd_define_symmetry
 		ss.delete_at(idx)
 	  }
 	  if ss.empty?
-	    current_space_group = g[0]
-		@@space_group_index.each { |key, value|
-		  if value.include?(i)
-		    current_crystal_system = key
-			break
-		  end
-		}
+	    current_space_group = i
 		break
 	  end
 	}
@@ -1886,67 +2101,167 @@ def cmd_define_symmetry
   select_space_group = lambda { |it|
 
     h = Dialog.run("Select Space Group") {
-      crystal_system_popup_handler = lambda { |it|
-        title = crystal_systems[it[:value]].downcase
-	    if title != current_crystal_system
-	      current_crystal_system = title
-	      space_groups = @@space_group_index[title].map { |i| @@space_groups[i][0] }
-	      item_with_tag("space_group")[:subitems] = space_groups
-	      item_with_tag("operations")[:value] = ""
-	    end
-      }
-      space_group_popup_handler = lambda { |it|
-        idx = @@space_group_index[current_crystal_system][it[:value]]
-	    current_space_group = @@space_groups[idx][0]
+	  update_operation = lambda { |*d|
+	    it = item_with_tag("operations")
+		cval = item_with_tag("crystal_system")[:value]
+		sval = item_with_tag("space_group")[:value]
+		vval = item_with_tag("variation")[:value]
+		idx = @@space_group_list[cval][1][sval][1][vval][1]
 	    op = ""
 	    @@space_groups[idx][1].each { |tr|
 	      op += symmetry_to_string(tr) + "\n"
 	    }
-	    item_with_tag("operations")[:value] = op
-		puts "op = #{op}"
+	    it[:value] = op
+	  }
+      crystal_system_popup_handler = lambda { |it|
+	    val = it[:value]
+        space_groups = @@space_group_list[val][1].map { |m| m[0] }
+        variations = @@space_group_list[val][1][0][1].map { |m| m[0] }
+		item_with_tag("space_group")[:subitems] = space_groups
+		item_with_tag("space_group")[:value] = 0
+		item_with_tag("variation")[:subitems] = variations
+		item_with_tag("variation")[:value] = 0
+		update_operation.call
       }
+      space_group_popup_handler = lambda { |it|
+	    val = it[:value]
+		cval = item_with_tag("crystal_system")[:value]
+		variations = @@space_group_list[cval][1][val][1].map { |m| m[0] }
+		item_with_tag("variation")[:subitems] = variations
+		item_with_tag("variation")[:value] = 0
+		update_operation.call
+      }
+	  variation_popup_handler = lambda { |it|
+	    update_operation.call
+	  }
 	  layout(2,
 	    item(:text, :title=>"Crystal System"),
 		item(:popup, :subitems=>crystal_systems, :tag=>"crystal_system", :action=>crystal_system_popup_handler),
 		item(:text, :title=>"Space Group"),
-		item(:popup, :subitems=>[], :tag=>"space_group", :action=>space_group_popup_handler),
+		item(:popup, :subitems=>space_groups, :tag=>"space_group", :action=>space_group_popup_handler),
+		item(:text, :title=>"Variation"),
+		item(:popup, :subitems=>variations, :tag=>"variation", :action=>variation_popup_handler),
 		item(:textview, :width=>360, :height=>200, :editable=>false, :tag=>"operations"),
 		-1)
-	  item_with_tag("crystal_system")[:value] = -1
-	  item_with_tag("space_group")[:value] = -1
+	  if current_space_group
+	    catch(:end_loop) {
+	      @@space_group_list.each_with_index { |m, i|
+		    m[1].each_with_index { |mm, j|
+		      mm[1].each_with_index { |mmm, k|
+		  	    if mmm[1] == current_space_group
+			      (it = item_with_tag("crystal_system"))[:value] = i
+				  crystal_system_popup_handler.call(it)
+			      (it = item_with_tag("space_group"))[:value] = j
+				  space_group_popup_handler.call(it)
+			      (it = item_with_tag("variation"))[:value] = k
+				  variation_popup_handler.call(it)
+				  throw(:end_loop)
+			    end
+			  }
+		    }
+		  }
+		}
+	  end
 	}
+	if h[:status] == 0
+	  cval = h["crystal_system"]
+	  sval = h["space_group"]
+	  vval = h["variation"]
+	  idx = @@space_group_list[cval][1][sval][1][vval][1]
+	  syms = @@space_groups[idx][1].dup
+	end
   }
   
-  syms = mol.symmetries
-  h = Dialog.run("Define Symmetry") {
+  h = Dialog.run("Symmetry Operations") {
+    update_space_group_text = lambda {
+	  guess_space_group.call
+	  if current_space_group
+	    label = @@space_groups[current_space_group][0]
+	  else
+	    label = ""
+	  end
+	  item_with_tag("space_group")[:value] = label
+	}
     layout(1,
-	  layout(3,
-	    item(:text, :title=>"Space Group"),
-		item(:textfield, :width=>80, :editable=>false, :tag=>"space_group"),
-		item(:button, :title=>"Select...", :action=>select_space_group)),
+	  layout(2,
+	    item(:text, :title=>"Space Group:"),
+		item(:textfield, :width=>200, :editable=>false, :tag=>"space_group")),
+	  item(:button, :title=>"Select...", :action=>lambda { |it|
+		select_space_group.call(it)
+		item_with_tag("sym_table")[:refresh] = true
+		update_space_group_text.call }, :align=>:right),
 	  item(:table, :tag=>"sym_table", :width=>300, :height=>300,
 		:columns=>[["Symmetry Operations", 280]],
-        :on_count=>lambda { |it| puts mol.symmetries.count; mol.symmetries.count },
-        :on_get_value=>lambda { |it, row, col| s = symmetry_to_string(mol.symmetries[row]); puts s; s },
-        :on_set_value=>lambda { |it, row, col, val| mol.symmetries[row] = string_to_symmetry(val) },
+        :on_count=>lambda { |it| syms.count },
+        :on_get_value=>lambda { |it, row, col| symmetry_to_string(syms[row]) },
+        :on_set_value=>lambda { |it, row, col, val|
+		  syms[row] = string_to_symmetry(val)
+		  update_space_group_text.call },
         :is_item_editable=>lambda { |it, row, col| true },
-        :on_selection_changed=>lambda { |it| } ),
+        :on_selection_changed=>lambda { |it|
+		  item_with_tag("delete")[:enabled] = (it[:selection].count > 0) } ),
 	  layout(2,
-	    item(:button, :title=>"+", :width=>40),
-		item(:button, :title=>"-", :width=>40)))
+	    item(:button, :title=>"+", :width=>40, :tag=>"add",
+		  :action=>lambda { |it|
+		    syms.push(Transform.new); item_with_tag("sym_table")[:refresh] = true
+			update_space_group_text.call } ),
+		item(:button, :title=>"-", :width=>40, :tag=>"delete", :enabled=>false,
+		  :action=>lambda { |it|
+		    item_with_tag("sym_table")[:selection].reverse_each { |n| syms.delete_at(n) }
+			item_with_tag("sym_table")[:refresh] = true
+			update_space_group_text.call } )))
 	item_with_tag("sym_table")[:refresh] = true
-	guess_space_group.call
-	item_with_tag("space_group")[:value] = (current_space_group || "")
+	update_space_group_text.call
   }
   
+end
+
+def cmd_show_periodic_image
+    mol = self
+    hash = Dialog.run("Show Periodic Image") {
+	  @mol = mol
+	  def set_periodic_image(it)
+	    a = []
+	    ["amin", "amax", "bmin", "bmax", "cmin", "cmax"].each_with_index { |k, i|
+		  s = value(k)
+		  if s == nil || s == ""
+		    a[i] = 0
+		  else
+		    a[i] = Integer(s)
+		  end
+		}
+	    @mol.show_periodic_image(a)
+		@mol.show_periodic_image = (attr("show_flag", :value) == 1 ? true : false)
+	  end
+	  pimage = @mol.show_periodic_image
+	  flag = @mol.show_periodic_image?
+	  layout(4,
+	    item(:checkbox, :title=>"Show Periodic Image", :tag=>"show_flag", :value=>(flag ? 1 : 0),
+		  :action=>lambda { |it| @mol.show_periodic_image = (it[:value] == 1 ? true : false) } ),
+		-1, -1, -1,
+		item(:text, :title=>"a-axis"),
+		item(:textfield, :width=>80, :tag=>"amin", :value=>pimage[0].to_s),
+		item(:text, :title=>"to"),
+		item(:textfield, :width=>80, :tag=>"amax", :value=>pimage[1].to_s),
+		item(:text, :title=>"b-axis"),
+		item(:textfield, :width=>80, :tag=>"bmin", :value=>pimage[2].to_s),
+		item(:text, :title=>"to"),
+		item(:textfield, :width=>80, :tag=>"bmax", :value=>pimage[3].to_s),
+		item(:text, :title=>"c-axis"),
+		item(:textfield, :width=>80, :tag=>"cmin", :value=>pimage[4].to_s),
+		item(:text, :title=>"to"),
+		item(:textfield, :width=>80, :tag=>"cmax", :value=>pimage[5].to_s),
+		item(:button, :title=>"Set", :action=>:set_periodic_image))
+	  set_attr(0, :action=>lambda { |it| set_periodic_image(it); end_modal(it) } )
+	}
 end
 
 end
 
 require_cell = lambda { |m| m && m.cell != nil }
 
-register_menu("Xtal\tDefine Unit Cell...", :cmd_define_unit_cell)
-register_menu("Xtal\tDefine Symmetry...", :cmd_define_symmetry)
+register_menu("Xtal\tUnit Cell...", :cmd_unit_cell)
+register_menu("Xtal\tSymmetry Operations...", :cmd_symmetry_operations)
 register_menu("Xtal\t-", nil)
 register_menu("Xtal\tShow Periodic Image...", :cmd_show_periodic_image, require_cell)
 register_menu("Xtal\tComplete by Symmetry", :complete_by_symmetry, require_cell)

@@ -937,8 +937,9 @@ RubyDialogCallback_setStringToItem(RDItem *item, const char *s)
 {
 	wxString str(s, WX_DEFAULT_CONV);
 	if (wxDynamicCast((wxWindow *)item, wxTextCtrl) != NULL) {
-		((wxTextCtrl *)item)->Clear();
-		((wxTextCtrl *)item)->AppendText(str);
+		((wxTextCtrl *)item)->ChangeValue(str);
+	//	((wxTextCtrl *)item)->Clear();
+	//	((wxTextCtrl *)item)->AppendText(str);
 	} else if (wxDynamicCast((wxWindow *)item, wxStaticText) != NULL) {
 		((wxStaticText *)item)->SetLabel(str);
 	}
