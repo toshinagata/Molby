@@ -143,8 +143,7 @@ def string_to_symmetry(str)
 	}
 	return Transform.new(a)
   rescue
-    error_message_box "Cannot convert to symmetry operation: #{str}"
-    return nil
+    raise "Cannot convert to symmetry operation: #{str}"
   end
 end
 
@@ -1945,8 +1944,8 @@ end
 #  For debug; check the symmetry data in space_groups.txt for self-consistency
 def Molecule.check_space_group
   zero_transform = Transform.zero
-  group_member_p = lambda { |tr|
-	group.each_with_index { |tr2, idx|
+  group_member_p = lambda { |g, tr|
+	g.each_with_index { |tr2, idx|
 	  tr2 = tr2 - tr
 	  #  Wrap the translational part to [-0.5..0.5]
 	  3.times { |k| tr2[3, k] -= (tr2[3, k] + 0.5).floor }
@@ -1963,9 +1962,14 @@ def Molecule.check_space_group
 	err = ""
 	n.times { |i|
 	  tri = group[i]
-	  trx = tri.inverse
+	  begin
+	    trx = tri.inverse
+	  rescue
+	    err += "The element #{i + 1} is not regular transform; #{trx ? symmetry_to_string(trx) : 'nil'}\n"
+		next
+	  end
 	  3.times { |k| trx[3, k] -= trx[3, k].floor }  #  Wrap the translation part to [0..1]
-	  if !group_member_p.call(trx)
+	  if !group_member_p.call(group, trx)
 		err += "The element #{i + 1} has no inverse element; #{symmetry_to_string(trx)}\n"
 		next
 	  end
@@ -1973,7 +1977,7 @@ def Molecule.check_space_group
 		trj = group[j]
 		trx = tri * trj
 		3.times { |k| trx[3, k] -= trx[3, k].floor }  #  Wrap the translation part to [0..1]
-		if !group_member_p.call(trx)
+		if !group_member_p.call(group, trx)
 		  err += "The element #{i + 1} * #{j + 1} is not in the group; "
 		  err += "#{symmetry_to_string(tri)} * #{symmetry_to_string(trj)} = #{symmetry_to_string(trx)}\n"
 		end
@@ -1983,9 +1987,10 @@ def Molecule.check_space_group
 	  msg = "#{name} is a complete group\n"
 	else
 	  msg = "#{name} is NOT a complete group\n" + err
+	  error_message_box(msg)
 	end
 	puts msg
-	break if err != ""
+#	break if err != ""
   }
 end
 
@@ -1993,6 +1998,9 @@ def cmd_symmetry_operations
 
   mol = self
   syms = mol.symmetries
+
+  debug = true
+  lines = [] if debug
 
   if !defined?(@@space_groups)
     @@space_groups = []       #  Sequential table of space groups (array of [name, array_of_transform])
@@ -2008,6 +2016,7 @@ def cmd_symmetry_operations
 	last_group_code = 0
     open(ScriptPath + "/space_groups.txt", "r") { |fp|
 	  while ln = fp.gets
+	    lines.push(ln) if debug
 	    if ln =~ /\[(\w+)\]/
 		  label = $1
 		  @@space_group_list.push([label, []])
@@ -2020,6 +2029,7 @@ def cmd_symmetry_operations
 		  group = []
 		  group_gen = []
 		  while ln = fp.gets
+		    lines.push(ln) if debug
 		    ln.chomp!
 			if ln =~ /^\s*$/
 			  break
@@ -2037,14 +2047,29 @@ def cmd_symmetry_operations
 				}
 			  }
 			else
-			  group.push(string_to_symmetry(ln))
+			  #  Rectify the shorthand descriptions
+			  ln1 = ln.dup if debug
+			  mod = false
+			  mod = ln.gsub!(/(\d)(\d)/, "\\1/\\2")
+			  mod = ln.gsub!(/(^|[^\/])(\d)([^\/]|$)/, "\\11/\\2\\3") || mod
+			  mod = ln.gsub!(/([0-9xyzXYZ])([xyzXYZ])/, "\\1+\\2") || mod
+			  if debug && mod
+			    puts "#{fp.lineno}: #{ln1} -> #{ln}\n"
+				lines[-1] = ln + "\n"
+			  end
+			  begin
+			    group.push(string_to_symmetry(ln))
+			  rescue
+			    error_message_box($!.message + "(line #{fp.lineno})")
+			  end
 			end
 		  end
 		  group.concat(group_gen)
 		  @@space_groups.push([name, group])
 		  group_index = @@space_groups.count - 1
 		  if last_group_code != group_code
-		    group_family_name = name[/^[^(]*/]  #  Remove parenthesized phrase
+		    idx = (name.index(" (") || 0) - 1  #  Remove parenthesized phrase
+		    group_family_name = name[0..idx]
 			@@space_group_list[-1][1].push([group_family_name, []])
 			last_group_code = group_code
 		  end
@@ -2052,7 +2077,17 @@ def cmd_symmetry_operations
 		end
 	  end
 	}
-	Molecule.check_space_group if nil   #  For debug
+	if debug
+	  Molecule.check_space_group
+	  fn = save_panel("Save modified space_group.txt:")
+	  if fn
+	    open(fn, "w") { |fp|
+		  lines.each { |ln|
+		    fp.print ln + "\n"
+		  }
+		}
+	  end
+	end
 	
   end
 
