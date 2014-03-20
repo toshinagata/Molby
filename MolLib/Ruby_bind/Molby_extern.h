@@ -45,7 +45,7 @@ extern void Molby_buildARGV(int argc, const char **argv);
 /*  RubyValue version of Ruby_funcall2_protect()  */
 extern RubyValue Ruby_funcall2_protect_extern(RubyValue recv, int mid, int argc, RubyValue *argv, int *status);
 
-extern int g_RubyID_call;  /*  rb_intern("call") for extrenal use  */
+extern int g_RubyID_call;  /*  rb_intern("call") for external use  */
 	
 STUB char *MyAppCallback_getGUIDescriptionString(void);
 STUB char *MyAppCallback_getGlobalSettings(const char *key);
@@ -78,7 +78,8 @@ STUB void MyAppCallback_hideConsoleWindow(void);
 STUB void MyAppCallback_bell(void);
 STUB int MyAppCallback_playSound(const char *filename, int flag);
 STUB void MyAppCallback_stopSound(void);
-
+STUB void MyAppCallback_initImageHandlers(void);
+	
 #define DUMMY_CALLBACK ((int (*)(void *))1)
 
 #ifdef __cplusplus

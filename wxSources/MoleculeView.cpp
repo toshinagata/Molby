@@ -436,6 +436,7 @@ MoleculeView::CaptureGLCanvas(float scale)
 
 		//  Create OpenGL offscreen buffer
 		GLuint frame_buf, render_buf, depth_buf;
+		frame_buf = render_buf = depth_buf = 0;
 		glGenFramebuffersEXT(1, &frame_buf);
 		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, frame_buf);
 		

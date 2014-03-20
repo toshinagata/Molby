@@ -70,6 +70,7 @@ BEGIN_EVENT_TABLE(MyDocument, wxDocument)
 	EVT_COMMAND(MyDocumentEvent_threadTerminated, MyDocumentEvent, MyDocument::OnSubThreadTerminated)
 	EVT_MENU(myMenuID_Import, MyDocument::OnImport)
 	EVT_MENU(myMenuID_Export, MyDocument::OnExport)
+	EVT_MENU(myMenuID_ExportGraphic, MyDocument::OnExportGraphic)
 	EVT_MENU(wxID_COPY, MyDocument::OnCopy)
 	EVT_MENU(wxID_PASTE, MyDocument::OnPaste)
 	EVT_MENU(wxID_CUT, MyDocument::OnCut)
@@ -358,6 +359,34 @@ MyDocument::OnExport(wxCommandEvent& event)
 }
 
 void
+MyDocument::OnExportGraphic(wxCommandEvent& event)
+{
+	wxString wildcard = _T("PNG File (*.png)|*.png|TIFF File (*.tif)|*.tif|All Files (*.*)|*.*");
+	wxFileName fname(GetFilename());
+	wxString fnstr;
+	int i;
+	GetPrintableName(fnstr);
+	if ((i = fnstr.Find('.', true)) != wxNOT_FOUND) {
+		fnstr = fnstr.Mid(0, i);
+	}
+	wxFileDialog *dialog = new wxFileDialog(NULL, _T("Export Graphic"), fname.GetPath(), fnstr + _T(".png"), wildcard, wxFD_SAVE | wxFD_OVERWRITE_PROMPT | wxFD_CHANGE_DIR);
+	if (dialog->ShowModal() == wxID_OK) {
+		wxString fnpath = dialog->GetPath();
+		MoleculeView *myview = (MoleculeView *)GetFirstView();
+		float scale = 4.0;
+		wxImage *img = myview->CaptureGLCanvas(scale);
+		wxString ext = fnpath.AfterLast('.');
+		wxBitmapType type = wxBITMAP_TYPE_PNG;
+		if (ext.CmpNoCase(_T("tif")) == 0)
+			type = wxBITMAP_TYPE_TIF;
+		MyAppCallback_initImageHandlers();
+		img->SaveFile(fnpath, type);
+		delete img;
+	}
+	dialog->Destroy();
+}
+
+void
 MyDocument::SetUndoEnabled(bool flag)
 {
 	if (flag) {
@@ -428,7 +457,7 @@ MyDocument::CleanUndoStack(bool shouldRegister)
 		if (shouldRegister) {
 			MyCommand *cmd = (MyCommand *)currentCommand;
 			if (cmd == NULL)
-				cmd = new MyCommand(mol);
+				cmd = new MyCommand(mol, _T(" "));
 			if (isUndoing)
 				cmd->SetRedoActions(undoStack, countUndoStack);
 			else

@@ -53,7 +53,7 @@ ifeq ($(DEBUG),1)
  COPT = -O0 -g
 else
  DESTPREFIX = build/release
- COPT = -O2
+ COPT = -O2 -g
 endif
 DESTDIR = $(PWD)/$(DESTPREFIX)
 CFLAGS = $(CPPFLAGS) $(COPT) $(CPP_EXTRA_FLAGS) $(RUBY_CFLAGS) $(WX_CPPFLAGS)

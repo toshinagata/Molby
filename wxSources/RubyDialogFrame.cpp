@@ -1636,11 +1636,7 @@ RubyDialogCallback_saveBitmapToFile(RDBitmap *bitmap, const char *fname)
 {
 	int len = strlen(fname);
 	wxBitmapType type = wxBITMAP_TYPE_PNG;
-	static bool handlers_init = false;
-	if (!handlers_init) {
-		wxInitAllImageHandlers();
-		handlers_init = true;
-	}
+	MyAppCallback_initImageHandlers();
 	if (len >= 4) {
 		if (strcasecmp(fname + len - 4, ".png") == 0)
 			type = wxBITMAP_TYPE_PNG;

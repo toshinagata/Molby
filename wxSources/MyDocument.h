@@ -93,6 +93,7 @@ public:
 	void    OnDocumentModified(wxCommandEvent& event);
 	void	OnImport(wxCommandEvent& event);
 	void	OnExport(wxCommandEvent& event);
+	void	OnExportGraphic(wxCommandEvent &event);
 
 	void	OnCopy(wxCommandEvent& event);
 	void	OnCut(wxCommandEvent& event);

@@ -375,6 +375,7 @@ MyApp::CreateMenuBar(int kind, wxMenu **out_file_history_menu, wxMenu **out_edit
 	file_menu->AppendSeparator();
 	file_menu->Append(myMenuID_Import, _T("Import..."));	
 	file_menu->Append(myMenuID_Export, _T("Export..."));	
+	file_menu->Append(myMenuID_ExportGraphic, _T("Export Graphic..."));	
 	
 	file_menu->AppendSeparator();
 	file_menu->Append(wxID_PRINT, _T("&Print...\tCtrl-P"));
@@ -1970,4 +1971,13 @@ int MyAppCallback_playSound(const char *filename, int flag)
 void MyAppCallback_stopSound(void)
 {
 	wxSound::Stop();
+}
+
+void MyAppCallback_initImageHandlers(void)
+{
+	static bool handlers_init = false;
+	if (!handlers_init) {
+		wxInitAllImageHandlers();
+		handlers_init = true;
+	}
 }

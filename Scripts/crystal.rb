@@ -48,23 +48,6 @@ def symmetry_to_string(sym)
   str = ""
   3.times { |j|
     s = ""
-	["x", "y", "z"].each_with_index { |t, i|
-	  a = sym[i, j]
-	  if a.abs < 1e-4
-	    next
-	  elsif (a - 1.0).abs < 1e-4
-	    s += (s == "" ? t : "+" + t)
-	  elsif (a + 1.0).abs < 1e-4
-	    s += "-" + t
-	  else
-	    if a > 0.0 && s != ""
-		  s += "+"
-		elsif a < 0.0
-		  s += "-"
-		end
-		s += sprintf("%.4f", a.abs) + t
-	  end
-	}
 	a = sym[3, j]
 	if a.abs > 1e-4
 	  if a > 0.0 && s != ""
@@ -92,6 +75,23 @@ def symmetry_to_string(sym)
 	    s += sprintf("%.4f", a)
 	  end
 	end
+	["x", "y", "z"].each_with_index { |t, i|
+	  a = sym[i, j]
+	  if a.abs < 1e-4
+	    next
+	  elsif (a - 1.0).abs < 1e-4
+	    s += (s == "" ? t : "+" + t)
+	  elsif (a + 1.0).abs < 1e-4
+	    s += "-" + t
+	  else
+	    if a > 0.0 && s != ""
+		  s += "+"
+		elsif a < 0.0
+		  s += "-"
+		end
+		s += sprintf("%.4f", a.abs) + t
+	  end
+	}
 	str += s
 	if j < 2
 	  str += ", "
@@ -1994,101 +1994,117 @@ def Molecule.check_space_group
   }
 end
 
+def Molecule.setup_space_groups
+  if defined?(@@space_groups)
+    return @@space_groups
+  end
+
+  #  The debug flag causes self-check of the space group table
+  debug = false
+  
+  lines = [] if debug
+
+  @@space_groups = []       #  Sequential table of space groups (array of [name, array_of_transform])
+  @@space_group_list = []   #  [["Triclinic",    -> Crystal system
+							#     ["#1: P1",     -> Space group family
+							#       [["P1", 0]]],-> Variations
+							#     ...
+							#   ["Monoclinic",
+							#     ...
+							#     ["#7: Pc",
+							#       [["Pc", 6], ["Pa", 7], ["Pn", 8]]],
+							#     ... ]]
+  last_group_code = 0
+  Kernel.open(ScriptPath + "/space_groups.txt", "r") { |fp|
+	while ln = fp.gets
+	  lines.push(ln) if debug
+	  if ln =~ /\[(\w+)\]/
+		label = $1
+		@@space_group_list.push([label, []])
+		next
+	  end
+	  if ln =~ /^(\d+) +(.*)$/
+		group_code = $1.to_i
+		group_name = $2
+	    name = "#" + $1 + ": " + $2
+		group = []
+		group_gen = []
+		while ln = fp.gets
+		  lines.push(ln.dup) if debug
+		  ln.chomp!
+		  if ln =~ /^\s*$/
+			break
+		  elsif ln =~ /^\+\(/
+			lattice = ln.scan(/((^\+)|,)\(([\/,0-9]+)\)/).map {
+			  |a| a[2].split(/, */).map {
+				|x| if x =~ /^(\d+)\/(\d+)$/
+				      $1.to_f / $2.to_f
+					else
+					  x.to_f
+					end } }
+			lattice.each { |lat|
+			  group.each { |tr|
+				tr = tr.dup
+				tr[3, 0] += lat[0]
+				tr[3, 1] += lat[1]
+				tr[3, 2] += lat[2]
+				group_gen.push(tr)
+			  }
+			}
+		  else
+			#  Rectify the shorthand descriptions
+			ln1 = ln.dup if debug
+			mod = false
+			mod = ln.gsub!(/(\d)(\d)/, "\\1/\\2")
+			mod = ln.gsub!(/(^|[^\/])(\d)([^\/]|$)/, "\\11/\\2\\3") || mod
+			mod = ln.gsub!(/([0-9xyzXYZ])([xyzXYZ])/, "\\1+\\2") || mod
+			if debug && mod
+			  puts "#{fp.lineno}: #{ln1} -> #{ln}\n"
+			end
+			begin
+			  group.push(string_to_symmetry(ln))
+			  if debug
+				lines[-1] = symmetry_to_string(group[-1]).gsub(/ +/, "") + "\n"
+			  end
+			rescue
+			  error_message_box($!.message + "(line #{fp.lineno})")
+			end
+		  end
+		end
+		group.concat(group_gen)
+		@@space_groups.push([name, group])
+		group_index = @@space_groups.count - 1
+		if last_group_code != group_code
+		  idx = (name.index(" (") || 0) - 1  #  Remove parenthesized phrase
+		  group_family_name = name[0..idx]
+		  @@space_group_list[-1][1].push([group_family_name, []])
+		  last_group_code = group_code
+		end
+		@@space_group_list[-1][1][-1][1].push([group_name, group_index])
+	  end
+	end
+  }
+  if debug
+	Molecule.check_space_group
+	fn = Dialog.save_panel("Save modified space_group.txt:")
+	if fn
+	  Kernel.open(fn, "w") { |fp|
+		lines.each { |ln|
+		  fp.print ln
+		}
+	  }
+	end
+  end
+  return @@space_groups
+end
+
 def cmd_symmetry_operations
 
   mol = self
   syms = mol.symmetries
 
-  debug = true
-  lines = [] if debug
-
   if !defined?(@@space_groups)
-    @@space_groups = []       #  Sequential table of space groups (array of [name, array_of_transform])
-    @@space_group_list = []   #  [["Triclinic",    -> Crystal system
-	                          #     ["#1: P1",     -> Space group family
-							  #       [["P1", 0]]],-> Variations
-				              #     ...
-							  #   ["Monoclinic",
-							  #     ...
-							  #     ["#7: Pc",
-							  #       [["Pc", 6], ["Pa", 7], ["Pn", 8]]],
-							  #     ... ]]
-	last_group_code = 0
-    open(ScriptPath + "/space_groups.txt", "r") { |fp|
-	  while ln = fp.gets
-	    lines.push(ln) if debug
-	    if ln =~ /\[(\w+)\]/
-		  label = $1
-		  @@space_group_list.push([label, []])
-		  next
-		end
-		if ln =~ /^(\d+) +(.*)$/
-		  group_code = $1.to_i
-		  group_name = $2
-		  name = "#" + $1 + ": " + $2
-		  group = []
-		  group_gen = []
-		  while ln = fp.gets
-		    lines.push(ln) if debug
-		    ln.chomp!
-			if ln =~ /^\s*$/
-			  break
-			elsif ln =~ /^\+\(/
-			  lattice = ln.scan(/((^\+)|,)\(([\/,0-9]+)\)/).map {
-			    |a| a[2].split(/, */).map {
-				  |x| (x == "1/2" ? 0.5 : (x == "0" ? 0.0 : (raise "Cannot parse lattice generator: #{a[0]}"))) } }
-			  lattice.each { |lat|
-			    group.each { |tr|
-				  tr = tr.dup
-				  tr[3, 0] += lat[0]
-				  tr[3, 1] += lat[1]
-				  tr[3, 2] += lat[2]
-				  group_gen.push(tr)
-				}
-			  }
-			else
-			  #  Rectify the shorthand descriptions
-			  ln1 = ln.dup if debug
-			  mod = false
-			  mod = ln.gsub!(/(\d)(\d)/, "\\1/\\2")
-			  mod = ln.gsub!(/(^|[^\/])(\d)([^\/]|$)/, "\\11/\\2\\3") || mod
-			  mod = ln.gsub!(/([0-9xyzXYZ])([xyzXYZ])/, "\\1+\\2") || mod
-			  if debug && mod
-			    puts "#{fp.lineno}: #{ln1} -> #{ln}\n"
-				lines[-1] = ln + "\n"
-			  end
-			  begin
-			    group.push(string_to_symmetry(ln))
-			  rescue
-			    error_message_box($!.message + "(line #{fp.lineno})")
-			  end
-			end
-		  end
-		  group.concat(group_gen)
-		  @@space_groups.push([name, group])
-		  group_index = @@space_groups.count - 1
-		  if last_group_code != group_code
-		    idx = (name.index(" (") || 0) - 1  #  Remove parenthesized phrase
-		    group_family_name = name[0..idx]
-			@@space_group_list[-1][1].push([group_family_name, []])
-			last_group_code = group_code
-		  end
-		  @@space_group_list[-1][1][-1][1].push([group_name, group_index])
-		end
-	  end
-	}
-	if debug
-	  Molecule.check_space_group
-	  fn = save_panel("Save modified space_group.txt:")
-	  if fn
-	    open(fn, "w") { |fp|
-		  lines.each { |ln|
-		    fp.print ln + "\n"
-		  }
-		}
-	  end
-	end
-	
+    Molecule.setup_space_groups
   end
 
   #  Menu titles
