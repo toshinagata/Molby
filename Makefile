@@ -106,6 +106,10 @@ cleandep:
 
 -include build/Makefile.depend
 
+#  For unknown reasons, OpenGL_extensions.c needs to be compiled with -O0.
+$(DESTPREFIX)/OpenGL_extensions.o : ../wxSources/OpenGL_extensions.c
+	$(CC) -c $< -o $@ $(CPPFLAGS) -O0 -g $(CPP_EXTRA_FLAGS) $(RUBY_CFLAGS) $(WX_CPPFLAGS)
+
 $(DESTPREFIX)/%.d : ../wxSources/%.cpp
 	$(CPP) -MM $< >$@ $(subst -arch ppc,,$(CFLAGS))
 

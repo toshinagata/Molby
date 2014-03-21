@@ -20,23 +20,41 @@
 #include "OpenGL_extensions.h"
 
 /*  Function pointers  */
-static GLboolean (*p_glIsRenderbufferEXT)(GLuint renderbuffer);
-static void (*p_glBindRenderbufferEXT)(GLenum target, GLuint renderbuffer);
-static void (*p_glDeleteRenderbuffersEXT)(GLsizei n, const GLuint * renderbuffers);
-static void (*p_glGenRenderbuffersEXT)(GLsizei n, GLuint * renderbuffers);
-static void (*p_glRenderbufferStorageEXT)(GLenum target, GLenum internalformat, GLsizei width, GLsizei height);
-static void (*p_glGetRenderbufferParameterivEXT)(GLenum target, GLenum pname, GLint * params);
-GLboolean (*p_glIsFramebufferEXT)(GLuint framebuffer);
-static void (*p_glBindFramebufferEXT)(GLenum target, GLuint framebuffer);
-static void (*p_glDeleteFramebuffersEXT)(GLsizei n, const GLuint * framebuffers);
-static void (*p_glGenFramebuffersEXT)(GLsizei n, GLuint * framebuffers);
-static GLenum (*p_glCheckFramebufferStatusEXT)(GLenum target);
-static void (*p_glFramebufferTexture1DEXT)(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level);
-static void (*p_glFramebufferTexture2DEXT)(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level);
-static void (*p_glFramebufferTexture3DEXT)(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level, GLint zoffset);
-static void (*p_glFramebufferRenderbufferEXT)(GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer);
-static void (*p_glGetFramebufferAttachmentParameterivEXT)(GLenum target, GLenum attachment, GLenum pname, GLint * params);
-static void (*p_glGenerateMipmapEXT)(GLenum target);
+typedef GLboolean (*t_glIsRenderbufferEXT)(GLuint renderbuffer);
+typedef void (*t_glBindRenderbufferEXT)(GLenum target, GLuint renderbuffer);
+typedef void (*t_glDeleteRenderbuffersEXT)(GLsizei n, const GLuint * renderbuffers);
+typedef void (*t_glGenRenderbuffersEXT)(GLsizei n, GLuint * renderbuffers);
+typedef void (*t_glRenderbufferStorageEXT)(GLenum target, GLenum internalformat, GLsizei width, GLsizei height);
+typedef void (*t_glGetRenderbufferParameterivEXT)(GLenum target, GLenum pname, GLint * params);
+typedef GLboolean (*t_glIsFramebufferEXT)(GLuint framebuffer);
+typedef void (*t_glBindFramebufferEXT)(GLenum target, GLuint framebuffer);
+typedef void (*t_glDeleteFramebuffersEXT)(GLsizei n, const GLuint * framebuffers);
+typedef void (*t_glGenFramebuffersEXT)(GLsizei n, GLuint * framebuffers);
+typedef GLenum (*t_glCheckFramebufferStatusEXT)(GLenum target);
+typedef void (*t_glFramebufferTexture1DEXT)(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level);
+typedef void (*t_glFramebufferTexture2DEXT)(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level);
+typedef void (*t_glFramebufferTexture3DEXT)(GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level, GLint zoffset);
+typedef void (*t_glFramebufferRenderbufferEXT)(GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer);
+typedef void (*t_glGetFramebufferAttachmentParameterivEXT)(GLenum target, GLenum attachment, GLenum pname, GLint * params);
+typedef void (*t_glGenerateMipmapEXT)(GLenum target);
+
+static t_glIsRenderbufferEXT p_glIsRenderbufferEXT;
+static t_glBindRenderbufferEXT p_glBindRenderbufferEXT;
+static t_glDeleteRenderbuffersEXT p_glDeleteRenderbuffersEXT;
+static t_glGenRenderbuffersEXT p_glGenRenderbuffersEXT;
+static t_glRenderbufferStorageEXT p_glRenderbufferStorageEXT;
+static t_glGetRenderbufferParameterivEXT p_glGetRenderbufferParameterivEXT;
+static t_glIsFramebufferEXT p_glIsFramebufferEXT;
+static t_glBindFramebufferEXT p_glBindFramebufferEXT;
+static t_glDeleteFramebuffersEXT p_glDeleteFramebuffersEXT;
+static t_glGenFramebuffersEXT p_glGenFramebuffersEXT;
+static t_glCheckFramebufferStatusEXT p_glCheckFramebufferStatusEXT;
+static t_glFramebufferTexture1DEXT p_glFramebufferTexture1DEXT;
+static t_glFramebufferTexture2DEXT p_glFramebufferTexture2DEXT;
+static t_glFramebufferTexture3DEXT p_glFramebufferTexture3DEXT;
+static t_glFramebufferRenderbufferEXT p_glFramebufferRenderbufferEXT;
+static t_glGetFramebufferAttachmentParameterivEXT p_glGetFramebufferAttachmentParameterivEXT;
+static t_glGenerateMipmapEXT p_glGenerateMipmapEXT;
 
 static int p_inited = 0;
 
@@ -44,57 +62,60 @@ int
 InitializeOpenGLExtensions(void)
 {
     int n = 0;
-    p_glIsRenderbufferEXT = (void *)wglGetProcAddress("glIsRenderbufferEXT");
+    if (p_inited != 0)
+        return;
+    p_glIsRenderbufferEXT = (t_glIsRenderbufferEXT)wglGetProcAddress("glIsRenderbufferEXT");
     if (p_glIsRenderbufferEXT == NULL)
         n++;
-    p_glBindRenderbufferEXT = (void *)wglGetProcAddress("glBindRenderbufferEXT");
+    p_glBindRenderbufferEXT = (t_glBindRenderbufferEXT)wglGetProcAddress("glBindRenderbufferEXT");
     if (p_glBindRenderbufferEXT == NULL)
         n++;
-    p_glDeleteRenderbuffersEXT = (void *)wglGetProcAddress("glDeleteRenderbuffersEXT");
+    p_glDeleteRenderbuffersEXT = (t_glDeleteRenderbuffersEXT)wglGetProcAddress("glDeleteRenderbuffersEXT");
     if (p_glDeleteRenderbuffersEXT == NULL)
         n++;
-    p_glGenRenderbuffersEXT = (void *)wglGetProcAddress("glGenRenderbuffersEXT");
+    p_glGenRenderbuffersEXT = (t_glGenRenderbuffersEXT)wglGetProcAddress("glGenRenderbuffersEXT");
     if (p_glGenRenderbuffersEXT == NULL)
         n++;
-    p_glRenderbufferStorageEXT = (void *)wglGetProcAddress("glRenderbufferStorageEXT");
+    p_glRenderbufferStorageEXT = (t_glRenderbufferStorageEXT)wglGetProcAddress("glRenderbufferStorageEXT");
     if (p_glRenderbufferStorageEXT == NULL)
         n++;
-    p_glGetRenderbufferParameterivEXT = (void *)wglGetProcAddress("glGetRenderbufferParameterivEXT");
+    p_glGetRenderbufferParameterivEXT = (t_glGetRenderbufferParameterivEXT)wglGetProcAddress("glGetRenderbufferParameterivEXT");
     if (p_glGetRenderbufferParameterivEXT == NULL)
         n++;
-    p_glIsFramebufferEXT = (void *)wglGetProcAddress("glIsFramebufferEXT");
+    p_glIsFramebufferEXT = (t_glIsFramebufferEXT)wglGetProcAddress("glIsFramebufferEXT");
     if (p_glIsFramebufferEXT == NULL)
         n++;
-    p_glBindFramebufferEXT = (void *)wglGetProcAddress("glBindFramebufferEXT");
+    p_glBindFramebufferEXT = (t_glBindFramebufferEXT)wglGetProcAddress("glBindFramebufferEXT");
     if (p_glBindFramebufferEXT == NULL)
         n++;
-    p_glDeleteFramebuffersEXT = (void *)wglGetProcAddress("glDeleteFramebuffersEXT");
+    p_glDeleteFramebuffersEXT = (t_glDeleteFramebuffersEXT)wglGetProcAddress("glDeleteFramebuffersEXT");
     if (p_glDeleteFramebuffersEXT == NULL)
         n++;
-    p_glGenFramebuffersEXT = (void *)wglGetProcAddress("glGenFramebuffersEXT");
+    p_glGenFramebuffersEXT = (t_glGenFramebuffersEXT)wglGetProcAddress("glGenFramebuffersEXT");
     if (p_glGenFramebuffersEXT == NULL)
         n++;
-    p_glCheckFramebufferStatusEXT = (void *)wglGetProcAddress("glCheckFramebufferStatusEXT");
+    p_glCheckFramebufferStatusEXT = (t_glCheckFramebufferStatusEXT)wglGetProcAddress("glCheckFramebufferStatusEXT");
     if (p_glCheckFramebufferStatusEXT == NULL)
         n++;
-    p_glFramebufferTexture1DEXT = (void *)wglGetProcAddress("glFramebufferTexture1DEXT");
+    p_glFramebufferTexture1DEXT = (t_glFramebufferTexture1DEXT)wglGetProcAddress("glFramebufferTexture1DEXT");
     if (p_glFramebufferTexture1DEXT == NULL)
         n++;
-    p_glFramebufferTexture2DEXT = (void *)wglGetProcAddress("glFramebufferTexture2DEXT");
+    p_glFramebufferTexture2DEXT = (t_glFramebufferTexture2DEXT)wglGetProcAddress("glFramebufferTexture2DEXT");
     if (p_glFramebufferTexture2DEXT == NULL)
         n++;
-    p_glFramebufferTexture3DEXT = (void *)wglGetProcAddress("glFramebufferTexture3DEXT");
+    p_glFramebufferTexture3DEXT = (t_glFramebufferTexture3DEXT)wglGetProcAddress("glFramebufferTexture3DEXT");
     if (p_glFramebufferTexture3DEXT == NULL)
         n++;
-    p_glFramebufferRenderbufferEXT = (void *)wglGetProcAddress("glFramebufferRenderbufferEXT");
+    p_glFramebufferRenderbufferEXT = (t_glFramebufferRenderbufferEXT)wglGetProcAddress("glFramebufferRenderbufferEXT");
     if (p_glFramebufferRenderbufferEXT == NULL)
         n++;
-    p_glGetFramebufferAttachmentParameterivEXT = (void *)wglGetProcAddress("glGetFramebufferAttachmentParameterivEXT");
+    p_glGetFramebufferAttachmentParameterivEXT = (t_glGetFramebufferAttachmentParameterivEXT)wglGetProcAddress("glGetFramebufferAttachmentParameterivEXT");
     if (p_glGetFramebufferAttachmentParameterivEXT == NULL)
         n++;
-    p_glGenerateMipmapEXT = (void *)wglGetProcAddress("glGenerateMipmapEXT");
+    p_glGenerateMipmapEXT = (t_glGenerateMipmapEXT)wglGetProcAddress("glGenerateMipmapEXT");
     if (p_glGenerateMipmapEXT == NULL)
         n++;
+    p_inited = 1;
     return n;
 }
 
