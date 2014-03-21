@@ -130,7 +130,8 @@ MainView_refreshCachedInfo(MainView *mview)
 	IntGroupClear(mview->tableCache);
 	IntGroupClear(mview->tableSelection);
 		
-	if (mview->tableIndex == kMainViewAtomTableIndex) {  /* Atoms */
+	if (mview->tableIndex == kMainViewAtomTableIndex ||
+		mview->tableIndex == kMainViewXtalCoordTableIndex) {  /* Atoms */
 		for (i = j = 0; i < mol->natoms; i++) {
 			f1 = mview->visibleFlags[i];
 			if ((f1 & 1) != 0) {
@@ -202,14 +203,18 @@ MainView_refreshCachedInfo(MainView *mview)
 				j++;
 			}
 		}
-	} else if (mview->tableIndex == kMainViewParameterTableIndex ||  /* Parameter infos */
-			   mview->tableIndex == kMainViewUnitCellTableIndex) {   /* Unit cell infos */
-		/*  Do nothing (tableCache will not be used)  */
-	} else if (mview->tableIndex == kMainViewMOTableIndex) {  /* MO infos  */
-		/*  Really no need to cache info, but create it anyway to simplify code  */
-		if (mol->bset != NULL && mol->bset->ncomps > 0)
-			IntGroupAdd(mview->tableCache, 0, mol->bset->ncomps);
+	} else {
+		/*  Cache is left empty (not used)  */
 	}
+
+//	} else if (mview->tableIndex == kMainViewParameterTableIndex ||  /* Parameter infos */
+//			   mview->tableIndex == kMainViewUnitCellTableIndex) {   /* Unit cell infos */
+//		/*  Do nothing (tableCache will not be used)  */
+//	} else if (mview->tableIndex == kMainViewMOTableIndex) {  /* MO infos  */
+//		/*  Really no need to cache info, but create it anyway to simplify code  */
+//		if (mol->bset != NULL && mol->bset->ncomps > 0)
+//			IntGroupAdd(mview->tableCache, 0, mol->bset->ncomps);
+//	}
 	
 	/*  Clear internal selection flag  */
 	for (i = 0; i < mol->natoms; i++) {
@@ -2800,35 +2805,48 @@ typedef struct ColumnInfoRecord {
 } ColumnInfoRecord;
 
 static ColumnInfoRecord sAtomColumns[] = {
-{"atom", 4, 0}, {"name", 4, 1}, {"type", 4, 1}, {"element", 4, 1}, {"residue", 6, 1},
-{"x", 6, 1}, {"y", 6, 1}, {"z", 6, 1}, {"charge", 6, 1}, {NULL}
+	{"atom", 4, 0}, {"name", 4, 1}, {"type", 4, 1}, {"element", 4, 1}, {"residue", 6, 1},
+	{"x", 6, 1}, {"y", 6, 1}, {"z", 6, 1}, {"charge", 6, 1}, {NULL}
 };
 static ColumnInfoRecord sBondColumns[] = {
-	{"atoms", 9, 0}, {"names", 9, 0}, {"type", 9, 0}, {"length", 8, 0}, {"par type", 8, 0}, {"k", 8, 0}, {"r0", 8, 0}, {NULL}
+	{"atoms", 9, 0}, {"names", 9, 0}, {"type", 9, 0}, {"length", 8, 0}, 
+	{"par type", 8, 0}, {"k", 8, 0}, {"r0", 8, 0}, {NULL}
 };
 static ColumnInfoRecord sAngleColumns[] = {
-{"atoms", 12, 0}, {"names", 12, 0}, {"type", 12, 0}, {"angle", 8, 0}, {"par type", 8, 0}, {"k", 8, 0}, {"a0", 8, 0}, {NULL}
+	{"atoms", 12, 0}, {"names", 12, 0}, {"type", 12, 0}, {"angle", 8, 0}, 
+	{"par type", 8, 0}, {"k", 8, 0}, {"a0", 8, 0}, {NULL}
 };
 static ColumnInfoRecord sDihedralColumns[] = {
-{"atoms", 15, 0}, {"names", 15, 0}, {"type", 15, 0}, {"dihedral", 8, 0}, {"par type", 8, 0}, {"k", 8, 0}, {"period", 4, 0}, {"phi0", 8, 0}, {NULL}
+	{"atoms", 15, 0}, {"names", 15, 0}, {"type", 15, 0}, {"dihedral", 8, 0}, 
+	{"par type", 8, 0}, {"k", 8, 0}, {"period", 4, 0}, {"phi0", 8, 0}, {NULL}
 };
 static ColumnInfoRecord sImproperColumns[] = {
-{"atoms", 15, 0}, {"names", 15, 0}, {"type", 15, 0}, {"improper", 8, 0}, {"par type", 8, 0}, {"k", 8, 0}, {"period", 4, 0}, {"phi0", 8, 0}, {NULL}
+	{"atoms", 15, 0}, {"names", 15, 0}, {"type", 15, 0}, {"improper", 8, 0}, 
+	{"par type", 8, 0}, {"k", 8, 0}, {"period", 4, 0}, {"phi0", 8, 0}, {NULL}
 };
 static ColumnInfoRecord sParameterColumns[] = {
-{"class", 5, 0}, {"type", 9, 0}, {"", 6, 0}, {"", 6, 0}, {"", 6, 0}, {"", 6, 0}, {"", 6, 0}, {"", 6, 0}, {"src", 8, 0}, {"comment", 25, 0}, {NULL}
+	{"class", 5, 0}, {"type", 9, 0}, {"", 6, 0}, {"", 6, 0}, {"", 6, 0}, 
+	{"", 6, 0}, {"", 6, 0}, {"", 6, 0}, {"src", 8, 0}, {"comment", 25, 0}, {NULL}
 };
 static ColumnInfoRecord sUnitCellColumns[] = {
-{"name", 6, 0}, {"values", 9, 1}, {"", 9, 1}, {"", 9, 1}, {NULL}
+	{"name", 6, 0}, {"values", 9, 1}, {"", 9, 1}, {"", 9, 1}, {NULL}
+};
+static ColumnInfoRecord sXtalCoordColumns[] = {
+	{"atom", 4, 0}, {"name", 4, 1}, {"element", 4, 1},
+	{"frx", 6, 1}, {"fry", 6, 1}, {"frz", 6, 1},
+	{"occ", 6, 1}, {"temp", 6, 1}, {NULL}
 };
 static ColumnInfoRecord sMOEnergyColumns[] = {
-{"MO", 5, 0}, {"alpha energy", 12, 0}, {"beta energy", 12, 0}, {NULL}
+	{"MO", 5, 0}, {"alpha energy", 12, 0}, {"beta energy", 12, 0}, {NULL}
 };
 static ColumnInfoRecord *sColumnInfo[] = {
-sAtomColumns, sBondColumns, sAngleColumns, sDihedralColumns, sImproperColumns, sParameterColumns, sUnitCellColumns, sMOEnergyColumns
+	sAtomColumns, sBondColumns, sAngleColumns, sDihedralColumns,
+	sImproperColumns, NULL, sParameterColumns, NULL, 
+	sUnitCellColumns, sXtalCoordColumns, NULL, sMOEnergyColumns
 };
 static char *sTableTitles[] = {
-	"atom", "bond", "angle", "dihedral", "improper", "parameter", "unit cell", "MO energy"
+	"atoms", "bonds", "angles", "dihedrals", "impropers", "--------",
+	"MM/MD pars", "--------", "unit cell", "xtal coords", "--------", "MO energy"
 };
 
 void
@@ -2843,7 +2861,7 @@ MainView_tableTitleForIndex(MainView *mview, int idx, char *buf, int bufsize)
 	snprintf(buf, bufsize, "%s", sTableTitles[idx]);
 }
 
-void
+int
 MainView_createColumnsForTableAtIndex(MainView *mview, int idx)
 {
 	int i;
@@ -2851,8 +2869,10 @@ MainView_createColumnsForTableAtIndex(MainView *mview, int idx)
 	if (mview == NULL)
 		idx = kMainViewParameterTableIndex;
 	if (idx < 0 || idx >= sizeof(sColumnInfo) / sizeof(sColumnInfo[0]))
-		return;
-
+		return 0;  /*  Invalid index  */
+	if (sColumnInfo[idx] == NULL)
+		return 0;  /*  Invalid index  */
+	
 	/*  Remove all existing columns  */
 	while (MainViewCallback_removeTableColumnAtIndex(mview, 0) > 0);
 	
@@ -2870,6 +2890,8 @@ MainView_createColumnsForTableAtIndex(MainView *mview, int idx)
 			width = 80;
 		MainViewCallback_addTableColumn(mview, recp->name, width, recp->editable);
 	}
+	
+	return 1;
 }
 
 void
@@ -2909,13 +2931,25 @@ MainView_numberOfRowsInTable(MainView *mview)
 		return ParameterTableNumberOfRows(gBuiltinParameters);
 	if (mview->mol == NULL)
 		return 0;
-	if (mview->tableIndex == kMainViewParameterTableIndex)
-		return ParameterTableNumberOfRows(mview->mol->par);
-	if (mview->tableIndex == kMainViewUnitCellTableIndex)
-		return 13; /* a, b, c, alpha, beta, gamma, a_valid, b_valid, c_valid, av, bv, cv, ov */
-	if (mview->tableCache == NULL)
-		MainView_refreshCachedInfo(mview);
-	return IntGroupGetCount(mview->tableCache);
+	switch (mview->tableIndex) {
+		case kMainViewParameterTableIndex:
+			return ParameterTableNumberOfRows(mview->mol->par);
+		case kMainViewUnitCellTableIndex:
+			return 13; /* a, b, c, alpha, beta, gamma, a_valid, b_valid, c_valid, av, bv, cv, ov */
+		case kMainViewAtomTableIndex:
+		case kMainViewBondTableIndex:
+		case kMainViewAngleTableIndex:
+		case kMainViewDihedralTableIndex:
+		case kMainViewImproperTableIndex:
+		case kMainViewXtalCoordTableIndex:
+			if (mview->tableCache == NULL)
+				MainView_refreshCachedInfo(mview);
+			return IntGroupGetCount(mview->tableCache);
+		case kMainViewMOTableIndex:
+			return (mview->mol->bset != NULL ? mview->mol->bset->ncomps : 0);
+		default:
+			return 0;
+	}
 }
 
 int
@@ -2923,9 +2957,17 @@ MainView_indexToTableRow(MainView *mview, int idx)
 {
 	if (mview == NULL)
 		return -1;
-	if (mview->tableIndex == kMainViewParameterTableIndex || mview->tableIndex == kMainViewUnitCellTableIndex)
-		return -1;  /*  Not supported yet  */
-	return IntGroupLookupPoint(mview->tableCache, idx);
+	switch (mview->tableIndex) {
+		case kMainViewAtomTableIndex:
+		case kMainViewBondTableIndex:
+		case kMainViewAngleTableIndex:
+		case kMainViewDihedralTableIndex:
+		case kMainViewImproperTableIndex:
+		case kMainViewXtalCoordTableIndex:
+			return IntGroupLookupPoint(mview->tableCache, idx);
+		default:
+			return idx;
+	}
 }
 
 int
@@ -2933,9 +2975,17 @@ MainView_tableRowToIndex(MainView *mview, int row)
 {
 	if (mview == NULL)
 		return -1;
-	if (mview->tableIndex == kMainViewParameterTableIndex || mview->tableIndex == kMainViewUnitCellTableIndex)
-		return -1;  /*  Not supported yet  */
-	return IntGroupGetNthPoint(mview->tableCache, row);
+	switch (mview->tableIndex) {
+		case kMainViewAtomTableIndex:
+		case kMainViewBondTableIndex:
+		case kMainViewAngleTableIndex:
+		case kMainViewDihedralTableIndex:
+		case kMainViewImproperTableIndex:
+		case kMainViewXtalCoordTableIndex:
+			return IntGroupGetNthPoint(mview->tableCache, row);
+		default:
+			return row;
+	}
 }
 
 static char *
@@ -3002,7 +3052,7 @@ MainView_valueForTable(MainView *mview, int column, int row, char *buf, int bufs
 		return ParameterTableGetItemText(mview->mol->par, column, row, buf, bufsize);
 
 	if (mview->tableIndex == kMainViewAtomTableIndex) { /* Atoms */
-		idx = IntGroupGetNthPoint(mview->tableCache, row);
+		idx = MainView_tableRowToIndex(mview, row);
 		ap[0] = ATOM_AT_INDEX(mol->atoms, idx);
 		switch (column) {
 			case 0: snprintf(buf, bufsize, "%d", idx); break;
@@ -3022,7 +3072,7 @@ MainView_valueForTable(MainView *mview, int column, int row, char *buf, int bufs
 			default: buf[0] = 0; break;
 		}
 	} else if (mview->tableIndex == kMainViewBondTableIndex) { /* Bonds */
-		idx = IntGroupGetNthPoint(mview->tableCache, row);
+		idx = MainView_tableRowToIndex(mview, row);
 		ip = mol->bonds + idx * 2;
 		ap[0] = ATOM_AT_INDEX(mol->atoms, ip[0]);
 		ap[1] = ATOM_AT_INDEX(mol->atoms, ip[1]);
@@ -3050,7 +3100,7 @@ MainView_valueForTable(MainView *mview, int column, int row, char *buf, int bufs
 			default: buf[0] = 0; break;
 		}
 	} else if (mview->tableIndex == kMainViewAngleTableIndex) { /* Angles */
-		idx = IntGroupGetNthPoint(mview->tableCache, row);
+		idx = MainView_tableRowToIndex(mview, row);
 		ip = mol->angles + idx * 3;
 		ap[0] = ATOM_AT_INDEX(mol->atoms, ip[0]);
 		ap[1] = ATOM_AT_INDEX(mol->atoms, ip[1]);
@@ -3080,7 +3130,7 @@ MainView_valueForTable(MainView *mview, int column, int row, char *buf, int bufs
 		}		
 	} else if (mview->tableIndex == kMainViewDihedralTableIndex || mview->tableIndex == kMainViewImproperTableIndex) { /* Dihedrals, Impropers */
 		int f = (mview->tableIndex == kMainViewDihedralTableIndex);
-		idx = IntGroupGetNthPoint(mview->tableCache, row);
+		idx = MainView_tableRowToIndex(mview, row);
 		ip = (f ? mview->mol->dihedrals : mview->mol->impropers) + idx * 4;
 		ap[0] = ATOM_AT_INDEX(mview->mol->atoms, ip[0]);
 		ap[1] = ATOM_AT_INDEX(mview->mol->atoms, ip[1]);
@@ -3142,6 +3192,24 @@ MainView_valueForTable(MainView *mview, int column, int row, char *buf, int bufs
 				}
 			}
 		}
+	} else if (mview->tableIndex == kMainViewXtalCoordTableIndex) {  /* fractional coords */
+		Vector fract_r;
+		idx = MainView_tableRowToIndex(mview, row);
+		ap[0] = ATOM_AT_INDEX(mol->atoms, idx);
+		if (mview->mol->cell != NULL)
+			TransformVec(&fract_r, mview->mol->cell->rtr, &(ap[0]->r));
+		else fract_r = ap[0]->r;
+		switch (column) {
+			case 0: snprintf(buf, bufsize, "%d", idx); break;
+			case 1: snprintf(buf, bufsize, "%.4s", ap[0]->aname); break;
+			case 2: snprintf(buf, bufsize, "%.2s", ap[0]->element); break;
+			case 3: snprintf(buf, bufsize, "%.3f", fract_r.x); break;
+			case 4: snprintf(buf, bufsize, "%.3f", fract_r.y); break;
+			case 5: snprintf(buf, bufsize, "%.3f", fract_r.z); break;
+			case 6: snprintf(buf, bufsize, "%.3f", ap[0]->occupancy); break;
+			case 7: snprintf(buf, bufsize, "%.3f", ap[0]->tempFactor); break;
+			default: buf[0] = 0; break;
+		}		
 	} else if (mview->tableIndex == kMainViewMOTableIndex) { /* MO energy */
 		BasisSet *bset = mview->mol->bset;
 		idx = row;
@@ -3216,7 +3284,7 @@ MainView_setColorForTable(MainView *mview, int column, int row, float *fg, float
 			default: bg[0] = bg[1] = bg[2] = 1.0; break;
 		}
 		return 2;
-	} else if (mview->tableIndex <= 0 || mview->tableIndex >= 5)
+	} else if (mview->tableIndex < kMainViewBondTableIndex || mview->tableIndex > kMainViewImproperTableIndex)
 		return 0;
 	
 	/*  Bond etc. table  */
@@ -3239,7 +3307,7 @@ MainView_setColorForTable(MainView *mview, int column, int row, float *fg, float
 	if (column < 3)
 		return 0;
 
-	idx = IntGroupGetNthPoint(mview->tableCache, row);
+	idx = MainView_tableRowToIndex(mview, row);
 	up = sParameterOfTypeAtIndex(mview->mol, parType, idx);
 	if (up == NULL)
 		return 0;
@@ -3279,8 +3347,17 @@ MainView_setSelectionFromTable(MainView *mview)
 	IntGroup *ig, *sel;
 	if (mview == NULL || mview->mol == NULL)
 		return;
-	if (mview->tableIndex >= kMainViewParameterTableIndex)
-		return;  /*  Do nothing  */
+	switch (mview->tableIndex) {
+		case kMainViewAtomTableIndex:
+		case kMainViewBondTableIndex:
+		case kMainViewAngleTableIndex:
+		case kMainViewDihedralTableIndex:
+		case kMainViewImproperTableIndex:
+		case kMainViewXtalCoordTableIndex:
+			break;   /*  Continue  */
+		default:
+			return;  /*  Do nothing  */
+	}
 	ig = MainViewCallback_getTableSelection(mview);
 	sel = IntGroupNew();
 	if (ig != NULL) {
@@ -3290,7 +3367,8 @@ MainView_setSelectionFromTable(MainView *mview)
 			i2 = IntGroupGetNthPoint(mview->tableCache, i1);
 			if (i2 < 0)
 				continue;
-			if (mview->tableIndex == kMainViewAtomTableIndex) {  /* Atoms */
+			if (mview->tableIndex == kMainViewAtomTableIndex ||
+				mview->tableIndex == kMainViewXtalCoordTableIndex) {  /* Atoms */
 				IntGroupAdd(sel, i2, 1);
 			} else if (mview->tableIndex == kMainViewBondTableIndex) {  /* Bonds */
 				ip = mview->mol->bonds + i2 * 2;
@@ -3392,7 +3470,7 @@ MainView_setValueForTable(MainView *mview, int column, int row, const char *buf)
 	MainView_valueForTable(mview, column, row, temp, sizeof temp);
 	if (strcmp(buf, temp) == 0 || buf[0] == 0)
 		return;  /*  No change  */
-	idx = IntGroupGetNthPoint(mview->tableCache, row);
+	idx = MainView_tableRowToIndex(mview, row);
 	if (mview->tableIndex == kMainViewAtomTableIndex) { /* Atoms */
 		switch (column) {
 			case 1: key = "name"; break;
@@ -3457,6 +3535,18 @@ MainView_setValueForTable(MainView *mview, int column, int row, const char *buf)
 			MolActionCreateAndPerform(mol, gMolActionSetBox, vecs, vecs + 1, vecs + 2, vecs + 3, (flags[0] != 0) * 4 + (flags[1] != 0) * 2 + (flags[2] != 0), 0);
 		}
 		
+	} else if (mview->tableIndex == kMainViewXtalCoordTableIndex) {  /* Fractional coords */
+		switch (column) {
+			case 1: key = "name"; break;
+			case 2: key = "element"; break;
+			case 3: key = "fract_x"; break;
+			case 4: key = "fract_y"; break;
+			case 5: key = "fract_z"; break;
+			case 6: key = "occupancy"; break;
+			case 7: key = "temp_factor"; break;
+			default: return;
+		}
+		MolActionCreateAndPerform(mol, SCRIPT_ACTION("iss"), "set_atom_attr", idx, key, buf);
 	}
 }
 
@@ -3494,14 +3584,24 @@ MainView_tableType(MainView *mview)
 void
 MainView_dragTableSelectionToRow(MainView *mview, int row)
 {
-	Int *new2old, i, n, count, natoms, start_row;
+	Int *new2old, i, n, count, natoms, start_idx, to_idx;
 	IntGroup *sel;
-	if (mview == NULL || mview->mol == NULL || mview->tableIndex != 0 || row < 0 || row > (natoms = mview->mol->natoms))
+	if (mview == NULL || mview->mol == NULL)
 		return;
+	if (mview->tableIndex != kMainViewAtomTableIndex && mview->tableIndex != kMainViewXtalCoordTableIndex)
+		return;  /*  Only atom tables can respond  */
 	if (md_is_running(mview->mol->arena)) {
 		MoleculeCallback_cannotModifyMoleculeDuringMDError(mview->mol);
 		return;
-	}	
+	}
+	n = MainView_numberOfRowsInTable(mview);
+	if (row < 0 || row > n)
+		return;  /*  Out of range  */
+	natoms = mview->mol->natoms;
+	if (row == n)
+		to_idx = natoms;
+	else
+		to_idx = MainView_tableRowToIndex(mview, row);
 	sel = MoleculeGetSelection(mview->mol);
 	if (sel == NULL || (count = IntGroupGetCount(sel)) == 0)
 		return;
@@ -3510,24 +3610,24 @@ MainView_dragTableSelectionToRow(MainView *mview, int row)
 		return;
 
 	//  Place the atoms above the target position
-	for (i = n = 0; i < row; i++) {
+	for (i = n = 0; i < to_idx; i++) {
 		if (IntGroupLookupPoint(sel, i) < 0)
 			new2old[n++] = i;
 	}
-	start_row = n;
+	start_idx = n;
 	//  Place the atoms within the selection
 	for (i = 0; i < count; i++) {
 		new2old[n++] = IntGroupGetNthPoint(sel, i);
 	}
 	//  Place the remaining atoms
-	for (i = row; i < natoms; i++) {
+	for (i = to_idx; i < natoms; i++) {
 		if (IntGroupLookupPoint(sel, i) < 0)
 			new2old[n++] = i;
 	}
 	MolActionCreateAndPerform(mview->mol, gMolActionRenumberAtoms, n, new2old);
 	
 	//  Change selection
-	sel = IntGroupNewWithPoints(start_row, count, -1);
+	sel = IntGroupNewWithPoints(start_idx, count, -1);
 	MolActionCreateAndPerform(mview->mol, gMolActionSetSelection, sel);
 	IntGroupRelease(sel);
 }

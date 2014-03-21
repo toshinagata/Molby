@@ -160,7 +160,7 @@ MoleculeView::OnCreate(wxDocument *doc, long WXUNUSED(flags) )
 	//  A panel containing a popup menu and a list window
 	wxPanel *panel0 = new wxPanel(splitter);
 	{
-		char buf[16];
+		char buf[32];
 		wxBoxSizer *sizer0;
 		sizer0 = new wxBoxSizer(wxVERTICAL);
 		wxArrayString choiceItems;
@@ -171,9 +171,6 @@ MoleculeView::OnCreate(wxDocument *doc, long WXUNUSED(flags) )
 			wxString itemTitle(buf, WX_DEFAULT_CONV);
 			choiceItems.Add(itemTitle);
 		}
-	/*	static wxString choiceItems[] = {
-			wxT("atoms"), wxT("bonds"), wxT("angles"), wxT("dihedrals"), wxT("impropers"), wxT("MO info")
-		}; */
 		
 		listmenu = new wxChoice(panel0, myID_TableMenu, wxDefaultPosition, wxDefaultSize, choiceItems);
 		sizer0->Add(listmenu, 0, wxALL, 0);
@@ -797,8 +794,13 @@ MoleculeView::SelectTable(int idx)
 {
 	if (idx >= 0 && idx < listmenu->GetCount() && idx != mview->tableIndex) {
 		isRebuildingTable = true;
+		if (MainView_createColumnsForTableAtIndex(mview, idx) == 0) {
+			/*  Invalid menu item  */
+			listmenu->SetSelection(mview->tableIndex);
+			isRebuildingTable = false;
+			return;
+		}
 		listmenu->SetSelection(idx);
-		MainView_createColumnsForTableAtIndex(mview, idx);
 		isRebuildingTable = false;
 		MoleculeLock(mview->mol);
 		MainView_refreshTable(mview);

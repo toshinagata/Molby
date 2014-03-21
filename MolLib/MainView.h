@@ -71,9 +71,13 @@ enum {
 	kMainViewAngleTableIndex = 2,
 	kMainViewDihedralTableIndex = 3,
 	kMainViewImproperTableIndex = 4,
-	kMainViewParameterTableIndex = 5,
-	kMainViewUnitCellTableIndex = 6,
-	kMainViewMOTableIndex = 7
+	kMainViewSeparator1TableIndex = 5,
+	kMainViewParameterTableIndex = 6,
+	kMainViewSeparator2TableIndex = 7,
+	kMainViewUnitCellTableIndex = 8,
+	kMainViewXtalCoordTableIndex = 9,
+	kMainViewSeparator3TableIndex = 10,
+	kMainViewMOTableIndex = 11
 };
 
 enum {
@@ -236,7 +240,7 @@ int MainView_copyOrCutParameters(MainView *mview, int flags);
 
 /*  Table view  */
 void MainView_tableTitleForIndex(MainView *mview, int idx, char *buf, int bufsize);
-void MainView_createColumnsForTableAtIndex(MainView *mview, int idx);
+int MainView_createColumnsForTableAtIndex(MainView *mview, int idx);
 void MainView_refreshTable(MainView *mview);
 int MainView_numberOfRowsInTable(MainView *mview);
 int MainView_indexToTableRow(MainView *mview, int idx);
