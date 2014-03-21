@@ -21,7 +21,7 @@ class Molecule
 	  sel = self.atom_group
 	end
 	atoms = sel.inspect.sub!("IntGroup[", "").sub!("]", "")
-    hash = Dialog.run {
+    hash = Dialog.run("Assign Residue") {
 	  layout(2,
 		item(:text, :title=>"New residue name/number\n(like \"RES.1\")\nfor atoms #{atoms}"),
 	    item(:textfield, :width=>120, :tag=>"residue"))
@@ -38,7 +38,7 @@ class Molecule
 	  sel = self.atom_group
 	end
 	atoms = sel.inspect.sub!("IntGroup[", "").sub!("]", "")
-    hash = Dialog.run {
+    hash = Dialog.run("Offset Residues") {
 	  layout(2,
 		item(:text, :title=>"Offset residue number:\nfor atoms #{atoms}"),
 	    item(:textfield, :width=>120, :tag=>"offset"))
@@ -72,7 +72,7 @@ class Molecule
   def cmd_delete_frames
     n = nframes
     return if n == 0
-	hash = Dialog.run {
+	hash = Dialog.run("Delete Frames") {
 	  layout(2,
 	    item(:text, :title=>"Start"),
 	    item(:textfield, :width=>120, :tag=>"start", :value=>"0"),
@@ -107,10 +107,10 @@ class Molecule
   
 end
 
-register_menu("Assign residue...", :cmd_assign_residue)
-register_menu("Offset residue...", :cmd_offset_residue)
-register_menu("Sort by residue", :cmd_sort_by_residue)
+register_menu("Assign residue...", :cmd_assign_residue, :non_empty)
+register_menu("Offset residue...", :cmd_offset_residue, :non_empty)
+register_menu("Sort by residue", :cmd_sort_by_residue, :non_empty)
 register_menu("", "")
-register_menu("Delete Frames...", :cmd_delete_frames)
+register_menu("Delete Frames...", :cmd_delete_frames, lambda { |m| m && m.nframes > 1 } )
 #register_menu("cmd test", :cmd_test)
 
