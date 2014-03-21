@@ -67,53 +67,6 @@ ObjectSetName(Object *obj, const char *name, Object *objRoot)
 		free((void *)(obj->name));
 	obj->name = strdup(name);
 	return;
-#if 0
-	char *buf, *p;
-	int n;
-	size_t size;
-	/* Allocate a copy of string with some space to add a number to the end */
-	size = strlen(name) + 6;
-	buf = (char *)malloc(size);
-	if (buf == NULL)
-		Panic("Cannot set object name");
-	strcpy(buf, name);
-	/* Determine the position to place the number; if name ends with space + number,
-	   then the number will be replaced. Otherwise, the number is appended at the
-	   end of the string with one space */
-	n = 0;
-	p = buf + strlen(name) - 1;
-	while (p >= buf && *p == ' ')
-		p--;
-	if (p >= buf && isdigit(*p)) {
-		char *p1 = p;
-		while (p1 >= buf && isdigit(*p1))
-			p1--;
-		if (p1 >= buf && *p1 == ' ') {
-			n = atoi(p1 + 1);
-			p = p1;
-		}
-	}
-	p++;
-	while (n < 1000) {
-		Object *op;
-		for (op = objRoot; op != NULL; op = op->next) {
-			if (op == obj)
-				continue;
-			if (strcmp(op->name, buf) == 0)
-				break;
-		}
-		if (op == NULL)
-			break;
-		if (p > buf && p[-1] != ' ')
-			*p++ = ' ';
-		snprintf(p, size - (p - buf), "%d", ++n);
-	}
-	if (n >= 1000)
-		Panic("Cannot set object name");
-	if (obj->name != NULL)
-		free((void *)(obj->name));
-	obj->name = buf;
-#endif
 }
 
 const char *

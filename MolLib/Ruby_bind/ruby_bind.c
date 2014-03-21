@@ -510,47 +510,6 @@ s_GetInterruptFlag(VALUE self)
 	return s_SetInterruptFlag(self, Qundef);
 }
 
-#if 0
-static VALUE
-s_Ruby_CallMethod(VALUE val)
-{
-	void **ptr = (void **)val;
-	VALUE receiver = (VALUE)ptr[0];
-	ID method_id = (ID)ptr[1];
-	VALUE args = (VALUE)ptr[2];
-	VALUE retval;
-	if (method_id == 0) {
-		/*  args should be a string, which is evaluated  */
-		if (receiver == Qnil) {
-			retval = rb_eval_string(StringValuePtr(args));
-		} else {
-			retval = rb_obj_instance_eval(1, &args, receiver);
-		}
-	} else {
-		/*  args should be an array of arguments  */
-		retval = rb_apply(receiver, method_id, args);
-	}
-	return retval;
-}
-
-VALUE
-Ruby_CallMethodWithInterrupt(VALUE receiver, ID method_id, VALUE args, int *status)
-{
-	VALUE retval, save_interrupt_flag;
-	void *ptr[3];
-	save_interrupt_flag = s_SetInterruptFlag(Qnil, Qtrue);
-	ptr[0] = (void *)receiver;
-	ptr[1] = (void *)method_id;
-	ptr[2] = (void *)args;
-	MyAppCallback_beginUndoGrouping();
-	retval = rb_protect(s_Ruby_CallMethod, (VALUE)ptr, status);
-	MyAppCallback_endUndoGrouping();
-	s_SetInterruptFlag(Qnil, save_interrupt_flag);
-	MyAppCallback_hideProgressPanel();  /*  In case when the progress panel is still onscreen */
-	return retval;
-}
-#endif
-
 VALUE
 Ruby_SetInterruptFlag(VALUE val)
 {
@@ -10864,7 +10823,6 @@ Init_Molby(void)
 	rb_define_method(rb_cMolecule, "bond_resolution", s_Molecule_BondResolution, -1);
 	rb_define_alias(rb_cMolecule, "bond_resolution=", "bond_resolution");
 	rb_define_method(rb_cMolecule, "resize_to_fit", s_Molecule_ResizeToFit, 0);
-#if 1 || !defined(__CMDMAC__)
 	rb_define_method(rb_cMolecule, "get_view_rotation", s_Molecule_GetViewRotation, 0);
 	rb_define_method(rb_cMolecule, "get_view_scale", s_Molecule_GetViewScale, 0);
 	rb_define_method(rb_cMolecule, "get_view_center", s_Molecule_GetViewCenter, 0);
@@ -10879,7 +10837,6 @@ Init_Molby(void)
 	rb_define_method(rb_cMolecule, "set_graphic_color", s_Molecule_SetGraphicColor, 2);
 	rb_define_method(rb_cMolecule, "show_graphic", s_Molecule_ShowGraphic, 1);
 	rb_define_method(rb_cMolecule, "hide_graphic", s_Molecule_HideGraphic, 1);
-#endif
 	rb_define_method(rb_cMolecule, "show_text", s_Molecule_ShowText, 1);
 	rb_define_method(rb_cMolecule, "md_arena", s_Molecule_MDArena, 0);
 	rb_define_method(rb_cMolecule, "set_parameter_attr", s_Molecule_SetParameterAttr, 5);

@@ -1522,27 +1522,6 @@ ParameterIsRelevantToAtomGroup(Int type, const UnionPar *up, const struct Atom *
 		retval++;
 	}
 	return 1;  /*  All explicit atom specifications are included in ig  */
-#if 0
-	if (retval == n)
-		return 1;  /*  Explicit atom specification only  */
-	IntGroupIteratorInit(ig, &iter);
-	retval = 0;
-	while ((i = IntGroupIteratorNext(&iter)) >= 0) {
-		api = ATOM_AT_INDEX(ap, i);
-		for (j = 0; j < n; j++) {
-			if (types[j] < kAtomTypeMinimum)
-				continue;
-			if (types[j] == kAtomTypeWildcard || types[j] == api->type || types[j] == api->type % kAtomTypeVariantBase) {
-				retval = 1;
-				break;
-			}
-		}
-		if (retval)
-			break;
-	}
-	IntGroupIteratorRelease(&iter);
-	return retval;
-#endif
 }
 
 BondPar *

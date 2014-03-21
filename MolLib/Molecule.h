@@ -276,7 +276,6 @@ typedef struct Molecule {
 							 recalculated from the atoms if it is -1  */
 	Int    cframe;       /*  The current frame number  */
 
-/*	Byte   useFlexibleCell;  *//*  Obsolete (since 0.6.5; unit cell is frame dependent in all cases)  */
 	Int    nframe_cells;
 	Vector *frame_cells; /*  The cell vectors for frames; (nframe_cells*4) array of Vectors  */
 
@@ -436,16 +435,6 @@ int MoleculeLookupAngle(Molecule *mp, Int n1, Int n2, Int n3);
 int MoleculeLookupDihedral(Molecule *mp, Int n1, Int n2, Int n3, Int n4);
 int MoleculeLookupImproper(Molecule *mp, Int n1, Int n2, Int n3, Int n4);
 
-/*
-Int	MoleculeReplaceAllAngles(Molecule *mol, Int nangles, const Int *angles, Int **outAngles);
-Int MoleculeReplaceAllDihedrals(Molecule *mol, Int ndihedrals, const Int *dihedrals, Int **outDihedrals);
-Int MoleculeReplaceAllImpropers(Molecule *mol, Int nimpropers, const Int *impropers, Int **outImpropers);
-
-Int MoleculeFindAllAngles(Molecule *mol, Int **outAngles);
-Int MoleculeFindAllDihedrals(Molecule *mol, Int **outDihedrals);
-Int MoleculeFindAllImpropers(Molecule *mol, Int **outImpropers);
-*/
-
 Int MoleculeFindMissingAngles(Molecule *mol, Int **outAngles);
 Int MoleculeFindMissingDihedrals(Molecule *mol, Int **outDihedrals);
 Int MoleculeFindMissingImpropers(Molecule *mol, Int **outImpropers);
@@ -495,7 +484,6 @@ int MoleculeHideAtoms(Molecule *mp, IntGroup *ig);
 int MoleculeRenumberAtoms(Molecule *mp, const Int *new2old, Int *old2new_out, Int isize);
 
 void MoleculeTransform(Molecule *mp, Transform tr, IntGroup *group);
-/*void MoleculeMove(Molecule *mp, Transform tr, IntGroup *group);*/
 void MoleculeTranslate(Molecule *mp, const Vector *vp, IntGroup *group);
 void MoleculeRotate(Molecule *mp, const Vector *axis, Double angle, const Vector *center, IntGroup *group);
 int MoleculeCenterOfMass(Molecule *mp, Vector *center, IntGroup *group);
@@ -537,8 +525,6 @@ int MoleculeLookUpCubeWithMONumber(Molecule *mp, Int mono);
 int MoleculeClearCubeAtIndex(Molecule *mp, Int index);
 int MoleculeOutputCube(Molecule *mp, Int index, const char *fname, const char *comment);
 
-/*#define kMoleculePasteboardType "Molecule"
-#define kParameterPasteboardType "Parameter" */
 extern char *gMoleculePasteboardType;
 extern char *gParameterPasteboardType;
 extern char *gLoadSaveErrorMessage;

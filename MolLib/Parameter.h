@@ -123,11 +123,6 @@ typedef struct VdwPairPar {
 typedef struct VdwCutoffPar {
 	Int    com, src;   /*  Index to the comment array  */
 	UInt   type1, type2;
-/*  The fields type and n1-n4 are now obsolete; atom index range is no longer supported  */
-/*	Byte   type;          *//* 0: atom type specific, 1: atom number specific */
-/*	UInt   n1, n2, n3, n4;*//*  atom type specific: n1 and n2 are atom types  */
-	                        /*  atom number specific: (n1,n2) and (n3,n4) are atom ranges */
-							/*  (n1<=n2, n3<=n4, including the bounds)  */
 	Double cutoff;
 } VdwCutoffPar;
 
@@ -158,10 +153,6 @@ typedef struct Parameter {
 	VdwPairPar *vdwpPars;
 	Int    nvdwCutoffPars;
 	VdwCutoffPar *vdwCutoffPars;
-/*	Int    natomPars;
-	ElementPar *atomPars;
-	Int    ncomments;
-	char **comments;  */
 } Parameter;
 
 /*  Parameter reference (for MolAction and Ruby types)  */

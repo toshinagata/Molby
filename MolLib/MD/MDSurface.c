@@ -292,7 +292,7 @@ s_register_intersect(MDArena *arena, Int i, const crossing_sphere_record *csj, c
 	intersect.flag = 0;
 	intersect.point_id = point_id;
 	AssignArray(&sarena->intersects, &sarena->maxintersects, sizeof(intersect_record), sarena->nintersects++, &intersect);
-#if DEBUG || 1
+#if DEBUG
 	if (csj->i != i || csk->i != i) {
 		md_warning(arena, "Internal inconsistency: point (%d,%d,%d;%d) is registered but circle indices are (%d,%d) and (%d,%d)", i+1, csj->j+1, csk->j+1, point_id, csj->i+1, csj->j+1, csk->i+1, csk->j+1);
 	}

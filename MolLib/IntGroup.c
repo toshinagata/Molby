@@ -22,9 +22,7 @@
 #include <limits.h>		/*  for INT_MAX  */
 #include <stdarg.h>
 
-#ifdef __MWERKS__
 #pragma mark ====== Private definitions ======
-#endif
 
 struct IntGroup {
 	int			refCount;	/*  the reference count  */
@@ -39,9 +37,7 @@ enum {
 	kIntGroupDeconvolute
 };
 
-#ifdef __MWERKS__
 #pragma mark ====== Private (static) functions ======
-#endif
 
 /* --------------------------------------
 	･ IntGroupCalcRequiredStorage
@@ -120,9 +116,7 @@ IntGroupDeleteEntries(IntGroup *psRef, int inStartIndex, int inEndIndex)
 	return result;
 }
 
-#ifdef __MWERKS__
 #pragma mark ====== New/Retain/Release ======
-#endif
 
 /* --------------------------------------
 	･ IntGroupNew
@@ -204,9 +198,8 @@ IntGroupRelease(IntGroup *psRef)
 	}
 }
 
-#ifdef __MWERKS__
 #pragma mark ====== Clear/Copy ======
-#endif
+
 /* --------------------------------------
 	･ IntGroupClear
    -------------------------------------- */
@@ -239,9 +232,7 @@ IntGroupCopy(IntGroup *psRef1, const IntGroup *psRef2)
 	return sts;
 }
 
-#ifdef __MWERKS__
 #pragma mark ====== Point Manipulations ======
-#endif
 
 /* --------------------------------------
 	･ IntGroupLookup
@@ -631,9 +622,7 @@ IntGroupLookupPoint(const IntGroup *psRef, int inPoint)
 	return -1;
 }
 
-#ifdef __MWERKS__
 #pragma mark ====== Binary Operations ======
-#endif
 
 /* --------------------------------------
 	･ IntGroupMyIntersect
@@ -721,37 +710,6 @@ IntGroupMyIntersect(
 		base += ptr[1] - ptr[0];
 	}
 
-	/*  *****   debug   *****  */
-/*
-	FILE *fp;
-	fp = ::fopen("intersect.out", "at");
-	switch (inCode) {
-		case code_Intersect: ::fprintf(fp, "Intersect:\n"); break;
-		case code_Convolute: ::fprintf(fp, "Convolute:\n"); break;
-		case code_Deconvolute: ::fprintf(fp, "Deconvolute:\n"); break;
-	}
-	for (i = 0; i < psRef1.mNumberOfEntries; i++) {
-		::fprintf(fp, "%c%ld %ld", (i == 0 ? '(' : ' '),
-			(int)psRef1.mEntries[i].beginPt,
-			(int)psRef1.mEntries[i].endPt);
-	}
-	::fprintf(fp, ")\n");
-	for (i = 0; i < psRef2.mNumberOfEntries; i++) {
-		::fprintf(fp, "%c%ld %ld", (i == 0 ? '(' : ' '),
-			(int)psRef2.mEntries[i].beginPt,
-			(int)psRef2.mEntries[i].endPt);
-	}
-	::fprintf(fp, ")\n");
-	for (i = 0; i < psRef3.mNumberOfEntries; i++) {
-		::fprintf(fp, "%c%ld %ld", (i == 0 ? '(' : ' '),
-			(int)psRef3.mEntries[i].beginPt,
-			(int)psRef3.mEntries[i].endPt);
-	}
-	::fprintf(fp, ")\n");
-	::fclose(fp);
-*/
-	/*  *********************  */
-	
 	return result;
 }
 
@@ -897,9 +855,7 @@ IntGroupOffset(IntGroup *psRef, int offset)
 	return kIntGroupStatusNoError;
 }
 
-#ifdef __MWERKS__
 #pragma mark ====== Debugging ======
-#endif
 
 char *
 IntGroupInspect(const IntGroup *pset)

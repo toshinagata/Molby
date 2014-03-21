@@ -1737,17 +1737,6 @@ MoleculeLoadPsfFile(Molecule *mp, const char *fname, char **errbuf)
 					frames = (Vector *)realloc(frames, size);
 				if (frames == NULL)
 					goto panic;
-			#if 0
-				if (fn == 1) {
-					/*  Copy the coordinates of the first frame  */
-					for (i = 0; i < mp->natoms; i++) {
-						ap = ATOM_AT_INDEX(mp->atoms, i);
-						frames[i] = ap->r;
-					}
-				}
-				/*  Copy the coordinates of the last frame to the newly created frame  */
-				memmove(frames + sizeof(Vector) * mp->natoms * fn, frames + sizeof(Vector) * mp->natoms * (fn - 1), sizeof(Vector) * mp->natoms);
-			#endif
 			}
 			/*  Read coordinates  */
 			for (i = 0; i < mp->natoms; i++) {
@@ -4295,24 +4284,6 @@ MoleculeWriteToPsfFile(Molecule *mp, const char *fname, char **errbuf)
 			fprintf(fp, " %.8g %.8g %.8g ! %d,%.4s\n", r.x, r.y, r.z, i + 1, ap->aname);
 		}
 		fprintf(fp, "\n");
-#if 0
-		if (mp->nframes > 0) {
-			int fn;  /*  Frame number  */
-			for (fn = 0; fn < ap->nframes; fn++) {
-				fprintf(fp, "%8d !COORD: coordinates for frame %d\n", mp->natoms, fn);
-				for (i = 0; i < mp->natoms; i++) {
-					Vector r;
-					ap = ATOM_AT_INDEX(mp->atoms, i);
-					if (ap->frames == NULL || fn >= ap->nframes)
-						r = ap->r;
-					else
-						r = ap->frames[fn];
-					fprintf(fp, " %.8g %.8g %.8g ! %d,%.4s\n", r.x, r.y, r.z, i + 1, ap->name);
-				}
-				fprintf(fp, "\n");
-			}
-		}
-#endif
 	}
 		
 	fclose(fp);
@@ -4764,58 +4735,6 @@ sOutputBondInstructions(FILE *fp, int natoms, Atom *atoms, int overlap_correctio
 		free(exbonds);
 	}
 }
-	
-#if 0
-{
-	/*  Explicit bond table, sorted by bond type  */
-	for (i = j = 0; i < mp->nbonds; i++) {
-		n1 = mp->bonds[i * 2];
-		n2 = mp->bonds[i * 2 + 1];
-		ap1 = ATOM_AT_INDEX(mp->atoms, n1);
-		ap2 = ATOM_AT_INDEX(mp->atoms, n2);
-		if ((ap1->exflags & kAtomHiddenFlag) || (ap2->exflags & kAtomHiddenFlag))
-			continue;
-		if (ap1->atomicNumber > 18 || ap2->atomicNumber > 18) {
-			type = 3;
-		} else if (ap1->atomicNumber > 1 && ap1->atomicNumber > 1) {
-			type = 2;
-		} else {
-			type = 1;
-		}
-		ip[j * 3] = type;
-		ip[j * 3 + 1] = sMakeAdc(n1, ap1->symbase, ap1->symop);
-		ip[j * 3 + 2] = sMakeAdc(n2, ap2->symbase, ap2->symop);
-		j++;
-	}
-	mergesort(ip, j, sizeof(int) * 3, sCompareBondType);
-	
-	/*  Output instruction cards  */
-	strcpy(buf, "  1   811");
-	for (i = n1 = 0; i < j; i++) {
-		n2 = (n1 % 3) * 18 + 9;
-		snprintf(buf + n2, 80 - n2, "%9d%9d\n", ip[i * 3 + 1], ip[i * 3 + 2]);
-		if (i == j - 1 || n1 >= 29 || ip[i * 3] != ip[i * 3 + 3]) {
-			/*  End of this instruction  */
-			buf[2] = '2';
-			fputs(buf, fp);
-			switch (ip[i * 3]) {
-				case 3: rad = 0.06; nshades = 5; break;
-				case 2: rad = 0.06; nshades = 1; break;
-				default: rad = 0.04; nshades = 1; break;
-			}
-			fprintf(fp, "                     %3d            %6.3f\n", nshades, rad);
-			strcpy(buf, "  1   811");
-			n1 = 0;
-			continue;
-		} else if (n1 % 3 == 2) {
-			fputs(buf, fp);
-			strcpy(buf, "  1      ");
-		}
-		n1++;
-	}
-	free(ip);
-}
-#endif
 
 int
 MoleculeWriteToTepFile(Molecule *mp, const char *fname, char **errbuf)
@@ -6625,28 +6544,6 @@ MoleculeAddExpandedAtoms(Molecule *mp, Symop symop, IntGroup *group, Int *indice
 			}
 		}
 	}
-					
-#if 0
-	for (i = 0; i < n0; i++) {
-		int b[2];
-		Int *cp;
-		b[0] = table[i];
-		if (b[0] < 0 || b[0] == i)
-			continue;
-		ap = ATOM_AT_INDEX(mp->atoms, i);
-		cp = AtomConnectData(&ap->connect);
-		for (n = 0; n < ap->connect.count; n++) {
-			b[1] = table[cp[n]];
-			if (b[1] < 0)
-				continue;
-			if (b[1] > n0 && b[0] > b[1])
-				continue;
-			if (MoleculeLookupBond(mp, b[0], b[1]) >= 0)
-				continue;
-			MoleculeAddBonds(mp, 1, b, NULL, 1);
-		}
-	}
-#endif
 	mp->needsMDRebuild = 1;
 	__MoleculeUnlock(mp);
 	free(table);

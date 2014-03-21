@@ -316,7 +316,7 @@ void
 MyListCtrl::StartEditText(int row, int column)
 {
 	wxRect rect;
-	int x0, x1, y0, dx, size, xpos, ypos, xunit, yunit;
+	int x0, x1, dx, size, xpos, ypos, xunit, yunit;
 	if (editText != NULL && editText->IsShown())
 		EndEditText(true);
 	if (dataSource == NULL || !dataSource->IsItemEditable(this, row, column))

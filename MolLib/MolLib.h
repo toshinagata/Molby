@@ -24,24 +24,4 @@
 #include "Trackball.h"
 #include "MolAction.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-	
-typedef struct MolArena {
-	Molecule *mp;       /*  Current molecule  */
-	struct MainView *mview;    /*  Active view  */
-	Int npars;          /*  Number of parameters in pars[] */
-	Parameter **pars;   /*  Parameters. pars[npars - 1] is always the 'custom' parameters, that are defined individually from TCL command. Other parameters are those from files, and they are registered by the order they are read from files.  */
-	
-	/*  These two fields are used by T_MolNew, T_MolRelease  */
-	Int nmollist;
-	Molecule **mollist;
-
-} MolArena;
-
-#ifdef __cplusplus
-}
-#endif
-		
 #endif /* __MolLib_h__ */
