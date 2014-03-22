@@ -915,7 +915,7 @@ end_of_header
 			  puts "#{n1} bonds are guessed." if verbose
 			end
 			if exbonds.length > 0
-			  h = Dialog.run {
+			  h = Dialog.run("CIF Import: Symmetry Expansion") {
 			    layout(1,
 				  item(:text, :title=>"There are bonds including symmetry related atoms.\nWhat do you want to do?"),
 				  item(:radio, :title=>"Expand only atoms that are included in those extra bonds.", :tag=>"atoms_only"),

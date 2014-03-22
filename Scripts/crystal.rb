@@ -1755,9 +1755,10 @@ end
 
   def cmd_unit_cell
     mol = self
+	new_box = nil
     hash = Dialog.run("Unit Cell") {
 	  @mol = mol
-	  @box = @mol.box
+	  @box = @mol.box.dup
 	  @box_save = nil
 	  
 	  def set_cell_value(item1)
@@ -1932,12 +1933,31 @@ end
 		-1, -1)
 	  set_attr(0, :action=>lambda { |it|
 	    if set_box_value(it)
-		  @mol.box = @box
+		  new_box = @box
 		  end_modal(it)
 		end
 	  } )
 	  update_values(nil)
 	}
+	if hash[:status] == 0
+	  if new_box != nil
+	    h = Dialog.run(" ") {
+		  layout(1,
+		    item(:text, :title=>"Do you want to keep the fractional coordinates?"),
+			item(:radio, :title=>"Yes, convert the cartesian coordinates so that the fractional coordinates will be unchanged.",
+			  :tag=>"yes", :value=>1),
+			item(:radio, :title=>"No, keep the cartesian coordinates unchanged.", :tag=>"no"))
+		  radio_group("yes", "no")
+		}
+		if h[:status] == 0
+		  yes = h["yes"] != 0
+		  new_box.push(yes)
+		  mol.box = new_box
+		end
+	  else
+	    mol.box = nil
+	  end
+	end
   end
 
 
@@ -2292,6 +2312,34 @@ def cmd_show_periodic_image
 	}
 end
 
+def has_expanded_atoms
+  atoms.find { |ap| ap.symop != nil }
+end
+
+def cmd_remove_expanded_atoms
+  mol = self
+  return unless mol.has_expanded_atoms
+  hash = Dialog.run("Remove Expanded Atoms") {
+    layout(1,
+	  item(:radio, :title=>"Remove all expanded atoms.", :tag=>"all", :value=>1),
+	  item(:radio, :title=>"Keep the expanded atoms that are in the same fragment with original atoms.", :tag=>"partial"))
+	radio_group("all", "partial")
+  }
+  if hash[:status] == 0
+    if hash["all"] == 1
+	  rm = mol.atom_group { |ap| ap.symop != nil }
+	else
+	  rm = IntGroup[]
+	  mol.each_fragment { |f|
+	    if !f.find { |i| mol.atoms[i].symop == nil }
+		  rm.add(f)
+		end
+	  }
+	end
+	mol.remove(rm)
+  end
+end
+
 end
 
 require_cell = lambda { |m| m && m.cell != nil }
@@ -2299,10 +2347,11 @@ require_cell = lambda { |m| m && m.cell != nil }
 register_menu("Xtal\tUnit Cell...", :cmd_unit_cell)
 register_menu("Xtal\tSymmetry Operations...", :cmd_symmetry_operations)
 register_menu("Xtal\t-", nil)
-register_menu("Xtal\tShow Periodic Image...", :cmd_show_periodic_image, require_cell)
-register_menu("Xtal\tComplete by Symmetry", :complete_by_symmetry, require_cell)
+register_menu("Xtal\tComplete by Symmetry", :complete_by_symmetry, lambda { |m| m && (m.cell != nil || m.nsymmetries > 1) } )
 register_menu("Xtal\tCreate Packing Diagram...", :create_packing_diagram, require_cell)
+register_menu("Xtal\tShow Periodic Image...", :cmd_show_periodic_image, require_cell)
+register_menu("Xtal\tRemove Expanded Atoms...", :cmd_remove_expanded_atoms, lambda { |m| m && m.has_expanded_atoms } )
 register_menu("Xtal\t-", nil)
-register_menu("Xtal\tBest-fit Planes...", :cmd_plane, :non_empty)
 register_menu("Xtal\tBonds and Angles with Sigma...", :cmd_bond_angle_with_sigma, :non_empty)
+register_menu("Xtal\tBest-fit Planes...", :cmd_plane, :non_empty)
 register_menu("Xtal\tShow ORTEP...", :cmd_show_ortep, :non_empty)
