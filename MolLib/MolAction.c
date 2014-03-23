@@ -560,11 +560,11 @@ s_MolActionLog(Molecule *mol, MolAction *action, FILE *fp)
 	 (Complex types) M: Molecule, G: IntGroup, A: Atom
 	 (Ruby value)    b: Ruby boolean, r: Ruby object, R: an array of Ruby object (a Ruby array)
 	 (Return value)  i, d, s, v, t, r, G + 0x80 */
-	
+	static int logCount = 0;
 	int i, j, k, lastIval = 0;
 	char buf[80];
 	MolActionArg *argp;
-	fprintf(fp, "MolAction: %s", action->name);
+	fprintf(fp, "MolAction [%d]: %s", ++logCount, action->name);
 	for (i = 0; i < action->nargs; i++) {
 		argp = action->args + i;
 		if (argp->type >= 0x80)

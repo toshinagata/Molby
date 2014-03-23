@@ -6766,7 +6766,9 @@ int
 sRemoveElementsFromArrayAtPositions(void *objs, int nobjs, void *clip, size_t size, IntGroup *where)
 {
 	int n1, n2, n3, start, end, i;
-	if (objs == NULL || where == NULL)
+	if (where == NULL || IntGroupGetCount(where) == 0)
+		return 0;  /*  No operation  */
+	if (objs == NULL || nobjs == 0)
 		return 1;  /*  Bad argument  */
 	n1 = 0;  /*  Position to move remaining elements to */
 	n2 = 0;  /*  Position to move remaining elements from  */
@@ -8255,7 +8257,7 @@ MoleculeDeleteAngles(Molecule *mp, Int *angles, IntGroup *where)
 	__MoleculeLock(mp);
 	if (sRemoveElementsFromArrayAtPositions(mp->angles, mp->nangles, angles, sizeof(Int) * 3, where) != 0) {
 		__MoleculeUnlock(mp);
-		Panic("Low memory while adding angles");
+		Panic("Bad argument while deleting angles");
 	}
 	mp->nangles -= (nc = IntGroupGetCount(where));
 	if (mp->nangles == 0) {
@@ -8307,7 +8309,7 @@ MoleculeDeleteDihedrals(Molecule *mp, Int *dihedrals, IntGroup *where)
 	__MoleculeLock(mp);
 	if (sRemoveElementsFromArrayAtPositions(mp->dihedrals, mp->ndihedrals, dihedrals, sizeof(Int) * 4, where) != 0) {
 		__MoleculeUnlock(mp);
-		Panic("Low memory while adding dihedrals");
+		Panic("Internal error: bad argument while deleting dihedrals");
 	}
 	mp->ndihedrals -= (nc = IntGroupGetCount(where));
 	if (mp->ndihedrals == 0) {
@@ -8359,7 +8361,7 @@ MoleculeDeleteImpropers(Molecule *mp, Int *impropers, IntGroup *where)
 	__MoleculeLock(mp);
 	if (sRemoveElementsFromArrayAtPositions(mp->impropers, mp->nimpropers, impropers, sizeof(Int) * 4, where) != 0) {
 		__MoleculeUnlock(mp);
-		Panic("Low memory while adding impropers");
+		Panic("Internal error: bad argument while deleting impropers");
 	}
 	mp->nimpropers -= (nc = IntGroupGetCount(where));
 	if (mp->impropers == NULL) {
