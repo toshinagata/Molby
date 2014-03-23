@@ -1065,15 +1065,15 @@ RubyDialogCallback_isItemHidden(RDItem *item)
 void
 RubyDialogCallback_setFontForItem(RDItem *item, int size, int family, int style, int weight)
 {
-	wxTextCtrl *ctrl;
-	wxStaticText *stxt;
+	wxTextCtrl *textctrl;
+	wxControl *ctrl;
 	wxFont font;
-	if ((ctrl = wxDynamicCast((wxWindow *)item, wxTextCtrl)) != NULL) {
-		wxTextAttr attr = ctrl->GetDefaultStyle();
+	if ((textctrl = wxDynamicCast((wxWindow *)item, wxTextCtrl)) != NULL) {
+		wxTextAttr attr = textctrl->GetDefaultStyle();
 		font = attr.GetFont();
-	} else if ((stxt = wxDynamicCast((wxWindow *)item, wxStaticText)) != NULL) {
-		font = stxt->GetFont();
-	}
+	} else if ((ctrl = wxDynamicCast((wxWindow *)item, wxControl)) != NULL) {
+		font = ctrl->GetFont();
+	} else return;
 	if (size == 0)
 		size = font.GetPointSize();
 	if (family == 0)
@@ -1098,15 +1098,15 @@ RubyDialogCallback_setFontForItem(RDItem *item, int size, int family, int style,
 				  (weight == 3 ? wxFONTWEIGHT_LIGHT :
 				   wxFONTWEIGHT_NORMAL));
 	}
-	if (ctrl != NULL) {
+	if (textctrl != NULL) {
 		wxTextAttr newAttr;
 		newAttr.SetFont(wxFont(size, family, style, weight));
-		ctrl->SetDefaultStyle(newAttr);
-	} else if (stxt != NULL) {
-		stxt->SetFont(wxFont(size, family, style, weight));
-		wxString label = stxt->GetLabel();
-		stxt->SetLabel(_(""));
-		stxt->SetLabel(label);  /*  Update the control size  */
+		textctrl->SetDefaultStyle(newAttr);
+	} else {
+		ctrl->SetFont(wxFont(size, family, style, weight));
+		wxString label = ctrl->GetLabel();
+		ctrl->SetLabel(_(""));
+		ctrl->SetLabel(label);  /*  Update the control size  */
 	}
 }
 

@@ -873,7 +873,9 @@ def bond_angle_with_sigma(*args)
 
   #  Unit cell parameter
   cell = self.cell
-  if cell.length == 6
+  if cell == nil
+    cell = [1, 1, 1, 90, 90, 90, 0, 0, 0, 0, 0, 0]
+  elsif cell.length == 6
     cell.push(0.0, 0.0, 0.0, 0.0, 0.0, 0.0)  #  No sigma information
   end
   # $a, $b, $c, $alpha, $beta, $gamma, $sig_a, $sig_b, $sig_c, $sig_alpha, $sig_beta, $sig_gamma = self.cell
@@ -1054,78 +1056,125 @@ def cmd_bond_angle_with_sigma
     values = []
 	clicked = []
 	sel = mol.selection
-	on_get_value = lambda { |it, row, col| values[row][col + 2] }
+	on_add_bond = lambda { |it|
+	  values.push([nil, nil, "-", nil, nil, nil, "-", 0])
+	  item_with_tag("table")[:refresh] = true
+	  item_with_tag("table")[:selection] = IntGroup[values.count - 1]
+	  item_with_tag("dump")[:enabled] = true
+	}
+	on_add_angle = lambda { |it|
+	  values.push([nil, nil, nil, nil, nil, nil, nil, 0])
+	  item_with_tag("table")[:refresh] = true
+	  item_with_tag("table")[:selection] = IntGroup[values.count - 1]
+	  item_with_tag("dump")[:enabled] = true
+	}
+	on_get_value = lambda { |it, row, col|
+	  v = values[row][col]
+	  if col < 3
+	    if v.is_a?(Integer)
+	      v = mol.atoms[v].name
+		elsif v == nil
+		  v = "(select)"
+		end
+	  elsif (col >= 4 && col <= 6) && (vv = values[row][col - 4]).is_a?(Integer)
+	    if (s = mol.atoms[vv].symop) != nil
+		  v = sprintf("%d_%d%d%d", s[0], s[1] + 5, s[2] + 5, s[3] + 5)
+		else
+		  v = "."
+		end
+	  end
+	  return v
+	}
+	on_selection_changed = lambda { |it|
+	  s = it[:selection]
+	  if s && s.count > 0
+	    set_attr("delete", :enabled=>true)
+	    set_attr("dump", :enabled=>true)
+	  else
+	    set_attr("delete", :enabled=>false)
+		set_attr("dump", :enabled=>false)
+	  end
+	}
+	on_delete = lambda { |it|
+	  s = attr("table", :selection)
+	  if s
+	    s.reverse_each { |idx|
+		  values.delete_at(idx)
+		}
+	  end
+	  tbl = item_with_tag("table")
+	  tbl[:selection] = IntGroup[]
+	  tbl[:refresh] = true
+	  on_selection_changed.call(tbl)
+	}
 	atom_name = lambda { |ap|
 	  (ap.molecule.nresidues >= 2 ? "#{ap.res_seq}:" : "") + ap.name
 	}
     layout(1,
-	  item(:table, :width=>480, :height=>300, :tag=>"table",
-	    :columns=>[["Bond/Angle", 140], "value(sigma)", "symop1", "symop2", "symop3"],
+	  item(:table, :width=>500, :height=>300, :tag=>"table",
+	    :columns=>[["atom1", 60], ["atom2", 60], ["atom3", 60],
+		  "value(sigma)", "symop1", "symop2", "symop3"],
 		:on_count=> lambda { |it| values.count },
-		:on_get_value=> on_get_value),
+		:on_get_value=>on_get_value,
+		:on_selection_changed=>on_selection_changed),
+	  item(:text, :title=>"(1) Hit 'New Bond' or 'New Angle', and (2) click on the atoms to measure in the main window.",
+	    :font=>[10]),
+	  layout(3,
+	    item(:button, :title=>"New Bond", :width=>80, :font=>[10], :action=>on_add_bond),
+		item(:button, :title=>"New Angle", :width=>80, :font=>[10], :action=>on_add_angle),
+		item(:button, :title=>"Delete", :width=>80, :font=>[10], :action=>on_delete,
+		  :tag=>"delete", :enabled=>false),
+		:padding=>5, :margin=>0),
 	  layout(2,
 	    item(:view, :width=>480, :height=>1), -1,
 	    item(:button, :title=>"Export to Clipboard", :tag=>"dump",
 		  :action=>lambda { |item|
-		    s = ""; values.each { |val| s += val[2..-1].join("  ") + "\n" }; export_to_clipboard(s)
+		    s = ""
+			sel = attr("table", :selection)
+			return if sel == nil || sel.count == 0
+			sel.each { |j|
+			  ss = ""
+			  7.times { |i|
+			    sss = on_get_value.call(item_with_tag("table"), j, i).to_s
+				ss += (sss == "-" ? "" : sss) + (i == 6 ? "\n" : "  ")
+			  }
+			  s += ss
+			}
+			export_to_clipboard(s)
 		  },
 		  :enabled=>false),
 		[item(:button, :title=>"Close", :action=>lambda { |item| hide }), {:align=>:right}])
 	)
 	on_document_modified = lambda { |*d|
-	  # puts "on_document_modified called: newsel = #{mol.selection}, sel = #{sel}"
-	  newsel = mol.selection
-	  val1 = val2 = nil
-	  if sel != newsel
-	    n1 = newsel.count
-		if n1 == 0
-		  #  Clear selection
-		  clicked.clear
-		elsif n1 == 1 && !clicked.include?(newsel[0])
-		  #  New atom
-		  clicked.clear
-		  clicked[0] = newsel[0]
-		  val1 = [[clicked[0]], "---", "", "", ""]
-		elsif n1 == 2 && clicked.length == 1
-		  #  New bond
-		  if newsel[0] == clicked[0]
-		    clicked[1] = newsel[1]
-		  elsif newsel[1] == clicked[0]
-		    clicked[1] = newsel[0]
-		  else
-		    clicked[0] = newsel[0]
-			clicked[1] = newsel[1]
+	  newsel = mol.selection - sel
+	  sel = mol.selection
+	  row = (item_with_tag("table")[:selection] || [nil])[-1]
+	  return unless row
+	  if newsel.count == 1
+	    #  Add new atom to the selected row
+		val = newsel[0]
+		lim = (values[row][2] == "-" ? 2 : 3)
+		i = 0
+		while i < lim
+		  if values[row][i] == nil
+		    values[row][i] = val
+			break
 		  end
-		  val1 = mol.bond_angle_with_sigma(clicked)[0]
-		elsif n1 == 3 && clicked.length == 2 && newsel.include?(clicked[0]) && newsel.include?(clicked[1])
-		  #  New angle
-		  clicked[2] = (newsel - clicked)[0]
-		  val1 = mol.bond_angle_with_sigma(clicked[1..2])[0]
-		  val2 = mol.bond_angle_with_sigma(clicked)[0]
-		else
-		  return
+		  i += 1
 		end
-		[val1, val2].each { |val|
-		  next unless val
-		  label = ""
-		  n = val[0].length
-		  n.times { |i|
-		    label += atom_name.call(mol.atoms[val[0][i]])
-			if val[0][i + 1]
-			  label += (mol.bond_exist?(val[0][i], val[0][i + 1]) ? "-" : "...")
-			end
+		if i == lim
+		  (lim - 1).times { |j|
+		    values[row][j] = values[row][j + 1]
 		  }
-		  val[1, 0] = label
-		  val.unshift(n)  #  val = [count, indices, label, value(sigma), symop1, symop2, symop3]
-		}
-	    if values[-1] && values[-1][0] == 1
-		  values.pop
+		  values[row][lim - 1] = val
 		end
-		values.push(val1) if val1
-		values.push(val2) if val2
-		sel = newsel
+		if i < lim - 1
+		  val1 = nil
+		else
+		  val1 = mol.bond_angle_with_sigma(values[row][0...lim])[0][1]
+		end
+		values[row][3] = val1
 		item_with_tag("table")[:refresh] = true
-		item_with_tag("dump")[:enabled] = (values.length > 0)
 	  end
 	}
     listen(mol, "documentModified", on_document_modified)
@@ -2009,7 +2058,6 @@ def Molecule.check_space_group
 	  msg = "#{name} is NOT a complete group\n" + err
 	  error_message_box(msg)
 	end
-	puts msg
 #	break if err != ""
   }
 end
@@ -2028,12 +2076,12 @@ def Molecule.setup_space_groups
   @@space_group_list = []   #  [["Triclinic",    -> Crystal system
 							#     ["#1: P1",     -> Space group family
 							#       [["P1", 0]]],-> Variations
-							#     ...
+							#     ...],
 							#   ["Monoclinic",
 							#     ...
 							#     ["#7: Pc",
 							#       [["Pc", 6], ["Pa", 7], ["Pn", 8]]],
-							#     ... ]]
+							#     ...]]
   last_group_code = 0
   Kernel.open(ScriptPath + "/space_groups.txt", "r") { |fp|
 	while ln = fp.gets
@@ -2257,15 +2305,16 @@ def cmd_symmetry_operations
         :on_selection_changed=>lambda { |it|
 		  item_with_tag("delete")[:enabled] = (it[:selection].count > 0) } ),
 	  layout(2,
-	    item(:button, :title=>"+", :width=>40, :tag=>"add",
+	    item(:togglebutton, :title=>"+", :width=>40, :tag=>"add",
 		  :action=>lambda { |it|
 		    syms.push(Transform.new); item_with_tag("sym_table")[:refresh] = true
 			update_space_group_text.call } ),
-		item(:button, :title=>"-", :width=>40, :tag=>"delete", :enabled=>false,
+		item(:togglebutton, :title=>"-", :width=>40, :tag=>"delete", :enabled=>false,
 		  :action=>lambda { |it|
 		    item_with_tag("sym_table")[:selection].reverse_each { |n| syms.delete_at(n) }
 			item_with_tag("sym_table")[:refresh] = true
-			update_space_group_text.call } )))
+			update_space_group_text.call } ),
+		:padding=>0, :margin=>0 ) )
 	item_with_tag("sym_table")[:refresh] = true
 	update_space_group_text.call
   }

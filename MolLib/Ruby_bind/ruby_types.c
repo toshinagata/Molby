@@ -156,10 +156,12 @@ s_Vector3D_ElementAtIndex(VALUE self, VALUE val)
 {
 	Vector *vp;
 	Double w;
-	int n = NUM2INT(val);
+	int n = NUM2INT(rb_Integer(val));
 	Data_Get_Struct(self, Vector, vp);
-	if (n < 0 || n >= 3)
-		rb_raise(rb_eMolbyError, "index to Vector3D out of range");
+	if (n < -3 || n >= 3)
+		rb_raise(rb_eMolbyError, "index to Vector3D (%d) out of range", n);
+	if (n < 0)
+		n += 3;
 	w = (n == 0 ? vp->x : (n == 1 ? vp->y : vp->z));
 	return rb_float_new(w);
 }
@@ -176,10 +178,12 @@ s_Vector3D_SetElementAtIndex(VALUE self, VALUE idx, VALUE val)
 {
 	Vector *vp;
 	Double w = NUM2DBL(rb_Float(val));
-	int n = NUM2INT(idx);
+	int n = NUM2INT(rb_Integer(idx));
 	Data_Get_Struct(self, Vector, vp);
-	if (n < 0 || n >= 3)
-		rb_raise(rb_eMolbyError, "index to Vector3D out of range");
+	if (n < -3 || n >= 3)
+		rb_raise(rb_eMolbyError, "index to Vector3D (%d) out of range", n);
+	if (n < 0)
+		n += 3;
 	if (n == 0)
 		vp->x = w;
 	else if (n == 1)
@@ -773,11 +777,15 @@ s_Transform_ElementAtIndex(VALUE self, VALUE val1, VALUE val2)
 {
 	Transform *tp;
 	double w;
-	int n1 = NUM2INT(val1);
-	int n2 = NUM2INT(val2);
+	int n1 = NUM2INT(rb_Integer(val1));
+	int n2 = NUM2INT(rb_Integer(val2));
 	Data_Get_Struct(self, Transform, tp);
-	if (n1 < 0 || n1 >= 4 || n2 < 0 || n2 >= 3)
-		rb_raise(rb_eMolbyError, "index to Transform out of range");
+	if (n1 < -4 || n1 >= 4 || n2 < -3 || n2 >= 3)
+		rb_raise(rb_eMolbyError, "index to Transform (%d,%d) out of range", n1, n2);
+	if (n1 < 0)
+		n1 += 4;
+	if (n2 < 0)
+		n2 += 3;
 	w = (*tp)[n1 * 3 + n2];
 	return rb_float_new(w);
 }
@@ -795,11 +803,15 @@ s_Transform_SetElementAtIndex(VALUE self, VALUE idx1, VALUE idx2, VALUE val)
 {
 	Transform *tp;
 	double w;
-	int n1 = NUM2INT(idx1);
-	int n2 = NUM2INT(idx2);
+	int n1 = NUM2INT(rb_Integer(idx1));
+	int n2 = NUM2INT(rb_Integer(idx2));
 	Data_Get_Struct(self, Transform, tp);
-	if (n1 < 0 || n1 >= 4 || n2 < 0 || n2 >= 3)
-		rb_raise(rb_eMolbyError, "index to Transform out of range");
+	if (n1 < -4 || n1 >= 4 || n2 < -3 || n2 >= 3)
+		rb_raise(rb_eMolbyError, "index to Transform (%d,%d) out of range", n1, n2);
+	if (n1 < 0)
+		n1 += 4;
+	if (n2 < 0)
+		n2 += 3;
 	w = NUM2DBL(rb_Float(val));
 	(*tp)[n1 * 3 + n2] = w;
 	return rb_float_new(w);
@@ -1088,10 +1100,12 @@ s_Transform_Column(VALUE self, VALUE val)
 {
 	Transform *tp1;
 	Vector v;
-	int n = NUM2INT(val);
+	int n = NUM2INT(rb_Integer(val));
 	Data_Get_Struct(self, Transform, tp1);
-	if (n < 0 || n >= 4)
-		rb_raise(rb_eMolbyError, "row index out of range");
+	if (n < -4 || n >= 4)
+		rb_raise(rb_eMolbyError, "row index (%d) out of range", n);
+	if (n < 0)
+		n += 4;
 	v.x = (*tp1)[n * 3];
 	v.y = (*tp1)[n * 3 + 1];
 	v.z = (*tp1)[n * 3 + 2];
@@ -1534,13 +1548,17 @@ s_LAMatrix_ElementAtIndex(int argc, VALUE *argv, VALUE self)
 	VALUE val1, val2;
 	int n1, n2;
 	rb_scan_args(argc, argv, "11", &val1, &val2);
-	n1 = NUM2INT(val1);
+	n1 = NUM2INT(rb_Integer(val1));
 	if (val2 != Qnil)
-		n2 = NUM2INT(val2);
-	else n2 = -1;
+		n2 = NUM2INT(rb_Integer(val2));
+	else n2 = -mp->row - 1;
 	Data_Get_Struct(self, LAMatrix, mp);
-	if (n1 < 0 || n1 >= mp->column || (val2 != Qnil && (n2 < 0 || n2 >= mp->row)))
-		rb_raise(rb_eMolbyError, "index to LAMatrix out of range");
+	if (n1 < -mp->column || n1 >= mp->column || (val2 != Qnil && (n2 < -mp->row || n2 >= mp->row)))
+		rb_raise(rb_eMolbyError, "index to LAMatrix (%d,%d) out of range", n1, n2);
+	if (n1 < 0)
+		n1 += mp->column;
+	if (n2 < 0)
+		n2 += mp->row;
 	if (n2 >= 0) {
 		w = mp->data[n1 * mp->row + n2];
 		return rb_float_new(w);
@@ -1579,10 +1597,14 @@ s_LAMatrix_SetElementAtIndex(int argc, VALUE *argv, VALUE self)
 	n1 = NUM2INT(rb_Integer(idx1));
 	if (idx2 != Qnil)
 		n2 = NUM2INT(rb_Integer(idx2));
-	else n2 = -1;
+	else n2 = -mp->row - 1;
 	Data_Get_Struct(self, LAMatrix, mp);
-	if (n1 < 0 || n1 >= mp->column || (idx2 != Qnil && (n2 < 0 || n2 >= mp->row)))
-		rb_raise(rb_eRangeError, "index to LAMatrix out of range");
+	if (n1 < -mp->column || n1 >= mp->column || (idx2 != Qnil && (n2 < -mp->row || n2 >= mp->row)))
+		rb_raise(rb_eRangeError, "index to LAMatrix (%d,%d) out of range", n1, n2);
+	if (n1 < 0)
+		n1 += mp->column;
+	if (n2 < 0)
+		n2 += mp->row;
 	if (idx2 == Qnil) {
 		val = rb_ary_to_ary(val);
 		if (RARRAY_LEN(val) > 0 && rb_obj_is_kind_of(RARRAY_PTR(val)[0], rb_cArray)) {
@@ -2177,20 +2199,24 @@ static VALUE
 s_LAMatrix_Submatrix_sub(VALUE self, int rowpos, int columnpos, int row, int column)
 {
 	LAMatrix *mp1, *mp2;
-	int i, j;
+	int i, j, n1, n2, n3, n4;
 	Data_Get_Struct(self, LAMatrix, mp1);
-	if (rowpos < 0 || rowpos >= mp1->row)
-		rb_raise(rb_eArgError, "row number out of range");
-	if (columnpos < 0 || columnpos >= mp1->column)
-		rb_raise(rb_eArgError, "column number out of range");
+	if (rowpos < -mp1->row || rowpos >= mp1->row)
+		rb_raise(rb_eArgError, "illegal row number (%d)", rowpos);
+	if (rowpos < 0)
+		rowpos += mp1->row;
+	if (columnpos < -mp1->column || columnpos >= mp1->column)
+		rb_raise(rb_eArgError, "illegal column number (%d)", columnpos);
+	if (columnpos < 0)
+		columnpos += mp1->column;
 	if (row == -1)
 		row = mp1->row - rowpos;
-	else if (row <= 0 || rowpos + row > mp1->row)
-		rb_raise(rb_eArgError, "number of rows out of range");
 	if (column == -1)
 		column = mp1->column - columnpos;
-	else if (column <= 0 || columnpos + column > mp1->column)
-		rb_raise(rb_eArgError, "number of columns out of range");
+	if (row <= 0 || rowpos + row > mp1->row)
+		rb_raise(rb_eArgError, "illegal row number (%d)", row);
+	if (column <= 0 || columnpos + column > mp1->column)
+		rb_raise(rb_eArgError, "illegal column number (%d)", column);
 	mp2 = LAMatrixNew(row, column);
 	for (i = 0; i < row; i++) {
 		for (j = 0; j < column; j++) {
@@ -2588,7 +2614,7 @@ static VALUE
 s_IntGroup_MemberP(VALUE self, VALUE val)
 {
 	IntGroup *ig;
-	int n = NUM2INT(val);
+	int n = NUM2INT(rb_Integer(val));
 	Data_Get_Struct(self, IntGroup, ig);
 	return (IntGroupLookup(ig, n, NULL) ? Qtrue : Qfalse);
 }
@@ -2606,6 +2632,8 @@ s_IntGroup_ElementAtIndex(VALUE self, VALUE val)
 	int n;
 	int index = NUM2INT(rb_Integer(val));
 	Data_Get_Struct(self, IntGroup, ig);
+	if (index < 0)
+		index += IntGroupGetCount(ig);
 	n = IntGroupGetNthPoint(ig, index);
 	return (n >= 0 ? INT2NUM(n) : Qnil);
 }
@@ -2794,9 +2822,11 @@ static VALUE
 s_IntGroup_RangeAt(VALUE self, VALUE val)
 {
 	IntGroup *ig;
-	int n = NUM2INT(val);
+	int n = NUM2INT(rb_Integer(val));
 	int sp, ep;
 	Data_Get_Struct(self, IntGroup, ig);
+	if (n < 0)
+		n += IntGroupGetIntervalCount(ig);
 	sp = IntGroupGetStartPoint(ig, n);
 	if (sp < 0)
 		return Qnil;

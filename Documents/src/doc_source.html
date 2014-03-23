@@ -97,7 +97,7 @@ Molby runs on the following platforms.
 </p>
 <ul>
 <li>Microsoft Windows (XP or later).</li>
-<li>Mac OS X (10.4 or later, PowerPC or Intel).</li>
+<li>Mac OS X (10.5 or later, PowerPC or Intel).</li>
 </ul>
 
 <p>
@@ -147,7 +147,7 @@ Molbyは以下のプラットフォームで動作します。
 </p>
 <ul>
 <li>Microsoft Windows (XPまたはそれ以降).</li>
-<li>Mac OS X (10.4またはそれ以降, PowerPCまたはIntel).</li>
+<li>Mac OS X (10.5またはそれ以降, PowerPCまたはIntel).</li>
 </ul>
 
 <p>
@@ -224,6 +224,10 @@ Molby includes the following softwares, which are copyrighted products as descri
 <li>
 <a href="http://www.fftw.org/">FFTW 3.3.2</a>: Copyright (C) 2003, 2007-11 Matteo Frigo and Massachusetts Institute of Technology
 </li>
+<li>
+<a href="http://web.ornl.gov/sci/ortep/">ORTEP III</a>: The citation is made like below. There are no copyright notice, but it is likely to be put in public domain.<br />
+Burnett, M. N.; Johnson, C. K. <i>ORTEP-III: Oak Ridge Thermal Ellipsoid Plot Program for Crystal Structure Illustrations,</i> Oak Ridge National Laboratory Report ORNL-6895, 1996.
+</li>
 </ul>
 
 <h2>2. License</h2>
@@ -278,6 +282,10 @@ Molby は以下のソフトウェアを含んでいます。それぞれの著�
 </li>
 <li>
 <a href="http://www.fftw.org/">FFTW 3.3.2</a>: Copyright (C) 2003, 2007-11 Matteo Frigo and Massachusetts Institute of Technology
+</li>
+<li>
+<a href="http://web.ornl.gov/sci/ortep/">ORTEP III</a>: The citation is made like below. There are no copyright notice, but it is likely to be put in public domain.<br />
+Burnett, M. N.; Johnson, C. K. <i>ORTEP-III: Oak Ridge Thermal Ellipsoid Plot Program for Crystal Structure Illustrations,</i> Oak Ridge National Laboratory Report ORNL-6895, 1996.
 </li>
 </ul>
 
@@ -1466,12 +1474,25 @@ J. Phys. Chem. 1995, 99, 6208.
 <link id="#navigation" />
 </div>
 
-<div file="qchem.html">
+<div file="coordination.html">
 <link rel="Up" href="tutorials.html" />
 <link rel="Prev" href="md.html" />
 <link id="#header" />
 <div class="contents" lang="en">
-<h1>Step Eight: Collaboration with Other Quantum Chemistry Softwares</h1>
+<h1>Step Eight: MM/MD Calculation of Coordination Compounds</h1>
+</div>
+<div class="contents" lang="ja">
+<h1>第八段階：配位化合物のMM/MD計算</h1>
+</div>
+<link id="#navigation" />
+</div>
+
+<div file="qchem.html">
+<link rel="Up" href="tutorials.html" />
+<link rel="Prev" href="coordination.html" />
+<link id="#header" />
+<div class="contents" lang="en">
+<h1>Step Nine: Collaboration with Other Quantum Chemistry Softwares</h1>
 <p>
 Molby has a capability to export and import files for quantum chemistry softwares, namely <a href="http://www.gaussian.com/">Gaussian</a> and <a href="http://www.msg.ameslab.gov/GAMESS/">GAMESS</a>. At present, the capability is quite limited, and in many cases it would be much better to use other established softwares. Nevertheless, if you are already familiar with Molby, you may want to use Molby for creating input files for Gaussian and GAMESS and processing outputs. Here are instructions how to do it.
 </p>
@@ -1574,7 +1595,7 @@ Press the "OK" button, and the RESP charge will be assigned to the atoms.
 </p>
 </div>
 <div class="contents" lang="ja">
-<h1>第八段階：他の量子化学ソフトウェアとの連携</h1>
+<h1>第九段階：他の量子化学ソフトウェアとの連携</h1>
 <p>
 Molby は量子化学計算ソフトウェア  <a href="http://www.gaussian.com/">Gaussian</a>、<a href="http://www.msg.ameslab.gov/GAMESS/">GAMESS</a> のファイルを作成／読み込みする機能を持っています。現状では、Molby には極めて制限された機能しかないため、おそらく他の実績あるソフトウェアを使った方がよいでしょう。しかし、Molby の操作に慣れているなら、Gaussian や GAMESS の入力を作成して結果を読み込むのに Molby を使いたいことがあるかもしれません。どのようにすればよいかを説明します。
 </p>
@@ -1665,7 +1686,7 @@ GAMESS 計算が完了したら、同じ分子ファイルを開き、"MM/MD" &r
 </p>
 <p><img src="../etc/tutorial_8_10.png" /></p>
 <p>
-GAMESS の dat ファイルを選択し（GAMESS の計算が成功すればこれができているはずです）、読み込んでください。読み込みが完了したら、"Run RESP..." ボタンが有効になっているはずです。もしそうならなかったら、読み込んだ dat ファイルに静電ポテンシャルのデータが含まれなかったということです。もう一度第１ステップからやり直し、特に "Calculate electrostatic potential (ESP)" チェックボックがオンになっていることを確かめてください。
+GAMESS の dat ファイルを選択し（GAMESS の計算が成功すればこれができているはずです）、読み込んでください。読み込みが完了したら、"Run RESP..." ボタンが有効になっているはずです。もしそうならなかったら、読み込んだ dat ファイルに静電ポテンシャルのデータが含まれなかったということです。もう一度第１ステップからやり直し、特に "Calculate electrostatic potential (ESP)" チェックボックスがオンになっていることを確かめてください。
 </p>
 <p><img src="../etc/tutorial_8_11.png" /></p>
 <p>
@@ -1679,12 +1700,125 @@ GAMESS の dat ファイルを選択し（GAMESS の計算が成功すればこ�
 <link id="#navigation" />
 </div>
 
-<div file="ruby.html">
+<div file="xtal.html">
 <link rel="Up" href="tutorials.html" />
 <link rel="Prev" href="qchem.html" />
 <link id="#header" />
 <div class="contents" lang="en">
-<h1>Step Nine: Using Embedded Ruby Interpreter</h1>
+<h1>Step Ten: Working with Crystal Structures</h1>
+<p>
+Information obtained from single-crystal X-ray analysis is a very important source of molecular structure. Molby can import crystallographic information files (CIFs) and handle structural data included in them. Although Molby does not have capability of solving structures from diffraction data, it does provide convenient features for viewing and examining crystal structures.
+</p>
+<h2>1. Importing a CIF file</h2>
+<p>
+Select "Open..." menu command in the "File" menu, and choose "Crystallographic Information File (CIF)" as the file type.
+</p>
+<p><img src="../etc/xtal_01.png" /></p>
+<p>
+Select a CIF file and hit "Open". If the molecule has crystallographic symmetry, it should have bonds including symmetry related atoms. In this case, a dialog like below is shown and you are asked how to handle such bonds.
+</p>
+<p><img src="../etc/xtal_02.png" /></p>
+<p>
+If the molecule is discrete with an imposed crystallographic symmetry, the default selection (the second one) should work all right. In other cases, where the molecule is an infinite chain, the first choice may make more sense. Expansion by symmetry is also available as a separate command, so it is also safe to ignore extra bonds at this stage (the third choice) and do symmetry expansion later.
+</p>
+<p>
+After expansion, the molecule looks like this. The atoms with darker colors are "expanded atoms."
+</p>
+<p><img src="../etc/xtal_03.png" /></p>
+<p>
+Molby internally handles all atomic positions as cartesian coordinates. However, the fractional coordinates can be calculated "on-the-fly." In the property table, you can choose to display the fractional coordinates (together with the site occupancies and isotropic temperature factors) as below.
+</p>
+<p><img src="../etc/xtal_04.png" /><img src="../etc/xtal_05.png" /></p>
+
+<h2>2. Examining the Crystal Structure</h2>
+<p>
+Commands for examining the crystal structure are available in the "Xtal" menu.
+</p>
+<p><img src="../etc/xtal_06.png" /></p>
+<h3>2-1. Unit Cell</h2>
+<p>
+The "Unit Cell" command is used to set the unit cell parameters. It is also possible to set the origin and the unit cell axes directly.
+</p>
+<p><img src="../etc/xtal_07.png" /></p>
+<h3>2-2. Symmetry Operation</h2>
+<p>
+The "Symmetry Operation" command is used to add/remove the symmetry operation, or change the space group.
+</p>
+<p><img src="../etc/xtal_08.png" /></p>
+<p>
+Hitting the "Select..." button causes another dialog to open, where you can choose one of the predefined space groups. All 230 space groups are included with various origin and axis settings (not all possible choices are covered though).
+</p>
+<p><img src="../etc/xtal_09.png" /></p>
+<h3>2-3. Symmetry Expansion</h3>
+<p>
+The "Complete by Symmetry" command is used to expand the molecular fragment in the asymmetric unit. It is supposed to work similarly as the "expand fragments" option in loading CIFs, but the result may be different. (This is because, in the "Complete by Symmetry" command, the bonds between different asymmetric units are "guessed" based on interatomic distances instead of being read from the CIF file.)
+</p>
+<p><img src="../etc/xtal_10.png" /></p>
+<p>
+The "Create Packing Diagram" command generates symmetry-related atoms within the given range of the fractional coordinates.
+</p>
+<p><img src="../etc/xtal_11.png" /><img src="../etc/xtal_12.png" /></p>
+<p>
+The "Show Periodic Image" command does <i>not</i> generate new atoms, but shows the periodic images of the present unit cell.
+</p>
+<p><img src="../etc/xtal_13.png" /><img src="../etc/xtal_14.png" /></p>
+<p>
+The "Remove Expanded Atoms" command removes the atoms generated by symmetry expansion. There are two options; one is to remove all expanded atoms, and the other is to remove only those atoms that are included in completely expanded fragments (i.e. the fragments containing at least one non-expanded atoms will be kept unchanged).
+</p>
+<p><img src="../etc/xtal_15.png" /></p>
+<p>
+The result looks like below. Note that the periodic images are still shown, because they are not expanded atoms but just images shown on the screen.
+</p>
+<p><img src="../etc/xtal_16.png" /></p>
+
+<h3>2-4. Bonds, Angles, and Planes</h3>
+<p>
+The "Bonds and Angles with Sigma..." command is used to calculate the interatomic distances and angles with the standard deviations.
+</p>
+<p><img src="../etc/xtal_17.png" /></p>
+<p>
+Hit "Add Bond" or "Add Angle" button to create a new entry, then select the atoms one by one in the main window. After adding one "bond" and one "angle", the window looks like below. Note that you can choose atoms that are not connected via chemical bonds.
+</p>
+<p><img src="../etc/xtal_18.png" /></p>
+<p>
+To use the calculated information in other applications (like pasting into a word processor), select the table rows and hit "Export to Clipboard." The information is copied as a plain text (one line per row) that can be pasted into other applications.
+</p>
+<p><img src="../etc/xtal_19.png" /><img src="../etc/xtal_20.png" /></p>
+<p>
+The "Best-Fit Planes" command is used for calculating mean planes, angles between the planes, and distances of atoms from the plane. After the dialog is opened, the set of atoms can be assigned by selecting the atoms in the main window and hit one of the "Set Current Selection" buttons.
+</p>
+<p><img src="../etc/xtal_21.png" /></p>
+
+<h3>2-5. ORTEP Drawing</h3>
+<p>
+The "Show ORTEP" command open the dialog like below.
+</p>
+<p><img src="../etc/xtal_22.png" /></p>
+<p>
+The ORTEP drawing is created by the bundled ORTEP-III program. The following citation should be made when using the output.
+</p>
+<ul>
+<li>
+Burnett, M. N.; Johnson, C. K. <i>ORTEP-III: Oak Ridge Thermal Ellipsoid Plot Program for Crystal Structure Illustrations,</i> Oak Ridge National Laboratory Report ORNL-6895, 1996.
+</li>
+</ul>
+<p>
+On this dialog, you can choose the appearance of the atoms and bonds. The orientation of the drawing is similar (although not completely the same) as in the main window. The drawing can be exported as an ORTEP input file or a graphic file (either as an encapsulated PostScript file, a PNG file or a TIFF file). When exporting to a bitmap file, the drawing is done at resolution of 360 dpi.
+</p>
+<p><img src="../etc/xtal_23.png" /></p>
+</div>
+<div class="contents" lang="ja">
+<h1>第十段階：結晶構造を取り扱う</h1>
+</div>
+<link id="#navigation" />
+</div>
+
+<div file="ruby.html">
+<link rel="Up" href="tutorials.html" />
+<link rel="Prev" href="xtal.html" />
+<link id="#header" />
+<div class="contents" lang="en">
+<h1>Step Eleven: Using Embedded Ruby Interpreter</h1>
 <p>
 One of the most useful features of Molby is the embedded Ruby interpreter. When working on molecular modeling, it is often necessary to modify the model according to some mathematical relations. It is also convenient if we can extract some molecular information by automated "scripts" (i.e. computer programs), and export as a text file that can be processed by graphing software. The embedded Ruby interpreter is very useful under these circumstances. Actually, many functions of Molby itself are implemented by Ruby scripts.
 </p>
@@ -1988,7 +2122,7 @@ The embedded Ruby capability is very strong, and cannot be fully explained in th
 </p>
 </div>
 <div class="contents" lang="ja">
-<h1>第九段階：組み込み Ruby インタプリタを使う</h1>
+<h1>第十一段階：組み込み Ruby インタプリタを使う</h1>
 <p>
 Molby の最も有用な機能の１つは、内蔵の Ruby インタプリタです。分子モデリングを行うとき、ある数学的な規則に従ってモデルを変更したいことがしばしばあります。また、分子のある種の情報を自動化された「スクリプト」（コンピュータプログラム）で抽出してテキストとして書き出し、グラフ描画ソフトウェアで処理することも有用です。内蔵 Ruby インタプリタは、このような場合に威力を発揮します。実は、Molby の機能の多くの部分は Ruby スクリプトで実装されているのです。
 </p>

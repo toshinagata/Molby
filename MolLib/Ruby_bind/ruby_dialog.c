@@ -742,24 +742,40 @@ s_RubyDialog_ItemWithTag(VALUE self, VALUE tval)
 /*
  *  call-seq:
  *     set_attr(tag, hash)
+ *     set_attr(tag, key1, val1, key2, val2,...)
  *
- *  Set the attributes given in the hash.
+ *  Set the attributes given in the hash or in the argument list.
  */
 static VALUE
-s_RubyDialog_SetAttr(VALUE self, VALUE tag, VALUE hash)
+s_RubyDialog_SetAttr(int argc, VALUE *argv, VALUE self)
 {
-	int i;
+	int i, itag, klen;
 	VALUE items = rb_iv_get(self, "_items");
 	VALUE *ptr = RARRAY_PTR(items);
-	int itag = s_RubyDialog_ItemIndexForTag(self, tag);
-	VALUE item = ptr[itag];
-	VALUE keys = rb_funcall(hash, rb_intern("keys"), 0);
-	int klen = RARRAY_LEN(keys);
-	VALUE *kptr = RARRAY_PTR(keys);
-	for (i = 0; i < klen; i++) {
-		VALUE key = kptr[i];
-		VALUE val = rb_hash_aref(hash, key);
-		s_RubyDialogItem_SetAttr(item, key, val);
+	VALUE tval, aval, item, key, val, *kptr;
+	rb_scan_args(argc, argv, "1*", &tval, &aval);
+	itag = s_RubyDialog_ItemIndexForTag(self, tval);
+	item = ptr[itag];
+	if (RARRAY_LEN(aval) == 1) {
+		VALUE hval = RARRAY_PTR(aval)[0];
+		VALUE keys = rb_funcall(hval, rb_intern("keys"), 0);
+		klen = RARRAY_LEN(keys);
+		kptr = RARRAY_PTR(keys);
+		for (i = 0; i < klen; i++) {
+			key = kptr[i];
+			val = rb_hash_aref(hval, key);
+			s_RubyDialogItem_SetAttr(item, key, val);
+		}
+	} else if (RARRAY_LEN(aval) % 2 == 1)
+		rb_raise(rb_eArgError, "set_attr: the arguments should be assigned as key-value pairs");
+	else {
+		klen = RARRAY_LEN(aval);
+		kptr = RARRAY_PTR(aval);
+		for (i = 0; i < klen; i += 2) {
+			key = kptr[i];
+			val = kptr[i + 1];
+			s_RubyDialogItem_SetAttr(item, key, val);
+		}
 	}
 	return item;
 }
@@ -1199,7 +1215,12 @@ s_RubyDialog_Item(int argc, VALUE *argv, VALUE self)
 	rb_ivar_set(new_item, SYM2ID(sDialogSymbol), self);
 	
 	/*  Set attributes  */
-	s_RubyDialog_SetAttr(self, val, hash);
+	{
+		VALUE vals[2];
+		vals[0] = val;
+		vals[1] = hash;
+		s_RubyDialog_SetAttr(2, vals, self);
+	}
 	
 	/*  Set internal attributes  */
 	rb_ivar_set(new_item, SYM2ID(sIsProcessingActionSymbol), Qfalse);
@@ -2659,7 +2680,7 @@ RubyDialogInitClass(void)
 	rb_define_method(rb_cDialog, "_items", s_RubyDialog_Items, 0);
 	rb_define_method(rb_cDialog, "nitems", s_RubyDialog_Nitems, 0);
 	rb_define_method(rb_cDialog, "each_item", s_RubyDialog_EachItem, 0);
-	rb_define_method(rb_cDialog, "set_attr", s_RubyDialog_SetAttr, 2);
+	rb_define_method(rb_cDialog, "set_attr", s_RubyDialog_SetAttr, -1);
 	rb_define_method(rb_cDialog, "attr", s_RubyDialog_Attr, 2);
 	rb_define_method(rb_cDialog, "radio_group", s_RubyDialog_RadioGroup, -2);
 	rb_define_method(rb_cDialog, "action", s_RubyDialog_Action, 1);
