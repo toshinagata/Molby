@@ -490,6 +490,39 @@ class Molecule
 	(n > 0 ? true : false)
   end
   
+  def savexyz(filename)
+    open(filename, "wb") { |fp|
+	  fp.printf "%d\n", self.natoms
+	  each_atom { |ap|
+	    fp.printf "%s %.5f %.5f %.5f\n", ap.element, ap.x, ap.y, ap.z
+	  }
+	}
+	return true
+  end
+  
+  def loadzmat(filename)
+    self.remove(All)
+	open(filename, "rb") { |fp|
+	  while (line = fp.gets)
+	    line.chomp!
+		a = line.split
+		an = Molecule.guess_atomic_number_from_name(a[0])
+		elm = Parameter.builtin.elements[an].name
+		base1 = a[1].to_i - 1
+		base2 = a[3].to_i - 1
+		base3 = a[5].to_i - 1
+		base1 = nil if base1 < 0
+		base2 = nil if base2 < 0
+		base3 = nil if base3 < 0
+		add_atom(a[0], elm, elm, a[2].to_f, base1, a[4].to_f, base2, a[6].to_f, base3)
+	  end
+	}
+	return true
+  end
+  
+  def savezmat(filename)
+  end
+  
   def loadcom(filename)
 #	save_undo_enabled = self.undo_enabled?
 #	self.undo_enabled = false

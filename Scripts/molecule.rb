@@ -151,6 +151,21 @@ class Molecule
     Math.atan2(-sn, cs) * Rad2Deg
   end
   
+  def Molecule.guess_atomic_number_from_name(name)
+    e = name[0..1].capitalize
+	f = Parameter.builtin.elements.find { |p| p.name == e }
+	if f
+	  return f.atomic_number
+	else
+	  e = name[0].capitalize
+	  f = Parameter.builtin.elements.find { |p| p.name == e }
+	  if f
+	    return f.atomic_number
+	  end
+	end
+	return nil
+  end
+  
   #  Calculate the bond length between the two atoms.
   def calc_bond(n1, n2)
     n1 = atoms[n1].r if !n1.is_a?(Vector3D)
@@ -348,7 +363,7 @@ class Molecule
         vx = v2.normalize
         vy = v3.cross(v2)
         if vy.length < 1e-8
-          n = Math::floor(angle / Math::PI + 0.5)
+          n = (angle / Math::PI + 0.5).floor
           if ((angle - n * Math::PI).abs < 1e-8)
             vd = vx * (bond * Math::cos(angle))
           else

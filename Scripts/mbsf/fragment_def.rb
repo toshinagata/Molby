@@ -73,7 +73,16 @@ class Molecule
 	["pyrimidine", "heterocyclic/pyrimidine.mbsf"],
 	["pyrrole", "heterocyclic/pyrrole.mbsf"],
 	["thiazole", "heterocyclic/thiazole.mbsf"],
-	["thiophene", "heterocyclic/thiophene.mbsf"]
+	["thiophene", "heterocyclic/thiophene.mbsf"],
+	
+	"Coordination",
+	["MX2 linear", "coordination/MX2.mbsf"],
+	["MX3 trigonal", "coordination/MX3y.mbsf"],
+	["MX3 T-shape", "coordination/MX3t.mbsf"],
+	["MX4 tetrahedral", "coordination/MX4t.mbsf"],
+	["MX4 square-planar", "coordination/MX4p.mbsf"],
+	["MX5 trigonal bipyramidal", "coordination/MX5.mbsf"],
+	["MX6 octahedral", "coordination/MX6.mbsf"]
   ]
 
   $named_fragments = []
