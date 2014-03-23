@@ -76,9 +76,6 @@ $(DESTPREFIX) :
 amber11 : ../amber11/src/antechamber/*.[ch] ../amber11/src/sqm/*.f ../amber11/src/config.h
 	make -f ../Makefile_amber11
 
-mopac/mopac606$(EXE_SUFFIX) : 
-	make -f ../Makefile_mopac606_nbo
-
 ortep3/ortep3$(EXE_SUFFIX) :
 	make -f ../Makefile_ortep3
 
@@ -140,7 +137,7 @@ endif
 	$(CC) -c buildInfo.c -o $(DESTPREFIX)/buildInfo.o $(CFLAGS)
 	$(CPP) -o $@ $(DESTOBJECTS) $(DESTPREFIX)/buildInfo.o $(CFLAGS) $(LDFLAGS)
 
-$(DESTPREFIX)/$(PRODUCT) : $(DESTPREFIX)/$(EXECUTABLE) ../Scripts/*.rb amber11 mopac/mopac606$(EXE_SUFFIX) ortep3/ortep3$(EXE_SUFFIX)
+$(DESTPREFIX)/$(PRODUCT) : $(DESTPREFIX)/$(EXECUTABLE) ../Scripts/*.rb amber11 ortep3/ortep3$(EXE_SUFFIX)
 ifeq ($(TARGET_PLATFORM),MAC)
 	rm -rf $(DESTPREFIX)/$(PRODUCT)
 	mkdir -p $(DESTPREFIX)/$(PRODUCT)/Contents/MacOS
@@ -149,7 +146,6 @@ ifeq ($(TARGET_PLATFORM),MAC)
 	echo -n "APPL????" > $(DESTPREFIX)/$(PRODUCT)/Contents/PkgInfo
 	cp -r ../Scripts $(DESTPREFIX)/$(PRODUCT)/Contents/Resources
 	cp -r amber11 $(DESTPREFIX)/$(PRODUCT)/Contents/Resources
-	cp -r mopac $(DESTPREFIX)/$(PRODUCT)/Contents/Resources
 	cp -r ortep3 $(DESTPREFIX)/$(PRODUCT)/Contents/Resources
 	mkdir -p $(DESTPREFIX)/$(PRODUCT)/Contents/Resources/Scripts/lib
 	for i in $(RUBY_EXTLIB); do cp $(RUBY_DIR)/lib/$$i $(DESTPREFIX)/$(PRODUCT)/Contents/Resources/Scripts/lib; done
@@ -162,7 +158,6 @@ ifeq ($(TARGET_PLATFORM),MSW)
 	cp `which mingwm10.dll` $(DESTPREFIX)/$(PRODUCT_DIR)
 	cp -r ../Scripts $(DESTPREFIX)/$(PRODUCT_DIR)
 	cp -r amber11 $(DESTPREFIX)/$(PRODUCT_DIR)
-	cp -r mopac $(DESTPREFIX)/$(PRODUCT_DIR)
 	cp -r ortep3 $(DESTPREFIX)/$(PRODUCT_DIR)
 	mkdir -p $(DESTPREFIX)/$(PRODUCT_DIR)/Scripts/lib
 	for i in $(RUBY_EXTLIB); do cp $(RUBY_DIR)/lib/$$i $(DESTPREFIX)/$(PRODUCT_DIR)/Scripts/lib; done

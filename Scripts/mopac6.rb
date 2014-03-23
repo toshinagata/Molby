@@ -18,6 +18,7 @@ class Molecule
   #  Execute mopac6
   #  inpname is the input file
   #  mol (optional) is the molecule from which the MOPAC input was built.
+  #  Currently not used (mopac6 is not bundled)
   def Molecule.execute_mopac(inpname, mol = nil)
 
     #  MOPAC executable
@@ -138,14 +139,7 @@ class Molecule
 	  layout(1,
 	    item(:text, :title=>"MOPAC input"),
 	    item(:textview, :width=>480, :height=>200, :tag=>"mopac_commands"),
-		layout(2,
-		  item(:text, :title=>"Action: "),
-		  item(:radio, :title=>"Save only", :tag=>"save_only", :value=>1),
-		  -1,
-		  item(:radio, :title=>"Save and Run MOPAC", :tag=>"save_and_run")
-		)
 	  )
-	  radio_group("save_only", "save_and_run")
 	  item_with_tag("mopac_commands")[:font] = [:fixed, 10]
 	  item_with_tag("mopac_commands")[:value] = mol.create_mopac
 	}
@@ -160,9 +154,6 @@ class Molecule
       open(fname, "w") { |fp|
 	    fp.write(mop)
 	  }
-	  if h["save_and_run"] == 1
-	    Molecule.execute_mopac(fname, self)
-	  end
 	end
 	
   end

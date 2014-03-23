@@ -76,7 +76,6 @@
 		E4FC77BF183E4F3F0064FB2E /* Types.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC77A6183E4F3F0064FB2E /* Types.c */; };
 		E4FC77D7183E4FFE0064FB2E /* Scripts in Resources */ = {isa = PBXBuildFile; fileRef = E4FC77D6183E4FFE0064FB2E /* Scripts */; };
 		E4FC7802183E503E0064FB2E /* amber11 in Resources */ = {isa = PBXBuildFile; fileRef = E4FC77D8183E503E0064FB2E /* amber11 */; };
-		E4FC7809183E50710064FB2E /* mopac in Resources */ = {isa = PBXBuildFile; fileRef = E4FC7806183E50710064FB2E /* mopac */; };
 		E4FC7811183E50DC0064FB2E /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E4FC7810183E50DC0064FB2E /* Accelerate.framework */; };
 		E4FC7838183E50F00064FB2E /* AGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E4FC7837183E50F00064FB2E /* AGL.framework */; };
 		E4FC784C183E51180064FB2E /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E4FC7845183E51180064FB2E /* Carbon.framework */; };
@@ -187,7 +186,6 @@
 		E4FC77D4183E4FF20064FB2E /* molby_icon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = molby_icon.icns; path = ../bitmaps/molby_icon.icns; sourceTree = SOURCE_ROOT; };
 		E4FC77D6183E4FFE0064FB2E /* Scripts */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Scripts; path = ../Scripts; sourceTree = SOURCE_ROOT; };
 		E4FC77D8183E503E0064FB2E /* amber11 */ = {isa = PBXFileReference; lastKnownFileType = folder; path = amber11; sourceTree = SOURCE_ROOT; };
-		E4FC7806183E50710064FB2E /* mopac */ = {isa = PBXFileReference; lastKnownFileType = folder; path = mopac; sourceTree = SOURCE_ROOT; };
 		E4FC7810183E50DC0064FB2E /* Accelerate.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Accelerate.framework; path = /System/Library/Frameworks/Accelerate.framework; sourceTree = "<absolute>"; };
 		E4FC7837183E50F00064FB2E /* AGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AGL.framework; path = /System/Library/Frameworks/AGL.framework; sourceTree = "<absolute>"; };
 		E4FC7845183E51180064FB2E /* Carbon.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Carbon.framework; path = /System/Library/Frameworks/Carbon.framework; sourceTree = "<absolute>"; };
@@ -361,7 +359,6 @@
 				E4FC77D4183E4FF20064FB2E /* molby_icon.icns */,
 				E4FC77D6183E4FFE0064FB2E /* Scripts */,
 				E4FC77D8183E503E0064FB2E /* amber11 */,
-				E4FC7806183E50710064FB2E /* mopac */,
 				E4ACACE418C6D32300F08B67 /* ortep3 */,
 				E4FC7C16183E54730064FB2E /* Molby-Info.plist */,
 			);
@@ -515,7 +512,6 @@
 				E4FC7F821840C22B0064FB2E /* molby_icon.icns in Resources */,
 				E4FC77D7183E4FFE0064FB2E /* Scripts in Resources */,
 				E4FC7802183E503E0064FB2E /* amber11 in Resources */,
-				E4FC7809183E50710064FB2E /* mopac in Resources */,
 				E4ACACE718C6D32300F08B67 /* ortep3 in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -534,7 +530,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "export TARGET_PLATFORM=MAC\nexport PATH=/usr/local/bin:$PATH\n(cd $PROJECT_DIR; sh ../record_build_date.sh --with-svn-status)\nif [ \"$BUILD_STYLE\" = \"Release\" ]; then\n  (cd $PROJECT_DIR/..; /usr/bin/ruby \"update_version.rb\")\n  (cd $PROJECT_DIR/../Documents; /usr/bin/ruby \"makedoc.rb\")\nfi\n(cd $PROJECT_DIR; make -f ../Makefile_amber11)\n(cd $PROJECT_DIR; make -f ../Makefile_mopac606_nbo)\n(cd $PROJECT_DIR; make -f ../Makefile_ortep3)\n";
+			shellScript = "export TARGET_PLATFORM=MAC\nexport PATH=/usr/local/bin:$PATH\n(cd $PROJECT_DIR; sh ../record_build_date.sh --with-svn-status)\nif [ \"$BUILD_STYLE\" = \"Release\" ]; then\n  (cd $PROJECT_DIR/..; /usr/bin/ruby \"update_version.rb\")\n  (cd $PROJECT_DIR/../Documents; /usr/bin/ruby \"makedoc.rb\")\nfi\n(cd $PROJECT_DIR; make -f ../Makefile_amber11)\n(cd $PROJECT_DIR; make -f ../Makefile_ortep3)\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
