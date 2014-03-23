@@ -247,6 +247,7 @@ bool MyApp::OnInit(void)
 	new wxDocTemplate(m_docManager, _T("SHELX Input File"), _T("*.ins;*.res"), _T(""), _T("ins"), _T("Molecule Doc"), _T("Molecule View"), CLASSINFO(MyDocument), CLASSINFO(MoleculeView));
 	new wxDocTemplate(m_docManager, _T("Crystallographic Information File"), _T("*.cif"), _T(""), _T("cif"), _T("Molecule Doc"), _T("Molecule View"), CLASSINFO(MyDocument), CLASSINFO(MoleculeView));
 	new wxDocTemplate(m_docManager, _T("Cartesian"), _T("*.xyz"), _T(""), _T("xyz"), _T("Molecule Doc"), _T("Molecule View"), CLASSINFO(MyDocument), CLASSINFO(MoleculeView));
+	new wxDocTemplate(m_docManager, _T("Z Matrix"), _T("*.zmat"), _T(""), _T("zmat"), _T("Molecule Doc"), _T("Molecule View"), CLASSINFO(MyDocument), CLASSINFO(MoleculeView));
 	new wxDocTemplate(m_docManager, _T("Any Molecule"), _T("*.*"), _T(""), _T(""), _T("Molecule Doc"), _T("Molecule View"), CLASSINFO(MyDocument), CLASSINFO(MoleculeView));
 
 	// Create the main frame window

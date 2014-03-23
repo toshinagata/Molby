@@ -29,7 +29,7 @@ EVT_MENU(wxID_REVERT, MyDocManager::OnFileRevert)
 END_EVENT_TABLE()
 
 static const char *sReadOnlyTypes[] = {
-	"out", "fchk", "log", "dat", "ins", "res", "xyz", NULL
+	"out", "fchk", "log", "dat", "ins", "res", NULL
 };
 
 void
