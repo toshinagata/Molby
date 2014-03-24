@@ -880,11 +880,11 @@ A molecule has many properties. It has a set of atoms and bonds. An atom has a n
 <p>
 Many of these information are accessible via the <span class="italic">property table</span>. The table is on the left side of the model window.
 </p>
-<p><img src="../etc/tutorial_5_01.png" /></p>
+<p><img src="../etc/table_01.png" /></p>
 <p>
 The table now shows the properties of each atom, namely its name, type, element, "residue" name and index, coordinates and partial charge. The property can be edited by double-clicking on the text.
 </p>
-<p><img src="../etc/tutorial_5_02.png" /></p>
+<p><img src="../etc/table_02.png" /></p>
 <p>
 When return (enter) or tab key is pressed, the edited value is finalized, and editing will continue on another cell. Pressing return, shift-return, tab, or shift-tab should cause editing of the bottom, above, right, or left cell, respectively. If you want to finish editing, use option- (or alt-) return key combination.
 </p>
@@ -894,11 +894,13 @@ Several points are worth mentioning here.
 <p>
 (1) The atom index (the leftmost column) cannot be edited. If you want to change the order of the atoms, try using a "drag-and-drop" feature, as shown in the figure below.
 </p>
-<p><img src="../etc/tutorial_5_03.png" /></p>
+<p><img src="../etc/table_03.png" />
+<img src="../etc/table_04.png" /></p>
 <p>
 (2) The residue column shows the residue name and index separated by a period. Manual editing of this cell may lead to a surprising result. For example, if you change the residue name of atom 0 from "RES" to "XXX", all atoms having residue index "1" will also have the new residue name "XXX".
 </p>
-<p><img src="../etc/tutorial_5_04.png" /></p>
+<p><img src="../etc/table_05.png" />
+<img src="../etc/table_06.png" /></p>
 <p>
 This behavior is based on the principle that all residue names and indices should be consistent, <span class="italic">i.e.</span> the atoms having the same residue index should have the same residue name. This is sometimes convenient, but in many cases it causes confusion.
 </p>
@@ -906,23 +908,23 @@ This behavior is based on the principle that all residue names and indices shoul
 A more recommended way to change the residue name and index is to use the menu command "Assign Residue...", in the "Script" menu, after selecting atoms you want to assign one residue name and index.
 </p>
 <p>
-<img src="../etc/tutorial_5_05.png" />
+<img src="../etc/table_07.png" />
 &nbsp;&nbsp;&nbsp;&nbsp;
-<img src="../etc/tutorial_5_06.png" />
+<img src="../etc/table_08.png" />
 </p>
 <p>
-<img src="../etc/tutorial_5_07.png" />
+<img src="../etc/table_09.png" />
 </p>
 
 <h2>2. The Bond/Angle/Dihedral/Improper Table</h2>
 <p>
 The property table can also show other information. The type of information can be selected at the popup menu.
 </p>
-<p><img src="../etc/tutorial_5_08.png" /></p>
+<p><img src="../etc/table_10.png" /></p>
 <p>
 The bond, angle, dihedral, and improper tables show the indices, names, and types of the constituent atoms. In addition, the quantities (bond lengths, angles, etc.) and the molecular mechanics parameters (only after MM/MD calculation is performed) are also shown.
 </p>
-<p><img src="../etc/tutorial_5_09.png" /></p>
+<p><img src="../etc/table_11.png" /></p>
 <p>
 The bonds, angles, etc. are not editable in the property table. At present, the only way to create/delete bonds from GUI is to use the mouse operation "Bond" or "Erase".
 </p>
@@ -931,7 +933,7 @@ The bonds, angles, etc. are not editable in the property table. At present, the 
 <p>
 The parameter table shows the molecular mechanics parameters in one table.
 </p>
-<p><img src="../etc/tutorial_5_10.png" /></p>
+<p><img src="../etc/table_12.png" /></p>
 <p>
 When you build a molecule from scratch, and open the parameter table before doing any MM/MD operations, this table is likely to be empty. This is because the MM parameters are looked up only when "Molecular Dynamics..." or "Minimize..." menu command is invoked, or you use MM/MD tools like Antechamber (see Step 4 for details). After doing some of these operations, you will see a set of parameters shown in this table.
 </p>
@@ -947,15 +949,16 @@ The "Bonds" parameters consist of "k" (the force constant in kcal/mol/&Aring;<su
 <p>
 There is another important property for each parameter, that is, whether the parameter is taken from the "global" source (i.e. not specific to this molecule), or it is "local" (specific to this molecule), or "undefined". This property is shown by the color of the row. The global parameters are shown in white cells, the local ones in pale yellow, and the undefined ones in red.
 </p>
-<p><img src="../etc/tutorial_5_11.png" /></p>
+<p><img src="../etc/table_13.png" /></p>
 <p>
 You can edit the parameters (although you need to be familiar with MM parameters and to know what you are doing!), but only if they are "local" or "undefined" parameters. The "global" parameters cannot be edited because it may be also used in other molecules, where the edited parameters may not be appropriate. If you want to modify some parameters but they are "global", then you can make them "local" by copying the parameters and the pasting.
 </p>
-<p><img src="../etc/tutorial_5_12.png" /></p>
+<p><img src="../etc/table_14.png" /></p>
 <p>
 Another way to create a "local" parameter is to use the "Create New Parameter" menu command in the Edit menu. You can choose the parameter type in the submenu.
 </p>
-<p><img src="../etc/tutorial_5_13.png" /></p>
+<p><img src="../etc/table_15.png" />
+<img src="../etc/table_16.png" /></p>
 <p>
 If some parameters are not to be used for calculation, you can "cut" the parameters from the table. This feature is useful when you have many duplicated parameters having different force constants. (In actual calculation, the parameter appearing later in the table will be used.)
 </p>
@@ -970,11 +973,11 @@ If some parameters are not to be used for calculation, you can "cut" the paramet
 <p>
 これらの情報の多くは「属性テーブル」で見ることができます。属性テーブルは、分子モデルのウィンドウの左半分にあります。
 </p>
-<p><img src="../etc/tutorial_5_01.png" /></p>
+<p><img src="../etc/table_01.png" /></p>
 <p>
 図では、テーブルは原子の属性を表示しています。名前、原子タイプ、元素、残基名と残基番号、座標、部分電荷です。これらの属性はダブルクリックして編集することができます。
 </p>
-<p><img src="../etc/tutorial_5_02.png" /></p>
+<p><img src="../etc/table_02.png" /></p>
 <p>
 リターン（エンター）またはタブキーを押すと、編集した値は確定され、別のセルが編集状態になります。リターン、シフト＋リターン、タブ、シフト＋タブでそれぞれ下・上・右・左のセルに移動します。編集を終了したい時は、オプション（Windows では Alt）＋リターンを使ってください。
 </p>
@@ -984,11 +987,13 @@ If some parameters are not to be used for calculation, you can "cut" the paramet
 <p>
 (1) 原子のインデックス（一番左の列）は編集できません。原子の順序を変えたい時は、下の図にあるように「ドラッグ・アンド・ドロップ」操作を使ってください。
 </p>
-<p><img src="../etc/tutorial_5_03.png" /></p>
+<p><img src="../etc/table_03.png" />
+<img src="../etc/table_04.png" /></p>
 <p>
 (2) 残基の列には、残基の名前と残基番号がピリオドでつないで表示されています。このセルを編集すると、妙なことが起きて驚くかもしれません。たとえば、原子０の残基名を "RES" から "XXX" に変えると、残基番号が "1" であるすべての原子の残基名が "XXX" に変わります。
 </p>
-<p><img src="../etc/tutorial_5_04.png" /></p>
+<p><img src="../etc/table_05.png" />
+<img src="../etc/table_06.png" /></p>
 <p>
 この挙動は、すべての残基名と残基番号は統一されていなければならない、という原理によります。つまり、同じ残基番号を持つ原子の残基名は同じでなければなりません。時にはこの挙動が便利に使えますが、混乱を招くことも多くあります。
 </p>
@@ -996,23 +1001,23 @@ If some parameters are not to be used for calculation, you can "cut" the paramet
 残基名と残基番号を変更するお勧めの方法は、変更したい原子を選択して "Script" メニューの "Assign Residue..." コマンドを使うことです。
 </p>
 <p>
-<img src="../etc/tutorial_5_05.png" />
+<img src="../etc/table_07.png" />
 &nbsp;&nbsp;&nbsp;&nbsp;
-<img src="../etc/tutorial_5_06.png" />
+<img src="../etc/table_08.png" />
 </p>
 <p>
-<img src="../etc/tutorial_5_07.png" />
+<img src="../etc/table_09.png" />
 </p>
 
 <h2>2. Bond/Angle/Dihedral/Improper テーブル</h2>
 <p>
 属性テーブルは他の情報も表示することができます。テーブルの種類はポップアップメニューで選択できます。
 </p>
-<p><img src="../etc/tutorial_5_08.png" /></p>
+<p><img src="../etc/table_10.png" /></p>
 <p>
 Bond, angle, dihedral, improper テーブルは、それぞれ結合・結合角・二面角・improper 二面角の構成原子のインデックス、名前、原子タイプを表示します。また、現在の値（結合長、角度、など）と、分子力学パラメータ（MM/MD 計算を行った直後に限られますが）も表示されます。
 </p>
-<p><img src="../etc/tutorial_5_09.png" /></p>
+<p><img src="../etc/table_11.png" /></p>
 <p>
 このテーブルで、結合、結合角などを編集することはできません。現在、画面上のインターフェイスを使って結合を作ったり削除したりする唯一の方法は、"Bond", "Erase" のマウス操作を使うことです。
 </p>
@@ -1021,7 +1026,7 @@ Bond, angle, dihedral, improper テーブルは、それぞれ結合・結合角
 <p>
 パラメータテーブルは、分子力学パラメータを表示します。
 </p>
-<p><img src="../etc/tutorial_5_10.png" /></p>
+<p><img src="../etc/table_12.png" /></p>
 <p>
 分子を新しく作成して、MM/MD に関連する操作を何もせずにパラメータテーブルを開くと、テーブルはおそらく空のままでしょう。分子力学パラメータは、"Molecular Dynamics..." または "Minimize..." メニューコマンドを実行したときか、Antechamber のような分子力学用ツール（第四段階参照）を使った時に初めて作成されます。これらの操作をした後には、パラメータがこのテーブルに表示されます。
 </p>
@@ -1037,15 +1042,16 @@ Bond, angle, dihedral, improper テーブルは、それぞれ結合・結合角
 <p>
 それぞれのパラメータにはもう一つ重要な特性があります。それは、そのパラメータが「グローバル」なのか（つまり、他の分子にも使われる共通の値なのか）、または「ローカル」なのか（この分子に特有）、または「未定義」なのか、です。この特性は、テーブルの行の色で区別できます。「グローバル」なパラメータは白、「ローカル」はうすい黄色、「未定義」は赤色のセルです。
 </p>
-<p><img src="../etc/tutorial_5_11.png" /></p>
+<p><img src="../etc/table_13.png" /></p>
 <p>
 パラメータは編集することができます（あなたが分子力学パラメータに詳しくて、何をしているかわかっていればの話だけど！）。ただし、パラメータが「ローカル」「未定義」の場合だけです。「グローバル」パラメータは、他の分子でも使われている可能性があるため、編集できません。「グローバル」なパラメータを編集したい時は、そのパラメータをコピー・ペーストすることで「ローカル」パラメータにすることができます。
 </p>
-<p><img src="../etc/tutorial_5_12.png" /></p>
+<p><img src="../etc/table_14.png" /></p>
 <p>
 「ローカル」なパラメータを作るもう１つの方法は、"Edit" メニューの "Create New Parameter" コマンドを使うことです。パラメータの種類をサブメニューから選ぶことができます。
 </p>
-<p><img src="../etc/tutorial_5_13.png" /></p>
+<p><img src="../etc/table_15.png" />
+<img src="../etc/table_16.png" /></p>
 <p>
 もしあるパラメータは計算に使わないという場合には、そのパラメータをテーブルから削除することができます。この機能は、同じパラメータで異なる値を持つものが複数ある場合に有用です。（実際の計算では、テーブルの後ろの方にあるパラメータが優先されます。）
 </p>
