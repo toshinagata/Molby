@@ -1705,8 +1705,8 @@ end
 
 register_menu("MM/MD\tImport AMBER Lib...", :cmd_import_amberlib)
 register_menu("MM/MD\t-", nil)
-register_menu("MM/MD\tGuess UFF Parameters...", :guess_uff_parameters, :non_empty) # uff.rb
 register_menu("MM/MD\tGuess MM/MD Parameters...", :cmd_antechamber, :non_empty)
+register_menu("MM/MD\tGuess UFF Parameters...", :guess_uff_parameters, :non_empty) # uff.rb
 register_menu("MM/MD\tGAMESS and RESP...", :cmd_gamess_resp, :non_empty)
 register_menu("MM/MD\tCreate SANDER Input...", :export_prmtop, :non_empty)
 register_menu("MM/MD\tImport AMBER Frcmod...", :cmd_import_frcmod, :non_empty)

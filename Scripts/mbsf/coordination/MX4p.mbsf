@@ -1,6 +1,6 @@
 !:atoms
 ! idx seg_name res_seq res_name name type charge weight element atomic_number occupancy temp_factor int_charge
-0 MAIN 0 _ Fe Fe 0.00000 55.84500 Fe 26 1.000000 0.000000 0
+0 MAIN 0 _ Cu Cu 0.00000 63.54600 Cu 29 1.000000 0.000000 0
 1 MAIN 0 _ Cl Cl 0.00000 35.45270 Cl 17 1.000000 0.000000 0
 2 MAIN 0 _ Cl Cl 0.00000 35.45270 Cl 17 1.000000 0.000000 0
 3 MAIN 0 _ Cl Cl 0.00000 35.45270 Cl 17 1.000000 0.000000 0

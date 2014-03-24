@@ -573,7 +573,7 @@ def guess_uff_parameters
       end
       return false
     }
-    modify_parameter = lambda { |mol, partype, idx, attr, val|
+    modify_parameter = lambda { |mol, partype, atom_types, idx, attr, val|
       arena = mol.md_arena
       case partype
       when "vdw"
@@ -592,9 +592,16 @@ def guess_uff_parameters
         pref = arena.improper_par(idx)
         pen = mol.parameter.impropers
       end
-      pref_new = pen.lookup(pref.atom_types, :create, :local, :missing, :nobasetype, :nowildcard)
+	  if atom_types == nil
+	    atom_types = pref.atom_types
+	  end
+      pref_new = pen.lookup(atom_types, :create, :local, :nobasetype, :nowildcard)
       pref.keys.each { |k|
         next if k == :source || k == :index || k == :par_type
+		if k == :atom_types
+		  pref_new.set_attr(k, atom_types)
+		  next
+		end
         pref_new.set_attr(k, pref.get_attr(k))
       }
       if attr != nil
@@ -604,6 +611,8 @@ def guess_uff_parameters
       return pref_new
     }
     set_value = lambda { |it, row, col, val|
+	  old_val = get_value.call(it, row, col)
+	  return if val == old_val
       case tab
       when "atoms"
         idx = xatoms[row]
@@ -624,48 +633,66 @@ def guess_uff_parameters
         when 6
           ap0.weight = val.to_f
         when 7
-          pp = modify_parameter.call(mol, "vdw", idx, :eps, val)
+          pp = modify_parameter.call(mol, "vdw", nil, idx, :eps, val)
           if pp.eps14 == 0.0
             pp.eps14 = val.to_f
           end
         when 8
-          pp = modify_parameter.call(mol, "vdw", idx, :r_eq, val)
+          pp = modify_parameter.call(mol, "vdw", nil, idx, :r_eq, val)
           if pp.r_eq14 == 0.0
             pp.r_eq14 = val.to_f
           end
         when 9
-          modify_parameter.call(mol, "vdw", idx, :eps14, val)
+          modify_parameter.call(mol, "vdw", nil, idx, :eps14, val)
         when 10
-          modify_parameter.call(mol, "vdw", idx, :r_eq14, val)
+          modify_parameter.call(mol, "vdw", nil, idx, :r_eq14, val)
         end
       when "bonds"
         idx = xbonds[row]
-        case col
-        when 5
-          mol.assign_bond_order(idx, val.to_f)
-        when 6
-          modify_parameter.call(mol, "bond", idx, :k, val)
-        when 7
-          modify_parameter.call(mol, "bond", idx, :r0, val)
-        end
+		types = mol.bonds[idx]
+		if col == 7 && val.to_f == 0.0
+		  val = nil
+		end
+		if val
+          case col
+          when 5
+            mol.assign_bond_order(idx, val.to_f)
+          when 6
+            modify_parameter.call(mol, "bond", types, idx, :k, val)
+          when 7
+            modify_parameter.call(mol, "bond", types, idx, :r0, val)
+          end
+		end
       when "angles"
         idx = xangles[row]
-        case col
-        when 5
-          modify_parameter.call(mol, "angle", idx, :k, val)
-        when 6
-          modify_parameter.call(mol, "angle", idx, :a0, val)
-        end
+		types = mol.angles[idx]
+		if col == 6 && val.to_f == 0.0
+		  val = nil
+		end
+		if val
+          case col
+          when 5
+            modify_parameter.call(mol, "angle", types, idx, :k, val)
+          when 6
+            modify_parameter.call(mol, "angle", types, idx, :a0, val)
+          end
+		end
       when "dihedrals"
         idx = xdihedrals[row]
-        case col
-        when 5
-          modify_parameter.call(mol, "dihedral", idx, :k, val)
-        when 6
-          modify_parameter.call(mol, "dihedral", idx, :period, val)
-        when 7
-          modify_parameter.call(mol, "dihedral", idx, :phi0, val)
-        end
+		types = mol.dihedrals
+		if (col == 5 || col == 7) && val.to_f == 0.0
+		  val = nil
+		end
+		if val
+          case col
+          when 5
+            modify_parameter.call(mol, "dihedral", types, idx, :k, val)
+          when 6
+            modify_parameter.call(mol, "dihedral", types, idx, :period, val)
+          when 7
+            modify_parameter.call(mol, "dihedral", types, idx, :phi0, val)
+          end
+	    end
       end
     }
     has_popup_menu = lambda { |it, row, col|
@@ -684,10 +711,10 @@ def guess_uff_parameters
       title = uff_popup.call(ap.atomic_number)[sel]
       ap.uff_type = (uff_type_for_title[title] || "")
     }
-    guess_uff_types = lambda { |recalc_all|
+    guess_uff_types = lambda { |g|
       xatoms.each { |idx|
         ap = mol.atoms[idx]
-        next if !recalc_all && ap.uff_type != ""
+		next if !g.include?(idx)
         u = uff_popup.call(ap.atomic_number)
         if u.length == 1
           ap.uff_type = (uff_type_for_title[u[0]] || "")
@@ -762,8 +789,12 @@ def guess_uff_parameters
         end
         if guess_atom_types
           #  Copy atom types and local parameters
+		  g = IntGroup[]
           frag.each_with_index { |n, i|
-            mol.atoms[n].atom_type = fmol.atoms[i].atom_type
+		    if mol.atoms[n].atom_type != fmol.atoms[i].atom_type
+			  g.add(n)
+              mol.atoms[n].atom_type = fmol.atoms[i].atom_type
+			end
           }
           [:bond, :angle, :dihedral, :improper, :vdw].each { |ptype|
             case ptype
@@ -789,7 +820,7 @@ def guess_uff_parameters
               end
             }
           }
-		  guess_uff_types.call(false)
+		  guess_uff_types.call(g)
         end
       }
     }
@@ -1063,7 +1094,7 @@ def guess_uff_parameters
     listen(mol, "documentModified", lambda { |d| update_xatoms.call; update_selection.call })
     listen(mol, "documentWillClose", lambda { |d| hide })
     update_xatoms.call
-    guess_uff_types.call(true)
+    guess_uff_types.call(mol.all)
     show
   }
 end
