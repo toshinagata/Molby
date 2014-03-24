@@ -237,7 +237,7 @@ class Molecule
   def ambertools_dialog(tool, msg = nil, block = nil)
 	log_dir = get_global_settings("antechamber.log_dir")
 	if !log_dir
-	  log_dir = $home_directory + "/molby/antechamber"
+	  log_dir = $home_directory + "/Molby/antechamber"
 	end
 	if $platform == "win"
 	  suffix = ".exe"
@@ -441,10 +441,10 @@ class Molecule
 	optimize_structure = get_global_settings("antechamber.optimize_structure").to_i
 	use_residue = get_global_settings("antechamber.use_residue").to_i
 	#  Create log directory
-	name = (self.name || "unknown").sub(/\.\w*$/, "")  #  Remove the extension
+	name = (self.name || "unknown").sub(/\.\w*$/, "").sub(/\*/, "")  #  Remove the extension and "*"
 	log_dir = get_global_settings("antechamber.log_dir")
 	if log_dir == nil
-	  log_dir = document_home + "/molby/antechamber"
+	  log_dir = document_home + "/Molby/antechamber"
 	end
 	if !File.directory?(log_dir)
 	  mkdir_recursive(log_dir)
@@ -587,6 +587,9 @@ class Molecule
   def import_frcmod(file)
     self.md_arena.prepare(true)  #  Clean up existing parameters
 	par = self.parameter
+	if !FileTest.exist?(file)
+	  error_message_box("#{file} does not exist?? really??")
+	end
     open(file, "r") { |fp|
 	  wtable = Hash.new
 	  state = 0

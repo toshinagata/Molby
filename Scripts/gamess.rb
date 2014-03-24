@@ -145,7 +145,7 @@ class Molecule
 	
     #  Prepare the scratch directory in the home directory
     #  (Not in the document home to avoid space-containing path in Windows)
-    scrdir = $home_directory + "/molby/gamess"
+    scrdir = $home_directory + "/Molby/gamess"
 	begin
 	  mkdir_recursive(scrdir)
 	rescue

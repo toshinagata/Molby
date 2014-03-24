@@ -1088,6 +1088,7 @@ MyDocument::OnSubThreadTerminated(wxCommandEvent &event)
 		if (mol->mview != NULL && mol->mview->ref != NULL) {
 			((MoleculeView *)(mol->mview->ref))->InvalidateProgressIndicator();
 		}
+		
 	}
 }
 

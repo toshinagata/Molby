@@ -198,6 +198,8 @@ protected:
 	int m_progressValue;
 	MyStringHash m_defaultSettings;
 
+	//  For CallSubProcess()
+	wxProcess *m_process;
 	bool m_processTerminated;
 	int m_processExitCode;
 

@@ -39,6 +39,6 @@ MyThread::Entry()
 	ExitCode code = (ExitCode)((*m_entry_func)(m_argptr, m_argnum));
 	if (m_exit_func)
 		(*m_exit_func)(m_argptr, m_argnum);
-	Exit(code);
-	return 0;
+//	Exit(code);
+	return (MyThread::ExitCode)code;
 }

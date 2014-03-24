@@ -160,6 +160,7 @@ MyApp::MyApp(void)
 {
     m_docManager = NULL;
 	m_progressFrame = NULL;
+	m_process = NULL;
 	m_processTerminated = false;
 	m_processExitCode = 0;
 	countScriptMenu = 0;
@@ -1223,6 +1224,8 @@ MyApp::OnEndProcess(wxProcessEvent &event)
 	if (fplog != NULL)
 		fprintf(fplog, "OnEndProcess called\n");
 #endif
+	delete m_process;
+	m_process = NULL;
 }
 
 int
@@ -1235,6 +1238,10 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
 	char buf[256];
 	size_t len, len_total;
 	wxString cmdstr(cmdline, WX_DEFAULT_CONV);
+	
+	if (m_process != NULL)
+		return -1;  //  Another process is already running (CallSubProcess() allows only one subprocess)
+	
 #if defined(__WXMSW__)
 	extern int myKillAllChildren(long pid, wxSignal sig, wxKillError *krc);
 #endif
@@ -1259,17 +1266,17 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
 #endif
 
 	//  Create proc object and call subprocess
-	wxProcess *proc = new wxProcess(this, -1);
-	proc->Redirect();
+	m_process = new wxProcess(this, -1);
+	m_process->Redirect();
 	int flag = wxEXEC_ASYNC;
 	flag |= wxEXEC_MAKE_GROUP_LEADER;
 	m_processTerminated = false;
 	m_processExitCode = 0;
-	long pid = ::wxExecute(cmdstr, flag, proc);
+	long pid = ::wxExecute(cmdstr, flag, m_process);
 	if (pid == 0) {
-		proc->Detach();
 		if (procname != NULL)
 			HideProgressPanel();
+		delete m_process;
 #if LOG_SUBPROCESS
 		fprintf(fplog, "Cannot start '%s'\n", cmdline);
 		fclose(fplog);
@@ -1282,13 +1289,15 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
 #endif
 	
 	//  Wait until process ends or user interrupts
-	wxInputStream *in = proc->GetInputStream();
-	wxInputStream *err = proc->GetErrorStream();
+	wxInputStream *in;
+	wxInputStream *err;
 	len_total = 0;
 	char *membuf = NULL;
 	int memsize = 0;
+	bool processShouldTerminate = false;
 	while (1) {
-		while (in->CanRead()) {
+		while (m_process != NULL && (m_process->IsInputAvailable())) {
+			in = m_process->GetInputStream();
 			in->Read(buf, sizeof buf - 1);
 			if ((len = in->LastRead()) > 0) {
 				buf[len] = 0;
@@ -1314,7 +1323,8 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
 				}
 			}
 		}
-		while (err->CanRead()) {
+		while (m_process != NULL && (m_process->IsErrorAvailable())) {
+			err = m_process->GetErrorStream();
 			err->Read(buf, sizeof buf - 1);
 			if ((len = err->LastRead()) > 0) {
 				buf[len] = 0;
@@ -1338,7 +1348,8 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
 				progress_panel = true;
 			}
 		}
-		if (m_processTerminated || !wxProcess::Exists(pid)) {
+		if (m_processTerminated) {
+			//  OnEndProcess has been called
 			if (m_processExitCode != 0) {
 				/*  Error from subprocess  */
 				status = (m_processExitCode & 255);
@@ -1348,8 +1359,10 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
 	
 		/*  In some cases, wxProcess cannot detect the termination of the subprocess. */
 		/*  So here are the platform-dependent examination   */
+		/*  2014.3.23. This part of code is removed, in the hope that as of 3.0.0
+		    wxWidgets now reports the termination of the subprocess correctly. (T.Nagata) */
 #if __WXMSW__
-		{
+		if (0) {
 		 // get the process handle to operate on
 			HANDLE hProcess = ::OpenProcess(SYNCHRONIZE |
 										PROCESS_TERMINATE |
@@ -1358,42 +1371,58 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
 										(DWORD)pid);
 			if (hProcess == NULL) {
 				if (::GetLastError() != ERROR_ACCESS_DENIED) {
-					m_processTerminated = 1;
-					m_processExitCode = 255;
+					processShouldTerminate = true;
+					status = 255;
 				}
 			} else {
 				DWORD exitCode;
 				if (::GetExitCodeProcess(hProcess, &exitCode) && exitCode != STILL_ACTIVE) {
-					m_processTerminated = 1;
-					m_processExitCode = exitCode;
+					processShouldTerminate = true;
+					status = exitCode & 255;
 				}
 				::CloseHandle(hProcess);
 			}
-			if (m_processTerminated) {
-#if LOG_SUBPROCESS
-				if (fplog) {
-					fprintf(fplog, "OnEndProcess *NOT* called\n");
-					fflush(fplog);
-				}
-#endif
-				status = m_processExitCode & 255;
-				proc->Detach();
-				break;
-			}
 		}
 #else
-		if (waitpid(pid, &status, WNOHANG) != 0) {
+		if (0 && waitpid(pid, &status, WNOHANG) != 0) {
+			processShouldTerminate = true;
+			//proc->Detach();
+			status = WEXITSTATUS(status);
+			//break;
+		}
+#endif
+		if (processShouldTerminate) {
+			int count1;
 #if LOG_SUBPROCESS
 			if (fplog) {
 				fprintf(fplog, "OnEndProcess *NOT* called\n");
 				fflush(fplog);
 			}
 #endif
-			proc->Detach();
-			status = WEXITSTATUS(status);
+			for (count1 = 100; count1 > 0; count1--) {
+				if (!wxProcess::Exists(pid))
+					break;
+				::wxMilliSleep(10);
+			}
+			if (count1 == 0)
+				m_process->Detach();
+			{
+				char *dochome = MyAppCallback_getDocumentHomeDir();
+				FILE *fp1;
+				snprintf(buf, sizeof buf, "%s/%s.log", dochome, (procname ? procname : "subprocess"));
+				free(dochome);
+				fp1 = fopen(buf, "w");
+				if (fp1 != NULL) {
+					fprintf(fp1, "OnEndProcess *NOT* called: count1 = %d\n", count1);
+					::wxMilliSleep(500);
+					if (m_processTerminated)
+						fprintf(fp1, "It looks like OnEndProcess is called after our checking.\n");
+					fclose(fp1);
+				}
+			}
+			
 			break;
 		}
-#endif
 		
 #if LOG_SUBPROCESS
 		if (++nn >= 10) {
@@ -1426,7 +1455,7 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
 				else
 					status = -2;  /*  User interrupt  */
 			}
-			proc->Detach();
+			m_process->Detach();
 			break;
 		}
 	}
@@ -1451,7 +1480,7 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
 #endif
 		*((char **)callback_data) = membuf;
 	}
-	
+
 	return status;
 }
 

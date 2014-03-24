@@ -25,7 +25,6 @@ class MyThread: public wxThread
 public:
 	static wxThreadError DetachNewThread(int (*entry_func)(void *, int), int (*exit_func)(void *, int), void *argptr, int argnum);
 	virtual ExitCode Entry();
-
 	int (*m_entry_func)(void *, int);
 	int (*m_exit_func)(void *, int);
 	void *m_argptr;
