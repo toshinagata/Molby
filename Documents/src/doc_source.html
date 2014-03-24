@@ -1093,60 +1093,60 @@ Now we try energy minimization. We use 2,2'-dimethoxybiphenyl as an example.
 <p>
 Build this molecule. The easiest way is, (1) double-click the empty editing area and type "C6H5C6H5", (2) select one ortho hydrogen, double-click, and type "OCH3", (3) repeat (2) for another ortho hydrogen on the other ring.
 </p>
-<p><img src="../etc/tutorial_40.png" /></p>
+<p><img src="../etc/minimize_01.png" /></p>
 <p>
-Open the "MM/MD" menu, and select "Auto Guess MM/MD Parameters..." command.
+Open the "MM/MD" menu, and select "Guess MM/MD Parameters..." command.
 </p>
-<p><img src="../etc/tutorial_41.png" /></p>
+<p><img src="../etc/minimize_02.png" /></p>
 <p>
-A dialog like below shows up. This is for execution of Antechamber on the current molecule. Turn off the first two checkboxes. The "log" directory is used by AmberTools for storing intermediate files; the default value would be acceptable, but you can change it here.
+A dialog like below shows up. This is for execution of Antechamber on the current molecule. Turn off the "partial charge" checkbox. The "log" directory is used by AmberTools for storing intermediate files; the default value would be acceptable, but you can change it here.
 </p>
-<p><img src="../etc/tutorial_42.png" /></p>
+<p><img src="../etc/minimize_03.png" /></p>
 <p>
 After pressing "OK", two dialog boxes appear in turn. They disappear so quickly that you may not recognize what they are saying; actually, the first one says "Running antechamber" and the second one "Running parmchk." These are programs included in AmberTools. In the present case, both programs complete successfully, and the following dialog appears.
 </p>
-<p><img src="../etc/tutorial_43.png" /></p>
+<p><img src="../etc/minimize_04.png" /></p>
 <p>
 Press "OK", and you will return to the molecule window. Do you notice what change has been made? It is the atom types that are modified. Specifically, the types of the atoms 0 and 10 are changed from "ca" to "cp".
 </p>
-<p><img src="../etc/tutorial_44.png" /></p>
+<p><img src="../etc/minimize_05.png" /></p>
 <p>
 If you are wondering what "ca" or "cp" mean, look at the global parameter table (MM/MD → View Global Parameters...), and find comment(s) in the "vdw" record.
 </p>
-<p><img src="../etc/tutorial_45.png" /></p>
+<p><img src="../etc/minimize_06.png" /></p>
 <p>
 Return to the molecule, and select MM/MD → Minimize.
 </p>
-<p><img src="../etc/tutorial_46.png" /></p>
+<p><img src="../etc/minimize_07.png" /></p>
 <p>
 A setting dialog opens. "Steps per frame" means the screen is updated every this number of steps. "Number of frames" means the maximum number of "frames" (i.e. screen updates) to calculate. If the minimization completes before this number of frames, the calculation will stop. The numbers 10 and 200 are reasonable choice in many cases.
 </p>
-<p><img src="../etc/tutorial_47.png" /></p>
+<p><img src="../etc/minimize_08.png" /></p>
 <p>
-Press "OK", and minimization starts. As you expect, the dihedral angle between the two phenyl rings becomes large. The calculation will stop after 200 frames. You can see the number "199" at the right bottom of the window, and the slider at the bottom of the window is now active. Move the slider, and you can see how the molecular structure changed during the minimization.
+Press "OK", and minimization starts. As you expect, the dihedral angle between the two phenyl rings becomes large. The calculation will stop after 200 frames. You can see the number "200" at the right bottom of the window, and the slider at the bottom of the window is now active. Move the slider, and you can see how the molecular structure changed during the minimization.
 </p>
-<p><img src="../etc/tutorial_48.png" /></p>
+<p><img src="../etc/minimize_09.png" /></p>
 <p>
 If you save this molecule at this stage, all the frames will be also saved (when you select the "mbsf" format), and the resulting file may be very large. If you do not want this, then you can remove all the frames by use of "Delete Frames..." command in the "Script" menu.
 </p>
-<p><img src="../etc/tutorial_49.png" /></p>
-<p><img src="../etc/tutorial_50.png" /></p>
+<p><img src="../etc/minimize_10.png" /></p>
+<p><img src="../etc/minimize_11.png" /></p>
 <h2 id="electrostatic" name="electrostatic">3. Handling electrostatic interaction</h2>
 <p>
 The above description is sufficient for initial cleanup of the molecular structure. However, we should go one further step to take electrostatic interaction into consideration. This is particularly important in molecules with polar functional groups (such as carbonyl).
 </p>
 <p>
-Continue our study on 2,2'-dimethoxybiphenyl. Open "MM/MD" → "Tools" → "Antechamber/parmchk...", and this time turn on the top checkbox. Also make sure the net molecular charge is correct.
+Continue our study on 2,2'-dimethoxybiphenyl. Open "MM/MD" → "Guess MM/MD Parameters...", and this time turn on the top checkbox. Also make sure the net molecular charge is correct.
 </p>
-<p><img src="../etc/tutorial_51.png" /></p>
+<p><img src="../etc/minimize_12.png" /></p>
 <p>
 Press "OK", and calculation starts. This time the calculation should take much longer than before, because semi-empirical calculation is carried out for optimizing the structure and getting the partial charges.
 </p>
-<p><img src="../etc/tutorial_52.png" /></p>
+<p><img src="../etc/minimize_13.png" /></p>
 <p>
 When calculation is done, the molecular structure may change, because structure optimization has been done by semi-empirical calculation. However, even more important is the "charge" values. You can see the charge values by scrolling the table to the right. By use of these "charge" values, interaction energies of the polar functional groups can be taken into account.
 </p>
-<p><img src="../etc/tutorial_53.png" /></p>
+<p><img src="../etc/minimize_14.png" /></p>
 <p>
 Note that the atomic charges given in the above method are derived from semi-empirical quantum chemical calculations. On the other hand, it is generally considered that the charges derived from ab initio calculations are better. Molby does not have capability to perform ab initio calculations, but it can help creating necessary input files for external quantum chemical programs. This will be described <a href="qchem.html#gamess_resp">elsewhere</a> in this User's Manual.
 </p>
@@ -1182,60 +1182,60 @@ Molby の分子力学計算は、基本的な分子力場（結合の伸縮、�
 <p>
 この分子のモデルを作ってください。簡単なやり方は、(1) 空の編集エリアでダブルクリックして "C6H5C6H5" とタイプする。(2) オルト位の水素原子を１つ選択し、ダブルクリックして "OCH3" とタイプする。(3) もう１つの環のオルト位の水素原子について、(2) を繰り返す。
 </p>
-<p><img src="../etc/tutorial_40.png" /></p>
+<p><img src="../etc/minimize_01.png" /></p>
 <p>
-"MM/MD"メニューを開き、"Auto Guess MM/MD Parameters..." コマンドを実行します。
+"MM/MD"メニューを開き、"Guess MM/MD Parameters..." コマンドを実行します。
 </p>
-<p><img src="../etc/tutorial_41.png" /></p>
+<p><img src="../etc/minimize_02.png" /></p>
 <p>
-下のようなダイアログが現れます。これは現在の分子に対して Antechamber を実行するためのものです。上の２つのチェックボックスをオフにしてください。"Log" ディレクトリは、AmberTools のプログラムが中間ファイルを保存するのに使います。デフォルトの位置で問題はないでしょうが、変更してもかまいません。
+下のようなダイアログが現れます。これは現在の分子に対して Antechamber を実行するためのものです。一番上のチェックボックス (partial charge) をオフにしてください。"Log" ディレクトリは、AmberTools のプログラムが中間ファイルを保存するのに使います。デフォルトの位置で問題はないでしょうが、変更してもかまいません。
 </p>
-<p><img src="../etc/tutorial_42.png" /></p>
+<p><img src="../etc/minimize_03.png" /></p>
 <p>
 "OK"を押すと、２つのダイアログが順に現れます。すぐに消えてしまうので、何と書いてあるか読めないかも知れません。最初のものは "Running antechamber", ２つめのものは "Running parmchk" と書いてあります。これらは AmberTools に含まれているプログラムです。今の場合は、両方とも正しく実行され、次のダイアログが現れます。
 </p>
-<p><img src="../etc/tutorial_43.png" /></p>
+<p><img src="../etc/minimize_04.png" /></p>
 <p>
 "OK"を押して、分子のウィンドウに戻ってください。何が変わったかわかるでしょうか？　変わったのは原子タイプです。具体的には、原子０と原子１０のタイプが "ca" から "cp" に変わっています。
 </p>
-<p><img src="../etc/tutorial_44.png" /></p>
+<p><img src="../etc/minimize_05.png" /></p>
 <p>
 "ca" や "cp" が何の意味か知りたければ、"MM/MD" メニューから "View Global Parameters..." を選んでみてください。Molby に同梱されているパラメータの一覧表が出てきます。"vdw" （van der Waals パラメータの意味ですが、原子タイプの定義も兼ねています）の中で "ca", "cp" を見つけて、表の右端にあるコメントを見てみてください。
 </p>
-<p><img src="../etc/tutorial_45.png" /></p>
+<p><img src="../etc/minimize_06.png" /></p>
 <p>
 分子のウィンドウに戻り、"MM/MD" → "Minimize" を選んでください。
 </p>
-<p><img src="../etc/tutorial_46.png" /></p>
+<p><img src="../etc/minimize_07.png" /></p>
 <p>
 設定ダイアログが開きます。"Steps per frame" は、構造最適化計算がこのステップ数進んだところで画面を更新する、という意味です。"Number of frames" は、この数だけ画面を更新したら計算を止める、という意味です。その前に構造最適化が終了すれば、その時点で計算は止まります。下の図にある 10, 200 を入れておけば、たいていの場合はよいでしょう。
 </p>
-<p><img src="../etc/tutorial_47.png" /></p>
+<p><img src="../etc/minimize_08.png" /></p>
 <p>
-"OK" を押すと、構造最適化が始まります。この分子の場合、期待される通り、２つのベンゼン環の間の二面角がだんだん大きくなります。指定通り、200回画面が更新されると計算は止まります。ウィンドウの右下に "199" という数字があり、ウィンドウの下辺にあるスライダーが有効になっています。更新された画面は、それぞれ独立したフレームとして保存されており、このスライダーを動かすと、初期状態からどのように構造が変わって行くかを再現することができます。
+"OK" を押すと、構造最適化が始まります。この分子の場合、期待される通り、２つのベンゼン環の間の二面角がだんだん大きくなります。指定通り、200回画面が更新されると計算は止まります。ウィンドウの右下に "200" という数字があり、ウィンドウの下辺にあるスライダーが有効になっています。更新された画面は、それぞれ独立したフレームとして保存されており、このスライダーを動かすと、初期状態からどのように構造が変わって行くかを再現することができます。
 </p>
-<p><img src="../etc/tutorial_48.png" /></p>
+<p><img src="../etc/minimize_09.png" /></p>
 <p>
 この時点で分子を "mbsf" フォーマットで保存すると、全部のフレームの情報が保存され、ファイルがとても大きくなります。これが好ましくない場合は、現在表示されている以外のフレームを削除することもできます。"Script" メニューから "Delete Frames..." コマンドを使ってください。
 </p>
-<p><img src="../etc/tutorial_49.png" /></p>
-<p><img src="../etc/tutorial_50.png" /></p>
+<p><img src="../etc/minimize_10.png" /></p>
+<p><img src="../etc/minimize_11.png" /></p>
 <h2 id="electrostatic" name="electrostatic">3. 静電相互作用の取り扱い</h2>
 <p>
 上の説明は、分子構造のひずみを取り除く最初の段階としては十分です。しかしながら、次の段階として、静電相互作用を考慮しなければなりません。特に、カルボニル基などの極性官能基が含まれている場合は、これは重要です。
 </p>
 <p>
-2,2'-ジメトキシビフェニルについて検討を続けましょう。"MM/MD" → "Tools" → "Antechamber/parmchk...", を開き、今度は一番上のチェックボックスをオンにします。そして、分子の総電荷が正しいことを確認してください。この場合は中性分子なので、"0" で結構です。
+2,2'-ジメトキシビフェニルについて検討を続けましょう。"MM/MD" → "Guess MM/MD Parameters...", を開き、今度は一番上のチェックボックスをオンにします。そして、分子の総電荷が正しいことを確認してください。この場合は中性分子なので、"0" で結構です。
 </p>
-<p><img src="../etc/tutorial_51.png" /></p>
+<p><img src="../etc/minimize_12.png" /></p>
 <p>
 "OK" を押すと、計算が始まります。今度は、前回よりもずっと長く計算時間がかかります。半経験的分子軌道法により、構造最適化と部分電荷の計算を行うからです。
 </p>
-<p><img src="../etc/tutorial_52.png" /></p>
+<p><img src="../etc/minimize_13.png" /></p>
 <p>
 計算が終了すると、分子構造は少し変化することがあります。半経験的分子軌道計算で構造最適化が行われたからです。また、"charge" の値が設定されていることがわかります。テーブルを右にスクロールすると、与えられた電荷の値を見ることができます。この電荷の値を用いて静電相互作用の計算を行うことにより、極性官能基の相互作用エネルギーをより正しく見積もることができます。
 </p>
-<p><img src="../etc/tutorial_53.png" /></p>
+<p><img src="../etc/minimize_14.png" /></p>
 <p>
 上の方法で計算した電荷は、半経験的分子軌道計算によるものです。一方、一般的には ab initio 計算で求めた電荷の方が良いと考えられています。Molby は ab initio 計算を行う機能を持っていませんが、外部の量子化学計算プログラムへの入力ファイルを作成する機能があります。これは、このマニュアルの<a href="qchem.html#gamess_resp">別のところ</a>で解説します。
 </p>
