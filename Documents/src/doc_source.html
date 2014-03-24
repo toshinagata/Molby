@@ -1480,6 +1480,139 @@ J. Phys. Chem. 1995, 99, 6208.
 <link id="#header" />
 <div class="contents" lang="en">
 <h1>Step Eight: MM/MD Calculation of Coordination Compounds</h1>
+<h2>1. Use of UFF (Universal Force Field) Parameters</h2>
+<p>
+Building molecular models of coordination compounds is often problematic. This is mainly due to the lack of appropriate MM parameters for metal atoms. One reasonable approach is to use UFF (universal force field) parameters developed by Rappé and coworkers (<i>J. Am. Chem. Soc.</i> <b>114</b>, 10024-10035 (1992)). Although estimation of the UFF parameters from the molecular structure is rather complicated, it can be automated by computer programs. In the following, you will see how Molby can help modeling of coordination compounds with the UFF parameters.
+</p>
+<p>
+Suppose we want to build a model of (terpy)PtCl, where terpy is 2,2':6',2"-terpyridine.
+</p>
+<p><img src="../etc/coord_01.png" /></p>
+<p>
+We need to build the molecular structure first. One approach is to build the organic part, and put metal atoms afterwards. Here, we will go through another route, which is more suitable for coordination compounds in general.
+</p>
+<p>
+Select "Open Predefined..." menu item, and find "MX4 square-planar" like below.
+</p>
+<p><img src="../etc/coord_02.png" /></p>
+<p>
+A square planar fragment of "CuCl4" appears on the screen.
+</p>
+<p><img src="../etc/coord_03.png" /></p>
+<p>
+Choose the "Select" tool, double click on one of the chlorine atoms, and type "C6H5".
+</p>
+<p><img style="vertical-align:top;" src="../etc/coord_04.png" /><img src="../etc/coord_05.png" /></p>
+<p>
+You see now a phenyl group is attached to the metal atom. Select the metal-C bond, and rotate the phenyl ring so that the ring is approximately coplanar with the metal-ligand plane.
+</p>
+<p><img src="../etc/coord_06.png" /></p>
+<p>
+Attach two other phenyl groups in a similay manner.
+</p>
+<p><img src="../etc/coord_07.png" /></p>
+<p>
+Remove the hydrogen atoms and create C-C bonds. Double-click on the carbon atoms connected to the metal, and change them to "N".
+</p>
+<p><img style="vertical-align:top;" src="../etc/coord_08.png" /><img style="vertical-align:top;" src="../etc/coord_09.png" /><img src="../etc/coord_10.png" /></p>
+<p>
+Now the molecular structure is complete. Next we need to assign the MM parameters. To do this, select the "Guess UFF Parameters..." from the "MM/MD" menu.
+</p>
+<p><img src="../etc/coord_11.png" /></p>
+<p>
+A dialog like below opens up. Here are listed the atoms that are (1) the metal atoms, (2) the ligand atoms that are connected to the metal atoms, and (3) the ligand atoms that are connected to any of the atoms in (2). In other words, the atoms within "two-bonds" distances are shown in this dialog. The Pt atom is shown in red, because it does not have predefined MM parameters. The ligand atoms already have their MM parameters, but if you look closely not all atoms are correctly recognized. For example, the pyridine N atoms are incorrectly assigned as "n3", which is a sp3 nitrogen.
+</p>
+<p><img src="../etc/coord_12.png" /></p>
+<p>
+The UFF parameter estimation consists of two stages. The first stage is to assign the types of the ligand atoms. This is basically the same as the procedure described in <a href="mm_minimize.html">Step 6</a>, but this time we need to run Antechamber for the non-metal part only. By hitting the button "Run Antechamber for Non-Metal Fragment", Antechamber is executed for each non-metal fragments. You may need to assign the charge for each fragment; for example, if you are using catecholato ligand, that fragment should have charge of -2.
+</p>
+<p><img style="vertical-align:top;" src="../etc/coord_13.png" /><img src="../etc/coord_14.png" /></p>
+<p>
+The fragment that are being assigned by Antechamber is shown in the main window as the selection. In this example, the first fragment contains only the chlorine atom, and the second fragment is the terpyridine ligand.
+</p>
+<p><img src="../etc/coord_15.png" /><img src="../etc/coord_16.png" /></p>
+<p>
+After running Antechamber, the table looks like below. Note that the values in the "type" column have been changed.
+</p>
+<p><img src="../etc/coord_17.png" /></p>
+<p>
+Next, we need to assign the "UFF types" to each atoms. In fact, the UFF types are already set in the previous stage. We still need to look at them, and correct the types if necessary. You can select the predefined UFF types from the popup menu.
+</p>
+<p><img src="../etc/coord_18.png" /></p>
+<p>
+One more step before estimating the UFF parameters. Click on the "Bonds" button, and the bond length table is shown as below.
+</p>
+<p><img src="../etc/coord_19.png" /></p>
+<p>
+Look at the rightmost two columns, named "r0" and "real_r". The value "r0" is the equilibrium bond length, and "real_r" is the present bond length. You see that "r0" is 0.000 for Pt-Cl and Pt-N bonds. If you do not give values, then the values in the "real_r" column are used. Apparently these bond lengths are too small, so we correct the "r0" values. Appropriate values would be 2.30 for Pt-Cl and 2.00 for Pt-N. If you have other favorite values based on your experience, please feel free to use them.
+</p>
+<p><img src="../etc/coord_20.png" /></p>
+<p>
+You can check the "Angles" page as well. In this case, all values can be left as 0.0.
+</p>
+<p><img src="../etc/coord_21.png" /></p>
+<p>
+Now you can hit the "Guess UFF Parameters for Bonds..." button. Make sure that the "k" and "a0" values are now set. Look at the "Bonds" and "Atoms" pages as well and see how the parameters are changed.
+</p>
+<p><img src="../etc/coord_22.png" /></p>
+<p>
+Close this dialog, and go into MM/MD calculations as usual. For example, you can perform energy minimization and get the structure like below.
+</p>
+<p><img src="../etc/coord_23.png" /></p>
+<h2>2. Compounds Containing Metal-π Bonds</h2>
+<p>
+Compounds containing metal-π bonds are also problematic in molecular mechanics calculations. The implementation of metal-π bonds in Molby is based on the proposal by Doman and coworkers (<i>J. Am. Chem. Soc.</i> <b>114,</b> 7262-7272 (1992)). Herein we will see how to build a molecular model of ferrocene.
+</p>
+<p><img src="../etc/ferro_01.png" /></p>
+<p>
+We start with the predefined structure "cyclopentadienyl."
+</p>
+<p><img src="../etc/ferro_02.png" /><img src="../etc/ferro_03.png" /></p>
+<p>
+Select the five carbon atoms, and do "Create Pi Anchor" menu command.
+</p>
+<p><img src="../etc/ferro_04.png" /></p>
+<p>
+"Pi anchor" is a <i>virtual atom</i>, whose coordinates are defined as the center of mass of the "parent" atoms. In this case, the parent atoms of the pi anchor is the carbon atoms of the Cp ring. In the main screen, the pi anchor is shown as a green dot, and it is connected to the parent atoms by a green thin bonds.
+</p>
+<p><img src="../etc/ferro_05.png" /></p>
+<p>
+Rotate the ring to show the "side view" of the ring, while keeping the pi anchor barely visible. Create a bond from the pi anchor to a new atom. Change the new atom to Fe.
+</p>
+<p><img src="../etc/ferro_06.png" /><img src="../etc/ferro_07.png" /><img src="../etc/ferro_08.png" /></p>
+<p>
+Copy the cyclopentadienyl ring and the pi anchor, and paste in the same window. Place the new ring to the appropriate position, and bond the Fe atom and the new pi anchor.
+</p>
+<p><img src="../etc/ferro_09.png" /><img src="../etc/ferro_10.png" /><img src="../etc/ferro_11.png" /></p>
+<p>
+Finally, make a bond between the two pi anchors. This is necessary to describe the barrier for ring rotation. The anchor-anchor bond is shown as a half-transparent green stick.
+</p>
+<p class="note">The ring rotation can be described as a dihedral term in the form of "ring atom"-"pi anchor"-"metal"-"X". However, in the case of a linear metallocene, "X" is the other pi anchor. Since the "pi anchor"-"metal"-"pi anchor" angle is always close to 180 degree, the dihedral angle cannot be defined. For this reason, the linear metallocene requires special treatment of the dihedral term in the form of "ring atom"-"pi anchor"-"pi anchor"-"ring atom". That is why we need to make a bond between two pi anchors. This is not the case for the bent metallocenes (like Cp<sub>2</sub>TiCl<sub>2</sub>), or half-sandwich complexes.
+</p>
+<p><img src="../etc/ferro_12.png" /></p>
+<p>
+Now we can go on to the UFF dialog as before. This time, we skip the "non-metal fragments" part, because Antechamber cannot handle cyclopentadienyl anion. Our cyclopentadienyl ring already has correct atom types, so we will use them as they are.
+</p>
+<p>
+Change the UFF type of the Fe atom to "Fe2+ octahedral".
+</p>
+<p><img src="../etc/ferro_13.png" /></p>
+<p>
+Click on the "Bonds" label, and change the "r0" parameter of the two bonds of "##-fe" or "fe-##" type ("##" represents the pi anchor). This should be the metal-pi distance, which is 1.66 &Aring; for ferrocene.
+</p>
+<p><img src="../etc/ferro_14.png" /></p>
+<p>
+The "Angle" page should also be edited. The "a0" parameter is set to 90.0 for the "fe-##-ca" type angles (ten lines from the top), and 180.0 for the "##-fe-##" type angle (the last line).
+</p>
+<p><img src="../etc/ferro_15.png" /></p>
+<p>
+Hit the "Guess UFF Parameters..." button to complete the calculation of the UFF parameters.
+</p>
+<p><img src="../etc/ferro_16.png" /></p>
+<p>
+You can now try the MM/MD calculation. Energy minimization results in an eclipsed conformation. MD at 298K shows that the Cp rings freely rotate at this temperature.
+</p>
+<p><img src="../etc/ferro_17.png" /></p>
 </div>
 <div class="contents" lang="ja">
 <h1>第八段階：配位化合物のMM/MD計算</h1>
@@ -2072,7 +2205,7 @@ each_frame { |n|  <span class="comment">#  This is an idiom to iterate over all 
 fp.close                     <span class="comment">#  We are done with this file</span>
 </p>
 <p>
-The last example is probably of more practical use. It generates a model of carbon nanotube with any chirality and length as you like.
+The last example generates a model of carbon nanotube with any chirality and length as you like.
 </p>
 <p class="code"><span class="comment">#  Create a model of carbon nanotube
 #  Requires Molby</span>
@@ -2376,7 +2509,7 @@ each_frame { |n|  <span class="comment">#  This is an idiom to iterate over all 
 fp.close                     <span class="comment">#  We are done with this file</span>
 </p>
 <p>
-最後の例はたぶんもっと実用的です。これは、任意のキラリティ・長さのカーボンナノチューブのモデルを作成するスクリプトです。
+最後の例は、任意のキラリティ・長さのカーボンナノチューブのモデルを作成するスクリプトです。
 </p>
 <p class="code"><span class="comment">#  Create a model of carbon nanotube
 #  Requires Molby</span>
