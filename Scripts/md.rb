@@ -1675,13 +1675,13 @@ class Molecule
 	  end
     }
 	if solvnames.length == 0
-	  Dialog.run {
+	  Dialog.run(" ") {
 	    layout(1,
 		  item(:text, :title=>"Please open a molecule file containing a solvent box."))
 	  }
 	  return
 	end
-	hash = Dialog.run {
+	hash = Dialog.run("Solvate") {
 	  layout(1,
 	    item(:text, :title=>"Choose solvent box:"),
 	    item(:popup, :subitems=>solvnames, :tag=>"solvent"),
