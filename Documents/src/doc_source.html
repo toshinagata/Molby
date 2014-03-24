@@ -1646,7 +1646,7 @@ Needless to say, you need to have access to Gaussian or GAMESS program packages.
 <p>
 The Gaussian input can be created by selecting "Export..." command in the "File" menu. The file extension is either "gjf" (as is the convention in GaussianW) or "com" (as in UNIX version of Gaussian).
 </p>
-<p><img style="vertical-align:top;" src="../etc/tutorial_8_01.png" /><img src="../etc/tutorial_8_02.png" /></p>
+<p><img style="vertical-align:top;" src="../etc/qchem_01.png" /><img src="../etc/qchem_02.png" /></p>
 <p>
 The output will look like this. Although Molby can create only one type of Gaussian input (optimize with PM3), it should be relatively easy to modify the generated input file by hand.
 </p>
@@ -1673,16 +1673,16 @@ H       -2.455000  -0.038000  -0.110000
 <p>
 When you do geometrical optimization, you may want to examine how the structure changes as the calculation proceeds. This can be done by importing the Gaussian output file. The extention should be either ".out" or ".log".
 </p>
-<p><img style="vertical-align:top;" src="../etc/tutorial_8_03.png" /><img src="../etc/tutorial_8_04.png" /></p>
+<p><img style="vertical-align:top;" src="../etc/qchem_03.png" /><img src="../etc/qchem_04.png" /></p>
 <h2>2. Using GAMESS</h2>
 <p>
 Creating GAMESS input can be more complicated than Gaussian, so that Molby provides a simple dialog to help creating GAMESS input. The dialog is accessible from the "Creating GAMESS input..." command in the "QChem" menu.
 </p>
-<p><img src="../etc/tutorial_8_05.png" /></p>
+<p><img src="../etc/qchem_05.png" /></p>
 <p>
 You can specify various settings in the dialog.
 </p>
-<p><img src="../etc/tutorial_8_06.png" /></p>
+<p><img src="../etc/qchem_06.png" /></p>
 <ul>
 <li><b>SCF Type:</b> RHF, ROHF, or UHF.</li>
 <li><b>Run Type:</b> Energy, Property, or Optimize.</li>
@@ -1707,32 +1707,32 @@ When the calculation of GAMESS is complete, you will find two output files, name
 We already saw <a href="mm_minimize.html#electrostatic">how to assign partial charges</a> for evaluation of electrostatic interactions in MM calculations. There we used semi-empirical calculations, although <i>ab initio</i> calculations will give better results if possible. Here are instructions how to do it using GAMESS.
 </p>
 <p>
-Select "MM/MD" &rarr; "Tools" &rarr; "GAMESS/RESP...".
+Select "MM/MD" &rarr; "GAMESS/RESP...".
 </p>
-<p><img src="../etc/tutorial_8_07.png" /></p>
+<p><img src="../etc/qchem_07.png" /></p>
 <p>
 The following window pops up. As the first step, press the "Create GAMESS Input..." button.
 </p>
-<p><img src="../etc/tutorial_8_08.png" /></p>
+<p><img src="../etc/qchem_08.png" /></p>
 <p>
 The familiar GAMESS dialog opens up. It is most important to turn on the "Calculate electrostatic potential (ESP)" checkbox (it should be turned on if you follow the steps as described here, but please double-check). Also make sure that the charge and multiplicity are correct, and select a suitable basis set (6-31G(d) is recommended).
 </p>
-<p><img src="../etc/tutorial_8_09.png" /></p>
+<p><img src="../etc/qchem_09.png" /></p>
 <p>
 Press OK to create the GAMESS input, and send it to GAMESS. The calculation will take time, so that you can finish Molby (after saving the molecule as a msbf file!), and work on something else at this stage.
 </p>
 <p>
 After the GAMESS calculation is complete, open the same molecule, and select "MM/MD" &rarr; "Tools" &rarr; "GAMESS/RESP..." again. This time, follow the second step by pressing the "Import GAMESS dat..." button.
 </p>
-<p><img src="../etc/tutorial_8_10.png" /></p>
+<p><img src="../etc/qchem_10.png" /></p>
 <p>
 Select the GAMESS dat file (which should be available when the GAMESS calculation ends successfully), and import it. When the import is complete, the "Run RESP..." button should be enabled. If it does not, the imported dat file does not have the electrostatic potential information. Start over from the step 1, and make sure that the "Calculate electrostatic potential (ESP)" checkbox is on.
 </p>
-<p><img src="../etc/tutorial_8_11.png" /></p>
+<p><img src="../etc/qchem_11.png" /></p>
 <p>
 Press the "Run RESP..." button, and the following dialog opens. This is almost the same as the dialog for Antechamber <a href="mm_minimize.html#minimize">described before</a>.
 </p>
-<p><img src="../etc/tutorial_8_12.png" /></p>
+<p><img src="../etc/qchem_12.png" /></p>
 <p>
 Press the "OK" button, and the RESP charge will be assigned to the atoms.
 </p>
@@ -1749,7 +1749,7 @@ Molby は量子化学計算ソフトウェア  <a href="http://www.gaussian.com/
 <p>
 Gaussian の入力は "File" &rarr; "Export..." コマンドを使えば作成することができます。ファイルの拡張子は "gjf"（GaussianW での習慣）、または "com"（UNIX 版での習慣）です。
 </p>
-<p><img style="vertical-align:top;" src="../etc/tutorial_8_01.png" /><img src="../etc/tutorial_8_02.png" /></p>
+<p><img style="vertical-align:top;" src="../etc/qchem_01.png" /><img src="../etc/qchem_02.png" /></p>
 <p>
 できあがったファイルは次のようになります。Molby が作成できるのは、一種類の Gaussian 入力ファイル（PM3 による構造最適化）だけですが、Gaussian の入力ファイルを手作業で修正するのは比較的簡単です。
 </p>
@@ -1776,16 +1776,16 @@ H       -2.455000  -0.038000  -0.110000
 <p>
 構造最適化を行ったあとは、構造がどのように変化するか見てみたいと思うでしょう。これは、Gaussian 出力ファイルを読み込めば実現できます。拡張子は ".out" または ".log" でなくてはなりません。
 </p>
-<p><img style="vertical-align:top;" src="../etc/tutorial_8_03.png" /><img src="../etc/tutorial_8_04.png" /></p>
+<p><img style="vertical-align:top;" src="../etc/qchem_03.png" /><img src="../etc/qchem_04.png" /></p>
 <h2>2. GAMESS を使う</h2>
 <p>
 GAMESS の入力を作成するのは Gaussian よりもずっと複雑なので、専用のダイアログが用意されています。このダイアログは、"QChem" &rarr; "Creating GAMESS input..." コマンドで開くことができます。
 </p>
-<p><img src="../etc/tutorial_8_05.png" /></p>
+<p><img src="../etc/qchem_05.png" /></p>
 <p>
 このダイアログでは、いろいろな設定を決めることができます。
 </p>
-<p><img src="../etc/tutorial_8_06.png" /></p>
+<p><img src="../etc/qchem_06.png" /></p>
 <ul>
 <li><b>SCF Type:</b> RHF, ROHF, または UHF.</li>
 <li><b>Run Type:</b> Energy, Property, または Optimize.</li>
@@ -1810,32 +1810,32 @@ GAMESS の計算が終了すると、*.log と *.dat の２つのファイルが
 分子力学計算で静電相互作用を評価するための部分電荷の計算については<a href="mm_minimize.html#electrostatic">すでに説明しました</a>。そこでは半経験的分子軌道計算を用いましたが、可能ならば ab initio 計算の方がよい結果を与えます。GAMESS を使って計算する方法を説明します。
 </p>
 <p>
-メニューより "MM/MD" &rarr; "Tools" &rarr; "GAMESS/RESP..." を選びます。
+メニューより "MM/MD" &rarr; "GAMESS/RESP..." を選びます。
 </p>
-<p><img src="../etc/tutorial_8_07.png" /></p>
+<p><img src="../etc/qchem_07.png" /></p>
 <p>
 次のウィンドウが開きます。第１のステップとして、"Create GAMESS Input..." ボタンを押します。
 </p>
-<p><img src="../etc/tutorial_8_08.png" /></p>
+<p><img src="../etc/qchem_08.png" /></p>
 <p>
 GAMESS のダイアログが開きます。大切なのは、"Calculate electrostatic potential (ESP)" チェックボックスをオンにすることです（ここの手順に従えば、自動的にオンになっているはずですが、一応確認してください）。分子の電荷・スピン多重度が正しいことを確かめ，基底関数 (6-31G(d) がおすすめ) を指定してください。
 </p>
-<p><img src="../etc/tutorial_8_09.png" /></p>
+<p><img src="../etc/qchem_09.png" /></p>
 <p>
 OK ボタンを押して GAMESS 入力を作成し、GAMESS で計算を実行してください。計算には時間がかかりますから、この時点で Molby を終了して他の作業をしていただいて構いません（ただし、分子ファイルを mbsf 形式で保存することを忘れないで！）。
 </p>
 <p>
 GAMESS 計算が完了したら、同じ分子ファイルを開き、"MM/MD" &rarr; "Tools" &rarr; "GAMESS/RESP..." をもう一度選択してください。今度は、第２ステップの "Import GAMESS dat..." ボタンを押します。
 </p>
-<p><img src="../etc/tutorial_8_10.png" /></p>
+<p><img src="../etc/qchem_10.png" /></p>
 <p>
 GAMESS の dat ファイルを選択し（GAMESS の計算が成功すればこれができているはずです）、読み込んでください。読み込みが完了したら、"Run RESP..." ボタンが有効になっているはずです。もしそうならなかったら、読み込んだ dat ファイルに静電ポテンシャルのデータが含まれなかったということです。もう一度第１ステップからやり直し、特に "Calculate electrostatic potential (ESP)" チェックボックスがオンになっていることを確かめてください。
 </p>
-<p><img src="../etc/tutorial_8_11.png" /></p>
+<p><img src="../etc/qchem_11.png" /></p>
 <p>
 "Run RESP..." ボタンを押すと、次のダイアログが開きます。これは、<a href="mm_minimize.html#minimize">前に説明した</a> Antechamber のダイアログとほとんど同じです。
 </p>
-<p><img src="../etc/tutorial_8_12.png" /></p>
+<p><img src="../etc/qchem_12.png" /></p>
 <p>
 "OK"ボタンを押すと、RESP 部分電荷が各原子に対してアサインされます。
 </p>
