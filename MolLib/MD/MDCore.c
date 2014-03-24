@@ -279,13 +279,14 @@ s_register_missing_parameters(Int **missing, Int *nmissing, Int type, Int t1, In
 /*  Check the bonded atoms and append to results if not already present */
 /*  results[] is terminated by -1, hence must be at least (natom+1) size  */
 static int
-s_check_bonded(Molecule *mol, Int idx, Int *results)
+s_check_bonded(Molecule *mol, Int idx, Int *results, AtomConnect *anchor_rev)
 {
 	Int i, j, n, *ip;
-	const Int *cp;
+	const Int *cp, *cpi;
 	Atom *ap = ATOM_AT_INDEX(mol->atoms, idx);
 	cp = AtomConnectData(&ap->connect);
 	for (i = 0; i < ap->connect.count; i++, cp++) {
+		/*  Directly connected to n */
 		Atom *api;
 		n = *cp;
 		for (ip = results; *ip >= 0; ip++) {
@@ -296,9 +297,10 @@ s_check_bonded(Molecule *mol, Int idx, Int *results)
 			*ip++ = n;
 			*ip = -1;
 		}
+		/*  n is an anchor, then connected to the n's parents  */
 		api = ATOM_AT_INDEX(mol->atoms, n);
 		if (api->anchor != NULL) {
-			const Int *cpi = AtomConnectData(&api->anchor->connect);
+			cpi = AtomConnectData(&api->anchor->connect);
 			for (j = 0; j < api->anchor->connect.count; j++, cpi++) {
 				n = *cpi;
 				for (ip = results; *ip >= 0; ip++) {
@@ -312,7 +314,37 @@ s_check_bonded(Molecule *mol, Int idx, Int *results)
 			}
 		}
 	}
+	cp = AtomConnectData(anchor_rev + idx);
+	for (i = 0; i < anchor_rev[idx].count; i++, cp++) {
+		/*  This is a parent to the anchor n  */
+		/*  Connected to n  */
+		Atom *apn;
+		n = *cp;
+		for (ip = results; *ip >= 0; ip++) {
+			if (n == *ip)
+				break;
+		}
+		if (*ip < 0) {
+			*ip++ = n;
+			*ip = -1;
+		}
+		apn = ATOM_AT_INDEX(mol->atoms, n);
+		cpi = AtomConnectData(&apn->connect);
+		for (j = 0; j < apn->connect.count; j++, cpi++) {
+			/*  Connected to the atoms that are connected to n  */
+			n = *cpi;
+			for (ip = results; *ip >= 0; ip++) {
+				if (n == *ip)
+					break;
+			}
+			if (*ip < 0) {
+				*ip++ = n;
+				*ip = -1;
+			}
+		}
+	}
 	if (ap->anchor != NULL) {
+		/*  If this is an anchor, then connected to my parents  */
 		cp = AtomConnectData(&ap->anchor->connect);
 		for (i = 0; i < ap->anchor->connect.count; i++, cp++) {
 			n = *cp;
@@ -338,6 +370,8 @@ s_make_exclusion_list(MDArena *arena)
 	Int natoms = arena->mol->natoms;
 	MDExclusion *exinfo;
 	int next_index, i, j;
+	AtomConnect *anchor_rev;
+	Atom *ap;
 
 	results = (Int *)calloc(sizeof(Int), natoms + 1);
 	if (results == NULL)
@@ -349,6 +383,18 @@ s_make_exclusion_list(MDArena *arena)
 	}
 	arena->nexlist = 0;
 
+	/*  Make temporary table of "anchor_reverse"  */
+	anchor_rev = (AtomConnect *)calloc(sizeof(AtomConnect), natoms);
+	for (i = 0, ap = arena->mol->atoms; i < natoms; i++, ap = ATOM_NEXT(ap)) {
+		if (ap->anchor != NULL) {
+			Int *cp = AtomConnectData(&ap->anchor->connect);
+			for (j = 0; j < ap->anchor->connect.count; j++) {
+				/*  cp[j] is a parent of anchor i  */
+				AtomConnectInsertEntry(anchor_rev + cp[j], -1, i);
+			}
+		}
+	}
+	
 	if (arena->exinfo != NULL)
 		free(arena->exinfo);
 	arena->exinfo = (MDExclusion *)calloc(sizeof(MDExclusion), natoms + 1);
@@ -365,15 +411,15 @@ s_make_exclusion_list(MDArena *arena)
 		results[1] = -1;
 		exinfo[i].index1 = 1;
 		/*  1-2 exclusion (directly bonded)  */
-		exinfo[i].index2 = s_check_bonded(arena->mol, i, results);
+		exinfo[i].index2 = s_check_bonded(arena->mol, i, results, anchor_rev);
 		n = exinfo[i].index2;
 		/*  1-3 exclusion: atoms bonded to 1-2 exclusions  */
 		for (j = exinfo[i].index1; j < exinfo[i].index2; j++)
-			n = s_check_bonded(arena->mol, results[j], results);
+			n = s_check_bonded(arena->mol, results[j], results, anchor_rev);
 		exinfo[i].index3 = n;
 		/*  1-4 exclusion: atoms bonded to 1-3 exclusions  */
 		for (j = exinfo[i].index2; j < exinfo[i].index3; j++)
-			n = s_check_bonded(arena->mol, results[j], results);
+			n = s_check_bonded(arena->mol, results[j], results, anchor_rev);
 		AssignArray(&arena->exlist, &arena->nexlist, sizeof(Int), next_index + n, NULL);
 		memcpy(arena->exlist + next_index, results, n * sizeof(Int));
 		exinfo[i].index0 += next_index;
@@ -384,6 +430,10 @@ s_make_exclusion_list(MDArena *arena)
 	}
 	exinfo[natoms].index0 = next_index;  /*  End of exlist  */
 	
+	for (i = 0; i < natoms; i++)
+		AtomConnectResize(anchor_rev + i, 0);
+	free(anchor_rev);
+
 	free(results);
 }
 
