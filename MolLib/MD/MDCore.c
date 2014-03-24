@@ -297,6 +297,7 @@ s_check_bonded(Molecule *mol, Int idx, Int *results, AtomConnect *anchor_rev)
 			*ip++ = n;
 			*ip = -1;
 		}
+#if 0
 		/*  n is an anchor, then connected to the n's parents  */
 		api = ATOM_AT_INDEX(mol->atoms, n);
 		if (api->anchor != NULL) {
@@ -313,6 +314,7 @@ s_check_bonded(Molecule *mol, Int idx, Int *results, AtomConnect *anchor_rev)
 				}
 			}
 		}
+#endif
 	}
 	cp = AtomConnectData(anchor_rev + idx);
 	for (i = 0; i < anchor_rev[idx].count; i++, cp++) {
@@ -328,6 +330,7 @@ s_check_bonded(Molecule *mol, Int idx, Int *results, AtomConnect *anchor_rev)
 			*ip++ = n;
 			*ip = -1;
 		}
+#if 0
 		apn = ATOM_AT_INDEX(mol->atoms, n);
 		cpi = AtomConnectData(&apn->connect);
 		for (j = 0; j < apn->connect.count; j++, cpi++) {
@@ -342,6 +345,7 @@ s_check_bonded(Molecule *mol, Int idx, Int *results, AtomConnect *anchor_rev)
 				*ip = -1;
 			}
 		}
+#endif
 	}
 	if (ap->anchor != NULL) {
 		/*  If this is an anchor, then connected to my parents  */
