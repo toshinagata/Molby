@@ -2012,7 +2012,7 @@ The "32" here is not a number but a string, because it is surrounded by quotatio
 </p>
 <p><img src="../etc/ruby_02.png" /></p>
 <p>
-Molby complains with this error dialog. It says "in '+': can't convert Fixnum into String," which means the integer 32 cannot be added to a string "C". Such kind of "type mismatch" error occurs very often, so please get used to it and learn how to fix it.
+Molby complains with this error dialog. It says "no implicit conversion of Fixnum into String," which means the integer 32 cannot be added to a string "C". Such kind of "type mismatch" error occurs very often, so please get used to it and learn how to fix it.
 </p>
 <p>
 Another useful feature of Ruby is an <i>Array</i>, which is an ordered collection of other Ruby objects. An array is expressed by comma-separated values surrounded by a pair of brackets.
@@ -2220,9 +2220,25 @@ The last example generates a model of carbon nanotube with any chirality and len
 <p class="code"><span class="comment">#  Create a model of carbon nanotube
 #  Requires Molby</span>
 r = 1.42     <span class="comment">#  The C-C bond length</span>
-n = 10       <span class="comment">#  The chirality index</span>
+n = 10       <span class="comment">#  The default chirality index</span>
 m = 5        <span class="comment">#  (ibid)</span>
-aspect = 5.0 <span class="comment">#  The aspect ratio (length / diameter)</span>
+aspect = 5.0 <span class="comment">#  The default aspect ratio (length / diameter)</span>
+
+#  Dialog to ask the chirality index and the aspect ratio
+h = Dialog.run("Create Carbon Nanotube") {
+  layout(3,
+    item(:text, :title=&gt;"Chirality Index"),
+    item(:textfield, :width=&gt;80, :tag=&gt;"n", :value=&gt;n.to_s),
+    item(:textfield, :width=&gt;80, :tag=&gt;"m", :value=&gt;m.to_s),
+    item(:text, :title=&gt;"Aspect Ratio"),
+    item(:textfield, :width=&gt;160, :tag=&gt;"aspect", :value=&gt;sprintf("%.1f", aspect)),
+    -1)
+}
+
+exit if h[:status] != 0
+aspect = h["aspect"].to_f
+n = h["n"].to_i
+m = h["m"].to_i
 
 k = aspect / (PI * sqrt(3.0))
 points = []
@@ -2257,7 +2273,7 @@ mol.guess_bonds
 mol2 = Molecule.open
 mol2.add(mol)
 </p>
-<p><img src="../etc/ruby_07.png" /><img src="../etc/ruby_08.png" /></p>
+<p><img style="vertical-align: top;" src="../etc/ruby_07.png" /><img src="../etc/ruby_08.png" /></p>
 
 <h2>5. Where to Go from Here</h2>
 <p>
@@ -2316,7 +2332,7 @@ Ruby インタプリタが "1+2" を計算し、答え (3) を次の行に表示
 </p>
 <p><img src="../etc/ruby_02.png" /></p>
 <p>
-Molby はエラーメッセージ "in '+': can't convert Fixnum into String" を表示します。これは、「整数」32 を「文字列」"C" に足すことはできないことを意味しています。このような「型が違う」エラーはとてもよく起きるので、どのように直せばいいかをよく理解しておいてください。
+Molby はエラーメッセージ "no implicit conversion of Fixnum into String" を表示します。これは、「整数」32 を「文字列」"C" に足すことはできないことを意味しています。このような「型が違う」エラーはとてもよく起きるので、どのように直せばいいかをよく理解しておいてください。
 </p>
 <p>
 Ruby のもう１つの便利な機能は「配列」<i>(Array)</i> です。これは、他の Ruby オブジェクトを順番に並べたものです。配列は、値をコンマで区切って角括弧 [] で囲むことで表します。
@@ -2524,9 +2540,25 @@ fp.close                     <span class="comment">#  We are done with this file
 <p class="code"><span class="comment">#  Create a model of carbon nanotube
 #  Requires Molby</span>
 r = 1.42     <span class="comment">#  The C-C bond length</span>
-n = 10       <span class="comment">#  The chirality index</span>
+n = 10       <span class="comment">#  The default chirality index</span>
 m = 5        <span class="comment">#  (ibid)</span>
-aspect = 5.0 <span class="comment">#  The aspect ratio (length / diameter)</span>
+aspect = 5.0 <span class="comment">#  The default aspect ratio (length / diameter)</span>
+
+#  Dialog to ask the chirality index and the aspect ratio
+h = Dialog.run("Create Carbon Nanotube") {
+  layout(3,
+    item(:text, :title=&gt;"Chirality Index"),
+    item(:textfield, :width=&gt;80, :tag=&gt;"n", :value=&gt;n.to_s),
+    item(:textfield, :width=&gt;80, :tag=&gt;"m", :value=&gt;m.to_s),
+    item(:text, :title=&gt;"Aspect Ratio"),
+    item(:textfield, :width=&gt;160, :tag=&gt;"aspect", :value=&gt;sprintf("%.1f", aspect)),
+    -1)
+}
+
+exit if h[:status] != 0
+aspect = h["aspect"].to_f
+n = h["n"].to_i
+m = h["m"].to_i
 
 k = aspect / (PI * sqrt(3.0))
 points = []
@@ -2561,7 +2593,7 @@ mol.guess_bonds
 mol2 = Molecule.open
 mol2.add(mol)
 </p>
-<p><img src="../etc/ruby_07.png" /><img src="../etc/ruby_08.png" /></p>
+<p><img style="vertical-align: top;" src="../etc/ruby_07.png" /><img src="../etc/ruby_08.png" /></p>
 
 <h2>5. 次に学ぶべきこと</h2>
 <p>
