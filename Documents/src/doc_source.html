@@ -1499,7 +1499,7 @@ Suppose we want to build a model of (terpy)PtCl, where terpy is 2,2':6',2"-terpy
 </p>
 <p><img src="../etc/coord_01.png" /></p>
 <p>
-We need to build the molecular structure first. One approach is to build the organic part, and put metal atoms afterwards. Here, we will go through another route, which is more suitable for coordination compounds in general.
+We need to build the molecular structure first. One approach is to build the organic part (terpy), and put metal atoms afterwards. Here, we will go through another route, namely start from the metal fragment and add ligands afterwards. In general, this approach should be more successful in building models of coordination compounds.
 </p>
 <p>
 Select "Open Predefined..." menu item, and find "MX4 square-planar" like below.
@@ -1514,7 +1514,7 @@ Choose the "Select" tool, double click on one of the chlorine atoms, and type "C
 </p>
 <p><img style="vertical-align:top;" src="../etc/coord_04.png" /><img src="../etc/coord_05.png" /></p>
 <p>
-You see now a phenyl group is attached to the metal atom. Select the metal-C bond, and rotate the phenyl ring so that the ring is approximately coplanar with the metal-ligand plane.
+You see now a phenyl group is attached to the metal atom. The orientation of the phenyl ring needs to be fixed. Select the metal-C bond, and rotate the phenyl ring so that the ring is approximately coplanar with the metal-ligand plane.
 </p>
 <p><img src="../etc/coord_06.png" /></p>
 <p>
@@ -1522,7 +1522,7 @@ Attach two other phenyl groups in a similay manner.
 </p>
 <p><img src="../etc/coord_07.png" /></p>
 <p>
-Remove the hydrogen atoms and create C-C bonds. Double-click on the carbon atoms connected to the metal, and change them to "N".
+Remove the hydrogen atoms and create C-C bonds. Double-click on the carbon atoms connected to the metal, and change them to "N". Double-click on the metal atom and change it to "Pt".
 </p>
 <p><img style="vertical-align:top;" src="../etc/coord_08.png" /><img style="vertical-align:top;" src="../etc/coord_09.png" /><img src="../etc/coord_10.png" /></p>
 <p>
@@ -1550,7 +1550,7 @@ Next, we need to assign the "UFF types" to each atoms. In fact, the UFF types ar
 </p>
 <p><img src="../etc/coord_18.png" /></p>
 <p>
-One more step before estimating the UFF parameters. Click on the "Bonds" button, and the bond length table is shown as below.
+There is another important step before estimating the UFF parameters. Click on the "Bonds" button, and the bond length table is shown as below.
 </p>
 <p><img src="../etc/coord_19.png" /></p>
 <p>
@@ -1626,6 +1626,139 @@ You can now try the MM/MD calculation. Energy minimization results in an eclipse
 </div>
 <div class="contents" lang="ja">
 <h1>第八段階：配位化合物のMM/MD計算</h1>
+<h2>1. UFF (Universal Force Field) パラメータを使う</h2>
+<p>
+配位化合物の分子モデル作成にはいろいろ問題があります。主な問題は、金属原子の分子力学パラメータが用意されていないことです。一つの合理的な方法は、Rappéらによって提案された UFF (universal force field) パラメータを使うことです (<i>J. Am. Chem. Soc.</i> <b>114</b>, 10024-10035 (1992))。 分子構造から UFF パラメータを見積もるのはやや複雑な作業ですが、プログラムによって自動化することは可能です。以下に、UFF を用いた配位化合物のモデルングに Molby がどのように利用できるかを示します。
+</p>
+<p>
+例として、(terpy)PtCl の分子モデルを作ってみましょう。terpy は 2,2':6',2"-terpyridine です。
+</p>
+<p><img src="../etc/coord_01.png" /></p>
+<p>
+最初に分子構造を作らなくてはいけません。一つの方法は、まず有機分子の部分 (terpy) を作成し、金属を後から付け加えることです。ここでは、別の方法を使ってみます。つまり、最初に金属回りの配位構造から始め、あとで配位子を付け加えます。一般的には、こちらの方が配位化合物のモデリングには適しています。
+</p>
+<p>
+"File" メニューから "Open Predefined..." を選び、下のように "MX4 square-planar" を見つけてください。
+</p>
+<p><img src="../etc/coord_02.png" /></p>
+<p>
+平面四配位の "CuCl4" 構造が現れます。
+</p>
+<p><img src="../etc/coord_03.png" /></p>
+<p>
+"Select" ツールを選び、塩素原子の１つをダブルクリックして、"C6H5" とタイプします。
+</p>
+<p><img style="vertical-align:top;" src="../etc/coord_04.png" /><img src="../etc/coord_05.png" /></p>
+<p>
+金属原子にフェニル基が結合しました。環はこの向きではいけませんので、金属-炭素結合を選択して、フェニル基を回転させ、環が金属・配位子平面と同一平面になるようにします。
+</p>
+<p><img src="../etc/coord_06.png" /></p>
+<p>
+他の２つの塩素原子も同様にフェニル基に置き換えます。
+</p>
+<p><img src="../etc/coord_07.png" /></p>
+<p>
+水素原子を削除して炭素−炭素結合を作成します。それから、金属に結合している炭素原子をダブルクリックして、"N"原子に変えます。金属原子をダブルクリックして、 "Pt" に変えます。
+</p>
+<p><img style="vertical-align:top;" src="../etc/coord_08.png" /><img style="vertical-align:top;" src="../etc/coord_09.png" /><img src="../etc/coord_10.png" /></p>
+<p>
+これで分子構造はできあがりました。次に、分子力学パラメータを設定します。"MM/MD"メニューから "Guess UFF Parameters..." コマンドを選択します。
+</p>
+<p><img src="../etc/coord_11.png" /></p>
+<p>
+下のようなダイアログが開きます。表に原子が並んでいますが、この原子は (1) 金属原子、(2) 金属原子に結合している原子、(3) (2) の原子のいずれかに結合している原子、のどれかです。言い換えれば、金属原子から「結合２つ分」以内の原子が表示されています。Pt 原子の行は赤色で表示されています。分子力学パラメータが定義されていないことを表しています。配位子の原子はすでに分子力学パラメータを持っていますが、よく見ると、間違っているものもあります。例えば、ピリジンの N 原子は "n3" タイプになっていますが、これは sp3 窒素です。
+</p>
+<p><img src="../etc/coord_12.png" /></p>
+<p>
+UFF パラメータの作成はいくつかの段階を要します。最初に、配位子の原子タイプを正しく設定します。この作業は、<a href="mm_minimize.html">第六段階</a> で行ったのとほぼ同じですが、今回は金属原子を除いた部分構造について Antechamber を実行する必要があります。"Run Antechamber for Non-Metal Fragment" ボタンを押すと、この作業が自動的に行われます。各部分構造について、電荷を与える必要があるかも知れません。例えば、カテコラト配位子を使っているなら、電荷は -2 となります。
+</p>
+<p><img style="vertical-align:top;" src="../etc/coord_13.png" /><img src="../etc/coord_14.png" /></p>
+<p>
+Antechamber を走らせる部分構造は、メインウィンドウで選択されて表示されます。ここの例では、１番目の部分構造は塩素原子１個だけを含み、２番目の部分構造はターピリジンになります。
+</p>
+<p><img src="../etc/coord_15.png" /><img src="../etc/coord_16.png" /></p>
+<p>
+Antechamber を走らせると、表は下のようになります。"type" 列の値が変わっていることに注意してください。
+</p>
+<p><img src="../etc/coord_17.png" /></p>
+<p>
+次に、各原子の "UFF type" を設定します。前の段階で UFF type を仮に設定してありますが、一通り見直して、必要なら変更してください。UFF type はポップアップメニューで選択することができます。
+</p>
+<p><img src="../etc/coord_18.png" /></p>
+<p>
+UFF パラメータの設定にはもう一つ大切な作業があります。"Bonds" ボタンを押して、結合テーブルを下のように表示してください。
+</p>
+<p><img src="../etc/coord_19.png" /></p>
+<p>
+一番右の２つの列、"r0" と "real_r" を見てください。"r0" の値は平均結合長で、"real_r" は現在の結合長です。Pt-Cl と Pt-N 結合を見ますと、"r0" の値はどちらも 0.000 になっています。このままだと、分子力学計算の結合長（結合エネルギーが最小になる距離）として "real_r" の値がそのまま使われます。現在の real_r の値は、Pt-Cl, Pt-N の距離としては短すぎます。Pt-Cl は 2.30 &Aring;, Pt-N は 2.00 &Aring; 程度が適当でしょう。他に適当な値の候補があるなら、それを使っていただいて構いません。
+</p>
+<p><img src="../etc/coord_20.png" /></p>
+<p>
+"Angle" のページも同様にチェックしましょう。今回は、角度の方はすべて 0.0 のままで構いません。
+</p>
+<p><img src="../etc/coord_21.png" /></p>
+<p>
+"Guess UFF Parameters for Bonds..." ボタンを押します。"k", "a0" の値がセットされたことを確かめてください。"Bonds", "Atoms" のページに戻り、これらのパラメータもセットされていることを確かめてください。
+</p>
+<p><img src="../etc/coord_22.png" /></p>
+<p>
+このダイアログを閉じて、MM/MD 計算を通常のように進めます。例えば、エネルギー最小化を行うと、下のような構造が得られます。
+</p>
+<p><img src="../etc/coord_23.png" /></p>
+<h2>2. 金属-π 結合を持つ化合物</h2>
+<p>
+分子力学計算では、金属-π結合を持つ化合物の取り扱いも厄介です。Molby は、Doman らの方法 (<i>J. Am. Chem. Soc.</i> <b>114,</b> 7262-7272 (1992)) に準じて金属-π結合の分子力学計算を実装しています。ここでは、フェロセンの分子モデルを作成してみます。
+</p>
+<p><img src="../etc/ferro_01.png" /></p>
+<p>
+"Open Predefined" から "cyclopentadienyl" を選びます。
+</p>
+<p><img style="vertical-align: top;" src="../etc/ferro_02.png" /><img src="../etc/ferro_03.png" /></p>
+<p>
+５つの炭素原子を選択し、"Create Pi Anchor" メニューコマンドを実行します。
+</p>
+<p><img src="../etc/ferro_04.png" /></p>
+<p>
+"Pi anchor" とは、「親」原子の重心を座標とする仮想的な原子です。今回は、シクロペンタジエニル環の５つの炭素原子（上で選択したもの）が pi anchor の親になります。スクリーン上では、pi anchor は緑色の小さな球で表し、親原子とは緑色の半透明の棒でつないで表示されます。
+</p>
+<p><img src="../etc/ferro_05.png" /></p>
+<p>
+Rotate the ring to show the "side view" of the ring, while keeping the pi anchor barely visible. Create a bond from the pi anchor to a new atom. Change the new atom to Fe.
+</p>
+<p><img src="../etc/ferro_06.png" /><img src="../etc/ferro_07.png" /><img src="../etc/ferro_08.png" /></p>
+<p>
+Copy the cyclopentadienyl ring and the pi anchor, and paste in the same window. Place the new ring to the appropriate position, and bond the Fe atom and the new pi anchor.
+</p>
+<p><img src="../etc/ferro_09.png" /><img src="../etc/ferro_10.png" /><img src="../etc/ferro_11.png" /></p>
+<p>
+Finally, make a bond between the two pi anchors. This is necessary to describe the barrier for ring rotation. The anchor-anchor bond is shown as a half-transparent green stick.
+</p>
+<p class="note">The ring rotation can be described as a dihedral term in the form of "ring atom"-"pi anchor"-"metal"-"X". However, in the case of a linear metallocene, "X" is the other pi anchor. Since the "pi anchor"-"metal"-"pi anchor" angle is always close to 180 degree, the dihedral angle cannot be defined. For this reason, the linear metallocene requires special treatment of the dihedral term in the form of "ring atom"-"pi anchor"-"pi anchor"-"ring atom". That is why we need to make a bond between two pi anchors. This is not the case for the bent metallocenes (like Cp<sub>2</sub>TiCl<sub>2</sub>), or half-sandwich complexes.
+</p>
+<p><img src="../etc/ferro_12.png" /></p>
+<p>
+Now we can go on to the UFF dialog as before. This time, we skip the "non-metal fragments" part, because Antechamber cannot handle cyclopentadienyl anion. Our cyclopentadienyl ring already has correct atom types, so we will use them as they are.
+</p>
+<p>
+Change the UFF type of the Fe atom to "Fe2+ octahedral".
+</p>
+<p><img src="../etc/ferro_13.png" /></p>
+<p>
+Click on the "Bonds" label, and change the "r0" parameter of the two bonds of "##-fe" or "fe-##" type ("##" represents the pi anchor). This should be the metal-pi distance, which is 1.66 &Aring; for ferrocene.
+</p>
+<p><img src="../etc/ferro_14.png" /></p>
+<p>
+The "Angle" page should also be edited. The "a0" parameter is set to 90.0 for the "fe-##-ca" type angles (ten lines from the top), and 180.0 for the "##-fe-##" type angle (the last line).
+</p>
+<p><img src="../etc/ferro_15.png" /></p>
+<p>
+Hit the "Guess UFF Parameters..." button to complete the calculation of the UFF parameters.
+</p>
+<p><img src="../etc/ferro_16.png" /></p>
+<p>
+You can now try the MM/MD calculation. Energy minimization results in an eclipsed conformation. MD at 298K shows that the Cp rings freely rotate at this temperature.
+</p>
+<p><img src="../etc/ferro_17.png" /></p>
 </div>
 <link id="#navigation" />
 </div>
