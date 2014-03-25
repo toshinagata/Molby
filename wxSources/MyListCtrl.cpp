@@ -397,9 +397,9 @@ MyListCtrl::EndEditTextAndRestart(bool setValueFlag, int newRow, int newColumn)
 		if (setValueFlag && dataSource) {
 			sval = editText->GetValue();
 		}
-		if (wxWindow::FindFocus() == editText) {
-			SetFocus();
-		}
+	//	if (wxWindow::FindFocus() == editText) {
+	//		SetFocus();
+	//	}
 #if defined(__WXMAC__)
 		{
 			/*  Erase the focus ring  */
@@ -409,8 +409,13 @@ MyListCtrl::EndEditTextAndRestart(bool setValueFlag, int newRow, int newColumn)
 			Refresh();
 		}
 #endif
-		editText->Hide();  /*  Temporarily hide until new editing starts  */
-
+		//  Temporarily hide until new editing starts
+		//  (editText is set to NULL to avoid recursive calling of EndEditText())
+		wxTextCtrl *saveEditText = editText;
+		editText = NULL;
+		saveEditText->Hide();
+		editText = saveEditText;
+		
 		if (setValueFlag && dataSource)
 			dataSource->SetItemText(this, editRow, editColumn, sval);
 
@@ -420,7 +425,7 @@ MyListCtrl::EndEditTextAndRestart(bool setValueFlag, int newRow, int newColumn)
 		StartEditText(newRow, newColumn);
 	} else {
 		editRow = editColumn = -1;
-#if defined(__WXMAC__)
+#if 0 && defined(__WXMAC__)
 		if (editText != NULL) {
 			editText->Disconnect(wxID_ANY);
 			editText->Destroy();
