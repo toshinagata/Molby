@@ -20,7 +20,6 @@ Source: "build\release\Molby\Scripts\mbsf\heterocyclic\*"; DestDir: {app}\Script
 Source: "build\release\Molby\Scripts\mbsf\solvents\*"; DestDir: {app}\Scripts\mbsf\solvents
 Source: "build\release\Molby\Scripts\lib\*"; DestDir: {app}\Scripts\lib
 Source: "build\release\Molby\Scripts\basis_sets\*"; DestDir: {app}\Scripts\basis_sets
-Source: "build\release\Molby\mopac\*"; DestDir: {app}\mopac
 Source: "build\release\Molby\ortep3\*"; DestDir: {app}\ortep3
 
 [Icons]

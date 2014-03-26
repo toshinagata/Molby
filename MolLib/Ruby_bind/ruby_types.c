@@ -2199,7 +2199,7 @@ static VALUE
 s_LAMatrix_Submatrix_sub(VALUE self, int rowpos, int columnpos, int row, int column)
 {
 	LAMatrix *mp1, *mp2;
-	int i, j, n1, n2, n3, n4;
+	int i, j;
 	Data_Get_Struct(self, LAMatrix, mp1);
 	if (rowpos < -mp1->row || rowpos >= mp1->row)
 		rb_raise(rb_eArgError, "illegal row number (%d)", rowpos);
