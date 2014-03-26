@@ -872,7 +872,7 @@ s_MolActionAddStructuralElements(Molecule *mol, MolAction *action, MolAction **a
 		if (mol->ndihedrals > nd) {
 			MolActionCallback_registerUndo(mol, *actp);
 			MolActionRelease(*actp);
-			ig2 = IntGroupNewWithPoints(na, mol->ndihedrals - nd, -1);
+			ig2 = IntGroupNewWithPoints(nd, mol->ndihedrals - nd, -1);
 			*actp = MolActionNew(gMolActionDeleteDihedrals, ig2);
 			IntGroupRelease(ig2);
 		}
