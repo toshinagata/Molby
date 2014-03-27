@@ -364,10 +364,14 @@ ConsoleFrame::OnEnterPressed()
 				Molby_showError(status);
 			} else {
 				textCtrl->AppendText(wxT("-->"));
-				Molby_showRubyValue(val, &valueString);
-				AssignArray(&valueHistory, &nValueHistory, sizeof(char *), nValueHistory, &valueString);
-				if (nValueHistory >= MAX_HISTORY_LINES)
-					DeleteArray(&valueHistory, &nValueHistory, sizeof(char *), 0, 1, NULL);
+				status = Molby_showRubyValue(val, &valueString);
+				if (status != 0) {
+					Molby_showError(status);
+				} else {
+					AssignArray(&valueHistory, &nValueHistory, sizeof(char *), nValueHistory, &valueString);
+					if (nValueHistory >= MAX_HISTORY_LINES)
+						DeleteArray(&valueHistory, &nValueHistory, sizeof(char *), 0, 1, NULL);
+				}
 			}
 			MyAppCallback_setConsoleColor(0);
 			textCtrl->AppendText(wxT("\n"));

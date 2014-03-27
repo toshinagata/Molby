@@ -44,6 +44,7 @@ Get ruby-2.0.0-p353.tar.gz, unpack it, and move the resulting directory ruby-2.0
 $ cd $MOLBY/../ruby-2.0.0-p353
 $ CFLAGS='-isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.5 -O2' ./configure --prefix=$PWD/osx-build --with-arch=i386,ppc --disable-shared --with-ext=date --disable-install-rdoc
 $ make && make install
+$ cd enc; ar -r libenc.a *.o; cp libenc.a ../osx-build/lib  #  We need shift_jis.o etc. for encoding support
 
 The osx-build directory contains lib (which contains libruby-static.a) and include (which contains include files). (There are also bin and share directories, but these are not used for building Molby.)
 $ make clean  #  Remove configure files and intermediates; the osx-build directory remains intact
@@ -118,6 +119,7 @@ If you use gcc 4.6 or later, comment out the following line in cygwin/GNUmakefil
 
 $ ./configure --prefix=$PWD/msw-build --disable-shared --with-ext=date --disable-install-rdoc --with-static-linked-ext
 $ make && make install
+$ cp enc/libenc.a msw-build/lib  #  We need this for encoding support
 
 The msw-build directory contains lib (which contains libmsvcrt-ruby200-static.a and libmsvcrt-rubuy200.a) and include (which contains include files). (There are also bin and share directories, but these are not used for building Molby.)
 $ make clean  #  Remove configure files and intermediates; the msw-build directory remains intact

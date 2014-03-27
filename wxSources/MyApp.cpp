@@ -43,6 +43,7 @@
 #include "wx/process.h"
 #include "wx/utils.h"
 #include "wx/sound.h"
+#include "wx/time.h"
 
 #include "MyApp.h"
 #include "MyDocument.h"
@@ -1238,6 +1239,7 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
 	char buf[256];
 	size_t len, len_total;
 	wxString cmdstr(cmdline, WX_DEFAULT_CONV);
+	wxLongLong startTime;
 	
 	if (m_process != NULL)
 		return -1;  //  Another process is already running (CallSubProcess() allows only one subprocess)
@@ -1251,6 +1253,7 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
 		ShowProgressPanel(buf);
 		progress_panel = true;
 	}
+	startTime = wxGetUTCTimeMillis();
 	
 	//  Create log file in the document home directory
 #if LOG_SUBPROCESS
@@ -1342,8 +1345,9 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
 				}
 			}
 		}
-		if (++count == 100) {
-			if (progress_panel == false) {
+		if (progress_panel == false) {
+			::wxSafeYield(NULL);  //  This seems necessary to get OnEndProcess called
+			if (++count == 40) {
 				ShowProgressPanel("Running subprocess...");
 				progress_panel = true;
 			}
@@ -1431,7 +1435,7 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
 			nn = 0;
 		}
 #endif
-		::wxMilliSleep(10);
+		::wxMilliSleep(25);
 		if (wxGetApp().IsInterrupted() || (callback != NULL && callback != DUMMY_CALLBACK && (callback_result = (*callback)(callback_data)) != 0)) {
 			/*  User interrupt  */
 			int kflag = wxKILL_CHILDREN;
@@ -1894,7 +1898,7 @@ MyAppCallback_executeScriptFromFile(const char *cpath, int *status)
 	}
 	
 	/*  Check the encoding specification, and if present convert it to default encoding  */
-	{
+	if (0) {
 		char *lp = script, *eolp;
 		int n = 0;
 		while (n < 2) {  /*  Check the first two lines  */

@@ -123,24 +123,24 @@ end
 
 register_menu("View\t-", nil)
 register_menu("View\t^Show Unit Cell", :cmd_show_unit_cell,
-  lambda { |m| [m != nil, m.show_unitcell] } )
+  lambda { |m| [m != nil, m && m.show_unitcell] } )
 register_menu("View\t^Show Hydrogen Atoms", :cmd_show_hydrogens,
-  lambda { |m| [m != nil, m.show_hydrogens] } )
+  lambda { |m| [m != nil, m && m.show_hydrogens] } )
 register_menu("View\t^Show Dummy Atoms", :cmd_show_dummy_atoms,
-  lambda { |m| [m != nil, m.show_dummy_atoms] } )
+  lambda { |m| [m != nil, m && m.show_dummy_atoms] } )
 register_menu("View\t^Show Expanded Atoms", :cmd_show_expanded,
-  lambda { |m| [m != nil, m.show_expanded] } )
+  lambda { |m| [m != nil, m && m.show_expanded] } )
 register_menu("View\t^Show Ellipsoids", :cmd_show_ellipsoids,
-  lambda { |m| [m != nil, m.show_ellipsoids] } )
+  lambda { |m| [m != nil, m && m.show_ellipsoids] } )
 register_menu("View\t^Show Rotation Center", :cmd_show_rotation_center,
-  lambda { |m| [m != nil, m.show_rotation_center] } )
+  lambda { |m| [m != nil, m && m.show_rotation_center] } )
 register_menu("View\t-", nil)
 register_menu("View\t^Show Graphite...", :cmd_show_graphite,
-  lambda { |m| [m != nil, m.show_graphite?] } )
+  lambda { |m| [m != nil, m && m.show_graphite?] } )
 register_menu("View\t-", nil)
 register_menu("View\tAppearance\t^Line", :cmd_line_mode,
-  lambda { |m| [m != nil, m.line_mode] } )
+  lambda { |m| [m != nil, m && m.line_mode] } )
 register_menu("View\tAppearance\t^Ball and Stick", :cmd_ball_and_stick_mode,
-  lambda { |m| [m != nil, !m.line_mode && m.atom_radius < 0.5] } )
+  lambda { |m| [m != nil, m && !m.line_mode && m.atom_radius < 0.5] } )
 register_menu("View\tAppearance\t^Space Filling", :cmd_space_filling_mode,
-  lambda { |m| [m != nil, !m.line_mode && m.atom_radius >= 0.5] } )
+  lambda { |m| [m != nil, m && !m.line_mode && m.atom_radius >= 0.5] } )

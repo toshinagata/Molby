@@ -935,9 +935,6 @@ The parameter table shows the molecular mechanics parameters in one table.
 </p>
 <p><img src="../etc/table_12.png" /></p>
 <p>
-When you build a molecule from scratch, and open the parameter table before doing any MM/MD operations, this table is likely to be empty. This is because the MM parameters are looked up only when "Molecular Dynamics..." or "Minimize..." menu command is invoked, or you use MM/MD tools like Antechamber (see Step 4 for details). After doing some of these operations, you will see a set of parameters shown in this table.
-</p>
-<p>
 The parameters are grouped in several classes, namely "VDWs", "Bonds", "Angles", "Dihedrals", "Impropers", and "VDW Pairs".
 </p>
 <p>
@@ -1028,9 +1025,6 @@ Bond, angle, dihedral, improper テーブルは、それぞれ結合・結合角
 </p>
 <p><img src="../etc/table_12.png" /></p>
 <p>
-分子を新しく作成して、MM/MD に関連する操作を何もせずにパラメータテーブルを開くと、テーブルはおそらく空のままでしょう。分子力学パラメータは、"Molecular Dynamics..." または "Minimize..." メニューコマンドを実行したときか、Antechamber のような分子力学用ツール（第四段階参照）を使った時に初めて作成されます。これらの操作をした後には、パラメータがこのテーブルに表示されます。
-</p>
-<p>
 パラメータはいくつかの種類にグループ分けされています。"VDWs", "Bonds", "Angles", "Dihedrals", "Impropers", そして "VDW Pairs" です。
 </p>
 <p>
@@ -1099,7 +1093,7 @@ Open the "MM/MD" menu, and select "Guess MM/MD Parameters..." command.
 </p>
 <p><img src="../etc/minimize_02.png" /></p>
 <p>
-A dialog like below shows up. This is for execution of Antechamber on the current molecule. Turn off the "partial charge" checkbox. The "log" directory is used by AmberTools for storing intermediate files; the default value would be acceptable, but you can change it here.
+A dialog like below shows up. This is for execution of Antechamber on the current molecule. Turn off the "Calculate partial charges" checkbox, and turn on the "Guess atom types" checkbox. The "log" directory is used by AmberTools for storing intermediate files; the default value would be acceptable, but you can change it here.
 </p>
 <p><img src="../etc/minimize_03.png" /></p>
 <p>
@@ -1188,7 +1182,7 @@ Molby の分子力学計算は、基本的な分子力場（結合の伸縮、�
 </p>
 <p><img src="../etc/minimize_02.png" /></p>
 <p>
-下のようなダイアログが現れます。これは現在の分子に対して Antechamber を実行するためのものです。一番上のチェックボックス (partial charge) をオフにしてください。"Log" ディレクトリは、AmberTools のプログラムが中間ファイルを保存するのに使います。デフォルトの位置で問題はないでしょうが、変更してもかまいません。
+下のようなダイアログが現れます。これは現在の分子に対して Antechamber を実行するためのものです。一番上のチェックボックス "Calculate partial charge" をオフ、その下の "Guess Atom Types" をオンにしてください。"Log" ディレクトリは、AmberTools のプログラムが中間ファイルを保存するのに使います。デフォルトの位置で問題はないでしょうが、変更してもかまいません。
 </p>
 <p><img src="../etc/minimize_03.png" /></p>
 <p>

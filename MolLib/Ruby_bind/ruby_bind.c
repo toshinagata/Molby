@@ -11065,7 +11065,11 @@ s_evalRubyScriptOnMoleculeSub(VALUE val)
 	if (ptr[2] == NULL) {
 		char *scr;
 		/*  String literal: we need to specify string encoding  */
+#if defined(__WXMSW__)
+		asprintf(&scr, "#coding:shift_jis\n%s", (char *)ptr[0]);
+#else
 		asprintf(&scr, "#coding:utf-8\n%s", (char *)ptr[0]);
+#endif
 		sval = rb_str_new2(scr);
 		free(scr);
 		fnval = rb_str_new2("(eval)");
@@ -11124,13 +11128,13 @@ Molby_evalRubyScriptOnMolecule(const char *script, Molecule *mol, const char *fn
 	return retval;
 }
 
-void
+int
 Molby_showRubyValue(RubyValue value, char **outValueString)
 {
 	VALUE val = (VALUE)value;
 	if (gMolbyIsCheckingInterrupt) {
 		MolActionAlertRubyIsRunning();
-		return;
+		return 0;
 	}
 	if (val != Qnil) {
 		int status;
@@ -11138,11 +11142,17 @@ Molby_showRubyValue(RubyValue value, char **outValueString)
 		gMolbyRunLevel++;
 		val = rb_protect(rb_inspect, val, &status);
 		gMolbyRunLevel--;
+		if (status != 0)
+			return status;
 		str = StringValuePtr(val);
 		if (outValueString != NULL)
 			*outValueString = strdup(str);
 		MyAppCallback_showScriptMessage("%s", str);
+	} else {
+		if (outValueString != NULL)
+			*outValueString = NULL;
 	}
+	return 0;
 }
 
 void
@@ -11301,6 +11311,11 @@ Molby_startup(const char *script, const char *dir)
 	}
 #endif
 	ruby_init();
+
+	{
+		extern void Init_shift_jis(void);
+		Init_shift_jis();
+	}
 	
 	/*  Initialize loadpath; the specified directory, "lib" subdirectory, and "."  */
 	ruby_incpush(".");

@@ -23,14 +23,15 @@ $startup_dir = Dir.pwd
 case RUBY_PLATFORM
   when /mswin|mingw|cygwin|bccwin/
     $platform = "win"
-#	$KCODE="SJIS"
+	Encoding.default_external = "shift_jis"
 	$home_directory = ENV['USERPROFILE'].gsub(/\\/, "/")
   when /darwin/
     $platform = "mac"
-#	$KCODE="UTF8"
+	Encoding.default_external = "utf-8"
 	$home_directory = ENV['HOME']
   else
     $platform = "other"
+	Encoding.default_external = "locale"
 	$home_directory = ENV['HOME']
 end
 

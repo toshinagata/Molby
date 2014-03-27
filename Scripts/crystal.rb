@@ -1,4 +1,5 @@
-#
+# coding: utf-8
+# 
 #  crystal.rb
 #
 #  Created by Toshi Nagata.
@@ -1807,7 +1808,8 @@ end
 	new_box = nil
     hash = Dialog.run("Unit Cell") {
 	  @mol = mol
-	  @box = @mol.box.dup
+	  @box = @mol.box
+	  @box = (@box ? @box.dup : nil)
 	  @box_save = nil
 	  
 	  def set_cell_value(item1)
