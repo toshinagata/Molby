@@ -53,6 +53,7 @@ VALUE rb_cMolecule, rb_cMolEnumerable, rb_cAtomRef;
 VALUE rb_cParameter, rb_cParEnumerable, rb_cParameterRef;
 
 VALUE gMolbyBacktrace;
+VALUE gMolbyErrorHistory;
 VALUE gScriptMenuCommands;
 VALUE gScriptMenuEnablers;
 
@@ -11042,8 +11043,12 @@ s_evalRubyScriptOnMoleculeSub(VALUE val)
 	VALUE sval, fnval, lnval, retval;
 	VALUE binding;
 
-	/*  Clear the error information  */
-	rb_set_errinfo(Qnil);
+	/*  Clear the error information (store in the history array if necessary)  */
+	sval = rb_errinfo();
+	if (sval != Qnil) {
+		rb_eval_string("$error_history.push([$!.to_s, $!.backtrace])");
+		rb_set_errinfo(Qnil);
+	}
 
 	if (s_ruby_top_self == Qfalse) {
 		s_ruby_top_self = rb_eval_string("eval(\"self\",TOPLEVEL_BINDING)");
@@ -11130,6 +11135,7 @@ Molby_evalRubyScriptOnMolecule(const char *script, Molecule *mol, const char *fn
 			/*  Capture exit and return the status value  */
 			retval = (RubyValue)rb_funcall(last_exception, rb_intern("status"), 0);
 			*status = 0;
+			rb_set_errinfo(Qnil);
 		}
 	}
 	s_SetInterruptFlag(Qnil, save_interrupt_flag);
@@ -11397,9 +11403,11 @@ Molby_startup(const char *script, const char *dir)
 	
 #endif
 	
-	/*  Global variable to hold backtrace  */
+	/*  Global variable to hold error information  */
 	rb_define_variable("$backtrace", &gMolbyBacktrace);
-
+	rb_define_variable("$error_history", &gMolbyErrorHistory);
+	gMolbyErrorHistory = rb_ary_new();
+	
 	/*  Global variables for script menus  */
 	rb_define_variable("$script_menu_commands", &gScriptMenuCommands);
 	rb_define_variable("$script_menu_enablers", &gScriptMenuEnablers);
