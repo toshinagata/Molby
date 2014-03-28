@@ -55,6 +55,7 @@ else
  DESTPREFIX = build/release
  COPT = -O2 -g
 endif
+MAKEDIR = $(PWD)
 DESTDIR = $(PWD)/$(DESTPREFIX)
 CFLAGS = $(CPPFLAGS) $(COPT) $(CPP_EXTRA_FLAGS) $(RUBY_CFLAGS) $(WX_CPPFLAGS)
 LDFLAGS = $(WX_LDFLAGS) $(LD_EXTRA_FLAGS) $(RUBY_LDFLAGS)
@@ -165,7 +166,9 @@ endif
 
 ifeq ($(TARGET_PLATFORM),MSW)
 setup: build/release/$(PRODUCT_DIR)/$(FINAL_EXECUTABLE)
-	/c/Program\ Files\ \(x86\)/Inno\ Setup\ 5/iscc molby.iss
+	mkdir -p ../Products
+	(/c/Program\ Files\ \(x86\)/Inno\ Setup\ 5/iscc molby.iss && mv Output/SetupMolbyWin.exe ../Products)
+	(cd build/release/$(PRODUCT_DIR) && zip -r $(MAKEDIR)/../Products/MolbyWin.zip * -x \*.DS_Store \*.svn*)
 endif
 
 clean:

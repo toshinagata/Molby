@@ -26,6 +26,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <libgen.h>  /*  for dirname()  */
 
 #include <ruby.h>
 
@@ -316,12 +317,14 @@ main(int argc, char **argv)
 	int fd;
 	char *scriptdir;
 	static const char fname[] = "startup.rb";
-	char *molbydir = getenv("MOLBYDIR");
-	if (molbydir == NULL) {
-		fprintf(stderr, "Please define the environmental variable MOLBYDIR to specify the location in which the 'Scripts' directory is present.\n");
-		exit(1);
+	char *argv0 = argv[0];
+	char *p = dirname(argv0);
+	if (p != NULL) {
+		asprintf(&p, "%s%cMolby_resources", p, PATH_SEPARATOR);
+	} else {
+		p = ".";
 	}
-	asprintf(&scriptdir, "%s%cScripts", molbydir, PATH_SEPARATOR);
+	asprintf(&scriptdir, "%s%cScripts", p, PATH_SEPARATOR);
 	fd = open(".", O_RDONLY);
 	chdir(scriptdir);
 	

@@ -4,7 +4,7 @@ AppVerName = Molby (v1.0b1)
 DefaultDirName = {pf}\Molby
 DefaultGroupName = Molby
 UninstallDisplayIcon = {app}\Molby.exe
-OutputBaseFileName = SetupMolby
+OutputBaseFileName = SetupMolbyWin
 
 [Files]
 Source: "build\release\Molby\Molby.exe"; DestDir: {app}

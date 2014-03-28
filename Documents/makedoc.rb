@@ -225,7 +225,7 @@ def special_node(e, ef, lang)
   en
 end
 
-base_dir = "doc"
+base_dir = "MolbyDoc"
 system("mkdir -p #{base_dir}; rm -rf #{base_dir}/*")
 
 #  Output to files (en and jp)

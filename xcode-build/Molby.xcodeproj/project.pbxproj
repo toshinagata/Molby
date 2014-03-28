@@ -452,6 +452,7 @@
 				8D1107290486CEB800E47090 /* Resources */,
 				8D11072C0486CEB800E47090 /* Sources */,
 				8D11072E0486CEB800E47090 /* Frameworks */,
+				E43C5D9518E553D9004FE397 /* ShellScript */,
 			);
 			buildRules = (
 			);
@@ -469,6 +470,7 @@
 			buildPhases = (
 				E49BFB731886E2E400188237 /* Sources */,
 				E49BFB741886E2E400188237 /* Frameworks */,
+				E43C5DE818E57C56004FE397 /* ShellScript */,
 			);
 			buildRules = (
 			);
@@ -519,6 +521,32 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
+		E43C5D9518E553D9004FE397 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "if [ \"$BUILD_STYLE\" = \"Release\" ]; then\n  rm -f \"$PROJECT_DIR/../Products/MolbyDoc.zip\"\n  (cd $PROJECT_DIR/../Documents && zip -r \"$PROJECT_DIR/../Products/MolbyDoc.zip\" MolbyDoc -x \\*.DS_Store -x \\*.svn*) || exit 1\nfi\n";
+		};
+		E43C5DE818E57C56004FE397 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 12;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "cp -a \"$BUILT_PRODUCTS_DIR/Molby.app/Contents/Resources\" \"$BUILT_PRODUCTS_DIR\" || exit 1\n(cd \"$BUILT_PRODUCTS_DIR\" && rm -rf Molby_resources && mv Resources Molby_resources) || exit 1\nif [ \"$BUILD_STYLE\" = \"Release\" ]; then\n  (mkdir -p \"$PROJECT_DIR/../Products/temp/Molby\" && cd \"$PROJECT_DIR/../Products/temp/Molby\" && rm -rf *) || exit 1\n  (cd \"$BUILT_PRODUCTS_DIR\" && cp -a Molby.app Molby_command Molby_resources \"$PROJECT_DIR/../Products/temp/Molby\") || exit 1\n  (cd \"$PROJECT_DIR/../Products/temp\" && rm -f ../MolbyMac.zip && zip -r ../MolbyMac.zip Molby -x \\*.DS_Store -x \\*.svn*) || exit 1\n  rm -rf \"$PROJECT_DIR/../Products/temp\" || exit 1\nfi\n";
+		};
 		E4FC7B57183E516E0064FB2E /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
