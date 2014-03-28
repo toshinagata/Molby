@@ -87,6 +87,9 @@ extern VALUE ValueFromVector(const Vector *vp);
 #define FileStringValuePtr(val) Ruby_FileStringValuePtr(&val)
 extern char *Ruby_FileStringValuePtr(VALUE *valp);
 extern VALUE Ruby_NewFileStringValue(const char *fstr);
+
+#define EncodedStringValuePtr(val) Ruby_EncodedStringValuePtr(&val)
+extern char *Ruby_EncodedStringValuePtr(VALUE *valp);
 	
 /*
 STUB VALUE MyAppCallback_getGlobalSettings(const char *key);

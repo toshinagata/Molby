@@ -8,7 +8,7 @@ ifeq ($(TARGET_PLATFORM),MAC)
  LD_EXTRA_FLAGS = -framework Accelerate -framework GLUT -L$(PWD)/../../fftw-3.3.2/osx-build/lib -lfftw3
  RUBY_DIR = $(PWD)/../../ruby-1.8.7-p160
  RUBY_CFLAGS = -isystem $(RUBY_DIR)/osx-build/include
- RUBY_LDFLAGS = -L$(RUBY_DIR)/osx-build/lib -lruby-static -lenc
+ RUBY_LDFLAGS = -L$(RUBY_DIR)/osx-build/lib -lruby-static -lenc -ltrans
  EXECUTABLE = Molby
  EXE_SUFFIX =
 endif
@@ -23,7 +23,7 @@ ifeq ($(TARGET_PLATFORM),MSW)
  LD_EXTRA_FLAGS = -L$(PWD)/../../CLAPACK-3.1.1.1-mingw/lib -L$(PWD)/../../fftw-3.3.2/msw-build/lib -llapackMinGW -lblasMinGW -lf2c_nomain -lfftw3
  RUBY_DIR = $(PWD)/../../ruby-2.0.0-p353
  RUBY_CFLAGS = -isystem $(RUBY_DIR)/msw-build/include/ruby-2.0.0 -I$(RUBY_DIR) -I$(RUBY_DIR)/msw-build/include/ruby-2.0.0/i386-mingw32
- RUBY_LDFLAGS = -L$(RUBY_DIR)/msw-build/lib -lmsvcrt-ruby200-static -lmsvcrt-ruby200 -lws2_32 -lshlwapi -limagehlp -lenc
+ RUBY_LDFLAGS = -L$(RUBY_DIR)/msw-build/lib -lmsvcrt-ruby200-static -lmsvcrt-ruby200 -lws2_32 -lshlwapi -limagehlp -lenc -ltrans
  EXECUTABLE = _Molby.exe_
  FINAL_EXECUTABLE = Molby.exe
  EXE_SUFFIX = .exe

@@ -27,6 +27,7 @@
 
 #include "version.h"       /*  for Ruby version  */
 #include "ruby/version.h"  /*  for RUBY_BIRTH_YEAR etc.  */
+#include "ruby/encoding.h" /*  for rb_str_encode() etc. */
 /*#include <node.h>     *//*  for rb_add_event_hook()  */
 
 #if defined(__WXMAC__) || defined(__CMDMAC__)
@@ -135,6 +136,13 @@ Ruby_NewFileStringValue(const char *fstr)
 #else
 	return rb_str_new2(fstr);
 #endif
+}
+
+char *
+Ruby_EncodedStringValuePtr(VALUE *valp)
+{
+	*valp = rb_str_encode(*valp, rb_enc_from_encoding(rb_default_external_encoding()), 0, Qnil);
+	return RSTRING_PTR(*valp);
 }
 
 VALUE
@@ -11316,8 +11324,9 @@ Molby_startup(const char *script, const char *dir)
 	ruby_init();
 
 	{
-		extern void Init_shift_jis(void);
+		extern void Init_shift_jis(void), Init_trans_japanese_sjis(void);
 		Init_shift_jis();
+		Init_trans_japanese_sjis();
 	}
 	
 	/*  Initialize loadpath; the specified directory, "lib" subdirectory, and "."  */

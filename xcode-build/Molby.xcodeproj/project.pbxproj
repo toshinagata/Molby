@@ -668,6 +668,7 @@
 					"-lfftw3",
 					"-lruby-static",
 					"-lenc",
+					"-ltrans",
 				);
 				PRODUCT_NAME = Molby;
 				SDKROOT = macosx10.5;
@@ -724,6 +725,7 @@
 					"-lfftw3",
 					"-lruby-static",
 					"-lenc",
+					"-ltrans",
 				);
 				PRODUCT_NAME = Molby;
 				SDKROOT = macosx10.5;
@@ -789,6 +791,7 @@
 					"-lfftw3",
 					"-lruby-static",
 					"-lenc",
+					"-ltrans",
 				);
 				PREBINDING = NO;
 				PRODUCT_NAME = Molby_command;
@@ -820,6 +823,7 @@
 					"-lfftw3",
 					"-lruby-static",
 					"-lenc",
+					"-ltrans",
 				);
 				PREBINDING = NO;
 				PRODUCT_NAME = Molby_command;

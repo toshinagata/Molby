@@ -168,7 +168,7 @@ s_RubyDialogItem_SetAttr(VALUE self, VALUE key, VALUE val)
 	} else if (key == sValueSymbol) {
 		/*  Value  */
 		if (type == sTextFieldSymbol || type == sTextViewSymbol) {
-			RubyDialogCallback_setStringToItem(view, (val == Qnil ? "" : StringValuePtr(val)));
+			RubyDialogCallback_setStringToItem(view, (val == Qnil ? "" : EncodedStringValuePtr(val)));
 		} else if (type == sPopUpSymbol) {
 			RubyDialogCallback_setSelectedSubItem(view, NUM2INT(rb_Integer(val)));
 		} else if (type == sCheckBoxSymbol || type == sRadioSymbol || type == sToggleButtonSymbol) {
@@ -176,7 +176,7 @@ s_RubyDialogItem_SetAttr(VALUE self, VALUE key, VALUE val)
 		}
 	} else if (key == sTitleSymbol) {
 		/*  Title  */
-		char *p = StringValuePtr(val);
+		char *p = EncodedStringValuePtr(val);
 		if (type == sTextSymbol)
 			RubyDialogCallback_setStringToItem(view, p);
 		else RubyDialogCallback_setTitleToItem(view, p);
@@ -203,7 +203,7 @@ s_RubyDialogItem_SetAttr(VALUE self, VALUE key, VALUE val)
 			while (RubyDialogCallback_deleteSubItem(view, 0) >= 0);
 			for (j = 0; j < len2; j++) {
 				VALUE val2 = ptr2[j];
-				RubyDialogCallback_appendSubItem(view, StringValuePtr(val2));
+				RubyDialogCallback_appendSubItem(view, EncodedStringValuePtr(val2));
 			}
 			RubyDialogCallback_resizeToBest(view);
 			RubyDialogCallback_setSelectedSubItem(view, 0);
@@ -303,7 +303,7 @@ s_RubyDialogItem_SetAttr(VALUE self, VALUE key, VALUE val)
 				weight = 3;
 			} else if (vali != Qnil) {
 				vali = rb_inspect(vali);
-				rb_raise(rb_eMolbyError, "unknown font specification (%s)", StringValuePtr(vali));
+				rb_raise(rb_eMolbyError, "unknown font specification (%s)", EncodedStringValuePtr(vali));
 			}
 		}
 		RubyDialogCallback_setFontForItem(view, size, family, style, weight);
@@ -334,7 +334,7 @@ s_RubyDialogItem_SetAttr(VALUE self, VALUE key, VALUE val)
 				cval = rb_ary_to_ary(RARRAY_PTR(val)[col]);
 				len = RARRAY_LEN(cval);
 				if (len >= 1) {
-					heading = StringValuePtr(RARRAY_PTR(cval)[0]);
+					heading = EncodedStringValuePtr(RARRAY_PTR(cval)[0]);
 				} else heading = "";
 				if (len >= 2) {
 					width = NUM2INT(rb_Integer(RARRAY_PTR(cval)[1]));
@@ -557,7 +557,7 @@ s_RubyDialogItem_AppendString(VALUE self, VALUE val)
 		rb_raise(rb_eStandardError, "The dialog item does not belong to any dialog (internal error?)");
 	view = RubyDialogCallback_dialogItemAtIndex(dref, itag);	
 	val = rb_str_to_str(val);
-	if (RubyDialogCallback_appendString(view, StringValuePtr(val)) == 0)
+	if (RubyDialogCallback_appendString(view, EncodedStringValuePtr(val)) == 0)
 		rb_raise(rb_eMolbyError, "Cannot append string to the dialog item");
 	return self;
 }
@@ -630,14 +630,14 @@ s_RubyDialog_Initialize(int argc, VALUE *argv, VALUE self)
 	RubyDialogCallback_setRubyObject(dref, (RubyValue)self);
 	
 	if (!NIL_P(val1)) {
-		char *p = StringValuePtr(val1);
+		char *p = EncodedStringValuePtr(val1);
 		RubyDialogCallback_setWindowTitle(dref, p);
 	}
 	if (val2 != Qnil)
-		title1 = StringValuePtr(val2);
+		title1 = EncodedStringValuePtr(val2);
 	else title1 = NULL;
 	if (val3 != Qnil)
-		title2 = StringValuePtr(val3);
+		title2 = EncodedStringValuePtr(val3);
 	else title2 = NULL;
 
 	//  Array of item informations
@@ -700,7 +700,7 @@ s_RubyDialog_ItemIndexForTag(VALUE self, VALUE tag)
 	if (i == -1)
 		rb_raise(rb_eStandardError, "item number (%d) out of range", i);
 	else if (i == -2)
-		rb_raise(rb_eStandardError, "Dialog has no item with tag %s", StringValuePtr(tag));
+		rb_raise(rb_eStandardError, "Dialog has no item with tag %s", EncodedStringValuePtr(tag));
 	return i;
 }
 
@@ -1150,7 +1150,7 @@ s_RubyDialog_Item(int argc, VALUE *argv, VALUE self)
 
 	val = rb_hash_aref(hash, sTitleSymbol);
 	if (!NIL_P(val)) {
-		title = StringValuePtr(val);
+		title = EncodedStringValuePtr(val);
 	} else {
 		title = "";
 	}
@@ -1400,7 +1400,7 @@ s_RubyDialog_CallActionProc(VALUE self, VALUE aval, int argc, VALUE *argv)
 		return rb_funcall2(aval, rb_intern("call"), argc, argv);
 	else {
 		VALUE insval = rb_inspect(aval);
-		rb_raise(rb_eTypeError, "Cannot call action method '%s'", StringValuePtr(insval));
+		rb_raise(rb_eTypeError, "Cannot call action method '%s'", EncodedStringValuePtr(insval));
 	}
 	return Qnil;  /*  Not reached  */
 }
@@ -1587,7 +1587,7 @@ s_RubyDialog_Listen(VALUE self, VALUE oval, VALUE sval, VALUE pval)
 	if (sval == Qnil)
 		sptr = NULL;
 	else
-		sptr = StringValuePtr(sval);
+		sptr = EncodedStringValuePtr(sval);
 	if (rb_obj_is_kind_of(oval, rb_cMolecule)) {
 		Molecule *mol = MoleculeFromValue(oval);
 		i = RubyDialogCallback_Listen(s_RubyDialog_GetController(self), mol, "Molecule", sptr, (RubyValue)oval, (RubyValue)pval);
@@ -1632,7 +1632,7 @@ s_RubyDialog_SavePanel(int argc, VALUE *argv, VALUE klass)
 	rb_scan_args(argc, argv, "04", &mval, &dval, &fval, &wval);
 	if (mval == Qnil)
 		mp = NULL;
-	else mp = StringValuePtr(mval);
+	else mp = EncodedStringValuePtr(mval);
 	if (dval == Qnil)
 		dp = NULL;
 	else dp = FileStringValuePtr(dval);
@@ -1670,7 +1670,7 @@ s_RubyDialog_OpenPanel(int argc, VALUE *argv, VALUE klass)
 	rb_scan_args(argc, argv, "05", &mval, &dval, &wval, &fval, &mulval);
 	if (mval == Qnil)
 		mp = NULL;
-	else mp = StringValuePtr(mval);
+	else mp = EncodedStringValuePtr(mval);
 	if (dval == Qnil)
 		dp = NULL;
 	else dp = FileStringValuePtr(dval);
@@ -1736,7 +1736,7 @@ s_RubyDialog_doTableAction(VALUE val)
 		args[2] = INT2NUM((int)vp[4]);
 		retval = s_RubyDialog_CallActionProc(self, pval, 3, args);
 		retval = rb_str_to_str(retval);
-		vp[5] = strdup(StringValuePtr(retval));
+		vp[5] = strdup(EncodedStringValuePtr(retval));
 		return retval;
 	} else if (sym == sOnSetValueSymbol) {
 		args[1] = INT2NUM((int)vp[3]);
@@ -1808,7 +1808,7 @@ s_RubyDialog_doTableAction(VALUE val)
 			*((char ***)vp[5]) = titles;
 			for (i = 0; i < n; i++) {
 				VALUE tval = RARRAY_PTR(retval)[i];
-				titles[i] = strdup(StringValuePtr(tval));
+				titles[i] = strdup(EncodedStringValuePtr(tval));
 			}
 		}
 		return retval;
@@ -2389,7 +2389,7 @@ static VALUE
 s_RubyDialog_DrawText(VALUE self, VALUE sval, VALUE xval, VALUE yval)
 {
 	RDDeviceContext *dc = s_RubyDialog_GetDeviceContext(self);
-	const char *s = StringValuePtr(sval);
+	const char *s = EncodedStringValuePtr(sval);
 	float x = NUM2DBL(rb_Float(xval));
 	float y = NUM2DBL(rb_Float(yval));
 	RubyDialogCallback_drawText(dc, s, x, y);
