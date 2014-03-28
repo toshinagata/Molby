@@ -11034,6 +11034,9 @@ s_evalRubyScriptOnMoleculeSub(VALUE val)
 	VALUE sval, fnval, lnval, retval;
 	VALUE binding;
 
+	/*  Clear the error information  */
+	rb_set_errinfo(Qnil);
+
 	if (s_ruby_top_self == Qfalse) {
 		s_ruby_top_self = rb_eval_string("eval(\"self\",TOPLEVEL_BINDING)");
 	}
