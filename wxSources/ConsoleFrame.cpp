@@ -438,6 +438,8 @@ ConsoleFrame::ShowHistory(bool up, bool option)
 			}
 		}
 	}
+	if (p == NULL)
+		p = "";
 	textCtrl->Replace(historyPos, textCtrl->GetLastPosition(), wxT(""));
 	SetConsoleColor(option ? 1 : 3);
 	while (isspace(*p))
