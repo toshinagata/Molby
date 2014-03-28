@@ -1079,7 +1079,7 @@ def cmd_bond_angle_with_sigma
 		end
 	  elsif (col >= 4 && col <= 6) && (vv = values[row][col - 4]).is_a?(Integer)
 	    if (s = mol.atoms[vv].symop) != nil
-		  v = sprintf("%d_%d%d%d", s[0], s[1] + 5, s[2] + 5, s[3] + 5)
+		  v = sprintf("%d_%d%d%d", s[0] + 1, s[1] + 5, s[2] + 5, s[3] + 5)
 		else
 		  v = "."
 		end
