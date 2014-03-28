@@ -168,7 +168,7 @@ ifeq ($(TARGET_PLATFORM),MSW)
 setup: build/release/$(PRODUCT_DIR)/$(FINAL_EXECUTABLE)
 	mkdir -p ../Products
 	(/c/Program\ Files\ \(x86\)/Inno\ Setup\ 5/iscc molby.iss && mv Output/SetupMolbyWin.exe ../Products)
-	(cd build/release/$(PRODUCT_DIR) && zip -r $(MAKEDIR)/../Products/MolbyWin.zip * -x \*.DS_Store \*.svn*)
+	(cd build/release/$(PRODUCT_DIR) && rm -rf $(MAKEDIR)/../Products/MolbyWin.zip && zip -r $(MAKEDIR)/../Products/MolbyWin.zip * -x \*.DS_Store \*.svn*)
 endif
 
 clean:
