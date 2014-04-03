@@ -526,3 +526,176 @@ ChangeLog
 　Version 0.6.5 を公開したのだが、GAMESS の構造最適化中のコンソールメッセージが変。同じ NSERCH に対応する行が複数表示されてしまう。要修正。
 　理想的には、GAMESS も MM/MD と同じように実行中はいったん Molby に制御を戻して、表示を自由に変更できるようにするのがよい（編集は禁止）。さらに、複数の分子についてそれぞれ計算を走らせることも可能にできればなおよい。これはかなりの大改造が必要。
 
+2013.11.
+・wxWidgets 3.0.0 への移行
+
+1. wxWidgets ビルド
+../configure --with-macosx-sdk=/Developer/SDKs/MacOSX10.5.sdk --with-macosx-version-min=10.5 --enable-universal_binary=ppc,i386 --disable-shared --with-opengl --enable-monolithic
+
+2. fftw ビルド
+　README 記載と同じ。ただし、ディレクトリ名を "osx-build-3" とする。
+$ cd $MOLBY/../fftw-3.3.2
+$ ./configure --prefix=$PWD/osx-build --disable-fortran CFLAGS="-isysroot /Developer/SDKs/MacOSX10.4u.sdk -mmacosx-version-min=10.4 -arch i386 -O2" CC="gcc-4.0" CXX="g++-4.0" CPP="gcc-4.0 -E" CXXCPP="g++-4.0 -E"
+$ make && make install  #  sudo is not necessary
+$ ./configure --prefix=$PWD/osx-ppc-build --disable-fortran CFLAGS="-isysroot /Developer/SDKs/MacOSX10.4u.sdk -mmacosx-version-min=10.4 -arch ppc -O2" CC="gcc-4.0" CXX="g++-4.0" CPP="gcc-4.0 -E" CXXCPP="g++-4.0 -E"
+$ make && make install  #  sudo is not necessary
+$ cd osx-build/lib
+$ mv libfftw3.a libfftw3.i386.a
+$ lipo -create libfftw3.i386.a ../../osx-ppc-build/lib/libfftw3.a -output libfftw3.a
+$ ranlib libfftw3.a
+
+3. Ruby ビルド
+　ruby-1.8.7-p160 を $MOLBY/.. にコピーする。osx-build-3 内にビルドする。
+$ cd $MOLBY/../ruby-1.8.7-p160
+$ CFLAGS='-isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.5 -arch i386 -arch ppc -O2' ./configure --prefix=$PWD/osx-build-3 --disable-shared
+$ make && make install
+$ mkdir osx-build-3/include
+$ cp *.h osx-build-3/include
+　ビルドが終わったら make clean しておく。(osx-build-3 内のファイルは残る)
+
+※ ruby-2.0.0 の場合
+$ CFLAGS='-isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.5 -O2' ./configure --prefix=$PWD/osx-build --with-arch=i386,ppc --disable-shared --with-ext=date --disable-install-rdoc
+
+4. Xcode 設定
+ヘッダ検索パス
+$(PROJECT_DIR)/../../fftw-3.3.2/osx-build-3/include $(PROJECT_DIR)/../../wxWidgets-3.0.0/include $(PROJECT_DIR)/../../wxWidgets-3.0.0/osx-build/lib/wx/include/osx_cocoa-unicode-static-3.0 $(PROJECT_DIR)/../../ruby-1.8.7-p160
+
+ライブラリ検索パス
+$(PROJECT_DIR)/../../fftw-3.3.2/osx-build-3/lib $(PROJECT_DIR)/../../wxWidgets-3.0.0/osx-build/lib $(PROJECT_DIR)/../../ruby-1.8.7-p160/osx-build-3/lib
+
+その他のCフラグ (C++フラグも同じものになる)
+-D_FILE_OFFSET_BITS=64 -D__WXMAC__ -D__WXOSX__ -D__WXOSX_COCOA__
+（デバッグビルドはこれに加えて -DDEBUG=1）
+
+リンカフラグ (-framework ... は Xcode プロジェクトで設定。その他のものをターゲットオプションで設定する)
+-L$(PROJECT_DIR)/../../wxWidgets-3.0.0/osx-build/lib -framework IOKit -framework Carbon -framework Cocoa -framework AudioToolbox -framework System -framework OpenGL -framework QuickTime $(PROJECT_DIR)/../../wxWidgets-3.0.0/osx-build/lib/libwx_osx_cocoau-3.0.a -framework WebKit -lwxregexu-3.0 -lwxtiff-3.0 -lwxjpeg-3.0 -lwxpng-3.0 -lz -lpthread -liconv 
+ターゲットオプションとして設定するもの: -lfftw3 -lwx_osx_cocoau-3.0 -lwx_osx_cocoau_gl-3.0 -lwxregexu-3.0 -lwxtiff-3.0 -lwxjpeg-3.0 -lwxpng-3.0 -lz -lpthread -liconv -lruby-static
+
+大量に警告が出る。
+deprecated conversion from string constant to 'char*'
+→ ターゲットオプションで、「文字列を読み込み専用にする」フラグを外す。
+XXXX has different visibility (default) in ..../yyyy.o and (hidden) in ..../zzzz.o
+→ ターゲットオプションで、「インラインメソッドを隠す (Inline Methods Hidden)」フラグを外す。
+
+
+2013.11.23.
+Windows7/MSYS/TDM-GCC-32-471 でビルドしてみる。
+
+CLAPACK
+$(MOLBY)/.. に clapack3.1.1.1.tgz を展開し、CLAPACK-3.1.1.1-mingw とリネーム。
+patch -p0 <$(MOLBY)/clapack-3.1.1.1-mingw.patch
+cd CLAPACK-3.1.1.1-mingw
+make
+# 最初 uninit.c でエラーが出ていたのだが、CLAPACK-3.1.1.1-mingw を作り直してビルドしたらあっさり通った。何だったんだ？
+# その後やっぱりエラーが出ることが判明。GCC の float.h に修正が必要。
+c:/TDM-GCC-32-471/lib/gcc/mingw32/4.7.1/include/float.h の最後の #endif の直前に #include_next <float.h> を加える。
+
+
+make blas_testing
+いろいろエラーが出ているが、結果を目視すると深刻ではなさそう（最後の桁で１違うとかそのレベル）。
+make lapack_testing
+これもいろいろエラーが出る。
+$ cd TESTING; grep fail *.out
+csep.out: CST drivers:      1 out of  11664 tests failed to pass the threshold
+csep.out: CST:    1 out of  4662 tests failed to pass the threshold
+dgd.out: DXV drivers:    200 out of   5000 tests failed to pass the threshold
+dsep.out: DST drivers:      1 out of  14256 tests failed to pass the threshold
+sgd.out: SXV drivers:     37 out of   5000 tests failed to pass the threshold
+ssep.out: SST:    1 out of  4662 tests failed to pass the threshold
+ssvd.out: SBD:      1 out of   5510 tests failed to pass the threshold
+zgd.out: ZXV drivers:     24 out of   5000 tests failed to pass the threshold
+　しかし、https://icl.cs.utk.edu/lapack-forum/viewtopic.php?t=167 によると、これらは深刻ではないらしい…
+
+　libf2c から main.o を除き、CLAPACK-3.1.1.1-mingw/lib にライブラリをコピー（名前が lib... になるように変更）
+$ cd F2CLIBS
+$ cp libf2c.a libf2c_nomain.a
+$ ar d libf2c_nomain.a main.o
+$ cd ..
+$ mkdir lib
+$ cp blasMinGW.a lib/libblasMinGW.a
+$ cp lapackMinGW.a lib/liblapackMinGW.a
+$ cp tmglibMinGW.a lib/libtmgMinGW.a
+$ cp F2CLIBS/libf2c_nomain.a lib
+
+Ruby
+$ cd $(MOLBY)/../ruby-1.8.7-p160
+$ ./configure --prefix="z:/wxMySamples/ruby-1.8.7-p160/msw-build-3" --disable-shared
+$ make && make install
+ruby.exe をビルドするときに -mno-cygwin が認識されないオプションであるとしてエラーになるので、GNUmakefile 10行目の DLLWRAP += -mno-cygwin をコメントアウトした。
+make install で、$PWD=/z/.../ だと /z を mkdir しようとして permission denied でエラーになる。Ruby では File.exist?("/z") が false になってしまうため (File.exist?("z:") なら OK)。これは仕様なので、--prefix="z:/..." とドライブネーム形式のフルパスにしないといけないみたい。
+MinGW の make 遅すぎ。クロスコンパイル環境作ろうかな…　→　やってみたけど、あちこち不具合がでる。自分の技術力ではまだ無理だな。
+一応 mingw32 上でビルドできた。
+ヘッダファイルのコピー
+$ mkdir msw-build-3/include
+$ cp *.h msw-build-3/include
+$ mkdir msw-build-3/include/win32
+$ cp win32/*.h msw-build-3/include/win32
+
+FFTW
+$ cd $MOLBY/../fftw-3.3.2
+$ ./configure --prefix=$PWD/msw-build-3 --disable-fortran CFLAGS="-O2"
+$ make && make install  #  sudo is not necessary
+　make で ".libs/****.la が作成できない" というエラーで頻繁に止まったが、これは、前の (OSX 上での) ビルドでシンボリックリンクが残っていたためらしい。non-unix システムだからしょうがないね。ちゃんと OSX 上で make clean しとかないといけない。
+??? なんか結局失敗した。よくわからん？
+(2013.11.26.)再挑戦。
+gcc -std=gnu99 -O2 -o bench.exe bench-bench.o bench-hool.o bench-fftw-bench.o ../.libs/libfftw3.a ../libbench2/libbench2.a で undefined reference to 'fftw_version', undefined reference to 'fftw_cc', undefined reference to 'fftw_codelet_optim' など大量にエラーが出る。なんじゃこれ？
+その前に、Making all in . の中で libtool: link: (cd .libs/libfftw3.lax/libkernel.a && ar x "/z/wxMySamples/fftw-3.3.2/kernel/.libs/libkernel.a") の後に「ファイルが見つかりません - *.o」というエラーが出ている。これもよくわからない。
+　ログをとりながら make: $ make 2>&1 | tee make.log (tee は MSYS に入っている。)
+　わかりました。MSYS に find が入ってないから、Windows の find.exe が実行されていたんだ。日本語のエラーメッセージが出るからおかしいと思った。./libtool スクリプトを調べて判明した。
+
+In func_extract_archives():
+   4249       *)
+   4250         func_extract_an_archive "$my_xdir" "$my_xabs" ← ここまではちゃんと通る
+   4251         ;;
+   4252       esac
+   4253       my_oldobjs="$my_oldobjs "`find $my_xdir -name \*.$objext -print -o -name \*.lo -print | sort | $NL2SP` ← この find が失敗する
+   4254     done
+
+http://sourceforge.net/projects/mingw/files/MSYS/Base/findutils から findutils-4.4.2-2-msys-1.0.13-bin.tar.lzma を取得。展開して、bin 中の３つのファイルを /bin に移動する。
+
+wxWidgets-3.0.0
+$ cd $MOLBY/../wxWidgets-3.0.0
+$ mkdir msw-build-3
+$ cd msw-build-3
+$ ../configure --with-msw --with-opengl --disable-shared --with-libjpeg=builtin --with-zlib=builtin --enable-monolithic && make 2>&1 | tee make.log
+
+Makefile 中で wx-config を呼び出しているところは書き換えた。（クロスコンパイルへの準備）
+
+一応ビルドはできるようになった模様。
+
+2013.12.09.
+　いくつか仕様変更？があった部分を修正。ただし、MDIからマルチウィンドウ方式に最近変更したので、それが原因の変更もあると思う。
+・Document に属さないウィンドウが最前面の時、wxDocManager::GetCurrentView() は「最前面のドキュメント」を返してくれない。このため、View::Activate をオーバーライドして、現在開いている View の表示順を明示的に保持するようにした。
+・RubyDialogFrame は wxDIALOG_NO_PARENT を立てて、親なしのダイアログとして開くことにした。wxWidgets のドキュメントによれば、モーダルダイアログでは問題が起きることがあるようだが、今のところ特に不具合は見つかっていない。（ただ、モーダルダイアログが開いている最中にタスクバーからダイアログ以外のウィンドウを選ぶことができてしまう。この場合、ウィンドウは一見アクティブになっているが入力を受け付けない。この不具合はどう回避するかまだ不明。）
+・OSX で wxToggleButton を作っても丸いボタンになってしまう。style に wxBORDER_SIMPLE を指定するとちゃんと四角いボタンになることを発見。→ wxMSW で見栄えがよろしくない。#ifdef で場合分けする。
+
+2014.3.28.
+　ついに "1.0 beta" として公開することにした。長かった…
+
+今回からベータ版とします。
+グラフィックツールキットを wxWidgets 2.8 から wxWidgets 3.0 に変更。
+Windows: MDI インターフェイスを廃止し、マルチウィンドウにした。
+内蔵 Ruby を 1.8.7 から 2.0.0 に変更。
+C60 フラーレン、ねじれ舟型シクロヘキサン、金属の配位構造などを predefined structure として追加。
+Antechamber が原子タイプと電荷について別々に実行できるようにした。
+UFF パラメータを内蔵。
+Ruby ダイアログでグラフィック描画ができるようになった（ドキュメントはまだない）
+メニューを整理。特に "Xtal" メニューを新設した。
+ORTEP3 を内蔵。グラフィックインターフェイスも作成した。
+メインウィンドウの印刷・エキスポートを実装。
+スペースフィリング表示を実装。
+その他バグ修正多数。
+
+First beta release.
+The graphic toolkit is changed from wxWidgets 2.8 to wxWidgets 3.0.
+Windows: the application no longer uses MDI interface, but uses multi-window interface.
+Embedded Ruby is now 2.0.0 instead of 1.8.7.
+C60 fullerene, twist-boat cyclohexane, metal coordination motifs are introduced as the predefined structure.
+Antechamber can be called for charge and atom types separately.
+UFF parameters are included.
+Graphic drawing is implemented in Ruby Dialog (not documented yet).
+Main menu is rearranged (in particular, there is now a "Xtal" menu)
+ORTEP3 is included, and graphic user interface for drawing ORTEP is provided.
+Printing and exporting the main window is now supported.
+Space-filling view is implemented.
+Many bug fixes.

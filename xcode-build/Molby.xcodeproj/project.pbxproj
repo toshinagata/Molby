@@ -532,7 +532,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "if [ \"$BUILD_STYLE\" = \"Release\" ]; then\n  rm -f \"$PROJECT_DIR/../Products/MolbyDoc.zip\"\n  (cd $PROJECT_DIR/../Documents && zip -r \"$PROJECT_DIR/../Products/MolbyDoc.zip\" MolbyDoc -x \\*.DS_Store -x \\*.svn*) || exit 1\nfi\n";
+			shellScript = "if [ \"$BUILD_STYLE\" = \"Release\" ]; then\n  mkdir -p \"$PROJECT_DIR/../Products\" && rm -f \"$PROJECT_DIR/../Products/MolbyDoc.zip\"\n  (cd $PROJECT_DIR/../Documents && zip -r \"$PROJECT_DIR/../Products/MolbyDoc.zip\" MolbyDoc -x \\*.DS_Store -x \\*.svn*) || exit 1\nfi\n";
 		};
 		E43C5DE818E57C56004FE397 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
