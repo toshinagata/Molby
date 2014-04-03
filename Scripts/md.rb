@@ -1038,7 +1038,7 @@ class Molecule
           eps = pp.eps
           d = pp.r_eq * 2
         else
-          eps = Math.sqrt(p1.eps * p2.eps)
+          eps = Math.sqrt_safe(p1.eps * p2.eps)
           d = p1.r_eq + p2.r_eq
         end
         vdw_access_table[i * nvdw_pars + j] =  vdw_access_table[j * nvdw_pars + i] = vdw_pair_table.length

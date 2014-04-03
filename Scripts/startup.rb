@@ -57,6 +57,23 @@ module Enumerable
   end
 end
 
+module Math
+  def acos_safe(arg)
+    if arg <= -1.0
+      return PI
+    elsif arg >= 1.0
+      return 0.0
+    else
+      return acos(arg)
+    end
+  end
+
+  def sqrt_safe(arg)
+    arg <= 0.0 ? 0.0 : sqrt(arg)
+  end
+end
+
+
 module Kernel
   def filecopy(src, dst)
     fpin = File.open(src, "rb")

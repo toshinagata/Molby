@@ -29,19 +29,6 @@ class AtomRef
   end
 end
 
-#  Used in bond_angle_with_sigma
-module Math
-  def acos_safe(arg)
-    if arg <= -1.0
-      return PI
-    elsif arg >= 1.0
-      return 0.0
-    else
-      return acos(arg)
-    end
-  end
-end
-
 module Kernel
 
 def symmetry_to_string(sym)
@@ -434,12 +421,6 @@ def savetep(filename)
   return true
 end
 
-end
-
-module Math
-  def sqrt_safe(arg)
-    arg <= 0.0 ? 0.0 : sqrt(arg)
-  end
 end
 
 #  Best-fit planes
@@ -1826,7 +1807,7 @@ end
 		bv = Vector3D[cos(gamma), sin(gamma), 0]
 		cx = cos(beta)
 		cy = (cos(alpha) - cos(beta) * cos(gamma)) / sin(gamma)
-		cz = sqrt(1.0 - cx * cx - cy * cy)
+		cz = sqrt_safe(1.0 - cx * cx - cy * cy)
 		cv = Vector3D[cx, cy, cz]
 		x0 = @box[0].normalize
 		z0 = (@box[0].cross(@box[1])).normalize

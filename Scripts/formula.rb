@@ -641,7 +641,7 @@ class Molecule
 	  else
 	    vn << vx if nc == 0
 		vn << vx * cs + vy * sn
-		vn << vx * cs + vy * (cs * (1 - cs) / sn) + vz * ((1 - cs) / sn * Math.sqrt(1 + 2 * cs))
+		vn << vx * cs + vy * (cs * (1 - cs) / sn) + vz * ((1 - cs) / sn * Math.sqrt_safe(1 + 2 * cs))
 	  end
 	  type = "h2" if anum == 1
 	elsif atype == "be"

@@ -140,8 +140,8 @@ UFFParams = [
 #  Calculate UFF bond length
 def uff_bond_length(r1, r2, x1, x2, bond_order)
   bond_order_correction = -0.1332 * (r1 + r2) * log(bond_order)
-  sq = sqrt(x1) - sqrt(x2)
-  electronegativity_correction = r1 * r2 * (sqrt(x1) - sqrt(x2)) ** 2 / (x1 * r1 + x2 * r2)
+  sq = sqrt_safe(x1) - sqrt_safe(x2)
+  electronegativity_correction = r1 * r2 * (sqrt_safe(x1) - sqrt_safe(x2)) ** 2 / (x1 * r1 + x2 * r2)
   return r1 + r2 + bond_order_correction + electronegativity_correction
 end
 
@@ -161,7 +161,7 @@ def uff_angle_force(idx1, idx2, idx3, bond_order_12, bond_order_23, angle)
   cost = cos(angle * 3.1415927 / 180.0)
   r12 = uff_bond_length(r1, r2, UFFParams[idx1][10], UFFParams[idx2][10], bond_order_12)
   r23 = uff_bond_length(r2, r3, UFFParams[idx2][10], UFFParams[idx3][10], bond_order_23)
-  r13 = sqrt(r12 * r12 + r23 * r23 - 2 * r12 * r23 * cost)
+  r13 = sqrt_safe(r12 * r12 + r23 * r23 - 2 * r12 * r23 * cost)
   return 332.06 * UFFParams[idx1][7] * UFFParams[idx3][7] / (r13 ** 5) * (r12 * r23 * (1.0 - cost * cost) - r13 * r13 * cost)
 end
 

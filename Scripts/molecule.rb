@@ -129,7 +129,7 @@ class Molecule
       return 0.0
     end
     cs = r21.dot(r23) / (w1 * w2)
-    Math.atan2(Math.sqrt(1 - cs*cs), cs) * Rad2Deg
+    Math.atan2(Math.sqrt_safe(1 - cs*cs), cs) * Rad2Deg
   end
   
   #  Calculate the dihedral angle defined by four vectors.
@@ -280,7 +280,10 @@ class Molecule
       else
         v3 = v2.cross(v1).normalize
       end
-      angle = Math.atan2(Math.sqrt(1.0 - cs*cs), cs) * Rad2Deg
+	  #if cs > 1.0
+	    puts "cs = #{cs}"
+	  #end
+      angle = Math.atan2(Math.sqrt_safe(1.0 - cs*cs), cs) * Rad2Deg
       mol.rotate(v3, angle, mol.atoms[base2].r)
     end
     #  Move the second molecule so that the atom 'base2' is located at atoms[base1].r+v1*len

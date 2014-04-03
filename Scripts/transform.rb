@@ -34,25 +34,25 @@ class Transform
     zz = self[2,2]
     ww = xx + yy + zz + 1.0
     if (ww >= 1.0)
-      w = Math.sqrt(0.25 * ww)
+      w = Math.sqrt_safe(0.25 * ww)
       ww = 0.25 / w;
       x = (self[1,2] - self[2,1]) * ww
       y = (self[2,0] - self[0,2]) * ww
       z = (self[0,1] - self[1,0]) * ww
     elsif (xx >= yy && xx >= zz)
-      x = Math.sqrt(0.25 * (1.0 + xx - yy - zz))
+      x = Math.sqrt_safe(0.25 * (1.0 + xx - yy - zz))
       ww = 0.25 / x
       y = (self[1,0] + self[0,1]) * ww
       z = (self[2,0] + self[0,2]) * ww
       w = (self[1,2] - self[2,1]) * ww
     elsif (yy >= zz)
-      y = Math.sqrt(0.25 * (1.0 + yy - xx - zz))
+      y = Math.sqrt_safe(0.25 * (1.0 + yy - xx - zz))
       ww = 0.25 / y
       x = (self[1,0] + self[0,1]) * ww
       z = (self[1,2] + self[2,1]) * ww
       w = (self[2,0] - self[0,2]) * ww
     else
-      z = Math.sqrt(0.25 * (1.0 + zz - xx - yy))
+      z = Math.sqrt_safe(0.25 * (1.0 + zz - xx - yy))
       ww = 0.25 / z
       x = (self[2,0] + self[0,2]) * ww
       y = (self[2,1] + self[1,2]) * ww
