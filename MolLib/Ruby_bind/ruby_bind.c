@@ -142,6 +142,7 @@ Ruby_NewFileStringValue(const char *fstr)
 char *
 Ruby_EncodedStringValuePtr(VALUE *valp)
 {
+	rb_string_value(valp);
 	*valp = rb_str_encode(*valp, rb_enc_from_encoding(rb_default_external_encoding()), 0, Qnil);
 	return RSTRING_PTR(*valp);
 }

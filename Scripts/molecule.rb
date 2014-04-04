@@ -280,9 +280,6 @@ class Molecule
       else
         v3 = v2.cross(v1).normalize
       end
-	  #if cs > 1.0
-	    puts "cs = #{cs}"
-	  #end
       angle = Math.atan2(Math.sqrt_safe(1.0 - cs*cs), cs) * Rad2Deg
       mol.rotate(v3, angle, mol.atoms[base2].r)
     end
