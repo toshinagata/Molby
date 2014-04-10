@@ -160,6 +160,40 @@ module Kernel
 	  }
 	end
   end
+
+  def remove_dir(dir)
+    entries = Dir.entries(dir)
+	entries.each { |en|
+	  next if en == "." || en == ".."
+	  fname = "#{dir}/#{en}"
+	  if File.directory?(fname)
+	    remove_dir(fname)
+	  else
+	    File.unlink(fname)
+	  end
+	}
+	Dir.unlink(dir)
+  end
+  
+  def erase_old_logs(tdir, level, keep_number)
+    log_dir = File.dirname(tdir)
+	if level == nil || level == "none"
+	  remove_dir(tdir)
+	elsif level == "latest"
+	  if keep_number == nil
+	    keep_number = 5
+	  else
+	    keep_number = keep_number.to_i
+	  end
+	  entries = Dir.entries(log_dir).select { |en| en != "." && en != ".." && File.directory?("#{log_dir}/#{en}") }
+	  #  Sort by modification date
+	  entries = entries.sort_by { |en| File.mtime("#{log_dir}/#{en}").to_i }
+	  (0...entries.count - keep_number).each { |i|
+	    remove_dir("#{log_dir}/#{entries[i]}")
+	  }
+	end
+  end
+  
 end
 
 class IO

@@ -138,13 +138,13 @@ class Molecule
       end
     end
 
-	if mol == nil
-		mol = Molecule.open(inpname)
-		if mol == nil
-			error_message_box("Cannot open #{inpname} as GAMESS input")
-			return
-		end
-	end
+#	if mol == nil
+#		mol = Molecule.open(inpname)
+#		if mol == nil
+#			error_message_box("Cannot open #{inpname} as GAMESS input")
+#			return
+#		end
+#	end
 	
     inpbase = File.basename(inpname)
     inpdir = File.dirname(inpname)
@@ -413,7 +413,9 @@ class Molecule
 	    end
 	  }
 	  erase_old_logs(scrdir, "latest", 5)
-	  message_box(msg, hmsg, :ok, icon)
+	  if mol != nil
+	    message_box(msg, hmsg, :ok, icon)
+      end
     }
 	
     timer_callback = lambda { |m, n|
@@ -491,7 +493,8 @@ class Molecule
 	  end
 	else
 	  pid = call_subprocess(cmdline, "Running GAMESS")
-	  term_callback(nil, pid)
+	  term_callback.call(nil, pid)
+	  return pid
 	end
 
   end
