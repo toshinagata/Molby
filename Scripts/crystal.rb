@@ -2301,7 +2301,12 @@ def cmd_symmetry_operations
 	item_with_tag("sym_table")[:refresh] = true
 	update_space_group_text.call
   }
-  
+  if h[:status] == 0
+    self.remove_symmetries(nil)
+	syms.each { |s|
+	  self.add_symmetry(s)
+    }
+  end
 end
 
 def cmd_show_periodic_image
