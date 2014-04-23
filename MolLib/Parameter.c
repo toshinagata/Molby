@@ -20,6 +20,7 @@
 #include <ctype.h>
 #include <stdarg.h>
 #include <math.h>
+#include <float.h>
 
 /*  Global parameter: it is initialized by the first call to ParameterReadFromFile()  */
 Parameter *gBuiltinParameters = NULL;
@@ -837,6 +838,8 @@ s_CommentToString(char *buf, int bufsize, void *bp)
 		snprintf(buf, bufsize, " ! %s", com);
 }
 
+#define DBL_EQUAL(a, b) (fabs((a) - (b)) < DBL_EPSILON * 2)
+
 int
 ParameterReadFromString(Parameter *par, char *buf, char **wbufp, const char *fname, int lineNumber, int src_idx)
 {
@@ -924,7 +927,7 @@ ParameterReadFromString(Parameter *par, char *buf, char **wbufp, const char *fna
 		val[0] *= KCAL2INTERNAL;
 		bp = ParameterLookupBondPar(par, itype[0], itype[1], -1, -1, options);
 		if (bp != NULL) {
-			if (bp->k != val[0] || bp->r0 != val[1]) {
+			if (!DBL_EQUAL(bp->k, val[0]) || !DBL_EQUAL(bp->r0, val[1])) {
 				s_AppendWarning(wbufp, "%s:%d: The BOND %s-%s parameter appeared twice; the values (%f, %f) are used\n", fname, lineNumber, AtomTypeDecodeToString(itype[0], type[0]), AtomTypeDecodeToString(itype[1], type[1]), val[0], val[1]);
 				retval = 1;
 			}
@@ -953,7 +956,7 @@ ParameterReadFromString(Parameter *par, char *buf, char **wbufp, const char *fna
 		val[1] *= (3.14159265358979 / 180.0);
 		ap = ParameterLookupAnglePar(par, itype[0], itype[1], itype[2], -1, -1, -1, options);
 		if (ap != NULL) {
-			if (ap->k != val[0] || ap->a0 != val[1]) {
+			if (!DBL_EQUAL(ap->k, val[0]) || !DBL_EQUAL(ap->a0, val[1])) {
 				s_AppendWarning(wbufp, "%s:%d: The ANGLE %s-%s-%s parameter appeared twice; the values (%f, %f) are used\n", fname, lineNumber, AtomTypeDecodeToString(itype[0], type[0]), AtomTypeDecodeToString(itype[1], type[1]), AtomTypeDecodeToString(itype[2], type[2]), val[0], val[1]);
 				retval = 1;
 			}
@@ -987,7 +990,8 @@ ParameterReadFromString(Parameter *par, char *buf, char **wbufp, const char *fna
 		val[0] *= KCAL2INTERNAL;
 		val[1] *= 3.14159265358979 / 180.0;
 		if (dp != NULL) {
-			if (dp->mult != 1 || dp->k[0] != val[0] || dp->period[0] != ival[0] || dp->phi0[0] != val[1]) {
+			if (dp->mult != 1 || !DBL_EQUAL(dp->k[0], val[0]) || dp->period[0] != ival[0] ||
+				!DBL_EQUAL(dp->phi0[0], val[1])) {
 				s_AppendWarning(wbufp, "%s:%d: The DIHEDRAL %s-%s-%s-%s parameter appeared twice; the values (%f, %d, %f) are used\n", fname, lineNumber, AtomTypeDecodeToString(itype[0], type[0]), AtomTypeDecodeToString(itype[1], type[1]), AtomTypeDecodeToString(itype[2], type[2]), AtomTypeDecodeToString(itype[3], type[3]), val[0], ival[0], val[1]);
 				retval = 1;
 			}
@@ -1031,7 +1035,8 @@ ParameterReadFromString(Parameter *par, char *buf, char **wbufp, const char *fna
 		val[0] *= KCAL2INTERNAL;
 		val[1] *= 3.14159265358979 / 180.0;
 		if (ip != NULL) {
-			if (ip->mult != 1 || ip->k[0] != val[0] || ip->period[0] != ival[0] || ip->phi0[0] != val[1]) {
+			if (ip->mult != 1 || !DBL_EQUAL(ip->k[0], val[0]) ||
+				ip->period[0] != ival[0] || !DBL_EQUAL(ip->phi0[0], val[1])) {
 				s_AppendWarning(wbufp, "%s:%d: The IMPROPER %s-%s-%s-%s parameter appeared twice; the values (%f, %d, %f) are used\n", fname, lineNumber, AtomTypeDecodeToString(itype[0], type[0]), AtomTypeDecodeToString(itype[1], type[1]), AtomTypeDecodeToString(itype[2], type[2]), AtomTypeDecodeToString(itype[3], type[3]), val[0], ival[0], val[1]);
 				retval = 1;
 			}
@@ -1097,7 +1102,7 @@ ParameterReadFromString(Parameter *par, char *buf, char **wbufp, const char *fna
 		for (i = 0; i < par->nvdwPars; i++) {
 			if (itype[0] == par->vdwPars[i].type1) {
 				vp = par->vdwPars + i;
-				if (vp->A != vtemp.A || vp->B != vtemp.B || vp->A14 != vtemp.A14 || vp->B14 != vtemp.B14) {
+				if (!DBL_EQUAL(vp->A, vtemp.A) || !DBL_EQUAL(vp->B, vtemp.B) || !DBL_EQUAL(vp->A14, vtemp.A14) || !DBL_EQUAL(vp->B14, vtemp.B14)) {
 					s_AppendWarning(wbufp, "%s:%d: The %s %s parameter appeared twice; the values (%f, %f, %f, %f, %d, %f, %f) are used\n", fname, lineNumber, (flag ? "VDW" : "NONBONDED"), AtomTypeDecodeToString(itype[0], type[0]), val[0], val[1], val[2], val[3], ival[0], val[4], val[5]);
 					retval = 1;
 				}
@@ -1147,7 +1152,7 @@ ParameterReadFromString(Parameter *par, char *buf, char **wbufp, const char *fna
 		for (i = 0; i < par->nvdwpPars; i++) {
 			if (itype[0] == par->vdwpPars[i].type1 && itype[1] == par->vdwpPars[i].type2) {
 				vp = par->vdwpPars + i;
-				if (vp->A != vtemp.A || vp->B != vtemp.B || vp->A14 != vtemp.A14 || vp->B14 != vtemp.B14) {
+				if (!DBL_EQUAL(vp->A, vtemp.A) || !DBL_EQUAL(vp->B, vtemp.B) || !DBL_EQUAL(vp->A14, vtemp.A14) || !DBL_EQUAL(vp->B14, vtemp.B14)) {
 					s_AppendWarning(wbufp, "%s:%d: The %s %s-%s parameter appeared twice; the values (%f, %f, %f, %f) are used\n", fname, lineNumber, (flag ? "VDWP" : "NBFI"), AtomTypeDecodeToString(itype[0], type[0]), AtomTypeDecodeToString(itype[1], type[1]), val[0], val[1], val[2], val[3]);
 					retval = 1;
 				}
