@@ -17,6 +17,7 @@ Source: "build\release\Molby\Scripts\mbsf\*"; DestDir: {app}\Scripts\mbsf
 Source: "build\release\Molby\Scripts\mbsf\alicyclic\*"; DestDir: {app}\Scripts\mbsf\alicyclic
 Source: "build\release\Molby\Scripts\mbsf\aromatic\*"; DestDir: {app}\Scripts\mbsf\aromatic
 Source: "build\release\Molby\Scripts\mbsf\heterocyclic\*"; DestDir: {app}\Scripts\mbsf\heterocyclic
+Source: "build\release\Molby\Scripts\mbsf\coordination\*"; DestDir: {app}\Scripts\mbsf\coordination
 Source: "build\release\Molby\Scripts\mbsf\solvents\*"; DestDir: {app}\Scripts\mbsf\solvents
 Source: "build\release\Molby\Scripts\lib\*"; DestDir: {app}\Scripts\lib
 Source: "build\release\Molby\Scripts\basis_sets\*"; DestDir: {app}\Scripts\basis_sets
