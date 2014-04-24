@@ -212,8 +212,12 @@ MoleculeView::OnCreate(wxDocument *doc, long WXUNUSED(flags) )
 			{	// Information text
 				infotext = new wxStaticText(panel1, -1, wxT(""), wxDefaultPosition, wxSize(80, 32), wxST_NO_AUTORESIZE | wxBORDER_SUNKEN);
 				infotext->SetMinSize(wxSize(80, 32));
+#if defined(__WXMSW__)
+				infotext->SetFont(*wxSMALL_FONT);
+#else
 				if (ctrlFont)
 					infotext->SetFont(*ctrlFont);
+#endif
 				sizer2->Add(infotext, 1, wxALL | wxEXPAND, 3);   // Can expand horizontally
 			}
 			{	// Custom progress indicator

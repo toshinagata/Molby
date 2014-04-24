@@ -207,7 +207,7 @@ class Molecule
     fpout.print "This job is running on host #{hostname}\n"
     fpout.print "under operating system #{uname} at #{Time.now.to_s}\n"
     fpout.print "Available scratch disk space (Kbyte units) at beginning of the job is\n"
-    fpout.print freebytes
+    fpout.print freebytes + "\n"
 
     #  Copy the input file
 	scrprefix = scrdir + sep + inpbody
@@ -292,6 +292,9 @@ class Molecule
 
     #    next files are used only during coupled cluster runs, so let's
     #    display the numerous definitions only if they are to be used.
+	#    Don't set these variables on windows, where the memory for environmental variables
+	#    is limited.
+	if $platform != "win"
     ENV["CCREST"] = "#{scrbody}.F70"
     ENV["CCDIIS"] = "#{scrbody}.F71"
     ENV["CCINTS"] = "#{scrbody}.F72"
@@ -318,10 +321,12 @@ class Molecule
     ENV["MMNEXM"] = "#{scrbody}.F95"
     ENV["MMNEXE"] = "#{scrbody}.F96"
     ENV["MMNREXM"] = "#{scrbody}.F97"
-    ENV["MMNREXE"] = "#{scrbody}.F98 "
+    ENV["MMNREXE"] = "#{scrbody}.F98"
+	end
     #
     #     next are for TDHFX code, not used by current GAMESS
     #
+	if false
     ENV["OLI201"] = "#{scrbody}.F201"
     ENV["OLI202"] = "#{scrbody}.F202"
     ENV["OLI203"] = "#{scrbody}.F203"
@@ -361,24 +366,31 @@ class Molecule
     ENV["OLI237"] = "#{scrbody}.F237"
     ENV["OLI238"] = "#{scrbody}.F238"
     ENV["OLI239"] = "#{scrbody}.F239"
-
+    end
+	
     if $platform == "win"
-	  if ncpus < 2
-	    ncpus = 2
+	#  if ncpus < 2
+	#    ncpus = 2
+	#  end
+	  if gmsvers == "11"
+	    #  Old (obsolete) cygwin version, using ddikick
+        fpout.print "ddikick will run #{ncpus} compute process\n"
+		ENV["CYGWIN"] = "nodosfilewarning"
+	  else
+        fpout.print "Microsoft MPI will be running GAMESS on 1 node.\n"
+        fpout.print "The binary kicked off by 'mpiexec' is gamess.#{gmsvers}.exe\n"
+        fpout.print "MS-MPI will run #{ncpus*2} compute process\n"
+        #  File containing environmental variables
+        envfil = "#{scrprefix}.GMS.ENV"
+        fp = File.open(envfil, "w")
+        ENV.each { |k, v| fp.print "#{k}=#{v}\n" }
+        fp.close
+        #  File containing arguments to mpiexec
+        procfil = "#{scrprefix}.processes.mpd"
+        fp = File.open(procfil, "w")
+        fp.print "-env ENVFIL #{envfil} -wdir #{scrdir} -n #{ncpus*2} #{gmsdir}#{sep}gamess.#{gmsvers}.exe\n"
+        fp.close
 	  end
-      fpout.print "Microsoft MPI will be running GAMESS on 1 node.\n"
-      fpout.print "The binary kicked off by 'mpiexec' is gamess.#{gmsvers}.exe\n"
-      fpout.print "MS-MPI will run #{ncpus} compute process\n"
-      #  File containing environmental variables
-      envfil = "#{scrprefix}.GMS.ENV"
-      fp = File.open(envfil, "w")
-      ENV.each { |k, v| fp.print "#{k}=#{v}\n" }
-      fp.close
-      #  File containing arguments to mpiexec
-      procfil = "#{scrprefix}.processes.mpd"
-      fp = File.open(procfil, "w")
-      fp.print "-env ENVFIL #{envfil} -wdir #{scrdir} -n #{ncpus} #{gmsdir}#{sep}gamess.#{gmsvers}.exe\n"
-      fp.close
     end
     
     fpout.close
@@ -479,7 +491,12 @@ class Molecule
     }
 
     if $platform == "win"
-	  cmdline = "cmd.exe /c \"mpiexec -configfile #{procfil} >>#{logname}\""
+	  if gmsvers == "11"
+	    hosts = "localhost " * ncpus
+	    cmdline = "cmd.exe /c \"#{gmsdir}/ddikick.exe #{gmsdir}/gamess.#{gmsvers}.exe #{inpbody} -ddi #{ncpus} #{ncpus} #{hosts} -scr #{scrdir} < NUL >>#{logname}\""
+	  else
+	    cmdline = "cmd.exe /c \"mpiexec -configfile #{procfil} >>#{logname}\""
+	  end
 	else
 	  hosts = "localhost " * ncpus
 	  cmdline = "/bin/sh -c '#{gmsdir}/ddikick.x #{gmsdir}/gamess.#{gmsvers}.x #{inpbody} -ddi #{ncpus} #{ncpus} #{hosts} -scr #{scrdir} < /dev/null >>#{logname}'"

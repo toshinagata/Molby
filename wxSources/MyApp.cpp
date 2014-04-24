@@ -206,22 +206,24 @@ bool MyApp::OnInit(void)
 		m_checker = new wxSingleInstanceChecker(name);
 		if (m_checker->IsAnotherRunning()) {
 			//  Make a connection with the other instance and ask for opening the file(s)
-			wxString files;
-			wxConnectionBase *connection;
-			int i;
-			for (i = 1; i < argc; i++) {
-				files.append(argv[i]);
-				files.append(wxT("\n"));
-			}
-			m_client = new MyClient;
-			connection = m_client->MakeConnection(wxT("localhost"), *m_ipcServiceName, MOLBY_IPC_TOPIC);
-			if (connection == NULL) {
-				wxLogError(wxT("Molby is already running; please shut it down and retry"));
+			if (argc > 1) {
+				wxString files;
+				wxConnectionBase *connection;
+				int i;
+				for (i = 1; i < argc; i++) {
+					files.append(argv[i]);
+					files.append(wxT("\n"));
+				}
+				m_client = new MyClient;
+				connection = m_client->MakeConnection(wxT("localhost"), *m_ipcServiceName, MOLBY_IPC_TOPIC);
+				if (connection == NULL) {
+					wxLogError(wxT("Molby is already running; please shut it down and retry"));
+					delete m_client;
+					return false;
+				}
+				connection->Execute(files);
 				delete m_client;
-				return false;
 			}
-			connection->Execute(files);
-			delete m_client;
 			return false;
 		} else {
 			m_server = new MyServer;

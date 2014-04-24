@@ -170,9 +170,9 @@ s_RubyDialogItem_SetAttr(VALUE self, VALUE key, VALUE val)
 		if (type == sTextFieldSymbol || type == sTextViewSymbol) {
 			RubyDialogCallback_setStringToItem(view, (val == Qnil ? "" : EncodedStringValuePtr(val)));
 		} else if (type == sPopUpSymbol) {
-			RubyDialogCallback_setSelectedSubItem(view, NUM2INT(rb_Integer(val)));
+			RubyDialogCallback_setSelectedSubItem(view, (val == Qnil ? 0 : NUM2INT(rb_Integer(val))));
 		} else if (type == sCheckBoxSymbol || type == sRadioSymbol || type == sToggleButtonSymbol) {
-			RubyDialogCallback_setStateForItem(view, NUM2INT(rb_Integer(val)));
+			RubyDialogCallback_setStateForItem(view, (val == Qnil ? 0 : NUM2INT(rb_Integer(val))));
 		}
 	} else if (key == sTitleSymbol) {
 		/*  Title  */
