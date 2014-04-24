@@ -160,7 +160,7 @@ class Molecule
 	
     #  Prepare the scratch directory in the home directory
     #  (Not in the document home to avoid space-containing path in Windows)
-    scrdir = $home_directory + "/Molby/gamess"
+    scrdir = $home_directory + "/Test Dir/Molby/gamess"    #  "Test Dir" for debug
 	begin
 	  mkdir_recursive(scrdir)
 	rescue
@@ -187,7 +187,7 @@ class Molecule
     #  Get the host name etc.
     hostname = backquote("hostname").chomp
     if $platform == "win"
-	  s = backquote("cmd.exe /c dir #{scrdir}")
+	  s = backquote("cmd.exe /c dir \"#{scrdir}\"")
       freebytes = s.split("\n").pop.match(/([0-9,]+)[^0-9]*$/).to_a[1]
       if freebytes
         freebytes = (freebytes.gsub(",","").to_i / 1024).to_s + " Kbytes"
@@ -388,7 +388,7 @@ class Molecule
         #  File containing arguments to mpiexec
         procfil = "#{scrprefix}.processes.mpd"
         fp = File.open(procfil, "w")
-        fp.print "-env ENVFIL #{envfil} -wdir #{scrdir} -n #{ncpus*2} #{gmsdir}#{sep}gamess.#{gmsvers}.exe\n"
+        fp.print "-env ENVFIL \"#{envfil}\" -wdir \"#{scrdir}\" -n #{ncpus*2} \"#{gmsdir}#{sep}gamess.#{gmsvers}.exe\"\n"
         fp.close
 	  end
     end
@@ -493,13 +493,13 @@ class Molecule
     if $platform == "win"
 	  if gmsvers == "11"
 	    hosts = "localhost " * ncpus
-	    cmdline = "cmd.exe /c \"#{gmsdir}/ddikick.exe #{gmsdir}/gamess.#{gmsvers}.exe #{inpbody} -ddi #{ncpus} #{ncpus} #{hosts} -scr #{scrdir} < NUL >>#{logname}\""
+	    cmdline = "cmd.exe /c \"#{gmsdir}/ddikick.exe #{gmsdir}/gamess.#{gmsvers}.exe #{inpbody} -ddi #{ncpus} #{ncpus} #{hosts} -scr \\\"#{scrdir}\\\" < NUL >>\\\"#{logname}\\\""
 	  else
-	    cmdline = "cmd.exe /c \"mpiexec -configfile #{procfil} >>#{logname}\""
+	    cmdline = "cmd.exe /c \"mpiexec -configfile \\\"#{procfil}\\\" >>\\\"#{logname}\\\""
 	  end
 	else
 	  hosts = "localhost " * ncpus
-	  cmdline = "/bin/sh -c '#{gmsdir}/ddikick.x #{gmsdir}/gamess.#{gmsvers}.x #{inpbody} -ddi #{ncpus} #{ncpus} #{hosts} -scr #{scrdir} < /dev/null >>#{logname}'"
+	  cmdline = "/bin/sh -c '\"#{gmsdir}/ddikick.x\" \"#{gmsdir}/gamess.#{gmsvers}.x\" #{inpbody} -ddi #{ncpus} #{ncpus} #{hosts} -scr \"#{scrdir}\" < /dev/null >>\"#{logname}\"'"
 	end
 	
 	if mol

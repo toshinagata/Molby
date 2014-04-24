@@ -1474,13 +1474,15 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
 
 	if (callback == DUMMY_CALLBACK) {
 #if __WXMSW__
-		/*  Convert "\r\n" to "\n"  */
-		char *p, *pend;
-		p = pend = membuf + strlen(membuf);
-		while (--p >= membuf) {
-			if (*p == '\r') {
-				memmove(p, p + 1, pend - p);
-				pend--;
+		if (membuf != NULL) {
+			/*  Convert "\r\n" to "\n"  */
+			char *p, *pend;
+			p = pend = membuf + strlen(membuf);
+			while (--p >= membuf) {
+				if (*p == '\r') {
+					memmove(p, p + 1, pend - p);
+					pend--;
+				}
 			}
 		}
 #endif
