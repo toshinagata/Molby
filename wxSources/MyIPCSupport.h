@@ -46,7 +46,7 @@ class MyServerConnection: public wxConnection
 {
 public:
 	virtual bool OnDisconnect();
-	virtual bool OnExecute(const wxString& topic, wxChar* data, int size, wxIPCFormat format);
+	virtual bool OnExecute(const wxString& topic, const void *data, size_t size, wxIPCFormat format);
 };
 
 class MyServer: public wxServer

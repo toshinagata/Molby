@@ -70,10 +70,10 @@ MyServerConnection::OnDisconnect()
 }
 
 bool
-MyServerConnection::OnExecute(const wxString& topic, wxChar* data, int size, wxIPCFormat format)
+MyServerConnection::OnExecute(const wxString& topic, const void *data, size_t size, wxIPCFormat format)
 {
 	if (topic == MOLBY_IPC_TOPIC) {
-		wxString files(data);
+		wxString files((wxChar *)data);
 		wxGetApp().RequestOpenFilesByIPC(files);
 		return true;
 	} else return false;
