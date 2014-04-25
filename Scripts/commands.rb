@@ -107,6 +107,27 @@ class Molecule
   
 end
 
+module Kernel
+  def ask_scratch_dir
+    sdir = get_global_settings("global.scratch_dir")
+	while 1
+      p = Dialog.open_panel("Please select scratch directory", sdir, nil, true)
+	  if p
+	    if p =~ / /
+		  error_message_box("Please avoid path containing a white space.\n" + p.sub(/ /, "<!> <!>"))
+		  sdir = p
+		  next
+		else
+		  set_global_settings("global.scratch_dir", p)
+		  return p
+	    end
+	  else
+	    return nil
+	  end
+	end
+  end
+end
+
 register_menu("Assign residue...", :cmd_assign_residue, :non_empty)
 register_menu("Offset residue...", :cmd_offset_residue, :non_empty)
 register_menu("Sort by residue", :cmd_sort_by_residue, :non_empty)

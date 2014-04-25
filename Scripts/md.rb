@@ -235,10 +235,7 @@ class Molecule
   end
   
   def ambertools_dialog(tool, msg = nil, block = nil)
-	log_dir = get_global_settings("antechamber.log_dir")
-	if !log_dir
-	  log_dir = $home_directory + "/Molby/antechamber"
-	end
+	log_dir = get_global_settings("global.scratch_dir") || ""
 	if $platform == "win"
 	  suffix = ".exe"
 	else
@@ -292,10 +289,10 @@ class Molecule
 		-1,
 		item(:line),
 		-1,
-		item(:text, :title=>"Log directory:"),
+		item(:text, :title=>"Scratch directory (default = home):"),
 		[ item(:button, :title=>"Choose...",
 			:action=>lambda { |it|
-			  dir = Dialog.open_panel(nil, nil, nil, true)
+			  dir = ask_scratch_dir
 			  if dir
 				set_value("log_dir", dir)
 			  end
@@ -326,6 +323,10 @@ class Molecule
     }
 	hash.each_pair { |key, value|
 	  next if key == :status
+	  if key == "log_dir"
+	    set_global_settings("global.scratch_dir", value)
+		next
+	  end
 	  v = [["log_none", "none"], ["log_error_only", "error_only"], ["log_keep_latest", "latest"], ["log_all", "all"]].assoc(key)
       if v 
 	    next if value != 1
@@ -339,60 +340,72 @@ class Molecule
 	return 1 - hash[:status]  #  1: OK, 0: Cancel, -1: Skip
   end
   
-  def create_ante_log_dir(name, key)
-    log_dir = get_global_settings("antechamber.log_dir")
-	msg = ""
-	begin
-	  if !FileTest.directory?(log_dir)
-	    mkdir_recursive(log_dir) rescue ((msg = "Cannot create directory #{log_dir}") && raise)
-	  end
-	  n = 1
-	  while FileTest.exist?(dname = log_dir + "/#{name}_#{key}.#{n}")
-	    n += 1
-	  end
-	  Dir.mkdir(dname) rescue ((msg = "Cannot create directory #{dname}") && raise)
-	  return dname
-	rescue
-	  error_message_box(msg + ": " + $!.to_s)
-	  return
-	end
-  end
+#  def create_ante_log_dir(name, key)
+#    log_dir = get_global_settings("global.scratch_dir")
+#	if log_dir == nil || log_dir == ""
+#	  log_dir = ask_scratch_dir
+#	  if log_dir == nil
+#	    error_message_box("Scratch directory is not set.")
+#		return nil
+#	  end
+#	end
+#	log_dir = log_dir + "/Molby/antechamber"
+#	msg = ""
+#	begin
+#	  if !FileTest.directory?(log_dir)
+#	    mkdir_recursive(log_dir) rescue ((msg = "Cannot create directory #{log_dir}") && raise)
+#	  end
+#	  n = 1
+#	  while FileTest.exist?(dname = log_dir + "/#{name}_#{key}.#{n}")
+#	    n += 1
+#	  end
+#	  Dir.mkdir(dname) rescue ((msg = "Cannot create directory #{dname}") && raise)
+#	  return dname
+#	rescue
+#	  error_message_box(msg + ": " + $!.to_s)
+#	  return
+#	end
+#  end
   
-  def clean_ante_log_dir(nkeep)
-    def rm_recursive(f)
-	  if FileTest.directory?(f)
-	    Dir.entries(f).each { |file|
-		  next if file == "." || file == ".."
-		  rm_recursive(f + "/" + file)
-		}
-		Dir.rmdir(f)
-	  else
-	    File.delete(f)
-	  end
-	end
-    log_dir = get_global_settings("antechamber.log_dir")
-	cwd = Dir.pwd
-	count = 0
-	begin
-	  Dir.chdir(log_dir)
-	  #  Get subdirectories and sort by last modified time
-	  dirs = Dir.entries(log_dir).reject! { |x|
-	    !FileTest.directory?(x) || x == "." || x == ".."
-	  }.sort_by { |x| 
-	    File.mtime(x)
-	  }
-	  dirs[0..-(nkeep + 1)].each { |d|
-	    rm_recursive(d)
-		count += 1
-	  }
-	rescue
-	  error_message_box $!.to_s
-	  Dir.chdir(cwd)
-	  return
-	end
-	Dir.chdir(cwd)
-	return count
-  end
+#  def clean_ante_log_dir(nkeep)
+#    def rm_recursive(f)
+#	  if FileTest.directory?(f)
+#	    Dir.entries(f).each { |file|
+#		  next if file == "." || file == ".."
+#		  rm_recursive(f + "/" + file)
+#		}
+#		Dir.rmdir(f)
+#	  else
+#	    File.delete(f)
+#	  end
+#	end
+#    log_dir = get_global_settings("global.scratch_dir")
+#	if log_dir == nil || log_dir == ""
+#	  return
+#    end
+#	log_dir = log_dir + "/Molby/antechamber"
+#	cwd = Dir.pwd
+#	count = 0
+#	begin
+#	  Dir.chdir(log_dir)
+#	  #  Get subdirectories and sort by last modified time
+#	  dirs = Dir.entries(log_dir).reject! { |x|
+#	    !FileTest.directory?(x) || x == "." || x == ".."
+#	  }.sort_by { |x| 
+#	    File.mtime(x)
+#	  }
+#	  dirs[0..-(nkeep + 1)].each { |d|
+#	    rm_recursive(d)
+#		count += 1
+#	  }
+#	rescue
+#	  error_message_box $!.to_s
+#	  Dir.chdir(cwd)
+#	  return
+#	end
+#	Dir.chdir(cwd)
+#	return count
+#  end
   
   def invoke_antechamber(ask_options = true, msg = nil)
     #  Find the ambertool directory
@@ -407,25 +420,13 @@ class Molecule
 	guess_atom_types = get_global_settings("antechamber.guess_atom_types").to_i
 	optimize_structure = get_global_settings("antechamber.optimize_structure").to_i
 	use_residue = get_global_settings("antechamber.use_residue").to_i
+
 	#  Create log directory
 	name = (self.name || "unknown").sub(/\.\w*$/, "").sub(/\*/, "")  #  Remove the extension and "*"
-	log_dir = get_global_settings("antechamber.log_dir")
-	if log_dir == nil
-	  log_dir = document_home + "/Molby/antechamber"
-	end
-	if !File.directory?(log_dir)
-	  mkdir_recursive(log_dir)
-	end
-	tdir = nil
-	1000.times { |i|
-	  tdir = sprintf("%s/%s.%04d", log_dir, name, i)
-	  if !File.exists?(tdir) && (Dir.mkdir(tdir) == 0)
-	    break
-	  end
-	  tdir = nil
-	}
-	if tdir == nil
-	  error_message_box("Cannot create log directory in #{log_dir}.")
+	begin
+	  tdir = create_temp_dir("antechamber", name)
+    rescue
+	  error_message_box($!.to_s)
 	  return -1
 	end
 	cwd = Dir.pwd
@@ -1261,8 +1262,13 @@ class Molecule
 	ante_dir = Molby::ResourcePath + "/amber11/bin"
 
 	#  Create the temporary directory
-	dname = create_ante_log_dir((self.path ? File.basename(self.path, ".*") : self.name), "rs")
-	return unless dname
+	name = (self.name || "unknown").sub(/\.\w*$/, "").sub(/\*/, "")  #  Remove the extension and "*"
+	begin
+	  dname = create_temp_dir("resp", name)
+    rescue
+	  error_message_box($!.to_s)
+	  return -1
+	end
 	cwd = Dir.pwd
 	Dir.chdir(dname)
 
@@ -1381,6 +1387,11 @@ class Molecule
 	  end
     }
 	Dir.chdir(cwd)
+
+	log_level = get_global_settings("antechamber.log_level")
+	log_keep_number = get_global_settings("antechamber.log_keep_number")
+	erase_old_logs(dname, log_level, log_keep_number)
+
 	return true
   end
   
@@ -1427,9 +1438,6 @@ class Molecule
 		[item(:button, :title=>"Run RESP...", :tag=>"resp",
 		  :action=>lambda { |it|
 		    if mol.cmd_run_resp
-			  if get_global_settings("antechamber.log_level") == "latest"
-			    mol.clean_ante_log_dir(Integer(get_global_settings("antechamber.log_keep_number")))
-			  end
 			  end_modal(0)
 			end
 		  }),

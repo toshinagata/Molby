@@ -35,6 +35,24 @@ case RUBY_PLATFORM
 	$home_directory = ENV['HOME']
 end
 
+sdir = get_global_settings("global.scratch_dir")
+if sdir == nil || sdir == ""
+  sdir = $home_directory
+  if $platform == "win" && sdir =~ / /
+    #  Try 8.3 name
+	tdir = ENV['TEMP']
+	if tdir != nil
+	  sdir = tdir.gsub(/\\/, "/")
+	end
+	if sdir =~ /\/AppData\/Local\/Temp$/
+	  sdir = Regexp.last_match.pre_match
+	end
+  end
+  if sdir !~ / /
+    set_global_settings("global.scratch_dir", sdir)
+  end
+end
+
 $backtrace = nil
 
 def backtrace
@@ -103,18 +121,29 @@ module Kernel
 	end
   end
   def create_temp_dir(tag, name = nil)
-    #  Create a temporary directory like HomeDirectory/Molby/tag/name.xxxxxx
-	name ||= "temp"
-	base = $home_directory + "/Molby/" + tag
-	mkdir_recursive(base)
-	10000.times { |n|
-	  p = sprintf("%s/%s.%05d", base, name, n)
-	  if !FileTest.exist?(p)
-	    Dir.mkdir(p)
-		return p
+    #  Create a temporary directory like %scratch%/Molby/tag/name.xxxxxx
+	base = get_global_settings("global.scratch_dir")
+	if base == nil || base == ""
+	  base = ask_scratch_dir
+	  if base == nil
+	    raise "Scratch directory is not set."
 	  end
-	}
-	raise "Cannot create temporary directory in #{base}"
+	end
+	msg = nil
+	name ||= "temp"
+	base = base + "/Molby/" + tag
+	begin
+	  mkdir_recursive(base) rescue ((msg = "Cannot create directory #{base}") && raise)
+	  10000.times { |n|
+	    p = sprintf("%s/%s.%05d", base, name, n)
+	    if !FileTest.exist?(p)
+	      Dir.mkdir(p) rescue ((msg = "Cannot create directory #{p}") && raise)
+		  return p
+	    end
+	  }
+	rescue
+	  raise "Cannot create temporary directory in #{base}"
+	end
   end
   def rm_recursive(path)
     if FileTest.directory?(path)
@@ -127,39 +156,44 @@ module Kernel
 	  File.unlink(path)
 	end
   end
-  def cleanup_temp_dir(path, option = nil)
+#  def cleanup_temp_dir(path, option = nil)
     #  Clean-up temporary directories
 	#  If option is nil, then the directory at path is removed
 	#  If option is a number, then the directories that are in the same parent directory as path
 	#  are removed except for the newest ones
-	if path.index($home_directory + "/Molby/") != 0
-	  raise "Bad cleanup_temp_dir call: the path does not begin with $HOME/Molby/ (#{path})"
-	end
-	if !FileTest.directory?(path)
-	  raise "Bad cleanup_temp_dir call: the path is not a directory (#{path})"
-	end
-	option = option.to_i
-	if option <= 0
-	  rm_recursive(path)
-	else
-	  base = File.dirname(path)
-	  ent = Dir.entries.sort_by { |en| File.mtime("#{base}/#{en}").to_i * (-1) } - [".", ".."]
-	  if $platform == "mac"
-	    ent -= [".DS_Store"]
-	  end
-	  ent[0, option] = []  #  Remove newest #{option} entries
-	  #  Mark this directory to be ready to remove (see below)
-	  open("#{path}/.done", "w") { |fp| }
-	  #  Remove the older directories
-	  ent.each { |en|
-	    #  Check the existence of ".done" file (otherwise, we may accidentarily remove a directory
-	    #  that is still in use in other threads)
-	    if File.exist?("#{base}/#{en}/.done")
-	      rm_recursive("#{base}/#{en}")
-		end
-	  }
-	end
-  end
+#	base = get_global_settings("global.scratch_dir")
+#	if base == nil || base == ""
+#	  raise "Scratch directory is not set."
+#	end
+#	base = base + "/Molby/"
+#	if path.index(base) != 0
+#	  raise "Bad cleanup_temp_dir call: the path is not a part of the scratch directory (#{path})"
+#	end
+#	if !FileTest.directory?(path)
+#	  raise "Bad cleanup_temp_dir call: the path is not a directory (#{path})"
+#	end
+#	option = option.to_i
+#	if option <= 0
+#	  rm_recursive(path)
+#	else
+#	  base = File.dirname(path)
+#	  ent = Dir.entries.sort_by { |en| File.mtime("#{base}/#{en}").to_i * (-1) } - [".", ".."]
+#	  if $platform == "mac"
+#	    ent -= [".DS_Store"]
+#	  end
+#	  ent[0, option] = []  #  Remove newest #{option} entries
+#	  #  Mark this directory to be ready to remove (see below)
+#	  open("#{path}/.done", "w") { |fp| }
+#	  #  Remove the older directories
+#	  ent.each { |en|
+#	    #  Check the existence of ".done" file (otherwise, we may accidentarily remove a directory
+#	    #  that is still in use in other threads)
+#	    if File.exist?("#{base}/#{en}/.done")
+#	      rm_recursive("#{base}/#{en}")
+#		end
+#	  }
+#	end
+# end
 
   def remove_dir(dir)
     entries = Dir.entries(dir)
@@ -175,8 +209,17 @@ module Kernel
 	Dir.unlink(dir)
   end
   
-  def erase_old_logs(tdir, level, keep_number)
+  def erase_old_logs(tdir, level = nil, keep_number = 0)
     log_dir = File.dirname(tdir)
+	base = get_global_settings("global.scratch_dir")
+	if base == nil || base == ""
+	  raise "Scratch directory is not set."
+	end
+	base = base.gsub(/\\/, "/") + "/Molby/"
+	tdir = tdir.gsub(/\\/, "/")
+	if tdir.index(base) != 0
+	  raise "Bad erase_old_logs call: the path is not a part of the scratch directory (#{tdir}, #{base})"
+	end
 	if level == nil || level == "none"
 	  remove_dir(tdir)
 	elsif level == "latest"
@@ -185,11 +228,18 @@ module Kernel
 	  else
 	    keep_number = keep_number.to_i
 	  end
-	  entries = Dir.entries(log_dir).select { |en| en != "." && en != ".." && File.directory?("#{log_dir}/#{en}") }
-	  #  Sort by modification date
-	  entries = entries.sort_by { |en| File.mtime("#{log_dir}/#{en}").to_i }
-	  (0...entries.count - keep_number).each { |i|
-	    remove_dir("#{log_dir}/#{entries[i]}")
+	  entries = Dir.entries(log_dir).sort_by { |en| File.mtime("#{log_dir}/#{en}").to_i * (-1) } - [".", ".."]
+	  if $platform == "mac"
+	    entries -= [".DS_Store"]
+	  end
+	  entries[0, keep_number] = []  #  Remove newest #{keep_number} entries
+	  #  Remove the older directories
+	  entries.each { |en|
+		#  Check the existence of ".in_use" file (otherwise, we may accidentarily remove a directory
+		#  that is still in use in other threads)
+		if !File.exist?("#{log_dir}/#{en}/.in_use")
+		  rm_recursive("#{log_dir}/#{en}")
+		end
 	  }
 	end
   end

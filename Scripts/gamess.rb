@@ -158,23 +158,28 @@ class Molecule
 	  ncpus = 1
 	end
 	
-    #  Prepare the scratch directory in the home directory
-    #  (Not in the document home to avoid space-containing path in Windows)
-    scrdir = $home_directory + "/Test Dir/Molby/gamess"    #  "Test Dir" for debug
+    #  Prepare the scratch directory
 	begin
-	  mkdir_recursive(scrdir)
+	  scrdir = create_temp_dir("gamess", inpbody)
 	rescue
-	  error_message_box("Cannot create directory #{scrdir}: " + $!.to_s)
+	  error_message_box($!.to_s)
 	  return
 	end
+#    scrdir = $home_directory + "/Molby/gamess"
+#	begin
+#	  mkdir_recursive(scrdir)
+#	rescue
+#	  error_message_box("Cannot create directory #{scrdir}: " + $!.to_s)
+#	  return
+#	end
 
-    scrdir = scrdir + "/" + inpbody + "." + $$.to_s + ".0"
-    n = 0
-    while File.exist?(scrdir)
-      scrdir = scrdir.sub(".#{n}", ".#{n + 1}")
-      n += 1
-    end
-    Dir.mkdir(scrdir)
+#    scrdir = scrdir + "/" + inpbody + "." + $$.to_s + ".0"
+#    n = 0
+#    while File.exist?(scrdir)
+#      scrdir = scrdir.sub(".#{n}", ".#{n + 1}")
+#      n += 1
+#    end
+#    Dir.mkdir(scrdir)
 
     if $platform == "win"
       sep = "\\"
@@ -196,7 +201,7 @@ class Molecule
       end
       uname = backquote("cmd.exe /c ver").to_s.gsub("\n", "")
     else
-      freebytes = `df -k #{scrdir}`
+      freebytes = `df -k "#{scrdir}"`
       uname = `uname`.chomp
     end
 
@@ -217,6 +222,7 @@ class Molecule
       scrbody = scrprefix
 	end
     filecopy(inpname, scrprefix + ".F05")
+    File.open("#{scrdir}/.in_use", "w") { |fp| }
 
     #  Prepare environmental variables
     auxdir = "#{gmsdir}#{sep}auxdata"
@@ -413,6 +419,9 @@ class Molecule
 		icon = :error
 	  end
 	  msg += "\n(In directory #{inpdir})"
+
+	  File.delete("#{scrdir}/.in_use")
+
   	  ext_to_keep = [".dat", ".rst", ".trj", ".efp", ".gamma", ".log"]
 	  ext_to_keep.each { |ex|
 	    if File.exists?("#{scrprefix}#{ex}")
@@ -424,7 +433,13 @@ class Molecule
 		  File.delete("#{scrdir}#{sep}#{file}")
 	    end
 	  }
-	  erase_old_logs(scrdir, "latest", 5)
+
+	  begin
+	    erase_old_logs(scrdir, "latest", 5)
+	  rescue
+	    error_message_box($!.to_s)
+		return
+	  end
 	  if mol != nil
 	    message_box(msg, hmsg, :ok, icon)
       end
@@ -493,13 +508,13 @@ class Molecule
     if $platform == "win"
 	  if gmsvers == "11"
 	    hosts = "localhost " * ncpus
-	    cmdline = "cmd.exe /c \"#{gmsdir}/ddikick.exe #{gmsdir}/gamess.#{gmsvers}.exe #{inpbody} -ddi #{ncpus} #{ncpus} #{hosts} -scr \\\"#{scrdir}\\\" < NUL >>\\\"#{logname}\\\""
+	    cmdline = "cmd.exe /c \"#{gmsdir}/ddikick.exe #{gmsdir}/gamess.#{gmsvers}.exe #{inpbody} -ddi #{ncpus} #{ncpus} #{hosts} -scr #{scrdir} < NUL >>#{logname}"
 	  else
-	    cmdline = "cmd.exe /c \"mpiexec -configfile \\\"#{procfil}\\\" >>\\\"#{logname}\\\""
+	    cmdline = "cmd.exe /c \"mpiexec -configfile #{procfil} >>#{logname}"
 	  end
 	else
 	  hosts = "localhost " * ncpus
-	  cmdline = "/bin/sh -c '\"#{gmsdir}/ddikick.x\" \"#{gmsdir}/gamess.#{gmsvers}.x\" #{inpbody} -ddi #{ncpus} #{ncpus} #{hosts} -scr \"#{scrdir}\" < /dev/null >>\"#{logname}\"'"
+	  cmdline = "/bin/sh -c '#{gmsdir}/ddikick.x #{gmsdir}/gamess.#{gmsvers}.x #{inpbody} -ddi #{ncpus} #{ncpus} #{hosts} -scr #{scrdir} < /dev/null >>#{logname}'"
 	end
 	
 	if mol

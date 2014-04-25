@@ -1415,7 +1415,12 @@ end
 
 def cmd_show_ortep
   mol = self
-  tmp = create_temp_dir("ortep", mol.name)
+  begin
+    tmp = create_temp_dir("ortep", mol.name)
+  rescue
+    error_message_box($!.to_s)
+	return
+  end
   tepexe = "#{ResourcePath}/ortep3/ortep3"
   if $platform == "win"
     tepexe += ".exe"
@@ -1685,7 +1690,7 @@ def cmd_show_ortep
 	}
 	#  Close handler (called when the close box is pressed or the document is closed)
 	@on_close = lambda { |*d|
-	  cleanup_temp_dir(tmp)
+	  erase_old_logs(tmp)
 	  tmp = nil
 	  true
 	}
