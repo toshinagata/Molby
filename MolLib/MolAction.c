@@ -388,7 +388,7 @@ s_MolActionToRubyArguments(VALUE vinfo)
 				break;
 			case 's':
 			case 'C':
-				val = rb_str_new((char *)argp->u.arval.ptr, argp->u.arval.nitems);
+				val = Ruby_NewEncodedStringValue((char *)argp->u.arval.ptr, argp->u.arval.nitems);
 				break;
 			case 'v':
 				val = ValueFromVector((Vector *)argp->u.arval.ptr);

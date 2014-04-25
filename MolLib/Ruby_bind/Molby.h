@@ -90,7 +90,8 @@ extern VALUE Ruby_NewFileStringValue(const char *fstr);
 
 #define EncodedStringValuePtr(val) Ruby_EncodedStringValuePtr(&val)
 extern char *Ruby_EncodedStringValuePtr(VALUE *valp);
-	
+extern VALUE Ruby_NewEncodedStringValue(const char *str, int len);
+
 /*
 STUB VALUE MyAppCallback_getGlobalSettings(const char *key);
 STUB void MyAppCallback_setGlobalSettings(const char *key, VALUE value);

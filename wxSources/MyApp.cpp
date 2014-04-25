@@ -1227,8 +1227,8 @@ MyApp::OnEndProcess(wxProcessEvent &event)
 	if (fplog != NULL)
 		fprintf(fplog, "OnEndProcess called\n");
 #endif
-	delete m_process;
-	m_process = NULL;
+//	delete m_process;
+//	m_process = NULL;
 }
 
 int
@@ -1301,6 +1301,13 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
 	int memsize = 0;
 	bool processShouldTerminate = false;
 	while (1) {
+		if (progress_panel == false) {
+			::wxSafeYield(NULL);  //  This seems necessary to get OnEndProcess called
+			if (++count == 40) {
+				ShowProgressPanel("Running subprocess...");
+				progress_panel = true;
+			}
+		}
 		while (m_process != NULL && (m_process->IsInputAvailable())) {
 			in = m_process->GetInputStream();
 			in->Read(buf, sizeof buf - 1);
@@ -1345,13 +1352,6 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
 					MyAppCallback_showScriptMessage("\n%s", buf);
 					MyAppCallback_setConsoleColor(0); 
 				}
-			}
-		}
-		if (progress_panel == false) {
-			::wxSafeYield(NULL);  //  This seems necessary to get OnEndProcess called
-			if (++count == 40) {
-				ShowProgressPanel("Running subprocess...");
-				progress_panel = true;
 			}
 		}
 		if (m_processTerminated) {
@@ -1462,6 +1462,7 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
 					status = -2;  /*  User interrupt  */
 			}
 			m_process->Detach();
+			m_process = NULL;
 			break;
 		}
 	}
@@ -1471,6 +1472,11 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
 
 	if (progress_panel)
 		HideProgressPanel();
+
+	if (m_process != NULL) {
+		delete m_process;
+		m_process = NULL;
+	}
 
 	if (callback == DUMMY_CALLBACK) {
 #if __WXMSW__

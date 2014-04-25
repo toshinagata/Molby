@@ -131,7 +131,7 @@ Ruby_NewFileStringValue(const char *fstr)
 	VALUE retval;
 	char *p = strdup(fstr);
 	translate_char(p, '\\', '/');
-	retval = rb_str_new2(p);
+	retval = rb_enc_str_new(p, strlen(p), rb_default_external_encoding());
 	free(p);
 	return retval;
 #else
@@ -145,6 +145,14 @@ Ruby_EncodedStringValuePtr(VALUE *valp)
 	rb_string_value(valp);
 	*valp = rb_str_encode(*valp, rb_enc_from_encoding(rb_default_external_encoding()), 0, Qnil);
 	return RSTRING_PTR(*valp);
+}
+
+VALUE
+Ruby_NewEncodedStringValue(const char *str, int len)
+{
+	if (len <= 0)
+		len = strlen(str);
+	return rb_enc_str_new(str, len, rb_default_external_encoding());
 }
 
 VALUE
@@ -986,10 +994,10 @@ s_Kernel_Backquote(VALUE self, VALUE cmd)
 	if (n != 0)
 		rb_raise(rb_eMolbyError, "Cannot invoke command '%s'", StringValuePtr(cmd));
 	if (buf != NULL) {
-		val = rb_str_new2(buf);
+		val = Ruby_NewEncodedStringValue(buf, 0);
 		free(buf);
 	} else {
-		val = rb_str_new2("");
+		val = Ruby_NewEncodedStringValue("", 0);
 	}
 	return val;
 }
