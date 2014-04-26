@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		E4196C66190B2FA500183E62 /* menu.mm in Sources */ = {isa = PBXBuildFile; fileRef = E4196C65190B2FA500183E62 /* menu.mm */; };
 		E420BDEF1885746700A2B983 /* ConsoleFrame.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BDE81885746700A2B983 /* ConsoleFrame.cpp */; };
 		E420BDF01885746700A2B983 /* filedlg.mm in Sources */ = {isa = PBXBuildFile; fileRef = E420BDEA1885746700A2B983 /* filedlg.mm */; };
 		E420BDF11885746700A2B983 /* GlobalParameterFilesFrame.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BDEB1885746700A2B983 /* GlobalParameterFilesFrame.cpp */; };
@@ -95,6 +96,7 @@
 
 /* Begin PBXFileReference section */
 		8D1107320486CEB800E47090 /* Molby.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Molby.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		E4196C65190B2FA500183E62 /* menu.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = menu.mm; sourceTree = "<group>"; };
 		E420BDE81885746700A2B983 /* ConsoleFrame.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ConsoleFrame.cpp; sourceTree = "<group>"; };
 		E420BDE91885746700A2B983 /* ConsoleFrame.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ConsoleFrame.h; sourceTree = "<group>"; };
 		E420BDEA1885746700A2B983 /* filedlg.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = filedlg.mm; sourceTree = "<group>"; };
@@ -405,6 +407,7 @@
 				E420BDF31885749000A2B983 /* listctrl_private.h */,
 				E420BDF41885749000A2B983 /* listctrl.cpp */,
 				E4653CB018A0CC7D0022377B /* textctrl_addition.mm */,
+				E4196C65190B2FA500183E62 /* menu.mm */,
 				E420BDF51885749000A2B983 /* MoleculeView.cpp */,
 				E420BDF61885749000A2B983 /* MoleculeView.h */,
 				E420BDF71885749000A2B983 /* MyApp.cpp */,
@@ -611,6 +614,7 @@
 				E420BE23188574F600A2B983 /* RubyDialogFrame.cpp in Sources */,
 				E420BE24188574F600A2B983 /* wxKillAddition.cpp in Sources */,
 				E4653CB118A0CC7D0022377B /* textctrl_addition.mm in Sources */,
+				E4196C66190B2FA500183E62 /* menu.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

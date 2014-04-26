@@ -99,6 +99,7 @@ enum {
 	myMenuID_StopMDRun = 202,
 	myMenuID_ViewGlobalParameters = 205,
 	myMenuID_ViewParameterFilesList = 206,
+	myMenuID_BringAllWindowsToFront = 207,
 	myMenuID_ExecuteScript = 300,
 	myMenuID_OpenConsoleWindow = 301,
 	myMenuID_EmptyConsoleWindow = 302,
@@ -165,7 +166,8 @@ class MyApp: public wxApp
 	void OnEmptyConsoleWindow(wxCommandEvent &event);
 	void OnViewGlobalParameters(wxCommandEvent &event);
 	void OnViewParameterFilesList(wxCommandEvent &event);
-
+	void OnBringAllWindowsToFront(wxCommandEvent &event);
+	
 	void OnEndProcess(wxProcessEvent &event);
 	int CallSubProcess(const char *cmdline, const char *procname, int (*callback)(void *) = NULL, void *callback_data = NULL, FILE *fpout = NULL, FILE *fperr = NULL);
 

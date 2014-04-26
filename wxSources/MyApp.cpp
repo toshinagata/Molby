@@ -94,6 +94,7 @@ BEGIN_EVENT_TABLE(MyApp, wxApp)
 	EVT_MENU(myMenuID_EmptyConsoleWindow, MyApp::OnEmptyConsoleWindow)
 	EVT_MENU(myMenuID_ViewGlobalParameters, MyApp::OnViewGlobalParameters)
 	EVT_MENU(myMenuID_ViewParameterFilesList, MyApp::OnViewParameterFilesList)
+	EVT_MENU(myMenuID_BringAllWindowsToFront, MyApp::OnBringAllWindowsToFront)
 #if defined(__WXMAC__)
 	EVT_ACTIVATE(MyApp::OnActivate)
 #endif
@@ -355,14 +356,15 @@ bool MyApp::OnInit(void)
 wxMenuBar *
 MyApp::CreateMenuBar(int kind, wxMenu **out_file_history_menu, wxMenu **out_edit_menu)
 {
-	
 	//// Make a menubar
 	wxMenu *file_menu = new wxMenu;
+	wxMenu *file_history_menu = NULL;
 
 	file_menu->Append(wxID_NEW, _T("&New...\tCtrl-N"));
 	file_menu->Append(wxID_OPEN, _T("&Open...\tCtrl-O"));
 	if (out_file_history_menu != NULL) {
-		*out_file_history_menu = new wxMenu;
+		file_history_menu = new wxMenu;
+		*out_file_history_menu = file_history_menu;
 		file_menu->AppendSubMenu(*out_file_history_menu, _T("Open Recent"));
 		m_docManager->FileHistoryAddFilesToMenu(*out_file_history_menu);
 		m_docManager->FileHistoryUseMenu(*out_file_history_menu);  //  Should be removed when menu is discarded
@@ -475,6 +477,14 @@ MyApp::CreateMenuBar(int kind, wxMenu **out_file_history_menu, wxMenu **out_edit
 	menu_bar->Append(view_menu, _T("View"));
 	menu_bar->Append(md_menu, _T("MM/MD"));
 	menu_bar->Append(script_menu, _T("&Script"));
+	
+#if defined(__WXMAC__)
+	wxMenu *window_menu = new wxMenu;
+	window_menu->Append(myMenuID_BringAllWindowsToFront, _T("Bring All to Front"));
+	window_menu->AppendSeparator();
+	menu_bar->Append(window_menu, _T("Window"));
+#endif
+	
 	menu_bar->Append(help_menu, _T("&Help"));
 	
 	UpdateScriptMenu(menu_bar);
@@ -721,6 +731,25 @@ MyApp::OnViewParameterFilesList(wxCommandEvent &event)
 	}
 	parameterFilesFrame->Show(true);
 	parameterFilesFrame->Raise();
+}
+
+void
+MyApp::OnBringAllWindowsToFront(wxCommandEvent &event)
+{
+	int size = 0, n;
+	wxWindowList::iterator iter;
+	wxTopLevelWindow **wins;
+	size = wxTopLevelWindows.size();
+	if (size > 0) {
+		wins = (wxTopLevelWindow **)calloc(sizeof(wxTopLevelWindow *), size);
+		for (iter = wxTopLevelWindows.begin(), n = 0; iter != wxTopLevelWindows.end(); ++iter, ++n) {
+			wins[n] = (wxTopLevelWindow *)(*iter);
+		}
+		for (n = 0; n < size; n++) {
+			if (wins[n]->IsShown())
+				wins[n]->Raise();
+		}
+	}
 }
 
 int
@@ -1333,7 +1362,7 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
 					MyAppCallback_setConsoleColor(0);
 					MyAppCallback_showScriptMessage("%s", buf);
 				}
-			}
+			} else break;
 		}
 		while (m_process != NULL && (m_process->IsErrorAvailable())) {
 			err = m_process->GetErrorStream();
@@ -1352,7 +1381,7 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
 					MyAppCallback_showScriptMessage("\n%s", buf);
 					MyAppCallback_setConsoleColor(0); 
 				}
-			}
+			} else break;
 		}
 		if (m_processTerminated) {
 			//  OnEndProcess has been called
