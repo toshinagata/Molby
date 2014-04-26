@@ -154,8 +154,8 @@ BasisSetRelease(BasisSet *bset)
 		free(bset->moenergies);
 	if (bset->scfdensities != NULL)
 		free(bset->scfdensities);
-	if (bset->pos != NULL)
-		free(bset->pos);
+/*	if (bset->pos != NULL)
+		free(bset->pos); */
 	if (bset->nuccharges != NULL)
 		free(bset->nuccharges);
 	if (bset->cubes != NULL) {
@@ -2493,6 +2493,35 @@ MoleculeSetMOCoefficients(Molecule *mol, Int idx, Double energy, Int ncomps, Dou
 	return 0;
 }
 
+/*  Get MO coefficients for idx-th MO  */
+/*  Caution: *ncoeffs and *coeffs should be valid _before_ calling this function, i.e.  */
+/*  *ncoeffs = 0 && *coeffs = NULL or *coeffs is a valid memory pointer and *ncoeffs  */
+/*  properly designates the memory size as an array of Doubles.  */
+int
+MoleculeGetMOCoefficients(Molecule *mol, Int idx, Double *energy, Int *ncoeffs, Double **coeffs)
+{
+	BasisSet *bset;
+	if (mol == NULL)
+		return -1;  /*  Molecule is empty  */
+	bset = mol->bset;
+	if (bset == NULL || bset->ncomps <= 0)
+		return -2;  /*  No basis set info  */
+	if (idx < 0 || idx >= bset->nmos)
+		return -3;  /*  MO index out of range  */
+	if (energy != NULL)
+		*energy = bset->moenergies[idx];
+	if (ncoeffs != NULL && coeffs != NULL) {
+		if (*ncoeffs < bset->ncomps || *coeffs == NULL) {
+			if (*coeffs != NULL)
+				free(*coeffs);  /*  Caution: possible cause of SIGBUS if *coeff is not initialized properly */
+			*coeffs = (Double *)calloc(sizeof(Double), bset->ncomps);
+			*ncoeffs = bset->ncomps;
+		}
+		memmove(*coeffs, bset->mo + (idx * bset->ncomps), sizeof(Double) * bset->ncomps);
+	}
+	return 0;
+}
+
 /*  Allocate BasisSet record. rflag: UHF, 0; RHF, 1; ROHF, 2
     ne_alpha: number of alpha electrons, ne_beta: number of beta electrons
     The natoms and pos are copied from mol.  */
@@ -2500,8 +2529,8 @@ int
 MoleculeAllocateBasisSetRecord(Molecule *mol, Int rflag, Int ne_alpha, Int ne_beta)
 {
 	BasisSet *bset;
-	int i;
-	Atom *ap;
+/*	int i;
+	Atom *ap; */
 	if (mol == NULL || mol->natoms == 0)
 		return -1;  /*  Molecule is empty  */
 	bset = mol->bset;
@@ -2510,19 +2539,19 @@ MoleculeAllocateBasisSetRecord(Molecule *mol, Int rflag, Int ne_alpha, Int ne_be
 		if (bset == NULL)
 			return -2;  /*  Low memory  */
 	}
-	if (bset->pos != NULL) {
+/*	if (bset->pos != NULL) {
 		free(bset->pos);
 		bset->pos = NULL;
-	}
+	} */
 	bset->natoms = mol->natoms;
-	bset->pos = (Vector *)calloc(sizeof(Vector), bset->natoms);
+/*	bset->pos = (Vector *)calloc(sizeof(Vector), bset->natoms);
 	if (bset->pos == NULL)
-		return -2;  /*  Low memory  */
-	for (i = 0, ap = mol->atoms; i < mol->natoms; i++, ap = ATOM_NEXT(ap)) {
+		return -2;  *//*  Low memory  */
+/*	for (i = 0, ap = mol->atoms; i < mol->natoms; i++, ap = ATOM_NEXT(ap)) {
 		bset->pos[i].x = ap->r.x * kAngstrom2Bohr;
 		bset->pos[i].y = ap->r.y * kAngstrom2Bohr;
 		bset->pos[i].z = ap->r.z * kAngstrom2Bohr;
-	}
+	} */
 	bset->ne_alpha = ne_alpha;
 	bset->ne_beta = ne_beta;
 	bset->rflag = rflag;
@@ -2657,7 +2686,7 @@ MoleculeLoadGaussianFchkFile(Molecule *mp, const char *fname, char **errbuf)
 	Int *iary;
 	Double *dary;
 	Atom *ap;
-	Vector *vp;
+/*	Vector *vp; */
 	Double w;
 
 	*errbuf = NULL;
@@ -2706,7 +2735,7 @@ MoleculeLoadGaussianFchkFile(Molecule *mp, const char *fname, char **errbuf)
 			/*  Allocate atom records (all are empty for now)  */
 			AssignArray(&mp->atoms, &mp->natoms, gSizeOfAtomRecord, natoms - 1, NULL);
 			/*  Also allocate atom position array for MO calculations  */
-			AssignArray(&bset->pos, &bset->natoms, sizeof(Vector), natoms - 1, NULL);
+		/*	AssignArray(&bset->pos, &bset->natoms, sizeof(Vector), natoms - 1, NULL); */
 			/*  Also allocate nuclear charge array  */
 			bset->nuccharges = (Double *)calloc(sizeof(Double), natoms);
 		} else if (strcmp(buf, "Number of electrons") == 0) {
@@ -2789,13 +2818,10 @@ MoleculeLoadGaussianFchkFile(Molecule *mp, const char *fname, char **errbuf)
 				retval = 2;
 				goto cleanup;
 			}
-			for (i = 0, ap = mp->atoms, vp = bset->pos; i < natoms; i++, ap = ATOM_NEXT(ap), vp++) {
-				vp->x = dary[i * 3];
-				vp->y = dary[i * 3 + 1];
-				vp->z = dary[i * 3 + 2];
-				ap->r.x = vp->x * kBohr2Angstrom;
-				ap->r.y = vp->y * kBohr2Angstrom;
-				ap->r.z = vp->z * kBohr2Angstrom;
+			for (i = 0, ap = mp->atoms; i < natoms; i++, ap = ATOM_NEXT(ap)) {
+				ap->r.x = dary[i * 3] * kBohr2Angstrom;
+				ap->r.y = dary[i * 3 + 1] * kBohr2Angstrom;
+				ap->r.z = dary[i * 3 + 2] * kBohr2Angstrom;
 			}
 			free(dary);
 			dary = NULL;
@@ -10547,7 +10573,7 @@ MoleculeSetPiAnchorList(Molecule *mol, Int idx, Int nentries, Int *entries, Doub
 /*  Index is the MO number (1-based)  */
 /*  tmp is an array of (natoms * 4) atoms, and used to store dr and |dr|^2 for each atom.  */
 static Double
-sCalcMOPoint(const BasisSet *bset, Int index, const Vector *vp, Double *tmp)
+sCalcMOPoint(Molecule *mp, const BasisSet *bset, Int index, const Vector *vp, Double *tmp)
 {
 	ShellInfo *sp;
 	PrimInfo *pp;
@@ -10555,10 +10581,13 @@ sCalcMOPoint(const BasisSet *bset, Int index, const Vector *vp, Double *tmp)
 	Int i, j;
 	/*  Cache dr and |dr|^2  */
 	for (i = 0; i < bset->natoms; i++) {
-		Vector r = bset->pos[i];
-		tmp[i * 4] = r.x = vp->x - r.x;
-		tmp[i * 4 + 1] = r.y = vp->y - r.y;
-		tmp[i * 4 + 2] = r.z = vp->z - r.z;
+		Vector r;
+		if (i < mp->natoms)
+			r = ATOM_AT_INDEX(mp->atoms, i)->r;
+		else r.x = r.y = r.z = 0.0;  /*  This is strange, but may happen  */
+		tmp[i * 4] = r.x = vp->x - r.x * kAngstrom2Bohr;
+		tmp[i * 4 + 1] = r.y = vp->y - r.y * kAngstrom2Bohr;
+		tmp[i * 4 + 2] = r.z = vp->z - r.z * kAngstrom2Bohr;
 		tmp[i * 4 + 3] = r.x * r.x + r.y * r.y + r.z * r.z;
 	}
 	/*  Iterate over all shells  */
@@ -10708,7 +10737,7 @@ MoleculeCalcMO(Molecule *mp, Int mono, const Vector *op, const Vector *dxp, cons
 				p.x = op->x + dxp->x * ix + dyp->x * iy + dzp->x * iz;
 				p.y = op->y + dxp->y * ix + dyp->y * iy + dzp->y * iz;
 				p.z = op->z + dxp->z * ix + dyp->z * iy + dzp->z * iz;
-				cp->dp[n++] = sCalcMOPoint(mp->bset, mono, &p, tmp);
+				cp->dp[n++] = sCalcMOPoint(mp, mp->bset, mono, &p, tmp);
 			}
 			if (callback != NULL && n - nn > 100) {
 				nn = n;
@@ -10731,31 +10760,34 @@ int
 MoleculeGetDefaultMOGrid(Molecule *mp, Int npoints, Vector *op, Vector *xp, Vector *yp, Vector *zp, Int *nx, Int *ny, Int *nz)
 {
 	int i;
-	Vector rmin, rmax, *vp;
+	Vector rmin, rmax, r;
 	Double dr, dx, dy, dz;
+	Atom *ap;
 	if (mp == NULL || mp->bset == NULL || mp->bset->natoms == 0)
 		return -1;
 	if (npoints <= 0)
 		npoints = 1000000;
 	rmin.x = rmin.y = rmin.z = 1e10;
 	rmax.x = rmax.y = rmax.z = -1e10;
-	for (i = 0, vp = mp->bset->pos; i < mp->bset->natoms; i++, vp++) {
-		dr = RadiusForAtomicNumber(ATOM_AT_INDEX(mp->atoms, i)->atomicNumber);
+	for (i = 0, ap = mp->atoms; i < mp->natoms; i++, ap = ATOM_NEXT(ap)) {
+		dr = RadiusForAtomicNumber(ap->atomicNumber);
+		r = ap->r;
+		VecScaleSelf(r, kAngstrom2Bohr);
 		if (dr == 0.0)
 			dr = 1.0;
 		dr = dr * kAngstrom2Bohr * 3.0 + 2.0;
-		if (rmin.x > vp->x - dr)
-			rmin.x = vp->x - dr;
-		if (rmin.y > vp->y - dr)
-			rmin.y = vp->y - dr;
-		if (rmin.z > vp->z - dr)
-			rmin.z = vp->z - dr;
-		if (rmax.x < vp->x + dr)
-			rmax.x = vp->x + dr;
-		if (rmax.y < vp->y + dr)
-			rmax.y = vp->y + dr;
-		if (rmax.z < vp->z + dr)
-			rmax.z = vp->z + dr;
+		if (rmin.x > r.x - dr)
+			rmin.x = r.x - dr;
+		if (rmin.y > r.y - dr)
+			rmin.y = r.y - dr;
+		if (rmin.z > r.z - dr)
+			rmin.z = r.z - dr;
+		if (rmax.x < r.x + dr)
+			rmax.x = r.x + dr;
+		if (rmax.y < r.y + dr)
+			rmax.y = r.y + dr;
+		if (rmax.z < r.z + dr)
+			rmax.z = r.z + dr;
 	}
 	dx = rmax.x - rmin.x;
 	dy = rmax.y - rmin.y;
@@ -10838,11 +10870,11 @@ MoleculeOutputCube(Molecule *mp, Int index, const char *fname, const char *comme
 	fprintf(fp, "%5d %11.6f %11.6f %11.6f\n", cp->nz, cp->dz.x, cp->dz.y, cp->dz.z);
 	
 	/*  Atomic information  */
-	for (i = 0; i < mp->bset->natoms; i++) {
-		Vector *vp = mp->bset->pos + i;
+	for (i = 0; i < mp->natoms; i++) {
 		Atom *ap = ATOM_AT_INDEX(mp->atoms, i);
 		/*  The second number should actually be the effective charge  */
-		fprintf(fp, "%5d %11.6f %11.6f %11.6f %11.6f\n", ap->atomicNumber, (double)ap->atomicNumber, vp->x, vp->y, vp->z);
+		fprintf(fp, "%5d %11.6f %11.6f %11.6f %11.6f\n", ap->atomicNumber, (double)ap->atomicNumber,
+				ap->r.x * kAngstrom2Bohr, ap->r.y * kAngstrom2Bohr, ap->r.z * kAngstrom2Bohr);
 	}
 	fprintf(fp, "%5d%5d\n", 1, 1);
 	
@@ -10850,7 +10882,13 @@ MoleculeOutputCube(Molecule *mp, Int index, const char *fname, const char *comme
 	for (i = n = 0; i < cp->nx; i++) {
 		for (j = 0; j < cp->ny; j++) {
 			for (k = 0; k < cp->nz; k++) {
-				fprintf(fp, " %12.5e", cp->dp[n++]);
+				/*  On Windows, the "%e" format writes the exponent in 3 digits, but
+				    this is not standard. So we avoid using %e  */
+				Double d = cp->dp[n++];
+				int exponent = (int)floor(log10(fabs(d)));
+				Double base = d * pow(10, -1.0 * exponent);
+				fprintf(fp, " %8.5fe%+03d", base, exponent);
+			/*	fprintf(fp, " %12.5e", d); */
 				if (k == cp->nz - 1 || k % 6 == 5)
 					fprintf(fp, "\n");
 			}

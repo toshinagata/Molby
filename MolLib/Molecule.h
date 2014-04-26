@@ -233,7 +233,7 @@ typedef struct BasisSet {
 	Int ncns;            /*  Number of normalized (cached) contraction coefficient values  */
 	Double *cns;         /*  Normalized (cached) contraction coefficients; (up to 10 values for each primitive)  */
 	Int natoms;          /*  Number of atoms; separately cached here because MO info should be invariant during editing */
-	Vector *pos;         /*  Positions of atoms; the unit is bohr, not angstrom  */
+/*	Vector *pos;         *//*  Positions of atoms; the unit is bohr, not angstrom  */
 	Double *nuccharges;  /*  Nuclear charges (for ECP atoms)  */
 	Int ne_alpha, ne_beta;  /*  Number of alpha/beta electrons  */
 	Int rflag;           /*  0: UHF, 1: RHF, 2:ROHF  */
@@ -362,6 +362,7 @@ void MoleculeExchange(Molecule *mp1, Molecule *mp2);
 int MoleculeAddGaussianOrbitalShell(Molecule *mol, Int sym, Int nprims, Int a_idx);
 int MoleculeAddGaussianPrimitiveCoefficients(Molecule *mol, Double exponent, Double contraction, Double contraction_sp);
 int MoleculeSetMOCoefficients(Molecule *mol, Int idx, Double energy, Int ncomps, Double *coeffs);
+int MoleculeGetMOCoefficients(Molecule *mol, Int idx, Double *energy, Int *ncoeffs, Double **coeffs);
 int MoleculeAllocateBasisSetRecord(Molecule *mol, Int rflag, Int ne_alpha, Int ne_beta);
 
 void MoleculeIncrementModifyCount(Molecule *mp);

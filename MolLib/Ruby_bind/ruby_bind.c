@@ -10204,6 +10204,62 @@ end:
 
 /*
  *  call-seq:
+ *     get_mo_coefficients(idx)
+ *
+ *  To be used internally. Get an array of MO coefficients for the given MO index (0-based).
+ */
+static VALUE
+s_Molecule_GetMOCoefficients(VALUE self, VALUE ival)
+{
+	Molecule *mol;
+	Int idx, ncomps, n;
+	Double energy;
+	Double *coeffs;
+	VALUE retval;
+    Data_Get_Struct(self, Molecule, mol);
+	idx = NUM2INT(rb_Integer(ival));
+	ncomps = 0;
+	coeffs = NULL;
+	n = MoleculeGetMOCoefficients(mol, idx, &energy, &ncomps, &coeffs);
+	if (n == -1)
+		rb_raise(rb_eMolbyError, "Molecule is emptry");
+	else if (n == -2)
+		rb_raise(rb_eMolbyError, "No basis set information is present");
+	else if (n == -3)
+		return Qnil;  /*  Silently returns nil  */
+	retval = rb_ary_new2(ncomps);
+	for (n = 0; n < ncomps; n++)
+		rb_ary_store(retval, n, rb_float_new(coeffs[n]));
+	free(coeffs);
+	return retval;
+}
+
+/*
+ *  call-seq:
+ *     get_mo_energy(idx)
+ *
+ *  To be used internally. Get the MO energy for the given MO index (0-based).
+ */
+static VALUE
+s_Molecule_GetMOEnergy(VALUE self, VALUE ival)
+{
+	Molecule *mol;
+	Int idx, n;
+	Double energy;
+    Data_Get_Struct(self, Molecule, mol);
+	idx = NUM2INT(rb_Integer(ival));
+	n = MoleculeGetMOCoefficients(mol, idx, &energy, NULL, NULL);
+	if (n == -1)
+		rb_raise(rb_eMolbyError, "Molecule is emptry");
+	else if (n == -2)
+		rb_raise(rb_eMolbyError, "No basis set information is present");
+	else if (n == -3)
+		return Qnil;
+	return rb_float_new(energy);
+}
+
+/*
+ *  call-seq:
  *     allocate_basis_set_record(rflag, ne_alpha, ne_beta)
  *
  *  To be used internally. Allocate a basis set record. rflag: 0, unrestricted; 1, restricted.
@@ -10868,6 +10924,8 @@ Init_Molby(void)
 	rb_define_method(rb_cMolecule, "add_gaussian_primitive_coefficients", s_Molecule_AddGaussianPrimitiveCoefficients, 3);
 	rb_define_method(rb_cMolecule, "mo_type", s_Molecule_MOType, 0);
 	rb_define_method(rb_cMolecule, "set_mo_coefficients", s_Molecule_SetMOCoefficients, 3);
+	rb_define_method(rb_cMolecule, "get_mo_coefficients", s_Molecule_GetMOCoefficients, 1);
+	rb_define_method(rb_cMolecule, "get_mo_energy", s_Molecule_GetMOEnergy, 1);
 	rb_define_method(rb_cMolecule, "allocate_basis_set_record", s_Molecule_AllocateBasisSetRecord, 3);
 	rb_define_method(rb_cMolecule, "search_equivalent_atoms", s_Molecule_SearchEquivalentAtoms, -1);
 	
