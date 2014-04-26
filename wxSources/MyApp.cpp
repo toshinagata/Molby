@@ -1874,16 +1874,24 @@ MyAppCallback_getHomeDir(void)
 	return (s == NULL ? NULL : strdup(s));
 }
 
+#if __WXMSW__
+#include <Shlobj.h>
+#endif
+
 char *
 MyAppCallback_getDocumentHomeDir(void)
 {
-	char *s;
 #if __WXMSW__
-	char *ss;
-	s = getenv("USERPROFILE");
-	asprintf(&ss, "%s\\My Documents", s);
-	return ss;
+	char appData[MAX_PATH * 2];
+	HRESULT hResult;
+	hResult = SHGetFolderPathA(NULL, CSIDL_PERSONAL, NULL, 0, appData);
+	if (hResult == S_OK) {
+		return strdup(appData);
+	} else {
+		return MyAppCallback_getHomeDir();
+	}
 #else
+	char *s;
 	s = getenv("HOME");
 	return (s == NULL ? NULL : strdup(s));
 #endif
