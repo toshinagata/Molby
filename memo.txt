@@ -699,3 +699,31 @@ ORTEP3 is included, and graphic user interface for drawing ORTEP is provided.
 Printing and exporting the main window is now supported.
 Space-filling view is implemented.
 Many bug fixes.
+
+2014.4.25.
+　相変わらず wxProcess 回りが不安定。Mac 版で、たまに wxProcess の終了を検知できないことがある。OnEndProcess() で m_process を delete するのをやめる。wxSafeYield コールの場所を変える。while (m_process != NULL && (m_process->IsInputAvailable())) ループの最後に "else break" を入れる。改善されたようだが、どんなものか？
+　Mac 版で Window メニューがないのが気になっていた。menu.mm に手を入れて解決。-[NSApplication setWindowsMenu:] を使うのだが、ちょっと癖がある。同じメニューに対して２回このメソッドを呼ぶと、ウィンドウリストが二重に表示されてしまう。一度読んだら２回目は呼ばないように、覚えておかないといけない。
+　Windows Vista 以降、ドキュメントホームが %USERPROFILE%\Documents (My Documents でなく) に変わったのを知らなかった。"My Documents" の部分のハードコーディングしていたので、Windows API を使うように変更。
+
+2014.4.26.
+  Version 1.0b2
+
+すべての外部プログラム (antechamber, resp, gamess, ortep) に対して共通のワーキングディレクトリを使用するようにした。（既定値はホームディレクトリ中の Molby）ワーキングディレクトリのパスは空白を含んでいてはいけない。
+MM/MD パラメータの読み込みの際に、同一パラメータの読み込み判定で丸め誤差を考慮するようにした。
+Symmetry Operation ダイアログで、新しい対称操作の追加ができなかったのを修正。
+GAMESS ダイアログで入力ファイルを編集できるようにした。
+Mac: "Window" メニューを実装した。
+Win: DLL がなくてクラッシュする問題を修正。
+Win: ドキュメントディレクトリを "My Documents" に決め打ちしていたのを修正。
+Win: "backquote" コマンドがうまく動いていなかったのを修正。
+Win: 二重に起動するとクラッシュしていた問題を修正。
+
+Common "Scratch" directory is used for all external programs, namely antechamber, resp, gamess and ortep. Note: the scratch directory cannot contain whitespace characters.
+In reading MM/MD parameters, check criteria for duplicate parameters are somewhat relaxed (i.e. comparison of floating numbers is allowed for rounding errors)
+Symmetry Operations dialog was not working for setting new symmetry. Fixed.
+GAMESS dialog is modified so that manual editing is possible.
+Mac: 'Window' menu is implemented.
+Win: crash caused by the 'missing DLL' problems was fixed.
+Win: document_home is modified to use the Windows API, instead of hard-coded path (which was wrong on Windows Vista and later).
+Win: "backquote" method was not working well.
+Win: when the program is started twice, the second invocation was causing crash. Hopefully fixed.
