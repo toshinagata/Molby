@@ -233,7 +233,6 @@ typedef struct BasisSet {
 	Int ncns;            /*  Number of normalized (cached) contraction coefficient values  */
 	Double *cns;         /*  Normalized (cached) contraction coefficients; (up to 10 values for each primitive)  */
 	Int natoms;          /*  Number of atoms; separately cached here because MO info should be invariant during editing */
-/*	Vector *pos;         *//*  Positions of atoms; the unit is bohr, not angstrom  */
 	Double *nuccharges;  /*  Nuclear charges (for ECP atoms)  */
 	Int ne_alpha, ne_beta;  /*  Number of alpha/beta electrons  */
 	Int rflag;           /*  0: UHF, 1: RHF, 2:ROHF  */
@@ -245,6 +244,31 @@ typedef struct BasisSet {
 	Int ncubes;          /*  Number of calculated MOs  */
 	Cube **cubes;        /*  Calculated MOs (an array of pointers to Cubes)  */
 } BasisSet;
+
+/*  Marching Cube (for drawing isosurface)  */
+typedef struct MCubePoint {
+	Int key;       /*  key = ((ix*ny+iy)*nz+iz)*3+ii, ii=0/1/2 for x/y/z direction, respectively */
+	float d;       /*  offset toward the direction; 0 <= d < 1  */
+	float pos[3];  /*  cartesian coordinate of the point  */
+	float grad[3]; /*  gradient vector  */
+} MCubePoint;
+	
+typedef struct MCube {
+	Int idn;             /*  MO number  */
+	Vector origin;       /*  Cube origin */
+	Double dx, dy, dz;   /*  Cube steps */
+	Int nx, ny, nz;      /*  Cube dimension (must be multiples of 8)  */
+	Double thres;        /*  Threshold value  */
+	Double *dp;          /*  Value for point (ix, iy, iz) is in dp[(ix*ny+iy)*nz+iz]  */
+	struct {
+		/*  Cube points and triangles: for positive and negative surfaces  */
+		Int ncubepoints;
+		MCubePoint *cubepoints;
+		Int ntriangles;
+		Int *triangles;  /*  Triangles; indices to cubepoints[]  */
+		float rgba[4];   /*  Surface color  */
+	} c[2];
+} MCube;
 
 /*  Electrostatic potential  */
 typedef struct Elpot {
@@ -297,6 +321,9 @@ typedef struct Molecule {
 	/*  Information for basis sets and MOs  */
 	BasisSet *bset;
 	
+	/*  Marching cube  */
+	MCube *mcube;
+
 	/*  Electrostatic potential  */
 	Int    nelpots;
 	Elpot  *elpots;
@@ -525,6 +552,9 @@ const Cube *MoleculeGetCubeAtIndex(Molecule *mp, Int index);
 int MoleculeLookUpCubeWithMONumber(Molecule *mp, Int mono);
 int MoleculeClearCubeAtIndex(Molecule *mp, Int index);
 int MoleculeOutputCube(Molecule *mp, Int index, const char *fname, const char *comment);
+
+MCube *MoleculeClearMCube(Molecule *mol, Int nx, Int ny, Int nz, const Vector *origin, Double dx, Double dy, Double dz);
+int MoleculeUpdateMCube(Molecule *mol, int idn);
 
 extern char *gMoleculePasteboardType;
 extern char *gParameterPasteboardType;

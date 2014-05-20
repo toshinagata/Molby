@@ -191,7 +191,7 @@ class Molecule
 				else
 					create_frame([coords])  #  Should not be (coords)
 				end
-			elsif line =~ /EQUILIBRIUM GEOMETRY LOCATED/i
+			elsif false && line =~ /EQUILIBRIUM GEOMETRY LOCATED/i
 				set_progress_message(mes + "\nReading optimized coordinates...")
 				fp.gets; fp.gets; fp.gets
 				n = 0
@@ -276,7 +276,7 @@ class Molecule
 				end
 			elsif line =~ /SCFTYP=(\w+)/
 				scftyp = $1
-				if ne_alpha > 0 && ne_beta > 0
+				if ne_alpha > 0 || ne_beta > 0
 					rflag = 0
 					case scftyp
 					when "RHF"

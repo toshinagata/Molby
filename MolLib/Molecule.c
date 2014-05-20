@@ -19,6 +19,7 @@
 #include <stddef.h>
 #include <ctype.h>
 #include <math.h>
+#include <float.h>
 
 #include "Missing.h"
 #include "Dcd.h"
@@ -535,6 +536,15 @@ MoleculeClear(Molecule *mp)
 	if (mp->bset != NULL) {
 		BasisSetRelease(mp->bset);
 		mp->bset = NULL;
+	}
+	if (mp->mcube != NULL) {
+		free(mp->mcube->dp);
+		free(mp->mcube->c[0].cubepoints);
+		free(mp->mcube->c[0].triangles);
+		free(mp->mcube->c[1].cubepoints);
+		free(mp->mcube->c[1].triangles);
+		free(mp->mcube);
+		mp->mcube = NULL;
 	}
 	if (mp->par != NULL) {
 		ParameterRelease(mp->par);
@@ -2539,19 +2549,7 @@ MoleculeAllocateBasisSetRecord(Molecule *mol, Int rflag, Int ne_alpha, Int ne_be
 		if (bset == NULL)
 			return -2;  /*  Low memory  */
 	}
-/*	if (bset->pos != NULL) {
-		free(bset->pos);
-		bset->pos = NULL;
-	} */
 	bset->natoms = mol->natoms;
-/*	bset->pos = (Vector *)calloc(sizeof(Vector), bset->natoms);
-	if (bset->pos == NULL)
-		return -2;  *//*  Low memory  */
-/*	for (i = 0, ap = mol->atoms; i < mol->natoms; i++, ap = ATOM_NEXT(ap)) {
-		bset->pos[i].x = ap->r.x * kAngstrom2Bohr;
-		bset->pos[i].y = ap->r.y * kAngstrom2Bohr;
-		bset->pos[i].z = ap->r.z * kAngstrom2Bohr;
-	} */
 	bset->ne_alpha = ne_alpha;
 	bset->ne_beta = ne_beta;
 	bset->rflag = rflag;
@@ -10585,9 +10583,9 @@ sCalcMOPoint(Molecule *mp, const BasisSet *bset, Int index, const Vector *vp, Do
 		if (i < mp->natoms)
 			r = ATOM_AT_INDEX(mp->atoms, i)->r;
 		else r.x = r.y = r.z = 0.0;  /*  This is strange, but may happen  */
-		tmp[i * 4] = r.x = vp->x - r.x * kAngstrom2Bohr;
-		tmp[i * 4 + 1] = r.y = vp->y - r.y * kAngstrom2Bohr;
-		tmp[i * 4 + 2] = r.z = vp->z - r.z * kAngstrom2Bohr;
+		tmp[i * 4] = r.x = (vp->x - r.x) * kAngstrom2Bohr;
+		tmp[i * 4 + 1] = r.y = (vp->y - r.y) * kAngstrom2Bohr;
+		tmp[i * 4 + 2] = r.z = (vp->z - r.z) * kAngstrom2Bohr;
 		tmp[i * 4 + 3] = r.x * r.x + r.y * r.y + r.z * r.z;
 	}
 	/*  Iterate over all shells  */
@@ -10690,7 +10688,7 @@ sCalcMOPoint(Molecule *mp, const BasisSet *bset, Int index, const Vector *vp, Do
 	return val;
 }
 
-/*  Calculate one MO. The input vectors should be in bohr unit (angstrom * 1.889725989 = kAngstrom2Bohr).  */
+/*  Calculate one MO. The input vectors are angstrom unit (changed from bohr unit: 20140520)  */
 /*  mono is the MO number (1-based)  */
 int
 MoleculeCalcMO(Molecule *mp, Int mono, const Vector *op, const Vector *dxp, const Vector *dyp, const Vector *dzp, Int nx, Int ny, Int nz, int (*callback)(double progress, void *ref), void *ref)
@@ -10756,6 +10754,7 @@ MoleculeCalcMO(Molecule *mp, Int mono, const Vector *op, const Vector *dxp, cons
 	return mp->bset->ncubes - 1;
 }
 
+/*  Output values are in angstrom unit (changed from bohr unit: 20140520)  */
 int
 MoleculeGetDefaultMOGrid(Molecule *mp, Int npoints, Vector *op, Vector *xp, Vector *yp, Vector *zp, Int *nx, Int *ny, Int *nz)
 {
@@ -10772,10 +10771,9 @@ MoleculeGetDefaultMOGrid(Molecule *mp, Int npoints, Vector *op, Vector *xp, Vect
 	for (i = 0, ap = mp->atoms; i < mp->natoms; i++, ap = ATOM_NEXT(ap)) {
 		dr = RadiusForAtomicNumber(ap->atomicNumber);
 		r = ap->r;
-		VecScaleSelf(r, kAngstrom2Bohr);
 		if (dr == 0.0)
 			dr = 1.0;
-		dr = dr * kAngstrom2Bohr * 3.0 + 2.0;
+		dr = dr * 3.0 + 2.0;
 		if (rmin.x > r.x - dr)
 			rmin.x = r.x - dr;
 		if (rmin.y > r.y - dr)
@@ -10864,10 +10862,14 @@ MoleculeOutputCube(Molecule *mp, Int index, const char *fname, const char *comme
 	fprintf(fp, "%s MO=%d\n", comment, cp->idn);
 	fprintf(fp, " MO coefficients\n");
 	
-	fprintf(fp, "%5d %11.6f %11.6f %11.6f\n", -(mp->bset->natoms), cp->origin.x, cp->origin.y, cp->origin.z);
-	fprintf(fp, "%5d %11.6f %11.6f %11.6f\n", cp->nx, cp->dx.x, cp->dx.y, cp->dx.z);
-	fprintf(fp, "%5d %11.6f %11.6f %11.6f\n", cp->ny, cp->dy.x, cp->dy.y, cp->dy.z);
-	fprintf(fp, "%5d %11.6f %11.6f %11.6f\n", cp->nz, cp->dz.x, cp->dz.y, cp->dz.z);
+	fprintf(fp, "%5d %11.6f %11.6f %11.6f\n", -(mp->bset->natoms),
+			cp->origin.x * kAngstrom2Bohr, cp->origin.y * kAngstrom2Bohr, cp->origin.z * kAngstrom2Bohr);
+	fprintf(fp, "%5d %11.6f %11.6f %11.6f\n", cp->nx,
+			cp->dx.x * kAngstrom2Bohr, cp->dx.y * kAngstrom2Bohr, cp->dx.z * kAngstrom2Bohr);
+	fprintf(fp, "%5d %11.6f %11.6f %11.6f\n", cp->ny,
+			cp->dy.x * kAngstrom2Bohr, cp->dy.y * kAngstrom2Bohr, cp->dy.z * kAngstrom2Bohr);
+	fprintf(fp, "%5d %11.6f %11.6f %11.6f\n", cp->nz,
+			cp->dz.x * kAngstrom2Bohr, cp->dz.y * kAngstrom2Bohr, cp->dz.z * kAngstrom2Bohr);
 	
 	/*  Atomic information  */
 	for (i = 0; i < mp->natoms; i++) {
@@ -10896,4 +10898,763 @@ MoleculeOutputCube(Molecule *mp, Int index, const char *fname, const char *comme
 	}
 	fclose(fp);
 	return 0;
+}
+
+#pragma mark ====== Marching Cube (for isosurface) ======
+
+MCube *
+MoleculeClearMCube(Molecule *mol, Int nx, Int ny, Int nz, const Vector *origin, Double dx, Double dy, Double dz)
+{
+	MCube *mc = mol->mcube;
+	int i;
+	float rgba[8] = { 1, 1, 1, 0.6, 0, 0, 1, 0.6 };
+	if (mc != NULL) {
+		free(mc->dp);
+		free(mc->c[0].cubepoints);
+		free(mc->c[0].triangles);
+		free(mc->c[1].cubepoints);
+		free(mc->c[1].triangles);
+		memmove(rgba, mc->c[0].rgba, sizeof(float) * 4);
+		memmove(rgba + 4, mc->c[1].rgba, sizeof(float) * 4);
+		free(mc);
+		mol->mcube = NULL;
+	}
+	if (nx > 0 && ny > 0 && nz > 0) {
+		mc = (MCube *)calloc(sizeof(MCube), 1);
+		/*  round up to nearest 4N+1 integer  */
+		dx *= nx;
+		dy *= ny;
+		dz *= nz;
+		mc->nx = (nx + 2) / 4 * 4 + 1;
+		mc->ny = (ny + 2) / 4 * 4 + 1;
+		mc->nz = (nz + 2) / 4 * 4 + 1;
+		mc->dx = dx / nx;
+		mc->dy = dy / ny;
+		mc->dz = dz / nz;
+		mc->origin = *origin;
+		mc->dp = (Double *)malloc(sizeof(Double) * mc->nx * mc->ny * mc->nz);
+		if (mc->dp == NULL) {
+			free(mc);
+			return NULL;
+		}
+		for (i = 0; i < mc->nx * mc->ny * mc->nz; i++) {
+			mc->dp[i] = DBL_MAX;
+		}
+		memmove(mc->c[0].rgba, rgba, sizeof(float) * 4);
+		memmove(mc->c[1].rgba, rgba + 4, sizeof(float) * 4);
+		mol->mcube = mc;
+	}
+	MoleculeCallback_notifyModification(mol, 0);
+	return mol->mcube;
+}
+
+static int sMarchingCubeTable[256][16] = {
+	{-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{0, 8, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{0, 1, 9, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{1, 8, 3, 9, 8, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{1, 2, 10, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{0, 8, 3, 1, 2, 10, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{9, 2, 10, 0, 2, 9, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{2, 8, 3, 2, 10, 8, 10, 9, 8, -1, -1, -1, -1, -1, -1, -1},
+	{3, 11, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{0, 11, 2, 8, 11, 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{1, 9, 0, 2, 3, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{1, 11, 2, 1, 9, 11, 9, 8, 11, -1, -1, -1, -1, -1, -1, -1},
+	{3, 10, 1, 11, 10, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{0, 10, 1, 0, 8, 10, 8, 11, 10, -1, -1, -1, -1, -1, -1, -1},
+	{3, 9, 0, 3, 11, 9, 11, 10, 9, -1, -1, -1, -1, -1, -1, -1},
+	{9, 8, 10, 10, 8, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{4, 7, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{4, 3, 0, 7, 3, 4, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{0, 1, 9, 8, 4, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{4, 1, 9, 4, 7, 1, 7, 3, 1, -1, -1, -1, -1, -1, -1, -1},
+	{1, 2, 10, 8, 4, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{3, 4, 7, 3, 0, 4, 1, 2, 10, -1, -1, -1, -1, -1, -1, -1},
+	{9, 2, 10, 9, 0, 2, 8, 4, 7, -1, -1, -1, -1, -1, -1, -1},
+	{2, 10, 9, 2, 9, 7, 2, 7, 3, 7, 9, 4, -1, -1, -1, -1},
+	{8, 4, 7, 3, 11, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{11, 4, 7, 11, 2, 4, 2, 0, 4, -1, -1, -1, -1, -1, -1, -1},
+	{9, 0, 1, 8, 4, 7, 2, 3, 11, -1, -1, -1, -1, -1, -1, -1},
+	{4, 7, 11, 9, 4, 11, 9, 11, 2, 9, 2, 1, -1, -1, -1, -1},
+	{3, 10, 1, 3, 11, 10, 7, 8, 4, -1, -1, -1, -1, -1, -1, -1},
+	{1, 11, 10, 1, 4, 11, 1, 0, 4, 7, 11, 4, -1, -1, -1, -1},
+	{4, 7, 8, 9, 0, 11, 9, 11, 10, 11, 0, 3, -1, -1, -1, -1},
+	{4, 7, 11, 4, 11, 9, 9, 11, 10, -1, -1, -1, -1, -1, -1, -1},
+	{9, 5, 4, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{9, 5, 4, 0, 8, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{0, 5, 4, 1, 5, 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{8, 5, 4, 8, 3, 5, 3, 1, 5, -1, -1, -1, -1, -1, -1, -1},
+	{1, 2, 10, 9, 5, 4, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{3, 0, 8, 1, 2, 10, 4, 9, 5, -1, -1, -1, -1, -1, -1, -1},
+	{5, 2, 10, 5, 4, 2, 4, 0, 2, -1, -1, -1, -1, -1, -1, -1},
+	{2, 10, 5, 3, 2, 5, 3, 5, 4, 3, 4, 8, -1, -1, -1, -1},
+	{9, 5, 4, 2, 3, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{0, 11, 2, 0, 8, 11, 4, 9, 5, -1, -1, -1, -1, -1, -1, -1},
+	{0, 5, 4, 0, 1, 5, 2, 3, 11, -1, -1, -1, -1, -1, -1, -1},
+	{2, 1, 5, 2, 5, 8, 2, 8, 11, 4, 8, 5, -1, -1, -1, -1},
+	{10, 3, 11, 10, 1, 3, 9, 5, 4, -1, -1, -1, -1, -1, -1, -1},
+	{4, 9, 5, 0, 8, 1, 8, 10, 1, 8, 11, 10, -1, -1, -1, -1},
+	{5, 4, 0, 5, 0, 11, 5, 11, 10, 11, 0, 3, -1, -1, -1, -1},
+	{5, 4, 8, 5, 8, 10, 10, 8, 11, -1, -1, -1, -1, -1, -1, -1},
+	{9, 7, 8, 5, 7, 9, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{9, 3, 0, 9, 5, 3, 5, 7, 3, -1, -1, -1, -1, -1, -1, -1},
+	{0, 7, 8, 0, 1, 7, 1, 5, 7, -1, -1, -1, -1, -1, -1, -1},
+	{1, 5, 3, 3, 5, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{9, 7, 8, 9, 5, 7, 10, 1, 2, -1, -1, -1, -1, -1, -1, -1},
+	{10, 1, 2, 9, 5, 0, 5, 3, 0, 5, 7, 3, -1, -1, -1, -1},
+	{8, 0, 2, 8, 2, 5, 8, 5, 7, 10, 5, 2, -1, -1, -1, -1},
+	{2, 10, 5, 2, 5, 3, 3, 5, 7, -1, -1, -1, -1, -1, -1, -1},
+	{7, 9, 5, 7, 8, 9, 3, 11, 2, -1, -1, -1, -1, -1, -1, -1},
+	{9, 5, 7, 9, 7, 2, 9, 2, 0, 2, 7, 11, -1, -1, -1, -1},
+	{2, 3, 11, 0, 1, 8, 1, 7, 8, 1, 5, 7, -1, -1, -1, -1},
+	{11, 2, 1, 11, 1, 7, 7, 1, 5, -1, -1, -1, -1, -1, -1, -1},
+	{9, 5, 8, 8, 5, 7, 10, 1, 3, 10, 3, 11, -1, -1, -1, -1},
+	{5, 7, 0, 5, 0, 9, 7, 11, 0, 1, 0, 10, 11, 10, 0, -1},
+	{11, 10, 0, 11, 0, 3, 10, 5, 0, 8, 0, 7, 5, 7, 0, -1},
+	{11, 10, 5, 7, 11, 5, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{10, 6, 5, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{0, 8, 3, 5, 10, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{9, 0, 1, 5, 10, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{1, 8, 3, 1, 9, 8, 5, 10, 6, -1, -1, -1, -1, -1, -1, -1},
+	{1, 6, 5, 2, 6, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{1, 6, 5, 1, 2, 6, 3, 0, 8, -1, -1, -1, -1, -1, -1, -1},
+	{9, 6, 5, 9, 0, 6, 0, 2, 6, -1, -1, -1, -1, -1, -1, -1},
+	{5, 9, 8, 5, 8, 2, 5, 2, 6, 3, 2, 8, -1, -1, -1, -1},
+	{2, 3, 11, 10, 6, 5, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{11, 0, 8, 11, 2, 0, 10, 6, 5, -1, -1, -1, -1, -1, -1, -1},
+	{0, 1, 9, 2, 3, 11, 5, 10, 6, -1, -1, -1, -1, -1, -1, -1},
+	{5, 10, 6, 1, 9, 2, 9, 11, 2, 9, 8, 11, -1, -1, -1, -1},
+	{6, 3, 11, 6, 5, 3, 5, 1, 3, -1, -1, -1, -1, -1, -1, -1},
+	{0, 8, 11, 0, 11, 5, 0, 5, 1, 5, 11, 6, -1, -1, -1, -1},
+	{3, 11, 6, 0, 3, 6, 0, 6, 5, 0, 5, 9, -1, -1, -1, -1},
+	{6, 5, 9, 6, 9, 11, 11, 9, 8, -1, -1, -1, -1, -1, -1, -1},
+	{5, 10, 6, 4, 7, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{4, 3, 0, 4, 7, 3, 6, 5, 10, -1, -1, -1, -1, -1, -1, -1},
+	{1, 9, 0, 5, 10, 6, 8, 4, 7, -1, -1, -1, -1, -1, -1, -1},
+	{10, 6, 5, 1, 9, 7, 1, 7, 3, 7, 9, 4, -1, -1, -1, -1},
+	{6, 1, 2, 6, 5, 1, 4, 7, 8, -1, -1, -1, -1, -1, -1, -1},
+	{1, 2, 5, 5, 2, 6, 3, 0, 4, 3, 4, 7, -1, -1, -1, -1},
+	{8, 4, 7, 9, 0, 5, 0, 6, 5, 0, 2, 6, -1, -1, -1, -1},
+	{7, 3, 9, 7, 9, 4, 3, 2, 9, 5, 9, 6, 2, 6, 9, -1},
+	{3, 11, 2, 7, 8, 4, 10, 6, 5, -1, -1, -1, -1, -1, -1, -1},
+	{5, 10, 6, 4, 7, 2, 4, 2, 0, 2, 7, 11, -1, -1, -1, -1},
+	{0, 1, 9, 4, 7, 8, 2, 3, 11, 5, 10, 6, -1, -1, -1, -1},
+	{9, 2, 1, 9, 11, 2, 9, 4, 11, 7, 11, 4, 5, 10, 6, -1},
+	{8, 4, 7, 3, 11, 5, 3, 5, 1, 5, 11, 6, -1, -1, -1, -1},
+	{5, 1, 11, 5, 11, 6, 1, 0, 11, 7, 11, 4, 0, 4, 11, -1},
+	{0, 5, 9, 0, 6, 5, 0, 3, 6, 11, 6, 3, 8, 4, 7, -1},
+	{6, 5, 9, 6, 9, 11, 4, 7, 9, 7, 11, 9, -1, -1, -1, -1},
+	{10, 4, 9, 6, 4, 10, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{4, 10, 6, 4, 9, 10, 0, 8, 3, -1, -1, -1, -1, -1, -1, -1},
+	{10, 0, 1, 10, 6, 0, 6, 4, 0, -1, -1, -1, -1, -1, -1, -1},
+	{8, 3, 1, 8, 1, 6, 8, 6, 4, 6, 1, 10, -1, -1, -1, -1},
+	{1, 4, 9, 1, 2, 4, 2, 6, 4, -1, -1, -1, -1, -1, -1, -1},
+	{3, 0, 8, 1, 2, 9, 2, 4, 9, 2, 6, 4, -1, -1, -1, -1},
+	{0, 2, 4, 4, 2, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{8, 3, 2, 8, 2, 4, 4, 2, 6, -1, -1, -1, -1, -1, -1, -1},
+	{10, 4, 9, 10, 6, 4, 11, 2, 3, -1, -1, -1, -1, -1, -1, -1},
+	{0, 8, 2, 2, 8, 11, 4, 9, 10, 4, 10, 6, -1, -1, -1, -1},
+	{3, 11, 2, 0, 1, 6, 0, 6, 4, 6, 1, 10, -1, -1, -1, -1},
+	{6, 4, 1, 6, 1, 10, 4, 8, 1, 2, 1, 11, 8, 11, 1, -1},
+	{9, 6, 4, 9, 3, 6, 9, 1, 3, 11, 6, 3, -1, -1, -1, -1},
+	{8, 11, 1, 8, 1, 0, 11, 6, 1, 9, 1, 4, 6, 4, 1, -1},
+	{3, 11, 6, 3, 6, 0, 0, 6, 4, -1, -1, -1, -1, -1, -1, -1},
+	{6, 4, 8, 11, 6, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{7, 10, 6, 7, 8, 10, 8, 9, 10, -1, -1, -1, -1, -1, -1, -1},
+	{0, 7, 3, 0, 10, 7, 0, 9, 10, 6, 7, 10, -1, -1, -1, -1},
+	{10, 6, 7, 1, 10, 7, 1, 7, 8, 1, 8, 0, -1, -1, -1, -1},
+	{10, 6, 7, 10, 7, 1, 1, 7, 3, -1, -1, -1, -1, -1, -1, -1},
+	{1, 2, 6, 1, 6, 8, 1, 8, 9, 8, 6, 7, -1, -1, -1, -1},
+	{2, 6, 9, 2, 9, 1, 6, 7, 9, 0, 9, 3, 7, 3, 9, -1},
+	{7, 8, 0, 7, 0, 6, 6, 0, 2, -1, -1, -1, -1, -1, -1, -1},
+	{7, 3, 2, 6, 7, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{2, 3, 11, 10, 6, 8, 10, 8, 9, 8, 6, 7, -1, -1, -1, -1},
+	{2, 0, 7, 2, 7, 11, 0, 9, 7, 6, 7, 10, 9, 10, 7, -1},
+	{1, 8, 0, 1, 7, 8, 1, 10, 7, 6, 7, 10, 2, 3, 11, -1},
+	{11, 2, 1, 11, 1, 7, 10, 6, 1, 6, 7, 1, -1, -1, -1, -1},
+	{8, 9, 6, 8, 6, 7, 9, 1, 6, 11, 6, 3, 1, 3, 6, -1},
+	{0, 9, 1, 11, 6, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{7, 8, 0, 7, 0, 6, 3, 11, 0, 11, 6, 0, -1, -1, -1, -1},
+	{7, 11, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{7, 6, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{3, 0, 8, 11, 7, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{0, 1, 9, 11, 7, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{8, 1, 9, 8, 3, 1, 11, 7, 6, -1, -1, -1, -1, -1, -1, -1},
+	{10, 1, 2, 6, 11, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{1, 2, 10, 3, 0, 8, 6, 11, 7, -1, -1, -1, -1, -1, -1, -1},
+	{2, 9, 0, 2, 10, 9, 6, 11, 7, -1, -1, -1, -1, -1, -1, -1},
+	{6, 11, 7, 2, 10, 3, 10, 8, 3, 10, 9, 8, -1, -1, -1, -1},
+	{7, 2, 3, 6, 2, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{7, 0, 8, 7, 6, 0, 6, 2, 0, -1, -1, -1, -1, -1, -1, -1},
+	{2, 7, 6, 2, 3, 7, 0, 1, 9, -1, -1, -1, -1, -1, -1, -1},
+	{1, 6, 2, 1, 8, 6, 1, 9, 8, 8, 7, 6, -1, -1, -1, -1},
+	{10, 7, 6, 10, 1, 7, 1, 3, 7, -1, -1, -1, -1, -1, -1, -1},
+	{10, 7, 6, 1, 7, 10, 1, 8, 7, 1, 0, 8, -1, -1, -1, -1},
+	{0, 3, 7, 0, 7, 10, 0, 10, 9, 6, 10, 7, -1, -1, -1, -1},
+	{7, 6, 10, 7, 10, 8, 8, 10, 9, -1, -1, -1, -1, -1, -1, -1},
+	{6, 8, 4, 11, 8, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{3, 6, 11, 3, 0, 6, 0, 4, 6, -1, -1, -1, -1, -1, -1, -1},
+	{8, 6, 11, 8, 4, 6, 9, 0, 1, -1, -1, -1, -1, -1, -1, -1},
+	{9, 4, 6, 9, 6, 3, 9, 3, 1, 11, 3, 6, -1, -1, -1, -1},
+	{6, 8, 4, 6, 11, 8, 2, 10, 1, -1, -1, -1, -1, -1, -1, -1},
+	{1, 2, 10, 3, 0, 11, 0, 6, 11, 0, 4, 6, -1, -1, -1, -1},
+	{4, 11, 8, 4, 6, 11, 0, 2, 9, 2, 10, 9, -1, -1, -1, -1},
+	{10, 9, 3, 10, 3, 2, 9, 4, 3, 11, 3, 6, 4, 6, 3, -1},
+	{8, 2, 3, 8, 4, 2, 4, 6, 2, -1, -1, -1, -1, -1, -1, -1},
+	{0, 4, 2, 4, 6, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{1, 9, 0, 2, 3, 4, 2, 4, 6, 4, 3, 8, -1, -1, -1, -1},
+	{1, 9, 4, 1, 4, 2, 2, 4, 6, -1, -1, -1, -1, -1, -1, -1},
+	{8, 1, 3, 8, 6, 1, 8, 4, 6, 6, 10, 1, -1, -1, -1, -1},
+	{10, 1, 0, 10, 0, 6, 6, 0, 4, -1, -1, -1, -1, -1, -1, -1},
+	{4, 6, 3, 4, 3, 8, 6, 10, 3, 0, 3, 9, 10, 9, 3, -1},
+	{10, 9, 4, 6, 10, 4, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{4, 9, 5, 7, 6, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{0, 8, 3, 4, 9, 5, 11, 7, 6, -1, -1, -1, -1, -1, -1, -1},
+	{5, 0, 1, 5, 4, 0, 7, 6, 11, -1, -1, -1, -1, -1, -1, -1},
+	{11, 7, 6, 8, 3, 4, 3, 5, 4, 3, 1, 5, -1, -1, -1, -1},
+	{9, 5, 4, 10, 1, 2, 7, 6, 11, -1, -1, -1, -1, -1, -1, -1},
+	{6, 11, 7, 1, 2, 10, 0, 8, 3, 4, 9, 5, -1, -1, -1, -1},
+	{7, 6, 11, 5, 4, 10, 4, 2, 10, 4, 0, 2, -1, -1, -1, -1},
+	{3, 4, 8, 3, 5, 4, 3, 2, 5, 10, 5, 2, 11, 7, 6, -1},
+	{7, 2, 3, 7, 6, 2, 5, 4, 9, -1, -1, -1, -1, -1, -1, -1},
+	{9, 5, 4, 0, 8, 6, 0, 6, 2, 6, 8, 7, -1, -1, -1, -1},
+	{3, 6, 2, 3, 7, 6, 1, 5, 0, 5, 4, 0, -1, -1, -1, -1},
+	{6, 2, 8, 6, 8, 7, 2, 1, 8, 4, 8, 5, 1, 5, 8, -1},
+	{9, 5, 4, 10, 1, 6, 1, 7, 6, 1, 3, 7, -1, -1, -1, -1},
+	{1, 6, 10, 1, 7, 6, 1, 0, 7, 8, 7, 0, 9, 5, 4, -1},
+	{4, 0, 10, 4, 10, 5, 0, 3, 10, 6, 10, 7, 3, 7, 10, -1},
+	{7, 6, 10, 7, 10, 8, 5, 4, 10, 4, 8, 10, -1, -1, -1, -1},
+	{6, 9, 5, 6, 11, 9, 11, 8, 9, -1, -1, -1, -1, -1, -1, -1},
+	{3, 6, 11, 0, 6, 3, 0, 5, 6, 0, 9, 5, -1, -1, -1, -1},
+	{0, 11, 8, 0, 5, 11, 0, 1, 5, 5, 6, 11, -1, -1, -1, -1},
+	{6, 11, 3, 6, 3, 5, 5, 3, 1, -1, -1, -1, -1, -1, -1, -1},
+	{1, 2, 10, 9, 5, 11, 9, 11, 8, 11, 5, 6, -1, -1, -1, -1},
+	{0, 11, 3, 0, 6, 11, 0, 9, 6, 5, 6, 9, 1, 2, 10, -1},
+	{11, 8, 5, 11, 5, 6, 8, 0, 5, 10, 5, 2, 0, 2, 5, -1},
+	{6, 11, 3, 6, 3, 5, 2, 10, 3, 10, 5, 3, -1, -1, -1, -1},
+	{5, 8, 9, 5, 2, 8, 5, 6, 2, 3, 8, 2, -1, -1, -1, -1},
+	{9, 5, 6, 9, 6, 0, 0, 6, 2, -1, -1, -1, -1, -1, -1, -1},
+	{1, 5, 8, 1, 8, 0, 5, 6, 8, 3, 8, 2, 6, 2, 8, -1},
+	{1, 5, 6, 2, 1, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{1, 3, 6, 1, 6, 10, 3, 8, 6, 5, 6, 9, 8, 9, 6, -1},
+	{10, 1, 0, 10, 0, 6, 9, 5, 0, 5, 6, 0, -1, -1, -1, -1},
+	{0, 3, 8, 5, 6, 10, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{10, 5, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{11, 5, 10, 7, 5, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{11, 5, 10, 11, 7, 5, 8, 3, 0, -1, -1, -1, -1, -1, -1, -1},
+	{5, 11, 7, 5, 10, 11, 1, 9, 0, -1, -1, -1, -1, -1, -1, -1},
+	{10, 7, 5, 10, 11, 7, 9, 8, 1, 8, 3, 1, -1, -1, -1, -1},
+	{11, 1, 2, 11, 7, 1, 7, 5, 1, -1, -1, -1, -1, -1, -1, -1},
+	{0, 8, 3, 1, 2, 7, 1, 7, 5, 7, 2, 11, -1, -1, -1, -1},
+	{9, 7, 5, 9, 2, 7, 9, 0, 2, 2, 11, 7, -1, -1, -1, -1},
+	{7, 5, 2, 7, 2, 11, 5, 9, 2, 3, 2, 8, 9, 8, 2, -1},
+	{2, 5, 10, 2, 3, 5, 3, 7, 5, -1, -1, -1, -1, -1, -1, -1},
+	{8, 2, 0, 8, 5, 2, 8, 7, 5, 10, 2, 5, -1, -1, -1, -1},
+	{9, 0, 1, 5, 10, 3, 5, 3, 7, 3, 10, 2, -1, -1, -1, -1},
+	{9, 8, 2, 9, 2, 1, 8, 7, 2, 10, 2, 5, 7, 5, 2, -1},
+	{1, 3, 5, 3, 7, 5, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{0, 8, 7, 0, 7, 1, 1, 7, 5, -1, -1, -1, -1, -1, -1, -1},
+	{9, 0, 3, 9, 3, 5, 5, 3, 7, -1, -1, -1, -1, -1, -1, -1},
+	{9, 8, 7, 5, 9, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{5, 8, 4, 5, 10, 8, 10, 11, 8, -1, -1, -1, -1, -1, -1, -1},
+	{5, 0, 4, 5, 11, 0, 5, 10, 11, 11, 3, 0, -1, -1, -1, -1},
+	{0, 1, 9, 8, 4, 10, 8, 10, 11, 10, 4, 5, -1, -1, -1, -1},
+	{10, 11, 4, 10, 4, 5, 11, 3, 4, 9, 4, 1, 3, 1, 4, -1},
+	{2, 5, 1, 2, 8, 5, 2, 11, 8, 4, 5, 8, -1, -1, -1, -1},
+	{0, 4, 11, 0, 11, 3, 4, 5, 11, 2, 11, 1, 5, 1, 11, -1},
+	{0, 2, 5, 0, 5, 9, 2, 11, 5, 4, 5, 8, 11, 8, 5, -1},
+	{9, 4, 5, 2, 11, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{2, 5, 10, 3, 5, 2, 3, 4, 5, 3, 8, 4, -1, -1, -1, -1},
+	{5, 10, 2, 5, 2, 4, 4, 2, 0, -1, -1, -1, -1, -1, -1, -1},
+	{3, 10, 2, 3, 5, 10, 3, 8, 5, 4, 5, 8, 0, 1, 9, -1},
+	{5, 10, 2, 5, 2, 4, 1, 9, 2, 9, 4, 2, -1, -1, -1, -1},
+	{8, 4, 5, 8, 5, 3, 3, 5, 1, -1, -1, -1, -1, -1, -1, -1},
+	{0, 4, 5, 1, 0, 5, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{8, 4, 5, 8, 5, 3, 9, 0, 5, 0, 3, 5, -1, -1, -1, -1},
+	{9, 4, 5, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{4, 11, 7, 4, 9, 11, 9, 10, 11, -1, -1, -1, -1, -1, -1, -1},
+	{0, 8, 3, 4, 9, 7, 9, 11, 7, 9, 10, 11, -1, -1, -1, -1},
+	{1, 10, 11, 1, 11, 4, 1, 4, 0, 7, 4, 11, -1, -1, -1, -1},
+	{3, 1, 4, 3, 4, 8, 1, 10, 4, 7, 4, 11, 10, 11, 4, -1},
+	{4, 11, 7, 9, 11, 4, 9, 2, 11, 9, 1, 2, -1, -1, -1, -1},
+	{9, 7, 4, 9, 11, 7, 9, 1, 11, 2, 11, 1, 0, 8, 3, -1},
+	{11, 7, 4, 11, 4, 2, 2, 4, 0, -1, -1, -1, -1, -1, -1, -1},
+	{11, 7, 4, 11, 4, 2, 8, 3, 4, 3, 2, 4, -1, -1, -1, -1},
+	{2, 9, 10, 2, 7, 9, 2, 3, 7, 7, 4, 9, -1, -1, -1, -1},
+	{9, 10, 7, 9, 7, 4, 10, 2, 7, 8, 7, 0, 2, 0, 7, -1},
+	{3, 7, 10, 3, 10, 2, 7, 4, 10, 1, 10, 0, 4, 0, 10, -1},
+	{1, 10, 2, 8, 7, 4, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{4, 9, 1, 4, 1, 7, 7, 1, 3, -1, -1, -1, -1, -1, -1, -1},
+	{4, 9, 1, 4, 1, 7, 0, 8, 1, 8, 7, 1, -1, -1, -1, -1},
+	{4, 0, 3, 7, 4, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{4, 8, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{9, 10, 8, 10, 11, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{3, 0, 9, 3, 9, 11, 11, 9, 10, -1, -1, -1, -1, -1, -1, -1},
+	{0, 1, 10, 0, 10, 8, 8, 10, 11, -1, -1, -1, -1, -1, -1, -1},
+	{3, 1, 10, 11, 3, 10, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{1, 2, 11, 1, 11, 9, 9, 11, 8, -1, -1, -1, -1, -1, -1, -1},
+	{3, 0, 9, 3, 9, 11, 1, 2, 9, 2, 11, 9, -1, -1, -1, -1},
+	{0, 2, 11, 8, 0, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{3, 2, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{2, 3, 8, 2, 8, 10, 10, 8, 9, -1, -1, -1, -1, -1, -1, -1},
+	{9, 10, 2, 0, 9, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{2, 3, 8, 2, 8, 10, 0, 1, 8, 1, 10, 8, -1, -1, -1, -1},
+	{1, 10, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{1, 3, 8, 9, 1, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{0, 9, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{0, 3, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
+	{-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1}
+};
+
+
+int
+MoleculeUpdateMCube(Molecule *mol, int idn)
+{
+	Int flags, retval, step, hstep, sn;
+	Int n, ix, iy, iz, nx, ny, nz;
+	Int nn, iix, iiy, iiz;
+	Int ncubepoints, c1, c2, c3;
+	Int *ip;
+	Double thres, *tmp, dd;
+	Vector p;
+	MCube *mc;
+	MCubePoint *mcp;
+	
+	if (mol == NULL || mol->bset == NULL || mol->mcube == NULL)
+		return -1;
+	if (mol->bset->cns == NULL) {
+		if (sSetupGaussianCoefficients(mol->bset) != 0)
+			return -1;
+	}
+
+	mc = mol->mcube;
+	if (idn != mc->idn) {
+		/*  Clear mcube values  */
+		for (ix = 0; ix < mc->nx * mc->ny * mc->nz; ix++)
+			mc->dp[ix] = DBL_MAX;
+		mc->idn = idn;
+	}
+	
+	/*  Temporary work area  */
+	tmp = (Double *)calloc(sizeof(Double), mol->bset->natoms * 4);
+	if (tmp == NULL)
+		return -2;
+	
+	/*  TODO: use multithread  */
+	nx = mc->nx;
+	ny = mc->ny;
+	nz = mc->nz;
+	step = 4;
+	
+	/*  (i * step, j * step, k * step)  */
+	for (ix = 0; ix < nx; ix += step) {
+		for (iy = 0; iy < ny; iy += step) {
+			for (iz = 0; iz < nz; iz += step) {
+				n = (ix * ny + iy) * nz + iz;
+				if (mc->dp[n] == DBL_MAX) {
+					p.x = mc->origin.x + mc->dx * ix;
+					p.y = mc->origin.y + mc->dy * iy;
+					p.z = mc->origin.z + mc->dz * iz;
+					mc->dp[n] = sCalcMOPoint(mol, mol->bset, mc->idn, &p, tmp);
+				}
+				n += step;
+			}
+		}
+	}
+	
+	/*  Intermediate points  */
+	for (step = 4; step > 1; step /= 2) {
+		hstep = step / 2;
+		for (sn = 0; sn <= 1; sn++) {
+			n = 0;
+			for (ix = 0; ix < nx - 1; ix += step) {
+				for (iy = 0; iy < ny - 1; iy += step) {
+					for (iz = 0; iz < nz - 1; iz += step) {
+						flags = 0;
+						thres = mc->thres * (sn == 0 ? 1 : -1);
+						n = (ix * ny + iy) * nz + iz;
+						if (mc->dp[n] == DBL_MAX || mc->dp[n + step * (nz * (ny + 1) + 1)] == DBL_MAX)
+							continue;
+						/*  (ix, iy, iz)  */
+						if (mc->dp[n] >= thres)
+							flags |= 1;
+						/*  (ix + step, iy, iz)  */
+						if (mc->dp[n + step * ny * nz] >= thres)
+							flags |= 2;
+						/*  (ix, iy + step, iz)  */
+						if (mc->dp[n + step * nz] >= thres)
+							flags |= 4;
+						/*  (ix + 4, iy + step, iz)  */
+						if (mc->dp[n + step * nz * (ny + 1)] >= thres)
+							flags |= 8;
+						/*  (ix, iy, iz + step)  */
+						if (mc->dp[n + step] >= thres)
+							flags |= 16;
+						if (mc->dp[n + step * (ny * nz + 1)] >= thres)
+							flags |= 32;
+						/*  (ix, iy + step, iz + step)  */
+						if (mc->dp[n + step * (nz + 1)] >= thres)
+							flags |= 64;
+						/*  (ix + step, iy + step, iz + step)  */
+						if (mc->dp[n + step * (nz * (ny + 1) + 1)] >= thres)
+							flags |= 128;
+						if (flags != 0 && flags != 255) {
+							/*  Calc the intermediate points  */
+							for (iix = 0; iix <= step; iix += hstep) {
+								for (iiy = 0; iiy <= step; iiy += hstep) {
+									for (iiz = 0; iiz <= step; iiz += hstep) {
+										if (iix % step == 0 && iiy % step == 0 && iiz % step == 0)
+											continue;
+										nn = n + (iix * ny + iiy) * nz + iiz;
+										if (mc->dp[nn] == DBL_MAX) {
+											p.x = mc->origin.x + mc->dx * (ix + iix);
+											p.y = mc->origin.y + mc->dy * (iy + iiy);
+											p.z = mc->origin.z + mc->dz * (iz + iiz);
+											mc->dp[nn] = sCalcMOPoint(mol, mol->bset, mc->idn, &p, tmp);
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	free(tmp);
+	
+	/*  Calculate vertex positions and normal vectors  */
+	for (sn = 0; sn <= 1; sn++) {
+		n = 0;
+		thres = mc->thres * (sn == 0 ? 1 : -1);
+		VecZero(p);
+		for (ix = 0; ix < nx - 1; ix++) {
+			for (iy = 0; iy < ny - 1; iy++) {
+				for (iz = 0; iz < nz - 1; iz++) {
+					Double dd0, dd1;
+					nn = (ix * ny + iy) * nz + iz;
+					dd0 = mc->dp[nn];
+					if (dd0 == DBL_MAX)
+						continue;
+					if (0) {
+						dd1 = mc->dp[nn + ny * nz];
+						if (dd1 != DBL_MAX)
+							p.x = (dd1 - dd0) / mc->dx;
+						else if (ix > 0 && (dd1 = mc->dp[nn - ny * nz]) != DBL_MAX)
+							p.x = (dd0 - dd1) / mc->dx;
+						else continue;  /*  Cannot define gradient  */
+						dd1 = mc->dp[nn + nz];
+						if (dd1 != DBL_MAX)
+							p.y = (dd1 - dd0) / mc->dy;
+						else if (iy > 0 && (dd1 = mc->dp[nn - nz]) != DBL_MAX)
+							p.y = (dd0 - dd1) / mc->dy;
+						else continue;
+						dd1 = mc->dp[nn + 1];
+						if (dd1 != DBL_MAX)
+							p.z = (dd1 - dd0) / mc->dz;
+						else if (iz > 0 && (dd1 = mc->dp[nn - 1]) != DBL_MAX)
+							p.z = (dd0 - dd1) / mc->dz;
+						else continue;
+						NormalizeVec(&p, &p);
+					}
+					if (n + 3 >= mc->c[sn].ncubepoints) {
+						/*  Expand cubepoints[] array  */
+						mc->c[sn].cubepoints = (MCubePoint *)realloc(mc->c[sn].cubepoints, sizeof(MCubePoint) * (mc->c[sn].ncubepoints + 8192));
+						if (mc->c[sn].cubepoints == NULL) {
+							mc->c[sn].ncubepoints = 0;
+							retval = -3;
+							goto end;
+						}
+						mc->c[sn].ncubepoints += 8192;
+					}
+					mcp = mc->c[sn].cubepoints + n;
+					iix = (dd0 >= thres ? 1 : -1);
+					/*  (x, y, z)->(x + 1, y, z)  */
+					dd1 = mc->dp[nn + ny * nz];
+					if (dd1 != DBL_MAX) {
+						iiy = (dd1 >= thres ? 1 : -1);
+						if (iix != iiy) {
+							/*  Register  */
+							mcp->key = nn * 3;
+							mcp->d = (thres - dd0) / (dd1 - dd0);
+							mcp->pos[0] = mc->origin.x + mc->dx * (ix + mcp->d);
+							mcp->pos[1] = mc->origin.y + mc->dy * iy;
+							mcp->pos[2] = mc->origin.z + mc->dz * iz;
+							mcp->grad[0] = p.x;
+							mcp->grad[1] = p.y;
+							mcp->grad[2] = p.z;
+							mcp++;
+							n++;
+						}
+					}
+					/*  (x, y, z)->(x, y + 1, z)  */
+					dd1 = mc->dp[nn + nz];
+					if (dd1 != DBL_MAX) {
+						iiy = (dd1 >= thres ? 1 : -1);
+						if (iix != iiy) {
+							/*  Register  */
+							mcp->key = nn * 3 + 1;
+							mcp->d = (thres - dd0) / (dd1 - dd0);
+							mcp->pos[0] = mc->origin.x + mc->dx * ix;
+							mcp->pos[1] = mc->origin.y + mc->dy * (iy + mcp->d);
+							mcp->pos[2] = mc->origin.z + mc->dz * iz;
+							mcp->grad[0] = p.x;
+							mcp->grad[1] = p.y;
+							mcp->grad[2] = p.z;
+							mcp++;
+							n++;
+						}
+					}
+					/*  (x, y, z)->(x, y, z + 1)  */
+					dd1 = mc->dp[nn + 1];
+					if (dd1 != DBL_MAX) {
+						iiy = (dd1 >= thres ? 1 : -1);
+						if (iix != iiy) {
+							/*  Register  */
+							mcp->key = nn * 3 + 2;
+							mcp->d = (thres - dd0) / (dd1 - dd0);
+							mcp->pos[0] = mc->origin.x + mc->dx * ix;
+							mcp->pos[1] = mc->origin.y + mc->dy * iy;
+							mcp->pos[2] = mc->origin.z + mc->dz * (iz + mcp->d);
+							mcp->grad[0] = p.x;
+							mcp->grad[1] = p.y;
+							mcp->grad[2] = p.z;
+							mcp++;
+							n++;
+						}
+					}
+				}
+			}
+		}
+		if (n < mc->c[sn].ncubepoints)
+			mc->c[sn].cubepoints[n].key = -1;  /*  End mark  */
+		ncubepoints = n;
+		if (ncubepoints < 3) {
+			/*  Less than 3 points: no triangles  */
+			if (mc->c[sn].ntriangles > 0)
+				mc->c[sn].triangles[0] = -1;  /*  End mark  */
+			retval = 0;
+			goto end;
+		}
+		
+		/*  Create triangle table  */
+		n = 0;
+		for (ix = 0; ix < nx - 1; ix++) {
+			for (iy = 0; iy < ny - 1; iy++) {
+				for (iz = 0; iz < nz - 1; iz++) {
+					nn = (ix * ny + iy) * nz + iz;
+					iix = 0;
+					if ((dd = mc->dp[nn]) == DBL_MAX)
+						continue;
+					else if (dd >= thres)
+						iix |= 1;
+					if ((dd = mc->dp[nn + ny * nz]) == DBL_MAX)
+						continue;
+					else if (dd >= thres)
+						iix |= 2;
+					if ((dd = mc->dp[nn + ny * nz + nz]) == DBL_MAX)
+						continue;
+					else if (dd >= thres)
+						iix |= 4;
+					if ((dd = mc->dp[nn + nz]) == DBL_MAX)
+						continue;
+					else if (dd >= thres)
+						iix |= 8;
+					if ((dd = mc->dp[nn + 1]) == DBL_MAX)
+						continue;
+					else if (dd >= thres)
+						iix |= 16;
+					if ((dd = mc->dp[nn + ny * nz + 1]) == DBL_MAX)
+						continue;
+					else if (dd >= thres)
+						iix |= 32;
+					if ((dd = mc->dp[nn + ny * nz + nz + 1]) == DBL_MAX)
+						continue;
+					else if (dd >= thres)
+						iix |= 64;
+					if ((dd = mc->dp[nn + nz + 1]) == DBL_MAX)
+						continue;
+					else if (dd >= thres)
+						iix |= 128;
+					for (iiy = 0; iiy < 15; iiy++) {
+						nn = sMarchingCubeTable[iix][iiy];
+						if (nn < 0)
+							break;
+						/*  key index for edges 0-11  */
+						switch (nn) {
+							case 0:  iiz = (( ix      * ny + iy    ) * nz + iz    ) * 3;     break;
+							case 1:  iiz = (((ix + 1) * ny + iy    ) * nz + iz    ) * 3 + 1; break;
+							case 2:  iiz = (( ix      * ny + iy + 1) * nz + iz    ) * 3;     break;
+							case 3:  iiz = (( ix      * ny + iy    ) * nz + iz    ) * 3 + 1; break;
+							case 4:  iiz = (( ix      * ny + iy    ) * nz + iz + 1) * 3;     break;
+							case 5:  iiz = (((ix + 1) * ny + iy    ) * nz + iz + 1) * 3 + 1; break;
+							case 6:  iiz = (( ix      * ny + iy + 1) * nz + iz + 1) * 3;     break;
+							case 7:  iiz = (( ix      * ny + iy    ) * nz + iz + 1) * 3 + 1; break;
+							case 8:  iiz = (( ix      * ny + iy    ) * nz + iz    ) * 3 + 2; break;
+							case 9:  iiz = (((ix + 1) * ny + iy    ) * nz + iz    ) * 3 + 2; break;
+							case 10: iiz = (((ix + 1) * ny + iy + 1) * nz + iz    ) * 3 + 2; break;
+							case 11: iiz = (( ix      * ny + iy + 1) * nz + iz    ) * 3 + 2; break;
+							default:
+								/*  Skip this triangle  */
+								iiy = (iiy - iiy % 3) + 2;
+								n = n - n % 3;
+								continue;
+						}
+						/*  Look for the key index in cubepoints  */
+						c1 = 0;
+						c3 = ncubepoints - 1;
+						mcp = mc->c[sn].cubepoints;
+						while (1) {
+							int w;
+							/*  c1 is always less than c3  */
+							if (c1 + 1 == c3) {
+								/*  end of search  */
+								if (mcp[c1].key == iiz) {
+									c2 = c1;
+								} else if (mcp[c3].key == iiz) {
+									c2 = c3;
+								} else {
+									c2 = -1;
+								}
+								break;
+							}
+							c2 = (c1 + c3) / 2;
+							w = mcp[c2].key - iiz;
+							if (w == 0)
+								break;
+							if (w < 0) {
+								c1 = c2;
+							} else {
+								c3 = c2;
+							}
+						}
+						if (c2 < 0) {
+							/*  Not found: skip this triangle  */
+							iiy = (iiy - iiy % 3) + 2;
+							n = n - n % 3;
+							continue;
+						}
+						if (n + 1 >= mc->c[sn].ntriangles) {
+							/*  Expand triangles[] array  */
+							mc->c[sn].triangles = (Int *)realloc(mc->c[sn].triangles, sizeof(Int) * (mc->c[sn].ntriangles + 8192));
+							if (mc->c[sn].triangles == NULL) {
+								mc->c[sn].ntriangles = 0;
+								retval = -4;
+								goto end;
+							}
+							mc->c[sn].ntriangles += 8192;
+						}
+						mc->c[sn].triangles[n] = c2;
+						n++;
+					}
+				}
+			}
+		}
+		if (n < mc->c[sn].ntriangles)
+			mc->c[sn].triangles[n] = -1;  /*  End mark  */
+		
+		/*  Estimate the normal vector  */
+		for (n = 0, ip = mc->c[sn].triangles; ip[n] >= 0; n += 3) {
+			Vector v[3];
+			for (ix = 0; ix < 3; ix++) {
+				mcp = &(mc->c[sn].cubepoints[ip[n + ix]]);
+				v[ix].x = mcp->pos[0];
+				v[ix].y = mcp->pos[1];
+				v[ix].z = mcp->pos[2];
+			}
+			VecDec(v[2], v[0]);
+			VecDec(v[1], v[0]);
+			VecCross(v[0], v[1], v[2]);
+			NormalizeVec(v, v);
+			for (ix = 0; ix < 3; ix++) {
+				mcp = &(mc->c[sn].cubepoints[ip[n + ix]]);
+				mcp->grad[0] += v[0].x;
+				mcp->grad[1] += v[0].y;
+				mcp->grad[2] += v[0].z;
+			}
+		}
+		for (n = 0, mcp = mc->c[sn].cubepoints; mcp->key >= 0; mcp++) {
+			if (mcp->grad[0] != 0.0 || mcp->grad[1] != 0.0 || mcp->grad[2] != 0.0) {
+				dd = 1.0 / sqrt(mcp->grad[0] * mcp->grad[0] + mcp->grad[1] * mcp->grad[1] + mcp->grad[2] * mcp->grad[2]);
+				mcp->grad[0] *= dd;
+				mcp->grad[1] *= dd;
+				mcp->grad[2] *= dd;
+			}
+		}
+	}
+	retval = 0;
+	MoleculeCallback_notifyModification(mol, 0);
+end:
+	/*  For debug  */
+	if (0) {
+		char *MyAppCallback_getDocumentHomeDir(void);
+		FILE *fp;
+		char *s;
+		Double dmax, dmin;
+		asprintf(&s, "%s/%s", MyAppCallback_getDocumentHomeDir(), "mcube_log.txt");
+		fp = fopen(s, "w");
+		dmax = -1e8;
+		dmin = 1e8;
+		for (n = 0; n < mc->nx * mc->ny * mc->nz; n++) {
+			if (mc->dp[n] == DBL_MAX)
+				continue;
+			if (dmax < mc->dp[n])
+				dmax = mc->dp[n];
+			if (dmin > mc->dp[n])
+				dmin = mc->dp[n];
+		}
+		dmax = fabs(dmax);
+		dmin = fabs(dmin);
+		if (dmax < dmin)
+			dmax = dmin;
+		dmax = 1.001 * dmax;
+		fprintf(fp, "thres = %g = 100\n", mc->thres);
+		for (iz = 0; iz < mc->nz; iz++) {
+			fprintf(fp, "z = %d\n", iz);
+			for (iy = 0; iy < mc->ny; iy++) {
+				for (ix = 0; ix < mc->nx; ix++) {
+					n = (ix * ny + iy) * nz + iz;
+					dd = mc->dp[n];
+					if (dd == DBL_MAX)
+						fprintf(fp, " XXX ");
+					else {
+						dd = dd * 100 / mc->thres;
+						if (dd > 999.0)
+							dd = 999.0;
+						else if (dd < -999.0)
+							dd = -999.0;
+						fprintf(fp, "%4d ", (int)(dd));
+					}
+				}
+				fprintf(fp, "\n");
+			}
+			fprintf(fp, "\n");
+		}
+		
+		for (sn = 0; sn <= 1; sn++) {
+			for (n = 0; n < mc->c[sn].ncubepoints; n++) {
+				MCubePoint *mcp = mc->c[sn].cubepoints + n;
+				nn = mcp->key;
+				if (nn == -1)
+					break;
+				iix = nn % 3;
+				iz = nn / 3 % mc->nz;
+				iy = nn / (3 * mc->nz) % mc->ny;
+				ix = nn / (3 * mc->nz * mc->ny);
+				fprintf(fp, "%c%d:[%d,%d,%d,%d] (%g,[%g,%g,%g],[%g,%g,%g])\n", (sn == 0 ? 'p' : 'P'),
+						n, ix, iy, iz, iix,
+						mcp->d, mcp->pos[0], mcp->pos[1], mcp->pos[2], mcp->grad[0], mcp->grad[1], mcp->grad[2]);
+			}
+			for (n = 0; n < mc->c[sn].ntriangles; n += 3) {
+				if (mc->c[sn].triangles[n] < 0)
+					break;
+				fprintf(fp, "%c%d:(%d,%d,%d)\n", (sn == 0 ? 't' : 'T'), n / 3,
+						mc->c[sn].triangles[n], mc->c[sn].triangles[n + 1], mc->c[sn].triangles[n + 2]);
+			}
+		}
+		fclose(fp);
+	}
+	
+	return retval;
 }

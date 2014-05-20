@@ -1216,6 +1216,32 @@ calcDragOffset(MainView *mview, Vector *outVector)
 }
 
 static void
+drawSurface(MainView *mview)
+{
+	int i, sn, k;
+	GLfloat rgba[4];
+	MCube *mc;
+	if (mview->mol == NULL || mview->mol->mcube == NULL)
+		return;
+	mc = mview->mol->mcube;
+	for (sn = 0; sn <= 1; sn++) {
+		if (mc->c[sn].ntriangles == 0)
+			continue;
+		for (i = 0; i < 4; i++)
+			rgba[i] = mc->c[sn].rgba[i];
+		k = (sn == 0 ? -1 : 1);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, rgba);
+		glBegin(GL_TRIANGLES);
+		for (i = 0; mc->c[sn].triangles[i] >= 0; i++) {
+			MCubePoint *mcp = mc->c[sn].cubepoints + mc->c[sn].triangles[i];
+			glNormal3f(mcp->grad[0] * k, mcp->grad[1] * k, mcp->grad[2] * k);
+			glVertex3f(mcp->pos[0], mcp->pos[1], mcp->pos[2]);
+		}
+		glEnd();		
+	}
+}
+
+static void
 drawModel(MainView *mview)
 {
 	Molecule *mol;
@@ -1738,6 +1764,7 @@ MainView_drawModel(MainView *mview)
 	
 	MainViewCallback_clearLabels(mview);
     drawModel(mview);
+	drawSurface(mview);
 	drawUnitCell(mview);
 	drawRotationCenter(mview);
 	drawGraphics(mview);

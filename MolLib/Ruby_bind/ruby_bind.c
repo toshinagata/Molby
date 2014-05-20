@@ -10048,6 +10048,99 @@ s_Molecule_Cubegen(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
+ *     set_surface_attr(attr = nil)
+ *
+ *  Set the drawing attributes of the surface. Attr is a hash containing the attributes.
+ */
+static VALUE
+s_Molecule_SetSurfaceAttr(VALUE self, VALUE hval)
+{
+    Molecule *mol;
+	VALUE aval;
+	Double d;
+	Int n;
+	unsigned char changed = 0;
+    Data_Get_Struct(self, Molecule, mol);
+	if (mol->mcube == NULL)
+		rb_raise(rb_eMolbyError, "No MO surface is defined yet");
+	if (hval == Qnil)
+		return Qnil;
+	if ((aval = rb_hash_aref(hval, ID2SYM(rb_intern("thres")))) != Qnil) {
+		d = NUM2DBL(rb_Float(aval));
+		if (d != mol->mcube->thres) {
+			mol->mcube->thres = d;
+			changed = 1;
+		}
+	}
+	if ((aval = rb_hash_aref(hval, ID2SYM(rb_intern("mo_index")))) != Qnil) {
+		n = NUM2INT(rb_Integer(aval));
+		if (n <= 0 || n > mol->bset->nmos)
+			rb_raise(rb_eMolbyError, "MO index (%d) is out of range; should be 1..%d", n, mol->bset->nmos);
+		if (n != mol->mcube->idn) {
+			mol->mcube->idn = n;
+			changed = 1;
+		}
+	}
+	if (changed) {
+		if (MoleculeUpdateMCube(mol, mol->mcube->idn) != 0)
+			rb_raise(rb_eMolbyError, "Cannot complete MO surface calculation");
+		return self;
+	} else return Qnil;
+}
+
+/*
+ *  call-seq:
+ *     create_surface(mo, npoints = 80*80*80, scale = 1.0, attr = nil)
+ *
+ *  Create a MO surface. The argument mo is the MO index (1-based).
+ *  Npoints is the approximate number of grid points, scale is
+ *  the scale factor to expand/shrink the limit of the grid box relative to the default size.
+ *  Attr is a hash to define the drawing attributes of the surface.
+ *  If the molecule does not contain MO information, raises exception.
+ */
+static VALUE
+s_Molecule_CreateSurface(int argc, VALUE *argv, VALUE self)
+{
+    Molecule *mol;
+	Vector o, dx, dy, dz;
+	Int nmo, nx, ny, nz;
+	VALUE nval, pval, sval, aval;
+	Int npoints = 80 * 80 * 80;
+	Double sc = 1.0;
+	Double thres = 0.05;
+    Data_Get_Struct(self, Molecule, mol);
+	rb_scan_args(argc, argv, "13", &nval, &pval, &sval, &aval);
+	nmo = NUM2INT(rb_Integer(nval));
+	if (mol->bset == NULL)
+		rb_raise(rb_eMolbyError, "No MO information is given");
+	if (nmo <= 0 || nmo > mol->bset->nmos)
+		rb_raise(rb_eMolbyError, "MO index (%d) is out of range; should be 1..%d", nmo, mol->bset->nmos);
+	if (pval != Qnil)
+		npoints = NUM2INT(rb_Integer(pval));
+	if (MoleculeGetDefaultMOGrid(mol, npoints, &o, &dx, &dy, &dz, &nx, &ny, &nz) != 0)
+		rb_raise(rb_eMolbyError, "Cannot get default grid size (internal error?)");
+	if (sval != Qnil) {
+		sc = NUM2DBL(rb_Float(sval));
+		if (sc <= 0.0)
+			rb_raise(rb_eMolbyError, "The scale factor (%g) should be positive number", sc);
+		o.x = o.x + (1.0 - sc) * dx.x * nx * 0.5;
+		o.y = o.y + (1.0 - sc) * dy.y * ny * 0.5;
+		o.z = o.z + (1.0 - sc) * dz.z * nz * 0.5;
+	}
+	if (mol->mcube != NULL)
+		thres = mol->mcube->thres;  /*  Already defined  */
+	if (MoleculeClearMCube(mol, nx, ny, nz, &o, dx.x * sc, dy.y * sc, dz.z * sc) == NULL)
+		rb_raise(rb_eMolbyError, "Cannot allocate memory for MO surface calculation");
+	mol->mcube->thres = thres;
+	if (s_Molecule_SetSurfaceAttr(self, aval) == Qnil) {
+		if (MoleculeUpdateMCube(mol, nmo) != 0)
+			rb_raise(rb_eMolbyError, "Cannot complete MO surface calculation");
+	}
+	return self;
+}
+
+/*
+ *  call-seq:
  *     nelpots
  *
  *  Get the number of electrostatic potential info.
@@ -10918,6 +11011,8 @@ Init_Molby(void)
 	rb_define_method(rb_cMolecule, "selected_MO", s_Molecule_SelectedMO, 0);
 	rb_define_method(rb_cMolecule, "default_MO_grid", s_Molecule_GetDefaultMOGrid, -1);
 	rb_define_method(rb_cMolecule, "cubegen", s_Molecule_Cubegen, -1);
+	rb_define_method(rb_cMolecule, "create_surface", s_Molecule_CreateSurface, -1);
+	rb_define_method(rb_cMolecule, "set_surface_attr", s_Molecule_SetSurfaceAttr, 1);
 	rb_define_method(rb_cMolecule, "nelpots", s_Molecule_NElpots, 0);
 	rb_define_method(rb_cMolecule, "elpot", s_Molecule_Elpot, 1);
 	rb_define_method(rb_cMolecule, "add_gaussian_orbital_shell", s_Molecule_AddGaussianOrbitalShell, 3);
