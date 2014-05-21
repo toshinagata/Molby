@@ -10762,7 +10762,7 @@ MoleculeGetDefaultMOGrid(Molecule *mp, Int npoints, Vector *op, Vector *xp, Vect
 	Vector rmin, rmax, r;
 	Double dr, dx, dy, dz;
 	Atom *ap;
-	if (mp == NULL || mp->bset == NULL || mp->bset->natoms == 0)
+	if (mp == NULL || mp->bset == NULL)
 		return -1;
 	if (npoints <= 0)
 		npoints = 1000000;
@@ -10910,8 +10910,10 @@ MoleculeClearMCube(Molecule *mol, Int nx, Int ny, Int nz, const Vector *origin, 
 	float rgba[8] = { 1, 1, 1, 0.6, 0, 0, 1, 0.6 };
 	if (mc != NULL) {
 		free(mc->dp);
+		free(mc->c[0].fp);
 		free(mc->c[0].cubepoints);
 		free(mc->c[0].triangles);
+		free(mc->c[1].fp);
 		free(mc->c[1].cubepoints);
 		free(mc->c[1].triangles);
 		memmove(rgba, mc->c[0].rgba, sizeof(float) * 4);
@@ -10928,12 +10930,21 @@ MoleculeClearMCube(Molecule *mol, Int nx, Int ny, Int nz, const Vector *origin, 
 		mc->nx = (nx + 2) / 4 * 4 + 1;
 		mc->ny = (ny + 2) / 4 * 4 + 1;
 		mc->nz = (nz + 2) / 4 * 4 + 1;
-		mc->dx = dx / nx;
-		mc->dy = dy / ny;
-		mc->dz = dz / nz;
+		mc->dx = dx / mc->nx;
+		mc->dy = dy / mc->ny;
+		mc->dz = dz / mc->nz;
 		mc->origin = *origin;
 		mc->dp = (Double *)malloc(sizeof(Double) * mc->nx * mc->ny * mc->nz);
 		if (mc->dp == NULL) {
+			free(mc);
+			return NULL;
+		}
+		mc->c[0].fp = (unsigned char *)calloc(sizeof(unsigned char), mc->nx * mc->ny * mc->nz);
+		mc->c[1].fp = (unsigned char *)calloc(sizeof(unsigned char), mc->nx * mc->ny * mc->nz);
+		if (mc->c[0].fp == NULL || mc->c[1].fp == NULL) {
+			free(mc->c[0].fp);
+			free(mc->c[1].fp);
+			free(mc->dp);
 			free(mc);
 			return NULL;
 		}
@@ -11220,7 +11231,8 @@ MoleculeUpdateMCube(Molecule *mol, int idn)
 	Vector p;
 	MCube *mc;
 	MCubePoint *mcp;
-	
+	Atom *ap;
+
 	if (mol == NULL || mol->bset == NULL || mol->mcube == NULL)
 		return -1;
 	if (mol->bset->cns == NULL) {
@@ -11231,8 +11243,11 @@ MoleculeUpdateMCube(Molecule *mol, int idn)
 	mc = mol->mcube;
 	if (idn != mc->idn) {
 		/*  Clear mcube values  */
-		for (ix = 0; ix < mc->nx * mc->ny * mc->nz; ix++)
+		for (ix = 0; ix < mc->nx * mc->ny * mc->nz; ix++) {
 			mc->dp[ix] = DBL_MAX;
+			mc->c[0].fp[ix] = 0;
+			mc->c[1].fp[ix] = 0;
+		}
 		mc->idn = idn;
 	}
 	
@@ -11247,6 +11262,50 @@ MoleculeUpdateMCube(Molecule *mol, int idn)
 	nz = mc->nz;
 	step = 4;
 	
+#if 1
+	/*  Calculate points within certain distances from atoms  */
+	for (nn = 0, ap = mol->atoms; nn < mol->natoms; nn++, ap = ATOM_NEXT(ap)) {
+		dd = RadiusForAtomicNumber(ap->atomicNumber);
+		if (dd == 0.0)
+			dd = 1.0;
+		dd = dd * 1.5 + 1.0;
+		p.x = ap->r.x - dd - mc->origin.x;
+		p.y = ap->r.y - dd - mc->origin.y;
+		p.z = ap->r.z - dd - mc->origin.z;
+		c1 = p.x / mc->dx;
+		c2 = p.y / mc->dy;
+		c3 = p.z / mc->dz;
+		iix = c1 + ceil(dd * 2.0 / mc->dx);
+		iiy = c2 + ceil(dd * 2.0 / mc->dy);
+		iiz = c3 + ceil(dd * 2.0 / mc->dz);
+		if (c1 < 0)
+			c1 = 0;
+		if (c2 < 0)
+			c2 = 0;
+		if (c3 < 0)
+			c3 = 0;
+		if (iix >= nx)
+			iix = nx - 1;
+		if (iiy >= ny)
+			iiy = ny - 1;
+		if (iiz >= nz)
+			iiz = nz - 1;
+		for (ix = c1; ix <= iix; ix++) {
+			p.x = mc->origin.x + mc->dx * ix;
+			for (iy = c2; iy <= iiy; iy++) {
+				p.y = mc->origin.y + mc->dy * iy;
+				for (iz = c3; iz <= iiz; iz++) {
+					n = (ix * ny + iy) * nz + iz;
+					if (mc->dp[n] == DBL_MAX) {
+						p.z = mc->origin.z + mc->dz * iz;
+						mc->dp[n] = sCalcMOPoint(mol, mol->bset, mc->idn, &p, tmp);
+					}
+				}
+			}
+		}
+	}
+	
+#else
 	/*  (i * step, j * step, k * step)  */
 	for (ix = 0; ix < nx; ix += step) {
 		for (iy = 0; iy < ny; iy += step) {
@@ -11322,6 +11381,9 @@ MoleculeUpdateMCube(Molecule *mol, int idn)
 			}
 		}
 	}
+	
+#endif
+
 	free(tmp);
 	
 	/*  Calculate vertex positions and normal vectors  */

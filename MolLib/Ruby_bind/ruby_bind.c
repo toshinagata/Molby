@@ -10058,13 +10058,14 @@ s_Molecule_SetSurfaceAttr(VALUE self, VALUE hval)
     Molecule *mol;
 	VALUE aval;
 	Double d;
-	Int n;
+	Int n, idn;
 	unsigned char changed = 0;
     Data_Get_Struct(self, Molecule, mol);
 	if (mol->mcube == NULL)
 		rb_raise(rb_eMolbyError, "No MO surface is defined yet");
 	if (hval == Qnil)
 		return Qnil;
+	idn = mol->mcube->idn;
 	if ((aval = rb_hash_aref(hval, ID2SYM(rb_intern("thres")))) != Qnil) {
 		d = NUM2DBL(rb_Float(aval));
 		if (d != mol->mcube->thres) {
@@ -10073,16 +10074,15 @@ s_Molecule_SetSurfaceAttr(VALUE self, VALUE hval)
 		}
 	}
 	if ((aval = rb_hash_aref(hval, ID2SYM(rb_intern("mo_index")))) != Qnil) {
-		n = NUM2INT(rb_Integer(aval));
-		if (n <= 0 || n > mol->bset->nmos)
-			rb_raise(rb_eMolbyError, "MO index (%d) is out of range; should be 1..%d", n, mol->bset->nmos);
-		if (n != mol->mcube->idn) {
-			mol->mcube->idn = n;
+		idn = NUM2INT(rb_Integer(aval));
+		if (idn <= 0 || idn > mol->bset->nmos)
+			rb_raise(rb_eMolbyError, "MO index (%d) is out of range; should be 1..%d", idn, mol->bset->nmos);
+		if (idn != mol->mcube->idn) {
 			changed = 1;
 		}
 	}
 	if (changed) {
-		if (MoleculeUpdateMCube(mol, mol->mcube->idn) != 0)
+		if (MoleculeUpdateMCube(mol, idn) != 0)
 			rb_raise(rb_eMolbyError, "Cannot complete MO surface calculation");
 		return self;
 	} else return Qnil;

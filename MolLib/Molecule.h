@@ -261,6 +261,12 @@ typedef struct MCube {
 	Double thres;        /*  Threshold value  */
 	Double *dp;          /*  Value for point (ix, iy, iz) is in dp[(ix*ny+iy)*nz+iz]  */
 	struct {
+		/*  Flags for cube (ix, iy, iz)-(ix+1, iy+1, iz+1). It is an 8-bit */
+		/*  integer representing whether the values at the 8 corners are */
+		/*  larger than the threshold value or not. As special cases,  */
+		/*  the values 0 and 255 (all corners are below or above the threshold) */
+		/*  are represented as 255, and the value 0 is used to indicate "yet undefined". */
+		unsigned char *fp;
 		/*  Cube points and triangles: for positive and negative surfaces  */
 		Int ncubepoints;
 		MCubePoint *cubepoints;
