@@ -232,7 +232,7 @@ typedef struct BasisSet {
 	PrimInfo *priminfos; /*  Primitive information table  */
 	Int ncns;            /*  Number of normalized (cached) contraction coefficient values  */
 	Double *cns;         /*  Normalized (cached) contraction coefficients; (up to 10 values for each primitive)  */
-	Int natoms;          /*  Number of atoms; separately cached here because MO info should be invariant during editing */
+	Int natoms_bs;       /*  Number of atoms; separately cached here because MO info should be invariant during editing */
 	Double *nuccharges;  /*  Nuclear charges (for ECP atoms)  */
 	Int ne_alpha, ne_beta;  /*  Number of alpha/beta electrons  */
 	Int rflag;           /*  0: UHF, 1: RHF, 2:ROHF  */

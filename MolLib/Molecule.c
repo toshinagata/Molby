@@ -2549,7 +2549,7 @@ MoleculeAllocateBasisSetRecord(Molecule *mol, Int rflag, Int ne_alpha, Int ne_be
 		if (bset == NULL)
 			return -2;  /*  Low memory  */
 	}
-	bset->natoms = mol->natoms;
+	bset->natoms_bs = mol->natoms;
 	bset->ne_alpha = ne_alpha;
 	bset->ne_beta = ne_beta;
 	bset->rflag = rflag;
@@ -2730,6 +2730,7 @@ MoleculeLoadGaussianFchkFile(Molecule *mp, const char *fname, char **errbuf)
 				retval = 2;
 				goto cleanup;
 			}
+			bset->natoms_bs = natoms;
 			/*  Allocate atom records (all are empty for now)  */
 			AssignArray(&mp->atoms, &mp->natoms, gSizeOfAtomRecord, natoms - 1, NULL);
 			/*  Also allocate atom position array for MO calculations  */
@@ -10578,11 +10579,9 @@ sCalcMOPoint(Molecule *mp, const BasisSet *bset, Int index, const Vector *vp, Do
 	Double val, tval, *cnp, *tmpp, *mobasep, *mop;
 	Int i, j;
 	/*  Cache dr and |dr|^2  */
-	for (i = 0; i < bset->natoms; i++) {
+	for (i = 0; i < mp->natoms; i++) {
 		Vector r;
-		if (i < mp->natoms)
-			r = ATOM_AT_INDEX(mp->atoms, i)->r;
-		else r.x = r.y = r.z = 0.0;  /*  This is strange, but may happen  */
+		r = ATOM_AT_INDEX(mp->atoms, i)->r;
 		tmp[i * 4] = r.x = (vp->x - r.x) * kAngstrom2Bohr;
 		tmp[i * 4 + 1] = r.y = (vp->y - r.y) * kAngstrom2Bohr;
 		tmp[i * 4 + 2] = r.z = (vp->z - r.z) * kAngstrom2Bohr;
@@ -10594,6 +10593,8 @@ sCalcMOPoint(Molecule *mp, const BasisSet *bset, Int index, const Vector *vp, Do
 	for (i = 0, sp = bset->shells; i < bset->nshells; i++, sp++) {
 		pp = bset->priminfos + sp->p_idx;
 		cnp = bset->cns + sp->cn_idx;
+		if (sp->a_idx >= mp->natoms)
+			return 0.0; /*  This may happen when molecule is edited after setting up MO info  */
 		tmpp = tmp + sp->a_idx * 4;
 		mop = mobasep + sp->m_idx;
 		switch (sp->sym) {
@@ -10702,6 +10703,9 @@ MoleculeCalcMO(Molecule *mp, Int mono, const Vector *op, const Vector *dxp, cons
 		if (sSetupGaussianCoefficients(mp->bset) != 0)
 			return -1;
 	}
+	if (mp->bset->natoms_bs > mp->natoms)
+		return -3;  /*  Number of atoms is smaller than expected (internal error)  */
+	
 	cp = (Cube *)calloc(sizeof(Cube), 1);
 	if (cp == NULL) {
 		return -1;
@@ -10721,7 +10725,7 @@ MoleculeCalcMO(Molecule *mp, Int mono, const Vector *op, const Vector *dxp, cons
 	cp->nz = nz;
 	
 	/*  TODO: use multithread  */
-	tmp = (Double *)calloc(sizeof(Double), mp->bset->natoms * 4);
+	tmp = (Double *)calloc(sizeof(Double), mp->bset->natoms_bs * 4);
 	if (tmp == NULL) {
 		free(cp->dp);
 		free(cp);
@@ -10862,7 +10866,7 @@ MoleculeOutputCube(Molecule *mp, Int index, const char *fname, const char *comme
 	fprintf(fp, "%s MO=%d\n", comment, cp->idn);
 	fprintf(fp, " MO coefficients\n");
 	
-	fprintf(fp, "%5d %11.6f %11.6f %11.6f\n", -(mp->bset->natoms),
+	fprintf(fp, "%5d %11.6f %11.6f %11.6f\n", -(mp->bset->natoms_bs),
 			cp->origin.x * kAngstrom2Bohr, cp->origin.y * kAngstrom2Bohr, cp->origin.z * kAngstrom2Bohr);
 	fprintf(fp, "%5d %11.6f %11.6f %11.6f\n", cp->nx,
 			cp->dx.x * kAngstrom2Bohr, cp->dx.y * kAngstrom2Bohr, cp->dx.z * kAngstrom2Bohr);
@@ -11239,6 +11243,8 @@ MoleculeUpdateMCube(Molecule *mol, int idn)
 		if (sSetupGaussianCoefficients(mol->bset) != 0)
 			return -1;
 	}
+	if (mol->bset->natoms_bs > mol->natoms)
+		return -1;  /*  Number of atoms is smaller than expected  */
 
 	mc = mol->mcube;
 	if (idn != mc->idn) {
@@ -11252,7 +11258,7 @@ MoleculeUpdateMCube(Molecule *mol, int idn)
 	}
 	
 	/*  Temporary work area  */
-	tmp = (Double *)calloc(sizeof(Double), mol->bset->natoms * 4);
+	tmp = (Double *)calloc(sizeof(Double), mol->bset->natoms_bs * 4);
 	if (tmp == NULL)
 		return -2;
 	

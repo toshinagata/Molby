@@ -1056,6 +1056,7 @@ class Molecule
 	  }
 	  return
 	end
+
     mos = selected_MO
 	if mos == nil || mos.length == 0
       Dialog.run {
@@ -1066,7 +1067,7 @@ class Molecule
 	end
 	hash = Dialog.run {
 	  layout(1,
-	    item(:text, :title=>"Please specify cube dimensions (in bohr unit):"),
+	    item(:text, :title=>"Please specify cube dimensions (in angstrom units):"),
 	    layout(4,
 		  item(:text, :title=>"Origin"),
 		  item(:textfield, :width=>100, :height=>20, :tag=>"originx", :value=>sprintf("%.6f", grid[0].x)),
