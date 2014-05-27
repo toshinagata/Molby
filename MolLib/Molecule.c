@@ -539,6 +539,7 @@ MoleculeClear(Molecule *mp)
 	}
 	if (mp->mcube != NULL) {
 		free(mp->mcube->dp);
+		free(mp->mcube->radii);
 		free(mp->mcube->c[0].cubepoints);
 		free(mp->mcube->c[0].triangles);
 		free(mp->mcube->c[1].cubepoints);
@@ -10914,6 +10915,7 @@ MoleculeClearMCube(Molecule *mol, Int nx, Int ny, Int nz, const Vector *origin, 
 	float rgba[8] = { 1, 1, 1, 0.6, 0, 0, 1, 0.6 };
 	if (mc != NULL) {
 		free(mc->dp);
+		free(mc->radii);
 		free(mc->c[0].fp);
 		free(mc->c[0].cubepoints);
 		free(mc->c[0].triangles);
@@ -11222,7 +11224,9 @@ static int sMarchingCubeTable[256][16] = {
 	{-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1}
 };
 
-
+/*  Recalculate the MCube  */
+/*  If idn < 0, then the current grid settings and values are unchanged, and */
+/*  only the marching cubes are regenerated.  */
 int
 MoleculeUpdateMCube(Molecule *mol, int idn)
 {
@@ -11247,7 +11251,10 @@ MoleculeUpdateMCube(Molecule *mol, int idn)
 		return -1;  /*  Number of atoms is smaller than expected  */
 
 	mc = mol->mcube;
-	if (idn != mc->idn) {
+	if (idn > 0) {
+		ShellInfo *sp;
+		Double *mobasep, *mop, mopmax;
+		Double xmin, xmax, ymin, ymax, zmin, zmax;
 		/*  Clear mcube values  */
 		for (ix = 0; ix < mc->nx * mc->ny * mc->nz; ix++) {
 			mc->dp[ix] = DBL_MAX;
@@ -11255,6 +11262,53 @@ MoleculeUpdateMCube(Molecule *mol, int idn)
 			mc->c[1].fp[ix] = 0;
 		}
 		mc->idn = idn;
+		/*  Estimate the orbital sizes  */
+		mc->radii = (Double *)realloc(mc->radii, sizeof(Double) * mol->natoms);
+		if (mc->radii == NULL)
+			return -2;  /*  Out of memory  */
+		mc->nradii = mol->natoms;
+		memset(mc->radii, 0, sizeof(Double) * mc->nradii);
+		mobasep = mol->bset->mo + (mc->idn - 1) * mol->bset->ncomps;
+		mopmax = 0.0;
+		for (ix = 0, sp = mol->bset->shells; ix < mol->bset->nshells; ix++, sp++) {
+			if (sp->a_idx >= mol->natoms)
+				continue;  /*  This may happen when molecule is edited after setting up MO info  */
+			mop = mobasep + sp->m_idx;
+			for (iy = 0; iy < sp->ncomp; iy++) {
+				dd = fabs(mop[iy]);
+				if (dd > mc->radii[sp->a_idx])
+					mc->radii[sp->a_idx] = dd;
+				if (dd > mopmax)
+					mopmax = dd;
+			}
+		}
+		xmin = ymin = zmin = 1e10;
+		xmax = ymax = zmax = -1e10;
+		for (ix = 0, ap = mol->atoms; ix < mol->natoms; ix++, ap = ATOM_NEXT(ap)) {
+			dd = RadiusForAtomicNumber(ap->atomicNumber);
+			dd = (dd * 2.0 + 1.0) * (mc->radii[ix] / mopmax) * (mc->expand > 0.0 ? mc->expand : 1.0);
+			mc->radii[ix] = dd;
+			p = ap->r;
+			dd += 0.1;
+			if (p.x - dd < xmin)
+				xmin = p.x - dd;
+			if (p.y - dd < ymin)
+				ymin = p.y - dd;
+			if (p.z - dd < zmin)
+				zmin = p.z - dd;
+			if (p.x + dd > xmax)
+				xmax = p.x + dd;
+			if (p.y + dd > ymax)
+				ymax = p.y + dd;
+			if (p.z + dd > zmax)
+				zmax = p.z + dd;
+		}
+		mc->origin.x = xmin;
+		mc->origin.y = ymin;
+		mc->origin.z = zmin;
+		mc->dx = (xmax - xmin) / mc->nx;
+		mc->dy = (ymax - ymin) / mc->ny;
+		mc->dz = (zmax - zmin) / mc->nz;
 	}
 	
 	/*  Temporary work area  */
@@ -11271,10 +11325,11 @@ MoleculeUpdateMCube(Molecule *mol, int idn)
 #if 1
 	/*  Calculate points within certain distances from atoms  */
 	for (nn = 0, ap = mol->atoms; nn < mol->natoms; nn++, ap = ATOM_NEXT(ap)) {
-		dd = RadiusForAtomicNumber(ap->atomicNumber);
+	/*	dd = RadiusForAtomicNumber(ap->atomicNumber);
 		if (dd == 0.0)
 			dd = 1.0;
-		dd = dd * 1.5 + 1.0;
+		dd = dd * 1.5 + 1.0; */
+		dd = mc->radii[nn];
 		p.x = ap->r.x - dd - mc->origin.x;
 		p.y = ap->r.y - dd - mc->origin.y;
 		p.z = ap->r.z - dd - mc->origin.z;

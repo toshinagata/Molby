@@ -10048,54 +10048,14 @@ s_Molecule_Cubegen(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     set_surface_attr(attr = nil)
+ *     create_surface(mo, attr = nil)
  *
- *  Set the drawing attributes of the surface. Attr is a hash containing the attributes.
- */
-static VALUE
-s_Molecule_SetSurfaceAttr(VALUE self, VALUE hval)
-{
-    Molecule *mol;
-	VALUE aval;
-	Double d;
-	Int n, idn;
-	unsigned char changed = 0;
-    Data_Get_Struct(self, Molecule, mol);
-	if (mol->mcube == NULL)
-		rb_raise(rb_eMolbyError, "No MO surface is defined yet");
-	if (hval == Qnil)
-		return Qnil;
-	idn = mol->mcube->idn;
-	if ((aval = rb_hash_aref(hval, ID2SYM(rb_intern("thres")))) != Qnil) {
-		d = NUM2DBL(rb_Float(aval));
-		if (d != mol->mcube->thres) {
-			mol->mcube->thres = d;
-			changed = 1;
-		}
-	}
-	if ((aval = rb_hash_aref(hval, ID2SYM(rb_intern("mo_index")))) != Qnil) {
-		idn = NUM2INT(rb_Integer(aval));
-		if (idn <= 0 || idn > mol->bset->nmos)
-			rb_raise(rb_eMolbyError, "MO index (%d) is out of range; should be 1..%d", idn, mol->bset->nmos);
-		if (idn != mol->mcube->idn) {
-			changed = 1;
-		}
-	}
-	if (changed) {
-		if (MoleculeUpdateMCube(mol, idn) != 0)
-			rb_raise(rb_eMolbyError, "Cannot complete MO surface calculation");
-		return self;
-	} else return Qnil;
-}
-
-/*
- *  call-seq:
- *     create_surface(mo, npoints = 80*80*80, scale = 1.0, attr = nil)
- *
- *  Create a MO surface. The argument mo is the MO index (1-based).
- *  Npoints is the approximate number of grid points, scale is
- *  the scale factor to expand/shrink the limit of the grid box relative to the default size.
- *  Attr is a hash to define the drawing attributes of the surface.
+ *  Create a MO surface. The argument mo is the MO index (1-based); if mo is -1,
+ *  then the attributes of the current surface are modified.
+ *  Attributes:
+ *    :npoints : the approximate number of grid points
+ *    :expand  : the scale factor to expand/shrink the display box size for each atom,
+ *    :thres   : the threshold for the isovalue surface
  *  If the molecule does not contain MO information, raises exception.
  */
 static VALUE
@@ -10104,39 +10064,64 @@ s_Molecule_CreateSurface(int argc, VALUE *argv, VALUE self)
     Molecule *mol;
 	Vector o, dx, dy, dz;
 	Int nmo, nx, ny, nz;
-	VALUE nval, pval, sval, aval;
-	Int npoints = 80 * 80 * 80;
-	Double sc = 1.0;
-	Double thres = 0.05;
+	Int need_recalc = 0;
+	VALUE nval, hval, aval;
+	Int npoints;
+	Double expand;
+	Double thres;
     Data_Get_Struct(self, Molecule, mol);
-	rb_scan_args(argc, argv, "13", &nval, &pval, &sval, &aval);
+	rb_scan_args(argc, argv, "11", &nval, &hval);
 	nmo = NUM2INT(rb_Integer(nval));
 	if (mol->bset == NULL)
 		rb_raise(rb_eMolbyError, "No MO information is given");
-	if (nmo <= 0 || nmo > mol->bset->nmos)
+	if ((nmo <= 0 && nmo != -1) || nmo > mol->bset->nmos)
 		rb_raise(rb_eMolbyError, "MO index (%d) is out of range; should be 1..%d", nmo, mol->bset->nmos);
-	if (pval != Qnil)
-		npoints = NUM2INT(rb_Integer(pval));
-	if (MoleculeGetDefaultMOGrid(mol, npoints, &o, &dx, &dy, &dz, &nx, &ny, &nz) != 0)
-		rb_raise(rb_eMolbyError, "Cannot get default grid size (internal error?)");
-	if (sval != Qnil) {
-		sc = NUM2DBL(rb_Float(sval));
-		if (sc <= 0.0)
-			rb_raise(rb_eMolbyError, "The scale factor (%g) should be positive number", sc);
-		o.x = o.x + (1.0 - sc) * dx.x * nx * 0.5;
-		o.y = o.y + (1.0 - sc) * dy.y * ny * 0.5;
-		o.z = o.z + (1.0 - sc) * dz.z * nz * 0.5;
+	if (hval != Qnil && (aval = rb_hash_aref(hval, ID2SYM(rb_intern("npoints")))) != Qnil) {
+		npoints = NUM2INT(rb_Integer(aval));
+		need_recalc = 1;
+	} else if (mol->mcube != NULL) {
+		npoints = mol->mcube->nx * mol->mcube->ny * mol->mcube->nz;
+	} else npoints = 80 * 80 * 80;
+	if (hval != Qnil && (aval = rb_hash_aref(hval, ID2SYM(rb_intern("expand")))) != Qnil) {
+		expand = NUM2DBL(rb_Float(aval));
+	} else if (mol->mcube != NULL) {
+		expand = mol->mcube->expand;
+	} else expand = 1.0;
+	if (hval != Qnil && (aval = rb_hash_aref(hval, ID2SYM(rb_intern("thres")))) != Qnil) {
+		thres = NUM2DBL(rb_Float(aval));
+	} else if (mol->mcube != NULL) {
+		thres = mol->mcube->thres;
+	} else thres = 0.05;
+	if (mol->mcube == NULL || npoints != mol->mcube->nx * mol->mcube->ny * mol->mcube->nz) {
+		if (MoleculeGetDefaultMOGrid(mol, npoints, &o, &dx, &dy, &dz, &nx, &ny, &nz) != 0)
+			rb_raise(rb_eMolbyError, "Cannot get default grid size (internal error?)");
+		if (MoleculeClearMCube(mol, nx, ny, nz, &o, dx.x, dy.y, dz.z) == NULL)
+			rb_raise(rb_eMolbyError, "Cannot allocate memory for MO surface calculation");
 	}
-	if (mol->mcube != NULL)
-		thres = mol->mcube->thres;  /*  Already defined  */
-	if (MoleculeClearMCube(mol, nx, ny, nz, &o, dx.x * sc, dy.y * sc, dz.z * sc) == NULL)
-		rb_raise(rb_eMolbyError, "Cannot allocate memory for MO surface calculation");
+	if (mol->mcube->expand != expand)
+		need_recalc = 1;
 	mol->mcube->thres = thres;
-	if (s_Molecule_SetSurfaceAttr(self, aval) == Qnil) {
-		if (MoleculeUpdateMCube(mol, nmo) != 0)
-			rb_raise(rb_eMolbyError, "Cannot complete MO surface calculation");
-	}
+	mol->mcube->expand = expand;
+	if (nmo < 0 && need_recalc)
+		nmo = mol->mcube->idn;  /*  Force recalculation  */
+	if (MoleculeUpdateMCube(mol, nmo) != 0)
+		rb_raise(rb_eMolbyError, "Cannot complete MO surface calculation");
 	return self;
+}
+
+/*
+ *  call-seq:
+ *     set_surface_attr(attr = nil)
+ *
+ *  Set the drawing attributes of the surface. Attr is a hash containing the attributes.
+ */
+static VALUE
+s_Molecule_SetSurfaceAttr(VALUE self, VALUE hval)
+{
+	VALUE args[2];
+	args[0] = INT2FIX(-1);
+	args[1] = hval;
+	return s_Molecule_CreateSurface(2, args, self);
 }
 
 /*

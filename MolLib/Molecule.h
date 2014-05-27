@@ -260,6 +260,9 @@ typedef struct MCube {
 	Int nx, ny, nz;      /*  Cube dimension (must be multiples of 8)  */
 	Double thres;        /*  Threshold value  */
 	Double *dp;          /*  Value for point (ix, iy, iz) is in dp[(ix*ny+iy)*nz+iz]  */
+	Int nradii;
+	Double *radii;       /*  Estimated radius (with margin) for each atom  */
+	Double expand;       /*  Expand the estimated radius by this value (default: 1.0)  */
 	struct {
 		/*  Flags for cube (ix, iy, iz)-(ix+1, iy+1, iz+1). It is an 8-bit */
 		/*  integer representing whether the values at the 8 corners are */
