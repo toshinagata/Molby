@@ -131,9 +131,10 @@ typedef struct ElementPar {
 	Int    com, src;   /*  Index to the comment array  */
 	Int    number;   /*  Atomic number  */
 	char   name[4];
-	Double radius;
-	Double r, g, b;  /*  Color: [0.0, 1.0] for each component  */
-	Double weight;
+	float  radius;   /*  Covalent radius  */
+	float  weight;
+	float  vdw_radius;  /*  van der Waals radius  */
+	unsigned short red, green, blue;  /*  Color: 0..65535 for each component  */
 	char   fullname[16];
 } ElementPar;
 	

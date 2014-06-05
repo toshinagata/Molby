@@ -88,7 +88,7 @@ static VALUE
 	s_ReqSym, s_EpsSym,
 	/* s_A14Sym, s_B14Sym, */
 	s_Req14Sym, s_Eps14Sym,
-	s_CutoffSym, s_RadiusSym, s_ColorSym, s_FullNameSym,
+	s_CutoffSym, s_RadiusSym, s_ColorSym, s_FullNameSym, s_VdwRadiusSym,
 	s_CommentSym, s_SourceSym;
 
 /*
@@ -1544,7 +1544,7 @@ static VALUE s_ParameterRef_GetCutoff(VALUE self) {
  *  call-seq:
  *     radius -> Float
  *
- *  Get the atomic radius for the atom display parameter.
+ *  Get the atomic (covalent) radius for the element parameter.
  */
 static VALUE s_ParameterRef_GetRadius(VALUE self) {
 	UnionPar *up;
@@ -1557,16 +1557,31 @@ static VALUE s_ParameterRef_GetRadius(VALUE self) {
 
 /*
  *  call-seq:
+ *     vdw_radius -> Float
+ *
+ *  Get the van der Waals radius for the element parameter. (0 if not given)
+ */
+static VALUE s_ParameterRef_GetVdwRadius(VALUE self) {
+	UnionPar *up;
+	Int tp;
+	up = s_UnionParFromValue(self, &tp, 0);
+	if (tp == kElementParType)
+		return rb_float_new(up->atom.vdw_radius);
+	else rb_raise(rb_eMolbyError, "invalid member vdw_radius");
+}
+
+/*
+ *  call-seq:
  *     color -> [Float, Float, Float]
  *
- *  Get the rgb color for the atom display parameter.
+ *  Get the rgb color for the element parameter.
  */
 static VALUE s_ParameterRef_GetColor(VALUE self) {
 	UnionPar *up;
 	Int tp;
 	up = s_UnionParFromValue(self, &tp, 0);
 	if (tp == kElementParType)
-		return rb_ary_new3(3, rb_float_new(up->atom.r), rb_float_new(up->atom.g), rb_float_new(up->atom.b));
+		return rb_ary_new3(3, rb_float_new(up->atom.red / 65535.0), rb_float_new(up->atom.green / 65535.0), rb_float_new(up->atom.blue / 65535.0));
 	else rb_raise(rb_eMolbyError, "invalid member color");
 }
 
@@ -1574,7 +1589,7 @@ static VALUE s_ParameterRef_GetColor(VALUE self) {
  *  call-seq:
  *     atomic_number -> Integer
  *
- *  Get the atomic number for the vdw or atom parameter.
+ *  Get the atomic number for the vdw or element parameter.
  */
 static VALUE s_ParameterRef_GetAtomicNumber(VALUE self) {
 	UnionPar *up;
@@ -1591,7 +1606,7 @@ static VALUE s_ParameterRef_GetAtomicNumber(VALUE self) {
  *  call-seq:
  *     name -> String
  *
- *  Get the name for the atom display parameter.
+ *  Get the name for the element parameter.
  */
 static VALUE s_ParameterRef_GetName(VALUE self) {
 	UnionPar *up;
@@ -1609,7 +1624,7 @@ static VALUE s_ParameterRef_GetName(VALUE self) {
  *  call-seq:
  *     weight -> Float
  *
- *  Get the atomic weight for the atom display parameter.
+ *  Get the atomic weight for the element parameter.
  */
 static VALUE s_ParameterRef_GetWeight(VALUE self) {
 	UnionPar *up;
@@ -1626,7 +1641,7 @@ static VALUE s_ParameterRef_GetWeight(VALUE self) {
  *  call-seq:
  *     fullname -> String
  *
- *  Get the full name for the atom display parameter.
+ *  Get the full name for the element parameter.
  */
 static VALUE s_ParameterRef_GetFullName(VALUE self) {
 	UnionPar *up;
@@ -2133,6 +2148,21 @@ static VALUE s_ParameterRef_SetRadius(VALUE self, VALUE val) {
 	return val;
 }
 
+static VALUE s_ParameterRef_SetVdwRadius(VALUE self, VALUE val) {
+	UnionPar *up;
+	Int tp, oldsrc;
+	VALUE oldval;
+	up = s_UnionParFromValue(self, &tp, 1);
+	oldval = s_ParameterRef_GetVdwRadius(self);
+	oldsrc = up->bond.src;
+	val = rb_Float(val);
+	if (tp == kElementParType) {
+		up->atom.vdw_radius = NUM2DBL(val);
+	} else rb_raise(rb_eMolbyError, "invalid member vdw_radius");
+	s_RegisterUndoForParameterAttrChange(self, s_VdwRadiusSym, val, oldval, oldsrc);	
+	return val;
+}
+
 static VALUE s_ParameterRef_SetColor(VALUE self, VALUE val) {
 	UnionPar *up;
 	Int tp, oldsrc;
@@ -2145,9 +2175,9 @@ static VALUE s_ParameterRef_SetColor(VALUE self, VALUE val) {
 		rb_raise(rb_eMolbyError, "value should be an array of three floats (r, g, b)");
 	valp = RARRAY_PTR(val);
 	if (tp == kElementParType) {
-		up->atom.r = NUM2DBL(rb_Float(valp[0]));
-		up->atom.g = NUM2DBL(rb_Float(valp[1]));
-		up->atom.b = NUM2DBL(rb_Float(valp[2]));
+		up->atom.red = (unsigned short)(NUM2DBL(rb_Float(valp[0])) * 65535.0);
+		up->atom.green = (unsigned short)(NUM2DBL(rb_Float(valp[1])) * 65535.0);
+		up->atom.blue = (unsigned short)(NUM2DBL(rb_Float(valp[2])) * 65535.0);
 	} else rb_raise(rb_eMolbyError, "invalid member color");
 	s_RegisterUndoForParameterAttrChange(self, s_ColorSym, val, oldval, oldsrc);	
 	return val;
@@ -2278,6 +2308,7 @@ static struct s_ParameterAttrDef {
 	{"eps14",        &s_Eps14Sym,        0, s_ParameterRef_GetEps14,        s_ParameterRef_SetEps14},
 	{"cutoff",       &s_CutoffSym,       0, s_ParameterRef_GetCutoff,       s_ParameterRef_SetCutoff},
 	{"radius",       &s_RadiusSym,       0, s_ParameterRef_GetRadius,       s_ParameterRef_SetRadius},
+	{"vdw_radius",   &s_VdwRadiusSym,    0, s_ParameterRef_GetVdwRadius,    s_ParameterRef_SetVdwRadius},
 	{"color",        &s_ColorSym,        0, s_ParameterRef_GetColor,        s_ParameterRef_SetColor},
 	{"atomic_number",&s_AtomicNumberSym, 0, s_ParameterRef_GetAtomicNumber, s_ParameterRef_SetAtomicNumber},
 	{"name",         &s_NameSym,         0, s_ParameterRef_GetName,         s_ParameterRef_SetName},
@@ -2343,7 +2374,7 @@ s_ParameterRef_Keys(VALUE self)
 		case kVdwCutoffParType:
 			return rb_ary_new3(6, s_IndexSym, s_ParTypeSym, s_AtomTypesSym, s_CutoffSym, s_CommentSym, s_SourceSym);
 		case kElementParType:
-			return rb_ary_new3(10, s_IndexSym, s_ParTypeSym, s_AtomicNumberSym, s_NameSym, s_FullNameSym, s_RadiusSym, s_ColorSym, s_WeightSym, s_CommentSym, s_SourceSym);
+			return rb_ary_new3(10, s_IndexSym, s_ParTypeSym, s_AtomicNumberSym, s_NameSym, s_FullNameSym, s_RadiusSym, s_ColorSym, s_WeightSym, s_VdwRadiusSym, s_CommentSym, s_SourceSym);
 		default:
 			rb_raise(rb_eMolbyError, "internal error: invalid parameter type");
 	}
@@ -2411,7 +2442,7 @@ s_ParameterRef_ToString(VALUE self)
 			snprintf(buf, sizeof buf, "vdwcutoff %4.6s %4.6s %8.4f", AtomTypeDecodeToString(up->vdwcutoff.type1, types[0]), AtomTypeDecodeToString(up->vdwcutoff.type2, types[1]), up->vdwcutoff.cutoff);
 			break;
 		case kElementParType:
-			snprintf(buf, sizeof buf, "element %2.2s %3d %6.3f %6.3f %6.3f %6.3f %8.4f %s", up->atom.name, up->atom.number, up->atom.radius, up->atom.r, up->atom.g, up->atom.b, up->atom.weight, up->atom.fullname);
+			snprintf(buf, sizeof buf, "element %2.2s %3d %6.3f %6.3f %6.3f %6.3f %8.4f %s %6.3f", up->atom.name, up->atom.number, up->atom.radius, up->atom.red / 65535.0, up->atom.green / 65535.0, up->atom.blue / 65535.0, up->atom.weight, up->atom.fullname, up->atom.vdw_radius);
 			break;
 	}
 	return rb_str_new2(buf);

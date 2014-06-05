@@ -1876,7 +1876,7 @@ int
 ElementParameterInitialize(const char *fname, char **outWarningMessage)
 {
 	char buf[1024], name[6], fullname[16];
-	double val[6];
+	double val[7];
 	FILE *fp = NULL;
 	int i, lineNumber, retval = 0;
 	char *wbuf = NULL;
@@ -1892,11 +1892,13 @@ ElementParameterInitialize(const char *fname, char **outWarningMessage)
 		if (strncmp(buf, "element ", 8) != 0)
 			continue;  /*  Skip non-relevant lines  */
 		fullname[0] = 0;
-		if (sscanf(buf + 8, " %4s %lf %lf %lf %lf %lf %lf %15s", name, &val[0], &val[1], &val[2], &val[3], &val[4], &val[5], fullname) < 7) {
+		if ((i = sscanf(buf + 8, " %4s %lf %lf %lf %lf %lf %lf %15s %lf", name, &val[0], &val[1], &val[2], &val[3], &val[4], &val[5], fullname, &val[6])) < 8) {
 			asprintf(&wbuf, "%s:%d: missing parameter in ELEMENT record", fname, lineNumber);
 			retval = 1;
 			goto exit;
 		}
+		if (i == 8)
+			val[6] = 0.0;
 		i = (int)val[0];
 		if (i < 0 || i >= 200) {
 			asprintf(&wbuf, "%s:%d: The atomic number (%d) in ELEMENT record is out of range", fname, lineNumber, i);
@@ -1907,12 +1909,13 @@ ElementParameterInitialize(const char *fname, char **outWarningMessage)
 		memmove(ep->name, name, 4);
 		ep->number = i;
 		ep->radius = val[1];
-		ep->r = val[2];
-		ep->g = val[3];
-		ep->b = val[4];
+		ep->red = (unsigned short)(val[2] * 65535.0);
+		ep->green = (unsigned short)(val[3] * 65535.0);
+		ep->blue = (unsigned short)(val[4] * 65535.0);
 		ep->weight = val[5];
 		fullname[15] = 0;
 		memmove(ep->fullname, fullname, 16);
+		ep->vdw_radius = val[6];
 	}
 exit:
 	if (fp != NULL)

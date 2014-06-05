@@ -2171,7 +2171,7 @@ MoleculeLoadTepFile(Molecule *mp, const char *fname, char **errbuf)
 		}
 	}
 	fclose(fp);
-	MoleculeGuessBonds(mp, 1.2, &nbonds, &bonds);
+	MoleculeGuessBonds(mp, 0.0, &nbonds, &bonds);
 	if (nbonds > 0) {
 		MoleculeAddBonds(mp, nbonds, bonds, NULL, 1);
 		free(bonds);
@@ -2369,7 +2369,7 @@ MoleculeLoadShelxFile(Molecule *mp, const char *fname, char **errbuf)
 		sMoleculeGenerateSymopWithTransform(mp, tr_inv, 0);
 	}
 	
-	MoleculeGuessBonds(mp, 1.2, &nbonds, &bonds);
+	MoleculeGuessBonds(mp, 0.0, &nbonds, &bonds);
 	if (nbonds > 0) {
 		MoleculeAddBonds(mp, nbonds, bonds, NULL, 1);
 		free(bonds);
@@ -3319,7 +3319,7 @@ exit_loop:
 	if (newmol && mol->nbonds == 0) {
 		/*  Guess bonds  */
 		Int nbonds, *bonds;
-		MoleculeGuessBonds(mol, 1.2, &nbonds, &bonds);
+		MoleculeGuessBonds(mol, 0.0, &nbonds, &bonds);
 		if (nbonds > 0) {
 			MolActionCreateAndPerform(mol, gMolActionAddBonds, nbonds * 2, bonds, NULL);
 			free(bonds);
@@ -5704,6 +5704,8 @@ MoleculeGuessBonds(Molecule *mp, Double limit, Int *outNbonds, Int **outBonds)
 	Atom *ap;
 	nbonds = 0;
 	bonds = NULL;
+	if (limit == 0.0)
+		limit = 1.2;
 	for (i = 1, ap = ATOM_NEXT(mp->atoms); i < mp->natoms; i++, ap = ATOM_NEXT(ap)) {
 		Vector r = ap->r;
 		Int an = ap->atomicNumber;

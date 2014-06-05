@@ -30,6 +30,9 @@
 
 #define biso2radius(r) ((r) > 0.5 ? sqrt((r) / 78.9568352087147) : 0.08)
 
+/*  pp is a pointer to Parameter record  */
+#define VDW_RADIUS(pp) (pp->vdw_radius == 0.0 ? pp->radius * 0.51 + 1.20 : pp->vdw_radius)
+
 /*  Invalid bond/angle/torsion value, used in internal cache  */
 const Double kInvalidValue = -10000000.0;
 
@@ -402,7 +405,7 @@ MainView_findObjectAtPoint(MainView *mview, const float *mousePos, int *outIndex
 				ep = &(gElementParameters[ap->atomicNumber]);
 				if (ep == NULL)
 					continue;
-				r = ep->radius * 2 * mview->atomRadius;
+				r = VDW_RADIUS(ep) * mview->atomRadius;
 			}
 			pa1 = pa;
 			pq1 = pq;
@@ -541,7 +544,7 @@ MainView_screenCenterPointOfAtom(MainView *mview, int index, float *outScreenPos
 		}
 	} else {
 		dp = &(gElementParameters[ap->atomicNumber]);
-		rad = dp->radius * 2 * mview->atomRadius;
+		rad = VDW_RADIUS(dp) * mview->atomRadius;
 		w = rad / VecLength(pv) * 1.1;
 		VecScaleSelf(pv, w);
 	}
@@ -984,6 +987,7 @@ drawAtom(MainView *mview, int i1, int selected, const Vector *dragOffset, const 
 	Vector r1;
 	GLfloat p[6];
 	double pp[3];
+	double rad;
 	char label[16];
 	GLfloat rgba[4];
 	Transform *trp = NULL;
@@ -1023,7 +1027,10 @@ drawAtom(MainView *mview, int i1, int selected, const Vector *dragOffset, const 
 	if (selected) {
 		memcpy(rgba, sRedColor, sizeof(rgba));
 	} else {
-		rgba[0] = dp->r; rgba[1] = dp->g; rgba[2] = dp->b; rgba[3] = 1.0;
+		rgba[0] = dp->red / 65535.0;
+		rgba[1] = dp->green / 65535.0;
+		rgba[2] = dp->blue / 65535.0;
+		rgba[3] = 1.0;
 	}
 	if (expanded || periodicOffset != NULL) {
 		rgba[0] *= 0.5;
@@ -1039,6 +1046,7 @@ drawAtom(MainView *mview, int i1, int selected, const Vector *dragOffset, const 
 		p[1] += dragOffset->y;
 		p[2] += dragOffset->z;
 	}
+	rad = VDW_RADIUS(dp) * mview->atomRadius;
 	if (mview->showEllipsoids) {
 		if (ap != NULL && ap->aniso != NULL) {
 			GLfloat elip[9];
@@ -1056,17 +1064,15 @@ drawAtom(MainView *mview, int i1, int selected, const Vector *dragOffset, const 
 			}
 			drawEllipsoid(p, elip, elip+3, elip+6, mview->atomResolution * 3 / 2); /* Use higher resolution than spheres */
 		} else {
-			Double rad;
 			if (ap != NULL) {
+				//  Recalculate radius from temperature factor
 				rad = biso2radius(ap->tempFactor);
 				rad *= mview->probabilityScale;
-			} else {
-				rad = dp->radius * 2 * mview->atomRadius;
 			}
 			drawSphere(p, rad, mview->atomResolution);
 		}
 	} else {
-		drawSphere(p, dp->radius * 2 * mview->atomRadius, mview->atomResolution);
+		drawSphere(p, rad, mview->atomResolution);
 	}
 	pp[0] = p[0];
 	pp[1] = p[1];
@@ -1144,7 +1150,10 @@ drawBond(MainView *mview, int i1, int i2, int selected, int selected2, int draft
 	if (selected && selected2) {
 		memcpy(rgba, sRedColor, sizeof(rgba));
 	} else {
-		rgba[0] = dp->r; rgba[1] = dp->g; rgba[2] = dp->b; rgba[3] = 1.0;
+		rgba[0] = dp->red / 65535.0;
+		rgba[1] = dp->green / 65535.0;
+		rgba[2] = dp->blue / 65535.0;
+		rgba[3] = 1.0;
 	}
 	rgba[3] *= alpha_mul;
 	if (expanded[0] || periodicOffset != NULL) {
@@ -1176,7 +1185,10 @@ drawBond(MainView *mview, int i1, int i2, int selected, int selected2, int draft
 	if (dp == NULL)
 		return;
 	if (!selected || !selected2) {
-		rgba[0] = dp->r; rgba[1] = dp->g; rgba[2] = dp->b; rgba[3] = 1.0;
+		rgba[0] = dp->red / 65535.0;
+		rgba[1] = dp->green / 65535.0;
+		rgba[2] = dp->blue / 65535.0;
+		rgba[3] = 1.0;
 	}
 	rgba[3] *= alpha_mul;
 	if (expanded[1] || periodicOffset != NULL) {
