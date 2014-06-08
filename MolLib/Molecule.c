@@ -11702,6 +11702,8 @@ MoleculeUpdateMCube(Molecule *mol, int idn)
 		for (n = 0, mcp = mc->c[sn].cubepoints; mcp->key >= 0; mcp++) {
 			if (mcp->grad[0] != 0.0 || mcp->grad[1] != 0.0 || mcp->grad[2] != 0.0) {
 				dd = 1.0 / sqrt(mcp->grad[0] * mcp->grad[0] + mcp->grad[1] * mcp->grad[1] + mcp->grad[2] * mcp->grad[2]);
+				if (mc->thres < 0.0)
+					dd = -dd;
 				mcp->grad[0] *= dd;
 				mcp->grad[1] *= dd;
 				mcp->grad[2] *= dd;
