@@ -285,6 +285,12 @@ typedef struct Elpot {
 	Double esp;
 } Elpot;
 
+/*  Properties (total energy etc.; specific for each frame)  */
+typedef struct MolProp {
+	char *propname;
+	Double *propvals;
+} MolProp;
+	
 /*  Molecule record  */
 typedef struct Molecule {
 	Object base;
@@ -336,6 +342,10 @@ typedef struct Molecule {
 	/*  Electrostatic potential  */
 	Int    nelpots;
 	Elpot  *elpots;
+
+	/*  Properties  */
+	Int    nmolprops;
+	MolProp *molprops;
 
 	/*  Parameters specific for this molecule  */
 	struct Parameter *par;
@@ -550,6 +560,12 @@ int MoleculeInsertFrames(Molecule *mp, IntGroup *group, const Vector *inFrame, c
 int MoleculeRemoveFrames(Molecule *mp, IntGroup *group, Vector *outFrame, Vector *outFrameCell);
 int MoleculeSelectFrame(Molecule *mp, int frame, int copyback);
 int MoleculeFlushFrames(Molecule *mp);
+
+int MoleculeCreateProperty(Molecule *mp, const char *name);
+int MoleculeLookUpProperty(Molecule *mp, const char *name);
+int MoleculeDeletePropertyAtIndex(Molecule *mp, int idx);
+int MoleculeSetProperty(Molecule *mp, int idx, IntGroup *ig, const Double *values);
+int MoleculeGetProperty(Molecule *mp, int idx, IntGroup *ig, Double *outValues);
 
 void MoleculeUpdatePiAnchorPositions(Molecule *mol);
 void MoleculeCalculatePiAnchorPosition(Molecule *mol, int idx);

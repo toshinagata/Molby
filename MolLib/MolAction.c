@@ -50,6 +50,7 @@ const char *gMolActionSetAtomVelocities = "atomVelocity:GV";
 const char *gMolActionSetAtomForces   = "atomForce:GV";
 const char *gMolActionInsertFrames    = "insertFrames:GVV";
 const char *gMolActionRemoveFrames    = "removeFrames:G";
+const char *gMolActionSetProperty     = "setProperty:iGD";
 const char *gMolActionSetSelection    = "selection:G";
 const char *gMolActionChangeResidueNumber = "changeResSeq:Gi";
 const char *gMolActionChangeResidueNumberForUndo = "changeResSeqForUndo:GIi";
@@ -1266,6 +1267,19 @@ s_MolActionRemoveFrames(Molecule *mol, MolAction *action, MolAction **actp)
 			IntGroupRelease(ig2);
 		return 0;  /*  Do nothing  */
 	}
+	
+	/*  Undo action for restoring properties  */
+	for (n2 = 0; n2 < mol->nmolprops; n2++) {
+		Double *dp = (Double *)calloc(sizeof(Double), n1);
+		if (MoleculeGetProperty(mol, n2, ig2, dp) > 0) {
+			/*  The negative property index indicates that no undo is required  */
+			act2 = MolActionNew(gMolActionSetProperty, -n2 - 1, ig2, n1, dp);
+			MolActionCallback_registerUndo(mol, act2);
+			MolActionRelease(act2);
+		}
+		free(dp);
+	}
+	
 	vp = (Vector *)calloc(sizeof(Vector), n1 * mol->natoms);
 	if (mol->cell != NULL && mol->frame_cells != NULL)
 		vp2 = (Vector *)calloc(sizeof(Vector) * 4, n1);
@@ -1289,6 +1303,40 @@ s_MolActionRemoveFrames(Molecule *mol, MolAction *action, MolAction **actp)
 		free(vp2);
 	if (ig2 != ig)
 		IntGroupRelease(ig2);
+	return 0;
+}
+
+static int
+s_MolActionSetProperty(Molecule *mol, MolAction *action, MolAction **actp)
+{
+	Int idx, n1, no_undo;
+	Double *dp, *dp2;
+	IntGroup *ig;
+	
+	no_undo = 0;
+	idx = action->args[0].u.ival;
+	if (idx < 0) {
+		idx = -idx - 1;
+		no_undo = 1;
+	}
+	ig = action->args[1].u.igval;
+	dp = (Double *)action->args[2].u.arval.ptr;
+	n1 = IntGroupGetCount(ig);
+	if (n1 == 0)
+		return 0;  /*  Do nothing  */
+	if (dp != NULL && action->args[2].u.arval.nitems != n1)
+		return -1;  /*  Internal inconsistency  */
+	
+	/*  Undo action for restoring old values  */
+	if (no_undo == 0) {
+		dp2 = (Double *)calloc(sizeof(Double), n1);
+		MoleculeGetProperty(mol, idx, ig, dp2);
+		*actp = MolActionNew(gMolActionSetProperty, idx, ig, n1, dp2);
+		free(dp2);
+	}
+	
+	/*  Set new values  */
+	MoleculeSetProperty(mol, idx, ig, dp);
 	return 0;
 }
 
@@ -1860,6 +1908,9 @@ MolActionPerform(Molecule *mol, MolAction *action)
 		if ((result = s_MolActionRemoveFrames(mol, action, &act2)) != 0)
 			return result;
 		needsSymmetryAmendment = 1;
+	} else if (strcmp(action->name, gMolActionSetProperty) == 0) {
+		if ((result = s_MolActionSetProperty(mol, action, &act2)) != 0)
+			return result;
 	} else if (strcmp(action->name, gMolActionSetSelection) == 0) {
 		if ((result = s_MolActionSetSelection(mol, action, &act2)) != 0)
 			return result;

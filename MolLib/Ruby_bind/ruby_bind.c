@@ -10546,6 +10546,160 @@ s_Molecule_CreatePiAnchor(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
+ *     set_property(name, value[, index]) -> value
+ *     set_property(name, values, group) -> values
+ *
+ *  Set molecular property. A property is a floating-point number with a specified name,
+ *  and can be set for each frame separately. The name of the property is given as a String.
+ *  The value can be a single floating point number, which is set to the current frame.
+ *  
+ */
+static VALUE
+s_Molecule_SetProperty(int argc, VALUE *argv, VALUE self)
+{
+	Molecule *mol;
+	VALUE nval, vval, ival;
+	char *name;
+	IntGroup *ig;
+	Int i, n, idx, fidx;
+	Double *dp;
+	rb_scan_args(argc, argv, "21", &nval, &vval, &ival);
+    Data_Get_Struct(self, Molecule, mol);
+	if (rb_obj_is_kind_of(nval, rb_cNumeric)) {
+		idx = NUM2INT(rb_Integer(nval));
+		if (idx < 0 || idx >= mol->nmolprops)
+			rb_raise(rb_eMolbyError, "The property index (%d) is out of range; should be 0..%d", idx, mol->nmolprops - 1);
+	} else {
+		name = StringValuePtr(nval);
+		idx = MoleculeLookUpProperty(mol, name);
+		if (idx < 0) {
+			idx = MoleculeCreateProperty(mol, name);
+			if (idx < 0)
+				rb_raise(rb_eMolbyError, "Cannot create molecular property %s", name);
+		}
+	}
+	if (rb_obj_is_kind_of(vval, rb_cNumeric)) {
+		if (ival == Qnil)
+			fidx = mol->cframe;
+		else {
+			fidx = NUM2INT(rb_Integer(ival));
+			n = MoleculeGetNumberOfFrames(mol);
+			if (fidx < 0 || fidx >= n)
+				rb_raise(rb_eMolbyError, "The frame index (%d) is out of range; should be 0..%d", fidx, n - 1);
+		}
+		ig = IntGroupNewWithPoints(fidx, 1, -1);
+		dp = (Double *)malloc(sizeof(Double));
+		*dp = NUM2DBL(rb_Float(vval));
+		n = 1;
+	} else {
+		vval = rb_ary_to_ary(vval);
+		ig = IntGroupFromValue(ival);
+		n = IntGroupGetCount(ig);
+		if (n == 0)
+			rb_raise(rb_eMolbyError, "No frames are specified");
+		if (RARRAY_LEN(vval) < n)
+			rb_raise(rb_eMolbyError, "Values are missing; at least %d values should be given", n);
+		dp = (Double *)calloc(sizeof(Double), n);
+		for (i = 0; i < n; i++)
+			dp[i] = NUM2DBL(rb_Float(RARRAY_PTR(vval)[i]));
+	}
+	
+	MolActionCreateAndPerform(mol, gMolActionSetProperty, idx, ig, n, dp);
+	free(dp);
+	IntGroupRelease(ig);
+	return self;
+}
+
+/*
+ *  call-seq:
+ *     get_property(name[, index]) -> value
+ *     get_property(name, group) -> values
+ *
+ *  Get molecular property. In the first form, a property value for a single frame is returned.
+ *  (If index is omitted, then the value for the current frame is given)
+ *  In the second form, an array of property values for the given frames is returned.
+ *  If name is not one of known properties or a valid index integer, exception is raised.
+ */
+static VALUE
+s_Molecule_GetProperty(int argc, VALUE *argv, VALUE self)
+{
+	Molecule *mol;
+	VALUE nval, ival;
+	char *name;
+	IntGroup *ig;
+	Int i, n, idx, fidx;
+	Double *dp;
+	rb_scan_args(argc, argv, "11", &nval, &ival);
+    Data_Get_Struct(self, Molecule, mol);
+	if (mol->nmolprops == 0)
+		rb_raise(rb_eMolbyError, "The molecule has no properties");
+	if (rb_obj_is_kind_of(nval, rb_cNumeric)) {
+		idx = NUM2INT(rb_Integer(nval));
+		if (idx < 0 || idx >= mol->nmolprops)
+			rb_raise(rb_eMolbyError, "The property index (%d) is out of range; should be 0..%d", idx, mol->nmolprops - 1);
+	} else {
+		name = StringValuePtr(nval);
+		idx = MoleculeLookUpProperty(mol, name);
+		if (idx < 0)
+			rb_raise(rb_eMolbyError, "The molecule has no property '%s'", name);
+	}
+	if (rb_obj_is_kind_of(ival, rb_cNumeric) || ival == Qnil) {
+		if (ival == Qnil)
+			fidx = mol->cframe;
+		else {
+			fidx = NUM2INT(rb_Integer(ival));
+			n = MoleculeGetNumberOfFrames(mol);
+			if (fidx < 0 || fidx >= n)
+				rb_raise(rb_eMolbyError, "The frame index (%d) is out of range; should be 0..%d", fidx, n - 1);
+		}
+		ig = IntGroupNewWithPoints(fidx, 1, -1);
+		ival = INT2FIX(fidx);
+		n = 1;
+	} else {
+		ig = IntGroupFromValue(ival);
+		n = IntGroupGetCount(ig);
+		if (n == 0)
+			return rb_ary_new();
+	}
+	dp = (Double *)calloc(sizeof(Double), n);
+	MoleculeGetProperty(mol, idx, ig, dp);	
+	if (FIXNUM_P(ival))
+		ival = rb_float_new(dp[0]);
+	else {
+		ival = rb_ary_new();
+		for (i = n - 1; i >= 0; i--) {
+			nval = rb_float_new(dp[i]);
+			rb_ary_store(ival, i, nval);
+		}
+	}
+	free(dp);
+	IntGroupRelease(ig);
+	return ival;
+}
+
+/*
+ *  call-seq:
+ *     property_names -> Array
+ *
+ *  Get an array of property names.
+ */
+static VALUE
+s_Molecule_PropertyNames(VALUE self)
+{
+	Molecule *mol;
+	VALUE rval, nval;
+	int i, n;
+    Data_Get_Struct(self, Molecule, mol);
+	rval = rb_ary_new();
+	for (i = mol->nmolprops - 1; i >= 0; i--) {
+		nval = rb_str_new2(mol->molprops[i].propname);
+		rb_ary_store(rval, i, nval);
+	}
+	return rval;
+}
+
+/*
+ *  call-seq:
  *     current       -> Molecule
  *
  *  Get the currently "active" molecule.
@@ -11059,6 +11213,10 @@ Init_Molby(void)
 	rb_define_method(rb_cMolecule, "search_equivalent_atoms", s_Molecule_SearchEquivalentAtoms, -1);
 	
 	rb_define_method(rb_cMolecule, "create_pi_anchor", s_Molecule_CreatePiAnchor, -1);
+	rb_define_method(rb_cMolecule, "set_property", s_Molecule_SetProperty, -1);
+	rb_define_method(rb_cMolecule, "get_property", s_Molecule_GetProperty, -1);
+	rb_define_method(rb_cMolecule, "property_names", s_Molecule_PropertyNames, 0);
+		
 	rb_define_method(rb_cMolecule, "==", s_Molecule_Equal, 1);
 	rb_define_method(rb_cMolecule, "call_subprocess_async", s_Molecule_CallSubProcessAsync, -1);
 

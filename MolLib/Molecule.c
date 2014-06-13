@@ -468,6 +468,7 @@ MoleculeRetain(Molecule *mp)
 void
 MoleculeClear(Molecule *mp)
 {
+	int i;
 	if (mp == NULL)
 		return;
 	if (mp->arena != NULL) {
@@ -483,7 +484,6 @@ MoleculeClear(Molecule *mp)
 		mp->bset = NULL;
 	}
 	if (mp->atoms != NULL) {
-		int i;
 		for (i = 0; i < mp->natoms; i++)
 			AtomClean(mp->atoms + i);
 		free(mp->atoms);
@@ -546,6 +546,15 @@ MoleculeClear(Molecule *mp)
 		free(mp->mcube->c[1].triangles);
 		free(mp->mcube);
 		mp->mcube = NULL;
+	}
+	if (mp->molprops != NULL) {
+		for (i = 0; i < mp->nmolprops; i++) {
+			free(mp->molprops[i].propname);
+			free(mp->molprops[i].propvals);
+		}
+		free(mp->molprops);
+		mp->molprops = NULL;
+		mp->nmolprops = 0;
 	}
 	if (mp->par != NULL) {
 		ParameterRelease(mp->par);
@@ -10060,6 +10069,9 @@ MoleculeInsertFrames(Molecule *mp, IntGroup *group, const Vector *inFrame, const
 	int i, j, count, n_new, n_old, natoms, exframes, last_inserted;
 	Vector *tempv, *vp;
 	Atom *ap;
+	MolProp *prp;
+	Double *dp;
+	
 	if (mp == NULL || (natoms = mp->natoms) == 0 || (count = IntGroupGetCount(group)) <= 0)
 		return -1;
 
@@ -10107,6 +10119,18 @@ MoleculeInsertFrames(Molecule *mp, IntGroup *group, const Vector *inFrame, const
 		}
 	}
 	
+	/*  Expand propvals for all properties  */
+	for (i = 0, prp = mp->molprops; i < mp->nmolprops; i++, prp++) {
+		dp = (Double *)realloc(prp->propvals, sizeof(Double) * n_new);
+		if (dp == NULL) {
+			__MoleculeUnlock(mp);
+			return -1;
+		}
+		for (j = n_old; j < n_new; j++)
+			dp[j] = 0.0;
+		prp->propvals = dp;
+	}
+	
 	/*  group = [n0..n1-1, n2..n3-1, ...]  */
 	/*  s = t = 0,  */
 	/*  tempv[0..n0-1] <- ap[0..n0-1], s += n0,
@@ -10116,23 +10140,28 @@ MoleculeInsertFrames(Molecule *mp, IntGroup *group, const Vector *inFrame, const
 		...
 		tempv[nl..n_new-1] <- ap[s..s+(n_new-nl-1)], s += n_new-nl
 		At last, s will become n_old and t will become count.  */
-	for (i = 0, ap = mp->atoms; i <= mp->natoms; i++, ap = ATOM_NEXT(ap)) {
+	for (i = 0, ap = mp->atoms, prp = mp->molprops; i <= mp->natoms + mp->nmolprops; i++) {
 		int s, t, ns, ne, mult;
 		Vector cr;
 		ne = s = t = 0;
 		if (i == mp->natoms) {
 			if (mp->cell == NULL || mp->frame_cells == NULL)
-				break;
+				continue;
 			vp = mp->frame_cells;
 			mult = 4;
-		} else {
+		} else if (i < mp->natoms) {
 			cr = ap->r;
 			vp = ap->frames;
 			mult = 1;
+		} else {
+			dp = prp->propvals;
 		}
 		for (j = 0; (ns = IntGroupGetStartPoint(group, j)) >= 0; j++) {
 			if (ns > ne) {
-				memmove(tempv + ne * mult, vp + s * mult, sizeof(Vector) * mult * (ns - ne));
+				if (i <= mp->natoms)
+					memmove(tempv + ne * mult, vp + s * mult, sizeof(Vector) * mult * (ns - ne));
+				else
+					memmove((Double *)tempv + ne, dp + s, sizeof(Double) * (ns - ne)); 
 				s += ns - ne;
 			}
 			ne = IntGroupGetEndPoint(group, j);
@@ -10149,23 +10178,37 @@ MoleculeInsertFrames(Molecule *mp, IntGroup *group, const Vector *inFrame, const
 						tempv[ns * 4 + 2] = mp->cell->axes[2];
 						tempv[ns * 4 + 3] = mp->cell->origin;
 					}
-				} else {
+				} else if (i < mp->natoms) {
 					if (inFrame != NULL)
 						tempv[ns] = inFrame[natoms * t + i];
 					else
 						tempv[ns] = cr;
+				} else {
+					((Double *)tempv)[ns] = 0.0;
 				}
 				t++;
 				ns++;
 			}
 		}
 		if (n_new > ne) {
-			memmove(tempv + ne * mult, vp + s * mult, sizeof(Vector) * mult * (n_new - ne));
+			if (i <= mp->natoms)
+				memmove(tempv + ne * mult, vp + s * mult, sizeof(Vector) * mult * (n_new - ne));
+			else
+				memmove((Double *)tempv + ne, dp + s, sizeof(Double) * (n_new - ne));
 			s += n_new - ne;
 		}
 		if (i < mp->natoms)
 			ap->nframes = n_new;
-		memmove(vp, tempv, sizeof(Vector) * mult * n_new);
+		if (i <= mp->natoms) {
+			memmove(vp, tempv, sizeof(Vector) * mult * n_new);
+			if (i < mp->natoms) {
+				ap->nframes = n_new;
+				ap = ATOM_NEXT(ap);
+			}
+		} else {
+			memmove(dp, (Double *)tempv, sizeof(Double) * n_new);
+			prp++;
+		}
 	}
 	free(tempv);
 	mp->nframes = n_new;
@@ -10181,6 +10224,7 @@ MoleculeRemoveFrames(Molecule *mp, IntGroup *inGroup, Vector *outFrame, Vector *
 	int i, count, n_new, n_old, natoms, nframes, old_count, new_cframe;
 	Vector *tempv, *vp;
 	Atom *ap;
+	MolProp *prp;
 	IntGroup *group, *group2;
 
 	if (mp == NULL || (natoms = mp->natoms) == 0 || (count = IntGroupGetCount(inGroup)) <= 0)
@@ -10246,18 +10290,18 @@ MoleculeRemoveFrames(Molecule *mp, IntGroup *inGroup, Vector *outFrame, Vector *
 		tempv[nl..n_old-1] -> ap[s..s+(n_old-nl-1)], s += n_old-nl
 		At last, s will become n_new and t will become count.  */
 	nframes = 0;
-	for (i = 0, ap = mp->atoms; i <= mp->natoms; i++, ap = ATOM_NEXT(ap)) {
+	for (i = 0, ap = mp->atoms, prp = mp->molprops; i <= mp->natoms + mp->nmolprops; i++) {
 		int s, t, j, ns, ne;
 		int mult;
 		/*  if i == mp->natoms, mp->frame_cells is handled  */
 		if (i == mp->natoms) {
 			if (mp->cell == NULL || mp->frame_cells == NULL)
-				break;
-			mult = 4;
+				continue;
+			mult = 4 * sizeof(Vector);
 			vp = mp->frame_cells;
 			old_count = n_old;
-		} else {
-			mult = 1;
+		} else if (i < mp->natoms) {
+			mult = sizeof(Vector);
 			vp = ap->frames;
 			if (vp == NULL) {
 				ap->frames = vp = (Vector *)calloc(sizeof(Vector), n_old);
@@ -10267,17 +10311,21 @@ MoleculeRemoveFrames(Molecule *mp, IntGroup *inGroup, Vector *outFrame, Vector *
 				}
 			}
 			old_count = ap->nframes;
+		} else {
+			mult = sizeof(Double);
+			vp = (Vector *)prp->propvals;
+			old_count = n_old;
 		}
 
 		/*  Copy vp to tempv  */
-		memset(tempv, 0, sizeof(Vector) * mult * n_old);
-		memmove(tempv, vp, sizeof(Vector) * mult * (old_count > n_old ? n_old : old_count));
+		memset(tempv, 0, mult * n_old);
+		memmove(tempv, vp, mult * (old_count > n_old ? n_old : old_count));
 		ne = ns = s = t = 0;
 		for (j = 0; ns < n_old && (ns = IntGroupGetStartPoint(group, j)) >= 0; j++) {
 			if (ns > n_old)
 				ns = n_old;
 			if (ns > ne) {
-				memmove(vp + s * mult, tempv + ne * mult, sizeof(Vector) * mult * (ns - ne));
+				memmove((char *)vp + s * mult, (char *)tempv + ne * mult, mult * (ns - ne));
 				s += ns - ne;
 			}
 			ne = IntGroupGetEndPoint(group, j);
@@ -10286,18 +10334,20 @@ MoleculeRemoveFrames(Molecule *mp, IntGroup *inGroup, Vector *outFrame, Vector *
 			while (ns < ne) {
 				if (i < mp->natoms)
 					outFrame[natoms * t + i] = tempv[ns];
-				else if (outFrameCell != NULL) {
-					outFrameCell[t * 4] = tempv[ns * 4];
-					outFrameCell[t * 4 + 1] = tempv[ns * 4 + 1];
-					outFrameCell[t * 4 + 2] = tempv[ns * 4 + 2];
-					outFrameCell[t * 4 + 3] = tempv[ns * 4 + 3];
+				else if (i == mp->natoms) {
+					if (outFrameCell != NULL) {
+						outFrameCell[t * 4] = tempv[ns * 4];
+						outFrameCell[t * 4 + 1] = tempv[ns * 4 + 1];
+						outFrameCell[t * 4 + 2] = tempv[ns * 4 + 2];
+						outFrameCell[t * 4 + 3] = tempv[ns * 4 + 3];
+					}
 				}
 				t++;
 				ns++;
 			}
 		}
 		if (n_old > ne) {
-			memmove(vp + s * mult, tempv + ne * mult, sizeof(Vector) * mult * (n_old - ne));
+			memmove((char *)vp + s * mult, (char *)tempv + ne * mult, mult * (n_old - ne));
 			s += n_old - ne;
 		}
 		if (i < mp->natoms)
@@ -10309,18 +10359,27 @@ MoleculeRemoveFrames(Molecule *mp, IntGroup *inGroup, Vector *outFrame, Vector *
 				free(ap->frames);
 				ap->frames = NULL;
 				ap->nframes = 0;
-			} else {
+			} else if (i == mp->natoms) {
 				free(mp->frame_cells);
 				mp->frame_cells = NULL;
 				mp->nframe_cells = 0;
+			} else {
+				prp->propvals = (Double *)realloc(prp->propvals, sizeof(Double));
 			}
 		} else {
 			if (i < mp->natoms)
 				ap->frames = (Vector *)realloc(ap->frames, sizeof(Vector) * s);
-			else {
+			else if (i == mp->natoms) {
 				AssignArray(&mp->frame_cells, &mp->nframe_cells, sizeof(Vector) * 4, s - 1, NULL);
 				mp->nframe_cells = s;
+			} else {
+				prp->propvals = (Double *)realloc(prp->propvals, sizeof(Double) * s);
 			}
+		}
+		if (i < mp->natoms) {
+			ap = ATOM_NEXT(ap);
+		} else if (i > mp->natoms) {
+			prp++;
 		}
 	}
 	free(tempv);
@@ -10395,6 +10454,96 @@ MoleculeFlushFrames(Molecule *mp)
 	if (nframes > 1)
 		MoleculeSelectFrame(mp, mp->cframe, 1);
 	return nframes;
+}
+
+#pragma mark ====== Molecule Propeties ======
+
+int
+MoleculeCreateProperty(Molecule *mp, const char *name)
+{
+	int i;
+	MolProp *prp;
+	for (i = 0, prp = mp->molprops; i < mp->nmolprops; i++, prp++) {
+		if (strcmp(prp->propname, name) == 0)
+			return -(i + 1);
+	}
+	prp = (MolProp *)calloc(sizeof(MolProp), 1);
+	if (prp == NULL)
+		return -10000;
+	prp->propname = strdup(name);
+	if (prp->propname == NULL)
+		return -10000;
+	i = MoleculeGetNumberOfFrames(mp);
+	prp->propvals = (Double *)calloc(sizeof(Double), i);
+	if (prp->propvals == NULL)
+		return -10000;
+	AssignArray(&mp->molprops, &mp->nmolprops, sizeof(MolProp), mp->nmolprops, prp);
+	free(prp);
+	return mp->nmolprops;
+}
+
+int
+MoleculeLookUpProperty(Molecule *mp, const char *name)
+{
+	int i;
+	MolProp *prp;
+	for (i = 0, prp = mp->molprops; i < mp->nmolprops; i++, prp++) {
+		if (strcmp(prp->propname, name) == 0)
+			return i;
+	}
+	return -1;
+}
+
+int
+MoleculeDeletePropertyAtIndex(Molecule *mp, int idx)
+{
+	if (idx >= 0 && idx < mp->nmolprops) {
+		free(mp->molprops[idx].propname);
+		free(mp->molprops[idx].propvals);
+		DeleteArray(&mp->molprops, &mp->nmolprops, sizeof(MolProp), idx, 1, NULL);
+		return idx;
+	}
+	return -1;
+}
+
+int
+MoleculeSetProperty(Molecule *mp, int idx, IntGroup *ig, const Double *values)
+{
+	IntGroupIterator iter;
+	int i, n, nframes;
+	if (idx < 0 || idx >= mp->nmolprops)
+		return -1;
+	IntGroupIteratorInit(ig, &iter);
+	nframes = MoleculeGetNumberOfFrames(mp);
+	n = 0;
+	while ((i = IntGroupIteratorNext(&iter)) >= 0) {
+		if (i >= nframes)
+			break;
+		mp->molprops[idx].propvals[i] = values[n];
+		n++;
+	}
+	IntGroupIteratorRelease(&iter);
+	return n;
+}
+
+int
+MoleculeGetProperty(Molecule *mp, int idx, IntGroup *ig, Double *outValues)
+{
+	IntGroupIterator iter;
+	int i, n, nframes;
+	if (idx < 0 || idx >= mp->nmolprops)
+		return -1;
+	IntGroupIteratorInit(ig, &iter);
+	nframes = MoleculeGetNumberOfFrames(mp);
+	n = 0;
+	while ((i = IntGroupIteratorNext(&iter)) >= 0) {
+		if (i >= nframes)
+			break;
+		outValues[n] = mp->molprops[idx].propvals[i];
+		n++;
+	}
+	IntGroupIteratorRelease(&iter);
+	return n;
 }
 
 #pragma mark ====== Pi Atoms ======
@@ -10947,12 +11096,20 @@ MoleculeClearMCube(Molecule *mol, Int nx, Int ny, Int nz, const Vector *origin, 
 			free(mc);
 			return NULL;
 		}
+		mc->radii = (Double *)calloc(sizeof(Double), mol->natoms);
+		if (mc->radii == NULL) {
+			free(mc->dp);
+			free(mc);
+			return NULL;
+		}
+		mc->nradii = mol->natoms;
 		mc->c[0].fp = (unsigned char *)calloc(sizeof(unsigned char), mc->nx * mc->ny * mc->nz);
 		mc->c[1].fp = (unsigned char *)calloc(sizeof(unsigned char), mc->nx * mc->ny * mc->nz);
 		if (mc->c[0].fp == NULL || mc->c[1].fp == NULL) {
 			free(mc->c[0].fp);
 			free(mc->c[1].fp);
 			free(mc->dp);
+			free(mc->radii);
 			free(mc);
 			return NULL;
 		}
@@ -11232,7 +11389,7 @@ static int sMarchingCubeTable[256][16] = {
 int
 MoleculeUpdateMCube(Molecule *mol, int idn)
 {
-	Int flags, retval, step, hstep, sn;
+	Int retval, step, sn;
 	Int n, ix, iy, iz, nx, ny, nz;
 	Int nn, iix, iiy, iiz;
 	Int ncubepoints, c1, c2, c3;

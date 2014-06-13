@@ -136,6 +136,7 @@ class Molecule
 	self.update_enabled = false
 	mes = "Loading GAMESS log file"
 	show_progress_panel(mes)
+	energy = 0.0
 	ne_alpha = ne_beta = 0   #  number of electrons
 	rflag = nil  #  0, UHF; 1, RHF; 2, ROHF
 	mo_count = 0
@@ -191,6 +192,10 @@ class Molecule
 				else
 					create_frame([coords])  #  Should not be (coords)
 				end
+				set_property("energy", energy)
+			elsif line =~ /FINAL .* ENERGY IS *([-.0-9]+) AFTER/
+			    energy = $1.to_f
+				puts energy
 			elsif false && line =~ /EQUILIBRIUM GEOMETRY LOCATED/i
 				set_progress_message(mes + "\nReading optimized coordinates...")
 				fp.gets; fp.gets; fp.gets
@@ -331,6 +336,9 @@ class Molecule
 	end
 	if nframes > 0
 	  select_frame(nframes - 1)
+	end
+	if energy != 0.0
+	  set_property("energy", energy)
 	end
 	hide_progress_panel
 	self.update_enabled = true
