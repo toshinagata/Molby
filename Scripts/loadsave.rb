@@ -126,6 +126,67 @@ class Molecule
   alias :loadmdcrd :loadcrd
   alias :savemdcrd :savecrd
 
+  def sub_load_gamess_log_basis_set(lines, lineno)
+    ln = 0
+	while (line = lines[ln])
+		ln += 1
+		break if line =~ /SHELL\s+TYPE\s+PRIMITIVE/
+	end
+	ln += 1
+	i = -1
+	nprims = 0
+	sym = -10  #  undefined
+	ncomps = 0
+	while (line = lines[ln])
+		ln += 1
+		break if line =~ /TOTAL NUMBER OF BASIS SET/
+		if line =~ /^\s*$/
+		  #  End of one shell
+		  add_gaussian_orbital_shell(sym, nprims, i)
+		  nprims = 0
+		  sym = -10
+		  next
+		end
+		a = line.split
+		if a.length == 1
+		  i += 1
+		  ln += 1  #  Skip the blank line
+		  next
+		elsif a.length == 5 || a.length == 6
+		  if sym == -10
+			case a[1]
+			when "S"
+			  sym = 0; n = 1
+			when "P"
+			  sym = 1; n = 3
+			when "L"
+			  sym = -1; n = 4
+			when "D"
+			  sym = 2; n = 6
+			when "F"
+			  sym = 3; n = 10
+			when "G"
+			  sym = 4; n = 15
+			else
+			  raise MolbyError, "Unknown gaussian shell type at line #{lineno + ln}"
+			end
+			ncomps += n
+		  end
+		  if (a.length == 5 && sym == -1) || (a.length == 6 && sym != -1)
+			raise MolbyError, "Wrong format in gaussian shell information at line #{lineno + ln}"
+		  end
+		  exp = Float(a[3])
+		  c = Float(a[4])
+		  csp = Float(a[5] || 0.0)
+		  add_gaussian_primitive_coefficients(exp, c, csp)
+		  nprims += 1
+		else
+		  raise MolbyError, "Error in reading basis set information at line #{lineno + ln}"
+		end
+	end
+	return ncomps
+  end
+  
   def sub_load_gamess_log(fp)
 
     if natoms == 0
@@ -136,17 +197,19 @@ class Molecule
 	self.update_enabled = false
 	mes = "Loading GAMESS log file"
 	show_progress_panel(mes)
-	energy = 0.0
+	energy = nil
 	ne_alpha = ne_beta = 0   #  number of electrons
 	rflag = nil  #  0, UHF; 1, RHF; 2, ROHF
 	mo_count = 0
+	search_mode = 0   #  0, no search; 1, optimize; 2, irc
 	ncomps = 0   #  Number of AO terms per one MO (sum of the number of components over all shells)
 	alpha_beta = nil   #  Flag to read alpha/beta MO appropriately
+	nsearch = 0  #  Search number for optimization
 	begin
-		if nframes > 0
-			create_frame
-			frame = nframes - 1
-		end
+	#	if nframes > 0
+	#		create_frame
+	#		frame = nframes - 1
+	#	end
 		n = 0
 		while 1
 			line = fp.gets
@@ -156,7 +219,15 @@ class Molecule
 			line.chomp!
 			if line =~ /ATOM\s+ATOMIC\s+COORDINATES/ || line =~ /COORDINATES OF ALL ATOMS ARE/
 				set_progress_message(mes + "\nReading atomic coordinates...")
-				first_line = (line =~ /ATOMIC/)
+				if line =~ /ATOMIC/
+				  first_line = true
+				  if !new_unit
+				    next   #  Skip initial atomic coordinates unless loading into an empty molecule
+				  end
+				else
+				  first_line = false
+				  nsearch += 1
+				end
 				line = fp.gets    #  Skip one line
 				n = 0
 				coords = []
@@ -188,14 +259,27 @@ class Molecule
 				#		}
 				#	}
 					new_unit = false
-					create_frame
+				#	create_frame
 				else
-					create_frame([coords])  #  Should not be (coords)
+					if search_mode != 1 || nsearch > 1
+						#  The first frame for geometry search has the same coordinates as input
+						create_frame([coords])  #  Should not be (coords)
+					end
 				end
-				set_property("energy", energy)
+				set_property("energy", energy) if energy
+			elsif line =~ /BEGINNING GEOMETRY SEARCH POINT/
+				energy = nil   #  New search has begun, so clear the energy
+				search_mode = 1
+			elsif line =~ /CONSTRAINED OPTIMIZATION POINT/
+				energy = nil   #  New search has begun, so clear the energy
+				search_mode = 2
 			elsif line =~ /FINAL .* ENERGY IS *([-.0-9]+) AFTER/
-			    energy = $1.to_f
-				puts energy
+				if search_mode != 2
+					energy = $1.to_f
+					set_property("energy", energy)
+				end
+			elsif line =~ /TOTAL ENERGY += +([-.0-9]+)/
+				energy = $1.to_f
 			elsif false && line =~ /EQUILIBRIUM GEOMETRY LOCATED/i
 				set_progress_message(mes + "\nReading optimized coordinates...")
 				fp.gets; fp.gets; fp.gets
@@ -209,68 +293,19 @@ class Molecule
 					n += 1
 					break if n >= natoms
 				end
-				if ne_alpha > 0 && ne_beta > 0
-					#  Allocate basis set record again, to update the atomic coordinates
-					allocate_basis_set_record(rflag, ne_alpha, ne_beta)
-				end
+			#	if ne_alpha > 0 && ne_beta > 0
+			#		#  Allocate basis set record again, to update the atomic coordinates
+			#		allocate_basis_set_record(rflag, ne_alpha, ne_beta)
+			#	end
 			elsif line =~ /ATOMIC BASIS SET/
-				while (line = fp.gets)
-					break if line =~ /SHELL\s+TYPE\s+PRIMITIVE/
-				end
-				line = fp.gets
-				i = -1
-				nprims = 0
-				sym = -10  #  undefined
-				ncomps = 0
+				lines = []
+				lineno = fp.lineno
 				while (line = fp.gets)
 					break if line =~ /TOTAL NUMBER OF BASIS SET/
 					line.chomp!
-					if line =~ /^\s*$/
-					  #  End of one shell
-					  add_gaussian_orbital_shell(sym, nprims, i)
-					  # puts "add_gaussian_orbital_shell #{sym}, #{nprims}, #{i}"
-					  nprims = 0
-					  sym = -10
-					  next
-					end
-					a = line.split
-					if a.length == 1
-					  i += 1
-					  line = fp.gets  #  Skip the blank line
-					  next
-					elsif a.length == 5 || a.length == 6
-					  if sym == -10
-						case a[1]
-						when "S"
-						  sym = 0; n = 1
-						when "P"
-						  sym = 1; n = 3
-						when "L"
-						  sym = -1; n = 4
-						when "D"
-						  sym = 2; n = 6
-						when "F"
-						  sym = 3; n = 10
-						when "G"
-						  sym = 4; n = 15
-						else
-						  raise MolbyError, "Unknown gaussian shell type at line #{fp.lineno}"
-						end
-						ncomps += n
-					  end
-					  if (a.length == 5 && sym == -1) || (a.length == 6 && sym != -1)
-					    raise MolbyError, "Wrong format in gaussian shell information at line #{fp.lineno}"
-					  end
-					  exp = Float(a[3])
-					  c = Float(a[4])
-					  csp = Float(a[5] || 0.0)
-					  add_gaussian_primitive_coefficients(exp, c, csp)
-					  nprims += 1
-					  # puts "add_gaussian_primitive_coefficients #{exp}, #{c}, #{csp}"
-					else
-					  raise MolbyError, "Error in reading basis set information at line #{fp.lineno}"
-					end
+					lines.push(line)
 				end
+				ncomps = sub_load_gamess_log_basis_set(lines, lineno)
 			elsif line =~ /NUMBER OF OCCUPIED ORBITALS/
 				line =~ /=\s*(\d+)/
 				n = Integer($1)
@@ -294,8 +329,8 @@ class Molecule
 				alpha_beta = $1
 			elsif line =~ /^\s*(EIGENVECTORS|MOLECULAR ORBITALS)\s*$/
 				if mo_count == 0
-					allocate_basis_set_record(rflag, ne_alpha, ne_beta)
-					# puts "allocate_basis_set_record  #{rflag}, #{ne_alpha}, #{ne_beta}"
+					clear_mo_coefficients
+					set_mo_info(:type=>["UHF", "RHF", "ROHF"][rflag], :alpha=>ne_alpha, :beta=>ne_beta)
 				end
 				mo_count += 1
 				idx = 0
@@ -358,6 +393,7 @@ class Molecule
 	end
 	n = 0
 	nf = 0
+	energy = nil
 	use_input_orientation = false
 	show_progress_panel("Loading Gaussian out file...")
 	while 1
@@ -365,7 +401,7 @@ class Molecule
 		if line == nil
 			break
 		end
-		line.chomp
+		line.chomp!
 		if line =~ /(Input|Standard) orientation/
 			match = $1
 			if match == "Input"
@@ -405,12 +441,22 @@ class Molecule
 			#	}
 				guess_bonds
 				new_unit = false
-				create_frame
+			#	create_frame
 			else
 				create_frame([coords])  #  Should not be (coords)
 			end
+			if energy
+				# TODO: to ensure whether the energy output line comes before
+				# or after the atomic coordinates.
+				set_property("energy", energy)
+			end
 			nf += 1
+		elsif line =~ /SCF Done: *E\(\w+\) *= *([-.0-9]+)/
+			energy = $1.to_f
 		end
+	end
+	if energy
+		set_property("energy", energy)
 	end
 	hide_progress_panel
 	(n > 0 ? true : false)

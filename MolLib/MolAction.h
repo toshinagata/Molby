@@ -51,6 +51,7 @@ extern const char *gMolActionSetAtomVelocities;
 extern const char *gMolActionSetAtomForces;
 extern const char *gMolActionInsertFrames;
 extern const char *gMolActionRemoveFrames;
+extern const char *gMolActionReorderFrames;
 extern const char *gMolActionSetProperty;
 extern const char *gMolActionSetSelection;
 extern const char *gMolActionChangeResidueNumber;

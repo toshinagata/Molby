@@ -627,6 +627,13 @@ RubyDialogCallback_show(RubyDialog *dref)
 		((RubyDialogFrame *)dref)->StartIntervalTimer(-1);
 	((RubyDialogFrame *)dref)->Show(true);
 	((RubyDialogFrame *)dref)->Raise();
+#if defined(__WXMAC__)
+	{
+		extern void AddWindowsItemWithTitle(const char *title);
+		wxString str = ((RubyDialogFrame *)dref)->GetLabel();
+		AddWindowsItemWithTitle(str.mb_str(WX_DEFAULT_CONV));
+	}
+#endif
 }
 
 void

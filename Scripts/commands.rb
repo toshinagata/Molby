@@ -100,24 +100,56 @@ class Molecule
 	end
   end
 
+  def cmd_reverse_frames
+    n = nframes
+    return if n == 0
+	hash = Dialog.run("Reverse Frames") {
+	  layout(2,
+	    item(:text, :title=>"Start"),
+	    item(:textfield, :width=>120, :tag=>"start", :value=>"0"),
+		item(:text, :title=>"End"),
+		item(:textfield, :width=>120, :tag=>"end", :value=>(n - 1).to_s))
+	}
+	if hash[:status] == 0
+	  sframe = Integer(hash["start"])
+	  eframe = Integer(hash["end"])
+	  return if sframe > eframe
+	  eframe = n - 1 if eframe >= n
+	  frames = (0...sframe).to_a + (sframe..eframe).to_a.reverse + ((eframe + 1)...n).to_a
+	  reorder_frames(frames)
+	end
+  end
+
   def cmd_extra_properties
     mol = self
-	on_document_modified = lambda { |m|
-	}
 	get_count = lambda { |it| mol.nframes }
-	get_value = lambda { |it, row, col| sprintf("%.8g", mol.get_property(col, row)) rescue "" }
+	get_value = lambda { |it, row, col|
+	  if col == 0
+	    row.to_s
+	  else
+	    sprintf("%.8f", mol.get_property(col - 1, row)) rescue ""
+	  end
+    }
     Dialog.new("Extra Props:" + mol.name, nil, nil, :resizable=>true, :has_close_box=>true) {
-	  columns = mol.property_names.map { |name| [name, 80] }
+	  names = nil
+	  on_document_modified = lambda { |m|
+	    if (n = m.property_names) != names
+		  names = n
+		  col = [["frame", 40]] + names.map { |nn| [nn, 120] }
+		  item_with_tag("table")[:columns] = col
+		end
+		item_with_tag("table")[:refresh] = true
+	  }
 	  layout(1,
-		item(:table, :width=>240, :height=>380, :flex=>[0,0,0,0,1,1], :tag=>"table",
-		  :columns=>columns,
+		item(:table, :width=>320, :height=>300, :flex=>[0,0,0,0,1,1], :tag=>"table",
 		  :on_count=>get_count,
 		  :on_get_value=>get_value),
 	    :flex=>[0,0,0,0,1,1]
 	  )
-	  set_min_size(480, 200)
+	  set_min_size(320, 200)
 	  listen(mol, "documentModified", on_document_modified)
 	  listen(mol, "documentWillClose", lambda { |m| close } )
+	  on_document_modified.call(mol)
 	  show
 	}
   end
@@ -155,6 +187,7 @@ register_menu("Offset residue...", :cmd_offset_residue, :non_empty)
 register_menu("Sort by residue", :cmd_sort_by_residue, :non_empty)
 register_menu("", "")
 register_menu("Delete Frames...", :cmd_delete_frames, lambda { |m| m && m.nframes > 1 } )
+register_menu("Reverse Frames...", :cmd_reverse_frames, lambda { |m| m && m.nframes > 1 } )
 register_menu("", "")
 register_menu("Open Extra Properties Window...", :cmd_extra_properties, lambda { |m| m && m.property_names.count > 0 } )
 #register_menu("cmd test", :cmd_test)

@@ -386,6 +386,8 @@ typedef struct Molecule {
 
 int strlen_limit(const char *s, int limit);
 
+void BasisSetRelease(BasisSet *bset);
+
 Molecule *MoleculeNew(void);
 int MoleculeLoadFile(Molecule *mp, const char *fname, const char *ftype, char **errbuf);
 int MoleculeLoadPsfFile(Molecule *mp, const char *fname, char **errbuf);
@@ -560,6 +562,7 @@ int MoleculeInsertFrames(Molecule *mp, IntGroup *group, const Vector *inFrame, c
 int MoleculeRemoveFrames(Molecule *mp, IntGroup *group, Vector *outFrame, Vector *outFrameCell);
 int MoleculeSelectFrame(Molecule *mp, int frame, int copyback);
 int MoleculeFlushFrames(Molecule *mp);
+int MoleculeReorderFrames(Molecule *mp, const Int *old_idx);
 
 int MoleculeCreateProperty(Molecule *mp, const char *name);
 int MoleculeLookUpProperty(Molecule *mp, const char *name);
@@ -580,6 +583,7 @@ int MoleculeOutputCube(Molecule *mp, Int index, const char *fname, const char *c
 
 MCube *MoleculeClearMCube(Molecule *mol, Int nx, Int ny, Int nz, const Vector *origin, Double dx, Double dy, Double dz);
 int MoleculeUpdateMCube(Molecule *mol, int idn);
+void MoleculeDeallocateMCube(MCube *mcube);
 
 extern char *gMoleculePasteboardType;
 extern char *gParameterPasteboardType;

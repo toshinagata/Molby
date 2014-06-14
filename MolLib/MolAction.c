@@ -50,6 +50,7 @@ const char *gMolActionSetAtomVelocities = "atomVelocity:GV";
 const char *gMolActionSetAtomForces   = "atomForce:GV";
 const char *gMolActionInsertFrames    = "insertFrames:GVV";
 const char *gMolActionRemoveFrames    = "removeFrames:G";
+const char *gMolActionReorderFrames   = "reorderFrames:I";
 const char *gMolActionSetProperty     = "setProperty:iGD";
 const char *gMolActionSetSelection    = "selection:G";
 const char *gMolActionChangeResidueNumber = "changeResSeq:Gi";
@@ -1307,6 +1308,33 @@ s_MolActionRemoveFrames(Molecule *mol, MolAction *action, MolAction **actp)
 }
 
 static int
+s_MolActionReorderFrames(Molecule *mol, MolAction *action, MolAction **actp)
+{
+	Int *ip, *ip2, i, n;
+
+	ip = action->args[0].u.arval.ptr;
+	
+	/*  Prepare undo data (and error check)  */
+	n = MoleculeGetNumberOfFrames(mol);
+	ip2 = (Int *)malloc(sizeof(Int) * n);
+	for (i = 0; i < n; i++) {
+		if (ip[i] < 0 || ip[i] >= n) {
+			free(ip2);
+			return -1;
+		}
+		ip2[ip[i]] = i;
+	}
+
+	MoleculeReorderFrames(mol, ip);
+	
+	*actp = MolActionNew(gMolActionReorderFrames, n, ip2);
+	(*actp)->frame = mol->cframe;
+	free(ip2);
+	
+	return 0;
+}
+
+static int
 s_MolActionSetProperty(Molecule *mol, MolAction *action, MolAction **actp)
 {
 	Int idx, n1, no_undo;
@@ -1908,6 +1936,9 @@ MolActionPerform(Molecule *mol, MolAction *action)
 		if ((result = s_MolActionRemoveFrames(mol, action, &act2)) != 0)
 			return result;
 		needsSymmetryAmendment = 1;
+	} else if (strcmp(action->name, gMolActionReorderFrames) == 0) {
+		if ((result = s_MolActionReorderFrames(mol, action, &act2)) != 0)
+			return result;
 	} else if (strcmp(action->name, gMolActionSetProperty) == 0) {
 		if ((result = s_MolActionSetProperty(mol, action, &act2)) != 0)
 			return result;

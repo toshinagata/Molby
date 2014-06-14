@@ -404,7 +404,8 @@ class Molecule
     size = 0
     lines = []
     last_line = ""
-    
+    search_mode = 0
+
     #  Callback procs
 	term_callback = lambda { |m, n|
 	  msg = "GAMESS execution on #{inpbase} "
@@ -469,13 +470,37 @@ class Molecule
           if line =~ /GEOMETRY SEARCH POINT NSERCH= *(\d+)/
             nserch = $1.to_i
             last_i = i
-          elsif line =~ /NSERCH:/
+			search_mode = 1
+			energy = nil
+		  elsif line =~ /CONSTRAINED OPTIMIZATION POINT/
+		    search_mode = 2
+			energy = nil
+		  elsif line =~ /POINT *([0-9]+) *ON THE REACTION PATH/
+		    nserch = $1.to_i
+			last_i = i
+          elsif line =~ /NSERCH: *([0-9]+)/
           #  print line
 			if mol
-			  dummy, n, grad = line.match(/NSERCH:[^0-9]*([0-9]+).*GRAD[^0-9]*([-.0-9]+)/).to_a
+			  n = $1
+			  line =~ /E= +([-.0-9]+)/
+			  energy = $1.to_f
+			  line =~ /GRAD\. MAX= +([-.0-9]+)/
+			  grad = $1
 			  mol.show_text("Search: #{n}\nGradient: #{grad}")
+			  mol.set_property("energy", energy)
 			end
 			last_i = i
+		  elsif line =~ /TOTAL ENERGY += *([-.0-9]+)/
+		    energy = $1
+			if mol && search_mode == 2
+			  mol.show_text("Point: #{nserch}\nEnergy: #{energy}")
+			end
+			energy = energy.to_f
+		  elsif line =~ /FINAL .* ENERGY IS +([-.0-9]+) *AFTER/
+		    energy = $1.to_f
+			if mol && search_mode == 0
+			  mol.set_property("energy", energy)
+			end
           elsif nserch > 0 && line =~ /ddikick\.x/
             last_i = -1
             break
@@ -488,6 +513,9 @@ class Molecule
                 coords.push(Vector3D[x.to_f, y.to_f, z.to_f])
               }
               mol.create_frame([coords])
+			  if search_mode == 1 && energy
+			    mol.set_property("energy", energy)
+			  end
               mol.display
               last_i = i + mol.natoms + 2
               i = last_i   #  Skip the processed lines

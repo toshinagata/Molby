@@ -262,3 +262,16 @@ wxMenuImpl* wxMenuImpl::Create( wxMenu* peer, const wxString& title )
     wxMenuImpl* c = new wxMenuCocoaImpl( peer, menu );
     return c;
 }
+
+/*  20140614 Toshi Nagata  */
+/*  Add the frontmost window to the window menu with the given title  */
+/*  (for RubyDialog)  */
+void
+AddWindowsItemWithTitle(const char *title)
+{
+	id win = [NSApp keyWindow];
+	if (win != nil) {
+		[NSApp addWindowsItem:win title:[NSString stringWithUTF8String:title] filename:NO];
+	}
+}
+/*  End Toshi Nagata   */

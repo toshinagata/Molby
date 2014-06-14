@@ -7712,39 +7712,6 @@ s_Molecule_EachFrame(VALUE self)
 
 /*
  *  call-seq:
- *     set_atom_attr(index, key, value)
- *
- *  Set the atom attribute for the specified atom.
- *  This operation is undoable.
- */
-static VALUE
-s_Molecule_SetAtomAttr(VALUE self, VALUE idx, VALUE key, VALUE val)
-{
-	Molecule *mol;
-	VALUE aref, oldval;
-    Data_Get_Struct(self, Molecule, mol);
-	aref = ValueFromMoleculeAndIndex(mol, s_Molecule_AtomIndexFromValue(mol, idx));
-	oldval = s_AtomRef_GetAttr(aref, key);
-	if (val == Qundef)
-		return oldval;
-	s_AtomRef_SetAttr(aref, key, val);
-	return val;
-}
-
-/*
- *  call-seq:
- *     get_atom_attr(index, key)
- *
- *  Get the atom attribute for the specified atom.
- */
-static VALUE
-s_Molecule_GetAtomAttr(VALUE self, VALUE idx, VALUE key)
-{
-	return s_Molecule_SetAtomAttr(self, idx, key, Qundef);
-}
-
-/*
- *  call-seq:
  *     get_coord_from_frame(index, group = nil)
  *
  *  Copy the coordinates from the indicated frame. If group is specified, only the specified atoms
@@ -7802,8 +7769,92 @@ s_Molecule_GetCoordFromFrame(int argc, VALUE *argv, VALUE self)
 		}
 		IntGroupIteratorRelease(&iter);
 	}
+	/*  Copy the extra properties  */
 	IntGroupRelease(ig);
+	for (i = 0; i < mol->nmolprops; i++) {
+		Double *dp = (Double *)malloc(sizeof(Double));
+		ig = IntGroupNew();
+		IntGroupAdd(ig, mol->cframe, 1);
+		*dp = mol->molprops[i].propvals[index];
+		MolActionCreateAndPerform(mol, gMolActionSetProperty, i, ig, 1, dp);
+		free(dp);
+		IntGroupRelease(ig);
+	}
+	
 	return self;
+}
+
+/*
+ *  call-seq:
+ *     reorder_frames(old_indices)
+ *
+ *  Reorder the frames. The argument is an array of integers that specify the 'old' 
+ *  frame numbers. Thus, if the argument is [2,0,1], then the new frames 0/1/2 are the
+ *  same as the old frames 2/0/1, respectively.
+ *  The argument must have the same number of integers as the number of frames.
+ */
+static VALUE
+s_Molecule_ReorderFrames(VALUE self, VALUE aval)
+{
+	Molecule *mol;
+	Int *ip, *ip2, i, n, nframes;
+    Data_Get_Struct(self, Molecule, mol);
+	aval = rb_ary_to_ary(aval);
+	nframes = MoleculeGetNumberOfFrames(mol);
+	if (RARRAY_LEN(aval) != nframes)
+		rb_raise(rb_eMolbyError, "The argument must have the same number of integers as the number of frames");
+	ip2 = (Int *)calloc(sizeof(Int), nframes);
+	ip = (Int *)calloc(sizeof(Int), nframes);
+	for (i = 0; i < nframes; i++) {
+		n = NUM2INT(rb_Integer(RARRAY_PTR(aval)[i]));
+		if (n < 0 || n >= nframes || ip2[n] != 0) {
+			free(ip2);
+			free(ip);
+			if (n < 0 || n >= nframes)
+				rb_raise(rb_eMolbyError, "The argument (%d) is out of range", n);
+			else
+				rb_raise(rb_eMolbyError, "The argument has duplicated entry (%d)", n);
+		}
+		ip2[n] = 1;
+		ip[i] = n;
+	}
+	free(ip2);
+	MolActionCreateAndPerform(mol, gMolActionReorderFrames, nframes, ip);
+	free(ip);
+	return self;
+}
+	
+/*
+ *  call-seq:
+ *     set_atom_attr(index, key, value)
+ *
+ *  Set the atom attribute for the specified atom.
+ *  This operation is undoable.
+ */
+static VALUE
+s_Molecule_SetAtomAttr(VALUE self, VALUE idx, VALUE key, VALUE val)
+{
+	Molecule *mol;
+	VALUE aref, oldval;
+    Data_Get_Struct(self, Molecule, mol);
+	aref = ValueFromMoleculeAndIndex(mol, s_Molecule_AtomIndexFromValue(mol, idx));
+	oldval = s_AtomRef_GetAttr(aref, key);
+	if (val == Qundef)
+		return oldval;
+	s_AtomRef_SetAttr(aref, key, val);
+	return val;
+}
+
+/*
+ *  call-seq:
+ *     get_atom_attr(index, key)
+ *
+ *  Get the atom attribute for the specified atom.
+ */
+static VALUE
+s_Molecule_GetAtomAttr(VALUE self, VALUE idx, VALUE key)
+{
+	return s_Molecule_SetAtomAttr(self, idx, key, Qundef);
 }
 
 /*
@@ -10209,6 +10260,31 @@ s_Molecule_Elpot(VALUE self, VALUE ival)
 
 /*
  *  call-seq:
+ *     clear_basis_set
+ *
+ *  Clear the existing basis set info. All gaussian coefficients, MO energies and coefficients,
+ *  cube and marching cube information are discarded. This operation is _not_ undoable!
+ */
+static VALUE
+s_Molecule_ClearBasisSet(VALUE self)
+{
+	Molecule *mol;
+    Data_Get_Struct(self, Molecule, mol);
+	if (mol != NULL) {
+		if (mol->bset != NULL) {
+			BasisSetRelease(mol->bset);
+			mol->bset = NULL;
+		}
+		if (mol->mcube != NULL) {
+			MoleculeDeallocateMCube(mol->mcube);
+			mol->mcube = NULL;
+		}
+	}
+	return self;
+}
+
+/*
+ *  call-seq:
  *     add_gaussian_orbital_shell(sym, nprims, atom_index)
  *
  *  To be used internally. Add a gaussian orbital shell with symmetry code, number of primitives,
@@ -10264,25 +10340,27 @@ s_Molecule_AddGaussianPrimitiveCoefficients(VALUE self, VALUE expval, VALUE cval
 
 /*
  *  call-seq:
- *     mo_type
+ *     clear_mo_coefficients
  *
- *  Returns either "RHF", "UHF", or "ROHF". If no MO info is present, returns nil.
+ *  Clear the existing MO coefficients.
  */
 static VALUE
-s_Molecule_MOType(VALUE self)
+s_Molecule_ClearMOCoefficients(VALUE self)
 {
 	Molecule *mol;
-    Data_Get_Struct(self, Molecule, mol);
-	if (mol != NULL && mol->bset != NULL) {
-		const char *s;
-		int rflag = mol->bset->rflag;
-		if (rflag == 0)
-			s = "UHF";
-		else if (rflag == 2)
-			s = "ROHF";
-		else s = "RHF";
-		return rb_str_new2(s);
-	} else return Qnil;
+	Data_Get_Struct(self, Molecule, mol);
+	if (mol->bset != NULL) {
+		if (mol->bset->moenergies != NULL) {
+			free(mol->bset->moenergies);
+			mol->bset->moenergies = NULL;
+		}
+		if (mol->bset->mo != NULL) {
+			free(mol->bset->mo);
+			mol->bset->mo = NULL;
+		}
+		mol->bset->nmos = 0;
+	}
+	return self;
 }
 
 /*
@@ -10385,6 +10463,108 @@ s_Molecule_GetMOEnergy(VALUE self, VALUE ival)
 	return rb_float_new(energy);
 }
 
+static VALUE sTypeSym, sAlphaSym, sBetaSym;
+
+static inline void
+s_InitMOInfoKeys(void)
+{
+	if (sTypeSym == 0) {
+		sTypeSym = ID2SYM(rb_intern("type"));
+		sAlphaSym = ID2SYM(rb_intern("alpha"));
+		sBetaSym = ID2SYM(rb_intern("beta"));
+	}
+}
+
+/*
+ *  call-seq:
+ *     set_mo_info(hash)
+ *
+ *  Set the MO info. hash keys: :type=>"RHF"|"UHF"|"ROHF",
+ *  :alpha=>integer, :beta=>integer
+ */
+static VALUE
+s_Molecule_SetMOInfo(VALUE self, VALUE hval)
+{
+	Molecule *mol;
+	VALUE aval;
+	Int rflag, na, nb, n;
+	char *s;
+    Data_Get_Struct(self, Molecule, mol);
+	if (mol->bset != NULL) {
+		rflag = mol->bset->rflag;
+		na = mol->bset->ne_alpha;
+		nb = mol->bset->ne_beta;
+	} else {
+		rflag = 1;
+		na = 0;
+		nb = 0;
+	}
+	if (hval != Qnil) {
+		if ((aval = rb_hash_aref(hval, sTypeSym)) != Qnil) {
+			s = StringValuePtr(aval);
+			if (strcasecmp(s, "RHF") == 0)
+				rflag = 1;
+			else if (strcasecmp(s, "UHF") == 0)
+				rflag = 0;
+			else if (strcasecmp(s, "ROHF") == 0)
+				rflag = 2;
+		}
+		if ((aval = rb_hash_aref(hval, sAlphaSym)) != Qnil) {
+			n = NUM2INT(rb_Integer(aval));
+			if (n >= 0)
+				na = n;
+		}
+		if ((aval = rb_hash_aref(hval, sBetaSym)) != Qnil) {
+			n = NUM2INT(rb_Integer(aval));
+			if (n >= 0)
+				nb = n;
+		}
+		MoleculeAllocateBasisSetRecord(mol, rflag, na, nb);
+	}
+	return self;
+}
+
+/*
+ *  call-seq:
+ *     get_mo_info(key)
+ *
+ *  Get the MO info. The key is as described in set_mo_info.
+ */
+static VALUE
+s_Molecule_GetMOInfo(VALUE self, VALUE kval)
+{
+	Molecule *mol;
+    Data_Get_Struct(self, Molecule, mol);
+	if (mol->bset == NULL)
+		rb_raise(rb_eMolbyError, "No MO information is defined");
+	if (kval == sTypeSym) {
+		switch (mol->bset->rflag) {
+			case 0: return rb_str_new2("UHF");
+			case 1: return rb_str_new2("RHF");
+			case 2: return rb_str_new2("ROHF");
+			default: return rb_str_to_str(INT2NUM(mol->bset->rflag));
+		}
+	} else if (kval == sAlphaSym) {
+		return INT2NUM(mol->bset->ne_alpha);
+	} else if (kval == sBetaSym) {
+		return INT2NUM(mol->bset->ne_beta);
+	} else return Qnil;
+}
+
+/*
+ *  call-seq:
+ *     mo_type
+ *
+ *  Returns either "RHF", "UHF", or "ROHF". If no MO info is present, raises exception.
+ */
+static VALUE
+s_Molecule_MOType(VALUE self)
+{
+	return s_Molecule_GetMOInfo(self, sTypeSym);
+}
+
+
+#if 0
 /*
  *  call-seq:
  *     allocate_basis_set_record(rflag, ne_alpha, ne_beta)
@@ -10410,6 +10590,7 @@ s_Molecule_AllocateBasisSetRecord(VALUE self, VALUE rval, VALUE naval, VALUE nbv
 		rb_raise(rb_eMolbyError, "Unknown error");
 	return self;
 }
+#endif
 
 /*
  *  call-seq:
@@ -10688,7 +10869,7 @@ s_Molecule_PropertyNames(VALUE self)
 {
 	Molecule *mol;
 	VALUE rval, nval;
-	int i, n;
+	int i;
     Data_Get_Struct(self, Molecule, mol);
 	rval = rb_ary_new();
 	for (i = mol->nmolprops - 1; i >= 0; i--) {
@@ -11105,6 +11286,7 @@ Init_Molby(void)
 	rb_define_alias(rb_cMolecule, "create_frames", "create_frame");
 	rb_define_alias(rb_cMolecule, "insert_frames", "insert_frame");
 	rb_define_alias(rb_cMolecule, "remove_frames", "remove_frame");
+	rb_define_method(rb_cMolecule, "reorder_frames", s_Molecule_ReorderFrames, 1);
 	rb_define_method(rb_cMolecule, "each_frame", s_Molecule_EachFrame, 0);
 	rb_define_method(rb_cMolecule, "get_coord_from_frame", s_Molecule_GetCoordFromFrame, -1);
 	rb_define_method(rb_cMolecule, "register_undo", s_Molecule_RegisterUndo, -1);
@@ -11203,13 +11385,17 @@ Init_Molby(void)
 	rb_define_method(rb_cMolecule, "set_surface_attr", s_Molecule_SetSurfaceAttr, 1);
 	rb_define_method(rb_cMolecule, "nelpots", s_Molecule_NElpots, 0);
 	rb_define_method(rb_cMolecule, "elpot", s_Molecule_Elpot, 1);
+	rb_define_method(rb_cMolecule, "clear_basis_set", s_Molecule_ClearBasisSet, 0);
 	rb_define_method(rb_cMolecule, "add_gaussian_orbital_shell", s_Molecule_AddGaussianOrbitalShell, 3);
 	rb_define_method(rb_cMolecule, "add_gaussian_primitive_coefficients", s_Molecule_AddGaussianPrimitiveCoefficients, 3);
 	rb_define_method(rb_cMolecule, "mo_type", s_Molecule_MOType, 0);
+	rb_define_method(rb_cMolecule, "clear_mo_coefficients", s_Molecule_ClearMOCoefficients, 0);
 	rb_define_method(rb_cMolecule, "set_mo_coefficients", s_Molecule_SetMOCoefficients, 3);
 	rb_define_method(rb_cMolecule, "get_mo_coefficients", s_Molecule_GetMOCoefficients, 1);
 	rb_define_method(rb_cMolecule, "get_mo_energy", s_Molecule_GetMOEnergy, 1);
-	rb_define_method(rb_cMolecule, "allocate_basis_set_record", s_Molecule_AllocateBasisSetRecord, 3);
+	rb_define_method(rb_cMolecule, "get_mo_info", s_Molecule_GetMOInfo, 1);
+	rb_define_method(rb_cMolecule, "set_mo_info", s_Molecule_SetMOInfo, 1);
+/*	rb_define_method(rb_cMolecule, "allocate_basis_set_record", s_Molecule_AllocateBasisSetRecord, 3); */
 	rb_define_method(rb_cMolecule, "search_equivalent_atoms", s_Molecule_SearchEquivalentAtoms, -1);
 	
 	rb_define_method(rb_cMolecule, "create_pi_anchor", s_Molecule_CreatePiAnchor, -1);
@@ -11381,6 +11567,8 @@ Init_Molby(void)
 
 	s_ID_equal = rb_intern("==");
 	g_RubyID_call = rb_intern("call");
+	
+	s_InitMOInfoKeys();
 }
 
 #pragma mark ====== External functions ======
