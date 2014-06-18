@@ -137,6 +137,7 @@ class Molecule
 	nprims = 0
 	sym = -10  #  undefined
 	ncomps = 0
+	clear_basis_set
 	while (line = lines[ln])
 		ln += 1
 		break if line =~ /TOTAL NUMBER OF BASIS SET/
@@ -186,7 +187,53 @@ class Molecule
 	end
 	return ncomps
   end
-  
+
+  def sub_load_gamess_log_mo_coefficients(lines, lineno, ncomps)
+    ln = 0
+	idx = 0
+	alpha = true
+	while (line = lines[ln]) != nil
+		ln += 1
+		if line =~ /BETA SET/
+			alpha = false
+			next
+		end
+		if line =~ /------------/ || line =~ /EIGENVECTORS/ || line =~ /\*\*\*\* (ALPHA|BETA) SET/
+			next
+		end
+		next unless line =~ /^\s*\d/
+		mo_labels = line.split       #  MO numbers (1-based)
+		mo_energies = lines[ln].split
+		mo_symmetries = lines[ln + 1].split
+	#	puts "mo #{mo_labels.inspect}"
+		ln += 2
+		mo = mo_labels.map { [] }    #  array of *independent* empty arrays
+		while (line = lines[ln]) != nil
+			ln += 1
+			break unless line =~ /^\s*\d/
+			5.times { |i|
+			  s = line[15 + 11 * i, 11].chomp
+			  break if s =~ /^\s*$/
+			  mo[i].push(Float(s)) rescue print "line = #{line}, s = #{s}"
+			# line[15..-1].split.each_with_index { |s, i|
+			#  	mo[i].push(Float(s))
+			}
+		end
+		mo.each_with_index { |m, i|
+			idx = Integer(mo_labels[i]) - 1
+			set_mo_coefficients(idx + (alpha ? 0 : ncomps), Float(mo_energies[i]), m)
+		#	if mo_labels[i] % 8 == 1
+		#		puts "set_mo_coefficients #{idx}, #{mo_energies[i]}, [#{m[0]}, ..., #{m[-1]}]"
+		#	end
+		}
+#		if line =~ /^\s*$/
+#			next
+#		else
+#			break
+#		end
+	end
+  end
+    
   def sub_load_gamess_log(fp)
 
     if natoms == 0
@@ -333,38 +380,16 @@ class Molecule
 					set_mo_info(:type=>["UHF", "RHF", "ROHF"][rflag], :alpha=>ne_alpha, :beta=>ne_beta)
 				end
 				mo_count += 1
-				idx = 0
-				line = fp.gets; line = fp.gets;
+				line = fp.gets; line = fp.gets
+				lineno = fp.lineno
+				lines = []
 				set_progress_message(mes + "\nReading MO coefficients...")
-				while (line = fp.gets) != nil
-					break unless line =~ /^\s*\d/
-					mo_labels = line.split       #  MO numbers (1-based)
-					mo_energies = fp.gets.split
-					mo_symmetries = fp.gets.split
-					mo = mo_labels.map { [] }    #  array of *independent* empty arrays
-					while (line = fp.gets) != nil
-						break unless line =~ /^\s*\d/
-						5.times { |i|
-						  s = line[15 + 11 * i, 11].chomp
-						  break if s =~ /^\s*$/
-						  mo[i].push(Float(s)) rescue print "line = #{line}, s = #{s}"
-						# line[15..-1].split.each_with_index { |s, i|
-						#  	mo[i].push(Float(s))
-						}
-					end
-					mo.each_with_index { |m, i|
-						idx = Integer(mo_labels[i]) - 1
-						set_mo_coefficients(idx + (alpha_beta == "BETA" ? ncomps : 0), Float(mo_energies[i]), m)
-					#	if mo_labels[i] % 8 == 1
-					#		puts "set_mo_coefficients #{idx}, #{mo_energies[i]}, [#{m[0]}, ..., #{m[-1]}]"
-					#	end
-					}
-					if line =~ /^\s*$/ && idx < ncomps - 1
-						next
-					else
-						break
-					end
+				while (line = fp.gets)
+					break if line =~ /\.\.\.\.\.\./ || line =~ /----------------/
+					line.chomp!
+					lines.push(line)
 				end
+				sub_load_gamess_log_mo_coefficients(lines, lineno, ncomps)
 				set_progress_message(mes)
 			end
 		end

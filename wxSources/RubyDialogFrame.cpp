@@ -46,6 +46,8 @@ BEGIN_EVENT_TABLE(RubyDialogFrame, wxDialog)
   EVT_SIZE(RubyDialogFrame::OnSize)
   EVT_CHAR(RubyDialogFrame::OnChar)
   EVT_CLOSE(RubyDialogFrame::OnCloseWindow)
+  EVT_ACTIVATE(RubyDialogFrame::OnActivate)
+  EVT_CHILD_FOCUS(RubyDialogFrame::OnChildFocus)
 END_EVENT_TABLE()
 
 RubyDialogFrame::RubyDialogFrame(wxWindow* parent, wxWindowID wid, const wxString& title, const wxPoint& pos, const wxSize& size, long style):
@@ -61,7 +63,8 @@ RubyDialogFrame::RubyDialogFrame(wxWindow* parent, wxWindowID wid, const wxStrin
 	onKeyHandlerEnabled = false;
 	currentContext = NULL;
 	currentDrawingItem = NULL;
-	
+	lastFocusedWindow = NULL;
+
 	//  Create a vertical box sizer that contains a panel containing all controls and a sizer containing
 	//  OK/Cancel buttons
 	contentSizer = new wxBoxSizer(wxVERTICAL);
@@ -355,6 +358,42 @@ RubyDialogFrame::OnCloseWindow(wxCloseEvent &event)
 	wxGetApp().CheckIfAllWindowsAreGone(NULL);
 }
 
+/*  Restore the focused window after reactivation  */
+/*  Only necessary for wxOSX?  */
+void
+RubyDialogFrame::OnActivate(wxActivateEvent &event)
+{
+	if (event.GetActive()) {
+		int i;
+		RDItem *itemp;
+		if (lastFocusedWindow != NULL) {
+			lastFocusedWindow->SetFocus();
+		} else {
+			for (i = 0; (itemp = DialogItemAtIndex(i)) != NULL; i++) {
+				if (((wxWindow *)itemp)->CanAcceptFocus()) {
+					((wxWindow *)itemp)->SetFocus();
+					lastFocusedWindow = (wxWindow *)itemp;
+					break;
+				}
+			}
+		}
+	}
+}
+
+/*  Remember the focused window after every focus change  */
+/*  Only necessary for wxOSX?  */
+void
+RubyDialogFrame::OnChildFocus(wxChildFocusEvent &event)
+{
+	wxWindow *winp = wxWindow::FindFocus();
+	if (winp != NULL) {
+		if (winp != lastFocusedWindow && wxDynamicCast(winp, wxTextCtrl) != NULL && ((wxTextCtrl *)winp)->IsEditable()) {
+			((wxTextCtrl *)winp)->SelectAll();
+		}
+		lastFocusedWindow = winp;
+	}
+}
+
 static wxEvtHandler *
 sGetEventHandlerFromObjectAndType(void *obj, wxEventType eventType)
 {
@@ -627,6 +666,7 @@ RubyDialogCallback_show(RubyDialog *dref)
 		((RubyDialogFrame *)dref)->StartIntervalTimer(-1);
 	((RubyDialogFrame *)dref)->Show(true);
 	((RubyDialogFrame *)dref)->Raise();
+	((RubyDialogFrame *)dref)->Enable();
 #if defined(__WXMAC__)
 	{
 		extern void AddWindowsItemWithTitle(const char *title);

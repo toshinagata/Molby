@@ -154,6 +154,71 @@ class Molecule
 	}
   end
   
+  def cmd_show_energy
+	wave = [0.0, 0.0]
+	cur = 0
+	mol = self
+	d = open_auxiliary_window("Energy", nil, nil, :resizable=>true, :has_close_box=>true) {
+	  graph_item = nil   #  Forward declaration
+	  target_mol = nil
+	  draw_graph = lambda { |it|
+		clear
+		f = graph_item[:frame]
+		draw_rectangle(0, 0, f[2], f[3])
+		width = f[2] - 25
+		height = f[3] - 25
+		draw_line(16, 0, 16, height + 12, width + 20, height + 12)
+		xx = yy = nil
+		min = wave.min
+		h = wave.max - min
+		h = (h == 0.0 ? 1.0 : height / h)
+		w = wave.count
+		w = (w == 0 ? 1.0 : Float(width) / w)
+		a = []
+		wave.each_with_index { |d, i|
+		  a.push(i * w + 16)
+		  a.push(height - (d - min) * h + 12)
+		}
+		if wave.count == 1
+		  a.push(w + 16)
+		  a.push(height - (wave[0] - min) * h + 12)
+		end
+		draw_line(a)
+		brush(:color=>[0.2, 0.2, 1.0])
+		y = wave[cur] || 0.0
+		xx = cur * w + 16
+		yy = height - (y - min) * h + 12
+		draw_ellipse(cur * w + 16, height - (y - min) * h + 12, 6)
+	  }
+	  @on_document_modified = lambda { |m|
+		cur = mol.frame
+		wave.clear
+		if mol.nframes < 2
+		  wave = [mol.get_property("energy", 0)] * 2
+		else
+		  wave = (0...mol.nframes).map { |i| mol.get_property("energy", i) }
+		end
+		f = graph_item[:frame]
+		item_with_tag("energy")[:title] = sprintf("Energy = %.10f hartree, Frame = %d", mol.get_property("energy", cur), cur)
+		graph_item.refresh_rect([0, 0, f[2], f[3]])
+	  }
+	  layout(1,
+		item(:text, :title=>"Energy =                 ", :tag=>"energy"),
+		item(:view, :frame=>[0, 0, 100, 80], :tag=>"graph", :on_paint=>draw_graph, :flex=>[0,0,0,0,1,1]),
+	#	item(:button, :title=>"Update", :action=>doc_modified, :align=>:center, :flex=>[1,1,1,0,0,0]),
+	#	item(:button, :title=>"Close", :action=>proc { hide }, :align=>:center, :flex=>[1,1,1,0,0,0]),
+		:flex=>[0,0,0,0,1,1]
+	  )
+	  graph_item = item_with_tag("graph")
+	  size = self.size
+	  set_min_size(size)
+	  set_size(500, 300)
+	  @on_document_modified.call(mol)
+	  show
+	}
+	self
+  end
+  
   #  DEBUG
   def cmd_test
     $test_dialog = Dialog.new("Test") { item(:text, :title=>"test"); show }
@@ -189,6 +254,6 @@ register_menu("", "")
 register_menu("Delete Frames...", :cmd_delete_frames, lambda { |m| m && m.nframes > 1 } )
 register_menu("Reverse Frames...", :cmd_reverse_frames, lambda { |m| m && m.nframes > 1 } )
 register_menu("", "")
-register_menu("Open Extra Properties Window...", :cmd_extra_properties, lambda { |m| m && m.property_names.count > 0 } )
+register_menu("Show Energy Window...", :cmd_show_energy, lambda { |m| m && m.property_names.include?("energy") } )
 #register_menu("cmd test", :cmd_test)
 

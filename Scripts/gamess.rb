@@ -403,9 +403,14 @@ class Molecule
     fplog = File.open(logname, "r")
     size = 0
     lines = []
+	lineno = 0
     last_line = ""
     search_mode = 0
-
+	rflag = 0
+	ne_alpha = ne_beta = 0
+	mo_count = 0
+	ncomps = 0
+	
     #  Callback procs
 	term_callback = lambda { |m, n|
 	  msg = "GAMESS execution on #{inpbase} "
@@ -478,6 +483,83 @@ class Molecule
 		  elsif line =~ /POINT *([0-9]+) *ON THE REACTION PATH/
 		    nserch = $1.to_i
 			last_i = i
+		  elsif line =~ /ATOMIC BASIS SET/
+			j = i
+			while j < lines.count
+			  line = lines[j]
+			  break if line =~ /TOTAL NUMBER OF BASIS SET/
+			  j += 1
+			end
+			if j < lines.count
+			  #  Found
+			  bs_lines = []
+			  ii = i
+			  while ii <= j
+			    bs_lines.push(lines[ii].chomp)
+				ii += 1
+			  end
+			  begin
+			    if mol
+				  ncomps = mol.sub_load_gamess_log_basis_set(bs_lines, lineno + i)
+				end
+			  rescue
+			    puts $!.to_s
+			    puts $!.backtrace.inspect
+			  end
+			  last_i = j
+			else
+			  break  #  Wait until all basis set lines are read
+			end
+		  elsif line =~ /NUMBER OF OCCUPIED ORBITALS/
+			line =~ /=\s*(\d+)/
+			n = Integer($1)
+			if line =~ /ALPHA/
+			  ne_alpha = n
+			else
+			  ne_beta = n
+			end
+		  elsif line =~ /SCFTYP=(\w+)/
+			scftyp = $1
+			if ne_alpha > 0 || ne_beta > 0
+			  rflag = 0
+			  case scftyp
+			  when "RHF"
+				rflag = 1
+			  when "ROHF"
+				rflag = 2
+			  end
+			end
+		  elsif line =~ /^\s*(EIGENVECTORS|MOLECULAR ORBITALS)\s*$/
+			if mo_count == 0 && mol
+			  mol.clear_mo_coefficients
+			  mol.set_mo_info(:type=>["UHF", "RHF", "ROHF"][rflag], :alpha=>ne_alpha, :beta=>ne_beta)
+			end
+			i += 2
+			j = i
+			mo_count += 1
+			while j < lines.count
+			  line = lines[j]
+			  break if line =~ /\.\.\.\.\.\./ || line =~ /----------------/
+			  j += 1
+			end
+			if j == lines.count
+			  break  #  Wait until complete MO info are read
+			end
+			ii = i
+			mo_lines = []
+			while ii < j
+			  mo_lines.push(lines[ii].chomp)
+			  ii += 1
+			end
+			begin
+			  if mol
+			    mol.sub_load_gamess_log_mo_coefficients(mo_lines, lineno + i, ncomps)
+			  end
+			rescue
+			  puts $!.to_s
+			  puts $!.backtrace.inspect
+			end
+			last_i = j
           elsif line =~ /NSERCH: *([0-9]+)/
           #  print line
 			if mol
@@ -528,6 +610,7 @@ class Molecule
           break
         elsif last_i
           lines[0..last_i] = nil
+		  lineno += last_i + 1
         end
       end
       true
@@ -903,7 +986,7 @@ class Molecule
 		if bssname
 		  user_input["basis"] = $gamess_basis_keys.find_index(bssname).to_s
 		end
-	    puts user_input.inspect
+	  #  puts user_input.inspect
 	  end
 	end
 	
@@ -1061,7 +1144,7 @@ class Molecule
 	  fname = Dialog.save_panel("Export GAMESS input file:", self.dir, basename + ".inp", "GAMESS input file (*.inp)|*.inp|All files|*.*")
 	  return nil if !fname
 	  if gamess_input_direct
-	    puts "gamess_input_direct = \"#{gamess_input_direct}\""
+	  #  puts "gamess_input_direct = \"#{gamess_input_direct}\""
 	    File.open(fname, "w") { |fp| fp.print(gamess_input_direct) }
 	  else
 	    export_gamess(fname, hash)

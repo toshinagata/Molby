@@ -60,6 +60,8 @@ public:
 	wxWindow *currentDrawingItem;
 	wxDC *currentContext;
 
+	wxWindow *lastFocusedWindow;
+
 	/*  Auto resizing  */
 	RDSize mySize;  /*  Previous size  */
 	bool autoResizeEnabled;  /*  true if auto resizing is enabled  */
@@ -97,7 +99,9 @@ public:
 	void OnSize(wxSizeEvent &event);
 	void OnChar(wxKeyEvent &event);
 	void OnCloseWindow(wxCloseEvent &event);
-
+	void OnActivate(wxActivateEvent &event);
+	void OnChildFocus(wxChildFocusEvent &event);
+	
 	//  MyListCtrlDataSource methods
 	virtual int GetItemCount(MyListCtrl *ctrl);
 	virtual wxString GetItemText(MyListCtrl *ctrl, long row, long column) const;

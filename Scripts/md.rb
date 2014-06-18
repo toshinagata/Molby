@@ -762,7 +762,7 @@ class Molecule
 	  end
 	}
 	message_box(msg, "AMBER Lib Import Complete", :ok)
-	puts msg
+#	puts msg
   end
   
   def Molecule.cmd_import_amberlib(mol)
