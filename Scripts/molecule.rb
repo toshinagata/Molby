@@ -756,4 +756,18 @@ class Molecule
 	end
   end
   
+  def close_active_auxiliary_window
+    puts @aux_windows.inspect
+    if @aux_windows
+	  @aux_windows.each_value { |d|
+	    puts "#{d}: #{d.active?}"
+	    if d.active?
+		  close_auxiliary_window(d)
+		  return true
+		end
+	  }
+	end
+	return false;
+  end
+  
 end

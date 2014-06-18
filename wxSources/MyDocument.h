@@ -95,6 +95,8 @@ public:
 	void	OnExport(wxCommandEvent& event);
 	void	OnExportGraphic(wxCommandEvent &event);
 
+	void	OnCustomClose(wxCommandEvent &event);
+	
 	void	OnCopy(wxCommandEvent& event);
 	void	OnCut(wxCommandEvent& event);
 	void	OnPaste(wxCommandEvent& event);

@@ -853,6 +853,21 @@ s_RubyDialog_Hide(VALUE self)
 
 /*
  *  call-seq:
+ *     is_active -> Boolean
+ *
+ *  Returns whether this dialog is 'active' (i.e. the user is working on it) or not.
+ */
+static VALUE
+s_RubyDialog_IsActive(VALUE self)
+{
+	RubyDialog *dref = s_RubyDialog_GetController(self);
+	if (RubyDialogCallback_isActive(dref))
+		return Qtrue;
+	else return Qfalse;
+}
+
+/*
+ *  call-seq:
  *     close
  *
  *  Close the modeless dialog. The normal close handler of the platform is invoked.
@@ -2687,6 +2702,7 @@ RubyDialogInitClass(void)
 	rb_define_method(rb_cDialog, "end_modal", s_RubyDialog_EndModal, -1);
 	rb_define_method(rb_cDialog, "show", s_RubyDialog_Show, 0);
 	rb_define_method(rb_cDialog, "hide", s_RubyDialog_Hide, 0);
+	rb_define_method(rb_cDialog, "active?", s_RubyDialog_IsActive, 0);
 	rb_define_method(rb_cDialog, "close", s_RubyDialog_Close, 0);
 	rb_define_method(rb_cDialog, "start_timer", s_RubyDialog_StartTimer, -1);
 	rb_define_method(rb_cDialog, "stop_timer", s_RubyDialog_StopTimer, 0);

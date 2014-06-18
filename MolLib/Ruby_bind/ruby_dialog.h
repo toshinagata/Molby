@@ -84,6 +84,8 @@ STUB void RubyDialogCallback_destroy(RubyDialog *dref);
 STUB void RubyDialogCallback_close(RubyDialog *dref);
 STUB void RubyDialogCallback_show(RubyDialog *dref);
 STUB void RubyDialogCallback_hide(RubyDialog *dref);
+STUB int RubyDialogCallback_isActive(RubyDialog *dref);	
+	
 STUB int RubyDialogCallback_startIntervalTimer(RubyDialog *dref, float interval);
 STUB void RubyDialogCallback_stopIntervalTimer(RubyDialog *dref);
 STUB void RubyDialogCallback_enableOnKeyHandler(RubyDialog *dref, int flag);

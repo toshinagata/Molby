@@ -43,6 +43,7 @@ BEGIN_EVENT_TABLE(RubyDialogFrame, wxDialog)
   EVT_TIMER(-1, RubyDialogFrame::OnTimerEvent)
   EVT_BUTTON(wxID_OK, RubyDialogFrame::OnDefaultButtonPressed)
   EVT_BUTTON(wxID_CANCEL, RubyDialogFrame::OnDefaultButtonPressed)
+  EVT_MENU(wxID_CLOSE, RubyDialogFrame::OnCloseFromMenu)
   EVT_SIZE(RubyDialogFrame::OnSize)
   EVT_CHAR(RubyDialogFrame::OnChar)
   EVT_CLOSE(RubyDialogFrame::OnCloseWindow)
@@ -394,6 +395,15 @@ RubyDialogFrame::OnChildFocus(wxChildFocusEvent &event)
 	}
 }
 
+void
+RubyDialogFrame::OnCloseFromMenu(wxCommandEvent &event)
+{
+	RubyDialog_doCloseWindow((RubyValue)dval, IsModal());
+	
+	//  Check if all windows are gone
+	wxGetApp().CheckIfAllWindowsAreGone(NULL);	
+}
+
 static wxEvtHandler *
 sGetEventHandlerFromObjectAndType(void *obj, wxEventType eventType)
 {
@@ -681,6 +691,14 @@ RubyDialogCallback_hide(RubyDialog *dref)
 {
 	((RubyDialogFrame *)dref)->StopIntervalTimer();
 	((RubyDialogFrame *)dref)->Show(false);
+}
+
+int
+RubyDialogCallback_isActive(RubyDialog *dref)
+{
+	if (((RubyDialogFrame *)dref)->IsActive())
+		return 1;
+	else return 0;
 }
 
 int

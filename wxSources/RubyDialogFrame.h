@@ -101,7 +101,8 @@ public:
 	void OnCloseWindow(wxCloseEvent &event);
 	void OnActivate(wxActivateEvent &event);
 	void OnChildFocus(wxChildFocusEvent &event);
-	
+	void OnCloseFromMenu(wxCommandEvent &event);
+
 	//  MyListCtrlDataSource methods
 	virtual int GetItemCount(MyListCtrl *ctrl);
 	virtual wxString GetItemText(MyListCtrl *ctrl, long row, long column) const;

@@ -75,6 +75,7 @@ BEGIN_EVENT_TABLE(MyDocument, wxDocument)
 	EVT_MENU(wxID_PASTE, MyDocument::OnPaste)
 	EVT_MENU(wxID_CUT, MyDocument::OnCut)
 	EVT_MENU(wxID_DELETE, MyDocument::OnDelete)
+	EVT_MENU(wxID_CLOSE, MyDocument::OnCustomClose)
 	EVT_MENU(myMenuID_CreateNewAtom, MyDocument::OnCreateNewAtom)
 	EVT_MENU_RANGE(myMenuID_CreateNewVdwParameter, myMenuID_CreateNewVdwCutoffParameter, MyDocument::OnCreateNewParameter)
 	EVT_MENU(myMenuID_CreatePiAnchor, MyDocument::OnCreatePiAnchor)
@@ -478,6 +479,15 @@ MyDocument::CleanUndoStack(bool shouldRegister)
 	undoStack = NULL;
 	countUndoStack = 0;
 	currentCommand = NULL;
+}
+
+void
+MyDocument::OnCustomClose(wxCommandEvent &event)
+{
+	RubyValue val;
+	MolActionCreateAndPerform(mol, SCRIPT_ACTION(";r"), "close_active_auxiliary_window", &val);
+	if (val == NULL || val == RubyNil)
+		event.Skip();
 }
 
 bool
