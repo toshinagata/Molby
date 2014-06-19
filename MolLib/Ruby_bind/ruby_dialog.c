@@ -2000,7 +2000,8 @@ s_RubyDialog_doItemAction(VALUE val)
 	VALUE flag;
 	RDItem *ip = (RDItem *)vp[1];
 	RDItem *ip2;
-	VALUE ival, itval, actval;
+	Int options = (Int)vp[2];
+	VALUE ival, itval, actval, tval, aval;
 	RubyDialog *dref = s_RubyDialog_GetController(self);
 	VALUE items = rb_iv_get(self, "_items");
 	int nitems = RARRAY_LEN(items);
@@ -2016,7 +2017,9 @@ s_RubyDialog_doItemAction(VALUE val)
 	rb_ivar_set(itval, SYM2ID(sIsProcessingActionSymbol), Qtrue);
 
 	/*  Handle radio group  */
-	if (s_RubyDialogItem_Attr(itval, sTypeSymbol) == sRadioSymbol) {
+	tval = s_RubyDialogItem_Attr(itval, sTypeSymbol);
+	aval = sActionSymbol;
+	if (tval == sRadioSymbol) {
 		VALUE gval = s_RubyDialogItem_Attr(itval, sRadioGroupSymbol);
 		if (gval == Qnil) {
 			/*  All other radio buttons with no radio group will be deselected  */
@@ -2043,16 +2046,21 @@ s_RubyDialog_doItemAction(VALUE val)
 		}
 	}
 	
+	if (tval == sTextFieldSymbol || tval == sTextViewSymbol) {
+		if (options == 1)
+			aval = ID2SYM(rb_intern("text_action"));  /*  Action for every text update  */
+	}
+	
 	/*  If the item has the "action" attribute, call it  */
-	actval = s_RubyDialogItem_Attr(itval, sActionSymbol);
+	actval = s_RubyDialogItem_Attr(itval, aval);
 	if (actval != Qnil) {
 		if (TYPE(actval) == T_SYMBOL)
 			rb_funcall(self, SYM2ID(actval), 1, itval);
 		else
 			rb_funcall(actval, rb_intern("call"), 1, itval);
-	} else if (rb_respond_to(itval, SYM2ID(sActionSymbol))) {
+	} else if (rb_respond_to(itval, SYM2ID(aval))) {
 		/*  If "action" method is defined, then call it without arguments  */
-		rb_funcall(itval, SYM2ID(sActionSymbol), 0);
+		rb_funcall(itval, SYM2ID(aval), 0);
 	} else {
 		/*  Default action (only for default buttons)  */
 		if (idx == 0 || idx == 1) {
@@ -2071,12 +2079,13 @@ s_RubyDialog_doItemAction(VALUE val)
  the item number (integer) as the argument. The default "action" method is
  defined as s_RubyDialog_action.  */
 void
-RubyDialog_doItemAction(RubyValue self, RDItem *ip)
+RubyDialog_doItemAction(RubyValue self, RDItem *ip, Int options)
 {
 	int status;
-	void *vp[2];
+	void *vp[3];
 	vp[0] = (void *)self;
 	vp[1] = ip;
+	vp[2] = (void *)options;
 	rb_protect(s_RubyDialog_doItemAction, (VALUE)vp, &status);
 	if (status != 0)
 		Molby_showError(status);

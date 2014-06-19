@@ -232,7 +232,25 @@ RubyDialogFrame::StopIntervalTimer(void)
 void
 RubyDialogFrame::OnDialogItemAction(wxCommandEvent &event)
 {
-	RubyDialog_doItemAction((RubyValue)dval, (RDItem *)(event.GetEventObject()));
+	RubyDialog_doItemAction((RubyValue)dval, (RDItem *)(event.GetEventObject()), 0);
+}
+
+void
+RubyDialogFrame::OnTextUpdated(wxCommandEvent &event)
+{
+	RubyDialog_doItemAction((RubyValue)dval, (RDItem *)(event.GetEventObject()), 1);
+}
+
+void
+RubyDialogFrame::OnEnterProcessedOnText(wxCommandEvent &event)
+{
+	RubyDialog_doItemAction((RubyValue)dval, (RDItem *)(event.GetEventObject()), 2);
+}
+
+void
+RubyDialogFrame::OnKillFocusOnText(wxFocusEvent &event)
+{
+	RubyDialog_doItemAction((RubyValue)dval, (RDItem *)(event.GetEventObject()), 3);
 }
 
 void
@@ -852,14 +870,18 @@ RubyDialogCallback_createItem(RubyDialog *dref, const char *type, const char *ti
 		no_action = true;
 	} else if (strcmp(type, "textfield") == 0) {
 		/*  Editable text  */
-		wxTextCtrl *tc = new wxTextCtrl(parent, -1, tstr, rect.GetPosition(), rect.GetSize());
+		wxTextCtrl *tc = new wxTextCtrl(parent, -1, tstr, rect.GetPosition(), rect.GetSize(), wxTE_PROCESS_ENTER);
 		control = tc;
-		tc->Connect(-1, wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler(RubyDialogFrame::OnDialogItemAction), NULL, parent);
+		tc->Connect(-1, wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler(RubyDialogFrame::OnTextUpdated), NULL, parent);
+		tc->Connect(-1, wxEVT_TEXT_ENTER, wxCommandEventHandler(RubyDialogFrame::OnEnterProcessedOnText), NULL, parent);
+		tc->Connect(-1, wxEVT_KILL_FOCUS, wxFocusEventHandler(RubyDialogFrame::OnKillFocusOnText), NULL, parent);
 	} else if (strcmp(type, "textview") == 0) {
 		/*  Text view  */
-		wxTextCtrl *tc = new wxTextCtrl(parent, -1, tstr, rect.GetPosition(), rect.GetSize(), wxTE_MULTILINE | wxTE_RICH);
+		wxTextCtrl *tc = new wxTextCtrl(parent, -1, tstr, rect.GetPosition(), rect.GetSize(), wxTE_MULTILINE | wxTE_RICH | wxTE_PROCESS_ENTER);
 		control = tc;
-		tc->Connect(-1, wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler(RubyDialogFrame::OnDialogItemAction), NULL, parent);
+		tc->Connect(-1, wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler(RubyDialogFrame::OnTextUpdated), NULL, parent);
+		tc->Connect(-1, wxEVT_TEXT_ENTER, wxCommandEventHandler(RubyDialogFrame::OnEnterProcessedOnText), NULL, parent);
+		tc->Connect(-1, wxEVT_KILL_FOCUS, wxFocusEventHandler(RubyDialogFrame::OnKillFocusOnText), NULL, parent);
 	} else if (strcmp(type, "view") == 0) {
 		/*  Panel  */
 		MyDrawingPanel *pn = new MyDrawingPanel(parent, -1, rect.GetPosition(), rect.GetSize());

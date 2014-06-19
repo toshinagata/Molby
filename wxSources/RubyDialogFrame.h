@@ -94,6 +94,10 @@ public:
 	int StartIntervalTimer(int millisec);
 	void StopIntervalTimer(void);
 	void OnDialogItemAction(wxCommandEvent &event);
+	void OnTextUpdated(wxCommandEvent &event);
+	void OnEnterProcessedOnText(wxCommandEvent &event);
+	void OnKillFocusOnText(wxFocusEvent &event);
+
 	void OnTimerEvent(wxTimerEvent &event);
 	void OnDefaultButtonPressed(wxCommandEvent &event);
 	void OnSize(wxSizeEvent &event);

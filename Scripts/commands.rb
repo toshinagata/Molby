@@ -233,7 +233,7 @@ class Molecule
 	    beta = nil
 	  end
 	  i = (beta ? 2 : 1)
-	  mo_menu = []  #  Create later
+	  mo_menu = ["1000 (-00.00000000)"]  #  Dummy entry; create later
 	  tabvals = []
 	  coeffs = nil
 	  a_idx_old = -1
@@ -265,15 +265,34 @@ class Molecule
 	  h = {"mo"=>nil, "color"=>nil, "opacity"=>nil, "threshold"=>nil, "expand"=>nil, "grid"=>nil}
 	  should_update = true
 	  on_action = lambda { |it|
-	    should_update = false
-	    h.each_key { |key|
-		  val = value(key)
-		  if val && h[key] != val
-		    should_update = true
-		    break
-		  end
-		}
-		item_with_tag("update")[:enabled] = should_update
+	    tag = it[:tag]
+		value = it[:value]
+		if tag == "color" || tag == "opacity"
+		  opac = value("opacity").to_f
+		  opac = 0.0 if opac < 0.0
+		  opac = 1.0 if opac > 1.0
+		  col = value("color")
+		  color = coltable[col] + [opac]
+		  color0 = [1,1,1,opac]
+		  mol.set_surface_attr(:color=>color, :color0=>color0)
+		  h[tag] = value
+		elsif tag == "threshold"
+	      thres = it[:value].to_f
+		  thres = 0.001 if thres >= 0.0 && thres < 0.001
+		  thres = -0.001 if thres <= 0.0 && thres > -0.001
+		  mol.set_surface_attr(:thres=>thres)
+		  h[tag] = value
+		else
+	      should_update = false
+	      h.each_key { |key|
+		    val = value(key)
+		    if val && h[key] != val
+		      should_update = true
+		      break
+		    end
+		  }
+		  item_with_tag("update")[:enabled] = should_update
+		end
 	  }
 	  on_mo_action = lambda { |it|
 	    mo = it[:value]
@@ -304,7 +323,7 @@ class Molecule
 		        i1 = n
 		        i2 = 1
 		        c1 = ""
-		        c2 = (i1 >= alpha ? "*" : "")
+		        c2 = (i1 > alpha ? "*" : "")
 		      end
 		      en = mol.get_mo_energy(i1 + (i2 == 0 ? ncomps : 0))
 		      sprintf("%d%s%s (%.8f)", i1, c1, c2, en)
@@ -326,7 +345,10 @@ class Molecule
 		  h[key] = value(key)
 		}
 		opac = h["opacity"].to_f
+		opac = 0.0 if opac < 0.0
+		opac = 1.0 if opac > 1.0
 		color = coltable[h["color"]] + [opac]
+		color0 = [1, 1, 1, opac]
 		thres = h["threshold"].to_f
 		thres = 0.001 if thres >= 0.0 && thres < 0.001
 		thres = -0.001 if thres <= 0.0 && thres > -0.001
@@ -343,7 +365,7 @@ class Molecule
 		  idx = 0
 		  mol.set_mo_coefficients(0, 0.0, coeffs)
 		end
-		mol.create_surface(idx, :npoints=>grid, :color=>color, :thres=>thres, :expand=>expand)
+		mol.create_surface(idx, :npoints=>grid, :color=>color, :thres=>thres, :expand=>expand, :color0=>color0)
 		on_action.call(it)
 	  }
 	  layout(1,

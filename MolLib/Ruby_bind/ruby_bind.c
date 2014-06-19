@@ -10188,29 +10188,35 @@ s_Molecule_CreateSurface(int argc, VALUE *argv, VALUE self)
 		if (MoleculeClearMCube(mol, nx, ny, nz, &o, dx.x, dy.y, dz.z) == NULL)
 			rb_raise(rb_eMolbyError, "Cannot allocate memory for MO surface calculation");
 	}
-	if (hval != Qnil && (((nx = 1), (aval = rb_hash_aref(hval, ID2SYM(rb_intern("color")))) != Qnil) ||
-						 ((nx = 0), (aval = rb_hash_aref(hval, ID2SYM(rb_intern("color0")))) != Qnil))) {
-		aval = rb_ary_to_ary(aval);
-		if (RARRAY_LEN(aval) < 3) {
-		raise:
-			rb_raise(rb_eMolbyError, "The color%s value must be an array with at least 3 float numbers", (nx == 0 ? "0" : ""));
+	for (nx = 0; nx < 2; nx++) {
+		aval = ID2SYM(rb_intern(nx == 0 ? "color0" : "color"));
+		if (hval != Qnil && (aval = rb_hash_aref(hval, aval)) != Qnil) {
+			aval = rb_ary_to_ary(aval);
+			if (RARRAY_LEN(aval) < 3) {
+			raise:
+				rb_raise(rb_eMolbyError, "The color%s value must be an array with at least 3 float numbers", (nx == 0 ? "0" : ""));
+			}
+			for (i = 0; i < 4; i++)
+				d[i] = mol->mcube->c[nx].rgba[i];
+			for (i = 0; i < 4 && i < RARRAY_LEN(aval); i++) {
+				d[i] = NUM2DBL(rb_Float(RARRAY_PTR(aval)[i]));
+				if (d[i] < 0.0 && d[i] > 1.0)
+					goto raise;
+			}
+			for (i = 0; i < 4; i++)
+				mol->mcube->c[nx].rgba[i] = d[i];
 		}
-		for (i = 0; i < 4; i++)
-			d[i] = mol->mcube->c[nx].rgba[i];
-		for (i = 0; i < 4 && i < RARRAY_LEN(aval); i++) {
-			d[i] = NUM2DBL(rb_Float(RARRAY_PTR(aval)[i]));
-			if (d[i] < 0.0 && d[i] > 1.0)
-				goto raise;
-		}
-		for (i = 0; i < 4; i++)
-			mol->mcube->c[nx].rgba[i] = d[i];
 	}
 	if (mol->mcube->expand != expand)
 		need_recalc = 1;
 	mol->mcube->thres = thres;
 	mol->mcube->expand = expand;
-	if (nmo < 0 && need_recalc)
-		nmo = mol->mcube->idn;  /*  Force recalculation  */
+	if (nmo < 0) {
+		if (mol->mcube->idn < 0)
+			return self;  /*  Only set attributes for now  */
+		if (need_recalc)
+			nmo = mol->mcube->idn;  /*  Force recalculation  */
+	}
 	if (MoleculeUpdateMCube(mol, nmo) != 0)
 		rb_raise(rb_eMolbyError, "Cannot complete MO surface calculation");
 	return self;

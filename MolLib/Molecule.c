@@ -11238,6 +11238,7 @@ MoleculeClearMCube(Molecule *mol, Int nx, Int ny, Int nz, const Vector *origin, 
 	}
 	if (nx > 0 && ny > 0 && nz > 0) {
 		mc = (MCube *)calloc(sizeof(MCube), 1);
+		mc->idn = -1;
 		/*  round up to nearest 4N+1 integer  */
 		dx *= nx;
 		dy *= ny;
