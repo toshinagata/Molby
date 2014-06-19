@@ -130,9 +130,9 @@ class Molecule
 	    sprintf("%.8f", mol.get_property(col - 1, row)) rescue ""
 	  end
     }
-    Dialog.new("Extra Props:" + mol.name, nil, nil, :resizable=>true, :has_close_box=>true) {
+    mol.open_auxiliary_window("Extra Props", nil, nil, :resizable=>true, :has_close_box=>true) {
 	  names = nil
-	  on_document_modified = lambda { |m|
+	  @on_document_modified = lambda { |m|
 	    if (n = m.property_names) != names
 		  names = n
 		  col = [["frame", 40]] + names.map { |nn| [nn, 120] }
@@ -147,8 +147,8 @@ class Molecule
 	    :flex=>[0,0,0,0,1,1]
 	  )
 	  set_min_size(320, 200)
-	  listen(mol, "documentModified", on_document_modified)
-	  listen(mol, "documentWillClose", lambda { |m| close } )
+	  # listen(mol, "documentModified", on_document_modified)
+	  # listen(mol, "documentWillClose", lambda { |m| close } )
 	  on_document_modified.call(mol)
 	  show
 	}
@@ -204,7 +204,7 @@ class Molecule
 	  }
 	  layout(1,
 		item(:text, :title=>"Energy =                 ", :tag=>"energy"),
-		item(:view, :frame=>[0, 0, 100, 80], :tag=>"graph", :on_paint=>draw_graph, :flex=>[0,0,0,0,1,1]),
+		item(:view, :frame=>[0, 0, 320, 240], :tag=>"graph", :on_paint=>draw_graph, :flex=>[0,0,0,0,1,1]),
 	#	item(:button, :title=>"Update", :action=>doc_modified, :align=>:center, :flex=>[1,1,1,0,0,0]),
 	#	item(:button, :title=>"Close", :action=>proc { hide }, :align=>:center, :flex=>[1,1,1,0,0,0]),
 		:flex=>[0,0,0,0,1,1]
@@ -217,6 +217,167 @@ class Molecule
 	  show
 	}
 	self
+  end
+  
+  def cmd_create_surface
+    mol = self
+	mol.open_auxiliary_window("MO Surface", nil, nil, :resizable=>true, :has_close_box=>true) {
+	  motype = mol.get_mo_info(:type)
+	  alpha = mol.get_mo_info(:alpha)
+	  beta = mol.get_mo_info(:beta)
+	  ncomps = mol.get_mo_info(:ncomps)
+	  mo_index = 1
+	  mo_ao = nil
+	  coltable = [[0,0,1], [1,0,0], [0,1,0], [1,1,0], [0,1,1], [1,0,1], [0,0,0]]
+	  if (motype == "RHF")
+	    beta = nil
+	  end
+	  i = (beta ? 2 : 1)
+	  mo_menu = []  #  Create later
+	  tabvals = []
+	  coeffs = nil
+	  a_idx_old = -1
+	  ncomps.times { |i|
+	    a_idx, label, nprims = mol.get_gaussian_shell_info(i)
+		if a_idx_old != a_idx
+		  a_idx_old = a_idx
+		  a = a_idx.to_s
+		  n = mol.atoms[a_idx].name
+		else
+		  a = n = ""
+		end
+		tabvals.push([a, n, label, a_idx])
+	  }
+	  on_get_value = lambda { |it, row, col|
+	    if col < 3
+		  tabvals[row][col]
+		else
+		  if coeffs == nil
+		    if mo_ao == 0
+		      coeffs = mol.get_mo_coefficients(mo_index)
+		    else
+		      coeffs = (0...ncomps).map { |i| (i == mo_index ? 1.0 : 0.0) }
+			end
+		  end
+		  sprintf("%.6f", coeffs[row])
+		end
+	  }
+	  h = {"mo"=>nil, "color"=>nil, "opacity"=>nil, "threshold"=>nil, "expand"=>nil, "grid"=>nil}
+	  should_update = true
+	  on_action = lambda { |it|
+	    should_update = false
+	    h.each_key { |key|
+		  val = value(key)
+		  if val && h[key] != val
+		    should_update = true
+		    break
+		  end
+		}
+		item_with_tag("update")[:enabled] = should_update
+	  }
+	  on_mo_action = lambda { |it|
+	    mo = it[:value]
+		if mo_ao == 0
+		  if beta
+		    mo_index = (mo / 2) + (mo % 2 == 1 ? ncomps : 0) + 1
+		  else
+		    mo_index = mo + 1
+		  end
+		else
+		  mo_index = mo
+		end
+		coeffs = nil
+		item_with_tag("table")[:refresh] = true
+	    on_action.call(it)
+	  }
+	  on_set_action = lambda { |it|
+	    if mo_ao != it[:value]
+		  mo_ao = it[:value]
+		  if mo_ao == 0
+		    mo_menu = (1..(ncomps * i)).map { |n|
+	          if beta
+		        i1 = (n - 1) / 2 + 1
+		        i2 = n % 2
+		        c1 = (i2 == 0 ? "B" : "A")
+		        c2 = (i1 > (i2 == 0 ? beta : alpha) ? "*" : "")
+		      else
+		        i1 = n
+		        i2 = 1
+		        c1 = ""
+		        c2 = (i1 >= alpha ? "*" : "")
+		      end
+		      en = mol.get_mo_energy(i1 + (i2 == 0 ? ncomps : 0))
+		      sprintf("%d%s%s (%.8f)", i1, c1, c2, en)
+			}
+		  else
+		    mo_menu = []
+		    ncomps.times { |i|
+			  mo_menu[i] = sprintf("AO%d: %s (%s)", i + 1, tabvals[i][2], mol.atoms[tabvals[i][3]].name)
+			}
+		  end
+		  it0 = item_with_tag("mo")
+		  it0[:subitems] = mo_menu
+		  it0[:value] = 0
+		  on_mo_action.call(it0)
+		end
+	  }
+	  on_update = lambda { |it|
+	    h.each_key { |key|
+		  h[key] = value(key)
+		}
+		opac = h["opacity"].to_f
+		color = coltable[h["color"]] + [opac]
+		thres = h["threshold"].to_f
+		thres = 0.001 if thres >= 0.0 && thres < 0.001
+		thres = -0.001 if thres <= 0.0 && thres > -0.001
+		expand = h["expand"].to_f
+		expand = 0.01 if expand < 0.01
+		expand = 10.0 if expand > 10.0
+		grid = h["grid"].to_i
+		if grid > 10000000
+		  grid = 10000000
+		end
+		if mo_ao == 0
+		  idx = mo_index
+		else
+		  idx = 0
+		  mol.set_mo_coefficients(0, 0.0, coeffs)
+		end
+		mol.create_surface(idx, :npoints=>grid, :color=>color, :thres=>thres, :expand=>expand)
+		on_action.call(it)
+	  }
+	  layout(1,
+	    layout(2,
+		  item(:text, :title=>"Orbital Set"),
+		  item(:popup, :tag=>"mo_ao", :subitems=>["Molecular Orbitals", "Atomic Orbitals"], :action=>on_set_action),
+	      item(:text, :title=>"Select"),
+	      item(:popup, :tag=>"mo", :subitems=>mo_menu, :action=>on_mo_action)),
+		layout(4,
+		  item(:text, :title=>"Color"),
+		  item(:popup, :tag=>"color", :subitems=>["blue", "red", "green", "yellow", "cyan", "magenta", "black"], :action=>on_action),
+		  item(:text, :title=>"Opacity"),
+		  item(:textfield, :tag=>"opacity", :width=>80, :value=>"0.6", :action=>on_action),
+		  item(:text, :title=>"Threshold"),
+		  item(:textfield, :tag=>"threshold", :width=>80, :value=>"0.05", :action=>on_action),
+		  item(:text, :title=>"Box Limit"),
+		  item(:textfield, :tag=>"expand", :width=>80, :value=>"1.0", :action=>on_action)),
+		layout(2,
+		  item(:text, :title=>"Number of Grid Points"),
+		  item(:textfield, :tag=>"grid", :width=>120, :value=>"512000", :action=>on_action)),
+	    item(:table, :width=>300, :height=>300, :tag=>"table",
+		  :columns=>[["Atom", 60], ["Name", 60], ["Label", 60], ["Coeff", 120]],
+		  :on_count=> lambda { |it| tabvals.count },
+		  :on_get_value=>on_get_value,
+		  :flex=>[0,0,0,0,1,1]),
+		item(:button, :tag=>"update", :title=>"Update", :action=>on_update, :flex=>[0,1,0,0,0,0]),
+		:flex=>[0,0,0,0,1,1]
+	  )
+	  on_set_action.call(item_with_tag("mo_ao"))
+	  size = self.size
+	  set_min_size(size[0], 250)
+	  item_with_tag("table")[:refresh] = true
+	  show
+    }
   end
   
   #  DEBUG
@@ -255,5 +416,6 @@ register_menu("Delete Frames...", :cmd_delete_frames, lambda { |m| m && m.nframe
 register_menu("Reverse Frames...", :cmd_reverse_frames, lambda { |m| m && m.nframes > 1 } )
 register_menu("", "")
 register_menu("Show Energy Window...", :cmd_show_energy, lambda { |m| m && m.property_names.include?("energy") } )
+register_menu("Show MO Surface...", :cmd_create_surface, lambda { |m| m && m.get_mo_info(:type) != nil } )
 #register_menu("cmd test", :cmd_test)
 

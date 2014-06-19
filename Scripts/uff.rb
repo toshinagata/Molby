@@ -279,7 +279,7 @@ def guess_uff_parameters
   arena.prepare(true)
   xatoms = IntGroup[]
   xbonds = xangles = xdihedrals = xfragments = []
-  h = Dialog.new("Guess UFF Parameters: #{mol.name}", nil, nil, :resizable=>true) {
+  mol.open_auxiliary_window("Guess UFF Parameters", nil, nil, :resizable=>true) {
     update_xatoms = lambda {
       xatoms = mol.atom_group { |ap| !exclude.member?(ap.atomic_number) }
       xfragments = mol.fragments(xatoms)
@@ -1091,8 +1091,9 @@ def guess_uff_parameters
     size = self.size
     set_min_size(size)
     set_size(size[0] + 100, size[1] + 50);
-    listen(mol, "documentModified", lambda { |d| update_xatoms.call; update_selection.call })
-    listen(mol, "documentWillClose", lambda { |d| hide })
+	@on_document_modified = lambda { |d| update_xatoms.call; update_selection.call }
+    # listen(mol, "documentModified", lambda { |d| update_xatoms.call; update_selection.call })
+    # listen(mol, "documentWillClose", lambda { |d| hide })
     update_xatoms.call
     guess_uff_types.call(mol.all)
     show

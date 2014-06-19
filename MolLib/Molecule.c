@@ -2444,7 +2444,85 @@ MoleculeAddGaussianPrimitiveCoefficients(Molecule *mol, Double exponent, Double 
 	return 0;
 }
 
-/*  Set MO coefficients for idx-th MO  */
+/*  Get the shell information from the component index  */
+/*  The outLabel must have space for at least 23 non-Null characters  */
+int
+MoleculeGetGaussianShellInfo(Molecule *mol, Int comp_idx, Int *outAtomIdx, char *outLabel, Int *outNprims)
+{
+	BasisSet *bset;
+	ShellInfo *shellp;
+	int si;
+	if (mol == NULL || (bset = mol->bset) == NULL)
+		return -1;  /*  No basis set info  */
+	if (comp_idx < 0 || comp_idx >= bset->ncomps)
+		return -2;  /*  Component index out of range  */
+	for (si = 0, shellp = bset->shells; si < bset->nshells; si++, shellp++) {
+		if (comp_idx >= shellp->ncomp) {
+			comp_idx -= shellp->ncomp;
+			continue;
+		} else {
+			static const char *type_p = "xyz";
+			static const char *type_d = "xxyyzzxyxzyz";
+			static const char *type_d5[] = {"xy","yz","zz", "xz", "xx-yy"};
+			static const char *type_f = "xxxyyyzzzxxyxxzxyyyyzxzzyzzxyz";
+			static const char *type_f7[] = {"x3-3xy2", "x2z-y2z", "x(5z2-r2)", "z(5z2-3r2)", "y(5z2-r2)", "xyz", "3x2y-y3"};
+			static const char *type_g[] = {"x4", "y4", "z4", "x3y", "x3z", "xy3", "y3z", "xz3", "yz3", "x2y2", "x2z2", "y2z2", "x2yz", "x2yz", "xyz2"};
+			static const char *type_g9[] = {"x4+y4-6x2y2", "xz(x2-3y2)", "(x2-y2)(7z2-r2)", "xz(7z2-3r2)", "35z4-30z2r2+3r4", "yz(7z2-3r2)", "xy(7z2-r2)", "yz(3x2-y2)", "xy(x2-y2)"};
+			*outAtomIdx = shellp->a_idx;
+			*outNprims = shellp->nprim;
+			switch (shellp->sym) {
+				case kGTOType_S:
+					strcpy(outLabel, "S");
+					break;
+				case kGTOType_P:
+					outLabel[0] = 'P';
+					outLabel[1] = type_p[comp_idx];
+					outLabel[2] = 0;
+					break;
+				case kGTOType_SP:
+					if (comp_idx == 0)
+						strcpy(outLabel, "S");
+					else {
+						outLabel[0] = 'P';
+						outLabel[1] = type_p[comp_idx - 1];
+						outLabel[2] = 0;
+					}
+					break;
+				case kGTOType_D:
+					outLabel[0] = 'D';
+					strncpy(outLabel + 1, type_d + comp_idx * 2, 2);
+					outLabel[3] = 0;
+					break;
+				case kGTOType_D5:
+					outLabel[0] = 'D';
+					strcpy(outLabel + 1, type_d5[comp_idx]);
+					break;
+				case kGTOType_F:
+					outLabel[0] = 'F';
+					strncpy(outLabel + 1, type_f + comp_idx * 3, 3);
+					outLabel[4] = 0;
+				case kGTOType_F7:
+					outLabel[0] = 'F';
+					strcpy(outLabel + 1, type_f7[comp_idx]);
+					break;
+				case kGTOType_G:
+					outLabel[0] = 'G';
+					strcpy(outLabel + 1, type_g[comp_idx]);
+					break;
+				case kGTOType_G9:
+					outLabel[0] = 'G';
+					strcpy(outLabel + 1, type_g9[comp_idx]);
+					break;
+				default:
+					return -3;  /*  Unsupported orbital type (internal error) */
+			}
+			return 0;
+		}
+	}
+	return -4;  /*  comp_idx out of range? (internal error)  */
+}
+
+/*  Set MO coefficients for idx-th MO (1-based)  */
 int
 MoleculeSetMOCoefficients(Molecule *mol, Int idx, Double energy, Int ncomps, Double *coeffs)
 {
@@ -2473,8 +2551,8 @@ MoleculeSetMOCoefficients(Molecule *mol, Int idx, Double energy, Int ncomps, Dou
 			bset->nmos = bset->ncomps;
 		if (bset->nmos <= 0)
 			return -3;  /*  Bad or inconsistent number of MOs  */
-		bset->mo = (Double *)calloc(sizeof(Double), bset->nmos * bset->ncomps);
-		bset->moenergies = (Double *)calloc(sizeof(Double), bset->nmos);
+		bset->mo = (Double *)calloc(sizeof(Double), (bset->nmos + 1) * bset->ncomps);
+		bset->moenergies = (Double *)calloc(sizeof(Double), bset->nmos + 1);
 		if (bset->mo == NULL || bset->moenergies == NULL) {
 			if (bset->mo != NULL)
 				free(bset->mo);
@@ -2486,8 +2564,14 @@ MoleculeSetMOCoefficients(Molecule *mol, Int idx, Double energy, Int ncomps, Dou
 			return -2;  /*  Low memory  */
 		}
 	}
-	if (idx < 0 || idx >= bset->nmos)
+	if (idx < 0)
+		idx = -idx + bset->ncomps;
+	if (idx < 0 || idx > bset->nmos)
 		return -4;  /*  Bad MO index  */
+	if (idx == 0)
+		idx = bset->nmos;  /*  Arbitrary vector  */
+	else
+		idx--;
 	if (energy != -1000000)
 		bset->moenergies[idx] = energy;
 	if (ncomps < bset->ncomps)
@@ -2502,7 +2586,7 @@ MoleculeSetMOCoefficients(Molecule *mol, Int idx, Double energy, Int ncomps, Dou
 	return 0;
 }
 
-/*  Get MO coefficients for idx-th MO  */
+/*  Get MO coefficients for idx-th MO (1-based)  */
 /*  Caution: *ncoeffs and *coeffs should be valid _before_ calling this function, i.e.  */
 /*  *ncoeffs = 0 && *coeffs = NULL or *coeffs is a valid memory pointer and *ncoeffs  */
 /*  properly designates the memory size as an array of Doubles.  */
@@ -2515,8 +2599,14 @@ MoleculeGetMOCoefficients(Molecule *mol, Int idx, Double *energy, Int *ncoeffs, 
 	bset = mol->bset;
 	if (bset == NULL || bset->ncomps <= 0)
 		return -2;  /*  No basis set info  */
-	if (idx < 0 || idx >= bset->nmos)
+	if (idx < 0)
+		idx = -idx + bset->ncomps;
+	if (idx < 0 || idx > bset->nmos)
 		return -3;  /*  MO index out of range  */
+	if (idx == 0)
+		idx = bset->nmos;  /*  Arbitrary vector  */
+	else
+		idx--;
 	if (energy != NULL)
 		*energy = bset->moenergies[idx];
 	if (ncoeffs != NULL && coeffs != NULL) {
@@ -3277,7 +3367,7 @@ MoleculeLoadGamessDatFile(Molecule *mol, const char *fname, char **errbuf)
 				}
 				if (k < mol->bset->ncomps)
 					continue;
-				j = MoleculeSetMOCoefficients(mol, i, -1000000, k, coeffs);
+				j = MoleculeSetMOCoefficients(mol, i + 1, -1000000, k, coeffs);
 				if (j != 0) {
 					s_append_asprintf(errbuf, "Line %d: cannot set coefficients for MO %d", lineNumber, i + 1);
 					free(coeffs);
@@ -10787,7 +10877,7 @@ MoleculeSetPiAnchorList(Molecule *mol, Int idx, Int nentries, Int *entries, Doub
 #pragma mark ====== MO calculation ======
 
 /*  Calculate an MO value for a single point.  */
-/*  Index is the MO number (1-based)  */
+/*  Index is the MO number (1-based); 0 denotes "arbitrary vector"  */
 /*  tmp is an array of (natoms * 4) atoms, and used to store dr and |dr|^2 for each atom.  */
 static Double
 sCalcMOPoint(Molecule *mp, const BasisSet *bset, Int index, const Vector *vp, Double *tmp)
@@ -10797,6 +10887,8 @@ sCalcMOPoint(Molecule *mp, const BasisSet *bset, Int index, const Vector *vp, Do
 	Double val, tval, *cnp, *tmpp, *mobasep, *mop;
 	Int i, j;
 	/*  Cache dr and |dr|^2  */
+	if (index == 0)
+		index = bset->nmos + 1;
 	for (i = 0; i < mp->natoms; i++) {
 		Vector r;
 		r = ATOM_AT_INDEX(mp->atoms, i)->r;
@@ -10908,7 +11000,7 @@ sCalcMOPoint(Molecule *mp, const BasisSet *bset, Int index, const Vector *vp, Do
 }
 
 /*  Calculate one MO. The input vectors are angstrom unit (changed from bohr unit: 20140520)  */
-/*  mono is the MO number (1-based)  */
+/*  mono is the MO number (1-based); 0 denotes "arbitrary vector" */
 int
 MoleculeCalcMO(Molecule *mp, Int mono, const Vector *op, const Vector *dxp, const Vector *dyp, const Vector *dzp, Int nx, Int ny, Int nz, int (*callback)(double progress, void *ref), void *ref)
 {
@@ -11476,7 +11568,7 @@ MoleculeUpdateMCube(Molecule *mol, int idn)
 		return -1;  /*  Number of atoms is smaller than expected  */
 
 	mc = mol->mcube;
-	if (idn > 0) {
+	if (idn >= 0) {
 		ShellInfo *sp;
 		Double *mobasep, *mop, mopmax;
 		Double xmin, xmax, ymin, ymax, zmin, zmax;
@@ -11493,7 +11585,7 @@ MoleculeUpdateMCube(Molecule *mol, int idn)
 			return -2;  /*  Out of memory  */
 		mc->nradii = mol->natoms;
 		memset(mc->radii, 0, sizeof(Double) * mc->nradii);
-		mobasep = mol->bset->mo + (mc->idn - 1) * mol->bset->ncomps;
+		mobasep = mol->bset->mo + (mc->idn == 0 ? mol->bset->nmos : mc->idn - 1) * mol->bset->ncomps;
 		mopmax = 0.0;
 		for (ix = 0, sp = mol->bset->shells; ix < mol->bset->nshells; ix++, sp++) {
 			if (sp->a_idx >= mol->natoms)
@@ -11782,8 +11874,7 @@ MoleculeUpdateMCube(Molecule *mol, int idn)
 			/*  Less than 3 points: no triangles  */
 			if (mc->c[sn].ntriangles > 0)
 				mc->c[sn].triangles[0] = -1;  /*  End mark  */
-			retval = 0;
-			goto end;
+			continue;
 		}
 		
 		/*  Create triangle table  */

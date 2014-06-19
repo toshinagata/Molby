@@ -220,7 +220,7 @@ class Molecule
 			}
 		end
 		mo.each_with_index { |m, i|
-			idx = Integer(mo_labels[i]) - 1
+			idx = Integer(mo_labels[i])
 			set_mo_coefficients(idx + (alpha ? 0 : ncomps), Float(mo_energies[i]), m)
 		#	if mo_labels[i] % 8 == 1
 		#		puts "set_mo_coefficients #{idx}, #{mo_energies[i]}, [#{m[0]}, ..., #{m[-1]}]"

@@ -669,7 +669,7 @@ end
 def cmd_plane
   plane_settings = @plane_settings || Hash.new
   mol = self
-  h = Dialog.new("Best-Fit Planes: " + mol.name, "Close", nil) {
+  mol.open_auxiliary_window("Best-Fit Planes", "Close", nil) {
     refresh_proc = lambda { |it|
       n = it[:tag][/\d/].to_i
       g = plane_settings["group#{n}"]
@@ -1034,7 +1034,7 @@ end
 
 def cmd_bond_angle_with_sigma
   mol = self
-  Dialog.new("Bond & Angle with Sigma:" + self.name, nil, nil) {
+  mol.open_auxiliary_window("Bond & Angle with Sigma", nil, nil) {
     values = []
 	clicked = []
 	sel = mol.selection
@@ -1127,7 +1127,7 @@ def cmd_bond_angle_with_sigma
 		  :enabled=>false),
 		[item(:button, :title=>"Close", :action=>lambda { |item| hide }), {:align=>:right}])
 	)
-	on_document_modified = lambda { |*d|
+	@on_document_modified = lambda { |*d|
 	  newsel = mol.selection - sel
 	  sel = mol.selection
 	  row = (item_with_tag("table")[:selection] || [nil])[-1]
@@ -1159,9 +1159,9 @@ def cmd_bond_angle_with_sigma
 		item_with_tag("table")[:refresh] = true
 	  end
 	}
-    listen(mol, "documentModified", on_document_modified)
-	listen(mol, "documentWillClose", lambda { |*d| hide } )
-	on_document_modified.call
+#   listen(mol, "documentModified", on_document_modified)
+#	listen(mol, "documentWillClose", lambda { |*d| hide } )
+	@on_document_modified.call
 	show
   }
 end
@@ -1441,7 +1441,7 @@ def cmd_show_ortep
 	  ["H", "all", "Open", "black"]
 	]
   }
-  Dialog.new("Show ORTEP:" + mol.name, nil, nil, :resizable=>true, :has_close_box=>true) {
+  mol.open_auxiliary_window("Show ORTEP", nil, nil, :resizable=>true, :has_close_box=>true) {
     tepview = nil  #  Forward declaration
 	tab = "Atoms"
 	columns = {
@@ -1686,7 +1686,7 @@ def cmd_show_ortep
 	    filecopy("#{tmp}/TEP.IN", fname)
       end
 	}
-	on_document_modified = lambda { |m|
+	@on_document_modified = lambda { |m|
 	}
 	#  Close handler (called when the close box is pressed or the document is closed)
 	@on_close = lambda { |*d|
@@ -1781,9 +1781,9 @@ def cmd_show_ortep
 	)
 	set_min_size(480, 200)
 	tepview = item_with_tag("ortep")
-	listen(mol, "documentModified", on_document_modified)
-	listen(mol, "documentWillClose", lambda { |m| close } )
-	on_document_modified.call(nil)
+#	listen(mol, "documentModified", on_document_modified)
+#	listen(mol, "documentWillClose", lambda { |m| close } )
+	@on_document_modified.call(nil)
     on_update_ortep.call(nil)
 	show
   }

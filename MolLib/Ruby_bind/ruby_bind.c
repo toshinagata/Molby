@@ -10132,8 +10132,9 @@ s_Molecule_Cubegen(int argc, VALUE *argv, VALUE self)
  *  call-seq:
  *     create_surface(mo, attr = nil)
  *
- *  Create a MO surface. The argument mo is the MO index (1-based); if mo is -1,
- *  then the attributes of the current surface are modified.
+ *  Create a MO surface. The argument mo is the MO index (1-based); if mo is negative,
+ *  then it denotes the beta orbital.
+ *  If mo is nil, then the attributes of the current surface are modified.
  *  Attributes:
  *    :npoints : the approximate number of grid points
  *    :expand  : the scale factor to expand/shrink the display box size for each atom,
@@ -10154,11 +10155,17 @@ s_Molecule_CreateSurface(int argc, VALUE *argv, VALUE self)
 	Double d[4];
     Data_Get_Struct(self, Molecule, mol);
 	rb_scan_args(argc, argv, "11", &nval, &hval);
-	nmo = NUM2INT(rb_Integer(nval));
 	if (mol->bset == NULL)
 		rb_raise(rb_eMolbyError, "No MO information is given");
-	if ((nmo <= 0 && nmo != -1) || nmo > mol->bset->nmos)
-		rb_raise(rb_eMolbyError, "MO index (%d) is out of range; should be 1..%d", nmo, mol->bset->nmos);
+	if (nval == Qnil) {
+		nmo = -1;
+	} else {
+		nmo = NUM2INT(rb_Integer(nval));
+		if (nmo > mol->bset->nmos || nmo < -mol->bset->ncomps)
+			rb_raise(rb_eMolbyError, "MO index (%d) is out of range; should be 1..%d (or -1..-%d for beta orbitals); (0 is acceptable as arbitrary vector)", nmo, mol->bset->nmos, mol->bset->ncomps);
+		if (nmo < 0)
+			nmo = -nmo + mol->bset->ncomps;
+	}
 	if (hval != Qnil && (aval = rb_hash_aref(hval, ID2SYM(rb_intern("npoints")))) != Qnil) {
 		npoints = NUM2INT(rb_Integer(aval));
 		need_recalc = 1;
@@ -10219,7 +10226,7 @@ static VALUE
 s_Molecule_SetSurfaceAttr(VALUE self, VALUE hval)
 {
 	VALUE args[2];
-	args[0] = INT2FIX(-1);
+	args[0] = Qnil;
 	args[1] = hval;
 	return s_Molecule_CreateSurface(2, args, self);
 }
@@ -10340,6 +10347,30 @@ s_Molecule_AddGaussianPrimitiveCoefficients(VALUE self, VALUE expval, VALUE cval
 
 /*
  *  call-seq:
+ *     get_gaussian_shell_info(comp_index) -> [atom_index, orbital_description, no_of_primitives]
+ *
+ *  Get the Gaussian shell information for the given MO coefficient index.
+ */
+static VALUE
+s_Molecule_GetGaussianShellInfo(VALUE self, VALUE cval)
+{
+	Molecule *mol;
+	Int n, c, atom_idx, nprims;
+	char label[32];
+    Data_Get_Struct(self, Molecule, mol);
+	if (mol->bset == NULL)
+		return Qnil;
+	c = NUM2INT(rb_Integer(cval));
+	if (c < 0 || c >= mol->bset->ncomps)
+		rb_raise(rb_eMolbyError, "The component index (%d) is out of range (should be 0..%d)", c, mol->bset->ncomps - 1);
+	n = MoleculeGetGaussianShellInfo(mol, c, &atom_idx, label, &nprims);
+	if (n != 0)
+		rb_raise(rb_eMolbyError, "Cannot get the shell info for component index (%d)", c);
+	return rb_ary_new3(3, INT2NUM(atom_idx), rb_str_new2(label), INT2NUM(nprims));
+}
+
+/*
+ *  call-seq:
  *     clear_mo_coefficients
  *
  *  Clear the existing MO coefficients.
@@ -10367,8 +10398,9 @@ s_Molecule_ClearMOCoefficients(VALUE self)
  *  call-seq:
  *     set_mo_coefficients(idx, energy, coefficients)
  *
- *  To be used internally. Add a MO coefficients. Idx is the MO index (for open shell system, 
- *  beta MOs comes after all alpha MOs), energy is the MO energy, coefficients is an array
+ *  To be used internally. Add a MO coefficients. Idx is the MO index (1-based; for open shell system, 
+ *  beta MOs comes after all alpha MOs; alternatively, the beta MO can be specified as a negative MO number)
+ *  Energy is the MO energy, and coefficients is an array
  *  of MO coefficients.
  */
 static VALUE
@@ -10390,7 +10422,7 @@ s_Molecule_SetMOCoefficients(VALUE self, VALUE ival, VALUE eval, VALUE aval)
 	}
 	for (i = 0; i < ncomps; i++)
 		coeffs[i] = NUM2DBL(rb_Float(RARRAY_PTR(aval)[i]));
-	i = MoleculeSetMOCoefficients(mol, idx, energy, ncomps, coeffs);
+	i = MoleculeSetMOCoefficients(mol, idx, energy, ncomps, coeffs); /* Negative (beta orbitals) or zero (arbitrary vector) idx is allowed */
 end:
 	if (i == -1)
 		rb_raise(rb_eMolbyError, "Molecule is emptry");
@@ -10399,7 +10431,7 @@ end:
 	else if (i == -3)
 		rb_raise(rb_eMolbyError, "Bad or inconsistent number of MOs");
 	else if (i == -4)
-		rb_raise(rb_eMolbyError, "Bad MO index");
+		rb_raise(rb_eMolbyError, "Bad MO index (%d)", idx);
 	else if (i == -5)
 		rb_raise(rb_eMolbyError, "Insufficient number of coefficients are given");
 	else if (i != 0)
@@ -10411,7 +10443,7 @@ end:
  *  call-seq:
  *     get_mo_coefficients(idx)
  *
- *  To be used internally. Get an array of MO coefficients for the given MO index (0-based).
+ *  To be used internally. Get an array of MO coefficients for the given MO index (1-based).
  */
 static VALUE
 s_Molecule_GetMOCoefficients(VALUE self, VALUE ival)
@@ -10443,7 +10475,7 @@ s_Molecule_GetMOCoefficients(VALUE self, VALUE ival)
  *  call-seq:
  *     get_mo_energy(idx)
  *
- *  To be used internally. Get the MO energy for the given MO index (0-based).
+ *  To be used internally. Get the MO energy for the given MO index (1-based).
  */
 static VALUE
 s_Molecule_GetMOEnergy(VALUE self, VALUE ival)
@@ -10463,7 +10495,7 @@ s_Molecule_GetMOEnergy(VALUE self, VALUE ival)
 	return rb_float_new(energy);
 }
 
-static VALUE sTypeSym, sAlphaSym, sBetaSym;
+static VALUE sTypeSym, sAlphaSym, sBetaSym, sNcompsSym;
 
 static inline void
 s_InitMOInfoKeys(void)
@@ -10472,6 +10504,7 @@ s_InitMOInfoKeys(void)
 		sTypeSym = ID2SYM(rb_intern("type"));
 		sAlphaSym = ID2SYM(rb_intern("alpha"));
 		sBetaSym = ID2SYM(rb_intern("beta"));
+		sNcompsSym = ID2SYM(rb_intern("ncomps"));
 	}
 }
 
@@ -10529,6 +10562,7 @@ s_Molecule_SetMOInfo(VALUE self, VALUE hval)
  *     get_mo_info(key)
  *
  *  Get the MO info. The key is as described in set_mo_info.
+ *  Read-only: :ncomps the number of components (and the number of MOs)
  */
 static VALUE
 s_Molecule_GetMOInfo(VALUE self, VALUE kval)
@@ -10536,7 +10570,7 @@ s_Molecule_GetMOInfo(VALUE self, VALUE kval)
 	Molecule *mol;
     Data_Get_Struct(self, Molecule, mol);
 	if (mol->bset == NULL)
-		rb_raise(rb_eMolbyError, "No MO information is defined");
+		return Qnil;
 	if (kval == sTypeSym) {
 		switch (mol->bset->rflag) {
 			case 0: return rb_str_new2("UHF");
@@ -10548,14 +10582,20 @@ s_Molecule_GetMOInfo(VALUE self, VALUE kval)
 		return INT2NUM(mol->bset->ne_alpha);
 	} else if (kval == sBetaSym) {
 		return INT2NUM(mol->bset->ne_beta);
-	} else return Qnil;
+	} else if (kval == sNcompsSym) {
+		return INT2NUM(mol->bset->ncomps);
+	} else {
+		kval = rb_inspect(kval);
+		rb_raise(rb_eMolbyError, "Unknown MO info key: %s", StringValuePtr(kval));
+		return Qnil;  /*  Does not reach here  */
+	}
 }
 
 /*
  *  call-seq:
  *     mo_type
  *
- *  Returns either "RHF", "UHF", or "ROHF". If no MO info is present, raises exception.
+ *  Returns either "RHF", "UHF", or "ROHF". If no MO info is present, returns nil.
  */
 static VALUE
 s_Molecule_MOType(VALUE self)
@@ -11388,6 +11428,7 @@ Init_Molby(void)
 	rb_define_method(rb_cMolecule, "clear_basis_set", s_Molecule_ClearBasisSet, 0);
 	rb_define_method(rb_cMolecule, "add_gaussian_orbital_shell", s_Molecule_AddGaussianOrbitalShell, 3);
 	rb_define_method(rb_cMolecule, "add_gaussian_primitive_coefficients", s_Molecule_AddGaussianPrimitiveCoefficients, 3);
+	rb_define_method(rb_cMolecule, "get_gaussian_shell_info", s_Molecule_GetGaussianShellInfo, 1);
 	rb_define_method(rb_cMolecule, "mo_type", s_Molecule_MOType, 0);
 	rb_define_method(rb_cMolecule, "clear_mo_coefficients", s_Molecule_ClearMOCoefficients, 0);
 	rb_define_method(rb_cMolecule, "set_mo_coefficients", s_Molecule_SetMOCoefficients, 3);
