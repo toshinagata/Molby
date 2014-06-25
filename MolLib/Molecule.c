@@ -344,6 +344,7 @@ MoleculeInitWithAtoms(Molecule *mp, const Atom *atoms, int natoms)
 Molecule *
 MoleculeInitWithMolecule(Molecule *mp2, Molecule *mp)
 {
+	int i, n;
 	MoleculeFlushFrames(mp);
 	MoleculeInitWithAtoms(mp2, mp->atoms, mp->natoms);
 	if (mp->nbonds > 0) {
@@ -385,6 +386,17 @@ MoleculeInitWithMolecule(Molecule *mp2, Molecule *mp)
 		if (NewArray(&mp2->frame_cells, &mp2->nframe_cells, sizeof(Vector) * 4, mp->nframe_cells) == NULL)
 			goto error;
 		memmove(mp2->frame_cells, mp->frame_cells, sizeof(Vector) * 4 * mp->nframe_cells);
+	}
+	
+	if (mp->nmolprops > 0) {
+		if (NewArray(&mp2->molprops, &mp2->nmolprops, sizeof(MolProp), mp->nmolprops) == NULL)
+			goto error;
+		n = MoleculeGetNumberOfFrames(mp);
+		for (i = 0; i < mp2->nmolprops; i++) {
+			mp2->molprops[i].propname = strdup(mp->molprops[i].propname);
+			mp2->molprops[i].propvals = (Double *)malloc(sizeof(Double) * n);
+			memcpy(mp2->molprops[i].propvals, mp->molprops[i].propvals, sizeof(Double) * n);
+		}
 	}
 	
 	/* FIXME: should bset (basis set info) and elpot be duplicated or not?  */
@@ -1637,6 +1649,48 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 						   &mview_ibuf[12], &mview_ibuf[13], &mview_ibuf[14],
 						   &mview_ibuf[15], &mview_ibuf[16], &mview_ibuf[17]);
 				}
+			}
+			continue;
+		} else if (strcmp(buf, "!:property") == 0) {
+			char dec[1024];
+			i = 0;
+			bufp = buf + 13;
+			while (*bufp != 0 && *bufp != '\n' && bufp < (buf + sizeof buf - 3)) {
+				if (*bufp == '%') {
+					dec[i] = bufp[1];
+					dec[i + 1] = bufp[2];
+					dec[i + 2] = 0;
+					dec[i++] = strtol(dec, NULL, 16);
+					bufp += 3;
+				} else {
+					dec[i++] = *bufp++;
+				}
+				if (i >= 1000)
+					break;
+			}
+			if (i == 0)
+				continue;
+			dec[i] = 0;
+			i = MoleculeCreateProperty(mp, dec);
+			if (i < 0) {
+				s_append_asprintf(errbuf, "line %d: warning: duplicate molecular property %s - ignored\n", lineNumber, dec);
+				nwarnings++;
+				continue;
+			}
+			j = 0;
+			while (ReadLine(buf, sizeof buf, fp, &lineNumber) > 0) {
+				if (buf[0] == '!')
+					continue;
+				if (buf[0] == '\n')
+					break;
+				if (j >= nframes) {
+					s_append_asprintf(errbuf, "line %d: warning: too many molecular property %s - ignored\n", lineNumber, dec);
+					nwarnings++;
+					break;
+				}
+				dbuf[0] = strtod(buf, NULL);
+				mp->molprops[i].propvals[j] = dbuf[0];
+				j++;
 			}
 			continue;
 		}
@@ -4295,6 +4349,40 @@ MoleculeWriteToMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 		fprintf(fp, "\n");
 	}
 
+	if (mp->nmolprops > 0) {
+		MolProp *prp;
+		for (i = 0, prp = mp->molprops; i < mp->nmolprops; i++, prp++) {
+			/*  Encode the property name if necessary  */
+			char *p;
+			char enc[1024];
+			n1 = n2 = 0;
+			for (p = prp->propname; *p != 0 && n1 < 900; p++) {
+				if (*p > ' ' && *p != '%' && *p < 0x7f) {
+					enc[n1++] = *p;
+					n2 = n1;
+				} else {
+					sprintf(enc + n1, "%%%02x", *p);
+					n1 += 3;
+				}
+			}
+			if (*p == 0)
+				enc[n1] = 0;
+			else {
+				enc[n2] = 0; /* Truncate after last ASCII character */
+				n1 = n2;
+			}
+			if (n1 == 0) {
+				sprintf(enc, "prop_%d", i + 1);
+				n1 = strlen(enc);
+			}
+			fprintf(fp, "!:property ; %s\n", enc);
+			for (j = 0; j < nframes; j++) {
+				fprintf(fp, "%.18g\n", prp->propvals[j]);
+			}
+			fprintf(fp, "\n");
+		}
+	}
+	
 	fclose(fp);
 	return 0;
 }
