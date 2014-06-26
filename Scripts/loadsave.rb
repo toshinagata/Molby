@@ -143,7 +143,7 @@ class Molecule
 		break if line =~ /TOTAL NUMBER OF BASIS SET/
 		if line =~ /^\s*$/
 		  #  End of one shell
-		  add_gaussian_orbital_shell(sym, nprims, i)
+		  add_gaussian_orbital_shell(i, sym, nprims)
 		  nprims = 0
 		  sym = -10
 		  next
@@ -397,7 +397,7 @@ class Molecule
 	if nframes > 0
 	  select_frame(nframes - 1)
 	end
-	if energy != 0.0
+	if energy && energy != 0.0
 	  set_property("energy", energy)
 	end
 	hide_progress_panel

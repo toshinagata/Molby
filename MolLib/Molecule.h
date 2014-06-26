@@ -408,12 +408,12 @@ Molecule *MoleculeRetain(Molecule *mp);
 void MoleculeRelease(Molecule *mp);
 void MoleculeExchange(Molecule *mp1, Molecule *mp2);
 
-int MoleculeAddGaussianOrbitalShell(Molecule *mol, Int sym, Int nprims, Int a_idx);
+int MoleculeAddGaussianOrbitalShell(Molecule *mol, Int a_idx, Int sym, Int nprims);
 int MoleculeAddGaussianPrimitiveCoefficients(Molecule *mol, Double exponent, Double contraction, Double contraction_sp);
-int MoleculeGetGaussianShellInfo(Molecule *mol, Int comp_idx, Int *outAtomIdx, char *outLabel, Int *outNprims);
+int MoleculeGetGaussianComponentInfo(Molecule *mol, Int comp_idx, Int *outAtomIdx, char *outLabel, Int *outShellIdx);
 int MoleculeSetMOCoefficients(Molecule *mol, Int idx, Double energy, Int ncomps, Double *coeffs);
 int MoleculeGetMOCoefficients(Molecule *mol, Int idx, Double *energy, Int *ncoeffs, Double **coeffs);
-int MoleculeAllocateBasisSetRecord(Molecule *mol, Int rflag, Int ne_alpha, Int ne_beta);
+int MoleculeSetMOInfo(Molecule *mol, Int rflag, Int ne_alpha, Int ne_beta);
 
 void MoleculeIncrementModifyCount(Molecule *mp);
 void MoleculeClearModifyCount(Molecule *mp);

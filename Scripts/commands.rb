@@ -238,7 +238,7 @@ class Molecule
 	  coeffs = nil
 	  a_idx_old = -1
 	  ncomps.times { |i|
-	    a_idx, label, nprims = mol.get_gaussian_shell_info(i)
+	    a_idx, s_idx, label = mol.get_gaussian_component_info(i)
 		if a_idx_old != a_idx
 		  a_idx_old = a_idx
 		  a = a_idx.to_s

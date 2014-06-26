@@ -1693,6 +1693,139 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 				j++;
 			}
 			continue;
+		} else if (strcmp(buf, "!:gaussian_primitives") == 0) {
+			while (ReadLine(buf, sizeof buf, fp, &lineNumber) > 0) {
+				if (buf[0] == '!')
+					continue;
+				if (buf[0] == '\n')
+					break;
+				/* sym nprims a_idx */
+				if (sscanf(buf, "%6s %d %d", cbuf[0], &ibuf[0], &ibuf[1]) < 3) {
+					s_append_asprintf(errbuf, "line %d: the gaussian primitive info cannot be read", lineNumber);
+					goto err_exit;
+				}
+				if (strcasecmp(cbuf[0], "S") == 0) {
+					ibuf[2] = 0;
+				} else if (strcasecmp(cbuf[0], "P") == 0) {
+					ibuf[2] = 1;
+				} else if (strcasecmp(cbuf[0], "SP") == 0) {
+					ibuf[2] = -1;
+				} else if (strcasecmp(cbuf[0], "D") == 0) {
+					ibuf[2] = 2;
+				} else if (strcasecmp(cbuf[0], "D5") == 0) {
+					ibuf[2] = -2;
+				} else if (strcasecmp(cbuf[0], "F") == 0) {
+					ibuf[2] = 3;
+				} else if (strcasecmp(cbuf[0], "F7") == 0) {
+					ibuf[2] = -3;
+				} else if (strcasecmp(cbuf[0], "G") == 0) {
+					ibuf[2] = 4;
+				} else if (strcasecmp(cbuf[0], "G9") == 0) {
+					ibuf[2] = -4;
+				} else {
+					s_append_asprintf(errbuf, "line %d: the gaussian primitive type %s is unknown", lineNumber, cbuf[0]);
+					goto err_exit;
+				}
+				if (ibuf[0] <= 0) {
+					s_append_asprintf(errbuf, "line %d: the number of primitive (%d) must be positive", lineNumber, ibuf[0]);
+					goto err_exit;
+				}
+				if (ibuf[1] < 0 || ibuf[1] >= mp->natoms) {
+					s_append_asprintf(errbuf, "line %d: the atom index (%d) is out of range", lineNumber, ibuf[1]);
+					goto err_exit;
+				}
+				MoleculeAddGaussianOrbitalShell(mp, ibuf[1], ibuf[2], ibuf[0]);
+				i = ibuf[0];
+				while (ReadLine(buf, sizeof buf, fp, &lineNumber) > 0) {
+					if (buf[0] == '!')
+						continue;
+					if (buf[0] == '\n')
+						break;
+					if (sscanf(buf, "%lf %lf %lf", &dbuf[0], &dbuf[1], &dbuf[2]) < 3) {
+						s_append_asprintf(errbuf, "line %d: cannot read gaussian primitive coefficients", lineNumber);
+						goto err_exit;
+					}
+					MoleculeAddGaussianPrimitiveCoefficients(mp, dbuf[0], dbuf[1], dbuf[2]);
+					if (--i == 0)
+						break;
+				}
+				if (buf[0] == '\n')
+					break;
+			}
+			continue;
+		} else if (strcmp(buf, "!:mo_info") == 0) {
+			while (ReadLine(buf, sizeof buf, fp, &lineNumber) > 0) {
+				if (buf[0] == '!')
+					continue;
+				if (buf[0] == '\n')
+					break;
+				if (sscanf(buf, "%6s %d %d", cbuf[0], &ibuf[0], &ibuf[1]) < 3) {
+					s_append_asprintf(errbuf, "line %d: the MO info cannot be correctly read", lineNumber);
+					goto err_exit;
+				}
+				if (strcasecmp(cbuf[0], "RHF") == 0) {
+					ibuf[2] = 1;
+				} else if (strcasecmp(cbuf[0], "ROHF") == 0) {
+					ibuf[2] = 2;
+				} else if (strcasecmp(cbuf[0], "UHF") == 0) {
+					ibuf[2] = 0;
+				} else {
+					s_append_asprintf(errbuf, "line %d: unknown HF type: %s", lineNumber, cbuf[0]);
+					goto err_exit;
+				}
+				if (ibuf[0] < 0 || ibuf[1] < 0) {
+					s_append_asprintf(errbuf, "line %d: incorrect number of electrons", lineNumber);
+					goto err_exit;
+				}
+				MoleculeSetMOInfo(mp, ibuf[2], ibuf[0], ibuf[1]);
+			}
+			continue;
+		} else if (strcmp(buf, "!:mo_coefficients") == 0) {
+			if (mp->bset == NULL || mp->bset->nshells == 0) {
+				s_append_asprintf(errbuf, "line %d: the :gaussian_primitive section must come before :mo_coefficients", lineNumber);
+				goto err_exit;
+			}
+			/*  Count the number of components  */
+			dp = (Double *)malloc(sizeof(Double) * mp->bset->ncomps);
+			i = 1;
+			while (ReadLine(buf, sizeof buf, fp, &lineNumber) > 0) {
+				if (buf[0] == '!')
+					continue;
+				if (buf[0] == '\n')
+					break;
+				if (sscanf(buf, "MO %d %lf", &ibuf[0], &dbuf[6]) < 2) {
+					s_append_asprintf(errbuf, "line %d: cannot read the MO index or energy", lineNumber);
+					goto err_exit;
+				}
+				if (ibuf[0] != i) {
+					s_append_asprintf(errbuf, "line %d: the MO index (%d) must be in ascending order", lineNumber, ibuf[0]);
+					goto err_exit;
+				}
+				i = 0;
+				while (ReadLine(buf, sizeof buf, fp, &lineNumber) > 0) {
+					j = sscanf(buf, "%lf %lf %lf %lf %lf %lf", &dbuf[0], &dbuf[1], &dbuf[2], &dbuf[3], &dbuf[4], &dbuf[5]);
+					if (j == 0) {
+						s_append_asprintf(errbuf, "line %d: cannot read the MO coefficients", lineNumber);
+						goto err_exit;
+					}
+					for (k = 0; k < j; k++, i++) {
+						if (i >= mp->bset->ncomps) {
+							s_append_asprintf(errbuf, "line %d: too many MO coefficients", lineNumber);
+							goto err_exit;
+						}
+						dp[i] = dbuf[k];
+					}
+					if (i >= mp->bset->ncomps)
+						break;
+				}
+				i = MoleculeSetMOCoefficients(mp, ibuf[0], dbuf[6], mp->bset->ncomps, dp);
+				if (i != 0) {
+					s_append_asprintf(errbuf, "line %d: cannot set MO coefficients", lineNumber);
+					goto err_exit;
+				}
+				i = ibuf[0] + 1;  /*  For next entry  */
+			}
+			continue;
 		}
 		/*  Unknown sections are silently ignored  */
 	}
@@ -2435,7 +2568,7 @@ MoleculeLoadShelxFile(Molecule *mp, const char *fname, char **errbuf)
 
 /*  Add one gaussian orbital shell information (not undoable)  */
 int
-MoleculeAddGaussianOrbitalShell(Molecule *mol, Int sym, Int nprims, Int a_idx)
+MoleculeAddGaussianOrbitalShell(Molecule *mol, Int a_idx, Int sym, Int nprims)
 {
 	BasisSet *bset;
 	ShellInfo *shellp;
@@ -2472,6 +2605,9 @@ MoleculeAddGaussianOrbitalShell(Molecule *mol, Int sym, Int nprims, Int a_idx)
 		shellp->m_idx = 0;
 		shellp->p_idx = 0;
 	}
+	/*  Update the number of components (if not yet determined)  */
+	if (bset->ncomps < shellp->m_idx + shellp->ncomp)
+		bset->ncomps = shellp->m_idx + shellp->ncomp;
 	return 0;
 }
 
@@ -2501,7 +2637,7 @@ MoleculeAddGaussianPrimitiveCoefficients(Molecule *mol, Double exponent, Double 
 /*  Get the shell information from the component index  */
 /*  The outLabel must have space for at least 23 non-Null characters  */
 int
-MoleculeGetGaussianShellInfo(Molecule *mol, Int comp_idx, Int *outAtomIdx, char *outLabel, Int *outNprims)
+MoleculeGetGaussianComponentInfo(Molecule *mol, Int comp_idx, Int *outAtomIdx, char *outLabel, Int *outShellIdx)
 {
 	BasisSet *bset;
 	ShellInfo *shellp;
@@ -2523,7 +2659,7 @@ MoleculeGetGaussianShellInfo(Molecule *mol, Int comp_idx, Int *outAtomIdx, char 
 			static const char *type_g[] = {"x4", "y4", "z4", "x3y", "x3z", "xy3", "y3z", "xz3", "yz3", "x2y2", "x2z2", "y2z2", "x2yz", "x2yz", "xyz2"};
 			static const char *type_g9[] = {"x4+y4-6x2y2", "xz(x2-3y2)", "(x2-y2)(7z2-r2)", "xz(7z2-3r2)", "35z4-30z2r2+3r4", "yz(7z2-3r2)", "xy(7z2-r2)", "yz(3x2-y2)", "xy(x2-y2)"};
 			*outAtomIdx = shellp->a_idx;
-			*outNprims = shellp->nprim;
+			*outShellIdx = si;
 			switch (shellp->sym) {
 				case kGTOType_S:
 					strcpy(outLabel, "S");
@@ -2675,11 +2811,10 @@ MoleculeGetMOCoefficients(Molecule *mol, Int idx, Double *energy, Int *ncoeffs, 
 	return 0;
 }
 
-/*  Allocate BasisSet record. rflag: 0, UHF; 1, RHF; 2, ROHF; -1, clear
-    ne_alpha: number of alpha electrons, ne_beta: number of beta electrons
-    The natoms and pos are copied from mol.  */
+/*  Set Basic MO Info. rflag: 0, UHF; 1, RHF; 2, ROHF; -1, clear
+    ne_alpha: number of alpha electrons, ne_beta: number of beta electrons   */
 int
-MoleculeAllocateBasisSetRecord(Molecule *mol, Int rflag, Int ne_alpha, Int ne_beta)
+MoleculeSetMOInfo(Molecule *mol, Int rflag, Int ne_alpha, Int ne_beta)
 {
 	BasisSet *bset;
 	if (mol == NULL || mol->natoms == 0)
@@ -3386,7 +3521,7 @@ MoleculeLoadGamessDatFile(Molecule *mol, const char *fname, char **errbuf)
 			continue;
 		} else if (strstr(buf, "E(UHF)") != NULL || (strstr(buf, "E(RHF)") != NULL && (n1 = 1)) || (strstr(buf, "E(ROHF)") != NULL && (n1 = 2))) {
 			if (mol->bset == NULL) {
-				i = MoleculeAllocateBasisSetRecord(mol, n1, 0, 0);
+				i = MoleculeSetMOInfo(mol, n1, 0, 0);
 				if (i != 0) {
 					s_append_asprintf(errbuf, "Line %d: cannot allocate basis set internal buffer", lineNumber);
 					retval = 8;
@@ -3990,6 +4125,7 @@ MoleculeWriteToMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 	FILE *fp;
 	Int i, j, k, n1, n2, n3, n_aniso, nframes, nanchors, n_uff;
 	Atom *ap;
+	char *p;
 	char bufs[6][8];
 
 	*errbuf = NULL;
@@ -4353,7 +4489,6 @@ MoleculeWriteToMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 		MolProp *prp;
 		for (i = 0, prp = mp->molprops; i < mp->nmolprops; i++, prp++) {
 			/*  Encode the property name if necessary  */
-			char *p;
 			char enc[1024];
 			n1 = n2 = 0;
 			for (p = prp->propname; *p != 0 && n1 < 900; p++) {
@@ -4381,6 +4516,56 @@ MoleculeWriteToMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 			}
 			fprintf(fp, "\n");
 		}
+	}
+	
+	if (mp->bset != NULL) {
+		/*  Gaussian primitive info  */
+		ShellInfo *sp;
+		PrimInfo *pp;
+		fprintf(fp, "!:gaussian_primitives\n");
+		fprintf(fp, "! sym nprims a_idx; A C Csp\n");
+		for (i = 0, sp = mp->bset->shells; i < mp->bset->nshells; i++, sp++) {
+			switch (sp->sym) {
+				case kGTOType_S:  p = "S";  break;
+				case kGTOType_P:  p = "P";  break;
+				case kGTOType_SP: p = "SP"; break;
+				case kGTOType_D:  p = "D";  break;
+				case kGTOType_D5: p = "D5"; break;
+				case kGTOType_F:  p = "F";  break;
+				case kGTOType_F7: p = "F7"; break;
+				case kGTOType_G:  p = "G";  break;
+				case kGTOType_G9: p = "G9"; break;
+				default: snprintf(bufs[0], 8, "X%d", sp->sym); p = bufs[0]; break;
+			}
+			fprintf(fp, "%s %d %d\n", p, sp->nprim, sp->a_idx);
+			pp = mp->bset->priminfos + sp->p_idx;
+			for (j = 0; j < sp->nprim; j++, pp++) {
+				fprintf(fp, "%.18g %.18g %.18g\n", pp->A, pp->C, pp->Csp);
+			}
+		}
+		fprintf(fp, "\n");
+		
+		/*  MO info  */
+		fprintf(fp, "!:mo_info\n");
+		fprintf(fp, "! uhf|rhf|rohf ne_alpha ne_beta\n");
+		switch (mp->bset->rflag) {
+			case 0: p = "UHF"; break;
+			case 1: p = "RHF"; break;
+			case 2: p = "ROHF"; break;
+			default: p = "(unknown)"; break;
+		}
+		fprintf(fp, "%s %d %d\n", p, mp->bset->ne_alpha, mp->bset->ne_beta);
+		fprintf(fp, "\n");
+
+		/*  MO coefficients  */
+		fprintf(fp, "!:mo_coefficients\n");
+		for (i = 0; i < mp->bset->nmos; i++) {
+			fprintf(fp, "MO %d %.18g\n", i + 1, mp->bset->moenergies[i]);
+			for (j = 0; j < mp->bset->ncomps; j++) {
+				fprintf(fp, "%.18g%c", mp->bset->mo[i * mp->bset->ncomps + j], (j % 6 == 5 || j == mp->bset->ncomps - 1 ? '\n' : ' '));
+			}
+		}
+		fprintf(fp, "\n");
 	}
 	
 	fclose(fp);

@@ -122,6 +122,9 @@ class Molecule
     gmsname = get_global_settings("gamess.executable_path")
     gmsdir = nil
     gmsvers = nil
+
+	cygwin_version = false  #  For windows: old cygwin version
+	
     while 1
       if gmsname == nil || !File.exist?(gmsname)
         gmsname = Dialog.open_panel("Please locate the GAMESS executable")
@@ -189,6 +192,13 @@ class Molecule
       sep = "/"
     end
 
+	#  Old (obsolete) cygwin version, using ddikick
+    if $platform == "win"
+	  if gmsvers == "11"
+	    cygwin_version = true
+	  end
+	end
+
     #  Get the host name etc.
     hostname = backquote("hostname").chomp
     if $platform == "win"
@@ -208,6 +218,10 @@ class Molecule
     #  Redirect standard output to the log file
     logname = scrdir + sep + logbase
     fpout = File.open(logname, "w")
+	if cygwin_version
+	  #  The cygwin version uses LF as the eol character
+	  fpout.binmode
+	end
     fpout.print "----- GAMESS execution script -----\n"
     fpout.print "This job is running on host #{hostname}\n"
     fpout.print "under operating system #{uname} at #{Time.now.to_s}\n"
@@ -378,7 +392,7 @@ class Molecule
 	#  if ncpus < 2
 	#    ncpus = 2
 	#  end
-	  if gmsvers == "11"
+	  if cygwin_version
 	    #  Old (obsolete) cygwin version, using ddikick
         fpout.print "ddikick will run #{ncpus} compute process\n"
 		ENV["CYGWIN"] = "nodosfilewarning"

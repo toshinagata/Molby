@@ -251,37 +251,9 @@ class IO
   def gets(rs = $/)
     if rs != $/
 	  return gets_original(rs)
-	end
-    if @end_of_line
-	  s = gets_original(@end_of_line)
-	  if s && s.chomp!(@end_of_line)
-	    s += $/
-	  end
 	else
-	  s = ""
-	  while c = getc
-	    if c == "\r"
-		  #  \r or \r\n
-		  if (c = getc) && c != "\n"
-		    ungetc(c)
-		    @end_of_line = "\r"
-		  else
-		    @end_of_line = "\r\n"
-		  end
-		  break
-		elsif c == "\n"
-		  #  \n
-		  @end_of_line = "\n"
-		  break
-		else
-		  s += c
-		end
-	  end
-	  if @end_of_line
-	    s += $/
-	  end
-    end
-	return s
+	  return gets_any_eol
+	end
   end
 end
 

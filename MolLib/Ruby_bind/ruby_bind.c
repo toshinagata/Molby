@@ -1035,6 +1035,65 @@ s_Kernel_SetGlobalSettings(VALUE self, VALUE key, VALUE value)
 	return value;
 }
 
+#pragma mark ====== IO extension ======
+
+/*
+ *  call-seq:
+ *     gets_any_eol
+ *
+ *  A gets variant that works for CR, LF, and CRLF end-of-line characters. 
+ */
+static VALUE
+s_IO_gets_any_eol(VALUE self)
+{
+	VALUE val, cval;
+	char buf[1024];
+	int i, c;
+	static ID id_getbyte = 0, id_ungetbyte;
+	if (id_getbyte == 0) {
+		id_getbyte = rb_intern("getbyte");
+		id_ungetbyte = rb_intern("ungetbyte");
+	}
+	i = 0;
+	val = Qnil;
+	while ((cval = rb_funcall(self, id_getbyte, 0)) != Qnil) {
+		c = NUM2INT(rb_Integer(cval));
+		if (c == 0x0d) {
+			cval = rb_funcall(self, id_getbyte, 0);
+			if (cval != Qnil) {
+				c = NUM2INT(rb_Integer(cval));
+				if (c != 0x0a)
+					rb_funcall(self, id_ungetbyte, 1, cval);
+			}
+		} else if (c != 0x0a) {
+			buf[i++] = c;
+			if (i >= 1020) {
+				buf[i] = 0;
+				if (val == Qnil)
+					val = rb_str_new(buf, i);
+				else
+					rb_str_append(val, rb_str_new(buf, i));
+				i = 0;
+			}
+		} else break;
+	}
+	if (cval == Qnil && i == 0 && val == Qnil)
+		return Qnil;  /*  End of file  */
+	buf[i] = 0;
+	if (val == Qnil)
+		val = rb_str_new(buf, i);
+	else if (i > 0)
+		rb_str_append(val, rb_str_new(buf, i));
+	val = rb_str_encode(val, rb_enc_from_encoding(rb_default_external_encoding()), 0, Qnil);
+	if (cval != Qnil) {
+		/*  Needs a end-of-line mark  */
+		cval = rb_gv_get("$/");
+		rb_str_append(val, cval);
+	}
+	rb_gv_set("$_", val);
+	return val;
+}
+
 #pragma mark ====== Utility functions (protected funcall) ======
 
 struct Ruby_funcall2_record {
@@ -10298,22 +10357,22 @@ s_Molecule_ClearBasisSet(VALUE self)
 
 /*
  *  call-seq:
- *     add_gaussian_orbital_shell(sym, nprims, atom_index)
+ *     add_gaussian_orbital_shell(atom_index, sym, no_of_primitives)
  *
- *  To be used internally. Add a gaussian orbital shell with symmetry code, number of primitives,
- *  and the corresponding atom index. Symmetry code: 0, S-type; 1, P-type; -1, SP-type; 2, D-type;
+ *  To be used internally. Add a gaussian orbital shell with the atom index, symmetry code,
+ *  and the number of primitives. Symmetry code: 0, S-type; 1, P-type; -1, SP-type; 2, D-type;
  *  -2, D5-type.
  */
 static VALUE
-s_Molecule_AddGaussianOrbitalShell(VALUE self, VALUE symval, VALUE npval, VALUE aval)
+s_Molecule_AddGaussianOrbitalShell(VALUE self, VALUE aval, VALUE symval, VALUE npval)
 {
 	Molecule *mol;
 	int sym, nprims, a_idx, n;
     Data_Get_Struct(self, Molecule, mol);
+	a_idx = NUM2INT(rb_Integer(aval));
 	sym = NUM2INT(rb_Integer(symval));
 	nprims = NUM2INT(rb_Integer(npval));
-	a_idx = NUM2INT(rb_Integer(aval));
-	n = MoleculeAddGaussianOrbitalShell(mol, sym, nprims, a_idx);
+	n = MoleculeAddGaussianOrbitalShell(mol, a_idx, sym, nprims);
 	if (n == -1)
 		rb_raise(rb_eMolbyError, "Molecule is emptry");
 	else if (n == -2)
@@ -10353,26 +10412,101 @@ s_Molecule_AddGaussianPrimitiveCoefficients(VALUE self, VALUE expval, VALUE cval
 
 /*
  *  call-seq:
- *     get_gaussian_shell_info(comp_index) -> [atom_index, orbital_description, no_of_primitives]
+ *     get_gaussian_shell_info(shell_index) -> [atom_index, sym, no_of_primitives, comp_index, no_of_components]
+ *
+ *  Get the Gaussian shell information for the given MO coefficient index.
+ *  The symmetry code is the same as in add_gaussian_orbital_shell.
+ *  The comp_index is the index of the first MO component belonging to this shell, and no_of_components
+ *  is the number of MO component belonging to this shell.
+ */
+static VALUE
+s_Molecule_GetGaussianShellInfo(VALUE self, VALUE sval)
+{
+	Molecule *mol;
+	ShellInfo *sp;
+	int s_idx, sym;
+    Data_Get_Struct(self, Molecule, mol);
+	if (mol->bset == NULL)
+		rb_raise(rb_eMolbyError, "No basis set information is defined");
+	s_idx = NUM2INT(rb_Integer(sval));
+	if (s_idx < 0 || s_idx >= mol->bset->nshells)
+		return Qnil;
+	sp = mol->bset->shells + s_idx;
+	sym = sp->sym;
+	switch (sym) {
+		case kGTOType_S:  sym = 0;  break;
+		case kGTOType_SP: sym = -1; break;
+		case kGTOType_P:  sym = 1;  break;
+		case kGTOType_D:  sym = 2;  break;
+		case kGTOType_D5: sym = -2; break;
+		case kGTOType_F:  sym = 3;  break;
+		case kGTOType_F7: sym = -3; break;
+		case kGTOType_G:  sym = 4;  break;
+		case kGTOType_G9: sym = -4; break;
+		default:
+			rb_raise(rb_eMolbyError, "The Gaussian shell type (%d) is unknown (internal error?)", sym);
+	}
+	return rb_ary_new3(5, INT2NUM(sp->a_idx), INT2NUM(sym), INT2NUM(sp->nprim), INT2NUM(sp->m_idx), INT2NUM(sp->ncomp));
+}
+
+/*
+ *  call-seq:
+ *     get_gaussian_primitive_coefficients(shell_index) -> [[exp1, con1 [, con_sp1]], [exp2, con2 [, con_sp2]],...]
+ *
+ *  Get the Gaussian primitive coefficients for the given MO component.
+ */
+static VALUE
+s_Molecule_GetGaussianPrimitiveCoefficients(VALUE self, VALUE sval)
+{
+	Molecule *mol;
+	ShellInfo *sp;
+	PrimInfo *pp;
+	int s_idx, i;
+	VALUE retval, aval;
+    Data_Get_Struct(self, Molecule, mol);
+	if (mol->bset == NULL)
+		rb_raise(rb_eMolbyError, "No basis set information is defined");
+	s_idx = NUM2INT(rb_Integer(sval));
+	if (s_idx < 0 || s_idx >= mol->bset->nshells)
+		return Qnil;
+	sp = mol->bset->shells + s_idx;
+	pp = mol->bset->priminfos + sp->p_idx;
+	retval = rb_ary_new2(sp->nprim);
+	for (i = 0; i < sp->nprim; i++) {
+		if (sp->sym == kGTOType_SP) {
+			/*  With P contraction coefficient  */
+			aval = rb_ary_new3(3, rb_float_new(pp[i].A), rb_float_new(pp[i].C), rb_float_new(pp[i].Csp));
+		} else {
+			/*  Without P contraction coefficient  */
+			aval = rb_ary_new3(2, rb_float_new(pp[i].A), rb_float_new(pp[i].C));
+		}
+		rb_ary_store(retval, i, aval);
+	}
+	return retval;
+}
+
+/*
+ *  call-seq:
+ *     get_gaussian_component_info(comp_index) -> [atom_index, shell_index, orbital_description]
  *
  *  Get the Gaussian shell information for the given MO coefficient index.
  */
 static VALUE
-s_Molecule_GetGaussianShellInfo(VALUE self, VALUE cval)
+s_Molecule_GetGaussianComponentInfo(VALUE self, VALUE cval)
 {
 	Molecule *mol;
-	Int n, c, atom_idx, nprims;
+	Int n, c, atom_idx, shell_idx;
 	char label[32];
     Data_Get_Struct(self, Molecule, mol);
 	if (mol->bset == NULL)
-		return Qnil;
+		rb_raise(rb_eMolbyError, "No basis set information is defined");
 	c = NUM2INT(rb_Integer(cval));
 	if (c < 0 || c >= mol->bset->ncomps)
-		rb_raise(rb_eMolbyError, "The component index (%d) is out of range (should be 0..%d)", c, mol->bset->ncomps - 1);
-	n = MoleculeGetGaussianShellInfo(mol, c, &atom_idx, label, &nprims);
+		return Qnil;
+	n = MoleculeGetGaussianComponentInfo(mol, c, &atom_idx, label, &shell_idx);
 	if (n != 0)
 		rb_raise(rb_eMolbyError, "Cannot get the shell info for component index (%d)", c);
-	return rb_ary_new3(3, INT2NUM(atom_idx), rb_str_new2(label), INT2NUM(nprims));
+	return rb_ary_new3(3, INT2NUM(atom_idx), INT2NUM(shell_idx), rb_str_new2(label));
 }
 
 /*
@@ -10501,7 +10635,7 @@ s_Molecule_GetMOEnergy(VALUE self, VALUE ival)
 	return rb_float_new(energy);
 }
 
-static VALUE sTypeSym, sAlphaSym, sBetaSym, sNcompsSym;
+static VALUE sTypeSym, sAlphaSym, sBetaSym, sNcompsSym, sNshellsSym;
 
 static inline void
 s_InitMOInfoKeys(void)
@@ -10511,6 +10645,7 @@ s_InitMOInfoKeys(void)
 		sAlphaSym = ID2SYM(rb_intern("alpha"));
 		sBetaSym = ID2SYM(rb_intern("beta"));
 		sNcompsSym = ID2SYM(rb_intern("ncomps"));
+		sNshellsSym = ID2SYM(rb_intern("nshells"));
 	}
 }
 
@@ -10558,7 +10693,7 @@ s_Molecule_SetMOInfo(VALUE self, VALUE hval)
 			if (n >= 0)
 				nb = n;
 		}
-		MoleculeAllocateBasisSetRecord(mol, rflag, na, nb);
+		MoleculeSetMOInfo(mol, rflag, na, nb);
 	}
 	return self;
 }
@@ -10568,7 +10703,7 @@ s_Molecule_SetMOInfo(VALUE self, VALUE hval)
  *     get_mo_info(key)
  *
  *  Get the MO info. The key is as described in set_mo_info.
- *  Read-only: :ncomps the number of components (and the number of MOs)
+ *  Read-only: :ncomps the number of components (and the number of MOs), :nshells the number of shells
  */
 static VALUE
 s_Molecule_GetMOInfo(VALUE self, VALUE kval)
@@ -10590,6 +10725,8 @@ s_Molecule_GetMOInfo(VALUE self, VALUE kval)
 		return INT2NUM(mol->bset->ne_beta);
 	} else if (kval == sNcompsSym) {
 		return INT2NUM(mol->bset->ncomps);
+	} else if (kval == sNshellsSym) {
+		return INT2NUM(mol->bset->nshells);
 	} else {
 		kval = rb_inspect(kval);
 		rb_raise(rb_eMolbyError, "Unknown MO info key: %s", StringValuePtr(kval));
@@ -10627,7 +10764,7 @@ s_Molecule_AllocateBasisSetRecord(VALUE self, VALUE rval, VALUE naval, VALUE nbv
 	rflag = NUM2INT(rb_Integer(rval));
 	na = NUM2INT(rb_Integer(naval));
 	nb = NUM2INT(rb_Integer(nbval));
-	n = MoleculeAllocateBasisSetRecord(mol, rflag, na, nb);
+	n = MoleculeSetMOInfo(mol, rflag, na, nb);
 	if (n == -1)
 		rb_raise(rb_eMolbyError, "Molecule is emptry");
 	else if (n == -2)
@@ -11435,6 +11572,8 @@ Init_Molby(void)
 	rb_define_method(rb_cMolecule, "add_gaussian_orbital_shell", s_Molecule_AddGaussianOrbitalShell, 3);
 	rb_define_method(rb_cMolecule, "add_gaussian_primitive_coefficients", s_Molecule_AddGaussianPrimitiveCoefficients, 3);
 	rb_define_method(rb_cMolecule, "get_gaussian_shell_info", s_Molecule_GetGaussianShellInfo, 1);
+	rb_define_method(rb_cMolecule, "get_gaussian_primitive_coefficients", s_Molecule_GetGaussianPrimitiveCoefficients, 1);
+	rb_define_method(rb_cMolecule, "get_gaussian_component_info", s_Molecule_GetGaussianComponentInfo, 1);
 	rb_define_method(rb_cMolecule, "mo_type", s_Molecule_MOType, 0);
 	rb_define_method(rb_cMolecule, "clear_mo_coefficients", s_Molecule_ClearMOCoefficients, 0);
 	rb_define_method(rb_cMolecule, "set_mo_coefficients", s_Molecule_SetMOCoefficients, 3);
@@ -11612,6 +11751,9 @@ Init_Molby(void)
 	rb_define_method(rb_mKernel, "stop_sound", s_Kernel_StopSound, 0);
 	rb_define_method(rb_mKernel, "export_to_clipboard", s_Kernel_ExportToClipboard, 1);
 
+	/*  class IO  */
+	rb_define_method(rb_cIO, "gets_any_eol", s_IO_gets_any_eol, 0);
+	
 	s_ID_equal = rb_intern("==");
 	g_RubyID_call = rb_intern("call");
 	
