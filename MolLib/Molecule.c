@@ -11858,19 +11858,26 @@ MoleculeUpdateMCube(Molecule *mol, int idn)
 		if (mc->radii == NULL)
 			return -2;  /*  Out of memory  */
 		mc->nradii = mol->natoms;
-		memset(mc->radii, 0, sizeof(Double) * mc->nradii);
-		mobasep = mol->bset->mo + (mc->idn == 0 ? mol->bset->nmos : mc->idn - 1) * mol->bset->ncomps;
-		mopmax = 0.0;
-		for (ix = 0, sp = mol->bset->shells; ix < mol->bset->nshells; ix++, sp++) {
-			if (sp->a_idx >= mol->natoms)
-				continue;  /*  This may happen when molecule is edited after setting up MO info  */
-			mop = mobasep + sp->m_idx;
-			for (iy = 0; iy < sp->ncomp; iy++) {
-				dd = fabs(mop[iy]);
-				if (dd > mc->radii[sp->a_idx])
-					mc->radii[sp->a_idx] = dd;
-				if (dd > mopmax)
-					mopmax = dd;
+		if (mc->idn == mol->bset->nmos + 1) {
+			/*  Total electron density  */
+			for (ix = 0; ix < mol->natoms; ix++)
+				mc->radii[ix] = 1.0;
+			mopmax = 1.0;
+		} else {
+			memset(mc->radii, 0, sizeof(Double) * mc->nradii);
+			mobasep = mol->bset->mo + (mc->idn == 0 ? mol->bset->nmos : mc->idn - 1) * mol->bset->ncomps;
+			mopmax = 0.0;
+			for (ix = 0, sp = mol->bset->shells; ix < mol->bset->nshells; ix++, sp++) {
+				if (sp->a_idx >= mol->natoms)
+					continue;  /*  This may happen when molecule is edited after setting up MO info  */
+				mop = mobasep + sp->m_idx;
+				for (iy = 0; iy < sp->ncomp; iy++) {
+					dd = fabs(mop[iy]);
+					if (dd > mc->radii[sp->a_idx])
+						mc->radii[sp->a_idx] = dd;
+					if (dd > mopmax)
+						mopmax = dd;
+				}
 			}
 		}
 		xmin = ymin = zmin = 1e10;
@@ -11950,7 +11957,33 @@ MoleculeUpdateMCube(Molecule *mol, int idn)
 					n = (ix * ny + iy) * nz + iz;
 					if (mc->dp[n] == DBL_MAX) {
 						p.z = mc->origin.z + mc->dz * iz;
-						mc->dp[n] = sCalcMOPoint(mol, mol->bset, mc->idn, &p, tmp);
+						if (mc->idn == mol->bset->nmos + 1) {
+							/*  Total electron density  */
+							Int ne_alpha, ne_beta;
+							mc->dp[n] = 0.0;
+							ne_alpha = mol->bset->ne_alpha;
+							ne_beta = mol->bset->ne_beta;
+							if (mol->bset->rflag == 2 && ne_alpha < ne_beta) {
+								/*  ROHF case: ensure ne_alpha >= ne_beta  */
+								ne_beta = ne_alpha;
+								ne_alpha = mol->bset->ne_beta;
+							}
+							for (sn = 1; sn <= ne_alpha; sn++) {
+								dd = sCalcMOPoint(mol, mol->bset, sn, &p, tmp);
+								dd = dd * dd;
+								if (mol->bset->rflag != 0 && sn <= ne_beta)
+									dd *= 2;
+								mc->dp[n] += dd;
+							}
+							if (mol->bset->rflag == 0) {
+								for (sn = 1; sn <= ne_beta; sn++) {
+									dd = sCalcMOPoint(mol, mol->bset, sn + mol->bset->ncomps, &p, tmp);
+									mc->dp[n] += dd * dd;
+								}
+							}
+						} else {
+							mc->dp[n] = sCalcMOPoint(mol, mol->bset, mc->idn, &p, tmp);
+						}
 					}
 				}
 			}

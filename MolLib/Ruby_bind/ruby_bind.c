@@ -10218,6 +10218,8 @@ s_Molecule_CreateSurface(int argc, VALUE *argv, VALUE self)
 		rb_raise(rb_eMolbyError, "No MO information is given");
 	if (nval == Qnil) {
 		nmo = -1;
+	} else if (nval == ID2SYM(rb_intern("total_density"))) {
+		nmo = mol->bset->nmos + 1;
 	} else {
 		nmo = NUM2INT(rb_Integer(nval));
 		if (nmo > mol->bset->nmos || nmo < -mol->bset->ncomps)

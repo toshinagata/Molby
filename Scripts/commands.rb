@@ -229,14 +229,12 @@ class Molecule
 	  mo_index = 1
 	  mo_ao = nil
 	  coltable = [[0,0,1], [1,0,0], [0,1,0], [1,1,0], [0,1,1], [1,0,1], [0,0,0]]
-	  if (motype == "RHF")
-	    beta = nil
-	  end
-	  i = (beta ? 2 : 1)
+	  mult = (motype == "UHF" ? 2 : 1)
 	  mo_menu = ["1000 (-00.00000000)"]  #  Dummy entry; create later
 	  tabvals = []
 	  coeffs = nil
 	  a_idx_old = -1
+	  occ = nil
 	  ncomps.times { |i|
 	    a_idx, s_idx, label = mol.get_gaussian_component_info(i)
 		if a_idx_old != a_idx
@@ -297,15 +295,35 @@ class Molecule
 	  on_mo_action = lambda { |it|
 	    mo = it[:value]
 		if mo_ao == 0
-		  if beta
+		  if motype == "UHF"
 		    mo_index = (mo / 2) + (mo % 2 == 1 ? ncomps : 0) + 1
+			if mo_index <= alpha || (mo_index > ncomps && mo_index <= ncomps + beta)
+			  occ_new = 1
+			else
+			  occ_new = 0
+			end
 		  else
 		    mo_index = mo + 1
+			if mo_index <= alpha && mo_index <= beta
+			  occ_new = 1
+			elsif mo_index <= alpha || mo_index <= beta
+			  occ_new = -1
+			else
+			  occ_new = 0
+			end
 		  end
 		else
 		  mo_index = mo
+		  occ_new = occ
 		end
 		coeffs = nil
+		if occ_new != occ
+		  #  Set default color
+		  col = (occ_new == 0 ? 1 : (occ_new == -1 ? 2 : 0))
+		  set_value("color", col)
+		  h["color"] = col
+		  occ = occ_new
+		end
 		item_with_tag("table")[:refresh] = true
 	    on_action.call(it)
 	  }
@@ -313,8 +331,8 @@ class Molecule
 	    if mo_ao != it[:value]
 		  mo_ao = it[:value]
 		  if mo_ao == 0
-		    mo_menu = (1..(ncomps * i)).map { |n|
-	          if beta
+		    mo_menu = (1..(ncomps * mult)).map { |n|
+	          if motype == "UHF"
 		        i1 = (n - 1) / 2 + 1
 		        i2 = n % 2
 		        c1 = (i2 == 0 ? "B" : "A")
@@ -323,7 +341,13 @@ class Molecule
 		        i1 = n
 		        i2 = 1
 		        c1 = ""
-		        c2 = (i1 > alpha ? "*" : "")
+				if i1 > beta && i1 > alpha
+				  c2 = "*"
+				elsif i1 > beta || i1 > alpha
+				  c2 = "S"
+				else
+				  c2 = ""
+				end
 		      end
 		      en = mol.get_mo_energy(i1 + (i2 == 0 ? ncomps : 0))
 		      sprintf("%d%s%s (%.8f)", i1, c1, c2, en)
