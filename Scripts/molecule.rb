@@ -759,7 +759,6 @@ class Molecule
   def close_active_auxiliary_window
     if @aux_windows
 	  @aux_windows.each_value { |d|
-	    puts "#{d}: #{d.active?}"
 	    if d.active?
 		  close_auxiliary_window(d)
 		  return true

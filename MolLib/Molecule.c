@@ -2691,6 +2691,7 @@ MoleculeGetGaussianComponentInfo(Molecule *mol, Int comp_idx, Int *outAtomIdx, c
 					outLabel[0] = 'F';
 					strncpy(outLabel + 1, type_f + comp_idx * 3, 3);
 					outLabel[4] = 0;
+					break;
 				case kGTOType_F7:
 					outLabel[0] = 'F';
 					strcpy(outLabel + 1, type_f7[comp_idx]);
