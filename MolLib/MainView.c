@@ -1741,7 +1741,7 @@ MainView_drawModel(MainView *mview)
     glViewport(0, 0, width, height);
     
 	/*  Clear the buffer  */
-    glClearColor(mview->background_color[0], mview->background_color[1], mview->background_color[2], 0);
+    glClearColor(mview->background_color[0], mview->background_color[1], mview->background_color[2], mview->background_color[3]);
     glClear(GL_COLOR_BUFFER_BIT |
             GL_DEPTH_BUFFER_BIT);
 	

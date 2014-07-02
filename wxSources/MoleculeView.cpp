@@ -425,11 +425,12 @@ MoleculeView::OnDraw(wxDC *dc)
 }
 
 wxImage *
-MoleculeView::CaptureGLCanvas(float scale)
+MoleculeView::CaptureGLCanvas(float scale, int bg_color)
 {
 	if (canvas && mview->mol != NULL) {
 		int x, y, width, height;
-
+		float bgcol[4];
+		
 		canvas->SetCurrent();
 		canvas->GetClientSize(&width, &height);
 		width *= scale;
@@ -455,9 +456,31 @@ MoleculeView::CaptureGLCanvas(float scale)
 		MainView_initializeOpenGL();
 
 		mview->offline_scale = scale;
+		for (x = 0; x < 4; x++) {
+			bgcol[x] = mview->background_color[x];
+		}
+		if (bg_color == 0) {
+			mview->background_color[0] = 0;
+			mview->background_color[1] = 0;
+			mview->background_color[2] = 0;
+			mview->background_color[3] = 0;
+		} else if (bg_color == 1) {
+			mview->background_color[0] = 0;
+			mview->background_color[1] = 0;
+			mview->background_color[2] = 0;
+			mview->background_color[3] = 1;
+		} else if (bg_color == 2) {
+			mview->background_color[0] = 1;
+			mview->background_color[1] = 1;
+			mview->background_color[2] = 1;
+			mview->background_color[3] = 1;
+		}
 		MoleculeLock(mview->mol);
 		MainView_drawModel(mview);
 		MoleculeUnlock(mview->mol);
+		for (x = 0; x < 4; x++) {
+			mview->background_color[x] = bgcol[x];
+		}
 		mview->offline_scale = 0.0;
 
 		glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);

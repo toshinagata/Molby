@@ -365,7 +365,17 @@ MyDocument::OnExportGraphic(wxCommandEvent& event)
 	wxString wildcard = _T("PNG File (*.png)|*.png|TIFF File (*.tif)|*.tif|All Files (*.*)|*.*");
 	wxFileName fname(GetFilename());
 	wxString fnstr;
-	int i;
+	Int scale, bg_color, n, i;
+	char *p;
+	i = MolActionCreateAndPerform(mol, SCRIPT_ACTION(";i"), "ask_graphic_export_scale", &n);
+	if (i != 0 || n < 0)
+		return;
+	i = MyAppCallback_getGlobalSettingsWithType("global.export_graphic_scale", 'i', &scale);
+	if (i != 0)
+		scale = 4;
+	i = MyAppCallback_getGlobalSettingsWithType("global.export_background_color", 'i', &bg_color);
+	if (i != 0)
+		bg_color = 0;
 	GetPrintableName(fnstr);
 	if ((i = fnstr.Find('.', true)) != wxNOT_FOUND) {
 		fnstr = fnstr.Mid(0, i);
@@ -374,8 +384,7 @@ MyDocument::OnExportGraphic(wxCommandEvent& event)
 	if (dialog->ShowModal() == wxID_OK) {
 		wxString fnpath = dialog->GetPath();
 		MoleculeView *myview = (MoleculeView *)GetFirstView();
-		float scale = 4.0;
-		wxImage *img = myview->CaptureGLCanvas(scale);
+		wxImage *img = myview->CaptureGLCanvas(scale, bg_color);
 		wxString ext = fnpath.AfterLast('.');
 		wxBitmapType type = wxBITMAP_TYPE_PNG;
 		if (ext.CmpNoCase(_T("tif")) == 0)

@@ -425,6 +425,27 @@ class Molecule
 	  show
     }
   end
+
+  def ask_graphic_export_scale
+    scale = get_global_settings("global.export_graphic_scale")
+	scale = (scale ? scale.to_i - 1 : 3)
+	bg_color = get_global_settings("global.export_background_color")
+	bg_color = (bg_color ? bg_color.to_i + 1 : 0)
+    hash = Dialog.run("Set Export Properties") {
+	  layout(2,
+		item(:text, :title=>"Resolution:"),
+		item(:popup, :subitems=>["Screen", "Screenx2", "Screenx3", "Screenx4", "Screenx5"], :tag=>"resolution", :value=>scale),
+		item(:text, :title=>"Background color:"),
+		item(:popup, :subitems=>["Same as Screen", "Transparent", "Black", "White"], :tag=>"bg_color", :value=>bg_color))
+	}
+	if hash[:status] == 0
+	  set_global_settings("global.export_graphic_scale", (hash["resolution"] + 1).to_s)
+	  set_global_settings("global.export_background_color", (hash["bg_color"] - 1).to_s)
+	  return 0
+	else
+	  return -1
+	end
+  end
   
   #  DEBUG
   def cmd_test
