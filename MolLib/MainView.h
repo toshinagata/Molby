@@ -268,6 +268,8 @@ STUB void MainViewCallback_setKeyboardFocus(MainView *mview);
 STUB int MainViewCallback_mouseCheck(MainView *mview);
 STUB void MainViewCallback_clearLabels(MainView *mview);
 STUB void MainViewCallback_drawLabel(MainView *mview, const float *pos, const char *label);
+STUB int MainViewCallback_exportGraphic(MainView *mview, const char *fname, float scale, int bg_color);
+	
 STUB void MainViewCallback_drawInfoText(MainView *mview, const char *label);
 STUB void MainViewCallback_selectMatrixCellForMode(MainView *mview, int mode);
 //STUB int MainViewCallback_getTag(MainView *mview);

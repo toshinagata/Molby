@@ -384,14 +384,7 @@ MyDocument::OnExportGraphic(wxCommandEvent& event)
 	if (dialog->ShowModal() == wxID_OK) {
 		wxString fnpath = dialog->GetPath();
 		MoleculeView *myview = (MoleculeView *)GetFirstView();
-		wxImage *img = myview->CaptureGLCanvas(scale, bg_color);
-		wxString ext = fnpath.AfterLast('.');
-		wxBitmapType type = wxBITMAP_TYPE_PNG;
-		if (ext.CmpNoCase(_T("tif")) == 0)
-			type = wxBITMAP_TYPE_TIF;
-		MyAppCallback_initImageHandlers();
-		img->SaveFile(fnpath, type);
-		delete img;
+		myview->DoExportGraphic(fnpath, scale, bg_color);
 	}
 	dialog->Destroy();
 }

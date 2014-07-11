@@ -514,6 +514,22 @@ MoleculeView::CaptureGLCanvas(float scale, int bg_color)
 	return NULL;
 }
 
+int
+MoleculeView::DoExportGraphic(wxString& fname, float scale, int bg_color)
+{
+	wxImage *img = CaptureGLCanvas(scale, bg_color);
+	if (img == NULL)
+		return -1;
+	wxString ext = fname.AfterLast('.');
+	wxBitmapType type = wxBITMAP_TYPE_PNG;
+	if (ext.CmpNoCase(_T("tif")) == 0)
+		type = wxBITMAP_TYPE_TIF;
+	MyAppCallback_initImageHandlers();
+	img->SaveFile(fname, type);
+	delete img;
+	return 0;
+}
+
 void
 MoleculeView::OnUpdate(wxView *WXUNUSED(sender), wxObject *WXUNUSED(hint))
 {
@@ -1346,6 +1362,16 @@ MainViewCallback_labelSize(struct Label *label, float *outSize)
 		}
 	}
   */
+}
+
+int
+MainViewCallback_exportGraphic(MainView *mview, const char *fname, float scale, int bg_color)
+{
+	if (mview != NULL && mview->ref != NULL && ((MoleculeView *)(mview->ref))->MolDocument() != NULL) {
+		wxString fnamestr(fname, wxConvFile);
+		return ((MoleculeView *)(mview->ref))->DoExportGraphic(fnamestr, scale, bg_color);
+	}
+	return -100;
 }
 
 #pragma mark ====== Plain C Interface (MyListCtrl) ======

@@ -11066,6 +11066,38 @@ s_Molecule_PropertyNames(VALUE self)
 
 /*
  *  call-seq:
+ *     export_graphic(fname, scale = 1.0, bg_color = -1)
+ *
+ *  Export the current graphic to a PNG or TIF file (determined by the extension).
+ *  bg_color: -1, same as screen; 0, transparent; 1, black; 2, white.
+ *  
+ */
+static VALUE
+s_Molecule_ExportGraphic(int argc, VALUE *argv, VALUE self)
+{
+	Molecule *mol;
+	VALUE fval, sval, bval;
+	char *fname;
+	float scale;
+	int bg_color;
+    Data_Get_Struct(self, Molecule, mol);
+	if (mol->mview == NULL)
+		rb_raise(rb_eMolbyError, "The molecule has no associated graphic view");
+	rb_scan_args(argc, argv, "12", &fval, &sval, &bval);
+	fname = FileStringValuePtr(fval);
+	if (sval == Qnil)
+		scale = 1.0;
+	else scale = NUM2DBL(rb_Float(sval));
+	if (bval == Qnil)
+		bg_color = -1;
+	else bg_color = NUM2INT(rb_Integer(bval));
+	if (MainViewCallback_exportGraphic(mol->mview, fname, scale, bg_color) == 0)
+		return fval;
+	else return Qnil;
+}
+
+/*
+ *  call-seq:
  *     current       -> Molecule
  *
  *  Get the currently "active" molecule.
@@ -11590,10 +11622,11 @@ Init_Molby(void)
 	rb_define_method(rb_cMolecule, "set_property", s_Molecule_SetProperty, -1);
 	rb_define_method(rb_cMolecule, "get_property", s_Molecule_GetProperty, -1);
 	rb_define_method(rb_cMolecule, "property_names", s_Molecule_PropertyNames, 0);
+	rb_define_method(rb_cMolecule, "export_graphic", s_Molecule_ExportGraphic, -1);
 		
 	rb_define_method(rb_cMolecule, "==", s_Molecule_Equal, 1);
 	rb_define_method(rb_cMolecule, "call_subprocess_async", s_Molecule_CallSubProcessAsync, -1);
-
+	
 	rb_define_singleton_method(rb_cMolecule, "current", s_Molecule_Current, 0);
 	rb_define_singleton_method(rb_cMolecule, "[]", s_Molecule_MoleculeAtIndex, -1);
 	rb_define_singleton_method(rb_cMolecule, "open", s_Molecule_Open, -1);
