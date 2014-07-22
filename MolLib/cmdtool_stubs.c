@@ -312,6 +312,12 @@ MolActionCallback_registerUndo(Molecule *mol, MolAction *action)
 }
 
 int
+MainViewCallback_exportGraphic(MainView *mview, const char *fname, float scale, int bg_color)
+{
+	return 0;
+}
+
+int
 main(int argc, char **argv)
 {
 	int fd;
