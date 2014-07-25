@@ -264,23 +264,26 @@ class Molecule
 				break
 			end
 			line.chomp!
-			if line =~ /ATOM\s+ATOMIC\s+COORDINATES/ || line =~ /COORDINATES OF ALL ATOMS ARE/
+			if line =~ /ATOM\s+ATOMIC\s+COORDINATES/ || line =~ /COORDINATES OF ALL ATOMS ARE/ || line =~ /COORDINATES \(IN ANGSTROM\) FOR \$DATA GROUP ARE/
 				set_progress_message(mes + "\nReading atomic coordinates...")
 				if line =~ /ATOMIC/
 				  first_line = true
 				  if !new_unit
 				    next   #  Skip initial atomic coordinates unless loading into an empty molecule
 				  end
+				  line = fp.gets  #  Skip one line
 				else
 				  first_line = false
 				  nsearch += 1
+				  if line =~ /COORDINATES OF ALL ATOMS ARE/
+				    line = fp.gets  #  Skip one line
+			      end
 				end
-				line = fp.gets    #  Skip one line
 				n = 0
 				coords = []
 				names = []
 				while (line = fp.gets) != nil
-					break if line =~ /^\s*$/ || line =~ /END OF ONE/
+					break if line =~ /^\s*$/ || line =~ /END OF ONE/ || line =~ /\$END/
 					next if line =~ /-----/
 					name, charge, x, y, z = line.split
 					v = Vector3D[x, y, z]

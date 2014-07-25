@@ -420,6 +420,7 @@ class Molecule
 	lineno = 0
     last_line = ""
     search_mode = 0
+	nserch = -1
 	rflag = 0
 	ne_alpha = ne_beta = 0
 	mo_count = 0
@@ -483,13 +484,16 @@ class Molecule
         size = fplog.tell
         last_i = nil
         i = 0
-        nserch = -1
         while i < lines.count
           line = lines[i]
           if line =~ /GEOMETRY SEARCH POINT NSERCH= *(\d+)/
             nserch = $1.to_i
             last_i = i
 			search_mode = 1
+			energy = nil
+		  elsif line =~ /START OF DRC CALCULATION/
+		    search_mode = 3
+			nserch = 1
 			energy = nil
 		  elsif line =~ /CONSTRAINED OPTIMIZATION POINT/
 		    search_mode = 2
@@ -600,11 +604,15 @@ class Molecule
           elsif nserch > 0 && line =~ /ddikick\.x/
             last_i = -1
             break
-          elsif mol && nserch > 0 && line =~ /COORDINATES OF ALL ATOMS/
-            #  There should be (natoms + 2) lines
-            if i + mol.natoms + 3 <= lines.count
+          elsif mol && nserch > 0 && (line =~ /COORDINATES OF ALL ATOMS/ || line =~ /COORDINATES \(IN ANGSTROM\) FOR \$DATA GROUP ARE/)
+            #  There should be (natoms) lines
+			if line =~ /COORDINATES OF ALL ATOMS/
+			  #  Skip header lines
+			  i += 2
+		    end
+            if i + mol.natoms + 1 <= lines.count
               coords = []
-              (i + 3...i + 3 + mol.natoms).each { |j|
+              (i + 1...i + 1 + mol.natoms).each { |j|
                 name, charge, x, y, z = lines[j].split
                 coords.push(Vector3D[x.to_f, y.to_f, z.to_f])
               }
@@ -613,7 +621,7 @@ class Molecule
 			    mol.set_property("energy", energy)
 			  end
               mol.display
-              last_i = i + mol.natoms + 2
+              last_i = i + mol.natoms
               i = last_i   #  Skip the processed lines
             end
           end
