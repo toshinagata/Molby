@@ -30,6 +30,82 @@ end
 
 class Molecule
 
+  #  Import nbo log.  The argument is either an array of Strings
+  #  or an IO object.
+  def import_nbo_log(lines)
+    if lines.is_a?(IO)
+	  getline = lambda { lines.gets }
+	else
+	  getline = lambda { lines.shift }
+    end
+    nbo = Hash.new
+	while (ln = getline.call) != nil
+	  if ln =~ /done with NBO analysis/
+	    break
+	  end
+	  if ln =~ /NATURAL POPULATIONS:  Natural atomic orbital occupancies/
+	    #  List of Natural AOs
+		getline.call
+		getline.call
+		getline.call
+		nbo["nao"] = []
+		while (ln = getline.call) != nil
+		  if ln =~ /^\s*$/
+		    #  Skip a blank line
+		    ln = getline.call
+			if ln =~ /^\s*$/
+			  #  Double blank lines indicates the end of the table
+			  break
+			end
+		  end
+		  ln.chomp!
+		  ln =~ /^( *\d+)( *[A-Za-z]+)( *\d+)( *[a-z]+)( *[A-Za-z]+)\( *(\d+)([a-z]+)\)/
+		  i = $1.to_i - 1
+		  an = $3.to_i - 1
+		  label = $4
+		  type = $5
+		  pn = $6
+		  vals = $~.post_match.split.map { |e| e.to_f }
+		  #  atom_index, type, pn+label, occupancy[, energy]
+		  nbo["nao"].push([an, type, pn + label] + vals)
+		end
+	  elsif ln =~ /([A-Z]+)s in the ([A-Z]+) basis:/
+	    #  Read matrix
+	    dst = $1
+		src = $2
+		key = src + "/" + dst
+		getline.call
+		getline.call
+		getline.call
+		lines = []
+		idx = 0
+		while (ln = getline.call) != nil
+		  if ln =~ /^\s*$/
+		    #  Blank line: end of one block
+		    ln = getline.call
+			if ln =~ /^\s*$/
+			  #  Double blank lines indicates the end of the table
+			  break
+			else
+			  #  Begin next section
+			  ln = getline.call
+			  idx = 0
+			  next
+			end
+		  end
+		  ln.chomp!
+		  ln =~ /-?\d\.\d+/
+		  a = ([$~[0]] + $~.post_match.split).map { |e| e.to_f }
+		  (lines[idx] ||= []).concat(a)
+		  idx += 1
+		end
+		nbo[key] = LAMatrix.new(lines).transpose!
+	  end
+	end
+	@nbo = nbo
+	puts @nbo.inspect
+  end
+  
   def Molecule.read_gamess_basis_sets(fname)
     # $gamess_basis = Hash.new unless $gamess_basis
 	$gamess_ecp = Hash.new unless $gamess_ecp
@@ -461,6 +537,11 @@ class Molecule
 	    error_message_box($!.to_s)
 		return
 	  end
+	  
+	  if (script = get_global_settings("gamess.postfix_script")) != nil && script != ""
+	    eval(script)
+	  end
+
 	  if mol != nil
 	    message_box(msg, hmsg, :ok, icon)
       end
@@ -637,6 +718,10 @@ class Molecule
       end
       true
     }
+
+    if (script = get_global_settings("gamess.prefix_script")) != nil && script != ""
+	  eval(script)
+	end
 
     if $platform == "win"
 	  if gmsvers == "11"
@@ -1039,6 +1124,21 @@ class Molecule
 		  end
 		end
 	  end
+	  def set_optional_scripts(item)
+	    h = Dialog.run("GAMESS Optional Scripts") {
+		  s_pre = get_global_settings("gamess.prefix_script")
+		  s_post = get_global_settings("gamess.postfix_script")
+		  layout(1,
+		    item(:text, :title=>"Script to run before GAMESS execution:"),
+			item(:textview, :width=>400, :height=>200, :value=>s_pre, :tag=>"prefix"),
+		    item(:text, :title=>"Script to run after GAMESS execution:"),
+			item(:textview, :width=>400, :height=>200, :value=>s_pre, :tag=>"postfix"))
+		}
+		if h[:status] == 0
+		  set_global_settings("gamess.prefix_script", h["prefix"])
+		  set_global_settings("gamess.postfix_script", h["postfix"])
+		end
+	  end
 	  layout(4,
 		item(:text, :title=>"SCF type"),
 		item(:popup, :subitems=>["RHF", "ROHF", "UHF"], :tag=>"scftype"),
@@ -1108,7 +1208,8 @@ class Molecule
 		
 		-1,
 		item(:button, :title=>"Select Path...", :tag=>"select_path", :action=>:select_gamess_path),
-		-1, -1,
+		-1,
+		item(:button, :title=>"Optional Scripts...", :action=>:set_optional_scripts),
 		
 		item(:text, :title=>"   N of CPUs"),
 		item(:textfield, :width=>80, :tag=>"ncpus"),
