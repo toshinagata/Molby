@@ -59,15 +59,41 @@ class Molecule
 			end
 		  end
 		  ln.chomp!
-		  ln =~ /^( *\d+)( *[A-Za-z]+)( *\d+)( *[a-z]+)( *[A-Za-z]+)\( *(\d+)([a-z]+)\)/
+		  next unless ln =~ /^ *(\d+) *([A-Za-z]+) *(\d+) *([a-z]+) +([A-Za-z]+)\( *(\d+)([a-z]+)\)/
 		  i = $1.to_i - 1
 		  an = $3.to_i - 1
+		  atom_label = $2 + $3.to_s
 		  label = $4
 		  type = $5
 		  pn = $6
 		  vals = $~.post_match.split.map { |e| e.to_f }
 		  #  atom_index, type, pn+label, occupancy[, energy]
-		  nbo["nao"].push([an, type, pn + label] + vals)
+		  nbo["nao"].push([atom_label, type, pn + label] + vals)
+		end
+	  elsif ln =~ / NATURAL BOND ORBITALS \(Summary\):/
+	    nbo["nbo"] = []
+		getline.call
+	    while (ln = getline.call) != nil
+		  break if ln =~ /Total Lewis/
+		  if ln =~ /^\s*$/
+			#  Skip a blank line
+			ln = getline.call
+			if ln =~ /^\s*$/
+			  #  Double blank lines indicates the end of the table
+			  break
+			end
+		  end
+		  if ln =~ /^\s*(\d+)\. *([A-Za-z]+\*?) *\( *(\d+)\) *([A-Za-z]+) *(\d+)(- *([A-Za-z]+) *(\d+))? *(\d\.\d+)/
+			idx = $1.to_i
+			orb_kind = $2
+			orb_idx = $3
+			atom_label = $4 + ($5.to_i - 1).to_s
+			if $6 != nil
+			  atom_label += "-" + $7 + ($8.to_i - 1).to_s
+			end
+			occ = $9.to_f
+			nbo["nbo"].push([orb_kind + "_" + orb_idx, atom_label, occ])
+		  end
 		end
 	  elsif ln =~ /([A-Z]+)s in the ([A-Z]+) basis:/
 	    #  Read matrix
@@ -77,7 +103,7 @@ class Molecule
 		getline.call
 		getline.call
 		getline.call
-		lines = []
+		elements = []
 		idx = 0
 		while (ln = getline.call) != nil
 		  if ln =~ /^\s*$/
@@ -94,16 +120,25 @@ class Molecule
 			end
 		  end
 		  ln.chomp!
-		  ln =~ /-?\d\.\d+/
+  		  ln =~ /-?\d\.\d+/
 		  a = ([$~[0]] + $~.post_match.split).map { |e| e.to_f }
-		  (lines[idx] ||= []).concat(a)
+		  (elements[idx] ||= []).concat(a)
 		  idx += 1
 		end
-		nbo[key] = LAMatrix.new(lines).transpose!
+		nbo[key] = LAMatrix.new(elements).transpose!
 	  end
 	end
 	@nbo = nbo
-	puts @nbo.inspect
+	if @nbo["AO/NAO"]
+	  #  Convert NAO based matrix into AO based matrix
+	  @nbo.keys.each { |key|
+	    if key[0..3] == "NAO/"
+		  key2 = "AO/" + key[4..-1]
+		  @nbo[key2] = @nbo["AO/NAO"] * @nbo[key]
+		end
+	  }
+	end
+#	puts @nbo.inspect
   end
   
   def Molecule.read_gamess_basis_sets(fname)
@@ -705,6 +740,21 @@ class Molecule
               last_i = i + mol.natoms
               i = last_i   #  Skip the processed lines
             end
+		  elsif line =~ /N A T U R A L   B O N D   O R B I T A L   A N A L Y S I S/
+		    #  NBO output
+		    j = i + 1
+			while j < lines.count
+			  break if lines[j] =~ /done with NBO analysis/
+			  j += 1
+			end
+			if j < lines.count
+			  nbo_lines = lines[i..j]
+			  mol.import_nbo_log(nbo_lines) rescue puts "Error: #{$!}, #{$!.backtrace.inspect}"
+			  last_i = j
+			  i = last_i  #  Skip the processed lines
+			else
+			  break  #  Wait until NBO is done
+			end
           end
           i += 1
         end
@@ -752,7 +802,7 @@ class Molecule
   def export_gamess(fname, hash)
 
     def reorder_array(ary, ordered_sub_ary)
-	  return ordered_sub_ary + (ary - ordered_sub_ary)
+	  return (ordered_sub_ary & ary) + (ary - ordered_sub_ary)
 	end
 	
 	now = Time.now.to_s
@@ -817,7 +867,7 @@ class Molecule
 	h = (hash["CONTRL"] ||= Hash.new)
 	h["COORD"] ||= "UNIQUE"
 	h["EXETYP"] ||= "RUN"
-	h["ICHARG"] ||= icharg.to_s
+	h["ICHARG"] ||= (icharg || 0).to_s
 	h["ICUT"] ||= "20"
 	h["INTTYP"] ||= "HONDO"
 	h["ITOL"] ||= "30"
@@ -827,10 +877,10 @@ class Molecule
 	h["MULT"] ||= mult.to_s
 	h["QMTTOL"] ||= "1e-08"
 	h["RUNTYP"] ||= runtyp
-	if hash["dft"] != 0
+	if (hash["dft"] || 0) != 0 && hash["dfttype"]
 	  h["DFTTYP"] ||= hash["dfttype"]
 	end
-	if hash["use_internal"] != 0 && (hash["runtype"] == 2 || h["RUNTYP"] == "OPTIMIZE")
+	if (hash["use_internal"] || 0) != 0 && (hash["runtype"] == 2 || h["RUNTYP"] == "OPTIMIZE")
 	  nzvar = natoms * 3 - 6  #  TODO: 3N-5 for linear molecules
 	  h["NZVAR"] ||= nzvar.to_s
 	else
@@ -871,7 +921,7 @@ class Molecule
 	  h["AUTO"] ||= ".T."
 	end
 	
-	if hash["esp"] != 0
+	if (hash["esp"] || 0) != 0
 	  h = (hash["ELPOT"] ||= Hash.new)
 	  h["IEPOT"] ||= "1"
 	  h["OUTPUT"] ||= "PUNCH"
@@ -925,13 +975,17 @@ class Molecule
 		n = 0
 		keys.each_with_index { |kk, i|
 		  v = h[kk]
-		  next if v == nil || v == ""
 		  if n == 0
 		    fp.printf " $%-6s", k
 		  elsif n % 3 == 0
 		    fp.print "\n        "
 		  end
-		  fp.printf " %s=%s", kk, h[kk].to_s
+		  if v == nil || v == ""
+		    #  No value
+			fp.print " " + kk
+		  else
+		    fp.printf " %s=%s", kk, h[kk].to_s
+		  end
 		  n += 1
 		}
 		if n > 0

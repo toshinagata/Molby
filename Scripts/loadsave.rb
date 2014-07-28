@@ -394,6 +394,13 @@ class Molecule
 				end
 				sub_load_gamess_log_mo_coefficients(lines, lineno, ncomps)
 				set_progress_message(mes)
+			elsif line =~ /N A T U R A L   B O N D   O R B I T A L   A N A L Y S I S/
+				nbo_lines = []
+				while (line = fp.gets) != nil
+				  break if line =~ /done with NBO analysis/
+				  nbo_lines.push(line)
+				end
+				import_nbo_log(nbo_lines)
 			end
 		end
 	end

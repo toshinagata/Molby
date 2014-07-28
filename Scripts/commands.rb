@@ -229,6 +229,31 @@ class Molecule
 	  mo_index = 1
 	  mo_ao = nil
 	  coltable = [[0,0,1], [1,0,0], [0,1,0], [1,1,0], [0,1,1], [1,0,1], [0,0,0]]
+	  mo_ao_items = ["Molecular Orbitals", "Atomic Orbitals"]
+	  mo_ao_keys = ["MO", "AO"]
+      if (nbo = mol.instance_eval { @nbo }) != nil
+	    nbo.keys.each { |key|
+		  if key[0..2] == "AO/"
+		    key2 = key[3..-1]
+			name2 = key2
+			if key2 == "NAO"
+			  name2 = "Natural Atomic Orbitals"
+			elsif key2 == "NBO"
+			  name2 = "Natural Bond Orbitals"
+			elsif key2 == "NHO"
+			  name2 = "Natural Hybrid Orbitals"
+			elsif key2 == "NLMO"
+			  name2 = "Natural Localized Molecular Orbitals"
+			elsif key2 == "PNAO"
+			  name2 = "Pre-orthogonal Natural Atomic Orbitals"
+			elsif key2 == "PNHO"
+			  name2 = "Pre-orthogonal Natural Hybrid Orbitals"
+			end
+			mo_ao_items.push(name2)
+			mo_ao_keys.push(key2)
+		  end
+		}
+	  end
 	  mult = (motype == "UHF" ? 2 : 1)
 	  mo_menu = ["1000 (-00.00000000)"]  #  Dummy entry; create later
 	  tabvals = []
@@ -253,8 +278,10 @@ class Molecule
 		  if coeffs == nil
 		    if mo_ao == 0
 		      coeffs = mol.get_mo_coefficients(mo_index)
-		    else
+		    elsif mo_ao == 1
 		      coeffs = (0...ncomps).map { |i| (i == mo_index ? 1.0 : 0.0) }
+			else
+			  coeffs = nbo["AO/" + mo_ao_keys[mo_ao]].column(mo_index).to_a[0]
 			end
 		  end
 		  sprintf("%.6f", coeffs[row])
@@ -352,15 +379,22 @@ class Molecule
 		      en = mol.get_mo_energy(i1 + (i2 == 0 ? ncomps : 0))
 		      sprintf("%d%s%s (%.8f)", i1, c1, c2, en)
 			}
-		  else
+		  elsif mo_ao == 1
 		    mo_menu = []
 		    ncomps.times { |i|
 			  mo_menu[i] = sprintf("AO%d: %s (%s)", i + 1, tabvals[i][2], mol.atoms[tabvals[i][3]].name)
+			}
+		  else
+		    mo_menu = []
+			key = mo_ao_keys[mo_ao]
+			ncomps.times { |i|
+			  mo_menu[i] = sprintf("#{key}%d", i + 1)
 			}
 		  end
 		  it0 = item_with_tag("mo")
 		  it0[:subitems] = mo_menu
 		  it0[:value] = 0
+		  h["mo"] = nil  # "Update" button is forced to be enabled
 		  on_mo_action.call(it0)
 		end
 	  }
@@ -395,7 +429,7 @@ class Molecule
 	  layout(1,
 	    layout(2,
 		  item(:text, :title=>"Orbital Set"),
-		  item(:popup, :tag=>"mo_ao", :subitems=>["Molecular Orbitals", "Atomic Orbitals"], :action=>on_set_action),
+		  item(:popup, :tag=>"mo_ao", :subitems=>mo_ao_items, :action=>on_set_action),
 	      item(:text, :title=>"Select"),
 	      item(:popup, :tag=>"mo", :subitems=>mo_menu, :action=>on_mo_action)),
 		layout(4,
