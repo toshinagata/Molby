@@ -1065,6 +1065,7 @@ s_IO_gets_any_eol(VALUE self)
 				if (c != 0x0a)
 					rb_funcall(self, id_ungetbyte, 1, cval);
 			}
+			break;
 		} else if (c != 0x0a) {
 			buf[i++] = c;
 			if (i >= 1020) {
