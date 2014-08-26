@@ -268,9 +268,9 @@ class Molecule
 				set_progress_message(mes + "\nReading atomic coordinates...")
 				if line =~ /ATOMIC/
 				  first_line = true
-				  if !new_unit
-				    next   #  Skip initial atomic coordinates unless loading into an empty molecule
-				  end
+				#  if !new_unit
+				#    next   #  Skip initial atomic coordinates unless loading into an empty molecule
+				#  end
 				  line = fp.gets  #  Skip one line
 				else
 				  first_line = false
@@ -311,8 +311,21 @@ class Molecule
 					new_unit = false
 				#	create_frame
 				else
-					if search_mode != 1 || nsearch > 1
-						#  The first frame for geometry search has the same coordinates as input
+				    dont_create = false
+					if (search_mode == 1 && nsearch == 1) || first_line
+						#  The input coordinate and the first frame for geometry search
+						#  can have the same coordinate as the last frame; if this is the case, then
+						#  do not create the new frame
+						select_frame(nframes - 1)
+						dont_create = true
+						each_atom { |ap|
+						  if (ap.r - coords[ap.index]).length2 > 1e-8
+						    dont_create = false
+							break
+						  end
+						}
+					end
+					if !dont_create
 						create_frame([coords])  #  Should not be (coords)
 					end
 				end
