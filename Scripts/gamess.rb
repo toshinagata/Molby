@@ -703,7 +703,7 @@ class Molecule
 			  line =~ /GRAD\. MAX= +([-.0-9]+)/
 			  grad = $1
 			  mol.show_text("Search: #{n}\nGradient: #{grad}")
-			  mol.set_property("energy", energy)
+			  # mol.set_property("energy", energy)
 			end
 			last_i = i
 		  elsif line =~ /TOTAL ENERGY += *([-.0-9]+)/
