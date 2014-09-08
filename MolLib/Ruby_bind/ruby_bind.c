@@ -91,6 +91,10 @@ static VALUE
 	s_CutoffSym, s_RadiusSym, s_ColorSym, s_FullNameSym, s_VdwRadiusSym,
 	s_CommentSym, s_SourceSym;
 
+/*  Symbols for graphics  */
+static VALUE
+	s_LineSym, s_PolySym, s_CylinderSym, s_ConeSym, s_EllipsoidSym;
+
 /*
  *  Utility function
  *  Get ary[i] by calling "[]" method
@@ -9692,41 +9696,50 @@ s_Molecule_SetBackgroundColor(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     create_graphic(kind, color, points, fill = nil) -> integer
+ *     insert_graphic(index, kind, color, points, fill = nil) -> integer
  *
- *  Create a new graphic object.
+ *  Create a new graphic object and insert at the given graphic index (if -1, then append at the last).
  *   kind: a symbol representing the kind of the graphic. :line, :poly, :cylinder, :cone, :ellipsoid
  *   color: an array of 3 (rgb) or 4 (rgba) floating numbers
  *   points: an array of Vectors
  *   
  */
 static VALUE
-s_Molecule_CreateGraphic(int argc, VALUE *argv, VALUE self)
+s_Molecule_InsertGraphic(int argc, VALUE *argv, VALUE self)
 {
     Molecule *mol;
 	MainViewGraphic g;
-	int i, n, ni;
+	int i, n, ni, idx;
 	const char *p;
-	VALUE kval, cval, pval, fval;
+	VALUE kval, cval, pval, fval, ival;
     Data_Get_Struct(self, Molecule, mol);
 	if (mol->mview == NULL)
 		rb_raise(rb_eMolbyError, "this molecule has no associated graphic view");
-	rb_scan_args(argc, argv, "31", &kval, &cval, &pval, &fval);
-	kval = rb_obj_as_string(kval);
+	rb_scan_args(argc, argv, "41", &ival, &kval, &cval, &pval, &fval);
+	idx = NUM2INT(rb_Integer(ival));
+	if (idx == -1)
+		idx = mol->mview->ngraphics;
+	else if (idx < 0 || idx > mol->mview->ngraphics)
+		rb_raise(rb_eMolbyError, "the graphic index (%d) out of range", idx);
 	memset(&g, 0, sizeof(g));
 	g.visible = 1;
-	p = RSTRING_PTR(kval);
-	if (strcmp(p, "line") == 0)
-		g.kind = kMainViewGraphicLine;
-	else if (strcmp(p, "poly") == 0)
-		g.kind = kMainViewGraphicPoly;
-	else if (strcmp(p, "cylinder") == 0)
-		g.kind = kMainViewGraphicCylinder;
-	else if (strcmp(p, "cone") == 0)
-		g.kind = kMainViewGraphicCone;
-	else if (strcmp(p, "ellipsoid") == 0)
-		g.kind = kMainViewGraphicEllipsoid;
-	else rb_raise(rb_eMolbyError, "unknown graphic object type: %s", p);
+	if (rb_obj_is_kind_of(kval, rb_cInteger)) {
+		g.kind = NUM2INT(kval);  /*  Direct assign (for undo registration)  */
+	} else {
+		kval = rb_obj_as_string(kval);
+		p = StringValuePtr(kval);
+		if (strcmp(p, "line") == 0)
+			g.kind = kMainViewGraphicLine;
+		else if (strcmp(p, "poly") == 0)
+			g.kind = kMainViewGraphicPoly;
+		else if (strcmp(p, "cylinder") == 0)
+			g.kind = kMainViewGraphicCylinder;
+		else if (strcmp(p, "cone") == 0)
+			g.kind = kMainViewGraphicCone;
+		else if (strcmp(p, "ellipsoid") == 0)
+			g.kind = kMainViewGraphicEllipsoid;
+		else rb_raise(rb_eMolbyError, "unknown graphic object type: %s", p);
+	}
 	g.closed = (RTEST(fval) ? 1 : 0);
 	cval = rb_ary_to_ary(cval);
 	n = RARRAY_LEN(cval);
@@ -9766,11 +9779,17 @@ s_Molecule_CreateGraphic(int argc, VALUE *argv, VALUE self)
 	NewArray(&g.points, &g.npoints, sizeof(GLfloat) * 3, n);
 	for (i = 0; i < n; i++) {
 		Vector v;
+		VALUE rval = RARRAY_PTR(pval)[i];
 		if (i == ni) {
-			v.x = NUM2DBL(rb_Float(RARRAY_PTR(pval)[i]));
+			if (rb_obj_is_kind_of(rval, rb_cVector3D)) {
+				/*  The float argument can also be given as a vector (for simplify undo registration)  */
+				VectorFromValue(rval, &v);
+			} else {
+				v.x = NUM2DBL(rb_Float(rval));
+			}
 			v.y = v.z = 0;
 		} else {
-			VectorFromValue(RARRAY_PTR(pval)[i], &v);
+			VectorFromValue(rval, &v);
 		}
 		g.points[i * 3] = v.x;
 		g.points[i * 3 + 1] = v.y;
@@ -9782,8 +9801,32 @@ s_Molecule_CreateGraphic(int argc, VALUE *argv, VALUE self)
 		g.points[6] = g.points[8] = g.points[9] = g.points[10] = 0;
 		g.points[7] = g.points[11] = g.points[3];
 	}
-	MainView_insertGraphic(mol->mview, -1, &g);
-	return INT2NUM(mol->mview->ngraphics - 1);	
+	MainView_insertGraphic(mol->mview, idx, &g);
+	
+	{
+		/*  Register undo  */
+		MolAction *act;
+		act = MolActionNew(SCRIPT_ACTION("i"), "remove_graphic", idx);
+		MolActionCallback_registerUndo(mol, act);
+		MolActionRelease(act);
+	}
+
+	return INT2NUM(idx);	
+}
+
+/*
+ *  call-seq:
+ *     create_graphic(kind, color, points, fill = nil) -> integer
+ *
+ *  Create a new graphic object. The arguments are similar as insert_graphic.
+ */
+static VALUE
+s_Molecule_CreateGraphic(int argc, VALUE *argv, VALUE self)
+{
+	VALUE args[5];
+	rb_scan_args(argc, argv, "31", args + 1, args + 2, args + 3, args + 4);
+	args[0] = INT2NUM(-1);
+	return s_Molecule_InsertGraphic(argc + 1, args, self);
 }
 
 /*
@@ -9803,6 +9846,34 @@ s_Molecule_RemoveGraphic(VALUE self, VALUE ival)
 	i = NUM2INT(rb_Integer(ival));
 	if (i < 0 || i >= mol->mview->ngraphics)
 		rb_raise(rb_eArgError, "graphic index is out of range");
+	{
+		/*  Prepare data for undo  */
+		MainViewGraphic *gp;
+		Vector *vp;
+		MolAction *act;
+		double col[4];
+		int n;
+		gp = mol->mview->graphics + i;
+		vp = (Vector *)malloc(sizeof(Vector) * gp->npoints);
+		for (n = 0; n < gp->npoints; n++) {
+			vp[n].x = gp->points[n * 3];
+			vp[n].y = gp->points[n * 3 + 1];
+			vp[n].z = gp->points[n * 3 + 2];
+		}
+		col[0] = gp->rgba[0];
+		col[1] = gp->rgba[1];
+		col[2] = gp->rgba[2];
+		col[3] = gp->rgba[3];
+		if (gp->visible == 0) {
+			act = MolActionNew(SCRIPT_ACTION("i"), "hide_graphic", i);
+			MolActionCallback_registerUndo(mol, act);
+			MolActionRelease(act);
+		}
+		act = MolActionNew(SCRIPT_ACTION("iiDVb"), "insert_graphic", i, gp->kind, 4, col, gp->npoints, vp, gp->closed);
+		MolActionCallback_registerUndo(mol, act);
+		free(vp);
+		MolActionRelease(act);
+	}
 	MainView_removeGraphic(mol->mview, i);
 	return ival;
 }
@@ -11586,6 +11657,7 @@ Init_Molby(void)
 	rb_define_method(rb_cMolecule, "set_view_center", s_Molecule_SetViewCenter, 1);
 	rb_define_method(rb_cMolecule, "set_background_color", s_Molecule_SetBackgroundColor, -1);
 	rb_define_method(rb_cMolecule, "create_graphic", s_Molecule_CreateGraphic, -1);
+	rb_define_method(rb_cMolecule, "insert_graphic", s_Molecule_InsertGraphic, -1);
 	rb_define_method(rb_cMolecule, "remove_graphic", s_Molecule_RemoveGraphic, 1);
 	rb_define_method(rb_cMolecule, "ngraphics", s_Molecule_NGraphics, 0);
 	rb_define_method(rb_cMolecule, "set_graphic_point", s_Molecule_SetGraphicPoint, 3);
@@ -11794,6 +11866,13 @@ Init_Molby(void)
 	g_RubyID_call = rb_intern("call");
 	
 	s_InitMOInfoKeys();
+	
+	/*  Symbols for graphics  */
+	s_LineSym = ID2SYM(rb_intern("line"));
+	s_PolySym = ID2SYM(rb_intern("poly"));
+	s_CylinderSym = ID2SYM(rb_intern("cylinder"));
+	s_ConeSym = ID2SYM(rb_intern("cone"));
+	s_EllipsoidSym = ID2SYM(rb_intern("ellipsoid"));
 }
 
 #pragma mark ====== External functions ======
