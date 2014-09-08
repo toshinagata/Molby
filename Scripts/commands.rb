@@ -248,6 +248,8 @@ class Molecule
 			  name2 = "Pre-orthogonal Natural Atomic Orbitals"
 			elsif key2 == "PNHO"
 			  name2 = "Pre-orthogonal Natural Hybrid Orbitals"
+			elsif key2 == "PNBO"
+			  name2 = "Pre-orthogonal Natural Bond Orbitals"
 			end
 			mo_ao_items.push(name2)
 			mo_ao_keys.push(key2)
@@ -387,8 +389,16 @@ class Molecule
 		  else
 		    mo_menu = []
 			key = mo_ao_keys[mo_ao]
+			labels = nbo[key + "_L"]
+			if labels == nil && key[0] == ?P
+			  labels = nbo[key[1..-1] + "_L"]
+			end
 			ncomps.times { |i|
-			  mo_menu[i] = sprintf("#{key}%d", i + 1)
+			  lab = sprintf("%s%d", key, i + 1)
+			  if labels
+			    lab += ":" + labels[i]
+			  end
+			  mo_menu[i] = lab
 			}
 		  end
 		  it0 = item_with_tag("mo")

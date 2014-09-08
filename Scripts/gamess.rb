@@ -95,16 +95,21 @@ class Molecule
 			nbo["nbo"].push([orb_kind + "_" + orb_idx, atom_label, occ])
 		  end
 		end
-	  elsif ln =~ /([A-Z]+)s in the ([A-Z]+) basis:/
+	  elsif ln =~ /([A-Z]+)s in the ([A-Z]+) basis:/ || ln =~ /([A-Z]+) Fock matrix:/
 	    #  Read matrix
 	    dst = $1
 		src = $2
+		if src == nil
+		  src = "F"   #  Fock
+		end
 		key = src + "/" + dst
 		getline.call
 		getline.call
 		getline.call
 		elements = []
+		labels = []
 		idx = 0
+		block = 0
 		while (ln = getline.call) != nil
 		  if ln =~ /^\s*$/
 		    #  Blank line: end of one block
@@ -116,16 +121,26 @@ class Molecule
 			  #  Begin next section
 			  ln = getline.call
 			  idx = 0
+			  block += 1
 			  next
 			end
 		  end
 		  ln.chomp!
-  		  ln =~ /-?\d\.\d+/
+  		  ln =~ /-?\d+\.\d+/
+		  lab = $~.pre_match.strip
 		  a = ([$~[0]] + $~.post_match.split).map { |e| e.to_f }
+		  if block == 0
+		    lab =~ /^[0-9]+\. *(.*)$/
+		    labels.push($1)
+		  end
 		  (elements[idx] ||= []).concat(a)
 		  idx += 1
 		end
 		nbo[key] = LAMatrix.new(elements).transpose!
+		key2 = (src == "F" ? dst : src) + "_L"
+		if nbo[key2] == nil
+		  nbo[key2] = labels
+		end
 	  end
 	end
 	@nbo = nbo
@@ -138,7 +153,7 @@ class Molecule
 		end
 	  }
 	end
-#	puts @nbo.inspect
+	puts @nbo.inspect
   end
   
   def Molecule.read_gamess_basis_sets(fname)
