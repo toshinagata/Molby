@@ -153,7 +153,7 @@ class Molecule
 		end
 	  }
 	end
-	puts @nbo.inspect
+	# puts @nbo.inspect
   end
   
   def Molecule.read_gamess_basis_sets(fname)
