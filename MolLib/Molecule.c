@@ -1602,15 +1602,23 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 					continue;
 				if (buf[0] == '\n')
 					break;
+				if (mp->mview == NULL || mp->mview->track == NULL)
+					continue;  /*  Skip (this should not happen though)  */
 				/* scale; trx try trz; theta_deg x y z */
-				if ((i == 0 && sscanf(buf, "%lf", &mview_dbuf[0]) < 1)
+				if ((i == 0 && sscanf(buf, "%lf", &dbuf[0]) < 1)
 					|| (i == 1 && sscanf(buf, "%lf %lf %lf",
-										 &mview_dbuf[1], &mview_dbuf[2], &mview_dbuf[3]) < 3)
+										 &dbuf[1], &dbuf[2], &dbuf[3]) < 3)
 					|| (i == 2 && sscanf(buf, "%lf %lf %lf %lf",
-										 &mview_dbuf[4], &mview_dbuf[5], &mview_dbuf[6], &mview_dbuf[7]) < 4)) {
+										 &dbuf[4], &dbuf[5], &dbuf[6], &dbuf[7]) < 4)) {
 					s_append_asprintf(errbuf, "line %d: bad trackball format", lineNumber);
 					goto err_exit;
 				}
+				if (i == 0)
+					TrackballSetScale(mp->mview->track, dbuf[0]);
+				else if (i == 1)
+					TrackballSetTranslate(mp->mview->track, dbuf + 1);
+				else if (i == 2)
+					TrackballSetRotate(mp->mview->track, dbuf + 4);
 				i++;
 			}
 			continue;
@@ -1620,6 +1628,8 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 					continue;
 				if (buf[0] == '\n')
 					break;
+				if (mp->mview == NULL)
+					continue;  /*  Skip (this should not happen, though)  */
 				bufp = buf;
 				comp = strsep(&bufp, " \t");
 				if (bufp != NULL) {
@@ -1627,27 +1637,40 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 						bufp++;
 					valp = strsep(&bufp, "\n");
 				} else valp = NULL;
-				/*  In the following, the redundant "!= NULL" is to suppress suprious warning  */
-				if ((strcmp(comp, "show_unit_cell") == 0 && (i = 1))
-					|| (strcmp(comp, "show_periodic_box") == 0 && (i = 2))
-					|| (strcmp(comp, "show_expanded_atoms") == 0 && (i = 3))
-					|| (strcmp(comp, "show_ellipsoids") == 0 && (i = 4))
-					|| (strcmp(comp, "show_hydrogens") == 0 && (i = 5))
-					|| (strcmp(comp, "show_dummy_atoms") == 0 && (i = 6))
-					|| (strcmp(comp, "show_rotation_center") == 0 && (i = 7))
-					|| (strcmp(comp, "show_graphite_flag") == 0 && (i = 8))
-					|| (strcmp(comp, "show_periodic_image_flag") == 0 && (i = 9))
-					|| (strcmp(comp, "show_graphite") == 0 && (i = 10))
-					|| (strcmp(comp, "atom_resolution") == 0 && (i = 11))
-					|| (strcmp(comp, "bond_resolution") == 0 && (i = 12))) {
-					mview_ibuf[i - 1] = atoi(valp);
-				} else if ((strcmp(comp, "atom_radius") == 0 && (i = 8))
-					|| (strcmp(comp, "bond_radius") == 0 && (i = 9))) {
-					mview_dbuf[i] = strtod(valp, NULL);
-				} else if (strcmp(comp, "show_periodic_image") == 0) {
-					sscanf(valp, "%d %d %d %d %d %d",
-						   &mview_ibuf[12], &mview_ibuf[13], &mview_ibuf[14],
-						   &mview_ibuf[15], &mview_ibuf[16], &mview_ibuf[17]);
+				if (strcmp(comp, "show_unit_cell") == 0)
+					mp->mview->showUnitCell = atoi(valp);
+				else if (strcmp(comp, "show_periodic_box") == 0)
+					mp->mview->showPeriodicBox = atoi(valp);
+				else if (strcmp(comp, "show_expanded_atoms") == 0)
+					mp->mview->showExpandedAtoms = atoi(valp);
+				else if (strcmp(comp, "show_ellipsoids") == 0)
+					mp->mview->showEllipsoids = atoi(valp);
+				else if (strcmp(comp, "show_hydrogens") == 0)
+					mp->mview->showHydrogens = atoi(valp);
+				else if (strcmp(comp, "show_dummy_atoms") == 0)
+					mp->mview->showDummyAtoms = atoi(valp);
+				else if (strcmp(comp, "show_rotation_center") == 0)
+					mp->mview->showRotationCenter = atoi(valp);
+				else if (strcmp(comp, "show_graphite_flag") == 0)
+					mp->mview->showGraphiteFlag = atoi(valp);
+				else if (strcmp(comp, "show_periodic_image_flag") == 0)
+					mp->mview->showPeriodicImageFlag = atoi(valp);
+				else if (strcmp(comp, "show_graphite") == 0)
+					mp->mview->showGraphite = atoi(valp);
+				else if (strcmp(comp, "show_expanded_atoms") == 0)
+					mp->mview->showExpandedAtoms = atoi(valp);
+				else if (strcmp(comp, "atom_resolution") == 0 && (i = atoi(valp)) >= 6)
+					mp->mview->atomResolution = i;
+				else if (strcmp(comp, "bond_resolution") == 0 && (i = atoi(valp)) >= 4)
+					mp->mview->bondResolution = i;
+				else if (strcmp(comp, "atom_radius") == 0)
+					mp->mview->atomRadius = strtod(valp, NULL);
+				else if (strcmp(comp, "bond_radius") == 0)
+					mp->mview->bondRadius = strtod(valp, NULL);
+				else if (strcmp(comp, "show_periodic_image") == 0) {
+					sscanf(valp, "%d %d %d %d %d %d", &ibuf[0], &ibuf[1], &ibuf[2], &ibuf[3], &ibuf[4], &ibuf[5]);
+					for (i = 0; i < 6; i++)
+						mp->mview->showPeriodicImage[i] = ibuf[i];
 				}
 			}
 			continue;
@@ -1826,6 +1849,121 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 				i = ibuf[0] + 1;  /*  For next entry  */
 			}
 			continue;
+		} else if (strcmp(buf, "!:graphics") == 0) {
+			while (ReadLine(buf, sizeof buf, fp, &lineNumber) > 0) {
+				MainViewGraphic *gp = NULL;
+				if (buf[0] == '!')
+					continue;
+				if (buf[0] == '\n')
+					break;
+				if (mp->mview == NULL)
+					continue;  /*  Skip  */
+				if (strcmp(buf, "line\n") == 0) {
+					ibuf[0] = kMainViewGraphicLine;
+				} else if (strcmp(buf, "poly\n") == 0) {
+					ibuf[0] = kMainViewGraphicPoly;
+				} else if (strcmp(buf, "cylinder\n") == 0) {
+					ibuf[0] = kMainViewGraphicCylinder;
+				} else if (strcmp(buf, "cone\n") == 0) {
+					ibuf[0] = kMainViewGraphicCone;
+				} else if (strcmp(buf, "ellipsoid\n") == 0) {
+					ibuf[0] = kMainViewGraphicEllipsoid;
+				} else {
+					continue;  /*  Skip  */
+				}
+				gp = (MainViewGraphic *)calloc(sizeof(MainViewGraphic), 1);
+				gp->kind = ibuf[0];
+				i = 0;
+				while (ReadLine(buf, sizeof buf, fp, &lineNumber) > 0) {
+					if (buf[0] == '!')
+						continue;
+					if (buf[0] == '\n')
+						break;
+					if (i == 0) {
+						if (sscanf(buf, "%d %d", &ibuf[0], &ibuf[1]) < 2) {
+							s_append_asprintf(errbuf, "line %d: the closed/visible flags cannot be read for graphic object", lineNumber);
+							goto err_exit;
+						}
+						gp->closed = ibuf[0];
+						gp->visible = ibuf[1];
+					} else if (i == 1) {
+						if (sscanf(buf, "%lf %lf %lf %lf", &dbuf[0], &dbuf[1], &dbuf[2], &dbuf[3]) < 4) {
+							s_append_asprintf(errbuf, "line %d: the color cannot be read for graphic object", lineNumber);
+							goto err_exit;
+						}
+						for (j = 0; j < 4; j++)
+							gp->rgba[j] = dbuf[j];
+					} else if (i == 2) {
+						j = atoi(buf);
+						if (j < 0) {
+							s_append_asprintf(errbuf, "line %d: the number of control points must be non-negative", lineNumber);
+							goto err_exit;
+						}
+						if (j > 0)
+							NewArray(&gp->points, &gp->npoints, sizeof(GLfloat) * 3, j);
+					} else if (i >= 3 && i < gp->npoints + 3) {
+						if (sscanf(buf, "%lf %lf %lf", &dbuf[0], &dbuf[1], &dbuf[2]) < 3) {
+							s_append_asprintf(errbuf, "line %d: the control point cannot be read for graphic object", lineNumber);
+							goto err_exit;
+						}
+						j = (i - 3) * 3;
+						gp->points[j++] = dbuf[0];
+						gp->points[j++] = dbuf[1];
+						gp->points[j] = dbuf[2];
+					} else if (i == gp->npoints + 3) {
+						j = atoi(buf);
+						if (j < 0) {
+							s_append_asprintf(errbuf, "line %d: the number of normals must be non-negative", lineNumber);
+							goto err_exit;
+						}
+						if (j > 0)
+							NewArray(&gp->normals, &gp->nnormals, sizeof(GLfloat) * 3, j);
+					} else if (i >= gp->npoints + 3 && i < gp->npoints + gp->nnormals + 3) {
+						if (sscanf(buf, "%lf %lf %lf", &dbuf[0], &dbuf[1], &dbuf[2]) < 3) {
+							s_append_asprintf(errbuf, "line %d: the normal vector cannot be read for graphic object", lineNumber);
+							goto err_exit;
+						}
+						j = (i - gp->npoints - 3) * 3;
+						gp->normals[j++] = dbuf[0];
+						gp->normals[j++] = dbuf[1];
+						gp->normals[j] = dbuf[2];
+					} else break;
+					i++;
+				}
+				MainView_insertGraphic(mp->mview, -1, gp);
+				free(gp);
+				if (buf[0] == '\n')
+					break;
+			}
+			continue;
+		} else if (strncmp(buf, "!:@", 3) == 0) {
+			/*  Plug-in implemented in the ruby world  */
+			Int stringLen;
+			char *stringBuf, *returnString;
+			i = strlen(buf);
+			NewArray(&stringBuf, &stringLen, sizeof(char), i + 1);
+			strcpy(stringBuf, buf);
+			k = lineNumber;
+			while (ReadLine(buf, sizeof buf, fp, &lineNumber) > 0) {
+				/*  The comment lines are _not_ skipped  */
+				if (buf[0] == '\n')
+					break;
+				j = strlen(buf);
+				AssignArray(&stringBuf, &stringLen, sizeof(char), i + j, NULL);
+				strncpy(stringBuf + i, buf, j);
+				i += j;
+			}
+			if (MolActionCreateAndPerform(mp, SCRIPT_ACTION("si;s"),
+										  "proc { |i| loadmbsf_plugin(i) rescue \"line #{i}: #{$i.to_s}\" }",
+										  stringBuf, k, &returnString) != 0) {
+				s_append_asprintf(errbuf, "line %d: cannot invoke Ruby plugin", lineNumber);
+				goto err_exit;
+			} else if (returnString[0] != 0) {
+				s_append_asprintf(errbuf, "%s", returnString);
+				goto err_exit;
+			}
+			free(stringBuf);
+			continue;
 		}
 		/*  Unknown sections are silently ignored  */
 	}
@@ -1835,7 +1973,8 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 		md_arena_set_molecule(mp->arena, mp);
 
 	fclose(fp);
-	if (mp->mview != NULL) {
+
+/*	if (mp->mview != NULL) {
 		if (mview_ibuf[0] != kUndefined)
 			mp->mview->showUnitCell = mview_ibuf[0];
 		if (mview_ibuf[1] != kUndefined)
@@ -1877,6 +2016,7 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 				TrackballSetRotate(mp->mview->track, mview_dbuf + 4);
 		}
 	}
+*/
 
 	return 0;
 
@@ -4567,6 +4707,47 @@ MoleculeWriteToMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 			}
 		}
 		fprintf(fp, "\n");
+	}
+
+	if (mp->mview != NULL && mp->mview->ngraphics > 0) {
+		MainViewGraphic *gp;
+		fprintf(fp, "!:graphics\n");
+		for (i = 0; i < mp->mview->ngraphics; i++) {
+			gp = mp->mview->graphics + i;
+			switch (gp->kind) {
+				case kMainViewGraphicLine: fprintf(fp, "line\n"); break;
+				case kMainViewGraphicPoly: fprintf(fp, "poly\n"); break;
+				case kMainViewGraphicCylinder: fprintf(fp, "cylinder\n"); break;
+				case kMainViewGraphicCone: fprintf(fp, "cone\n"); break;
+				case kMainViewGraphicEllipsoid: fprintf(fp, "ellipsoid\n"); break;
+				default: fprintf(fp, "unknown\n"); break;
+			}
+			fprintf(fp, "%d %d\n", gp->closed, gp->visible);
+			fprintf(fp, "%.4f %.4f %.4f %.4f\n", gp->rgba[0], gp->rgba[1], gp->rgba[2], gp->rgba[3]);
+			fprintf(fp, "%d\n", gp->npoints);
+			for (j = 0; j < gp->npoints; j++)
+				fprintf(fp, "%.6f %.6f %.6f\n", gp->points[j * 3], gp->points[j * 3 + 1], gp->points[j * 3 + 2]);
+			fprintf(fp, "%d\n", gp->nnormals);
+			for (j = 0; j < gp->nnormals; j++)
+				fprintf(fp, "%.6f %.6f %.6f\n", gp->normals[j * 3], gp->normals[j * 3 + 1], gp->normals[j * 3 + 2]);
+		}
+		fprintf(fp, "\n");
+	}
+	
+	/*  Plug-in in the Ruby world  */
+	{
+		char *outMessage;
+		if (MolActionCreateAndPerform(mp, SCRIPT_ACTION(";s"),
+									  "proc { savembsf_plugin rescue \"Plug-in error: #{$!.to_s}\" }", &outMessage) == 0) {
+			if (outMessage[0] != 0) {
+				if (strncmp(outMessage, "Plug-in", 7) == 0) {
+					s_append_asprintf(errbuf, "%s", outMessage);
+				} else {
+					fprintf(fp, "%s\n", outMessage);
+				}
+			}
+			free(outMessage);
+		}
 	}
 	
 	fclose(fp);

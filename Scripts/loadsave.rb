@@ -1211,4 +1211,14 @@ end_of_header
 	self
   end
 
+  #  Plug-in for loading mbsf
+  def loadmbsf_plugin(s, lineno)
+    ""
+  end
+  
+  #  Plug-in for saving mbsf
+  def savembsf_plugin
+    ""
+  end
+  
 end

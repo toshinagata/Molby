@@ -4960,11 +4960,11 @@ s_Molecule_Equal(VALUE self, VALUE val)
 #pragma mark ------ Load/Save ------
 
 static void
-s_Molecule_RaiseOnLoadSave(int status, const char *msg, const char *fname)
+s_Molecule_RaiseOnLoadSave(int status, int isloading, const char *msg, const char *fname)
 {
 	if (gLoadSaveErrorMessage != NULL) {
 		MyAppCallback_setConsoleColor(1);
-		MyAppCallback_showScriptMessage("On loading %s:\n%s\n", fname, gLoadSaveErrorMessage);
+		MyAppCallback_showScriptMessage("On %s %s:\n%s\n", (isloading ? "loading" : "saving"), fname, gLoadSaveErrorMessage);
 		MyAppCallback_setConsoleColor(0);
 	}
 	if (status != 0)
@@ -4990,7 +4990,7 @@ s_Molecule_Loadmbsf(int argc, VALUE *argv, VALUE self)
 	rb_scan_args(argc, argv, "1", &fname);
 	fstr = FileStringValuePtr(fname);
 	retval = MoleculeLoadMbsfFile(mol, fstr, &gLoadSaveErrorMessage);
-	s_Molecule_RaiseOnLoadSave(retval, "Failed to load mbsf", fstr);
+	s_Molecule_RaiseOnLoadSave(retval, 1, "Failed to load mbsf", fstr);
 	return Qtrue;	
 }
 
@@ -5017,13 +5017,13 @@ s_Molecule_Loadpsf(int argc, VALUE *argv, VALUE self)
 	rb_scan_args(argc, argv, "11", &fname, &pdbname);
 	fstr = FileStringValuePtr(fname);
 	retval = MoleculeLoadPsfFile(mol, fstr, &gLoadSaveErrorMessage);
-	s_Molecule_RaiseOnLoadSave(retval, "Failed to load psf", fstr);
+	s_Molecule_RaiseOnLoadSave(retval, 1, "Failed to load psf", fstr);
 	pdbstr = NULL;
 	if (!NIL_P(pdbname)) {
 		pdbstr = strdup(FileStringValuePtr(pdbname));
 		retval = MoleculeReadCoordinatesFromPdbFile(mol, pdbstr, &gLoadSaveErrorMessage);
 		free(pdbstr);
-		s_Molecule_RaiseOnLoadSave(retval, "Failed to load coordinates from pdb", pdbstr);
+		s_Molecule_RaiseOnLoadSave(retval, 1, "Failed to load coordinates from pdb", pdbstr);
 	}
 	return Qtrue;
 }
@@ -5048,7 +5048,7 @@ s_Molecule_Loadpdb(int argc, VALUE *argv, VALUE self)
 	MoleculeClearLoadSaveErrorMessage();
 	fstr = FileStringValuePtr(fname);
 	retval = MoleculeReadCoordinatesFromPdbFile(mol, fstr, &gLoadSaveErrorMessage);
-	s_Molecule_RaiseOnLoadSave(retval, "Failed to load pdb", fstr);
+	s_Molecule_RaiseOnLoadSave(retval, 1, "Failed to load pdb", fstr);
 	return Qtrue;	
 }
 
@@ -5071,7 +5071,7 @@ s_Molecule_Loaddcd(int argc, VALUE *argv, VALUE self)
 	MoleculeClearLoadSaveErrorMessage();
 	fstr = FileStringValuePtr(fname);
 	retval = MoleculeReadCoordinatesFromDcdFile(mol, fstr, &gLoadSaveErrorMessage);
-	s_Molecule_RaiseOnLoadSave(retval, "Failed to load dcd", fstr);
+	s_Molecule_RaiseOnLoadSave(retval, 1, "Failed to load dcd", fstr);
 	return Qtrue;	
 }
 
@@ -5094,7 +5094,7 @@ s_Molecule_Loadtep(int argc, VALUE *argv, VALUE self)
 	MoleculeClearLoadSaveErrorMessage();
 	fstr = FileStringValuePtr(fname);
 	retval = MoleculeLoadTepFile(mol, fstr, &gLoadSaveErrorMessage);
-	s_Molecule_RaiseOnLoadSave(retval, "Failed to load ORTEP file", fstr);
+	s_Molecule_RaiseOnLoadSave(retval, 1, "Failed to load ORTEP file", fstr);
 	return Qtrue;	
 }
 
@@ -5117,7 +5117,7 @@ s_Molecule_Loadres(int argc, VALUE *argv, VALUE self)
 	MoleculeClearLoadSaveErrorMessage();
 	fstr = FileStringValuePtr(fname);
 	retval = MoleculeLoadShelxFile(mol, fstr, &gLoadSaveErrorMessage);
-	s_Molecule_RaiseOnLoadSave(retval, "Failed to load SHELX res file", fstr);
+	s_Molecule_RaiseOnLoadSave(retval, 1, "Failed to load SHELX res file", fstr);
 	return Qtrue;	
 }
 
@@ -5140,7 +5140,7 @@ s_Molecule_Loadfchk(int argc, VALUE *argv, VALUE self)
 	MoleculeClearLoadSaveErrorMessage();
 	fstr = FileStringValuePtr(fname);
 	retval = MoleculeLoadGaussianFchkFile(mol, fstr, &gLoadSaveErrorMessage);
-	s_Molecule_RaiseOnLoadSave(retval, "Failed to load Gaussian fchk", fstr);
+	s_Molecule_RaiseOnLoadSave(retval, 1, "Failed to load Gaussian fchk", fstr);
 	return Qtrue;	
 }
 
@@ -5165,7 +5165,7 @@ s_Molecule_Loaddat(int argc, VALUE *argv, VALUE self)
 	MyAppCallback_showProgressPanel("Loading GAMESS dat file...");
 	retval = MoleculeLoadGamessDatFile(mol, fstr, &gLoadSaveErrorMessage);
 	MyAppCallback_hideProgressPanel();
-	s_Molecule_RaiseOnLoadSave(retval, "Failed to load GAMESS dat", fstr);
+	s_Molecule_RaiseOnLoadSave(retval, 1, "Failed to load GAMESS dat", fstr);
 	return Qtrue;	
 }
 
@@ -5185,7 +5185,7 @@ s_Molecule_Savembsf(VALUE self, VALUE fname)
 	MoleculeClearLoadSaveErrorMessage();
 	fstr = FileStringValuePtr(fname);
 	retval = MoleculeWriteToMbsfFile(mol, fstr, &gLoadSaveErrorMessage);
-	s_Molecule_RaiseOnLoadSave(retval, "Failed to save mbsf", fstr);
+	s_Molecule_RaiseOnLoadSave(retval, 0, "Failed to save mbsf", fstr);
 	return Qtrue;
 }
 
@@ -5205,7 +5205,7 @@ s_Molecule_Savepsf(VALUE self, VALUE fname)
 	MoleculeClearLoadSaveErrorMessage();
 	fstr = FileStringValuePtr(fname);
 	retval = MoleculeWriteToPsfFile(mol, fstr, &gLoadSaveErrorMessage);
-	s_Molecule_RaiseOnLoadSave(retval, "Failed to save psf", fstr);
+	s_Molecule_RaiseOnLoadSave(retval, 0, "Failed to save psf", fstr);
 	return Qtrue;
 }
 
@@ -5225,7 +5225,7 @@ s_Molecule_Savepdb(VALUE self, VALUE fname)
 	MoleculeClearLoadSaveErrorMessage();
 	fstr = FileStringValuePtr(fname);
 	retval = MoleculeWriteToPdbFile(mol, fstr, &gLoadSaveErrorMessage);
-	s_Molecule_RaiseOnLoadSave(retval, "Failed to save pdb", fstr);
+	s_Molecule_RaiseOnLoadSave(retval, 0, "Failed to save pdb", fstr);
 	return Qtrue;
 }
 
@@ -5245,7 +5245,7 @@ s_Molecule_Savedcd(VALUE self, VALUE fname)
 	MoleculeClearLoadSaveErrorMessage();
 	fstr = FileStringValuePtr(fname);
 	retval = MoleculeWriteToDcdFile(mol, fstr, &gLoadSaveErrorMessage);
-	s_Molecule_RaiseOnLoadSave(retval, "Failed to save dcd", fstr);
+	s_Molecule_RaiseOnLoadSave(retval, 0, "Failed to save dcd", fstr);
 	return Qtrue;
 }
 
@@ -5320,7 +5320,7 @@ s_Molecule_LoadSave(int argc, VALUE *argv, VALUE self, int loadFlag)
 failure:
 	rval = rb_str_to_str(argv[0]);
 	asprintf(&p, "Failed to %s file %s", (loadFlag ? "load" : "save"), type);
-	s_Molecule_RaiseOnLoadSave(1, p, StringValuePtr(rval));
+	s_Molecule_RaiseOnLoadSave(1, loadFlag, p, StringValuePtr(rval));
 	return Qnil;  /*  Does not reach here  */
 
 success:
@@ -9623,21 +9623,173 @@ s_Molecule_NGraphics(VALUE self)
 		rb_raise(rb_eMolbyError, "this molecule has no associated graphic view");
 	return INT2NUM(mol->mview->ngraphics);
 }
-	
+
 /*
  *  call-seq:
- *     set_graphic_point(graphic_index, point_index, new_value) -> new_value
+ *     get_graphic_point(graphic_index, point_index) -> value
+ *     get_graphic_points(graphic_index) -> values
  *
- *  Change the point_index-th control point of graphic_index-th graphic object
+ *  Get the point_index-th control point of graphic_index-th graphic object.
+ *  Get an array of all control points with the given values.
  *   
  */
 static VALUE
-s_Molecule_SetGraphicPoint(VALUE self, VALUE gval, VALUE pval, VALUE nval)
+s_Molecule_GetGraphicPoint(int argc, VALUE *argv, VALUE self)
+{
+	MainViewGraphic *gp;
+    Molecule *mol;
+	int index, pindex;
+	Vector v;
+	VALUE gval, pval;
+    Data_Get_Struct(self, Molecule, mol);
+	if (mol->mview == NULL)
+		rb_raise(rb_eMolbyError, "this molecule has no associated graphic view");
+	rb_scan_args(argc, argv, "11", &gval, &pval);
+	index = NUM2INT(rb_Integer(gval));
+	if (index < 0 || index >= mol->mview->ngraphics)
+		rb_raise(rb_eArgError, "the graphic index is out of range");
+	gp = mol->mview->graphics + index;
+	if (pval != Qnil) {
+		pindex = NUM2INT(rb_Integer(pval));
+		if (pindex < 0 || pindex >= gp->npoints)
+			rb_raise(rb_eArgError, "the point index is out of range");
+		v.x = gp->points[pindex * 3];
+		v.y = gp->points[pindex * 3 + 1];
+		v.z = gp->points[pindex * 3 + 2];
+		if ((gp->kind == kMainViewGraphicCylinder || gp->kind == kMainViewGraphicCone) && pindex == 2) {
+			return rb_float_new(v.x);
+		} else {
+			return ValueFromVector(&v);
+		}
+	} else {
+		pval = rb_ary_new();
+		for (pindex = 0; pindex < gp->npoints; pindex++) {
+			v.x = gp->points[pindex * 3];
+			v.y = gp->points[pindex * 3 + 1];
+			v.z = gp->points[pindex * 3 + 2];
+			rb_ary_push(pval, ValueFromVector(&v));
+		}
+		return pval;
+	}
+}
+
+/*
+ *  call-seq:
+ *     set_graphic_point(graphic_index, point_index, new_value) -> new_value
+ *     set_graphic_points(graphic_index, new_values) -> new_values
+ *
+ *  Change the point_index-th control point of graphic_index-th graphic object.
+ *  Replace the control points with the given values.
+ *   
+ */
+static VALUE
+s_Molecule_SetGraphicPoint(int argc, VALUE *argv, VALUE self)
+{
+	MainViewGraphic *gp;
+    Molecule *mol;
+	int index, pindex;
+	Vector v, v0;
+	VALUE gval, pval, nval;
+	MolAction *act;
+    Data_Get_Struct(self, Molecule, mol);
+	if (mol->mview == NULL)
+		rb_raise(rb_eMolbyError, "this molecule has no associated graphic view");
+	rb_scan_args(argc, argv, "21", &gval, &pval, &nval);
+	index = NUM2INT(rb_Integer(gval));
+	if (index < 0 || index >= mol->mview->ngraphics)
+		rb_raise(rb_eArgError, "the graphic index is out of range");
+	gp = mol->mview->graphics + index;
+	if (nval != Qnil) {
+		pindex = NUM2INT(rb_Integer(pval));
+		if (pindex < 0 || pindex >= gp->npoints)
+			rb_raise(rb_eArgError, "the point index is out of range");
+		v0.x = gp->points[pindex * 3];
+		v0.y = gp->points[pindex * 3 + 1];
+		v0.z = gp->points[pindex * 3 + 2];
+		if (rb_obj_is_kind_of(nval, rb_cNumeric)) {
+			if ((gp->kind == kMainViewGraphicCylinder || gp->kind == kMainViewGraphicCone) && pindex == 2) {
+				v.x = NUM2DBL(rb_Float(nval));
+				v.y = v.z = 0;
+			} else if (gp->kind == kMainViewGraphicEllipsoid && pindex == 1) {
+				v.x = NUM2DBL(rb_Float(nval));
+				v.y = v.z = 0;
+				gp->points[7] = gp->points[11] = v.x;
+				gp->points[6] = gp->points[8] = gp->points[9] = gp->points[10] = 0;
+			} else rb_raise(rb_eArgError, "the argument must be an array-like object");
+		} else {
+			if (nval == Qnil) {
+				v.x = kInvalidFloat;
+				v.y = v.z = 0.0;
+			} else VectorFromValue(nval, &v);
+		}
+		gp->points[pindex * 3] = v.x;
+		gp->points[pindex * 3 + 1] = v.y;
+		gp->points[pindex * 3 + 2] = v.z;
+		act = MolActionNew(SCRIPT_ACTION("iiv"), "set_graphic_point", index, pindex, &v0);
+	} else {
+		VALUE aval;
+		int len;
+		Vector *vp = (Vector *)malloc(sizeof(Vector) * gp->npoints);
+		for (pindex = 0; pindex < gp->npoints; pindex++) {
+			vp[pindex].x = gp->points[pindex * 3];
+			vp[pindex].y = gp->points[pindex * 3 + 1];
+			vp[pindex].z = gp->points[pindex * 3 + 2];
+		}
+		act = MolActionNew(SCRIPT_ACTION("iV"), "set_graphic_points", index, gp->npoints, vp);
+		free(vp);
+		pval = rb_ary_to_ary(pval);
+		len = RARRAY_LEN(pval);
+		if (gp->npoints < len) {
+			gp->points = (GLfloat *)realloc(gp->points, sizeof(GLfloat) * 3 * len);
+			gp->npoints = len;
+		} else if (gp->npoints > len) {
+			int len2 = 3;
+			switch (gp->kind) {
+				case kMainViewGraphicLine: len2 = 2; break;
+				case kMainViewGraphicPoly: len2 = 3; break;
+				case kMainViewGraphicCylinder: len2 = 3; break;
+				case kMainViewGraphicCone: len2 = 3; break;
+				case kMainViewGraphicEllipsoid: len2 = 4; break;
+			}
+			if (len2 < len)
+				len2 = len;
+			gp->npoints = len2;
+		}
+		for (pindex = 0; pindex < len && pindex < gp->npoints; pindex++) {
+			aval = RARRAY_PTR(pval)[pindex];
+			if ((gp->kind == kMainViewGraphicCylinder || gp->kind == kMainViewGraphicCone) && pindex == 2) {
+				v.x = NUM2DBL(rb_Float(aval));
+				v.y = v.z = 0;
+			} else if (gp->kind == kMainViewGraphicEllipsoid && pindex == 1 && len == 2) {
+				v.x = NUM2DBL(rb_Float(aval));
+				v.y = v.z = 0;
+				gp->points[7] = gp->points[11] = v.x;
+				gp->points[6] = gp->points[8] = gp->points[9] = gp->points[10] = 0;
+				break;
+			} else VectorFromValue(aval, &v);
+			gp->points[pindex * 3] = v.x;
+			gp->points[pindex * 3 + 1] = v.y;
+			gp->points[pindex * 3 + 2] = v.z;
+		}
+	}
+	MolActionCallback_registerUndo(mol, act);
+	MolActionRelease(act);		
+	MoleculeCallback_notifyModification(mol, 0);
+	return nval;
+}
+
+/*
+ *  call-seq:
+ *     get_graphic_color(graphic_index) -> value
+ *
+ *  Get the color of graphic_index-th graphic object
+ */
+static VALUE
+s_Molecule_GetGraphicColor(VALUE self, VALUE gval)
 {
 	MainViewGraphic *gp;
     Molecule *mol;
 	int index;
-	Vector v;
     Data_Get_Struct(self, Molecule, mol);
 	if (mol->mview == NULL)
 		rb_raise(rb_eMolbyError, "this molecule has no associated graphic view");
@@ -9645,29 +9797,7 @@ s_Molecule_SetGraphicPoint(VALUE self, VALUE gval, VALUE pval, VALUE nval)
 	if (index < 0 || index >= mol->mview->ngraphics)
 		rb_raise(rb_eArgError, "the graphic index is out of range");
 	gp = mol->mview->graphics + index;
-	index = NUM2INT(rb_Integer(pval));
-	if (index < 0 || index >= gp->npoints)
-		rb_raise(rb_eArgError, "the point index is out of range");
-	if (rb_obj_is_kind_of(nval, rb_cNumeric)) {
-		if ((gp->kind == kMainViewGraphicCylinder || gp->kind == kMainViewGraphicCone) && index == 2) {
-			v.x = NUM2DBL(rb_Float(nval));
-			v.y = v.z = 0;
-		} else if (gp->kind == kMainViewGraphicEllipsoid && index == 1) {
-			gp->points[3] = gp->points[7] = gp->points[11] = NUM2DBL(rb_Float(nval));
-			gp->points[4] = gp->points[5] = gp->points[6] = gp->points[8] = gp->points[9] = gp->points[10] = 0;
-			return nval;
-		} else rb_raise(rb_eArgError, "the argument must be an array-like object");
-	} else {
-		if (nval == Qnil) {
-			v.x = kInvalidFloat;
-			v.y = v.z = 0.0;
-		} else VectorFromValue(nval, &v);
-	}
-	gp->points[index * 3] = v.x;
-	gp->points[index * 3 + 1] = v.y;
-	gp->points[index * 3 + 2] = v.z;
-	MoleculeCallback_notifyModification(mol, 0);
-	return nval;
+	return rb_ary_new3(4, rb_float_new(gp->rgba[0]), rb_float_new(gp->rgba[1]), rb_float_new(gp->rgba[2]), rb_float_new(gp->rgba[3]));
 }
 
 /*
@@ -9682,7 +9812,9 @@ s_Molecule_SetGraphicColor(VALUE self, VALUE gval, VALUE cval)
 {
 	MainViewGraphic *gp;
     Molecule *mol;
-	int index, n;
+	MolAction *act;
+	double c[4];
+	int index, i, n;
     Data_Get_Struct(self, Molecule, mol);
 	if (mol->mview == NULL)
 		rb_raise(rb_eMolbyError, "this molecule has no associated graphic view");
@@ -9690,15 +9822,21 @@ s_Molecule_SetGraphicColor(VALUE self, VALUE gval, VALUE cval)
 	if (index < 0 || index >= mol->mview->ngraphics)
 		rb_raise(rb_eArgError, "the graphic index is out of range");
 	gp = mol->mview->graphics + index;
+	for (i = 0; i < 4; i++)
+		c[i] = gp->rgba[i];
 	cval = rb_ary_to_ary(cval);
 	n = RARRAY_LEN(cval);
 	if (n != 3 && n != 4)
 		rb_raise(rb_eArgError, "the color argument must have 3 or 4 numbers");
-	for (index = 0; index < n; index++) {
-		gp->rgba[index] = NUM2DBL(rb_Float(RARRAY_PTR(cval)[index]));
+
+	for (i = 0; i < n; i++) {
+		gp->rgba[i] = NUM2DBL(rb_Float(RARRAY_PTR(cval)[i]));
 	}
 	if (n == 3)
 		gp->rgba[3] = 1.0;
+	act = MolActionNew(SCRIPT_ACTION("iD"), "set_graphic_color", index, 4, c);
+	MolActionCallback_registerUndo(mol, act);
+	MolActionRelease(act);		
 	MoleculeCallback_notifyModification(mol, 0);
 	return cval;
 }
@@ -11389,7 +11527,11 @@ Init_Molby(void)
 	rb_define_method(rb_cMolecule, "create_graphic", s_Molecule_CreateGraphic, -1);
 	rb_define_method(rb_cMolecule, "remove_graphic", s_Molecule_RemoveGraphic, 1);
 	rb_define_method(rb_cMolecule, "ngraphics", s_Molecule_NGraphics, 0);
-	rb_define_method(rb_cMolecule, "set_graphic_point", s_Molecule_SetGraphicPoint, 3);
+	rb_define_method(rb_cMolecule, "get_graphic_point", s_Molecule_GetGraphicPoint, -1);
+	rb_define_method(rb_cMolecule, "set_graphic_point", s_Molecule_SetGraphicPoint, -1);
+	rb_define_alias(rb_cMolecule, "get_graphic_points", "get_graphic_point");
+	rb_define_alias(rb_cMolecule, "set_graphic_points", "set_graphic_point");
+	rb_define_method(rb_cMolecule, "get_graphic_color", s_Molecule_SetGraphicColor, 1);
 	rb_define_method(rb_cMolecule, "set_graphic_color", s_Molecule_SetGraphicColor, 2);
 	rb_define_method(rb_cMolecule, "show_graphic", s_Molecule_ShowGraphic, 1);
 	rb_define_method(rb_cMolecule, "hide_graphic", s_Molecule_HideGraphic, 1);
