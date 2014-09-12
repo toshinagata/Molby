@@ -4776,6 +4776,8 @@ s_MolEnumerable_Equal(VALUE self, VALUE val)
 
 #pragma mark ====== Molecule Class ======
 
+#pragma mark ------ Allocate/Release/Accessor ------
+
 /*  An malloc'ed string buffer. Retains the error/warning message from the last ***load/***save method.  */
 /*  Accessible from Ruby as Molecule#error_message and Molecule#error_message=.  */
 char *gLoadSaveErrorMessage = NULL;
@@ -4901,18 +4903,6 @@ s_Molecule_AtomGroupFromValue(VALUE self, VALUE val)
 	return ig;
 }
 
-static void
-s_Molecule_RaiseOnLoadSave(int status, const char *msg, const char *fname)
-{
-	if (gLoadSaveErrorMessage != NULL) {
-		MyAppCallback_setConsoleColor(1);
-		MyAppCallback_showScriptMessage("On loading %s:\n%s\n", fname, gLoadSaveErrorMessage);
-		MyAppCallback_setConsoleColor(0);
-	}
-	if (status != 0)
-		rb_raise(rb_eMolbyError, "%s %s", msg, fname);
-}
-
 /*
  *  call-seq:
  *     dup          -> Molecule
@@ -4929,6 +4919,56 @@ s_Molecule_InitCopy(VALUE self, VALUE arg)
 	if (MoleculeInitWithMolecule(mp1, mp2) == NULL)
 		rb_raise(rb_eMolbyError, "Cannot duplicate molecule");
 	return self;
+}
+
+/*
+ *  call-seq:
+ *     atom_index(val)       -> Integer
+ *
+ *  Returns the atom index represented by val. val can be either a non-negative integer
+ *  (directly representing the atom index), a negative integer (representing <code>natoms - val</code>),
+ *  a string of type "resname.resid:name" or "resname:name" or "resid:name" or "name", 
+ *  where resname, resid, name are the residue name, residue id, and atom name respectively.
+ *  If val is a string and multiple atoms match the description, the atom with the lowest index
+ *  is returned.
+ */
+static VALUE
+s_Molecule_AtomIndex(VALUE self, VALUE val)
+{
+    Molecule *mol;
+    Data_Get_Struct(self, Molecule, mol);
+	return INT2NUM(s_Molecule_AtomIndexFromValue(mol, val));
+}
+
+/*
+ *  call-seq:
+ *     self == Molecule -> boolean
+ *
+ *  True if the two arguments point to the same molecule.
+ */
+static VALUE
+s_Molecule_Equal(VALUE self, VALUE val)
+{
+	if (rb_obj_is_kind_of(val, rb_cMolecule)) {
+		Molecule *mol1, *mol2;
+		Data_Get_Struct(self, Molecule, mol1);
+		Data_Get_Struct(val, Molecule, mol2);
+		return (mol1 == mol2 ? Qtrue : Qfalse);
+	} else return Qfalse;
+}
+
+#pragma mark ------ Load/Save ------
+
+static void
+s_Molecule_RaiseOnLoadSave(int status, const char *msg, const char *fname)
+{
+	if (gLoadSaveErrorMessage != NULL) {
+		MyAppCallback_setConsoleColor(1);
+		MyAppCallback_showScriptMessage("On loading %s:\n%s\n", fname, gLoadSaveErrorMessage);
+		MyAppCallback_setConsoleColor(0);
+	}
+	if (status != 0)
+		rb_raise(rb_eMolbyError, "%s %s", msg, fname);
 }
 
 /*
@@ -5209,27 +5249,6 @@ s_Molecule_Savedcd(VALUE self, VALUE fname)
 	return Qtrue;
 }
 
-/*
- *  call-seq:
- *     savetep(file)       -> bool
- *
- *  Write coordinates as an ORTEP file. Returns true if successful.
- */
-/*
-static VALUE
-s_Molecule_Savetep(VALUE self, VALUE fname)
-{
-	char *fstr;
-    Molecule *mol;
-	char errbuf[128];
-    Data_Get_Struct(self, Molecule, mol);
-	fstr = FileStringValuePtr(fname);
-	if (MoleculeWriteToTepFile(mol, fstr, errbuf, sizeof errbuf) != 0)
-		rb_raise(rb_eMolbyError, errbuf);
-	return Qtrue;
-}
-*/
-
 /*  load([ftype, ] fname, ...)  */
 static VALUE
 s_Molecule_LoadSave(int argc, VALUE *argv, VALUE self, int loadFlag)
@@ -5352,6 +5371,89 @@ s_Molecule_Save(int argc, VALUE *argv, VALUE self)
 {
 	return s_Molecule_LoadSave(argc, argv, self, 0);
 }
+
+/*
+ *  call-seq:
+ *     open        -> Molecule
+ *     open(file)  -> Molecule
+ *
+ *  Create a new molecule from file as a document. If file is not given, an untitled document is created.
+ */
+static VALUE
+s_Molecule_Open(int argc, VALUE *argv, VALUE self)
+{
+	VALUE fname;
+	const char *p;
+	Molecule *mp;
+	VALUE iflag;
+	rb_scan_args(argc, argv, "01", &fname);
+	if (NIL_P(fname))
+		p = NULL;
+	else
+		p = FileStringValuePtr(fname);
+	iflag = Ruby_SetInterruptFlag(Qfalse);
+	mp = MoleculeCallback_openNewMolecule(p);
+	Ruby_SetInterruptFlag(iflag);
+	if (mp == NULL) {
+		if (p == NULL)
+			rb_raise(rb_eMolbyError, "Cannot create untitled document");
+		else
+			rb_raise(rb_eMolbyError, "Cannot open the file %s", p);
+	}
+	return ValueFromMolecule(mp);
+}
+
+/*
+ *  call-seq:
+ *     new  -> Molecule
+ *     new(file, *args)  -> Molecule
+ *
+ *  Create a new molecule and call "load" method with the same arguments.
+ */
+static VALUE
+s_Molecule_Initialize(int argc, VALUE *argv, VALUE self)
+{
+	if (argc > 0)
+		return s_Molecule_Load(argc, argv, self);
+	else return Qnil;  /*  An empty molecule (which is prepared in s_Molecule_Alloc()) is returned  */
+}
+
+/*
+ *  call-seq:
+ *     error_message       -> String
+ *
+ *  Get the error_message from the last load/save method. If no error, returns nil.
+ */
+static VALUE
+s_Molecule_ErrorMessage(VALUE klass)
+{
+	if (gLoadSaveErrorMessage == NULL)
+		return Qnil;
+	else return rb_str_new2(gLoadSaveErrorMessage);
+}
+
+/*
+ *  call-seq:
+ *     set_error_message(String)
+ *     Molecule.error_message = String
+ *
+ *  Get the error_message from the last load/save method. If no error, returns nil.
+ */
+static VALUE
+s_Molecule_SetErrorMessage(VALUE klass, VALUE sval)
+{
+	if (gLoadSaveErrorMessage != NULL) {
+		free(gLoadSaveErrorMessage);
+		gLoadSaveErrorMessage = NULL;
+	}
+	if (sval != Qnil) {
+		sval = rb_str_to_str(sval);
+		gLoadSaveErrorMessage = strdup(StringValuePtr(sval));
+	}
+	return sval;
+}
+
+#pragma mark ------ Name attributes ------
 
 /*
  *  call-seq:
@@ -5479,51 +5581,7 @@ s_Molecule_Inspect(VALUE self)
 	}
 }
 
-/*
- *  call-seq:
- *     open        -> Molecule
- *     open(file)  -> Molecule
- *
- *  Create a new molecule from file as a document. If file is not given, an untitled document is created.
- */
-static VALUE
-s_Molecule_Open(int argc, VALUE *argv, VALUE self)
-{
-	VALUE fname;
-	const char *p;
-	Molecule *mp;
-	VALUE iflag;
-	rb_scan_args(argc, argv, "01", &fname);
-	if (NIL_P(fname))
-		p = NULL;
-	else
-		p = FileStringValuePtr(fname);
-	iflag = Ruby_SetInterruptFlag(Qfalse);
-	mp = MoleculeCallback_openNewMolecule(p);
-	Ruby_SetInterruptFlag(iflag);
-	if (mp == NULL) {
-		if (p == NULL)
-			rb_raise(rb_eMolbyError, "Cannot create untitled document");
-		else
-			rb_raise(rb_eMolbyError, "Cannot open the file %s", p);
-	}
-	return ValueFromMolecule(mp);
-}
-
-/*
- *  call-seq:
- *     new  -> Molecule
- *     new(file, *args)  -> Molecule
- *
- *  Create a new molecule and call "load" method with the same arguments.
- */
-static VALUE
-s_Molecule_Initialize(int argc, VALUE *argv, VALUE self)
-{
-	if (argc > 0)
-		return s_Molecule_Load(argc, argv, self);
-	else return Qnil;  /*  An empty molecule (which is prepared in s_Molecule_Alloc()) is returned  */
-}
+#pragma mark ------ MolEnumerables ------
 
 static VALUE
 s_Molecule_MolEnumerable(VALUE self, int kind)
@@ -5695,327 +5753,6 @@ s_Molecule_Nresidues(VALUE self)
 	return INT2NUM(mol->nresidues);
 }
 
-static VALUE
-s_Molecule_BondParIsObsolete(VALUE self, VALUE val)
-{
-	rb_raise(rb_eMolbyError, "Molecule#bond_par, angle_par, dihedral_par, improper_par, vdw_par are now obsolete. You can use MDArena#bond_par, angle_par, dihedral_par, improper_par, vdw_par instead, and probably these are what you really want.");
-}
-
-/*
- *  call-seq:
- *     bond_par(idx)    -> ParameterRef
- *
- *  Returns the MD parameter for the idx-th bond.
- */
-/*
-static VALUE
-s_Molecule_BondPar(VALUE self, VALUE val)
-{
-    Molecule *mol;
-	BondPar *bp;
-	UInt t1, t2;
-	Int i1, i2;
-	Int ival;
-    Data_Get_Struct(self, Molecule, mol);
-	ival = NUM2INT(rb_Integer(val));
-	if (ival < -mol->nbonds || ival >= mol->nbonds)
-		rb_raise(rb_eMolbyError, "bond index (%d) out of range", ival);
-	if (ival < 0)
-		ival += mol->nbonds;
-	s_RebuildMDParameterIfNecessary(self, Qtrue);
-	i1 = mol->bonds[ival * 2];
-	i2 = mol->bonds[ival * 2 + 1];
-	t1 = ATOM_AT_INDEX(mol->atoms, i1)->type;
-	t2 = ATOM_AT_INDEX(mol->atoms, i2)->type;
-	bp = ParameterLookupBondPar(mol->par, t1, t2, i1, i2, 0);
-	if (bp == NULL)
-		return Qnil;
-	return ValueFromMoleculeWithParameterTypeAndIndex(mol, kBondParType, bp - mol->par->bondPars);
-}
-*/
-
-/*
- *  call-seq:
- *     angle_par(idx)    -> ParameterRef
- *
- *  Returns the MD parameter for the idx-th angle.
- */
-/*
-static VALUE
-s_Molecule_AnglePar(VALUE self, VALUE val)
-{
-    Molecule *mol;
-	AnglePar *ap;
-	UInt t1, t2, t3;
-	Int i1, i2, i3;
-	Int ival;
-    Data_Get_Struct(self, Molecule, mol);
-	ival = NUM2INT(rb_Integer(val));
-	if (ival < -mol->nangles || ival >= mol->nangles)
-		rb_raise(rb_eMolbyError, "angle index (%d) out of range", ival);
-	if (ival < 0)
-		ival += mol->nangles;
-	s_RebuildMDParameterIfNecessary(self, Qtrue);
-	i1 = mol->angles[ival * 3];
-	i2 = mol->angles[ival * 3 + 1];
-	i3 = mol->angles[ival * 3 + 2];
-	t1 = ATOM_AT_INDEX(mol->atoms, i1)->type;
-	t2 = ATOM_AT_INDEX(mol->atoms, i2)->type;
-	t3 = ATOM_AT_INDEX(mol->atoms, i3)->type;
-	ap = ParameterLookupAnglePar(mol->par, t1, t2, t3, i1, i2, i3, 0);
-	if (ap == NULL)
-		return Qnil;
-	return ValueFromMoleculeWithParameterTypeAndIndex(mol, kAngleParType, ap - mol->par->anglePars);
-}
-*/
-/*
- *  call-seq:
- *     dihedral_par(idx)    -> ParameterRef
- *
- *  Returns the MD parameter for the idx-th dihedral.
- */
-/*
-static VALUE
-s_Molecule_DihedralPar(VALUE self, VALUE val)
-{
-    Molecule *mol;
-	Int ival;
-	TorsionPar *tp;
-	UInt t1, t2, t3, t4;
-	Int i1, i2, i3, i4;
-    Data_Get_Struct(self, Molecule, mol);
-	ival = NUM2INT(rb_Integer(val));
-	if (ival < -mol->ndihedrals || ival >= mol->ndihedrals)
-		rb_raise(rb_eMolbyError, "dihedral index (%d) out of range", ival);
-	if (ival < 0)
-		ival += mol->ndihedrals;
-	s_RebuildMDParameterIfNecessary(self, Qtrue);
-	i1 = mol->dihedrals[ival * 4];
-	i2 = mol->dihedrals[ival * 4 + 1];
-	i3 = mol->dihedrals[ival * 4 + 2];
-	i4 = mol->dihedrals[ival * 4 + 3];
-	t1 = ATOM_AT_INDEX(mol->atoms, i1)->type;
-	t2 = ATOM_AT_INDEX(mol->atoms, i2)->type;
-	t3 = ATOM_AT_INDEX(mol->atoms, i3)->type;
-	t4 = ATOM_AT_INDEX(mol->atoms, i4)->type;
-	tp = ParameterLookupDihedralPar(mol->par, t1, t2, t3, t4, i1, i2, i3, i4, 0);
-	if (tp == NULL)
-		return Qnil;
-	return ValueFromMoleculeWithParameterTypeAndIndex(mol, kDihedralParType, tp - mol->par->dihedralPars);
-}
-*/
-/*
- *  call-seq:
- *     improper_par(idx)    -> ParameterRef
- *
- *  Returns the MD parameter for the idx-th improper.
- */
-/*
-static VALUE
-s_Molecule_ImproperPar(VALUE self, VALUE val)
-{
-    Molecule *mol;
-	Int ival;
-	TorsionPar *tp;
-	UInt t1, t2, t3, t4;
-	Int i1, i2, i3, i4;
-    Data_Get_Struct(self, Molecule, mol);
-	ival = NUM2INT(rb_Integer(val));
-	if (ival < -mol->nimpropers || ival >= mol->nimpropers)
-		rb_raise(rb_eMolbyError, "improper index (%d) out of range", ival);
-	if (ival < 0)
-		ival += mol->nimpropers;
-	s_RebuildMDParameterIfNecessary(self, Qtrue);
-	i1 = mol->impropers[ival * 4];
-	i2 = mol->impropers[ival * 4 + 1];
-	i3 = mol->impropers[ival * 4 + 2];
-	i4 = mol->impropers[ival * 4 + 3];
-	t1 = ATOM_AT_INDEX(mol->atoms, i1)->type;
-	t2 = ATOM_AT_INDEX(mol->atoms, i2)->type;
-	t3 = ATOM_AT_INDEX(mol->atoms, i3)->type;
-	t4 = ATOM_AT_INDEX(mol->atoms, i4)->type;
-	tp = ParameterLookupImproperPar(mol->par, t1, t2, t3, t4, i1, i2, i3, i4, 0);
-	if (tp == NULL)
-		return Qnil;
-	return ValueFromMoleculeWithParameterTypeAndIndex(mol, kImproperParType, tp - mol->par->improperPars);
-}
-*/
-
-/*
- *  call-seq:
- *     start_step       -> Integer
- *
- *  Returns the start step (defined by dcd format).
- */
-static VALUE
-s_Molecule_StartStep(VALUE self)
-{
-    Molecule *mol;
-    Data_Get_Struct(self, Molecule, mol);
-	return INT2NUM(mol->startStep);
-}
-
-/*
- *  call-seq:
- *     start_step = Integer
- *
- *  Set the start step (defined by dcd format).
- */
-static VALUE
-s_Molecule_SetStartStep(VALUE self, VALUE val)
-{
-    Molecule *mol;
-    Data_Get_Struct(self, Molecule, mol);
-	mol->startStep = NUM2INT(rb_Integer(val));
-	return val;
-}
-
-/*
- *  call-seq:
- *     steps_per_frame       -> Integer
- *
- *  Returns the number of steps between frames (defined by dcd format).
- */
-static VALUE
-s_Molecule_StepsPerFrame(VALUE self)
-{
-    Molecule *mol;
-    Data_Get_Struct(self, Molecule, mol);
-	return INT2NUM(mol->stepsPerFrame);
-}
-
-/*
- *  call-seq:
- *     steps_per_frame = Integer
- *
- *  Set the number of steps between frames (defined by dcd format).
- */
-static VALUE
-s_Molecule_SetStepsPerFrame(VALUE self, VALUE val)
-{
-    Molecule *mol;
-    Data_Get_Struct(self, Molecule, mol);
-	mol->stepsPerFrame = NUM2INT(rb_Integer(val));
-	return val;
-}
-
-/*
- *  call-seq:
- *     ps_per_step       -> Float
- *
- *  Returns the time increment (in picoseconds) for one step (defined by dcd format).
- */
-static VALUE
-s_Molecule_PsPerStep(VALUE self)
-{
-    Molecule *mol;
-    Data_Get_Struct(self, Molecule, mol);
-	return rb_float_new(mol->psPerStep);
-}
-
-/*
- *  call-seq:
- *     ps_per_step = Float
- *
- *  Set the time increment (in picoseconds) for one step (defined by dcd format).
- */
-static VALUE
-s_Molecule_SetPsPerStep(VALUE self, VALUE val)
-{
-    Molecule *mol;
-    Data_Get_Struct(self, Molecule, mol);
-	mol->psPerStep = NUM2DBL(rb_Float(val));
-	return val;
-}
-
-/*
- *  call-seq:
- *     find_angles     -> Integer
- *
- *  Find the angles from the bonds. Returns the number of angles newly created.
- */
-/*
-static VALUE
-s_Molecule_FindAngles(VALUE self)
-{
-    Molecule *mol;
-	Atom *ap;
-	int n1, i, j, nc;
-	Int *ip, nip, n[3];
-    Data_Get_Struct(self, Molecule, mol);
-	if (mol == NULL || mol->natoms == 0)
-		return INT2NUM(0);
-	ip = NULL;
-	nip = 0;
-	for (n1 = 0, ap = mol->atoms; n1 < mol->natoms; n1++, ap = ATOM_NEXT(ap)) {
-		nc = ap->connect.count;
-		n[1] = n1;
-		for (i = 0; i < nc; i++) {
-			n[0] = ap->connects[i];
-			for (j = i + 1; j < nc; j++) {
-				n[2] = ap->connects[j];
-				if (MoleculeLookupAngle(mol, n[0], n[1], n[2]) < 0)
-					AssignArray(&ip, &nip, sizeof(Int) * 3, nip, n);
-			}
-		}
-	}
-	if (nip > 0) {
-		MolActionCreateAndPerform(mol, gMolActionAddAngles, nip * 3, ip, NULL);		
-		free(ip);
-	}
-	return INT2NUM(nip);
-}
-*/
-/*
- *  call-seq:
- *     find_dihedrals     -> Integer
- *
- *  Find the dihedrals from the bonds. Returns the number of dihedrals newly created.
- */
-/*
-static VALUE
-s_Molecule_FindDihedrals(VALUE self)
-{
-    Molecule *mol;
-	Atom *ap1, *ap2;
-	int n1, i, j, k, nc1, nc2;
-	Int *ip, nip, n[4];
-    Data_Get_Struct(self, Molecule, mol);
-	if (mol == NULL || mol->natoms == 0)
-		return INT2NUM(0);
-	ip = NULL;
-	nip = 0;
-	for (n1 = 0, ap1 = mol->atoms; n1 < mol->natoms; n1++, ap1 = ATOM_NEXT(ap1)) {
-		nc1 = ap1->connect.count;
-		n[1] = n1;
-		for (i = 0; i < nc1; i++) {
-			n[2] = ap1->connects[i];
-			if (n[1] > n[2])
-				continue;
-			ap2 = ATOM_AT_INDEX(mol->atoms, n[2]);
-			nc2 = ap2->connect.count;
-			for (j = 0; j < nc1; j++) {
-				n[0] = ap1->connects[j];
-				if (n[0] == n[2])
-					continue;
-				for (k = 0; k < nc2; k++) {
-					n[3] = ap2->connects[k];
-					if (n[3] == n1 || n[3] == n[0])
-						continue;
-					if (MoleculeLookupDihedral(mol, n[0], n[1], n[2], n[3]) < 0)
-						AssignArray(&ip, &nip, sizeof(Int) * 4, nip, n);
-				}
-			}
-		}
-	}
-	if (nip > 0) {
-		MolActionCreateAndPerform(mol, gMolActionAddDihedrals, nip * 4, ip, NULL);
-		free(ip);
-	}
-	return INT2NUM(nip);
-}
-*/
-
 /*
  *  call-seq:
  *     nresidues = Integer
@@ -6109,369 +5846,7 @@ s_Molecule_EachAtom(int argc, VALUE *argv, VALUE self)
     return self;
 }
 
-/*
- *  call-seq:
- *     cell     -> [a, b, c, alpha, beta, gamma [, sig_a, sig_b, sig_c, sig_alpha, sig_beta, sig_gamma]]
- *
- *  Returns the unit cell parameters. If cell is not set, returns nil.
- */
-static VALUE
-s_Molecule_Cell(VALUE self)
-{
-    Molecule *mol;
-	int i;
-	VALUE val;
-    Data_Get_Struct(self, Molecule, mol);
-	if (mol->cell == NULL)
-		return Qnil;
-	val = rb_ary_new2(6);
-	for (i = 0; i < 6; i++)
-		rb_ary_push(val, rb_float_new(mol->cell->cell[i]));
-	if (mol->cell->has_sigma) {
-		for (i = 0; i < 6; i++) {
-			rb_ary_push(val, rb_float_new(mol->cell->cellsigma[i]));
-		}
-	}
-	return val;
-}
-
-/*
- *  call-seq:
- *     cell = [a, b, c, alpha, beta, gamma [, sig_a, sig_b, sig_c, sig_alpha, sig_beta, sig_gamma]]
- *     set_cell([a, b, c, alpha, beta, gamma[, sig_a, sig_b, sig_c, sig_alpha, sig_beta, sig_gamma]], convert_coord = nil)
- *
- *  Set the unit cell parameters. If the cell value is nil, then clear the current cell.
-    If the given argument has 12 or more members, then the second half of the parameters represents the sigma values.
-    This operation is undoable.
-    Convert_coord is a flag to specify that the coordinates should be transformed so that the fractional coordinates remain the same.
- */
-static VALUE
-s_Molecule_SetCell(int argc, VALUE *argv, VALUE self)
-{
-    Molecule *mol;
-	VALUE val, cval;
-	int i, convert_coord, n;
-	double d[12];
-    Data_Get_Struct(self, Molecule, mol);
-	rb_scan_args(argc, argv, "11", &val, &cval);
-	if (val == Qnil) {
-		n = 0;
-	} else {
-		int len;
-		val = rb_ary_to_ary(val);
-		len = RARRAY_LEN(val);
-		if (len >= 12) {
-			n = 12;
-		} else if (len >= 6) {
-			n = 6;
-		} else rb_raise(rb_eMolbyError, "too few members for cell parameters (6 or 12 required)");
-		for (i = 0; i < n; i++)
-			d[i] = NUM2DBL(rb_Float((RARRAY_PTR(val))[i]));
-	}
-	convert_coord = (RTEST(cval) ? 1 : 0);
-	MolActionCreateAndPerform(mol, gMolActionSetCell, n, d, convert_coord);
-	return val;
-}
-
-/*
- *  call-seq:
- *     box -> [avec, bvec, cvec, origin, flags]
- *
- *  Get the unit cell information in the form of a periodic bounding box.
- *  Avec, bvec, cvec, origin are Vector3D objects, and flags is a 3-member array of 
- *  Integers which define whether the system is periodic along the axis.
- *  If no unit cell is defined, nil is returned.
- */
-static VALUE
-s_Molecule_Box(VALUE self)
-{
-    Molecule *mol;
-	VALUE v[5], val;
-    Data_Get_Struct(self, Molecule, mol);
-	if (mol == NULL || mol->cell == NULL)
-		return Qnil;
-	v[0] = ValueFromVector(&(mol->cell->axes[0]));
-	v[1] = ValueFromVector(&(mol->cell->axes[1]));
-	v[2] = ValueFromVector(&(mol->cell->axes[2]));
-	v[3] = ValueFromVector(&(mol->cell->origin));
-	v[4] = rb_ary_new3(3, INT2NUM(mol->cell->flags[0]), INT2NUM(mol->cell->flags[1]), INT2NUM(mol->cell->flags[2]));
-	val = rb_ary_new4(5, v);
-	return val;
-}
-
-/*
- *  call-seq:
- *     set_box(avec, bvec, cvec, origin = [0, 0, 0], flags = [1, 1, 1], convert_coordinates = nil)
- *     set_box(d, origin = [0, 0, 0])
- *     set_box
- *
- *  Set the unit cell parameters. Avec, bvec, and cvec can be either a Vector3D or a number.
- If it is a number, the x/y/z axis vector is multiplied with the given number and used
- as the box vector.
- Flags, if present, is a 3-member array of Integers defining whether the system is
- periodic along the axis.
- If convert_coordinates is true, then the coordinates are converted so that the fractional coordinates remain the same.
- In the second form, an isotropic box with cell-length d is set.
- In the third form, the existing box is cleared.
- Note: the sigma of the cell parameters is not cleared unless the periodic box itself is cleared.
- */
-static VALUE
-s_Molecule_SetBox(VALUE self, VALUE aval)
-{
-    Molecule *mol;
-	VALUE v[6];
-	static Vector ax[3] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
-	Vector vv[3];
-	Vector origin = {0, 0, 0};
-	char flags[3];
-	Double d;
-	int i, convertCoordinates = 0;
-    Data_Get_Struct(self, Molecule, mol);
-	if (aval == Qnil) {
-		MolActionCreateAndPerform(mol, gMolActionClearBox);
-		return self;
-	}
-	aval = rb_ary_to_ary(aval);
-	for (i = 0; i < 6; i++) {
-		if (i < RARRAY_LEN(aval))
-			v[i] = (RARRAY_PTR(aval))[i];
-		else v[i] = Qnil;
-	}
-	if (v[0] == Qnil) {
-		MolActionCreateAndPerform(mol, gMolActionClearBox);
-		return self;
-	}
-	if ((v[1] == Qnil || v[2] == Qnil) && rb_obj_is_kind_of(v[0], rb_cNumeric)) {
-		d = NUM2DBL(rb_Float(v[0]));
-		for (i = 0; i < 3; i++)
-			VecScale(vv[i], ax[i], d);
-		if (v[1] != Qnil)
-			VectorFromValue(v[1], &origin);
-		flags[0] = flags[1] = flags[2] = 1;
-	} else {
-		for (i = 0; i < 3; i++) {
-			if (v[i] == Qnil) {
-				VecZero(vv[i]);
-			} else if (rb_obj_is_kind_of(v[i], rb_cNumeric)) {
-				d = NUM2DBL(rb_Float(v[i]));
-				VecScale(vv[i], ax[i], d);
-			} else {
-				VectorFromValue(v[i], &vv[i]);
-			}
-			flags[i] = (VecLength2(vv[i]) > 0.0);
-		}
-		if (v[3] != Qnil)
-			VectorFromValue(v[3], &origin);
-		if (v[4] != Qnil) {
-			for (i = 0; i < 3; i++) {
-				VALUE val = Ruby_ObjectAtIndex(v[4], i);
-				flags[i] = (NUM2INT(rb_Integer(val)) != 0);
-			}
-		}
-		if (RTEST(v[5]))
-			convertCoordinates = 1;
-	}
-	MolActionCreateAndPerform(mol, gMolActionSetBox, &(vv[0]), &(vv[1]), &(vv[2]), &origin, (flags[0] * 4 + flags[1] * 2 + flags[2]), convertCoordinates);
-	return self;
-}
-
-/*
- *  call-seq:
- *     cell_periodicity -> [n1, n2, n3]
- *
- *  Get flags denoting whether the cell is periodic along the a/b/c axes. If the cell is not defined
- *  nil is returned.
- */
-static VALUE
-s_Molecule_CellPeriodicity(VALUE self)
-{
-    Molecule *mol;
-    Data_Get_Struct(self, Molecule, mol);
-	if (mol->cell == NULL)
-		return Qnil;
-	return rb_ary_new3(3, INT2FIX((int)mol->cell->flags[0]), INT2FIX((int)mol->cell->flags[1]), INT2FIX((int)mol->cell->flags[2]));
-}
-
-/*
- *  call-seq:
- *     self.cell_periodicity = [n1, n2, n3] or Integer or nil
- *     set_cell_periodicity = [n1, n2, n3] or Integer or nil
- *
- *  Set whether the cell is periodic along the a/b/c axes. If an integer is given as an argument,
- *  its bits 2/1/0 (from the lowest) correspond to the a/b/c axes. Nil is equivalent to [0, 0, 0].
- *  If cell is not defined, exception is raised.
- *  This operation is undoable.
- */
-static VALUE
-s_Molecule_SetCellPeriodicity(VALUE self, VALUE arg)
-{
-    Molecule *mol;
-	Int flag;
-    Data_Get_Struct(self, Molecule, mol);
-	if (mol->cell == NULL)
-		rb_raise(rb_eMolbyError, "periodic cell is not defined");
-	if (arg == Qnil)
-		flag = 0;
-	else if (rb_obj_is_kind_of(arg, rb_cNumeric))
-		flag = NUM2INT(rb_Integer(arg));
-	else {
-		Int i;
-		VALUE arg0;
-		arg = rb_ary_to_ary(arg);
-		flag = 0;
-		for (i = 0; i < 3 && i < RARRAY_LEN(arg); i++) {
-			arg0 = RARRAY_PTR(arg)[i];
-			if (arg0 != Qnil && arg0 != Qfalse && arg0 != INT2FIX(0))
-				flag |= (1 << (2 - i));
-		}
-	}
-	MolActionCreateAndPerform(mol, gMolActionSetCellPeriodicity, flag);
-	return arg;
-}
-
-/*
- *  call-seq:
- *     cell_flexibility -> bool
- *
- *  Returns the unit cell is flexible or not
- */
-static VALUE
-s_Molecule_CellFlexibility(VALUE self)
-{
-	rb_warn("cell_flexibility is obsolete (unit cell is always frame dependent)");
-	return Qtrue;
-/*    Molecule *mol;
-    Data_Get_Struct(self, Molecule, mol);
-	if (mol->cell == NULL)
-		return Qfalse;
-	if (mol->useFlexibleCell)
-		return Qtrue;
-	else return Qfalse; */
-}
-
-/*
- *  call-seq:
- *     self.cell_flexibility = bool
- *     set_cell_flexibility(bool)
- *
- *  Change the unit cell is flexible or not
- */
-static VALUE
-s_Molecule_SetCellFlexibility(VALUE self, VALUE arg)
-{
-	rb_warn("set_cell_flexibility is obsolete (unit cell is always frame dependent)");
-	return self;
-/*    Molecule *mol;
-    Data_Get_Struct(self, Molecule, mol);
-	MolActionCreateAndPerform(mol, gMolActionSetCellFlexibility, RTEST(arg) != 0);
-	return self; */
-}
-
-/*
- *  call-seq:
- *     cell_transform -> Transform
- *
- *  Get the transform matrix that converts internal coordinates to cartesian coordinates.
- *  If cell is not defined, nil is returned.
- */
-static VALUE
-s_Molecule_CellTransform(VALUE self)
-{
-    Molecule *mol;
-    Data_Get_Struct(self, Molecule, mol);
-	if (mol == NULL || mol->cell == NULL)
-		return Qnil;
-	return ValueFromTransform(&(mol->cell->tr));
-}
-
-/*
- *  call-seq:
- *     symmetry -> Array of Transforms
- *     symmetries -> Array of Transforms
- *
- *  Get the currently defined symmetry operations. If no symmetry operation is defined,
- *  returns an empty array.
- */
-static VALUE
-s_Molecule_Symmetry(VALUE self)
-{
-    Molecule *mol;
-	VALUE val;
-	int i;
-    Data_Get_Struct(self, Molecule, mol);
-	if (mol->nsyms <= 0)
-		return rb_ary_new();
-	val = rb_ary_new2(mol->nsyms);
-	for (i = 0; i < mol->nsyms; i++) {
-		rb_ary_push(val, ValueFromTransform(&mol->syms[i]));
-	}
-	return val;
-}
-
-/*
- *  call-seq:
- *     nsymmetries -> Integer
- *
- *  Get the number of currently defined symmetry operations.
- */
-static VALUE
-s_Molecule_Nsymmetries(VALUE self)
-{
-    Molecule *mol;
-    Data_Get_Struct(self, Molecule, mol);
-	return INT2NUM(mol->nsyms);
-}
-
-/*
- *  call-seq:
- *     add_symmetry(Transform) -> Integer
- *
- *  Add a new symmetry operation. If no symmetry operation is defined and the
- *  given argument is not an identity transform, then also add an identity
- *  transform at the index 0.
- *  Returns the total number of symmetries after operation.
- */
-static VALUE
-s_Molecule_AddSymmetry(VALUE self, VALUE trans)
-{
-    Molecule *mol;
-	Transform tr;
-    Data_Get_Struct(self, Molecule, mol);
-	TransformFromValue(trans, &tr);
-	MolActionCreateAndPerform(mol, gMolActionAddSymmetryOperation, &tr);
-	return INT2NUM(mol->nsyms);
-}
-
-/*
- *  call-seq:
- *     remove_symmetry(count = nil) -> Integer
- *     remove_symmetries(count = nil) -> Integer
- *
- *  Remove the specified number of symmetry operations. The last added ones are removed
- *  first. If count is nil, then all symmetry operations are removed. Returns the
- *  number of leftover symmetries.
- */
-static VALUE
-s_Molecule_RemoveSymmetry(int argc, VALUE *argv, VALUE self)
-{
-    Molecule *mol;
-	VALUE cval;
-	int i, n;
-    Data_Get_Struct(self, Molecule, mol);
-	rb_scan_args(argc, argv, "01", &cval);
-	if (cval == Qnil)
-		n = mol->nsyms - 1;
-	else {
-		n = NUM2INT(rb_Integer(cval));
-		if (n < 0 || n > mol->nsyms)
-			rb_raise(rb_eMolbyError, "the given count of symops is out of range");
-		if (n == mol->nsyms)
-			n = mol->nsyms - 1;
-	}
-	for (i = 0; i < n; i++)
-		MolActionCreateAndPerform(mol, gMolActionDeleteSymmetryOperation);
-	return INT2NUM(mol->nsyms);
-}
+#pragma mark ------ Atom Group ------
 
 static VALUE
 s_Molecule_AtomGroup_i(VALUE arg, VALUE values)
@@ -6559,22 +5934,73 @@ s_Molecule_AtomGroup(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     atom_index(val)       -> Integer
+ *     selection       -> IntGroup
  *
- *  Returns the atom index represented by val. val can be either a non-negative integer
- *  (directly representing the atom index), a negative integer (representing <code>natoms - val</code>),
- *  a string of type "resname.resid:name" or "resname:name" or "resid:name" or "name", 
- *  where resname, resid, name are the residue name, residue id, and atom name respectively.
- *  If val is a string and multiple atoms match the description, the atom with the lowest index
- *  is returned.
+ *  Returns the current selection.
  */
 static VALUE
-s_Molecule_AtomIndex(VALUE self, VALUE val)
+s_Molecule_Selection(VALUE self)
 {
     Molecule *mol;
+	IntGroup *ig;
+	VALUE val;
     Data_Get_Struct(self, Molecule, mol);
-	return INT2NUM(s_Molecule_AtomIndexFromValue(mol, val));
+	if (mol != NULL && (ig = MoleculeGetSelection(mol)) != NULL) {
+		ig = IntGroupNewFromIntGroup(ig);  /*  Duplicate, so that the change from GUI does not affect the value  */
+		val = ValueFromIntGroup(ig);
+		IntGroupRelease(ig);
+	} else {
+		val = IntGroup_Alloc(rb_cIntGroup);
+	}
+	return val;
 }
+
+static VALUE
+s_Molecule_SetSelectionSub(VALUE self, VALUE val, int undoable)
+{
+    Molecule *mol;
+	IntGroup *ig;
+    Data_Get_Struct(self, Molecule, mol);
+	if (val == Qnil)
+		ig = NULL;
+	else
+		ig = s_Molecule_AtomGroupFromValue(self, val);
+	if (undoable)
+		MolActionCreateAndPerform(mol, gMolActionSetSelection, ig);
+	else
+		MoleculeSetSelection(mol, ig);
+	if (ig != NULL)
+		IntGroupRelease(ig);
+	return val;
+}
+
+/*
+ *  call-seq:
+ *     selection = IntGroup
+ *
+ *  Set the current selection. The right-hand operand may be nil.
+ *  This operation is _not_ undoable. If you need undo, use set_undoable_selection instead.
+ */
+static VALUE
+s_Molecule_SetSelection(VALUE self, VALUE val)
+{
+	return s_Molecule_SetSelectionSub(self, val, 0);
+}
+
+/*
+ *  call-seq:
+ *     set_undoable_selection(IntGroup)
+ *
+ *  Set the current selection with undo registration. The right-hand operand may be nil.
+ *  This operation is undoable.
+ */
+static VALUE
+s_Molecule_SetUndoableSelection(VALUE self, VALUE val)
+{
+	return s_Molecule_SetSelectionSub(self, val, 1);
+}
+
+#pragma mark ------ Editing ------
 
 /*
  *  call-seq:
@@ -7281,6 +6707,380 @@ s_Molecule_RenumberAtoms(VALUE self, VALUE array)
 
 /*
  *  call-seq:
+ *     set_atom_attr(index, key, value)
+ *
+ *  Set the atom attribute for the specified atom.
+ *  This operation is undoable.
+ */
+static VALUE
+s_Molecule_SetAtomAttr(VALUE self, VALUE idx, VALUE key, VALUE val)
+{
+	Molecule *mol;
+	VALUE aref, oldval;
+    Data_Get_Struct(self, Molecule, mol);
+	aref = ValueFromMoleculeAndIndex(mol, s_Molecule_AtomIndexFromValue(mol, idx));
+	oldval = s_AtomRef_GetAttr(aref, key);
+	if (val == Qundef)
+		return oldval;
+	s_AtomRef_SetAttr(aref, key, val);
+	return val;
+}
+
+/*
+ *  call-seq:
+ *     get_atom_attr(index, key)
+ *
+ *  Get the atom attribute for the specified atom.
+ */
+static VALUE
+s_Molecule_GetAtomAttr(VALUE self, VALUE idx, VALUE key)
+{
+	return s_Molecule_SetAtomAttr(self, idx, key, Qundef);
+}
+
+#pragma mark ------ Undo Support ------
+
+/*
+ *  call-seq:
+ *     register_undo(script, *args)
+ *
+ *  Register an undo operation with the current molecule.
+ */
+static VALUE
+s_Molecule_RegisterUndo(int argc, VALUE *argv, VALUE self)
+{
+	Molecule *mol;
+	VALUE script, args;
+	MolAction *act;
+    Data_Get_Struct(self, Molecule, mol);
+	rb_scan_args(argc, argv, "1*", &script, &args);
+	act = MolActionNew(SCRIPT_ACTION("R"), StringValuePtr(script), args);
+	MolActionCallback_registerUndo(mol, act);
+	return script;
+}
+
+/*
+ *  call-seq:
+ *     undo_enabled? -> bool
+ *
+ *  Returns true if undo is enabled for this molecule; otherwise no.
+ */
+static VALUE
+s_Molecule_UndoEnabled(VALUE self)
+{
+    Molecule *mol;
+    Data_Get_Struct(self, Molecule, mol);
+	if (MolActionCallback_isUndoRegistrationEnabled(mol))
+		return Qtrue;
+	else return Qfalse;
+}
+
+/*
+ *  call-seq:
+ *     undo_enabled = bool
+ *
+ *  Enable or disable undo.
+ */
+static VALUE
+s_Molecule_SetUndoEnabled(VALUE self, VALUE val)
+{
+    Molecule *mol;
+    Data_Get_Struct(self, Molecule, mol);
+	MolActionCallback_setUndoRegistrationEnabled(mol, (val != Qfalse && val != Qnil));
+	return val;
+}
+
+#pragma mark ------ Measure ------
+
+static void
+s_Molecule_DoCenterOfMass(Molecule *mol, Vector *outv, IntGroup *ig)
+{
+	switch (MoleculeCenterOfMass(mol, outv, ig)) {
+		case 2: rb_raise(rb_eMolbyError, "atom group is empty"); break;
+		case 3: rb_raise(rb_eMolbyError, "weight is zero --- atomic weights are not defined?"); break;
+		case 0: break;
+		default: rb_raise(rb_eMolbyError, "cannot calculate center of mass"); break;
+	}
+}
+
+/*
+ *  call-seq:
+ *     center_of_mass(group = nil)       -> Vector3D
+ *
+ *  Calculate the center of mass for the given set of atoms. The argument
+ *  group is null, then all atoms are considered.
+ */
+static VALUE
+s_Molecule_CenterOfMass(int argc, VALUE *argv, VALUE self)
+{
+    Molecule *mol;
+	VALUE group;
+	IntGroup *ig;
+	Vector v;
+    Data_Get_Struct(self, Molecule, mol);
+	rb_scan_args(argc, argv, "01", &group);
+	ig = (NIL_P(group) ? NULL : s_Molecule_AtomGroupFromValue(self, group));
+	s_Molecule_DoCenterOfMass(mol, &v, ig);
+	if (ig != NULL)
+		IntGroupRelease(ig);
+	return ValueFromVector(&v);
+}
+
+/*
+ *  call-seq:
+ *     centralize(group = nil)       -> self
+ *
+ *  Translate the molecule so that the center of mass of the given group is located
+ *  at (0, 0, 0). Equivalent to molecule.translate(molecule.center_of_mass(group) * -1).
+ */
+static VALUE
+s_Molecule_Centralize(int argc, VALUE *argv, VALUE self)
+{
+    Molecule *mol;
+	VALUE group;
+	IntGroup *ig;
+	Vector v;
+    Data_Get_Struct(self, Molecule, mol);
+	rb_scan_args(argc, argv, "01", &group);
+	ig = (NIL_P(group) ? NULL : s_Molecule_AtomGroupFromValue(self, group));
+	s_Molecule_DoCenterOfMass(mol, &v, ig);
+	if (ig != NULL)
+		IntGroupRelease(ig);
+	v.x = -v.x;
+	v.y = -v.y;
+	v.z = -v.z;
+	MolActionCreateAndPerform(mol, gMolActionTranslateAtoms, &v, NULL);
+	return self;
+}
+
+/*
+ *  call-seq:
+ *     bounds(group = nil)       -> [min, max]
+ *
+ *  Calculate the boundary. The return value is an array of two Vector3D objects.
+ */
+static VALUE
+s_Molecule_Bounds(int argc, VALUE *argv, VALUE self)
+{
+    Molecule *mol;
+	VALUE group;
+	IntGroup *ig;
+	Vector vmin, vmax;
+	int n;
+	Atom *ap;
+    Data_Get_Struct(self, Molecule, mol);
+	rb_scan_args(argc, argv, "01", &group);
+	ig = (NIL_P(group) ? NULL : s_Molecule_AtomGroupFromValue(self, group));
+	if (ig != NULL && IntGroupGetCount(ig) == 0)
+		rb_raise(rb_eMolbyError, "atom group is empty");
+	vmin.x = vmin.y = vmin.z = 1e30;
+	vmax.x = vmax.y = vmax.z = -1e30;
+	for (n = 0, ap = mol->atoms; n < mol->natoms; n++, ap = ATOM_NEXT(ap)) {
+		Vector r;
+		if (ig != NULL && IntGroupLookup(ig, n, NULL) == 0)
+			continue;
+		r = ap->r;
+		if (r.x < vmin.x)
+			vmin.x = r.x;
+		if (r.y < vmin.y)
+			vmin.y = r.y;
+		if (r.z < vmin.z)
+			vmin.z = r.z;
+		if (r.x > vmax.x)
+			vmax.x = r.x;
+		if (r.y > vmax.y)
+			vmax.y = r.y;
+		if (r.z > vmax.z)
+			vmax.z = r.z;
+	}
+	return rb_ary_new3(2, ValueFromVector(&vmin), ValueFromVector(&vmax));
+}
+
+/*  Get atom position or a vector  */
+static void
+s_Molecule_GetVectorFromArg(Molecule *mol, VALUE val, Vector *vp)
+{
+	if (rb_obj_is_kind_of(val, rb_cInteger) || rb_obj_is_kind_of(val, rb_cString)) {
+		int n1 = s_Molecule_AtomIndexFromValue(mol, val);
+		*vp = ATOM_AT_INDEX(mol->atoms, n1)->r;
+	} else {
+		VectorFromValue(val, vp);
+	}
+}
+
+/*
+ *  call-seq:
+ *     measure_bond(n1, n2)       -> Float
+ *
+ *  Calculate the bond length. The arguments can either be atom indices, the "residue:name" representation, 
+ *  or Vector3D values.
+ *  If the crystallographic cell is defined, then the internal coordinates are convereted to the cartesian.
+ */
+static VALUE
+s_Molecule_MeasureBond(VALUE self, VALUE nval1, VALUE nval2)
+{
+    Molecule *mol;
+	Vector v1, v2;
+    Data_Get_Struct(self, Molecule, mol);
+	s_Molecule_GetVectorFromArg(mol, nval1, &v1);
+	s_Molecule_GetVectorFromArg(mol, nval2, &v2);
+	return rb_float_new(MoleculeMeasureBond(mol, &v1, &v2));
+}
+
+/*
+ *  call-seq:
+ *     measure_angle(n1, n2, n3)       -> Float
+ *
+ *  Calculate the bond angle. The arguments can either be atom indices, the "residue:name" representation, 
+ *  or Vector3D values. The return value is in degree.
+ *  If the crystallographic cell is defined, then the internal coordinates are convereted to the cartesian.
+ */
+static VALUE
+s_Molecule_MeasureAngle(VALUE self, VALUE nval1, VALUE nval2, VALUE nval3)
+{
+    Molecule *mol;
+	Vector v1, v2, v3;
+	Double d;
+    Data_Get_Struct(self, Molecule, mol);
+	s_Molecule_GetVectorFromArg(mol, nval1, &v1);
+	s_Molecule_GetVectorFromArg(mol, nval2, &v2);
+	s_Molecule_GetVectorFromArg(mol, nval3, &v3);	
+	d = MoleculeMeasureAngle(mol, &v1, &v2, &v3);
+	if (isnan(d))
+		return Qnil;  /*  Cannot define  */
+	else return rb_float_new(d);
+}
+
+/*
+ *  call-seq:
+ *     measure_dihedral(n1, n2, n3, n4)       -> Float
+ *
+ *  Calculate the dihedral angle. The arguments can either be atom indices, the "residue:name" representation, 
+ *  or Vector3D values. The return value is in degree.
+ *  If the crystallographic cell is defined, then the internal coordinates are convereted to the cartesian.
+ */
+static VALUE
+s_Molecule_MeasureDihedral(VALUE self, VALUE nval1, VALUE nval2, VALUE nval3, VALUE nval4)
+{
+    Molecule *mol;
+	Vector v1, v2, v3, v4;
+	Double d;
+    Data_Get_Struct(self, Molecule, mol);
+	s_Molecule_GetVectorFromArg(mol, nval1, &v1);
+	s_Molecule_GetVectorFromArg(mol, nval2, &v2);
+	s_Molecule_GetVectorFromArg(mol, nval3, &v3);	
+	s_Molecule_GetVectorFromArg(mol, nval4, &v4);	
+	d = MoleculeMeasureDihedral(mol, &v1, &v2, &v3, &v4);
+	if (isnan(d))
+		return Qnil;  /*  Cannot define  */
+	else return rb_float_new(d);
+}
+
+/*
+ *  call-seq:
+ *     find_conflicts(limit[, group1[, group2 [, ignore_exclusion]]]) -> [[n1, n2], [n3, n4], ...]
+ *
+ *  Find pairs of atoms that are within the limit distance. If group1 and group2 are given, the
+ *  first and second atom in the pair should belong to group1 and group2, respectively.
+ *  If ignore_exclusion is true, then 1-2 (bonded), 1-3, 1-4 pairs are also considered.
+ */
+static VALUE
+s_Molecule_FindConflicts(int argc, VALUE *argv, VALUE self)
+{
+    Molecule *mol;
+	VALUE limval, gval1, gval2, rval, igval;
+	IntGroup *ig1, *ig2;
+	IntGroupIterator iter1, iter2;
+	Int npairs, *pairs;
+	Int n[2], i;
+	Double lim;
+	Vector r1;
+	Atom *ap1, *ap2;
+	MDExclusion *exinfo;
+	Int *exlist;
+	
+    Data_Get_Struct(self, Molecule, mol);
+	rb_scan_args(argc, argv, "13", &limval, &gval1, &gval2, &igval);
+	lim = NUM2DBL(rb_Float(limval));
+	if (lim <= 0.0)
+		rb_raise(rb_eMolbyError, "the limit (%g) should be positive", lim);
+	if (gval1 != Qnil)
+		ig1 = s_Molecule_AtomGroupFromValue(self, gval1);
+	else
+		ig1 = IntGroupNewWithPoints(0, mol->natoms, -1);
+	if (gval2 != Qnil)
+		ig2 = s_Molecule_AtomGroupFromValue(self, gval2);
+	else
+		ig2 = IntGroupNewWithPoints(0, mol->natoms, -1);
+	
+	if (!RTEST(igval)) {
+		/*  Use the exclusion table in MDArena  */
+		if (mol->par == NULL || mol->arena == NULL || mol->arena->is_initialized == 0 || mol->needsMDRebuild) {
+			VALUE mval = ValueFromMolecule(mol);
+			s_RebuildMDParameterIfNecessary(mval, Qnil);
+		}
+		exinfo = mol->arena->exinfo;  /*  May be NULL  */
+		exlist = mol->arena->exlist;	
+	} else {
+		exinfo = NULL;
+		exlist = NULL;
+	}
+	IntGroupIteratorInit(ig1, &iter1);
+	IntGroupIteratorInit(ig2, &iter2);
+	npairs = 0;
+	pairs = NULL;
+	while ((n[0] = IntGroupIteratorNext(&iter1)) >= 0) {
+		Int exn1, exn2;
+		ap1 = ATOM_AT_INDEX(mol->atoms, n[0]);
+		r1 = ap1->r;
+		if (exinfo != NULL) {
+			exn1 = exinfo[n[0]].index1;
+			exn2 = exinfo[n[0] + 1].index1;
+		} else exn1 = exn2 = -1;
+		IntGroupIteratorReset(&iter2);
+		while ((n[1] = IntGroupIteratorNext(&iter2)) >= 0) {
+			ap2 = ATOM_AT_INDEX(mol->atoms, n[1]);
+			if (n[0] == n[1])
+				continue;  /*  Same atom  */
+			if (exinfo != NULL) {
+				/*  Look up exclusion table to exclude 1-2, 1-3, and 1-4 pairs  */
+				for (i = exn1; i < exn2; i++) {
+					if (exlist[i] == n[1])
+						break;
+				}
+				if (i < exn2)
+					continue;  /*  Should be excluded  */
+			}
+			if (MoleculeMeasureBond(mol, &r1, &(ap2->r)) < lim) {
+				/*  Is this pair already registered?  */
+				Int *ip;
+				for (i = 0, ip = pairs; i < npairs; i++, ip += 2) {
+					if ((ip[0] == n[0] && ip[1] == n[1]) || (ip[0] == n[1] && ip[1] == n[0]))
+						break;
+				}
+				if (i >= npairs) {
+					/*  Not registered yet  */
+					AssignArray(&pairs, &npairs, sizeof(Int) * 2, npairs, n);
+				}
+			}
+		}
+	}
+	IntGroupIteratorRelease(&iter2);
+	IntGroupIteratorRelease(&iter1);
+	IntGroupRelease(ig2);
+	IntGroupRelease(ig1);
+	rval = rb_ary_new2(npairs);
+	if (pairs != NULL) {
+		for (i = 0; i < npairs; i++) {
+			rb_ary_push(rval, rb_ary_new3(2, INT2NUM(pairs[i * 2]), INT2NUM(pairs[i * 2 + 1])));
+		}
+		free(pairs);
+	}
+	return rval;
+}
+
+/*
+ *  call-seq:
  *     find_close_atoms(atom, limit = 1.2, radius = 0.77)   -> array of Integers (atom indices)
  *
  *  Find atoms that are within the threshold distance from the given atom.
@@ -7362,191 +7162,703 @@ s_Molecule_GuessBonds(int argc, VALUE *argv, VALUE self)
 	}
 	return INT2NUM(nbonds);
 }
-	
-/*
- *  call-seq:
- *     register_undo(script, *args)
- *
- *  Register an undo operation with the current molecule.
- */
-static VALUE
-s_Molecule_RegisterUndo(int argc, VALUE *argv, VALUE self)
-{
-	Molecule *mol;
-	VALUE script, args;
-	MolAction *act;
-    Data_Get_Struct(self, Molecule, mol);
-	rb_scan_args(argc, argv, "1*", &script, &args);
-	act = MolActionNew(SCRIPT_ACTION("R"), StringValuePtr(script), args);
-	MolActionCallback_registerUndo(mol, act);
-	return script;
-}
+
+#pragma mark ------ Cell and Symmetry ------
 
 /*
  *  call-seq:
- *     undo_enabled? -> bool
+ *     cell     -> [a, b, c, alpha, beta, gamma [, sig_a, sig_b, sig_c, sig_alpha, sig_beta, sig_gamma]]
  *
- *  Returns true if undo is enabled for this molecule; otherwise no.
+ *  Returns the unit cell parameters. If cell is not set, returns nil.
  */
 static VALUE
-s_Molecule_UndoEnabled(VALUE self)
+s_Molecule_Cell(VALUE self)
 {
     Molecule *mol;
-    Data_Get_Struct(self, Molecule, mol);
-	if (MolActionCallback_isUndoRegistrationEnabled(mol))
-		return Qtrue;
-	else return Qfalse;
-}
-
-/*
- *  call-seq:
- *     undo_enabled = bool
- *
- *  Enable or disable undo.
- */
-static VALUE
-s_Molecule_SetUndoEnabled(VALUE self, VALUE val)
-{
-    Molecule *mol;
-    Data_Get_Struct(self, Molecule, mol);
-	MolActionCallback_setUndoRegistrationEnabled(mol, (val != Qfalse && val != Qnil));
-	return val;
-}
-
-/*
- *  call-seq:
- *     selection       -> IntGroup
- *
- *  Returns the current selection.
- */
-static VALUE
-s_Molecule_Selection(VALUE self)
-{
-    Molecule *mol;
-	IntGroup *ig;
+	int i;
 	VALUE val;
     Data_Get_Struct(self, Molecule, mol);
-	if (mol != NULL && (ig = MoleculeGetSelection(mol)) != NULL) {
-		ig = IntGroupNewFromIntGroup(ig);  /*  Duplicate, so that the change from GUI does not affect the value  */
-		val = ValueFromIntGroup(ig);
-		IntGroupRelease(ig);
-	} else {
-		val = IntGroup_Alloc(rb_cIntGroup);
+	if (mol->cell == NULL)
+		return Qnil;
+	val = rb_ary_new2(6);
+	for (i = 0; i < 6; i++)
+		rb_ary_push(val, rb_float_new(mol->cell->cell[i]));
+	if (mol->cell->has_sigma) {
+		for (i = 0; i < 6; i++) {
+			rb_ary_push(val, rb_float_new(mol->cell->cellsigma[i]));
+		}
 	}
 	return val;
 }
 
+/*
+ *  call-seq:
+ *     cell = [a, b, c, alpha, beta, gamma [, sig_a, sig_b, sig_c, sig_alpha, sig_beta, sig_gamma]]
+ *     set_cell([a, b, c, alpha, beta, gamma[, sig_a, sig_b, sig_c, sig_alpha, sig_beta, sig_gamma]], convert_coord = nil)
+ *
+ *  Set the unit cell parameters. If the cell value is nil, then clear the current cell.
+ If the given argument has 12 or more members, then the second half of the parameters represents the sigma values.
+ This operation is undoable.
+ Convert_coord is a flag to specify that the coordinates should be transformed so that the fractional coordinates remain the same.
+ */
 static VALUE
-s_Molecule_SetSelectionSub(VALUE self, VALUE val, int undoable)
+s_Molecule_SetCell(int argc, VALUE *argv, VALUE self)
 {
     Molecule *mol;
-	IntGroup *ig;
+	VALUE val, cval;
+	int i, convert_coord, n;
+	double d[12];
     Data_Get_Struct(self, Molecule, mol);
-	if (val == Qnil)
-		ig = NULL;
-	else
-		ig = s_Molecule_AtomGroupFromValue(self, val);
-	if (undoable)
-		MolActionCreateAndPerform(mol, gMolActionSetSelection, ig);
-	else
-		MoleculeSetSelection(mol, ig);
-	if (ig != NULL)
-		IntGroupRelease(ig);
+	rb_scan_args(argc, argv, "11", &val, &cval);
+	if (val == Qnil) {
+		n = 0;
+	} else {
+		int len;
+		val = rb_ary_to_ary(val);
+		len = RARRAY_LEN(val);
+		if (len >= 12) {
+			n = 12;
+		} else if (len >= 6) {
+			n = 6;
+		} else rb_raise(rb_eMolbyError, "too few members for cell parameters (6 or 12 required)");
+		for (i = 0; i < n; i++)
+			d[i] = NUM2DBL(rb_Float((RARRAY_PTR(val))[i]));
+	}
+	convert_coord = (RTEST(cval) ? 1 : 0);
+	MolActionCreateAndPerform(mol, gMolActionSetCell, n, d, convert_coord);
 	return val;
 }
 
 /*
  *  call-seq:
- *     selection = IntGroup
+ *     box -> [avec, bvec, cvec, origin, flags]
  *
- *  Set the current selection. The right-hand operand may be nil.
- *  This operation is _not_ undoable. If you need undo, use set_undoable_selection instead.
+ *  Get the unit cell information in the form of a periodic bounding box.
+ *  Avec, bvec, cvec, origin are Vector3D objects, and flags is a 3-member array of 
+ *  Integers which define whether the system is periodic along the axis.
+ *  If no unit cell is defined, nil is returned.
  */
 static VALUE
-s_Molecule_SetSelection(VALUE self, VALUE val)
+s_Molecule_Box(VALUE self)
 {
-	return s_Molecule_SetSelectionSub(self, val, 0);
+    Molecule *mol;
+	VALUE v[5], val;
+    Data_Get_Struct(self, Molecule, mol);
+	if (mol == NULL || mol->cell == NULL)
+		return Qnil;
+	v[0] = ValueFromVector(&(mol->cell->axes[0]));
+	v[1] = ValueFromVector(&(mol->cell->axes[1]));
+	v[2] = ValueFromVector(&(mol->cell->axes[2]));
+	v[3] = ValueFromVector(&(mol->cell->origin));
+	v[4] = rb_ary_new3(3, INT2NUM(mol->cell->flags[0]), INT2NUM(mol->cell->flags[1]), INT2NUM(mol->cell->flags[2]));
+	val = rb_ary_new4(5, v);
+	return val;
 }
 
 /*
  *  call-seq:
- *     set_undoable_selection(IntGroup)
+ *     set_box(avec, bvec, cvec, origin = [0, 0, 0], flags = [1, 1, 1], convert_coordinates = nil)
+ *     set_box(d, origin = [0, 0, 0])
+ *     set_box
  *
- *  Set the current selection with undo registration. The right-hand operand may be nil.
+ *  Set the unit cell parameters. Avec, bvec, and cvec can be either a Vector3D or a number.
+ If it is a number, the x/y/z axis vector is multiplied with the given number and used
+ as the box vector.
+ Flags, if present, is a 3-member array of Integers defining whether the system is
+ periodic along the axis.
+ If convert_coordinates is true, then the coordinates are converted so that the fractional coordinates remain the same.
+ In the second form, an isotropic box with cell-length d is set.
+ In the third form, the existing box is cleared.
+ Note: the sigma of the cell parameters is not cleared unless the periodic box itself is cleared.
+ */
+static VALUE
+s_Molecule_SetBox(VALUE self, VALUE aval)
+{
+    Molecule *mol;
+	VALUE v[6];
+	static Vector ax[3] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
+	Vector vv[3];
+	Vector origin = {0, 0, 0};
+	char flags[3];
+	Double d;
+	int i, convertCoordinates = 0;
+    Data_Get_Struct(self, Molecule, mol);
+	if (aval == Qnil) {
+		MolActionCreateAndPerform(mol, gMolActionClearBox);
+		return self;
+	}
+	aval = rb_ary_to_ary(aval);
+	for (i = 0; i < 6; i++) {
+		if (i < RARRAY_LEN(aval))
+			v[i] = (RARRAY_PTR(aval))[i];
+		else v[i] = Qnil;
+	}
+	if (v[0] == Qnil) {
+		MolActionCreateAndPerform(mol, gMolActionClearBox);
+		return self;
+	}
+	if ((v[1] == Qnil || v[2] == Qnil) && rb_obj_is_kind_of(v[0], rb_cNumeric)) {
+		d = NUM2DBL(rb_Float(v[0]));
+		for (i = 0; i < 3; i++)
+			VecScale(vv[i], ax[i], d);
+		if (v[1] != Qnil)
+			VectorFromValue(v[1], &origin);
+		flags[0] = flags[1] = flags[2] = 1;
+	} else {
+		for (i = 0; i < 3; i++) {
+			if (v[i] == Qnil) {
+				VecZero(vv[i]);
+			} else if (rb_obj_is_kind_of(v[i], rb_cNumeric)) {
+				d = NUM2DBL(rb_Float(v[i]));
+				VecScale(vv[i], ax[i], d);
+			} else {
+				VectorFromValue(v[i], &vv[i]);
+			}
+			flags[i] = (VecLength2(vv[i]) > 0.0);
+		}
+		if (v[3] != Qnil)
+			VectorFromValue(v[3], &origin);
+		if (v[4] != Qnil) {
+			for (i = 0; i < 3; i++) {
+				VALUE val = Ruby_ObjectAtIndex(v[4], i);
+				flags[i] = (NUM2INT(rb_Integer(val)) != 0);
+			}
+		}
+		if (RTEST(v[5]))
+			convertCoordinates = 1;
+	}
+	MolActionCreateAndPerform(mol, gMolActionSetBox, &(vv[0]), &(vv[1]), &(vv[2]), &origin, (flags[0] * 4 + flags[1] * 2 + flags[2]), convertCoordinates);
+	return self;
+}
+
+/*
+ *  call-seq:
+ *     cell_periodicity -> [n1, n2, n3]
+ *
+ *  Get flags denoting whether the cell is periodic along the a/b/c axes. If the cell is not defined
+ *  nil is returned.
+ */
+static VALUE
+s_Molecule_CellPeriodicity(VALUE self)
+{
+    Molecule *mol;
+    Data_Get_Struct(self, Molecule, mol);
+	if (mol->cell == NULL)
+		return Qnil;
+	return rb_ary_new3(3, INT2FIX((int)mol->cell->flags[0]), INT2FIX((int)mol->cell->flags[1]), INT2FIX((int)mol->cell->flags[2]));
+}
+
+/*
+ *  call-seq:
+ *     self.cell_periodicity = [n1, n2, n3] or Integer or nil
+ *     set_cell_periodicity = [n1, n2, n3] or Integer or nil
+ *
+ *  Set whether the cell is periodic along the a/b/c axes. If an integer is given as an argument,
+ *  its bits 2/1/0 (from the lowest) correspond to the a/b/c axes. Nil is equivalent to [0, 0, 0].
+ *  If cell is not defined, exception is raised.
  *  This operation is undoable.
  */
 static VALUE
-s_Molecule_SetUndoableSelection(VALUE self, VALUE val)
+s_Molecule_SetCellPeriodicity(VALUE self, VALUE arg)
 {
-	return s_Molecule_SetSelectionSub(self, val, 1);
-}
-
-/*
- *  call-seq:
- *     hidden_atoms       -> IntGroup
- *
- *  Returns the currently hidden atoms.
- */
-static VALUE
-s_Molecule_HiddenAtoms(VALUE self)
-{
-	rb_raise(rb_eMolbyError, "set_hidden_atoms is now obsolete. Try using Molecule#is_atom_visible or AtomRef#hidden.");
-	return Qnil;  /*  Not reached  */
-/*    Molecule *mol;
-	IntGroup *ig;
-	VALUE val;
+    Molecule *mol;
+	Int flag;
     Data_Get_Struct(self, Molecule, mol);
-	if (mol != NULL) {
-		Atom *ap;
-		int i;
-		ig = IntGroupNew();
-		for (i = 0, ap = mol->atoms; i < mol->natoms; i++, ap = ATOM_NEXT(ap)) {
-			if (ap->exflags & kAtomHiddenFlag)
-				IntGroupAdd(ig, i, 1);
+	if (mol->cell == NULL)
+		rb_raise(rb_eMolbyError, "periodic cell is not defined");
+	if (arg == Qnil)
+		flag = 0;
+	else if (rb_obj_is_kind_of(arg, rb_cNumeric))
+		flag = NUM2INT(rb_Integer(arg));
+	else {
+		Int i;
+		VALUE arg0;
+		arg = rb_ary_to_ary(arg);
+		flag = 0;
+		for (i = 0; i < 3 && i < RARRAY_LEN(arg); i++) {
+			arg0 = RARRAY_PTR(arg)[i];
+			if (arg0 != Qnil && arg0 != Qfalse && arg0 != INT2FIX(0))
+				flag |= (1 << (2 - i));
 		}
-		val = ValueFromIntGroup(ig);
-		IntGroupRelease(ig);
-		rb_obj_freeze(val);
-		return val;
-	} else return Qnil; */
-}
-
-/*
- *  call-seq:
- *     set_hidden_atoms(IntGroup)
- *     self.hidden_atoms = IntGroup
- *
- *  Hide the specified atoms. This operation is _not_ undoable.
- */
-static VALUE
-s_Molecule_SetHiddenAtoms(VALUE self, VALUE val)
-{
-	rb_raise(rb_eMolbyError, "set_hidden_atoms is now obsolete. Try using Molecule#is_atom_visible or AtomRef#hidden.");
-	return Qnil;  /*  Not reached  */
-/*
-	Molecule *mol;
-    Data_Get_Struct(self, Molecule, mol);
-	if (mol != NULL) {
-		Atom *ap;
-		int i;
-		IntGroup *ig;
-		if (val == Qnil)
-			ig = NULL;
-		else
-			ig = s_Molecule_AtomGroupFromValue(self, val);
-		for (i = 0, ap = mol->atoms; i < mol->natoms; i++, ap = ATOM_NEXT(ap)) {
-			if (ig != NULL && IntGroupLookup(ig, i, NULL)) {
-				ap->exflags |= kAtomHiddenFlag;
-			} else {
-				ap->exflags &= kAtomHiddenFlag;
-			}
-		}
-		if (ig != NULL)
-			IntGroupRelease(ig);
-		MoleculeCallback_notifyModification(mol, 0);
 	}
-	return val; */
+	MolActionCreateAndPerform(mol, gMolActionSetCellPeriodicity, flag);
+	return arg;
 }
+
+/*
+ *  call-seq:
+ *     cell_flexibility -> bool
+ *
+ *  Returns the unit cell is flexible or not
+ */
+static VALUE
+s_Molecule_CellFlexibility(VALUE self)
+{
+	rb_warn("cell_flexibility is obsolete (unit cell is always frame dependent)");
+	return Qtrue;
+	/*    Molecule *mol;
+	 Data_Get_Struct(self, Molecule, mol);
+	 if (mol->cell == NULL)
+	 return Qfalse;
+	 if (mol->useFlexibleCell)
+	 return Qtrue;
+	 else return Qfalse; */
+}
+
+/*
+ *  call-seq:
+ *     self.cell_flexibility = bool
+ *     set_cell_flexibility(bool)
+ *
+ *  Change the unit cell is flexible or not
+ */
+static VALUE
+s_Molecule_SetCellFlexibility(VALUE self, VALUE arg)
+{
+	rb_warn("set_cell_flexibility is obsolete (unit cell is always frame dependent)");
+	return self;
+	/*    Molecule *mol;
+	 Data_Get_Struct(self, Molecule, mol);
+	 MolActionCreateAndPerform(mol, gMolActionSetCellFlexibility, RTEST(arg) != 0);
+	 return self; */
+}
+
+/*
+ *  call-seq:
+ *     cell_transform -> Transform
+ *
+ *  Get the transform matrix that converts internal coordinates to cartesian coordinates.
+ *  If cell is not defined, nil is returned.
+ */
+static VALUE
+s_Molecule_CellTransform(VALUE self)
+{
+    Molecule *mol;
+    Data_Get_Struct(self, Molecule, mol);
+	if (mol == NULL || mol->cell == NULL)
+		return Qnil;
+	return ValueFromTransform(&(mol->cell->tr));
+}
+
+/*
+ *  call-seq:
+ *     symmetry -> Array of Transforms
+ *     symmetries -> Array of Transforms
+ *
+ *  Get the currently defined symmetry operations. If no symmetry operation is defined,
+ *  returns an empty array.
+ */
+static VALUE
+s_Molecule_Symmetry(VALUE self)
+{
+    Molecule *mol;
+	VALUE val;
+	int i;
+    Data_Get_Struct(self, Molecule, mol);
+	if (mol->nsyms <= 0)
+		return rb_ary_new();
+	val = rb_ary_new2(mol->nsyms);
+	for (i = 0; i < mol->nsyms; i++) {
+		rb_ary_push(val, ValueFromTransform(&mol->syms[i]));
+	}
+	return val;
+}
+
+/*
+ *  call-seq:
+ *     nsymmetries -> Integer
+ *
+ *  Get the number of currently defined symmetry operations.
+ */
+static VALUE
+s_Molecule_Nsymmetries(VALUE self)
+{
+    Molecule *mol;
+    Data_Get_Struct(self, Molecule, mol);
+	return INT2NUM(mol->nsyms);
+}
+
+/*
+ *  call-seq:
+ *     add_symmetry(Transform) -> Integer
+ *
+ *  Add a new symmetry operation. If no symmetry operation is defined and the
+ *  given argument is not an identity transform, then also add an identity
+ *  transform at the index 0.
+ *  Returns the total number of symmetries after operation.
+ */
+static VALUE
+s_Molecule_AddSymmetry(VALUE self, VALUE trans)
+{
+    Molecule *mol;
+	Transform tr;
+    Data_Get_Struct(self, Molecule, mol);
+	TransformFromValue(trans, &tr);
+	MolActionCreateAndPerform(mol, gMolActionAddSymmetryOperation, &tr);
+	return INT2NUM(mol->nsyms);
+}
+
+/*
+ *  call-seq:
+ *     remove_symmetry(count = nil) -> Integer
+ *     remove_symmetries(count = nil) -> Integer
+ *
+ *  Remove the specified number of symmetry operations. The last added ones are removed
+ *  first. If count is nil, then all symmetry operations are removed. Returns the
+ *  number of leftover symmetries.
+ */
+static VALUE
+s_Molecule_RemoveSymmetry(int argc, VALUE *argv, VALUE self)
+{
+    Molecule *mol;
+	VALUE cval;
+	int i, n;
+    Data_Get_Struct(self, Molecule, mol);
+	rb_scan_args(argc, argv, "01", &cval);
+	if (cval == Qnil)
+		n = mol->nsyms - 1;
+	else {
+		n = NUM2INT(rb_Integer(cval));
+		if (n < 0 || n > mol->nsyms)
+			rb_raise(rb_eMolbyError, "the given count of symops is out of range");
+		if (n == mol->nsyms)
+			n = mol->nsyms - 1;
+	}
+	for (i = 0; i < n; i++)
+		MolActionCreateAndPerform(mol, gMolActionDeleteSymmetryOperation);
+	return INT2NUM(mol->nsyms);
+}
+
+/*
+ *  call-seq:
+ *     wrap_unit_cell(group) -> Vector3D
+ *
+ *  Move the specified group so that the center of mass of the group is within the
+ *  unit cell. The offset vector is returned. If no periodic box is defined, 
+ *  exception is raised.
+ */
+static VALUE
+s_Molecule_WrapUnitCell(VALUE self, VALUE gval)
+{
+    Molecule *mol;
+	IntGroup *ig;
+	Vector v, cv, dv;
+    Data_Get_Struct(self, Molecule, mol);
+	if (mol->cell == NULL)
+		rb_raise(rb_eMolbyError, "no unit cell is defined");
+	ig = s_Molecule_AtomGroupFromValue(self, gval);
+	s_Molecule_DoCenterOfMass(mol, &cv, ig);
+	TransformVec(&v, mol->cell->rtr, &cv);
+	if (mol->cell->flags[0])
+		v.x -= floor(v.x);
+	if (mol->cell->flags[1])
+		v.y -= floor(v.y);
+	if (mol->cell->flags[2])
+		v.z -= floor(v.z);
+	TransformVec(&dv, mol->cell->tr, &v);
+	VecDec(dv, cv);
+	MolActionCreateAndPerform(mol, gMolActionTranslateAtoms, &dv, ig);
+	IntGroupRelease(ig);
+	return ValueFromVector(&dv);
+}
+
+/*
+ *  call-seq:
+ *     expand_by_symmetry(group, sym, dx=0, dy=0, dz=0, allow_overlap = false) -> Array
+ *
+ *  Expand the specified part of the molecule by the given symmetry operation.
+ *  Returns the array of atom indices corresponding to the expanded atoms.
+ *  If allow_overlap is true, then new atoms are created even when the
+ *  coordinates coincide with the some other atom (special position) of the
+ *  same element; otherwise, such atom will not be created and the index of the
+ *  existing atom is given in the returned array.
+ */
+static VALUE
+s_Molecule_ExpandBySymmetry(int argc, VALUE *argv, VALUE self)
+{
+    Molecule *mol;
+	VALUE gval, sval, xval, yval, zval, rval, oval;
+	IntGroup *ig;
+	Int n[4], allow_overlap;
+	Int natoms;
+	Int nidx, *idx;
+	
+    Data_Get_Struct(self, Molecule, mol);
+	rb_scan_args(argc, argv, "24", &gval, &sval, &xval, &yval, &zval, &oval);
+	n[0] = NUM2INT(rb_Integer(sval));
+	n[1] = (xval == Qnil ? 0 : NUM2INT(rb_Integer(xval)));
+	n[2] = (yval == Qnil ? 0 : NUM2INT(rb_Integer(yval)));
+	n[3] = (zval == Qnil ? 0 : NUM2INT(rb_Integer(zval)));
+	allow_overlap = (RTEST(oval) ? 1 : 0);
+	ig = s_Molecule_AtomGroupFromValue(self, gval);
+	if (n[0] < 0 || (n[0] > 0 && n[0] >= mol->nsyms))
+		rb_raise(rb_eMolbyError, "symmetry index is out of bounds");
+	natoms = mol->natoms;
+	
+	MolActionCreateAndPerform(mol, gMolActionExpandBySymmetry, ig, n[1], n[2], n[3], n[0], allow_overlap, &nidx, &idx);
+	
+	rval = rb_ary_new2(nidx);
+	while (--nidx >= 0) {
+		rb_ary_store(rval, nidx, INT2NUM(idx[nidx]));
+	}
+	/*	if (natoms == mol->natoms)
+	 rval = Qnil;
+	 else {
+	 rval = IntGroup_Alloc(rb_cIntGroup);
+	 Data_Get_Struct(rval, IntGroup, ig);
+	 IntGroup_RaiseIfError(IntGroupAdd(ig, natoms, mol->natoms - natoms));
+	 } */
+	return rval;
+}
+
+/*
+ *  call-seq:
+ *     amend_by_symmetry(group = nil) -> IntGroup
+ *
+ *  Expand the specified part of the molecule by the given symmetry operation.
+ *  Returns an IntGroup containing the added atoms.
+ */
+static VALUE
+s_Molecule_AmendBySymmetry(int argc, VALUE *argv, VALUE self)
+{
+    Molecule *mol;
+	IntGroup *ig, *ig2;
+	VALUE rval, gval;
+    Data_Get_Struct(self, Molecule, mol);
+	rb_scan_args(argc, argv, "01", &gval);
+	if (gval != Qnil)
+		ig = s_Molecule_AtomGroupFromValue(self, gval);
+	else ig = NULL;
+	MolActionCreateAndPerform(mol, gMolActionAmendBySymmetry, ig, &ig2);
+	rval = ValueFromIntGroup(ig2);
+	IntGroupRelease(ig2);
+	return rval;
+}
+
+#pragma mark ------ Transforms ------
+
+/*
+ *  call-seq:
+ *     translate(vec, group = nil)       -> Molecule
+ *
+ *  Translate the molecule by vec. If group is given, only atoms in the group are moved.
+ *  This operation is undoable.
+ */
+static VALUE
+s_Molecule_Translate(int argc, VALUE *argv, VALUE self)
+{
+    Molecule *mol;
+	VALUE vec, group;
+	Vector v;
+	IntGroup *ig;
+    Data_Get_Struct(self, Molecule, mol);
+	rb_scan_args(argc, argv, "11", &vec, &group);
+	ig = (NIL_P(group) ? NULL : s_Molecule_AtomGroupFromValue(self, group));
+	VectorFromValue(vec, &v);
+	//	MoleculeTranslate(mol, &v, ig);
+	MolActionCreateAndPerform(mol, gMolActionTranslateAtoms, &v, ig);
+	if (ig != NULL)
+		IntGroupRelease(ig);
+	return self;
+}
+
+/*
+ *  call-seq:
+ *     rotate(axis, angle, center = [0,0,0], group = nil)       -> Molecule
+ *
+ *  Rotate the molecule. The axis must not a zero vector. angle is given in degree.
+ *  If group is given, only atoms in the group are moved.
+ *  This operation is undoable.
+ */
+static VALUE
+s_Molecule_Rotate(int argc, VALUE *argv, VALUE self)
+{
+    Molecule *mol;
+	volatile VALUE aval, anval, cval, gval;
+	Double angle;
+	Vector av, cv;
+	Transform tr;
+	IntGroup *ig;
+    Data_Get_Struct(self, Molecule, mol);
+	rb_scan_args(argc, argv, "22", &aval, &anval, &cval, &gval);
+	ig = (NIL_P(gval) ? NULL : s_Molecule_AtomGroupFromValue(self, gval));
+	angle = NUM2DBL(rb_Float(anval)) * kDeg2Rad;
+	VectorFromValue(aval, &av);
+	if (NIL_P(cval))
+		cv.x = cv.y = cv.z = 0.0;
+	else
+		VectorFromValue(cval, &cv);
+	if (TransformForRotation(tr, &av, angle, &cv))
+		rb_raise(rb_eMolbyError, "rotation axis cannot be a zero vector");
+	MolActionCreateAndPerform(mol, gMolActionTransformAtoms, &tr, ig);
+	if (ig != NULL)
+		IntGroupRelease(ig);
+	return self;
+}
+
+/*
+ *  call-seq:
+ *     reflect(axis, center = [0,0,0], group = nil)       -> Molecule
+ *
+ *  Reflect the molecule by the plane which is perpendicular to axis and including center. 
+ *  axis must not be a zero vector.
+ *  If group is given, only atoms in the group are moved.
+ *  This operation is undoable.
+ */
+static VALUE
+s_Molecule_Reflect(int argc, VALUE *argv, VALUE self)
+{
+    Molecule *mol;
+	volatile VALUE aval, cval, gval;
+	Vector av, cv;
+	Transform tr;
+	IntGroup *ig;
+    Data_Get_Struct(self, Molecule, mol);
+	rb_scan_args(argc, argv, "12", &aval, &cval, &gval);
+	ig = (NIL_P(gval) ? NULL : s_Molecule_AtomGroupFromValue(self, gval));
+	VectorFromValue(aval, &av);
+	if (NIL_P(cval))
+		cv.x = cv.y = cv.z = 0.0;
+	else
+		VectorFromValue(cval, &cv);
+	if (TransformForReflection(tr, &av, &cv))
+		rb_raise(rb_eMolbyError, "reflection axis cannot be a zero vector");
+	MolActionCreateAndPerform(mol, gMolActionTransformAtoms, &tr, ig);
+	if (ig != NULL)
+		IntGroupRelease(ig);
+	return self;
+}
+
+/*
+ *  call-seq:
+ *     invert(center = [0,0,0], group = nil)       -> Molecule
+ *
+ *  Invert the molecule with the given center.
+ *  If group is given, only atoms in the group are moved.
+ *  This operation is undoable.
+ */
+static VALUE
+s_Molecule_Invert(int argc, VALUE *argv, VALUE self)
+{
+	Molecule *mol;
+	volatile VALUE cval, gval;
+	Vector cv;
+	Transform tr;
+	IntGroup *ig;
+    Data_Get_Struct(self, Molecule, mol);
+	rb_scan_args(argc, argv, "02", &cval, &gval);
+	ig = (NIL_P(gval) ? NULL : s_Molecule_AtomGroupFromValue(self, gval));
+	if (NIL_P(cval))
+		cv.x = cv.y = cv.z = 0.0;
+	else
+		VectorFromValue(cval, &cv);
+	TransformForInversion(tr, &cv);
+	MolActionCreateAndPerform(mol, gMolActionTransformAtoms, &tr, ig);
+	if (ig != NULL)
+		IntGroupRelease(ig);
+	return self;
+}
+
+/*
+ *  call-seq:
+ *     transform(transform, group = nil)       -> Molecule
+ *
+ *  Transform the molecule by the given Transform object.
+ *  If group is given, only atoms in the group are moved.
+ *  This operation is undoable.
+ */
+static VALUE
+s_Molecule_Transform(int argc, VALUE *argv, VALUE self)
+{
+    Molecule *mol;
+	VALUE trans, group;
+	Transform tr;
+	IntGroup *ig;
+    Data_Get_Struct(self, Molecule, mol);
+	rb_scan_args(argc, argv, "11", &trans, &group);
+	ig = (NIL_P(group) ? NULL : s_Molecule_AtomGroupFromValue(self, group));
+	TransformFromValue(trans, &tr);
+	/*	MoleculeTransform(mol, tr, ig); */
+	MolActionCreateAndPerform(mol, gMolActionTransformAtoms, &tr, ig);
+	if (ig != NULL)
+		IntGroupRelease(ig);
+	return self;
+}
+
+/*
+ *  call-seq:
+ *     transform_for_symop(symop, is_cartesian = nil) -> Transform
+ *
+ *  Get the transform corresponding to the symmetry operation. The symop can either be
+ *  an integer (index of symmetry operation) or [sym, dx, dy, dz].
+ *  If is_cartesian is true, the returned transform is for cartesian coordinates.
+ *  Otherwise, the returned transform is for fractional coordinates.
+ *  Raises exception when no cell or no transform are defined.
+ */
+static VALUE
+s_Molecule_TransformForSymop(int argc, VALUE *argv, VALUE self)
+{
+    Molecule *mol;
+	VALUE sval, fval;
+	Symop symop;
+	Transform tr;
+    Data_Get_Struct(self, Molecule, mol);
+	if (mol->cell == NULL)
+		rb_raise(rb_eMolbyError, "no unit cell is defined");
+	if (mol->nsyms == 0)
+		rb_raise(rb_eMolbyError, "no symmetry operation is defined");
+	rb_scan_args(argc, argv, "11", &sval, &fval);
+	if (rb_obj_is_kind_of(sval, rb_cNumeric)) {
+		symop.sym = NUM2INT(rb_Integer(sval));
+		symop.dx = symop.dy = symop.dz = 0;
+	} else {
+		sval = rb_ary_to_ary(sval);
+		if (RARRAY_LEN(sval) < 4)
+			rb_raise(rb_eMolbyError, "missing arguments as symop; at least four integers should be given");
+		symop.sym = NUM2INT(rb_Integer(RARRAY_PTR(sval)[0]));
+		symop.dx = NUM2INT(rb_Integer(RARRAY_PTR(sval)[1]));
+		symop.dy = NUM2INT(rb_Integer(RARRAY_PTR(sval)[2]));
+		symop.dz = NUM2INT(rb_Integer(RARRAY_PTR(sval)[3]));
+	}
+	if (symop.sym >= mol->nsyms)
+		rb_raise(rb_eMolbyError, "index of symmetry operation (%d) is out of range", symop.sym);
+	MoleculeGetTransformForSymop(mol, symop, &tr, (RTEST(fval) != 0));
+	return ValueFromTransform(&tr);
+}
+
+/*
+ *  call-seq:
+ *     symop_for_transform(transform, is_cartesian = nil) -> [sym, dx, dy, dz]
+ *
+ *  Get the symmetry operation corresponding to the given transform.
+ *  If is_cartesian is true, the given transform is for cartesian coordinates.
+ *  Otherwise, the given transform is for fractional coordinates.
+ *  Raises exception when no cell or no transform are defined.
+ */
+static VALUE
+s_Molecule_SymopForTransform(int argc, VALUE *argv, VALUE self)
+{
+    Molecule *mol;
+	VALUE tval, fval;
+	Symop symop;
+	Transform tr;
+	int n;
+    Data_Get_Struct(self, Molecule, mol);
+	if (mol->cell == NULL)
+		rb_raise(rb_eMolbyError, "no unit cell is defined");
+	if (mol->nsyms == 0)
+		rb_raise(rb_eMolbyError, "no symmetry operation is defined");
+	rb_scan_args(argc, argv, "11", &tval, &fval);
+	TransformFromValue(tval, &tr);
+	n = MoleculeGetSymopForTransform(mol, tr, &symop, (RTEST(fval) != 0));
+	if (n == 0) {
+		return rb_ary_new3(4, INT2NUM(symop.sym), INT2NUM(symop.dx), INT2NUM(symop.dy), INT2NUM(symop.dz));
+	} else {
+		return Qnil;  /*  Not found  */
+	}
+}
+
+#pragma mark ------ Frames ------
 
 /*
  *  call-seq:
@@ -7887,39 +8199,8 @@ s_Molecule_ReorderFrames(VALUE self, VALUE aval)
 	free(ip);
 	return self;
 }
-	
-/*
- *  call-seq:
- *     set_atom_attr(index, key, value)
- *
- *  Set the atom attribute for the specified atom.
- *  This operation is undoable.
- */
-static VALUE
-s_Molecule_SetAtomAttr(VALUE self, VALUE idx, VALUE key, VALUE val)
-{
-	Molecule *mol;
-	VALUE aref, oldval;
-    Data_Get_Struct(self, Molecule, mol);
-	aref = ValueFromMoleculeAndIndex(mol, s_Molecule_AtomIndexFromValue(mol, idx));
-	oldval = s_AtomRef_GetAttr(aref, key);
-	if (val == Qundef)
-		return oldval;
-	s_AtomRef_SetAttr(aref, key, val);
-	return val;
-}
 
-/*
- *  call-seq:
- *     get_atom_attr(index, key)
- *
- *  Get the atom attribute for the specified atom.
- */
-static VALUE
-s_Molecule_GetAtomAttr(VALUE self, VALUE idx, VALUE key)
-{
-	return s_Molecule_SetAtomAttr(self, idx, key, Qundef);
-}
+#pragma mark ------ Fragments ------
 
 /*
  *  call-seq:
@@ -8141,620 +8422,6 @@ s_Molecule_BondsOnBorder(int argc, VALUE *argv, VALUE self)
 	IntGroupRelease(bg);
 	IntGroupRelease(ig);
 	return retval;
-}
-
-/*
- *  call-seq:
- *     translate(vec, group = nil)       -> Molecule
- *
- *  Translate the molecule by vec. If group is given, only atoms in the group are moved.
- *  This operation is undoable.
- */
-static VALUE
-s_Molecule_Translate(int argc, VALUE *argv, VALUE self)
-{
-    Molecule *mol;
-	VALUE vec, group;
-	Vector v;
-	IntGroup *ig;
-    Data_Get_Struct(self, Molecule, mol);
-	rb_scan_args(argc, argv, "11", &vec, &group);
-	ig = (NIL_P(group) ? NULL : s_Molecule_AtomGroupFromValue(self, group));
-	VectorFromValue(vec, &v);
-//	MoleculeTranslate(mol, &v, ig);
-	MolActionCreateAndPerform(mol, gMolActionTranslateAtoms, &v, ig);
-	if (ig != NULL)
-		IntGroupRelease(ig);
-	return self;
-}
-
-/*
- *  call-seq:
- *     rotate(axis, angle, center = [0,0,0], group = nil)       -> Molecule
- *
- *  Rotate the molecule. The axis must not a zero vector. angle is given in degree.
- *  If group is given, only atoms in the group are moved.
- *  This operation is undoable.
- */
-static VALUE
-s_Molecule_Rotate(int argc, VALUE *argv, VALUE self)
-{
-    Molecule *mol;
-	volatile VALUE aval, anval, cval, gval;
-	Double angle;
-	Vector av, cv;
-	Transform tr;
-	IntGroup *ig;
-    Data_Get_Struct(self, Molecule, mol);
-	rb_scan_args(argc, argv, "22", &aval, &anval, &cval, &gval);
-	ig = (NIL_P(gval) ? NULL : s_Molecule_AtomGroupFromValue(self, gval));
-	angle = NUM2DBL(rb_Float(anval)) * kDeg2Rad;
-	VectorFromValue(aval, &av);
-	if (NIL_P(cval))
-		cv.x = cv.y = cv.z = 0.0;
-	else
-		VectorFromValue(cval, &cv);
-	if (TransformForRotation(tr, &av, angle, &cv))
-		rb_raise(rb_eMolbyError, "rotation axis cannot be a zero vector");
-	MolActionCreateAndPerform(mol, gMolActionTransformAtoms, &tr, ig);
-	if (ig != NULL)
-		IntGroupRelease(ig);
-	return self;
-}
-
-/*
- *  call-seq:
- *     reflect(axis, center = [0,0,0], group = nil)       -> Molecule
- *
- *  Reflect the molecule by the plane which is perpendicular to axis and including center. 
- *  axis must not be a zero vector.
- *  If group is given, only atoms in the group are moved.
- *  This operation is undoable.
- */
-static VALUE
-s_Molecule_Reflect(int argc, VALUE *argv, VALUE self)
-{
-    Molecule *mol;
-	volatile VALUE aval, cval, gval;
-	Vector av, cv;
-	Transform tr;
-	IntGroup *ig;
-    Data_Get_Struct(self, Molecule, mol);
-	rb_scan_args(argc, argv, "12", &aval, &cval, &gval);
-	ig = (NIL_P(gval) ? NULL : s_Molecule_AtomGroupFromValue(self, gval));
-	VectorFromValue(aval, &av);
-	if (NIL_P(cval))
-		cv.x = cv.y = cv.z = 0.0;
-	else
-		VectorFromValue(cval, &cv);
-	if (TransformForReflection(tr, &av, &cv))
-		rb_raise(rb_eMolbyError, "reflection axis cannot be a zero vector");
-	MolActionCreateAndPerform(mol, gMolActionTransformAtoms, &tr, ig);
-	if (ig != NULL)
-		IntGroupRelease(ig);
-	return self;
-}
-
-/*
- *  call-seq:
- *     invert(center = [0,0,0], group = nil)       -> Molecule
- *
- *  Invert the molecule with the given center.
- *  If group is given, only atoms in the group are moved.
- *  This operation is undoable.
- */
-static VALUE
-s_Molecule_Invert(int argc, VALUE *argv, VALUE self)
-{
-	Molecule *mol;
-	volatile VALUE cval, gval;
-	Vector cv;
-	Transform tr;
-	IntGroup *ig;
-    Data_Get_Struct(self, Molecule, mol);
-	rb_scan_args(argc, argv, "02", &cval, &gval);
-	ig = (NIL_P(gval) ? NULL : s_Molecule_AtomGroupFromValue(self, gval));
-	if (NIL_P(cval))
-		cv.x = cv.y = cv.z = 0.0;
-	else
-		VectorFromValue(cval, &cv);
-	TransformForInversion(tr, &cv);
-	MolActionCreateAndPerform(mol, gMolActionTransformAtoms, &tr, ig);
-	if (ig != NULL)
-		IntGroupRelease(ig);
-	return self;
-}
-
-/*
- *  call-seq:
- *     transform(transform, group = nil)       -> Molecule
- *
- *  Transform the molecule by the given Transform object.
- *  If group is given, only atoms in the group are moved.
- *  This operation is undoable.
- */
-static VALUE
-s_Molecule_Transform(int argc, VALUE *argv, VALUE self)
-{
-    Molecule *mol;
-	VALUE trans, group;
-	Transform tr;
-	IntGroup *ig;
-    Data_Get_Struct(self, Molecule, mol);
-	rb_scan_args(argc, argv, "11", &trans, &group);
-	ig = (NIL_P(group) ? NULL : s_Molecule_AtomGroupFromValue(self, group));
-	TransformFromValue(trans, &tr);
-/*	MoleculeTransform(mol, tr, ig); */
-	MolActionCreateAndPerform(mol, gMolActionTransformAtoms, &tr, ig);
-	if (ig != NULL)
-		IntGroupRelease(ig);
-	return self;
-}
-
-static void
-s_Molecule_DoCenterOfMass(Molecule *mol, Vector *outv, IntGroup *ig)
-{
-	switch (MoleculeCenterOfMass(mol, outv, ig)) {
-		case 2: rb_raise(rb_eMolbyError, "atom group is empty"); break;
-		case 3: rb_raise(rb_eMolbyError, "weight is zero --- atomic weights are not defined?"); break;
-		case 0: break;
-		default: rb_raise(rb_eMolbyError, "cannot calculate center of mass"); break;
-	}
-}
-
-/*
- *  call-seq:
- *     center_of_mass(group = nil)       -> Vector3D
- *
- *  Calculate the center of mass for the given set of atoms. The argument
- *  group is null, then all atoms are considered.
- */
-static VALUE
-s_Molecule_CenterOfMass(int argc, VALUE *argv, VALUE self)
-{
-    Molecule *mol;
-	VALUE group;
-	IntGroup *ig;
-	Vector v;
-    Data_Get_Struct(self, Molecule, mol);
-	rb_scan_args(argc, argv, "01", &group);
-	ig = (NIL_P(group) ? NULL : s_Molecule_AtomGroupFromValue(self, group));
-	s_Molecule_DoCenterOfMass(mol, &v, ig);
-	if (ig != NULL)
-		IntGroupRelease(ig);
-	return ValueFromVector(&v);
-}
-
-/*
- *  call-seq:
- *     centralize(group = nil)       -> self
- *
- *  Translate the molecule so that the center of mass of the given group is located
- *  at (0, 0, 0). Equivalent to molecule.translate(molecule.center_of_mass(group) * -1).
- */
-static VALUE
-s_Molecule_Centralize(int argc, VALUE *argv, VALUE self)
-{
-    Molecule *mol;
-	VALUE group;
-	IntGroup *ig;
-	Vector v;
-    Data_Get_Struct(self, Molecule, mol);
-	rb_scan_args(argc, argv, "01", &group);
-	ig = (NIL_P(group) ? NULL : s_Molecule_AtomGroupFromValue(self, group));
-	s_Molecule_DoCenterOfMass(mol, &v, ig);
-	if (ig != NULL)
-		IntGroupRelease(ig);
-	v.x = -v.x;
-	v.y = -v.y;
-	v.z = -v.z;
-	MolActionCreateAndPerform(mol, gMolActionTranslateAtoms, &v, NULL);
-	return self;
-}
-
-/*
- *  call-seq:
- *     bounds(group = nil)       -> [min, max]
- *
- *  Calculate the boundary. The return value is an array of two Vector3D objects.
- */
-static VALUE
-s_Molecule_Bounds(int argc, VALUE *argv, VALUE self)
-{
-    Molecule *mol;
-	VALUE group;
-	IntGroup *ig;
-	Vector vmin, vmax;
-	int n;
-	Atom *ap;
-    Data_Get_Struct(self, Molecule, mol);
-	rb_scan_args(argc, argv, "01", &group);
-	ig = (NIL_P(group) ? NULL : s_Molecule_AtomGroupFromValue(self, group));
-	if (ig != NULL && IntGroupGetCount(ig) == 0)
-		rb_raise(rb_eMolbyError, "atom group is empty");
-	vmin.x = vmin.y = vmin.z = 1e30;
-	vmax.x = vmax.y = vmax.z = -1e30;
-	for (n = 0, ap = mol->atoms; n < mol->natoms; n++, ap = ATOM_NEXT(ap)) {
-		Vector r;
-		if (ig != NULL && IntGroupLookup(ig, n, NULL) == 0)
-			continue;
-		r = ap->r;
-		if (r.x < vmin.x)
-			vmin.x = r.x;
-		if (r.y < vmin.y)
-			vmin.y = r.y;
-		if (r.z < vmin.z)
-			vmin.z = r.z;
-		if (r.x > vmax.x)
-			vmax.x = r.x;
-		if (r.y > vmax.y)
-			vmax.y = r.y;
-		if (r.z > vmax.z)
-			vmax.z = r.z;
-	}
-	return rb_ary_new3(2, ValueFromVector(&vmin), ValueFromVector(&vmax));
-}
-
-/*  Get atom position or a vector  */
-static void
-s_Molecule_GetVectorFromArg(Molecule *mol, VALUE val, Vector *vp)
-{
-	if (rb_obj_is_kind_of(val, rb_cInteger) || rb_obj_is_kind_of(val, rb_cString)) {
-		int n1 = s_Molecule_AtomIndexFromValue(mol, val);
-		*vp = ATOM_AT_INDEX(mol->atoms, n1)->r;
-	} else {
-		VectorFromValue(val, vp);
-	}
-}
-
-/*
- *  call-seq:
- *     measure_bond(n1, n2)       -> Float
- *
- *  Calculate the bond length. The arguments can either be atom indices, the "residue:name" representation, 
- *  or Vector3D values.
- *  If the crystallographic cell is defined, then the internal coordinates are convereted to the cartesian.
- */
-static VALUE
-s_Molecule_MeasureBond(VALUE self, VALUE nval1, VALUE nval2)
-{
-    Molecule *mol;
-	Vector v1, v2;
-    Data_Get_Struct(self, Molecule, mol);
-	s_Molecule_GetVectorFromArg(mol, nval1, &v1);
-	s_Molecule_GetVectorFromArg(mol, nval2, &v2);
-	return rb_float_new(MoleculeMeasureBond(mol, &v1, &v2));
-}
-
-/*
- *  call-seq:
- *     measure_angle(n1, n2, n3)       -> Float
- *
- *  Calculate the bond angle. The arguments can either be atom indices, the "residue:name" representation, 
- *  or Vector3D values. The return value is in degree.
- *  If the crystallographic cell is defined, then the internal coordinates are convereted to the cartesian.
- */
-static VALUE
-s_Molecule_MeasureAngle(VALUE self, VALUE nval1, VALUE nval2, VALUE nval3)
-{
-    Molecule *mol;
-	Vector v1, v2, v3;
-	Double d;
-    Data_Get_Struct(self, Molecule, mol);
-	s_Molecule_GetVectorFromArg(mol, nval1, &v1);
-	s_Molecule_GetVectorFromArg(mol, nval2, &v2);
-	s_Molecule_GetVectorFromArg(mol, nval3, &v3);	
-	d = MoleculeMeasureAngle(mol, &v1, &v2, &v3);
-	if (isnan(d))
-		return Qnil;  /*  Cannot define  */
-	else return rb_float_new(d);
-}
-
-/*
- *  call-seq:
- *     measure_dihedral(n1, n2, n3, n4)       -> Float
- *
- *  Calculate the dihedral angle. The arguments can either be atom indices, the "residue:name" representation, 
- *  or Vector3D values. The return value is in degree.
- *  If the crystallographic cell is defined, then the internal coordinates are convereted to the cartesian.
- */
-static VALUE
-s_Molecule_MeasureDihedral(VALUE self, VALUE nval1, VALUE nval2, VALUE nval3, VALUE nval4)
-{
-    Molecule *mol;
-	Vector v1, v2, v3, v4;
-	Double d;
-    Data_Get_Struct(self, Molecule, mol);
-	s_Molecule_GetVectorFromArg(mol, nval1, &v1);
-	s_Molecule_GetVectorFromArg(mol, nval2, &v2);
-	s_Molecule_GetVectorFromArg(mol, nval3, &v3);	
-	s_Molecule_GetVectorFromArg(mol, nval4, &v4);	
-	d = MoleculeMeasureDihedral(mol, &v1, &v2, &v3, &v4);
-	if (isnan(d))
-		return Qnil;  /*  Cannot define  */
-	else return rb_float_new(d);
-}
-
-/*
- *  call-seq:
- *     expand_by_symmetry(group, sym, dx=0, dy=0, dz=0, allow_overlap = false) -> Array
- *
- *  Expand the specified part of the molecule by the given symmetry operation.
- *  Returns the array of atom indices corresponding to the expanded atoms.
- *  If allow_overlap is true, then new atoms are created even when the
- *  coordinates coincide with the some other atom (special position) of the
- *  same element; otherwise, such atom will not be created and the index of the
- *  existing atom is given in the returned array.
- */
-static VALUE
-s_Molecule_ExpandBySymmetry(int argc, VALUE *argv, VALUE self)
-{
-    Molecule *mol;
-	VALUE gval, sval, xval, yval, zval, rval, oval;
-	IntGroup *ig;
-	Int n[4], allow_overlap;
-	Int natoms;
-	Int nidx, *idx;
-
-    Data_Get_Struct(self, Molecule, mol);
-	rb_scan_args(argc, argv, "24", &gval, &sval, &xval, &yval, &zval, &oval);
-	n[0] = NUM2INT(rb_Integer(sval));
-	n[1] = (xval == Qnil ? 0 : NUM2INT(rb_Integer(xval)));
-	n[2] = (yval == Qnil ? 0 : NUM2INT(rb_Integer(yval)));
-	n[3] = (zval == Qnil ? 0 : NUM2INT(rb_Integer(zval)));
-	allow_overlap = (RTEST(oval) ? 1 : 0);
-	ig = s_Molecule_AtomGroupFromValue(self, gval);
-	if (n[0] < 0 || (n[0] > 0 && n[0] >= mol->nsyms))
-		rb_raise(rb_eMolbyError, "symmetry index is out of bounds");
-	natoms = mol->natoms;
-	
-	MolActionCreateAndPerform(mol, gMolActionExpandBySymmetry, ig, n[1], n[2], n[3], n[0], allow_overlap, &nidx, &idx);
-
-	rval = rb_ary_new2(nidx);
-	while (--nidx >= 0) {
-		rb_ary_store(rval, nidx, INT2NUM(idx[nidx]));
-	}
-/*	if (natoms == mol->natoms)
-		rval = Qnil;
-	else {
-		rval = IntGroup_Alloc(rb_cIntGroup);
-		Data_Get_Struct(rval, IntGroup, ig);
-		IntGroup_RaiseIfError(IntGroupAdd(ig, natoms, mol->natoms - natoms));
-	} */
-	return rval;
-}
-
-/*
- *  call-seq:
- *     amend_by_symmetry(group = nil) -> IntGroup
- *
- *  Expand the specified part of the molecule by the given symmetry operation.
- *  Returns an IntGroup containing the added atoms.
- */
-static VALUE
-s_Molecule_AmendBySymmetry(int argc, VALUE *argv, VALUE self)
-{
-    Molecule *mol;
-	IntGroup *ig, *ig2;
-	VALUE rval, gval;
-    Data_Get_Struct(self, Molecule, mol);
-	rb_scan_args(argc, argv, "01", &gval);
-	if (gval != Qnil)
-		ig = s_Molecule_AtomGroupFromValue(self, gval);
-	else ig = NULL;
-	MolActionCreateAndPerform(mol, gMolActionAmendBySymmetry, ig, &ig2);
-	rval = ValueFromIntGroup(ig2);
-	IntGroupRelease(ig2);
-	return rval;
-}
-
-/*
- *  call-seq:
- *     transform_for_symop(symop, is_cartesian = nil) -> Transform
- *
- *  Get the transform corresponding to the symmetry operation. The symop can either be
- *  an integer (index of symmetry operation) or [sym, dx, dy, dz].
- *  If is_cartesian is true, the returned transform is for cartesian coordinates.
- *  Otherwise, the returned transform is for fractional coordinates.
- *  Raises exception when no cell or no transform are defined.
- */
-static VALUE
-s_Molecule_TransformForSymop(int argc, VALUE *argv, VALUE self)
-{
-    Molecule *mol;
-	VALUE sval, fval;
-	Symop symop;
-	Transform tr;
-    Data_Get_Struct(self, Molecule, mol);
-	if (mol->cell == NULL)
-		rb_raise(rb_eMolbyError, "no unit cell is defined");
-	if (mol->nsyms == 0)
-		rb_raise(rb_eMolbyError, "no symmetry operation is defined");
-	rb_scan_args(argc, argv, "11", &sval, &fval);
-	if (rb_obj_is_kind_of(sval, rb_cNumeric)) {
-		symop.sym = NUM2INT(rb_Integer(sval));
-		symop.dx = symop.dy = symop.dz = 0;
-	} else {
-		sval = rb_ary_to_ary(sval);
-		if (RARRAY_LEN(sval) < 4)
-			rb_raise(rb_eMolbyError, "missing arguments as symop; at least four integers should be given");
-		symop.sym = NUM2INT(rb_Integer(RARRAY_PTR(sval)[0]));
-		symop.dx = NUM2INT(rb_Integer(RARRAY_PTR(sval)[1]));
-		symop.dy = NUM2INT(rb_Integer(RARRAY_PTR(sval)[2]));
-		symop.dz = NUM2INT(rb_Integer(RARRAY_PTR(sval)[3]));
-	}
-	if (symop.sym >= mol->nsyms)
-		rb_raise(rb_eMolbyError, "index of symmetry operation (%d) is out of range", symop.sym);
-	MoleculeGetTransformForSymop(mol, symop, &tr, (RTEST(fval) != 0));
-	return ValueFromTransform(&tr);
-}
-	
-/*
- *  call-seq:
- *     symop_for_transform(transform, is_cartesian = nil) -> [sym, dx, dy, dz]
- *
- *  Get the symmetry operation corresponding to the given transform.
- *  If is_cartesian is true, the given transform is for cartesian coordinates.
- *  Otherwise, the given transform is for fractional coordinates.
- *  Raises exception when no cell or no transform are defined.
- */
-static VALUE
-s_Molecule_SymopForTransform(int argc, VALUE *argv, VALUE self)
-{
-    Molecule *mol;
-	VALUE tval, fval;
-	Symop symop;
-	Transform tr;
-	int n;
-    Data_Get_Struct(self, Molecule, mol);
-	if (mol->cell == NULL)
-		rb_raise(rb_eMolbyError, "no unit cell is defined");
-	if (mol->nsyms == 0)
-		rb_raise(rb_eMolbyError, "no symmetry operation is defined");
-	rb_scan_args(argc, argv, "11", &tval, &fval);
-	TransformFromValue(tval, &tr);
-	n = MoleculeGetSymopForTransform(mol, tr, &symop, (RTEST(fval) != 0));
-	if (n == 0) {
-		return rb_ary_new3(4, INT2NUM(symop.sym), INT2NUM(symop.dx), INT2NUM(symop.dy), INT2NUM(symop.dz));
-	} else {
-		return Qnil;  /*  Not found  */
-	}
-}
-
-/*
- *  call-seq:
- *     wrap_unit_cell(group) -> Vector3D
- *
- *  Move the specified group so that the center of mass of the group is within the
- *  unit cell. The offset vector is returned. If no periodic box is defined, 
- *  exception is raised.
- */
-static VALUE
-s_Molecule_WrapUnitCell(VALUE self, VALUE gval)
-{
-    Molecule *mol;
-	IntGroup *ig;
-	Vector v, cv, dv;
-    Data_Get_Struct(self, Molecule, mol);
-	if (mol->cell == NULL)
-		rb_raise(rb_eMolbyError, "no unit cell is defined");
-	ig = s_Molecule_AtomGroupFromValue(self, gval);
-	s_Molecule_DoCenterOfMass(mol, &cv, ig);
-	TransformVec(&v, mol->cell->rtr, &cv);
-	if (mol->cell->flags[0])
-		v.x -= floor(v.x);
-	if (mol->cell->flags[1])
-		v.y -= floor(v.y);
-	if (mol->cell->flags[2])
-		v.z -= floor(v.z);
-	TransformVec(&dv, mol->cell->tr, &v);
-	VecDec(dv, cv);
-	MolActionCreateAndPerform(mol, gMolActionTranslateAtoms, &dv, ig);
-	IntGroupRelease(ig);
-	return ValueFromVector(&dv);
-}
-
-/*
- *  call-seq:
- *     find_conflicts(limit[, group1[, group2 [, ignore_exclusion]]]) -> [[n1, n2], [n3, n4], ...]
- *
- *  Find pairs of atoms that are within the limit distance. If group1 and group2 are given, the
- *  first and second atom in the pair should belong to group1 and group2, respectively.
- *  If ignore_exclusion is true, then 1-2 (bonded), 1-3, 1-4 pairs are also considered.
- */
-static VALUE
-s_Molecule_FindConflicts(int argc, VALUE *argv, VALUE self)
-{
-    Molecule *mol;
-	VALUE limval, gval1, gval2, rval, igval;
-	IntGroup *ig1, *ig2;
-	IntGroupIterator iter1, iter2;
-	Int npairs, *pairs;
-	Int n[2], i;
-	Double lim;
-	Vector r1;
-	Atom *ap1, *ap2;
-	MDExclusion *exinfo;
-	Int *exlist;
-
-    Data_Get_Struct(self, Molecule, mol);
-	rb_scan_args(argc, argv, "13", &limval, &gval1, &gval2, &igval);
-	lim = NUM2DBL(rb_Float(limval));
-	if (lim <= 0.0)
-		rb_raise(rb_eMolbyError, "the limit (%g) should be positive", lim);
-	if (gval1 != Qnil)
-		ig1 = s_Molecule_AtomGroupFromValue(self, gval1);
-	else
-		ig1 = IntGroupNewWithPoints(0, mol->natoms, -1);
-	if (gval2 != Qnil)
-		ig2 = s_Molecule_AtomGroupFromValue(self, gval2);
-	else
-		ig2 = IntGroupNewWithPoints(0, mol->natoms, -1);
-	
-	if (!RTEST(igval)) {
-		/*  Use the exclusion table in MDArena  */
-		if (mol->par == NULL || mol->arena == NULL || mol->arena->is_initialized == 0 || mol->needsMDRebuild) {
-			VALUE mval = ValueFromMolecule(mol);
-			s_RebuildMDParameterIfNecessary(mval, Qnil);
-		}
-		exinfo = mol->arena->exinfo;  /*  May be NULL  */
-		exlist = mol->arena->exlist;	
-	} else {
-		exinfo = NULL;
-		exlist = NULL;
-	}
-	IntGroupIteratorInit(ig1, &iter1);
-	IntGroupIteratorInit(ig2, &iter2);
-	npairs = 0;
-	pairs = NULL;
-	while ((n[0] = IntGroupIteratorNext(&iter1)) >= 0) {
-		Int exn1, exn2;
-		ap1 = ATOM_AT_INDEX(mol->atoms, n[0]);
-		r1 = ap1->r;
-		if (exinfo != NULL) {
-			exn1 = exinfo[n[0]].index1;
-			exn2 = exinfo[n[0] + 1].index1;
-		} else exn1 = exn2 = -1;
-		IntGroupIteratorReset(&iter2);
-		while ((n[1] = IntGroupIteratorNext(&iter2)) >= 0) {
-			ap2 = ATOM_AT_INDEX(mol->atoms, n[1]);
-			if (n[0] == n[1])
-				continue;  /*  Same atom  */
-			if (exinfo != NULL) {
-				/*  Look up exclusion table to exclude 1-2, 1-3, and 1-4 pairs  */
-				for (i = exn1; i < exn2; i++) {
-					if (exlist[i] == n[1])
-						break;
-				}
-				if (i < exn2)
-					continue;  /*  Should be excluded  */
-			}
-			if (MoleculeMeasureBond(mol, &r1, &(ap2->r)) < lim) {
-				/*  Is this pair already registered?  */
-				Int *ip;
-				for (i = 0, ip = pairs; i < npairs; i++, ip += 2) {
-					if ((ip[0] == n[0] && ip[1] == n[1]) || (ip[0] == n[1] && ip[1] == n[0]))
-						break;
-				}
-				if (i >= npairs) {
-					/*  Not registered yet  */
-					AssignArray(&pairs, &npairs, sizeof(Int) * 2, npairs, n);
-				}
-			}
-		}
-	}
-	IntGroupIteratorRelease(&iter2);
-	IntGroupIteratorRelease(&iter1);
-	IntGroupRelease(ig2);
-	IntGroupRelease(ig1);
-	rval = rb_ary_new2(npairs);
-	if (pairs != NULL) {
-		for (i = 0; i < npairs; i++) {
-			rb_ary_push(rval, rb_ary_new3(2, INT2NUM(pairs[i * 2]), INT2NUM(pairs[i * 2 + 1])));
-		}
-		free(pairs);
-	}
-	return rval;
 }
 
 /*  Calculate the transform that moves the current coordinates to the reference
@@ -9053,6 +8720,8 @@ err:
 	return Qnil;  /*  Not reached  */
 }
 
+#pragma mark ------ Screen Display ------
+
 /*
  *  call-seq:
  *     display
@@ -9262,6 +8931,33 @@ s_Molecule_IsAtomVisible(VALUE self, VALUE ival)
 			return Qfalse;
 	}
 	return ((ap->exflags & kAtomHiddenFlag) != 0 ? Qfalse : Qtrue);
+}
+
+/*
+ *  call-seq:
+ *     hidden_atoms       -> IntGroup
+ *
+ *  Returns the currently hidden atoms.
+ */
+static VALUE
+s_Molecule_HiddenAtoms(VALUE self)
+{
+	rb_raise(rb_eMolbyError, "set_hidden_atoms is now obsolete. Try using Molecule#is_atom_visible or AtomRef#hidden.");
+	return Qnil;  /*  Not reached  */
+}
+
+/*
+ *  call-seq:
+ *     set_hidden_atoms(IntGroup)
+ *     self.hidden_atoms = IntGroup
+ *
+ *  Hide the specified atoms. This operation is _not_ undoable.
+ */
+static VALUE
+s_Molecule_SetHiddenAtoms(VALUE self, VALUE val)
+{
+	rb_raise(rb_eMolbyError, "set_hidden_atoms is now obsolete. Try using Molecule#is_atom_visible or AtomRef#hidden.");
+	return Qnil;  /*  Not reached  */
 }
 
 /*
@@ -9696,6 +9392,40 @@ s_Molecule_SetBackgroundColor(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
+ *     export_graphic(fname, scale = 1.0, bg_color = -1)
+ *
+ *  Export the current graphic to a PNG or TIF file (determined by the extension).
+ *  bg_color: -1, same as screen; 0, transparent; 1, black; 2, white.
+ *  
+ */
+static VALUE
+s_Molecule_ExportGraphic(int argc, VALUE *argv, VALUE self)
+{
+	Molecule *mol;
+	VALUE fval, sval, bval;
+	char *fname;
+	float scale;
+	int bg_color;
+    Data_Get_Struct(self, Molecule, mol);
+	if (mol->mview == NULL)
+		rb_raise(rb_eMolbyError, "The molecule has no associated graphic view");
+	rb_scan_args(argc, argv, "12", &fval, &sval, &bval);
+	fname = FileStringValuePtr(fval);
+	if (sval == Qnil)
+		scale = 1.0;
+	else scale = NUM2DBL(rb_Float(sval));
+	if (bval == Qnil)
+		bg_color = -1;
+	else bg_color = NUM2INT(rb_Integer(bval));
+	if (MainViewCallback_exportGraphic(mol->mview, fname, scale, bg_color) == 0)
+		return fval;
+	else return Qnil;
+}
+
+#pragma mark ------ Graphics ------
+
+/*
+ *  call-seq:
  *     insert_graphic(index, kind, color, points, fill = nil) -> integer
  *
  *  Create a new graphic object and insert at the given graphic index (if -1, then append at the last).
@@ -10039,6 +9769,8 @@ s_Molecule_ShowText(VALUE self, VALUE arg)
 	return Qnil;
 }
 
+#pragma mark ------ MD Support ------
+
 /*
  *  call-seq:
  *     md_arena -> MDArena
@@ -10100,6 +9832,101 @@ s_Molecule_Parameter(VALUE self)
 		return Qnil; */
 	return s_NewParameterValueFromValue(self);
 }
+
+/*
+ *  call-seq:
+ *     start_step       -> Integer
+ *
+ *  Returns the start step (defined by dcd format).
+ */
+static VALUE
+s_Molecule_StartStep(VALUE self)
+{
+    Molecule *mol;
+    Data_Get_Struct(self, Molecule, mol);
+	return INT2NUM(mol->startStep);
+}
+
+/*
+ *  call-seq:
+ *     start_step = Integer
+ *
+ *  Set the start step (defined by dcd format).
+ */
+static VALUE
+s_Molecule_SetStartStep(VALUE self, VALUE val)
+{
+    Molecule *mol;
+    Data_Get_Struct(self, Molecule, mol);
+	mol->startStep = NUM2INT(rb_Integer(val));
+	return val;
+}
+
+/*
+ *  call-seq:
+ *     steps_per_frame       -> Integer
+ *
+ *  Returns the number of steps between frames (defined by dcd format).
+ */
+static VALUE
+s_Molecule_StepsPerFrame(VALUE self)
+{
+    Molecule *mol;
+    Data_Get_Struct(self, Molecule, mol);
+	return INT2NUM(mol->stepsPerFrame);
+}
+
+/*
+ *  call-seq:
+ *     steps_per_frame = Integer
+ *
+ *  Set the number of steps between frames (defined by dcd format).
+ */
+static VALUE
+s_Molecule_SetStepsPerFrame(VALUE self, VALUE val)
+{
+    Molecule *mol;
+    Data_Get_Struct(self, Molecule, mol);
+	mol->stepsPerFrame = NUM2INT(rb_Integer(val));
+	return val;
+}
+
+/*
+ *  call-seq:
+ *     ps_per_step       -> Float
+ *
+ *  Returns the time increment (in picoseconds) for one step (defined by dcd format).
+ */
+static VALUE
+s_Molecule_PsPerStep(VALUE self)
+{
+    Molecule *mol;
+    Data_Get_Struct(self, Molecule, mol);
+	return rb_float_new(mol->psPerStep);
+}
+
+/*
+ *  call-seq:
+ *     ps_per_step = Float
+ *
+ *  Set the time increment (in picoseconds) for one step (defined by dcd format).
+ */
+static VALUE
+s_Molecule_SetPsPerStep(VALUE self, VALUE val)
+{
+    Molecule *mol;
+    Data_Get_Struct(self, Molecule, mol);
+	mol->psPerStep = NUM2DBL(rb_Float(val));
+	return val;
+}
+
+static VALUE
+s_Molecule_BondParIsObsolete(VALUE self, VALUE val)
+{
+	rb_raise(rb_eMolbyError, "Molecule#bond_par, angle_par, dihedral_par, improper_par, vdw_par are now obsolete. You can use MDArena#bond_par, angle_par, dihedral_par, improper_par, vdw_par instead, and probably these are what you really want.");
+}
+
+#pragma mark ------ MO Handling ------
 
 /*
  *  call-seq:
@@ -10820,34 +10647,7 @@ s_Molecule_MOType(VALUE self)
 	return s_Molecule_GetMOInfo(self, sTypeSym);
 }
 
-
-#if 0
-/*
- *  call-seq:
- *     allocate_basis_set_record(rflag, ne_alpha, ne_beta)
- *
- *  To be used internally. Allocate a basis set record. rflag: 0, unrestricted; 1, restricted.
- *  ne_alpha, ne_beta: number of alpha/beta electrons.
- */
-static VALUE
-s_Molecule_AllocateBasisSetRecord(VALUE self, VALUE rval, VALUE naval, VALUE nbval)
-{
-	Molecule *mol;
-	Int rflag, na, nb, n;
-    Data_Get_Struct(self, Molecule, mol);
-	rflag = NUM2INT(rb_Integer(rval));
-	na = NUM2INT(rb_Integer(naval));
-	nb = NUM2INT(rb_Integer(nbval));
-	n = MoleculeSetMOInfo(mol, rflag, na, nb);
-	if (n == -1)
-		rb_raise(rb_eMolbyError, "Molecule is emptry");
-	else if (n == -2)
-		rb_raise(rb_eMolbyError, "Low memory");
-	else if (n != 0)
-		rb_raise(rb_eMolbyError, "Unknown error");
-	return self;
-}
-#endif
+#pragma mark ------ Molecular Topology ------
 
 /*
  *  call-seq:
@@ -10981,6 +10781,8 @@ s_Molecule_CreatePiAnchor(int argc, VALUE *argv, VALUE self)
     aref = AtomRefNew(mol, idx);
     return Data_Wrap_Struct(rb_cAtomRef, 0, (void (*)(void *))AtomRefRelease, aref);
 }
+
+#pragma mark ------ Molecular Properties ------
 
 /*
  *  call-seq:
@@ -11136,37 +10938,7 @@ s_Molecule_PropertyNames(VALUE self)
 	return rval;
 }
 
-/*
- *  call-seq:
- *     export_graphic(fname, scale = 1.0, bg_color = -1)
- *
- *  Export the current graphic to a PNG or TIF file (determined by the extension).
- *  bg_color: -1, same as screen; 0, transparent; 1, black; 2, white.
- *  
- */
-static VALUE
-s_Molecule_ExportGraphic(int argc, VALUE *argv, VALUE self)
-{
-	Molecule *mol;
-	VALUE fval, sval, bval;
-	char *fname;
-	float scale;
-	int bg_color;
-    Data_Get_Struct(self, Molecule, mol);
-	if (mol->mview == NULL)
-		rb_raise(rb_eMolbyError, "The molecule has no associated graphic view");
-	rb_scan_args(argc, argv, "12", &fval, &sval, &bval);
-	fname = FileStringValuePtr(fval);
-	if (sval == Qnil)
-		scale = 1.0;
-	else scale = NUM2DBL(rb_Float(sval));
-	if (bval == Qnil)
-		bg_color = -1;
-	else bg_color = NUM2INT(rb_Integer(bval));
-	if (MainViewCallback_exportGraphic(mol->mview, fname, scale, bg_color) == 0)
-		return fval;
-	else return Qnil;
-}
+#pragma mark ------ Class methods ------
 
 /*
  *  call-seq:
@@ -11279,57 +11051,7 @@ s_Molecule_OrderedList(VALUE klass)
 	return ary;
 }
 
-/*
- *  call-seq:
- *     error_message       -> String
- *
- *  Get the error_message from the last load/save method. If no error, returns nil.
- */
-static VALUE
-s_Molecule_ErrorMessage(VALUE klass)
-{
-	if (gLoadSaveErrorMessage == NULL)
-		return Qnil;
-	else return rb_str_new2(gLoadSaveErrorMessage);
-}
-
-/*
- *  call-seq:
- *     set_error_message(String)
- *     Molecule.error_message = String
- *
- *  Get the error_message from the last load/save method. If no error, returns nil.
- */
-static VALUE
-s_Molecule_SetErrorMessage(VALUE klass, VALUE sval)
-{
-	if (gLoadSaveErrorMessage != NULL) {
-		free(gLoadSaveErrorMessage);
-		gLoadSaveErrorMessage = NULL;
-	}
-	if (sval != Qnil) {
-		sval = rb_str_to_str(sval);
-		gLoadSaveErrorMessage = strdup(StringValuePtr(sval));
-	}
-	return sval;
-}
-
-/*
- *  call-seq:
- *     self == Molecule -> boolean
- *
- *  True if the two arguments point to the same molecule.
- */
-static VALUE
-s_Molecule_Equal(VALUE self, VALUE val)
-{
-	if (rb_obj_is_kind_of(val, rb_cMolecule)) {
-		Molecule *mol1, *mol2;
-		Data_Get_Struct(self, Molecule, mol1);
-		Data_Get_Struct(val, Molecule, mol2);
-		return (mol1 == mol2 ? Qtrue : Qfalse);
-	} else return Qfalse;
-}
+#pragma mark ------ Call Subprocess ------
 
 /*  The callback functions for call_subprocess_async  */
 static int
@@ -11440,6 +11162,8 @@ s_Molecule_CallSubProcessAsync(int argc, VALUE *argv, VALUE self)
 	return INT2NUM(n);
 }
 
+#pragma mark ====== Define Molby Classes ======
+
 void
 Init_Molby(void)
 {
@@ -11456,9 +11180,13 @@ Init_Molby(void)
 
 	/*  class Molecule  */
 	rb_cMolecule = rb_define_class_under(rb_mMolby, "Molecule", rb_cObject);
+
 	rb_define_alloc_func(rb_cMolecule, s_Molecule_Alloc);
     rb_define_private_method(rb_cMolecule, "initialize", s_Molecule_Initialize, -1);
     rb_define_private_method(rb_cMolecule, "initialize_copy", s_Molecule_InitCopy, 1);
+	rb_define_method(rb_cMolecule, "atom_index", s_Molecule_AtomIndex, 1);
+	rb_define_method(rb_cMolecule, "==", s_Molecule_Equal, 1);
+
     rb_define_method(rb_cMolecule, "loadmbsf", s_Molecule_Loadmbsf, -1);
     rb_define_method(rb_cMolecule, "loadpsf", s_Molecule_Loadpsf, -1);
     rb_define_alias(rb_cMolecule, "loadpsfx", "loadpsf");
@@ -11469,19 +11197,24 @@ Init_Molby(void)
     rb_define_method(rb_cMolecule, "loadfchk", s_Molecule_Loadfchk, -1);
     rb_define_alias(rb_cMolecule, "loadfch", "loadfchk");
     rb_define_method(rb_cMolecule, "loaddat", s_Molecule_Loaddat, -1);
-    rb_define_method(rb_cMolecule, "molload", s_Molecule_Load, -1);
-    rb_define_method(rb_cMolecule, "molsave", s_Molecule_Save, -1);
 	rb_define_method(rb_cMolecule, "savembsf", s_Molecule_Savembsf, 1);
     rb_define_method(rb_cMolecule, "savepsf", s_Molecule_Savepsf, 1);
     rb_define_alias(rb_cMolecule, "savepsfx", "savepsf");
     rb_define_method(rb_cMolecule, "savepdb", s_Molecule_Savepdb, 1);
     rb_define_method(rb_cMolecule, "savedcd", s_Molecule_Savedcd, 1);
-/*    rb_define_method(rb_cMolecule, "savetep", s_Molecule_Savetep, 1); */
+    rb_define_method(rb_cMolecule, "molload", s_Molecule_Load, -1);
+    rb_define_method(rb_cMolecule, "molsave", s_Molecule_Save, -1);
+	rb_define_singleton_method(rb_cMolecule, "open", s_Molecule_Open, -1);
+	rb_define_singleton_method(rb_cMolecule, "error_message", s_Molecule_ErrorMessage, 0);
+	rb_define_singleton_method(rb_cMolecule, "set_error_message", s_Molecule_SetErrorMessage, 1);
+	rb_define_singleton_method(rb_cMolecule, "error_message=", s_Molecule_SetErrorMessage, 1);
+	
     rb_define_method(rb_cMolecule, "name", s_Molecule_Name, 0);
 	rb_define_method(rb_cMolecule, "set_name", s_Molecule_SetName, 1);
     rb_define_method(rb_cMolecule, "path", s_Molecule_Path, 0);
     rb_define_method(rb_cMolecule, "dir", s_Molecule_Dir, 0);
     rb_define_method(rb_cMolecule, "inspect", s_Molecule_Inspect, 0);
+
     rb_define_method(rb_cMolecule, "atoms", s_Molecule_Atoms, 0);
     rb_define_method(rb_cMolecule, "bonds", s_Molecule_Bonds, 0);
     rb_define_method(rb_cMolecule, "angles", s_Molecule_Angles, 0);
@@ -11493,50 +11226,21 @@ Init_Molby(void)
 	rb_define_method(rb_cMolecule, "nangles", s_Molecule_Nangles, 0);
 	rb_define_method(rb_cMolecule, "ndihedrals", s_Molecule_Ndihedrals, 0);
 	rb_define_method(rb_cMolecule, "nimpropers", s_Molecule_Nimpropers, 0);
-
-	rb_define_method(rb_cMolecule, "bond_par", s_Molecule_BondParIsObsolete, 1);
-	rb_define_method(rb_cMolecule, "angle_par", s_Molecule_BondParIsObsolete, 1);
-	rb_define_method(rb_cMolecule, "dihedral_par", s_Molecule_BondParIsObsolete, 1);
-	rb_define_method(rb_cMolecule, "improper_par", s_Molecule_BondParIsObsolete, 1);
-	rb_define_method(rb_cMolecule, "vdw_par", s_Molecule_BondParIsObsolete, 1);
-
-	rb_define_method(rb_cMolecule, "start_step", s_Molecule_StartStep, 0);
-	rb_define_method(rb_cMolecule, "start_step=", s_Molecule_SetStartStep, 1);
-	rb_define_method(rb_cMolecule, "steps_per_frame", s_Molecule_StepsPerFrame, 0);
-	rb_define_method(rb_cMolecule, "steps_per_frame=", s_Molecule_SetStepsPerFrame, 1);
-	rb_define_method(rb_cMolecule, "ps_per_step", s_Molecule_PsPerStep, 0);
-	rb_define_method(rb_cMolecule, "ps_per_step=", s_Molecule_SetPsPerStep, 1);
-	
 	rb_define_method(rb_cMolecule, "nresidues", s_Molecule_Nresidues, 0);
 	rb_define_method(rb_cMolecule, "nresidues=", s_Molecule_ChangeNresidues, 1);
 	rb_define_method(rb_cMolecule, "max_residue_number", s_Molecule_MaxResSeq, -1);
 	rb_define_method(rb_cMolecule, "min_residue_number", s_Molecule_MinResSeq, -1);
+	
 	rb_define_method(rb_cMolecule, "each_atom", s_Molecule_EachAtom, -1);
-	rb_define_method(rb_cMolecule, "cell", s_Molecule_Cell, 0);
-	rb_define_method(rb_cMolecule, "cell=", s_Molecule_SetCell, -1);
-	rb_define_alias(rb_cMolecule, "set_cell", "cell=");
-	rb_define_method(rb_cMolecule, "box", s_Molecule_Box, 0);
-	rb_define_method(rb_cMolecule, "box=", s_Molecule_SetBox, 1);
-	rb_define_method(rb_cMolecule, "set_box", s_Molecule_SetBox, -2);
-	rb_define_method(rb_cMolecule, "cell_transform", s_Molecule_CellTransform, 0);
-	rb_define_method(rb_cMolecule, "cell_periodicity", s_Molecule_CellPeriodicity, 0);
-	rb_define_method(rb_cMolecule, "cell_periodicity=", s_Molecule_SetCellPeriodicity, 1);
-	rb_define_alias(rb_cMolecule, "set_cell_periodicity", "cell_periodicity=");
-	rb_define_method(rb_cMolecule, "cell_flexibility", s_Molecule_CellFlexibility, 0);
-	rb_define_method(rb_cMolecule, "cell_flexibility=", s_Molecule_SetCellFlexibility, 1);
-	rb_define_alias(rb_cMolecule, "set_cell_flexibility", "cell_flexibility=");
-	rb_define_method(rb_cMolecule, "symmetry", s_Molecule_Symmetry, 0);
-	rb_define_alias(rb_cMolecule, "symmetries", "symmetry");
-	rb_define_method(rb_cMolecule, "nsymmetries", s_Molecule_Nsymmetries, 0);
-	rb_define_method(rb_cMolecule, "add_symmetry", s_Molecule_AddSymmetry, 1);
-	rb_define_method(rb_cMolecule, "remove_symmetry", s_Molecule_RemoveSymmetry, -1);
-	rb_define_alias(rb_cMolecule, "remove_symmetries", "remove_symmetry");
+	rb_define_method(rb_cMolecule, "atom_group", s_Molecule_AtomGroup, -1);
+	rb_define_method(rb_cMolecule, "selection", s_Molecule_Selection, 0);
+	rb_define_method(rb_cMolecule, "selection=", s_Molecule_SetSelection, 1);
+	rb_define_method(rb_cMolecule, "set_undoable_selection", s_Molecule_SetUndoableSelection, 1);
+	
 	rb_define_method(rb_cMolecule, "extract", s_Molecule_Extract, -1);
     rb_define_method(rb_cMolecule, "add", s_Molecule_Add, 1);
 	rb_define_alias(rb_cMolecule, "+", "add");
     rb_define_method(rb_cMolecule, "remove", s_Molecule_Remove, 1);
-	rb_define_method(rb_cMolecule, "atom_group", s_Molecule_AtomGroup, -1);
-	rb_define_method(rb_cMolecule, "atom_index", s_Molecule_AtomIndex, 1);
 	rb_define_method(rb_cMolecule, "create_atom", s_Molecule_CreateAnAtom, -1);
 	rb_define_method(rb_cMolecule, "duplicate_atom", s_Molecule_DuplicateAnAtom, -1);
 	rb_define_method(rb_cMolecule, "create_bond", s_Molecule_CreateBond, -1);
@@ -11557,55 +11261,75 @@ Init_Molby(void)
 	rb_define_method(rb_cMolecule, "assign_residue", s_Molecule_AssignResidue, 2);
 	rb_define_method(rb_cMolecule, "offset_residue", s_Molecule_OffsetResidue, 2);
 	rb_define_method(rb_cMolecule, "renumber_atoms", s_Molecule_RenumberAtoms, 1);
-	rb_define_method(rb_cMolecule, "find_close_atoms", s_Molecule_FindCloseAtoms, -1);
-	rb_define_method(rb_cMolecule, "guess_bonds", s_Molecule_GuessBonds, -1);
-	rb_define_method(rb_cMolecule, "selection", s_Molecule_Selection, 0);
-	rb_define_method(rb_cMolecule, "selection=", s_Molecule_SetSelection, 1);
-	rb_define_method(rb_cMolecule, "set_undoable_selection", s_Molecule_SetUndoableSelection, 1);
-	rb_define_method(rb_cMolecule, "hidden_atoms", s_Molecule_HiddenAtoms, 0);  /*  obsolete  */
-	rb_define_method(rb_cMolecule, "hidden_atoms=", s_Molecule_SetHiddenAtoms, 1);	/*  obsolete  */
-	rb_define_alias(rb_cMolecule, "set_hidden_atoms", "hidden_atoms=");  /*  obsolete  */
-	rb_define_method(rb_cMolecule, "frame", s_Molecule_Frame, 0);
-	rb_define_method(rb_cMolecule, "frame=", s_Molecule_SelectFrame, 1);
-	rb_define_alias(rb_cMolecule, "select_frame", "frame=");
-	rb_define_method(rb_cMolecule, "nframes", s_Molecule_Nframes, 0);
-	rb_define_method(rb_cMolecule, "create_frame", s_Molecule_CreateFrames, -1);
-	rb_define_method(rb_cMolecule, "insert_frame", s_Molecule_InsertFrames, -1);
-	rb_define_method(rb_cMolecule, "remove_frame", s_Molecule_RemoveFrames, -1);
-	rb_define_alias(rb_cMolecule, "create_frames", "create_frame");
-	rb_define_alias(rb_cMolecule, "insert_frames", "insert_frame");
-	rb_define_alias(rb_cMolecule, "remove_frames", "remove_frame");
-	rb_define_method(rb_cMolecule, "reorder_frames", s_Molecule_ReorderFrames, 1);
-	rb_define_method(rb_cMolecule, "each_frame", s_Molecule_EachFrame, 0);
-	rb_define_method(rb_cMolecule, "get_coord_from_frame", s_Molecule_GetCoordFromFrame, -1);
+
+	rb_define_method(rb_cMolecule, "set_atom_attr", s_Molecule_SetAtomAttr, 3);
+	rb_define_method(rb_cMolecule, "get_atom_attr", s_Molecule_GetAtomAttr, 2);
 	rb_define_method(rb_cMolecule, "register_undo", s_Molecule_RegisterUndo, -1);
 	rb_define_method(rb_cMolecule, "undo_enabled?", s_Molecule_UndoEnabled, 0);
 	rb_define_method(rb_cMolecule, "undo_enabled=", s_Molecule_SetUndoEnabled, 1);
-	rb_define_method(rb_cMolecule, "set_atom_attr", s_Molecule_SetAtomAttr, 3);
-	rb_define_method(rb_cMolecule, "get_atom_attr", s_Molecule_GetAtomAttr, 2);
-	rb_define_method(rb_cMolecule, "fragment", s_Molecule_Fragment, -1);
-	rb_define_method(rb_cMolecule, "fragments", s_Molecule_Fragments, -1);
-	rb_define_method(rb_cMolecule, "each_fragment", s_Molecule_EachFragment, -1);
-	rb_define_method(rb_cMolecule, "detachable?", s_Molecule_Detachable_P, 1);
-	rb_define_method(rb_cMolecule, "bonds_on_border", s_Molecule_BondsOnBorder, -1);
-	rb_define_method(rb_cMolecule, "translate", s_Molecule_Translate, -1);
-	rb_define_method(rb_cMolecule, "rotate", s_Molecule_Rotate, -1);
-	rb_define_method(rb_cMolecule, "reflect", s_Molecule_Reflect, -1);
-	rb_define_method(rb_cMolecule, "invert", s_Molecule_Invert, -1);
-	rb_define_method(rb_cMolecule, "transform", s_Molecule_Transform, -1);
+
 	rb_define_method(rb_cMolecule, "center_of_mass", s_Molecule_CenterOfMass, -1);
 	rb_define_method(rb_cMolecule, "centralize", s_Molecule_Centralize, -1);
 	rb_define_method(rb_cMolecule, "bounds", s_Molecule_Bounds, -1);
 	rb_define_method(rb_cMolecule, "measure_bond", s_Molecule_MeasureBond, 2);
 	rb_define_method(rb_cMolecule, "measure_angle", s_Molecule_MeasureAngle, 3);
 	rb_define_method(rb_cMolecule, "measure_dihedral", s_Molecule_MeasureDihedral, 4);
+	rb_define_method(rb_cMolecule, "find_conflicts", s_Molecule_FindConflicts, -1);
+	rb_define_method(rb_cMolecule, "find_close_atoms", s_Molecule_FindCloseAtoms, -1);
+	rb_define_method(rb_cMolecule, "guess_bonds", s_Molecule_GuessBonds, -1);
+
+	rb_define_method(rb_cMolecule, "cell", s_Molecule_Cell, 0);
+	rb_define_method(rb_cMolecule, "cell=", s_Molecule_SetCell, -1);
+	rb_define_alias(rb_cMolecule, "set_cell", "cell=");
+	rb_define_method(rb_cMolecule, "box", s_Molecule_Box, 0);
+	rb_define_method(rb_cMolecule, "box=", s_Molecule_SetBox, 1);
+	rb_define_method(rb_cMolecule, "set_box", s_Molecule_SetBox, -2);
+	rb_define_method(rb_cMolecule, "cell_periodicity", s_Molecule_CellPeriodicity, 0);
+	rb_define_method(rb_cMolecule, "cell_periodicity=", s_Molecule_SetCellPeriodicity, 1);
+	rb_define_alias(rb_cMolecule, "set_cell_periodicity", "cell_periodicity=");
+	rb_define_method(rb_cMolecule, "cell_flexibility", s_Molecule_CellFlexibility, 0);
+	rb_define_method(rb_cMolecule, "cell_flexibility=", s_Molecule_SetCellFlexibility, 1);
+	rb_define_alias(rb_cMolecule, "set_cell_flexibility", "cell_flexibility=");
+	rb_define_method(rb_cMolecule, "cell_transform", s_Molecule_CellTransform, 0);
+	rb_define_method(rb_cMolecule, "symmetry", s_Molecule_Symmetry, 0);
+	rb_define_alias(rb_cMolecule, "symmetries", "symmetry");
+	rb_define_method(rb_cMolecule, "nsymmetries", s_Molecule_Nsymmetries, 0);
+	rb_define_method(rb_cMolecule, "add_symmetry", s_Molecule_AddSymmetry, 1);
+	rb_define_method(rb_cMolecule, "remove_symmetry", s_Molecule_RemoveSymmetry, -1);
+	rb_define_alias(rb_cMolecule, "remove_symmetries", "remove_symmetry");
+	rb_define_method(rb_cMolecule, "wrap_unit_cell", s_Molecule_WrapUnitCell, 1);
 	rb_define_method(rb_cMolecule, "expand_by_symmetry", s_Molecule_ExpandBySymmetry, -1);
 	rb_define_method(rb_cMolecule, "amend_by_symmetry", s_Molecule_AmendBySymmetry, -1);
+
+	rb_define_method(rb_cMolecule, "translate", s_Molecule_Translate, -1);
+	rb_define_method(rb_cMolecule, "rotate", s_Molecule_Rotate, -1);
+	rb_define_method(rb_cMolecule, "reflect", s_Molecule_Reflect, -1);
+	rb_define_method(rb_cMolecule, "invert", s_Molecule_Invert, -1);
+	rb_define_method(rb_cMolecule, "transform", s_Molecule_Transform, -1);
 	rb_define_method(rb_cMolecule, "transform_for_symop", s_Molecule_TransformForSymop, -1);
 	rb_define_method(rb_cMolecule, "symop_for_transform", s_Molecule_SymopForTransform, -1);
-	rb_define_method(rb_cMolecule, "wrap_unit_cell", s_Molecule_WrapUnitCell, 1);
-	rb_define_method(rb_cMolecule, "find_conflicts", s_Molecule_FindConflicts, -1);
+
+	rb_define_method(rb_cMolecule, "frame=", s_Molecule_SelectFrame, 1);
+	rb_define_alias(rb_cMolecule, "select_frame", "frame=");
+	rb_define_method(rb_cMolecule, "frame", s_Molecule_Frame, 0);
+	rb_define_method(rb_cMolecule, "nframes", s_Molecule_Nframes, 0);
+	rb_define_method(rb_cMolecule, "insert_frame", s_Molecule_InsertFrames, -1);
+	rb_define_method(rb_cMolecule, "create_frame", s_Molecule_CreateFrames, -1);
+	rb_define_method(rb_cMolecule, "remove_frame", s_Molecule_RemoveFrames, -1);
+	rb_define_alias(rb_cMolecule, "create_frames", "create_frame");
+	rb_define_alias(rb_cMolecule, "insert_frames", "insert_frame");
+	rb_define_alias(rb_cMolecule, "remove_frames", "remove_frame");
+	rb_define_method(rb_cMolecule, "each_frame", s_Molecule_EachFrame, 0);
+	rb_define_method(rb_cMolecule, "get_coord_from_frame", s_Molecule_GetCoordFromFrame, -1);
+	rb_define_method(rb_cMolecule, "reorder_frames", s_Molecule_ReorderFrames, 1);
+
+	rb_define_method(rb_cMolecule, "fragment", s_Molecule_Fragment, -1);
+	rb_define_method(rb_cMolecule, "fragments", s_Molecule_Fragments, -1);
+	rb_define_method(rb_cMolecule, "each_fragment", s_Molecule_EachFragment, -1);
+	rb_define_method(rb_cMolecule, "detachable?", s_Molecule_Detachable_P, 1);
+	rb_define_method(rb_cMolecule, "bonds_on_border", s_Molecule_BondsOnBorder, -1);
 	rb_define_method(rb_cMolecule, "fit_coordinates", s_Molecule_FitCoordinates, -1);
+
 	rb_define_method(rb_cMolecule, "display", s_Molecule_Display, 0);
 	rb_define_method(rb_cMolecule, "make_front", s_Molecule_MakeFront, 0);
 	rb_define_method(rb_cMolecule, "update_enabled?", s_Molecule_UpdateEnabled, 0);
@@ -11617,9 +11341,12 @@ Init_Molby(void)
 	rb_define_method(rb_cMolecule, "show_dummy_atoms=", s_Molecule_ShowDummyAtoms, -1);
 	rb_define_method(rb_cMolecule, "show_expanded", s_Molecule_ShowExpanded, -1);
 	rb_define_method(rb_cMolecule, "show_expanded=", s_Molecule_ShowExpanded, -1);
-	rb_define_method(rb_cMolecule, "is_atom_visible", s_Molecule_IsAtomVisible, 1);
 	rb_define_method(rb_cMolecule, "show_ellipsoids", s_Molecule_ShowEllipsoids, -1);
 	rb_define_method(rb_cMolecule, "show_ellipsoids=", s_Molecule_ShowEllipsoids, -1);
+	rb_define_method(rb_cMolecule, "is_atom_visible", s_Molecule_IsAtomVisible, 1);
+	rb_define_method(rb_cMolecule, "hidden_atoms", s_Molecule_HiddenAtoms, 0);  /*  obsolete  */
+	rb_define_method(rb_cMolecule, "hidden_atoms=", s_Molecule_SetHiddenAtoms, 1);	/*  obsolete  */
+	rb_define_alias(rb_cMolecule, "set_hidden_atoms", "hidden_atoms=");  /*  obsolete  */
 	rb_define_method(rb_cMolecule, "show_graphite", s_Molecule_ShowGraphite, -1);
 	rb_define_method(rb_cMolecule, "show_graphite=", s_Molecule_ShowGraphite, -1);
 	rb_define_method(rb_cMolecule, "show_graphite?", s_Molecule_ShowGraphiteFlag, 0);
@@ -11656,8 +11383,10 @@ Init_Molby(void)
 	rb_define_method(rb_cMolecule, "set_view_scale", s_Molecule_SetViewScale, 1);
 	rb_define_method(rb_cMolecule, "set_view_center", s_Molecule_SetViewCenter, 1);
 	rb_define_method(rb_cMolecule, "set_background_color", s_Molecule_SetBackgroundColor, -1);
-	rb_define_method(rb_cMolecule, "create_graphic", s_Molecule_CreateGraphic, -1);
+	rb_define_method(rb_cMolecule, "export_graphic", s_Molecule_ExportGraphic, -1);
+	
 	rb_define_method(rb_cMolecule, "insert_graphic", s_Molecule_InsertGraphic, -1);
+	rb_define_method(rb_cMolecule, "create_graphic", s_Molecule_CreateGraphic, -1);
 	rb_define_method(rb_cMolecule, "remove_graphic", s_Molecule_RemoveGraphic, 1);
 	rb_define_method(rb_cMolecule, "ngraphics", s_Molecule_NGraphics, 0);
 	rb_define_method(rb_cMolecule, "set_graphic_point", s_Molecule_SetGraphicPoint, 3);
@@ -11665,9 +11394,22 @@ Init_Molby(void)
 	rb_define_method(rb_cMolecule, "show_graphic", s_Molecule_ShowGraphic, 1);
 	rb_define_method(rb_cMolecule, "hide_graphic", s_Molecule_HideGraphic, 1);
 	rb_define_method(rb_cMolecule, "show_text", s_Molecule_ShowText, 1);
+
 	rb_define_method(rb_cMolecule, "md_arena", s_Molecule_MDArena, 0);
 	rb_define_method(rb_cMolecule, "set_parameter_attr", s_Molecule_SetParameterAttr, 5);
 	rb_define_method(rb_cMolecule, "parameter", s_Molecule_Parameter, 0);
+	rb_define_method(rb_cMolecule, "start_step", s_Molecule_StartStep, 0);
+	rb_define_method(rb_cMolecule, "start_step=", s_Molecule_SetStartStep, 1);
+	rb_define_method(rb_cMolecule, "steps_per_frame", s_Molecule_StepsPerFrame, 0);
+	rb_define_method(rb_cMolecule, "steps_per_frame=", s_Molecule_SetStepsPerFrame, 1);
+	rb_define_method(rb_cMolecule, "ps_per_step", s_Molecule_PsPerStep, 0);
+	rb_define_method(rb_cMolecule, "ps_per_step=", s_Molecule_SetPsPerStep, 1);
+	rb_define_method(rb_cMolecule, "bond_par", s_Molecule_BondParIsObsolete, 1); /* Obsolete */
+	rb_define_method(rb_cMolecule, "angle_par", s_Molecule_BondParIsObsolete, 1); /* Obsolete */
+	rb_define_method(rb_cMolecule, "dihedral_par", s_Molecule_BondParIsObsolete, 1); /* Obsolete */
+	rb_define_method(rb_cMolecule, "improper_par", s_Molecule_BondParIsObsolete, 1); /* Obsolete */
+	rb_define_method(rb_cMolecule, "vdw_par", s_Molecule_BondParIsObsolete, 1); /* Obsolete */
+		
 	rb_define_method(rb_cMolecule, "selected_MO", s_Molecule_SelectedMO, 0);
 	rb_define_method(rb_cMolecule, "default_MO_grid", s_Molecule_GetDefaultMOGrid, -1);
 	rb_define_method(rb_cMolecule, "cubegen", s_Molecule_Cubegen, -1);
@@ -11681,33 +11423,27 @@ Init_Molby(void)
 	rb_define_method(rb_cMolecule, "get_gaussian_shell_info", s_Molecule_GetGaussianShellInfo, 1);
 	rb_define_method(rb_cMolecule, "get_gaussian_primitive_coefficients", s_Molecule_GetGaussianPrimitiveCoefficients, 1);
 	rb_define_method(rb_cMolecule, "get_gaussian_component_info", s_Molecule_GetGaussianComponentInfo, 1);
-	rb_define_method(rb_cMolecule, "mo_type", s_Molecule_MOType, 0);
 	rb_define_method(rb_cMolecule, "clear_mo_coefficients", s_Molecule_ClearMOCoefficients, 0);
 	rb_define_method(rb_cMolecule, "set_mo_coefficients", s_Molecule_SetMOCoefficients, 3);
 	rb_define_method(rb_cMolecule, "get_mo_coefficients", s_Molecule_GetMOCoefficients, 1);
 	rb_define_method(rb_cMolecule, "get_mo_energy", s_Molecule_GetMOEnergy, 1);
-	rb_define_method(rb_cMolecule, "get_mo_info", s_Molecule_GetMOInfo, 1);
 	rb_define_method(rb_cMolecule, "set_mo_info", s_Molecule_SetMOInfo, 1);
-/*	rb_define_method(rb_cMolecule, "allocate_basis_set_record", s_Molecule_AllocateBasisSetRecord, 3); */
+	rb_define_method(rb_cMolecule, "get_mo_info", s_Molecule_GetMOInfo, 1);
+	rb_define_method(rb_cMolecule, "mo_type", s_Molecule_MOType, 0);
+
 	rb_define_method(rb_cMolecule, "search_equivalent_atoms", s_Molecule_SearchEquivalentAtoms, -1);
-	
 	rb_define_method(rb_cMolecule, "create_pi_anchor", s_Molecule_CreatePiAnchor, -1);
+	
 	rb_define_method(rb_cMolecule, "set_property", s_Molecule_SetProperty, -1);
 	rb_define_method(rb_cMolecule, "get_property", s_Molecule_GetProperty, -1);
 	rb_define_method(rb_cMolecule, "property_names", s_Molecule_PropertyNames, 0);
-	rb_define_method(rb_cMolecule, "export_graphic", s_Molecule_ExportGraphic, -1);
 		
-	rb_define_method(rb_cMolecule, "==", s_Molecule_Equal, 1);
-	rb_define_method(rb_cMolecule, "call_subprocess_async", s_Molecule_CallSubProcessAsync, -1);
-	
 	rb_define_singleton_method(rb_cMolecule, "current", s_Molecule_Current, 0);
 	rb_define_singleton_method(rb_cMolecule, "[]", s_Molecule_MoleculeAtIndex, -1);
-	rb_define_singleton_method(rb_cMolecule, "open", s_Molecule_Open, -1);
 	rb_define_singleton_method(rb_cMolecule, "list", s_Molecule_List, 0);
 	rb_define_singleton_method(rb_cMolecule, "ordered_list", s_Molecule_OrderedList, 0);
-	rb_define_singleton_method(rb_cMolecule, "error_message", s_Molecule_ErrorMessage, 0);
-	rb_define_singleton_method(rb_cMolecule, "set_error_message", s_Molecule_SetErrorMessage, 1);
-	rb_define_singleton_method(rb_cMolecule, "error_message=", s_Molecule_SetErrorMessage, 1);
+	
+	rb_define_method(rb_cMolecule, "call_subprocess_async", s_Molecule_CallSubProcessAsync, -1);
 	
 	/*  class MolEnumerable  */
 	rb_cMolEnumerable = rb_define_class_under(rb_mMolby, "MolEnumerable", rb_cObject);
