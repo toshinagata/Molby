@@ -39,21 +39,25 @@ IMPLEMENT_DYNAMIC_CLASS(MyLayoutPanel, wxPanel)
 
 IMPLEMENT_DYNAMIC_CLASS(MyDrawingPanel, wxPanel)
 
-BEGIN_EVENT_TABLE(RubyDialogFrame, wxDialog)
+BEGIN_EVENT_TABLE(RubyDialogFrame, wxModalWindow)
   EVT_TIMER(-1, RubyDialogFrame::OnTimerEvent)
   EVT_BUTTON(wxID_OK, RubyDialogFrame::OnDefaultButtonPressed)
   EVT_BUTTON(wxID_CANCEL, RubyDialogFrame::OnDefaultButtonPressed)
   EVT_MENU(wxID_CLOSE, RubyDialogFrame::OnCloseFromMenu)
+  EVT_CLOSE(RubyDialogFrame::OnCloseWindow)
+  EVT_UPDATE_UI(wxID_ANY, RubyDialogFrame::OnUpdateUI)
   EVT_SIZE(RubyDialogFrame::OnSize)
   EVT_CHAR(RubyDialogFrame::OnChar)
-  EVT_CLOSE(RubyDialogFrame::OnCloseWindow)
   EVT_ACTIVATE(RubyDialogFrame::OnActivate)
   EVT_CHILD_FOCUS(RubyDialogFrame::OnChildFocus)
 END_EVENT_TABLE()
 
+IMPLEMENT_DYNAMIC_CLASS(RubyDialogFrame, wxModalWindow)
+
 RubyDialogFrame::RubyDialogFrame(wxWindow* parent, wxWindowID wid, const wxString& title, const wxPoint& pos, const wxSize& size, long style):
-	wxDialog(parent, wid, title, pos, size, style)
+	wxModalWindow(parent, wid, title, pos, size, style)
 {
+	myStyle = style;
 	ditems = NULL;
 	nditems = 0;
 	dval = NULL;
@@ -65,6 +69,7 @@ RubyDialogFrame::RubyDialogFrame(wxWindow* parent, wxWindowID wid, const wxStrin
 	currentContext = NULL;
 	currentDrawingItem = NULL;
 	lastFocusedWindow = NULL;
+	shouldInitializeBeforeShow = true;
 
 	//  Create a vertical box sizer that contains a panel containing all controls and a sizer containing
 	//  OK/Cancel buttons
@@ -76,7 +81,6 @@ RubyDialogFrame::RubyDialogFrame(wxWindow* parent, wxWindowID wid, const wxStrin
 	boxSizer->Add(contentSizer, 1, wxALL | wxEXPAND, 14);
 	this->SetSizer(boxSizer);
 	boxSizer->Layout();
-	this->CentreOnScreen();
 }
 
 RubyDialogFrame::~RubyDialogFrame()
@@ -166,7 +170,21 @@ RubyDialogFrame::SetRubyObject(RubyValue val)
 void
 RubyDialogFrame::CreateStandardButtons(const char *oktitle, const char *canceltitle)
 {
-	wxSizer *sizer = CreateButtonSizer(wxOK | wxCANCEL);
+//	wxSizer *sizer = CreateButtonSizer(wxOK | wxCANCEL);
+	wxStdDialogButtonSizer *sizer = new wxStdDialogButtonSizer();
+	{
+		wxButton *ok = NULL;
+		wxButton *cancel = NULL;	
+		ok = new wxButton(this, wxID_OK);
+		sizer->AddButton(ok);
+		cancel = new wxButton(this, wxID_CANCEL);
+		sizer->AddButton(cancel);
+		ok->SetDefault();
+		ok->SetFocus();
+	//	SetAffirmativeId(wxID_OK);
+		sizer->Realize();
+	}
+	
 	if (oktitle != NULL || canceltitle != NULL) {
 		if (sizer == NULL)
 			return;  /*  Cannot create  */
@@ -377,11 +395,27 @@ RubyDialogFrame::OnCloseWindow(wxCloseEvent &event)
 	wxGetApp().CheckIfAllWindowsAreGone(NULL);
 }
 
+void
+RubyDialogFrame::OnUpdateUI(wxUpdateUIEvent& event)
+{
+	if (event.GetEventObject()->IsKindOf(wxClassInfo::FindClass(wxT("wxMenu")))) {
+		int uid = event.GetId();
+		if (uid == wxID_CLOSE)
+			event.Enable(true);
+		else if (uid >= wxID_LOWEST)
+			event.Enable(false);
+		return;
+	}
+	event.Skip();
+}
+
+
 /*  Restore the focused window after reactivation  */
 /*  Only necessary for wxOSX?  */
 void
 RubyDialogFrame::OnActivate(wxActivateEvent &event)
 {
+	wxModalWindow::OnActivate(event);
 	if (event.GetActive()) {
 		int i;
 		RDItem *itemp;
@@ -620,13 +654,19 @@ RubyDialogFrame::OnPopUpMenuSelected(MyListCtrl *ctrl, long row, long column, in
 RubyDialog *
 RubyDialogCallback_new(int style)
 {
-	RubyDialogFrame *dref;
-	int fstyle = wxCAPTION | wxSYSTEM_MENU | wxDIALOG_NO_PARENT;
+	RubyDialogFrame *dref;	
+	int fstyle = wxCAPTION | wxSYSTEM_MENU;
 	if (style & rd_Resizable)
 		fstyle |= wxMAXIMIZE_BOX | wxRESIZE_BORDER;
-	if (style & rd_HasCloseBox)
+	if (style & rd_HasCloseBox) {
 		fstyle |= wxCLOSE_BOX;
+	}
 	dref = new RubyDialogFrame(GetMainFrame(), -1, _T("Ruby Dialog"), wxDefaultPosition, wxDefaultSize, fstyle);
+	if (style & rd_HasCloseBox)
+		dref->EnableCloseButton(true);
+#if defined(__WXMSW__)
+	dref->SetBackgroundColour(wxSystemSettings::GetColour(wxSYS_COLOUR_WINDOW));
+#endif
 	return (RubyDialog *)dref;
 }
 
@@ -652,7 +692,9 @@ RubyDialogCallback_setWindowTitle(RubyDialog *dref, const char *title)
 int
 RubyDialogCallback_runModal(RubyDialog *dref)
 {
-	int retval = ((RubyDialogFrame *)dref)->ShowModal();
+	int retval;
+	((RubyDialogFrame *)dref)->CenterOnScreen();
+	retval = ((RubyDialogFrame *)dref)->ShowModal();
 	if (retval == wxID_OK)
 		return 0;  /*  OK  */
 	else return 1;  /* Cancel */
@@ -690,11 +732,20 @@ RubyDialogCallback_close(RubyDialog *dref)
 void
 RubyDialogCallback_show(RubyDialog *dref)
 {
-	if (((RubyDialogFrame *)dref)->myTimer != NULL)
-		((RubyDialogFrame *)dref)->StartIntervalTimer(-1);
-	((RubyDialogFrame *)dref)->Show(true);
-	((RubyDialogFrame *)dref)->Raise();
-	((RubyDialogFrame *)dref)->Enable();
+	RubyDialogFrame *dframe = (RubyDialogFrame *)dref;
+
+	if (dframe->shouldInitializeBeforeShow) {
+		//  Set a menu bar
+		dframe->SetMenuBar(wxGetApp().CreateMenuBar(3, NULL, NULL));
+		dframe->shouldInitializeBeforeShow = false;
+	}
+	
+	if (dframe->myTimer != NULL)
+		dframe->StartIntervalTimer(-1);
+	dframe->Show(true);
+	dframe->Raise();
+	dframe->Enable();
+
 #if defined(__WXMAC__)
 	{
 		extern void AddWindowsItemWithTitle(const char *title);
@@ -1187,8 +1238,12 @@ RubyDialogCallback_setFontForItem(RDItem *item, int size, int family, int style,
 	}
 	if (textctrl != NULL) {
 		wxTextAttr newAttr;
-		newAttr.SetFont(wxFont(size, family, style, weight));
+		wxFont newFont(size, family, style, weight);
+		newAttr.SetFont(newFont);
 		textctrl->SetDefaultStyle(newAttr);
+#if __WXMAC__
+		textctrl->SetFont(newFont);
+#endif
 	} else {
 		ctrl->SetFont(wxFont(size, family, style, weight));
 		wxString label = ctrl->GetLabel();

@@ -54,6 +54,8 @@
 		E49BFC1F1886E78600188237 /* buildInfo.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC7CA5183F94D30064FB2E /* buildInfo.c */; };
 		E49BFC2C1886E88A00188237 /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E4FC7810183E50DC0064FB2E /* Accelerate.framework */; };
 		E4ACACE718C6D32300F08B67 /* ortep3 in Resources */ = {isa = PBXBuildFile; fileRef = E4ACACE418C6D32300F08B67 /* ortep3 */; };
+		E4D379A219C87C2200636D28 /* modalwindow.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E4D379A119C87C2200636D28 /* modalwindow.cpp */; };
+		E4D37E0E19CC831500636D28 /* modalwindow_osx.mm in Sources */ = {isa = PBXBuildFile; fileRef = E4D37E0D19CC831500636D28 /* modalwindow_osx.mm */; };
 		E4FC77A9183E4F3F0064FB2E /* Dcd.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC777B183E4F3F0064FB2E /* Dcd.c */; };
 		E4FC77AA183E4F3F0064FB2E /* IntGroup.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC777D183E4F3F0064FB2E /* IntGroup.c */; };
 		E4FC77AB183E4F3F0064FB2E /* MainView.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC777F183E4F3F0064FB2E /* MainView.c */; };
@@ -140,6 +142,9 @@
 		E4653CB018A0CC7D0022377B /* textctrl_addition.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = textctrl_addition.mm; sourceTree = "<group>"; };
 		E49BFB761886E2E400188237 /* Molby_command */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Molby_command; sourceTree = BUILT_PRODUCTS_DIR; };
 		E4ACACE418C6D32300F08B67 /* ortep3 */ = {isa = PBXFileReference; lastKnownFileType = folder; path = ortep3; sourceTree = "<group>"; };
+		E4D379A019C87C1200636D28 /* modalwindow.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = modalwindow.h; sourceTree = "<group>"; };
+		E4D379A119C87C2200636D28 /* modalwindow.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = modalwindow.cpp; sourceTree = "<group>"; };
+		E4D37E0D19CC831500636D28 /* modalwindow_osx.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = modalwindow_osx.mm; sourceTree = "<group>"; };
 		E4FC777A183E4F3F0064FB2E /* cmdtool_stubs.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = cmdtool_stubs.c; path = ../MolLib/cmdtool_stubs.c; sourceTree = SOURCE_ROOT; };
 		E4FC777B183E4F3F0064FB2E /* Dcd.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = Dcd.c; path = ../MolLib/Dcd.c; sourceTree = SOURCE_ROOT; };
 		E4FC777C183E4F3F0064FB2E /* Dcd.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Dcd.h; path = ../MolLib/Dcd.h; sourceTree = SOURCE_ROOT; };
@@ -439,6 +444,9 @@
 				E420BE1F188574F600A2B983 /* RubyDialogFrame.cpp */,
 				E420BE20188574F600A2B983 /* RubyDialogFrame.h */,
 				E420BE21188574F600A2B983 /* wxKillAddition.cpp */,
+				E4D379A019C87C1200636D28 /* modalwindow.h */,
+				E4D379A119C87C2200636D28 /* modalwindow.cpp */,
+				E4D37E0D19CC831500636D28 /* modalwindow_osx.mm */,
 			);
 			name = wxSources;
 			path = ../wxSources;
@@ -615,6 +623,8 @@
 				E420BE24188574F600A2B983 /* wxKillAddition.cpp in Sources */,
 				E4653CB118A0CC7D0022377B /* textctrl_addition.mm in Sources */,
 				E4196C66190B2FA500183E62 /* menu.mm in Sources */,
+				E4D379A219C87C2200636D28 /* modalwindow.cpp in Sources */,
+				E4D37E0E19CC831500636D28 /* modalwindow_osx.mm in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -18,12 +18,15 @@
 #ifndef __RubyDialogFrame_h__
 #define __RubyDialogFrame_h__
 
+#include "wx/frame.h"
 #include "wx/dialog.h"
 #include "wx/sizer.h"
 #include "wx/panel.h"
 #include "wx/timer.h"
 #include "../Mollib/Ruby_bind/ruby_dialog.h"
 #include "MyListCtrl.h"
+
+#include "modalwindow.h"
 
 /*  MyLayoutPanel: an empty subclass of wxPanel exclusively used in Dialog#layout  */
 class MyLayoutPanel: public wxPanel {
@@ -40,13 +43,15 @@ class MyDrawingPanel: public wxPanel {
 public:
 	MyDrawingPanel(): wxPanel() {}
 	MyDrawingPanel(wxWindow *parent, wxWindowID winid = wxID_ANY, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize): wxPanel(parent, winid, pos, size) {}
-	virtual ~MyDrawingPanel() {}		
+	virtual ~MyDrawingPanel() {}
 private:
 	DECLARE_DYNAMIC_CLASS(MyDrawingPanel)
 };
 
-class RubyDialogFrame: public wxDialog, public MyListCtrlDataSource {	
+class RubyDialogFrame: public wxModalWindow, public MyListCtrlDataSource {	
 public:
+	int myStyle;
+
 	RDItem **ditems;
 	int nditems;
 	RubyValue dval;  /*  The Ruby value representing this object  */
@@ -73,7 +78,11 @@ public:
 	/*  On key handler (the handler is in the Ruby world)  */
 	bool onKeyHandlerEnabled;
 
-	RubyDialogFrame(wxWindow* parent, wxWindowID wid, const wxString& title, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxDEFAULT_DIALOG_STYLE);
+	/*  Flag to invoke one-time initialization just before showing up  */
+	bool shouldInitializeBeforeShow;
+	
+	RubyDialogFrame():wxModalWindow() {}
+	RubyDialogFrame(wxWindow* parent, wxWindowID wid, const wxString& title, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxDEFAULT_FRAME_STYLE);
 	virtual ~RubyDialogFrame();
 
 	/*  For internal use (discard data in messageData[])  */
@@ -106,6 +115,7 @@ public:
 	void OnActivate(wxActivateEvent &event);
 	void OnChildFocus(wxChildFocusEvent &event);
 	void OnCloseFromMenu(wxCommandEvent &event);
+	void OnUpdateUI(wxUpdateUIEvent& event);
 
 	//  MyListCtrlDataSource methods
 	virtual int GetItemCount(MyListCtrl *ctrl);
@@ -120,6 +130,7 @@ public:
 	virtual void OnPopUpMenuSelected(MyListCtrl *ctrl, long row, long column, int selected_index);
 		
 private:
+	DECLARE_DYNAMIC_CLASS(RubyDialogFrame)
 	DECLARE_EVENT_TABLE()
 };
 

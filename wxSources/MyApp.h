@@ -57,57 +57,61 @@ class MyDocument;
 #endif
 
 enum {
-	myMenuID_MyFirstMenuItem = 100,
-	myMenuID_Import = 101,
-	myMenuID_Export = 102,
-	myMenuID_ExportGraphic = 103,
-	myMenuID_SelectFragment = 104,
-	myMenuID_SelectReverse = 105,
-	myMenuID_CreateNewAtom = 106,
-	myMenuID_CreateNewParameter = 107,
-	myMenuID_CreateNewVdwParameter = 108,
-	myMenuID_CreateNewBondParameter = 109,
-	myMenuID_CreateNewAngleParameter = 110,
-	myMenuID_CreateNewDihedralParameter = 111,
-	myMenuID_CreateNewImproperParameter = 112,
-	myMenuID_CreateNewVdwPairParameter = 113,
-	myMenuID_CreateNewVdwCutoffParameter = 114,
-	myMenuID_CreatePiAnchor = 115,
-	myMenuID_AddHydrogen = 120,
-	myMenuID_AddHydrogenSp3 = 121,
-	myMenuID_AddHydrogenSp2 = 122,
-	myMenuID_AddHydrogenLinear = 123,
-	myMenuID_AddHydrogenPyramidal = 124,
-	myMenuID_AddHydrogenBent = 125,
-	myMenuID_FitToScreen = 150,
-	myMenuID_CenterSelection = 151,
-/*	myMenuID_ShowUnitCell = 152,
-	myMenuID_ShowPeriodicBox = 153,
-	myMenuID_ShowHydrogens = 154,
-	myMenuID_ShowDummyAtoms = 155,
-	myMenuID_ShowExpandedAtoms = 156,
-	myMenuID_ShowEllipsoids = 157,
-	myMenuID_ShowRotationCenter = 158, */
-//	myMenuID_ShowGraphite = 159,
-//	myMenuID_LineMode = 160,
-	myMenuID_ShowAllAtoms = 161,
-	myMenuID_HideSelected = 162,
-	myMenuID_HideUnselected = 163,
-	myMenuID_HideReverse = 164,
-	myMenuID_MolecularDynamics = 200,
-	myMenuID_Minimize = 201,
-	myMenuID_StopMDRun = 202,
-	myMenuID_ViewGlobalParameters = 205,
-	myMenuID_ViewParameterFilesList = 206,
-	myMenuID_BringAllWindowsToFront = 207,
-	myMenuID_ExecuteScript = 300,
-	myMenuID_OpenConsoleWindow = 301,
-	myMenuID_EmptyConsoleWindow = 302,
-	myMenuID_CustomScript = 303,
-	myMenuID_MyLastMenuItem = 499,
-	myMenuID_PredefinedFragment = 500,
-	myMenuID_MyLastFragment = 699,
-	myMenuID_Internal_CheckIfAllWindowsAreGone = 900
+	myMenuID_MyFirstMenuItem = 12000,
+	myMenuID_Import = 12001,
+	myMenuID_Export = 12002,
+	myMenuID_ExportGraphic = 12003,
+	myMenuID_SelectFragment = 12004,
+	myMenuID_SelectReverse = 12005,
+
+	myMenuID_CreateNewAtom = 12010,
+	myMenuID_CreateNewParameter = 12011,
+	myMenuID_CreateNewVdwParameter = 12012,
+	myMenuID_CreateNewBondParameter = 12013,
+	myMenuID_CreateNewAngleParameter = 12014,
+	myMenuID_CreateNewDihedralParameter = 12015,
+	myMenuID_CreateNewImproperParameter = 12016,
+	myMenuID_CreateNewVdwPairParameter = 12017,
+	myMenuID_CreateNewVdwCutoffParameter = 12018,
+	myMenuID_CreatePiAnchor = 12019,
+
+	myMenuID_AddHydrogen = 12030,
+	myMenuID_AddHydrogenSp3 = 12031,
+	myMenuID_AddHydrogenSp2 = 12032,
+	myMenuID_AddHydrogenLinear = 12033,
+	myMenuID_AddHydrogenPyramidal = 12034,
+	myMenuID_AddHydrogenBent = 12035,
+
+	myMenuID_FitToScreen = 12050,
+	myMenuID_CenterSelection = 12051,
+
+	myMenuID_ShowAllAtoms = 12060,
+	myMenuID_HideSelected = 12061,
+	myMenuID_HideUnselected = 12062,
+	myMenuID_HideReverse = 12063,
+
+	myMenuID_MolecularDynamics = 12070,
+	myMenuID_Minimize = 12071,
+	myMenuID_StopMDRun = 12072,
+	
+	myMenuID_ViewGlobalParameters = 12080,
+	myMenuID_ViewParameterFilesList = 12081,
+	
+	myMenuID_BringAllWindowsToFront = 12090,
+	
+	myMenuID_ExecuteScript = 12100,
+	myMenuID_OpenConsoleWindow = 12101,
+	myMenuID_EmptyConsoleWindow = 12102,
+
+	myMenuID_PredefinedFragment = 12200,
+	myMenuID_MyLastFragment = 12999,
+	
+	//  The ID of script menu has "1000 * depth" offset
+	myMenuID_CustomScript = 13000,
+	
+	myMenuID_MyLastMenuItem = 29999,
+
+	myMenuID_Internal_CheckIfAllWindowsAreGone = 30000
 };
 
 enum {

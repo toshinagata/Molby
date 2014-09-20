@@ -52,6 +52,7 @@
 #include "ProgressFrame.h"
 #include "GlobalParameterFrame.h"
 #include "GlobalParameterFilesFrame.h"
+#include "RubyDialogFrame.h"
 #include "MyMBConv.h"
 
 #if defined(__WXMSW__)
@@ -353,10 +354,42 @@ bool MyApp::OnInit(void)
 //  kind == 0: main menu
 //  kind == 1: molecule window
 //  kind == 2: console window
+//  kind == 3: Ruby dialog (non-modal)
 wxMenuBar *
 MyApp::CreateMenuBar(int kind, wxMenu **out_file_history_menu, wxMenu **out_edit_menu)
 {
-	//// Make a menubar
+
+#if __WXMSW__
+	if (kind == 3) {
+
+		//  Simplified menu
+		wxMenu *file_menu = new wxMenu;
+		file_menu->Append(wxID_CLOSE, _T("&Close\tCtrl-W"));
+
+		wxMenu *edit_menu = new wxMenu;
+		edit_menu->Append(wxID_UNDO, _T("&Undo\tCtrl-Z"));
+		edit_menu->Append(wxID_REDO, _T("&Redo"));
+		edit_menu->AppendSeparator();
+		edit_menu->Append(wxID_CUT, _T("Cut\tCtrl-X"));
+		edit_menu->Append(wxID_COPY, _T("Copy\tCtrl-C"));
+		edit_menu->Append(wxID_PASTE, _T("Paste\tCtrl-V"));
+		edit_menu->Append(wxID_CLEAR, _T("Clear"));
+		edit_menu->AppendSeparator();
+		edit_menu->Append(wxID_SELECTALL, _T("Select All\tCtrl-A"));
+		
+		wxMenu *help_menu = new wxMenu;
+		help_menu->Append(wxID_ABOUT, _T("&About...\tF1"));
+		
+		wxMenuBar *menu_bar = new wxMenuBar;
+		
+		menu_bar->Append(file_menu, _T("&File"));
+		menu_bar->Append(edit_menu, _T("&Edit"));
+		menu_bar->Append(help_menu, _T("&Help"));
+		
+		return menu_bar;
+	}
+#endif
+	
 	wxMenu *file_menu = new wxMenu;
 	wxMenu *file_history_menu = NULL;
 
@@ -1032,6 +1065,18 @@ MyApp::OnUpdateUI(wxUpdateUIEvent& event)
 	MainView *mview = MainViewCallback_activeView();
 	if (uid >= myMenuID_CustomScript && uid < myMenuID_CustomScript + countScriptMenu) {
 		//  Check the script menu
+		//  If the frontmost window is RubyDialogFrame, then disable any script menu command
+		wxWindow *w;
+#if defined(__WXMAC__)
+		void *MacGetActiveWindow(void);
+		w = wxDynamicCast(wxNonOwnedWindow::GetFromWXWindow((WXWindow)MacGetActiveWindow()), wxWindow);
+#else
+		w = wxGetActiveWindow();
+#endif
+		if (wxDynamicCast(w, RubyDialogFrame) != NULL) {
+			event.Enable(false);
+			return;
+		}
 		Molecule *mol;
 		int enabled, checked;
 		char *title;
