@@ -2006,6 +2006,14 @@ s_RubyDialog_doItemAction(VALUE val)
 	VALUE items = rb_iv_get(self, "_items");
 	int nitems = RARRAY_LEN(items);
 	int idx = RubyDialogCallback_indexOfItem(dref, ip);
+	static VALUE sTextActionSym = Qfalse, sEscapeActionSym, sReturnActionSym;
+
+	if (sTextActionSym == Qfalse) {
+		sTextActionSym = ID2SYM(rb_intern("text_action"));
+		sEscapeActionSym = ID2SYM(rb_intern("escape_action"));
+		sReturnActionSym = ID2SYM(rb_intern("return_action"));
+	}
+	
 	if (idx < 0)
 		return Qnil;
 	ival = INT2NUM(idx);
@@ -2048,7 +2056,14 @@ s_RubyDialog_doItemAction(VALUE val)
 	
 	if (tval == sTextFieldSymbol || tval == sTextViewSymbol) {
 		if (options == 1)
-			aval = ID2SYM(rb_intern("text_action"));  /*  Action for every text update  */
+			aval = sTextActionSym;   /*  Action for every text update  */
+	}
+	
+	if (tval == sTextFieldSymbol) {
+		if (options == 2)
+			aval = sReturnActionSym;
+		else if (options == 4)
+			aval = sEscapeActionSym;
 	}
 	
 	/*  If the item has the "action" attribute, call it  */
@@ -2061,6 +2076,11 @@ s_RubyDialog_doItemAction(VALUE val)
 	} else if (rb_respond_to(itval, SYM2ID(aval))) {
 		/*  If "action" method is defined, then call it without arguments  */
 		rb_funcall(itval, SYM2ID(aval), 0);
+	} else if (aval == sReturnActionSym || aval == sEscapeActionSym) {
+		/*  Enter or escape is pressed on text field  */
+		rb_ivar_set(itval, SYM2ID(sIsProcessingActionSymbol), Qfalse);
+		itval = s_RubyDialog_ItemAtIndex(self, (aval == sReturnActionSym ? INT2FIX(0) : INT2FIX(1)));
+		s_RubyDialog_EndModal(1, &itval, self);		
 	} else {
 		/*  Default action (only for default buttons)  */
 		if (idx == 0 || idx == 1) {

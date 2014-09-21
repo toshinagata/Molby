@@ -34,6 +34,7 @@
 #include "MyApp.h"
 #include "MyMBConv.h"
 #include "MyDocument.h"
+#include "MyTextCtrl.h"
 
 IMPLEMENT_DYNAMIC_CLASS(MyLayoutPanel, wxPanel)
 
@@ -268,7 +269,14 @@ RubyDialogFrame::OnEnterProcessedOnText(wxCommandEvent &event)
 void
 RubyDialogFrame::OnKillFocusOnText(wxFocusEvent &event)
 {
+	event.Skip();
 	RubyDialog_doItemAction((RubyValue)dval, (RDItem *)(event.GetEventObject()), 3);
+}
+
+void
+RubyDialogFrame::OnEscapeProcessedOnText(wxCommandEvent &event)
+{
+	RubyDialog_doItemAction((RubyValue)dval, (RDItem *)(event.GetEventObject()), 4);
 }
 
 void
@@ -416,6 +424,7 @@ void
 RubyDialogFrame::OnActivate(wxActivateEvent &event)
 {
 	wxModalWindow::OnActivate(event);
+#if defined(__WXMAC__)
 	if (event.GetActive()) {
 		int i;
 		RDItem *itemp;
@@ -431,6 +440,7 @@ RubyDialogFrame::OnActivate(wxActivateEvent &event)
 			}
 		}
 	}
+#endif
 }
 
 /*  Remember the focused window after every focus change  */
@@ -440,11 +450,14 @@ RubyDialogFrame::OnChildFocus(wxChildFocusEvent &event)
 {
 	wxWindow *winp = wxWindow::FindFocus();
 	if (winp != NULL) {
+#if defined(__WXMAC__)
 		if (winp != lastFocusedWindow && wxDynamicCast(winp, wxTextCtrl) != NULL && ((wxTextCtrl *)winp)->IsEditable()) {
 			((wxTextCtrl *)winp)->SelectAll();
 		}
+#endif
 		lastFocusedWindow = winp;
 	}
+	event.Skip();
 }
 
 void
@@ -655,7 +668,7 @@ RubyDialog *
 RubyDialogCallback_new(int style)
 {
 	RubyDialogFrame *dref;	
-	int fstyle = wxCAPTION | wxSYSTEM_MENU;
+	int fstyle = wxCAPTION | wxSYSTEM_MENU | wxTAB_TRAVERSAL;
 	if (style & rd_Resizable)
 		fstyle |= wxMAXIMIZE_BOX | wxRESIZE_BORDER;
 	if (style & rd_HasCloseBox) {
@@ -689,10 +702,49 @@ RubyDialogCallback_setWindowTitle(RubyDialog *dref, const char *title)
 	((RubyDialogFrame *)dref)->SetLabel(str);
 }
 
+void
+RubyDialogCallback_initializeBeforeShow(RubyDialog *dref, int modal)
+{
+	RubyDialogFrame *dframe = (RubyDialogFrame *)dref;
+
+	if (dframe->shouldInitializeBeforeShow) {
+		if (modal == 0) {
+			//  Set a menu bar
+			//  The window size may change on setting the menu bar, so restore the original size
+			//  after setting the menu bar
+			int width, height;
+			dframe->GetClientSize(&width, &height);
+			dframe->SetMenuBar(wxGetApp().CreateMenuBar(3, NULL, NULL));
+			dframe->SetClientSize(width, height);
+		}
+		//  If there is a textfield or textview control, then set focus on the first one
+		int i;
+		RDItem *itemp;
+		for (i = 2; (itemp = dframe->DialogItemAtIndex(i)) != NULL; i++) {
+			bool canAcceptFocus;
+#if defined(__WXMAC__)
+			canAcceptFocus = (wxDynamicCast((wxWindow *)itemp, wxTextCtrl) != NULL && ((wxTextCtrl *)itemp)->IsEditable());
+#else
+			canAcceptFocus = ((wxWindow *)itemp)->CanAcceptFocusFromKeyboard();
+#endif
+			
+			if (canAcceptFocus) {
+				if (wxDynamicCast((wxWindow *)itemp, wxTextCtrl) != NULL && ((wxTextCtrl *)itemp)->IsEditable()) {
+					((wxTextCtrl *)itemp)->SelectAll();
+				}
+				((wxWindow *)itemp)->SetFocus();
+				break;
+			}
+		}		
+		dframe->shouldInitializeBeforeShow = false;
+	}	
+}
+
 int
 RubyDialogCallback_runModal(RubyDialog *dref)
 {
 	int retval;
+	RubyDialogCallback_initializeBeforeShow(dref, 1);
 	((RubyDialogFrame *)dref)->CenterOnScreen();
 	retval = ((RubyDialogFrame *)dref)->ShowModal();
 	if (retval == wxID_OK)
@@ -734,11 +786,7 @@ RubyDialogCallback_show(RubyDialog *dref)
 {
 	RubyDialogFrame *dframe = (RubyDialogFrame *)dref;
 
-	if (dframe->shouldInitializeBeforeShow) {
-		//  Set a menu bar
-		dframe->SetMenuBar(wxGetApp().CreateMenuBar(3, NULL, NULL));
-		dframe->shouldInitializeBeforeShow = false;
-	}
+	RubyDialogCallback_initializeBeforeShow(dref, 0);
 	
 	if (dframe->myTimer != NULL)
 		dframe->StartIntervalTimer(-1);
@@ -921,10 +969,11 @@ RubyDialogCallback_createItem(RubyDialog *dref, const char *type, const char *ti
 		no_action = true;
 	} else if (strcmp(type, "textfield") == 0) {
 		/*  Editable text  */
-		wxTextCtrl *tc = new wxTextCtrl(parent, -1, tstr, rect.GetPosition(), rect.GetSize(), wxTE_PROCESS_ENTER);
+		MyTextCtrl *tc = new MyTextCtrl(parent, -1, tstr, rect.GetPosition(), rect.GetSize(), wxTE_PROCESS_ENTER | MyTextCtrl_Process_Escape);
 		control = tc;
 		tc->Connect(-1, wxEVT_COMMAND_TEXT_UPDATED, wxCommandEventHandler(RubyDialogFrame::OnTextUpdated), NULL, parent);
 		tc->Connect(-1, wxEVT_TEXT_ENTER, wxCommandEventHandler(RubyDialogFrame::OnEnterProcessedOnText), NULL, parent);
+		tc->Connect(-1, myTextCtrl_EVT_PROCESS_ESCAPE, wxCommandEventHandler(RubyDialogFrame::OnEscapeProcessedOnText), NULL, parent);
 		tc->Connect(-1, wxEVT_KILL_FOCUS, wxFocusEventHandler(RubyDialogFrame::OnKillFocusOnText), NULL, parent);
 	} else if (strcmp(type, "textview") == 0) {
 		/*  Text view  */

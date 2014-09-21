@@ -105,6 +105,7 @@ public:
 	void OnDialogItemAction(wxCommandEvent &event);
 	void OnTextUpdated(wxCommandEvent &event);
 	void OnEnterProcessedOnText(wxCommandEvent &event);
+	void OnEscapeProcessedOnText(wxCommandEvent &event);
 	void OnKillFocusOnText(wxFocusEvent &event);
 
 	void OnTimerEvent(wxTimerEvent &event);
