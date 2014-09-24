@@ -42,9 +42,11 @@ typedef doublereal     __CLPK_doublereal;
 #ifdef __cplusplus
 extern "C" {
 #endif
-	
-#define STUB extern
 
+#ifndef STUB
+#define STUB extern
+#endif
+	
 #ifndef kRad2Deg
 #define kRad2Deg  (180./3.14159265358979)
 #endif

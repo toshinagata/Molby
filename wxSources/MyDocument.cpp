@@ -366,7 +366,6 @@ MyDocument::OnExportGraphic(wxCommandEvent& event)
 	wxFileName fname(GetFilename());
 	wxString fnstr;
 	Int scale, bg_color, n, i;
-	char *p;
 	i = MolActionCreateAndPerform(mol, SCRIPT_ACTION(";i"), "ask_graphic_export_scale", &n);
 	if (i != 0 || n < 0)
 		return;
@@ -486,9 +485,9 @@ MyDocument::CleanUndoStack(bool shouldRegister)
 void
 MyDocument::OnCustomClose(wxCommandEvent &event)
 {
-	RubyValue val;
-	MolActionCreateAndPerform(mol, SCRIPT_ACTION(";r"), "close_active_auxiliary_window", &val);
-	if (val == NULL || val == RubyNil)
+//	RubyValue val;
+//	MolActionCreateAndPerform(mol, SCRIPT_ACTION(";r"), "close_all_auxiliary_windows", &val);
+//	if (val == NULL || val == RubyNil)
 		event.Skip();
 }
 
@@ -504,6 +503,8 @@ MyDocument::Close()
 		return false;
 	}
 	if (wxDocument::Close()) {
+		/*  Close all auxiliary windows  */
+		MolActionCreateAndPerform(mol, SCRIPT_ACTION(""), "close_all_auxiliary_windows");
 		/*  Send a message that this document will close  */
 		wxCommandEvent myEvent(MyDocumentEvent, MyDocumentEvent_documentWillClose);
 		myEvent.SetEventObject(this);
@@ -529,7 +530,10 @@ MyDocument::OnDocumentModified(wxCommandEvent& event)
 {
 	isModifyNotificationSent = false;
 	MoleculeClearModifyCount(GetMainView()->mol);
-	
+
+	/*  Send message to all auxiliary windows  */
+	MolActionCreateAndPerform(mol, SCRIPT_ACTION(""), "call_modification_handler_in_all_auxiliary_windows");
+
 	event.Skip();  //  Also pass to other notification handlers
 	UpdateModifyFlag();
 }

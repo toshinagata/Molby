@@ -18,21 +18,28 @@
 #ifndef __ruby_dialog_h__
 #define __ruby_dialog_h__
 
-#include "Molby_extern.h"
+//#include "Molby_extern.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 	
-/*  RubyDialog class  */
-/* extern VALUE rb_cDialog; */
-
 /*  Style of the dialog frame  */
 enum {
 	rd_Resizable = 1,
 	rd_HasCloseBox = 2,
 };
 
+#ifndef RubyValue_is_Defined
+#define RubyValue_is_Defined
+typedef void *RubyValue;
+#define RubyNil (RubyValue)4
+#endif
+
+#ifndef STUB
+#define STUB extern
+#endif
+	
 /*  True if y-coordinate grows from bottom to top (like Cocoa)  */
 extern int gRubyDialogIsFlipped;
 	
@@ -53,7 +60,7 @@ extern const RDRect gZeroRect;
 	
 /*  Utility function  */
 extern int RubyDialog_validateItemContent(RubyValue self, RDItem *ip, const char *s);
-extern void RubyDialog_doItemAction(RubyValue self, RDItem *ip, Int options);
+extern void RubyDialog_doItemAction(RubyValue self, RDItem *ip, int options);
 extern void RubyDialog_doTimerAction(RubyValue self);
 extern void RubyDialog_doKeyAction(RubyValue self, int keyCode);
 extern int RubyDialog_getFlexFlags(RubyValue self, RDItem *ip);
@@ -73,7 +80,8 @@ extern void RubyDialog_OnPopUpMenuSelected(RubyValue self, RDItem *ip, int row, 
 
 extern void RubyDialogInitClass(void);
 
-/*  Stub routines  */
+/*  Stub entries  */
+STUB RubyValue RubyDialogCallback_parentModule(void);	
 STUB RubyDialog *RubyDialogCallback_new(int style);
 STUB void RubyDialogCallback_release(RubyDialog *dref);
 STUB void RubyDialogCallback_setRubyObject(RubyDialog *dref, RubyValue val);
@@ -97,6 +105,9 @@ STUB void RubyDialogCallback_setWindowSize(RubyDialog *dref, RDSize size);
 
 STUB void RubyDialogCallback_setAutoResizeEnabled(RubyDialog *dref, int flag);
 STUB int RubyDialogCallback_isAutoResizeEnabled(RubyDialog *dref);
+
+//STUB int RubyDialogCallback_GetEventHandlerFromValueAndMessage(RubyValue val, const char *msg, RDEventHandlerRecord **recp);
+//STUB int RubyDialogCallback_Listen(RubyDialog *dref, RDEventHandlerRecord *rec, RubyValue oval, RubyValue pval);
 STUB int RubyDialogCallback_Listen(RubyDialog *dref, void *obj, const char *objtype, const char *msg, RubyValue oval, RubyValue pval);
 
 STUB void RubyDialogCallback_createStandardButtons(RubyDialog *dref, const char *oktitle, const char *canceltitle);

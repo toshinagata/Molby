@@ -11753,6 +11753,14 @@ Init_Molby(void)
 	s_EllipsoidSym = ID2SYM(rb_intern("ellipsoid"));
 }
 
+#pragma mark ====== Interface with RubyDialog class ======
+
+RubyValue
+RubyDialogCallback_parentModule(void)
+{
+	return (RubyValue)rb_mMolby;
+}
+
 #pragma mark ====== External functions ======
 
 static VALUE s_ruby_top_self = Qfalse;

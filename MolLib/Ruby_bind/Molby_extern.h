@@ -24,10 +24,12 @@ extern "C" {
 #include "../MolLib.h"
 
 /*  This definition is to work around 'VALUE' type in sources without "ruby.h"  */
+#ifndef RubyValue_is_Defined
+#define RubyValue_is_Defined
 typedef void *RubyValue;
-
 #define RubyNil ((RubyValue)4)
-	
+#endif
+
 extern char *gRubyVersion;
 extern char *gRubyCopyright;
 

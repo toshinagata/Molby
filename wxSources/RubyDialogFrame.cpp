@@ -31,6 +31,8 @@
 #include "wx/dcmemory.h"
 
 #include "RubyDialogFrame.h"
+
+#include "../MolLib/Ruby_bind/Molby_extern.h"
 #include "MyApp.h"
 #include "MyMBConv.h"
 #include "MyDocument.h"

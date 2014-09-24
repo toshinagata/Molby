@@ -51,6 +51,7 @@ VALUE rb_cDialog = Qfalse;
 VALUE rb_cDialogItem = Qfalse;
 VALUE rb_mDeviceContext = Qfalse;
 VALUE rb_cBitmap = Qfalse;
+VALUE rb_eDialogError = Qfalse;
 VALUE gRubyDialogList = Qnil;
 
 const RDPoint gZeroPoint = {0, 0};
@@ -2710,10 +2711,14 @@ s_Bitmap_SaveToFile(VALUE self, VALUE fnval)
 void
 RubyDialogInitClass(void)
 {
+	VALUE parent;
 	if (rb_cDialog != Qfalse)
 		return;
-
-	rb_cDialog = rb_define_class_under(rb_mMolby, "Dialog", rb_cObject);
+	parent = RubyDialogCallback_parentModule();
+	if (parent != Qfalse)
+		rb_cDialog = rb_define_class_under(parent, "Dialog", rb_cObject);
+	else
+		rb_cDialog = rb_define_class("Dialog", rb_cObject);
 	rb_define_alloc_func(rb_cDialog, s_RubyDialog_Alloc);
 	rb_define_private_method(rb_cDialog, "initialize", s_RubyDialog_Initialize, -1);
 	rb_define_method(rb_cDialog, "run", s_RubyDialog_Run, 0);
@@ -2744,7 +2749,11 @@ RubyDialogInitClass(void)
 	rb_define_singleton_method(rb_cDialog, "save_panel", s_RubyDialog_SavePanel, -1);
 	rb_define_singleton_method(rb_cDialog, "open_panel", s_RubyDialog_OpenPanel, -1);
 
-	rb_cDialogItem = rb_define_class_under(rb_mMolby, "DialogItem", rb_cObject);
+	if (parent != Qfalse)
+		rb_cDialogItem = rb_define_class_under(parent, "DialogItem", rb_cObject);
+	else
+		rb_cDialogItem = rb_define_class("DialogItem", rb_cObject);
+
 	rb_define_method(rb_cDialogItem, "[]=", s_RubyDialogItem_SetAttr, 2);
 	rb_define_method(rb_cDialogItem, "[]", s_RubyDialogItem_Attr, 1);
 	rb_define_alias(rb_cDialogItem, "set_attr", "[]=");
@@ -2752,7 +2761,11 @@ RubyDialogInitClass(void)
 	rb_define_method(rb_cDialogItem, "append_string", s_RubyDialogItem_AppendString, 1);
 	rb_define_method(rb_cDialogItem, "refresh_rect", s_RubyDialogItem_RefreshRect, -1);
 	
-	rb_mDeviceContext = rb_define_module_under(rb_mMolby, "DeviceContext");
+	if (parent != Qfalse)
+		rb_mDeviceContext = rb_define_module_under(parent, "DeviceContext");
+	else
+		rb_mDeviceContext = rb_define_module("DeviceContext");
+
 	rb_define_method(rb_mDeviceContext, "clear", s_RubyDialog_Clear, 0);
 	rb_define_method(rb_mDeviceContext, "draw_ellipse", s_RubyDialog_DrawEllipse, -1);
 	rb_define_method(rb_mDeviceContext, "draw_line", s_RubyDialog_DrawLine, -1);
@@ -2765,12 +2778,22 @@ RubyDialogInitClass(void)
 
     rb_include_module(rb_cDialog, rb_mDeviceContext);
 	
-	rb_cBitmap = rb_define_class_under(rb_mMolby, "Bitmap", rb_cObject);
+	if (parent != Qfalse)
+		rb_cBitmap = rb_define_class_under(parent, "Bitmap", rb_cObject);
+	else
+		rb_cBitmap = rb_define_class("Bitmap", rb_cObject);
+
 	rb_include_module(rb_cBitmap, rb_mDeviceContext);
 	rb_define_alloc_func(rb_cBitmap, s_Bitmap_Alloc);
 	rb_define_private_method(rb_cBitmap, "initialize", s_Bitmap_Initialize, -1);
 	rb_define_method(rb_cBitmap, "focus_exec", s_Bitmap_FocusExec, -1);
 	rb_define_method(rb_cBitmap, "save_to_file", s_Bitmap_SaveToFile, 1);
+	
+	if (parent != Qfalse)
+		rb_eDialogError = rb_define_class_under(parent, "DialogError", rb_eStandardError);
+	else
+		rb_eDialogError = rb_define_class("DialogError", rb_eStandardError);
+
 	{
 		static VALUE *sTable1[] = {
 			&sTextSymbol, &sTextFieldSymbol, &sRadioSymbol, &sButtonSymbol,

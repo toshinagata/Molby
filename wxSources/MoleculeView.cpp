@@ -549,8 +549,13 @@ MoleculeView::OnUpdate(wxView *WXUNUSED(sender), wxObject *WXUNUSED(hint))
 bool
 MoleculeView::OnClose(bool deleteWindow)
 {
+#if !defined(__WXMAC__)
+	//  On wxOSX, this causes invocation of MyDocument::Close() twice, which
+	//  apprently is not very good. However, on wxMSW this is not the case.
+	//  So we need to keep this code for wxMSW but not for wxOSX.
 	if (!GetDocument()->Close())
 		return false;
+#endif
 
 	//  Dispose relationship between this and Molecule (MainView)
 	MainView_setViewObject(mview, NULL);

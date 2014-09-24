@@ -73,7 +73,7 @@ public:
 	
 	/*  Message bridge (with Ruby world); obj, event_type, event_id, proc val  */
 	void **messageData;
-	Int countMessageData;
+	int countMessageData;
 	
 	/*  On key handler (the handler is in the Ruby world)  */
 	bool onKeyHandlerEnabled;

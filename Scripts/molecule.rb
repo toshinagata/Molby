@@ -737,9 +737,14 @@ class Molecule
 	  if block
 	    d.instance_eval(&block)
 		d.instance_eval { |_d|
-	      listen(mol, "documentModified", lambda { |m| @on_document_modified.call(m) if @on_document_modified } )
-	      listen(mol, "documentWillClose", lambda { |m| m.close_auxiliary_window(_d) } )
-		  @on_close = lambda { mol.close_auxiliary_window(_d, true); true}
+#	      listen(mol, "documentModified", lambda { |m| @on_document_modified.call(m) if @on_document_modified } )
+#	      listen(mol, "documentWillClose", lambda { |m| m.close_auxiliary_window(_d) } )
+          if @on_close != nil
+		    save_on_close = @on_close
+		    @on_close = lambda { save_on_close.call; mol.close_auxiliary_window(_d, true); true}
+		  else
+		    @on_close = lambda { mol.close_auxiliary_window(_d, true); true }
+		  end
 		}
 	  end
 	  @aux_windows[title] = d
@@ -756,16 +761,37 @@ class Molecule
 	end
   end
   
-  def close_active_auxiliary_window
+  def close_all_auxiliary_windows
     if @aux_windows
-	  @aux_windows.each_value { |d|
-	    if d.active?
-		  close_auxiliary_window(d)
-		  return true
-		end
+	  @aux_windows.values.each { |d|
+	    close_auxiliary_window(d)
 	  }
+	  return true
+	else
+	  return false
 	end
-	return false;
   end
+  
+  def call_modification_handler_in_all_auxiliary_windows
+    mol = self
+    if @aux_windows
+	  @aux_windows.values.each { |d|
+	    d.instance_eval { @on_document_modified.call(mol) if @on_document_modified }
+      }
+	end
+  end
+  
+#  def close_active_auxiliary_window
+#    puts "close_active_auxiliary_windows"
+#    if @aux_windows
+#	  @aux_windows.each_value { |d|
+#	    if d.active?
+#		  close_auxiliary_window(d)
+#		  return true
+#		end
+#	  }
+#	end
+#	return false;
+#  end
   
 end
