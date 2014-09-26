@@ -66,8 +66,8 @@ RubyDialogFrame::RubyDialogFrame(wxWindow* parent, wxWindowID wid, const wxStrin
 	dval = NULL;
 	mySize = gZeroSize;
 	autoResizeEnabled = true;
-	messageData = NULL;
-	countMessageData = 0;
+//	messageData = NULL;
+//	countMessageData = 0;
 	onKeyHandlerEnabled = false;
 	currentContext = NULL;
 	currentDrawingItem = NULL;
@@ -92,9 +92,10 @@ RubyDialogFrame::~RubyDialogFrame()
 		delete myTimer;
 	if (ditems != NULL)
 		free(ditems);
-	DiscardMessageData();
+//	DiscardMessageData();
 }
 
+#if 0
 void
 RubyDialogFrame::DiscardMessageData()
 {
@@ -114,6 +115,7 @@ RubyDialogFrame::DiscardMessageData()
 	messageData = NULL;
 	countMessageData = 0;
 }
+#endif
 
 int
 RubyDialogFrame::AddDialogItem(RDItem *item)
@@ -164,7 +166,7 @@ RubyDialogFrame::SetRubyObject(RubyValue val)
 	dval = val;
 	if (dval == NULL) {
 		/*  Stop message mechanism (because this object is already disconnected from the Ruby world)  */
-		DiscardMessageData();
+	/*	DiscardMessageData(); */
 	}
 }
 
@@ -479,6 +481,7 @@ sGetEventHandlerFromObjectAndType(void *obj, wxEventType eventType)
 	else return NULL;
 }
 
+#if 0
 int
 RubyDialogFrame::ListenToObject(void *obj, const char *objtype, const char *msg, RubyValue oval, RubyValue pval)
 {
@@ -584,6 +587,7 @@ RubyDialogFrame::HandleDocumentEvent(wxCommandEvent &event)
 	}
 	event.Skip();
 }
+#endif
 
 void
 RubyDialogFrame::HandlePaintEvent(wxPaintEvent &event)
@@ -905,11 +909,13 @@ RubyDialogCallback_isAutoResizeEnabled(RubyDialog *dref)
 	return ((RubyDialogFrame *)dref)->IsAutoResizeEnabled();
 }
 
+/*
 int
 RubyDialogCallback_Listen(RubyDialog *dref, void *obj, const char *objtype, const char *msg, RubyValue oval, RubyValue pval)
 {
 	return ((RubyDialogFrame *)dref)->ListenToObject(obj, objtype, msg, oval, pval);
 }
+*/
 
 void
 RubyDialogCallback_createStandardButtons(RubyDialog *dref, const char *oktitle, const char *canceltitle)

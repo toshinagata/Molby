@@ -33,14 +33,15 @@ typedef void *RubyValue;
 extern char *gRubyVersion;
 extern char *gRubyCopyright;
 
+extern void Ruby_showError(int status);
+extern int Ruby_showValue(RubyValue value, char **outValueString);
+extern int Ruby_UpdateUI(int index, Molecule *mol, int *outChecked, char **outTitle);
+
 extern void Molby_startup(const char *script_path, const char *dir);
 extern char *Molby_getDescription(void);
-extern void Molby_showError(int status);
 extern RubyValue Molby_evalRubyScriptOnMolecule(const char *script, Molecule *mol, const char *fname, int *status);
 /* extern RubyValue Molby_evalRubyScript(const char *script, int *status);
 extern RubyValue Molby_evalRubyScriptOnActiveMoleculeWithInterrupt(const char *script, int *status); */
-extern int Molby_showRubyValue(RubyValue value, char **outValueString);
-extern int Ruby_UpdateUI(int index, Molecule *mol, int *outChecked, char **outTitle);
 /*extern int Ruby_methodType(const char *className, const char *methodName);*/
 extern void Molby_buildARGV(int argc, const char **argv);
 	

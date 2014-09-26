@@ -75,7 +75,7 @@ BEGIN_EVENT_TABLE(MyDocument, wxDocument)
 	EVT_MENU(wxID_PASTE, MyDocument::OnPaste)
 	EVT_MENU(wxID_CUT, MyDocument::OnCut)
 	EVT_MENU(wxID_DELETE, MyDocument::OnDelete)
-	EVT_MENU(wxID_CLOSE, MyDocument::OnCustomClose)
+//	EVT_MENU(wxID_CLOSE, MyDocument::OnCustomClose)
 	EVT_MENU(myMenuID_CreateNewAtom, MyDocument::OnCreateNewAtom)
 	EVT_MENU_RANGE(myMenuID_CreateNewVdwParameter, myMenuID_CreateNewVdwCutoffParameter, MyDocument::OnCreateNewParameter)
 	EVT_MENU(myMenuID_CreatePiAnchor, MyDocument::OnCreatePiAnchor)
@@ -488,7 +488,7 @@ MyDocument::OnCustomClose(wxCommandEvent &event)
 //	RubyValue val;
 //	MolActionCreateAndPerform(mol, SCRIPT_ACTION(";r"), "close_all_auxiliary_windows", &val);
 //	if (val == NULL || val == RubyNil)
-		event.Skip();
+//		event.Skip();
 }
 
 bool
@@ -503,8 +503,8 @@ MyDocument::Close()
 		return false;
 	}
 	if (wxDocument::Close()) {
-		/*  Close all auxiliary windows  */
-		MolActionCreateAndPerform(mol, SCRIPT_ACTION(""), "close_all_auxiliary_windows");
+		/*  Call close hander in the Ruby world  */
+		MolActionCreateAndPerform(mol, SCRIPT_ACTION(""), "on_close");
 		/*  Send a message that this document will close  */
 		wxCommandEvent myEvent(MyDocumentEvent, MyDocumentEvent_documentWillClose);
 		myEvent.SetEventObject(this);
@@ -531,8 +531,8 @@ MyDocument::OnDocumentModified(wxCommandEvent& event)
 	isModifyNotificationSent = false;
 	MoleculeClearModifyCount(GetMainView()->mol);
 
-	/*  Send message to all auxiliary windows  */
-	MolActionCreateAndPerform(mol, SCRIPT_ACTION(""), "call_modification_handler_in_all_auxiliary_windows");
+	/*  Call modified handler in the Ruby world  */
+	MolActionCreateAndPerform(mol, SCRIPT_ACTION(""), "on_modified");
 
 	event.Skip();  //  Also pass to other notification handlers
 	UpdateModifyFlag();

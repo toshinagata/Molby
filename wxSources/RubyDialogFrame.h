@@ -72,8 +72,8 @@ public:
 	bool autoResizeEnabled;  /*  true if auto resizing is enabled  */
 	
 	/*  Message bridge (with Ruby world); obj, event_type, event_id, proc val  */
-	void **messageData;
-	int countMessageData;
+//	void **messageData;
+//	int countMessageData;
 	
 	/*  On key handler (the handler is in the Ruby world)  */
 	bool onKeyHandlerEnabled;
@@ -86,13 +86,14 @@ public:
 	virtual ~RubyDialogFrame();
 
 	/*  For internal use (discard data in messageData[])  */
-	void DiscardMessageData();
+//	void DiscardMessageData();
 	
 	void SetAutoResizeEnabled(int flag) { autoResizeEnabled = (flag != 0); }
 	bool IsAutoResizeEnabled() { return autoResizeEnabled; }
 	
-	int ListenToObject(void *obj, const char *objtype, const char *msg, RubyValue oval, RubyValue pval);
-	void HandleDocumentEvent(wxCommandEvent &event);
+//	int ListenToObject(void *obj, const char *objtype, const char *msg, RubyValue oval, RubyValue pval);
+//	void HandleDocumentEvent(wxCommandEvent &event);
+
 	void HandlePaintEvent(wxPaintEvent &event);
 
 	int AddDialogItem(RDItem *item);

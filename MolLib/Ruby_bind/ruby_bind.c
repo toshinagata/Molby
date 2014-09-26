@@ -11878,7 +11878,7 @@ Molby_evalRubyScriptOnMolecule(const char *script, Molecule *mol, const char *fn
 }
 
 int
-Molby_showRubyValue(RubyValue value, char **outValueString)
+Ruby_showValue(RubyValue value, char **outValueString)
 {
 	VALUE val = (VALUE)value;
 	if (gMolbyIsCheckingInterrupt) {
@@ -11905,7 +11905,7 @@ Molby_showRubyValue(RubyValue value, char **outValueString)
 }
 
 void
-Molby_showError(int status)
+Ruby_showError(int status)
 {
 	static const int tag_raise = 6;
 	char *msg = NULL, *msg2;
@@ -12163,7 +12163,7 @@ Molby_startup(const char *script, const char *dir)
 		rb_load_protect(rb_str_new2(script), 0, &status);
 		gMolbyRunLevel--;
 		if (status != 0)
-			Molby_showError(status);
+			Ruby_showError(status);
 		else
 			MyAppCallback_showScriptMessage("Done.\n");
 	}

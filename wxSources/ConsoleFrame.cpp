@@ -361,12 +361,12 @@ ConsoleFrame::OnEnterPressed()
 			char *valueString;
 			MyAppCallback_setConsoleColor(1);
 			if (status != 0) {
-				Molby_showError(status);
+				Ruby_showError(status);
 			} else {
 				textCtrl->AppendText(wxT("-->"));
-				status = Molby_showRubyValue(val, &valueString);
+				status = Ruby_showValue(val, &valueString);
 				if (status != 0) {
-					Molby_showError(status);
+					Ruby_showError(status);
 				} else {
 					AssignArray(&valueHistory, &nValueHistory, sizeof(char *), nValueHistory, &valueString);
 					if (nValueHistory >= MAX_HISTORY_LINES)

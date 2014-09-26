@@ -761,23 +761,36 @@ class Molecule
 	end
   end
   
-  def close_all_auxiliary_windows
-    if @aux_windows
+#  def close_all_auxiliary_windows
+#    if @aux_windows
+#	  @aux_windows.values.each { |d|
+#	    close_auxiliary_window(d)
+#	  }
+#	  return true
+#	else
+#	  return false
+#	end
+#  end
+  
+  def on_close
+    mol = self
+	@on_close.call(mol) if @on_close
+	if @aux_windows
 	  @aux_windows.values.each { |d|
 	    close_auxiliary_window(d)
-	  }
-	  return true
-	else
-	  return false
+      }
 	end
   end
   
-  def call_modification_handler_in_all_auxiliary_windows
+  def on_modified
     mol = self
-    if @aux_windows
-	  @aux_windows.values.each { |d|
+	#  Call a handler if defined
+	@on_document_modified.call(mol) if @on_document_modified
+	if @aux_windows
+	  @aux_windows.each_value { |d|
+	    #  For each auxiliary window, call a handler if defined
 	    d.instance_eval { @on_document_modified.call(mol) if @on_document_modified }
-      }
+	  }
 	end
   end
   

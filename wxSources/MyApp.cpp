@@ -1139,7 +1139,7 @@ MyApp::OnExecuteScript(wxCommandEvent &event)
 		if (retval == (RubyValue)6 && status == -1)
 			MyAppCallback_errorMessageBox("Cannot open Ruby script %s", (const char *)path.mb_str(wxConvFile));
 		else if (status != 0)
-			Molby_showError(status);
+			Ruby_showError(status);
 	}
 	dialog->Destroy();
 }
@@ -1196,7 +1196,7 @@ MyApp::OnOpenFiles(const wxString &files)
 				if (retval == (RubyValue)6 && status == -1)
 					MyAppCallback_errorMessageBox("Cannot open Ruby script: %s", (const char *)file.mb_str(wxConvFile));
 				else
-					Molby_showError(status);
+					Ruby_showError(status);
 				return false;
 			}
 		} else {

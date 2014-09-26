@@ -39,7 +39,9 @@ typedef void *RubyValue;
 #ifndef STUB
 #define STUB extern
 #endif
-	
+
+extern void Ruby_showError(int status);
+
 /*  True if y-coordinate grows from bottom to top (like Cocoa)  */
 extern int gRubyDialogIsFlipped;
 	
@@ -106,9 +108,7 @@ STUB void RubyDialogCallback_setWindowSize(RubyDialog *dref, RDSize size);
 STUB void RubyDialogCallback_setAutoResizeEnabled(RubyDialog *dref, int flag);
 STUB int RubyDialogCallback_isAutoResizeEnabled(RubyDialog *dref);
 
-//STUB int RubyDialogCallback_GetEventHandlerFromValueAndMessage(RubyValue val, const char *msg, RDEventHandlerRecord **recp);
-//STUB int RubyDialogCallback_Listen(RubyDialog *dref, RDEventHandlerRecord *rec, RubyValue oval, RubyValue pval);
-STUB int RubyDialogCallback_Listen(RubyDialog *dref, void *obj, const char *objtype, const char *msg, RubyValue oval, RubyValue pval);
+//STUB int RubyDialogCallback_Listen(RubyDialog *dref, void *obj, const char *objtype, const char *msg, RubyValue oval, RubyValue pval);
 
 STUB void RubyDialogCallback_createStandardButtons(RubyDialog *dref, const char *oktitle, const char *canceltitle);
 STUB RDItem *RubyDialogCallback_createItem(RubyDialog *dref, const char *type, const char *title, RDRect frame);

@@ -15,8 +15,9 @@
 
 */
 
+#include <ruby.h>
 #include "ruby_dialog.h"
-#include "Molby.h"
+#include "IntGroup.h"
 
 static VALUE
 	sTextSymbol, sTextFieldSymbol, sRadioSymbol, sButtonSymbol,
@@ -61,6 +62,21 @@ const RDRect gZeroRect = {{0, 0}, {0, 0}};
 /*  True if y-coordinate grows from bottom to top (like Cocoa)  */
 int gRubyDialogIsFlipped = 0;
 
+#pragma mark ====== External utility functions and macros ======
+
+#define FileStringValuePtr(val) Ruby_FileStringValuePtr(&val)
+extern char *Ruby_FileStringValuePtr(VALUE *valp);
+extern VALUE Ruby_NewFileStringValue(const char *fstr);
+
+#define EncodedStringValuePtr(val) Ruby_EncodedStringValuePtr(&val)
+extern char *Ruby_EncodedStringValuePtr(VALUE *valp);
+extern VALUE Ruby_NewEncodedStringValue(const char *str, int len);
+
+extern VALUE Ruby_SetInterruptFlag(VALUE val);
+extern VALUE Ruby_ObjectAtIndex(VALUE ary, int idx);
+extern VALUE ValueFromIntGroup(IntGroup *ig);
+extern IntGroup *IntGroupFromValue(VALUE val);
+
 #pragma mark ====== Dialog alloc/init/release ======
 
 typedef struct RubyDialogInfo {
@@ -102,7 +118,7 @@ s_RubyDialog_Forget(VALUE self)
 	if (di != NULL) {
 		if (di->dref != NULL) {
 			/*  Unregister all messages  */
-			RubyDialogCallback_Listen(di->dref, NULL, NULL, NULL, NULL, NULL);
+		/*	RubyDialogCallback_Listen(di->dref, NULL, NULL, NULL, NULL, NULL); */
 		}
 		di->dref = NULL;
 	}
@@ -142,7 +158,7 @@ s_RubyDialogItem_SetAttr(VALUE self, VALUE key, VALUE val)
 	itag = NUM2INT(rb_ivar_get(self, SYM2ID(sIndexSymbol)));
 	type = rb_ivar_get(self, SYM2ID(sTypeSymbol));
 	if (dialog_val == Qnil || (dref = s_RubyDialog_GetController(dialog_val)) == NULL)
-		rb_raise(rb_eStandardError, "The dialog item does not belong to any dialog (internal error?)");
+		rb_raise(rb_eDialogError, "The dialog item does not belong to any dialog (internal error?)");
 	view = RubyDialogCallback_dialogItemAtIndex(dref, itag);
 	key_id = SYM2ID(key);
 	if (key == sRangeSymbol) {
@@ -260,7 +276,7 @@ s_RubyDialogItem_SetAttr(VALUE self, VALUE key, VALUE val)
 			} else if (rb_obj_is_kind_of(val, rb_cNumeric)) {
 				flex = NUM2INT(rb_Integer(val));
 			} else {
-				rb_raise(rb_eMolbyError, "the 'flex' attribute should be either an integer or an array of 4 boolean/integers");
+				rb_raise(rb_eDialogError, "the 'flex' attribute should be either an integer or an array of 4 boolean/integers");
 			}
 			rb_ivar_set(self, key_id, INT2NUM(flex));
 		}
@@ -304,7 +320,7 @@ s_RubyDialogItem_SetAttr(VALUE self, VALUE key, VALUE val)
 				weight = 3;
 			} else if (vali != Qnil) {
 				vali = rb_inspect(vali);
-				rb_raise(rb_eMolbyError, "unknown font specification (%s)", EncodedStringValuePtr(vali));
+				rb_raise(rb_eDialogError, "unknown font specification (%s)", EncodedStringValuePtr(vali));
 			}
 		}
 		RubyDialogCallback_setFontForItem(view, size, family, style, weight);
@@ -355,7 +371,7 @@ s_RubyDialogItem_SetAttr(VALUE self, VALUE key, VALUE val)
 		}			
 	} else {
 		if (key == sTagSymbol && rb_obj_is_kind_of(val, rb_cInteger))
-			rb_raise(rb_eMolbyError, "the dialog item tag must not be integers");				
+			rb_raise(rb_eDialogError, "the dialog item tag must not be integers");				
 		rb_ivar_set(self, key_id, val);
 	}
 	RubyDialogCallback_setNeedsDisplay(view, 1);
@@ -389,7 +405,7 @@ s_RubyDialogItem_Attr(VALUE self, VALUE key)
 	if (key == sTypeSymbol)
 		return type;
 	if (dialog_val == Qnil || (dref = s_RubyDialog_GetController(dialog_val)) == NULL)
-		rb_raise(rb_eStandardError, "The dialog item does not belong to any dialog (internal error?)");
+		rb_raise(rb_eDialogError, "The dialog item does not belong to any dialog (internal error?)");
 	view = RubyDialogCallback_dialogItemAtIndex(dref, itag);
 	key_id = SYM2ID(key);
 
@@ -502,7 +518,7 @@ s_RubyDialogItem_Attr(VALUE self, VALUE key)
 		int size, family, style, weight;
 		VALUE fval, sval, wval;
 		if (RubyDialogCallback_getFontForItem(view, &size, &family, &style, &weight) == 0)
-			rb_raise(rb_eMolbyError, "Cannot get font for dialog item");
+			rb_raise(rb_eDialogError, "Cannot get font for dialog item");
 		fval = (family == 1 ? sDefaultSymbol :
 				(family == 2 ? sRomanSymbol :
 				 (family == 3 ? sSwissSymbol :
@@ -555,11 +571,11 @@ s_RubyDialogItem_AppendString(VALUE self, VALUE val)
 	index_val = rb_ivar_get(self, SYM2ID(sIndexSymbol));
 	itag = NUM2INT(index_val);
 	if (dialog_val == Qnil || (dref = s_RubyDialog_GetController(dialog_val)) == NULL)
-		rb_raise(rb_eStandardError, "The dialog item does not belong to any dialog (internal error?)");
+		rb_raise(rb_eDialogError, "The dialog item does not belong to any dialog (internal error?)");
 	view = RubyDialogCallback_dialogItemAtIndex(dref, itag);	
 	val = rb_str_to_str(val);
 	if (RubyDialogCallback_appendString(view, EncodedStringValuePtr(val)) == 0)
-		rb_raise(rb_eMolbyError, "Cannot append string to the dialog item");
+		rb_raise(rb_eDialogError, "Cannot append string to the dialog item");
 	return self;
 }
 
@@ -584,7 +600,7 @@ s_RubyDialogItem_RefreshRect(int argc, VALUE *argv, VALUE self)
 	index_val = rb_ivar_get(self, SYM2ID(sIndexSymbol));
 	itag = NUM2INT(index_val);
 	if (dialog_val == Qnil || (dref = s_RubyDialog_GetController(dialog_val)) == NULL)
-		rb_raise(rb_eStandardError, "The dialog item does not belong to any dialog (internal error?)");
+		rb_raise(rb_eDialogError, "The dialog item does not belong to any dialog (internal error?)");
 	view = RubyDialogCallback_dialogItemAtIndex(dref, itag);
 	rb_scan_args(argc, argv, "11", &rval, &fval);
 	if (argc == 1)
@@ -699,9 +715,9 @@ s_RubyDialog_ItemIndexForTag(VALUE self, VALUE tag)
 {
 	int i = s_RubyDialog_ItemIndexForTagNoRaise(self, tag);
 	if (i == -1)
-		rb_raise(rb_eStandardError, "item number (%d) out of range", i);
+		rb_raise(rb_eDialogError, "item number (%d) out of range", i);
 	else if (i == -2)
-		rb_raise(rb_eStandardError, "Dialog has no item with tag %s", EncodedStringValuePtr(tag));
+		rb_raise(rb_eDialogError, "Dialog has no item with tag %s", EncodedStringValuePtr(tag));
 	return i;
 }
 
@@ -1160,7 +1176,7 @@ s_RubyDialog_Item(int argc, VALUE *argv, VALUE self)
 	if (NIL_P(hash))
 		hash = rb_hash_new();
 	else if (TYPE(hash) != T_HASH)
-		rb_raise(rb_eMolbyError, "The second argument of Dialog#item must be a hash");
+		rb_raise(rb_eDialogError, "The second argument of Dialog#item must be a hash");
 	rect.size.width = rect.size.height = 1.0;
 	rect.origin.x = rect.origin.y = 0.0;
 
@@ -1218,7 +1234,7 @@ s_RubyDialog_Item(int argc, VALUE *argv, VALUE self)
 	}
 	
 	if (RubyDialogCallback_createItem(dref, rb_id2name(SYM2ID(type)), title, rect) == NULL)
-		rb_raise(rb_eStandardError, "item type :%s is not implemented", rb_id2name(SYM2ID(type)));
+		rb_raise(rb_eDialogError, "item type :%s is not implemented", rb_id2name(SYM2ID(type)));
 
 	/*  Push to _items  */
 	items = rb_iv_get(self, "_items");
@@ -1335,7 +1351,7 @@ s_RubyDialog_RadioGroup(VALUE self, VALUE aval)
 		rb_ary_push(gval, INT2NUM(j));
 	}
 	if (i < n)
-		rb_raise(rb_eStandardError, "the item %d (at index %d) does not represent a radio button", j, i);
+		rb_raise(rb_eDialogError, "the item %d (at index %d) does not represent a radio button", j, i);
 	
 	/*  Set the radio group array to the specified items. If the item already belongs to a radio group,
 	    then it is removed from that group. */
@@ -1473,7 +1489,7 @@ s_RubyDialog_StartTimer(int argc, VALUE *argv, VALUE self)
 		rb_iv_set(self, "_timer_action", actval);
 	dval = NUM2DBL(rb_Float(itval));
 	if (RubyDialogCallback_startIntervalTimer(dref, dval) == 0)
-		rb_raise(rb_eStandardError, "Cannot start timer for dialog");
+		rb_raise(rb_eDialogError, "Cannot start timer for dialog");
 	return self;
 }
 
@@ -1587,6 +1603,7 @@ s_RubyDialog_SetMinSize(int argc, VALUE *argv, VALUE self)
 	return self;
 }
 
+#if 0
 /*
  *  call-seq:
  *     listen(obj, str, pr)
@@ -1609,8 +1626,8 @@ s_RubyDialog_Listen(VALUE self, VALUE oval, VALUE sval, VALUE pval)
 		i = RubyDialogCallback_Listen(s_RubyDialog_GetController(self), mol, "Molecule", sptr, (RubyValue)oval, (RubyValue)pval);
 		if (i < 0) {
 			switch (i) {
-				case -1: rb_raise(rb_eMolbyError, "This dialog cannot be listened to."); break;
-				case -2: rb_raise(rb_eMolbyError, "This message is not supported"); break;
+				case -1: rb_raise(rb_eDialogError, "This dialog cannot be listened to."); break;
+				case -2: rb_raise(rb_eDialogError, "This message is not supported"); break;
 			}
 		} else {
 			/*  Keep the objects in the internal array, to protect from GC  */
@@ -1627,10 +1644,11 @@ s_RubyDialog_Listen(VALUE self, VALUE oval, VALUE sval, VALUE pval)
 			}
 		}
 	} else {
-		rb_raise(rb_eMolbyError, "Dialog#listen is presently only available for Molecule object");
+		rb_raise(rb_eDialogError, "Dialog#listen is presently only available for Molecule object");
 	}
 	return self;
 }
+#endif
 
 /*
  *  call-seq:
@@ -1698,7 +1716,7 @@ s_RubyDialog_OpenPanel(int argc, VALUE *argv, VALUE klass)
 	if (mulval != Qnil && mulval != Qfalse) {
 		multiple_selection = 1;
 		if (for_directories && multiple_selection)
-			rb_raise(rb_eStandardError, "open_panel for directories allows only single selection");
+			rb_raise(rb_eDialogError, "open_panel for directories allows only single selection");
 	}
 	iflag = Ruby_SetInterruptFlag(Qfalse);
 	n = RubyDialogCallback_openPanel(mp, dp, wp, &ary, for_directories, multiple_selection);
@@ -1844,7 +1862,7 @@ RubyDialog_GetTableItemCount(RubyValue self, RDItem *ip)
 	void *vp[4] = { (void *)self, (void *)ip, (void *)sOnCountSymbol, NULL };
 	VALUE val = rb_protect(s_RubyDialog_doTableAction, (VALUE)vp, &status);
 	if (status != 0) {
-		Molby_showError(status);
+		Ruby_showError(status);
 		return 0;
 	} else if (val == Qnil)
 		return 0;
@@ -1884,7 +1902,7 @@ RubyDialog_DragTableSelectionToRow(RubyValue self, RDItem *ip, int row)
 	void *vp[5] = { (void *)self, (void *)ip, (void *)sOnDragSelectionToRowSymbol, (void *)row, NULL };
 	rb_protect(s_RubyDialog_doTableAction, (VALUE)vp, &status);
 	if (status != 0)
-		Molby_showError(status);
+		Ruby_showError(status);
 }
 
 int
@@ -1916,7 +1934,7 @@ RubyDialog_OnTableSelectionChanged(RubyValue self, RDItem *ip)
 	void *vp[4] = { (void *)self, (void *)ip, (void *)sOnSelectionChangedSymbol, NULL };
 	rb_protect(s_RubyDialog_doTableAction, (VALUE)vp, &status);
 	if (status != 0)
-		Molby_showError(status);
+		Ruby_showError(status);
 }
 
 int
@@ -1948,7 +1966,7 @@ RubyDialog_OnPopUpMenuSelected(RubyValue self, RDItem *ip, int row, int column, 
 	void *vp[7] = { (void *)self, (void *)ip, (void *)sOnPopUpMenuSelectedSymbol, (void *)row, (void *)column, (void *)selected_index, NULL };
 	rb_protect(s_RubyDialog_doTableAction, (VALUE)vp, &status);
 	if (status != 0)
-		Molby_showError(status);
+		Ruby_showError(status);
 }
 	
 #pragma mark ====== Utility function ======
@@ -2001,7 +2019,7 @@ s_RubyDialog_doItemAction(VALUE val)
 	VALUE flag;
 	RDItem *ip = (RDItem *)vp[1];
 	RDItem *ip2;
-	Int options = (Int)vp[2];
+	int options = (int)vp[2];
 	VALUE ival, itval, actval, tval, aval;
 	RubyDialog *dref = s_RubyDialog_GetController(self);
 	VALUE items = rb_iv_get(self, "_items");
@@ -2100,7 +2118,7 @@ s_RubyDialog_doItemAction(VALUE val)
  the item number (integer) as the argument. The default "action" method is
  defined as s_RubyDialog_action.  */
 void
-RubyDialog_doItemAction(RubyValue self, RDItem *ip, Int options)
+RubyDialog_doItemAction(RubyValue self, RDItem *ip, int options)
 {
 	int status;
 	void *vp[3];
@@ -2109,7 +2127,7 @@ RubyDialog_doItemAction(RubyValue self, RDItem *ip, Int options)
 	vp[2] = (void *)options;
 	rb_protect(s_RubyDialog_doItemAction, (VALUE)vp, &status);
 	if (status != 0)
-		Molby_showError(status);
+		Ruby_showError(status);
 }
 
 static VALUE
@@ -2145,7 +2163,7 @@ RubyDialog_doPaintAction(RubyValue self, RDItem *ip)
 	vp[1] = ip;
 	rb_protect(s_RubyDialog_doPaintAction, (VALUE)vp, &status);
 	if (status != 0)
-		Molby_showError(status);
+		Ruby_showError(status);
 }
 
 static VALUE
@@ -2169,7 +2187,7 @@ RubyDialog_doTimerAction(RubyValue self)
 	if (status != 0) {
 		/*  Stop timer before showing error dialog  */
 		RubyDialogCallback_stopIntervalTimer(s_RubyDialog_GetController((VALUE)self));
-		Molby_showError(status);
+		Ruby_showError(status);
 	}
 }
 
@@ -2198,7 +2216,7 @@ RubyDialog_doKeyAction(RubyValue self, int keyCode)
 	values[1] = (void *)keyCode;
 	rb_protect(s_RubyDialog_doKeyAction, (VALUE)values, &status);
 	if (status != 0) {
-		Molby_showError(status);
+		Ruby_showError(status);
 	}
 }
 
@@ -2274,7 +2292,7 @@ RubyDialog_doCloseWindow(RubyValue self, int isModal)
 	void *args[2] = { (void *)self, (void *)isModal };
 	rval = rb_protect(s_RubyDialog_doCloseWindow, (VALUE)args, &status);
 	if (status != 0) {
-		Molby_showError(status);
+		Ruby_showError(status);
 	}
 }
 
@@ -2291,7 +2309,7 @@ s_RubyDialog_GetDeviceContext(VALUE self)
 		Data_Get_Struct(self, RDBitmap, bitmap);
 		return RubyDialogCallback_getDeviceContextForBitmap(bitmap);
 	} else {
-		rb_raise(rb_eMolbyError, "No graphic device context is available");
+		rb_raise(rb_eDialogError, "No graphic device context is available");
 		return NULL;  /* Not reached */
 	}
 }
@@ -2350,24 +2368,24 @@ s_RubyDialog_DrawLine(int argc, VALUE *argv, VALUE self)
 			/*  The second form  */
 			ncoords = argc;
 			if (ncoords < 2)
-				rb_raise(rb_eMolbyError, "Too few coordinates are given (requires at least two points)");
+				rb_raise(rb_eDialogError, "Too few coordinates are given (requires at least two points)");
 			coords = (float *)calloc(sizeof(float), ncoords * 2);
 			coords[0] = NUM2DBL(rb_Float(RARRAY_PTR(aval)[0]));
 			coords[1] = NUM2DBL(rb_Float(RARRAY_PTR(aval)[1]));
 			for (i = 1; i < ncoords; i++) {
 				aval = rb_ary_to_ary(argv[i]);
 				if (RARRAY_LEN(aval) < 2)
-					rb_raise(rb_eMolbyError, "The coordinate should be an array of two numerics");
+					rb_raise(rb_eDialogError, "The coordinate should be an array of two numerics");
 				coords[i * 2] = NUM2DBL(rb_Float(RARRAY_PTR(aval)[0]));
 				coords[i * 2 + 1] = NUM2DBL(rb_Float(RARRAY_PTR(aval)[1]));
 			}
 		} else {
 			/*  The third form  */
 			if (RARRAY_LEN(aval) % 2 == 1)
-				rb_raise(rb_eMolbyError, "An odd number of numerics are given; the coordinate values should be given in pairs");
+				rb_raise(rb_eDialogError, "An odd number of numerics are given; the coordinate values should be given in pairs");
 			ncoords = RARRAY_LEN(aval) / 2;
 			if (ncoords < 2)
-				rb_raise(rb_eMolbyError, "Too few coordinates are given (requires at least two points)");
+				rb_raise(rb_eDialogError, "Too few coordinates are given (requires at least two points)");
 			coords = (float *)calloc(sizeof(float), ncoords * 2);
 			for (i = 0; i < ncoords * 2; i++) {
 				coords[i] = NUM2DBL(rb_Float(RARRAY_PTR(aval)[i]));
@@ -2377,9 +2395,9 @@ s_RubyDialog_DrawLine(int argc, VALUE *argv, VALUE self)
 		/*  The first form  */
 		ncoords = argc / 2;
 		if (ncoords < 2)
-			rb_raise(rb_eMolbyError, "Too few coordinates are given (requires at least two points)");
+			rb_raise(rb_eDialogError, "Too few coordinates are given (requires at least two points)");
 		if (argc % 2 == 1)
-			rb_raise(rb_eMolbyError, "An odd number of numerics are given; the coordinate values should be given in pairs");
+			rb_raise(rb_eDialogError, "An odd number of numerics are given; the coordinate values should be given in pairs");
 		coords = (float *)calloc(sizeof(float), ncoords * 2);
 		for (i = 0; i < ncoords * 2; i++) {
 			coords[i] = NUM2DBL(rb_Float(argv[i]));
@@ -2410,7 +2428,7 @@ s_RubyDialog_DrawRectangle(int argc, VALUE *argv, VALUE self)
 		rb_scan_args(argc, argv, "11", &xval, &rval);
 		xval = rb_ary_to_ary(xval);
 		if (RARRAY_LEN(xval) < 4)
-			rb_raise(rb_eMolbyError, "The dimension of rectangle should be given as four numerics (x, y, width, height) or an array of four numerics.");
+			rb_raise(rb_eDialogError, "The dimension of rectangle should be given as four numerics (x, y, width, height) or an array of four numerics.");
 		hval = RARRAY_PTR(xval)[3];
 		wval = RARRAY_PTR(xval)[2];
 		yval = RARRAY_PTR(xval)[1];
@@ -2656,11 +2674,11 @@ s_Bitmap_Initialize(int argc, VALUE *argv, VALUE self)
 	width = NUM2INT(rb_Integer(wval));
 	height = NUM2INT(rb_Integer(hval));
 	if (width <= 0 || width >= 32768)
-		rb_raise(rb_eMolbyError, "Bitmap width (%d) is out of range (1..32767)", width);
+		rb_raise(rb_eDialogError, "Bitmap width (%d) is out of range (1..32767)", width);
 	if (height <= 0 || height >= 32768)
-		rb_raise(rb_eMolbyError, "Bitmap height (%d) is out of range (1..32767)", height);
+		rb_raise(rb_eDialogError, "Bitmap height (%d) is out of range (1..32767)", height);
 	if (depth != 32)
-		rb_raise(rb_eMolbyError, "Only depth = 32 is supported currently");
+		rb_raise(rb_eDialogError, "Only depth = 32 is supported currently");
 	bitmap = RubyDialogCallback_createBitmap(width, height, depth);
 	DATA_PTR(self) = bitmap;
 	return self;
@@ -2714,7 +2732,7 @@ RubyDialogInitClass(void)
 	VALUE parent;
 	if (rb_cDialog != Qfalse)
 		return;
-	parent = RubyDialogCallback_parentModule();
+	parent = (VALUE)RubyDialogCallback_parentModule();
 	if (parent != Qfalse)
 		rb_cDialog = rb_define_class_under(parent, "Dialog", rb_cObject);
 	else
@@ -2745,7 +2763,7 @@ RubyDialogInitClass(void)
 	rb_define_method(rb_cDialog, "size", s_RubyDialog_Size, 0);
 	rb_define_method(rb_cDialog, "set_min_size", s_RubyDialog_SetMinSize, -1);
 	rb_define_method(rb_cDialog, "min_size", s_RubyDialog_MinSize, 0);
-	rb_define_method(rb_cDialog, "listen", s_RubyDialog_Listen, 3);
+/*	rb_define_method(rb_cDialog, "listen", s_RubyDialog_Listen, 3); */
 	rb_define_singleton_method(rb_cDialog, "save_panel", s_RubyDialog_SavePanel, -1);
 	rb_define_singleton_method(rb_cDialog, "open_panel", s_RubyDialog_OpenPanel, -1);
 

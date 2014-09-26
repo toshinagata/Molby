@@ -548,7 +548,7 @@ s_MolActionPerformRubyScript(Molecule *mol, MolAction *action)
 		MyAppCallback_endUndoGrouping();
 	}
 	if (result != 0) {
-		Molby_showError(result);
+		Ruby_showError(result);
 	}
 	MyAppCallback_hideProgressPanel();  /*  In case when the progress panel is still onscreen */
 	return (result == 0 ? 0 : -1);
