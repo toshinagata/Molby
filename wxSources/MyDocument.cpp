@@ -532,7 +532,9 @@ MyDocument::OnDocumentModified(wxCommandEvent& event)
 	MoleculeClearModifyCount(GetMainView()->mol);
 
 	/*  Call modified handler in the Ruby world  */
-	MolActionCreateAndPerform(mol, SCRIPT_ACTION(""), "on_modified");
+	/*  (Does not if undo is disabled --- e.g. during loading structure)  */
+	if (isUndoEnabled)
+		MolActionCreateAndPerform(mol, SCRIPT_ACTION(""), "on_modified");
 
 	event.Skip();  //  Also pass to other notification handlers
 	UpdateModifyFlag();
