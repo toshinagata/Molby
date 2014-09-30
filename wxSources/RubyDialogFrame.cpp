@@ -414,8 +414,8 @@ RubyDialogFrame::OnUpdateUI(wxUpdateUIEvent& event)
 		int uid = event.GetId();
 		if (uid == wxID_CLOSE)
 			event.Enable(true);
-		else if (uid >= wxID_LOWEST)
-			event.Enable(false);
+		else
+			event.Skip();
 		return;
 	}
 	event.Skip();
@@ -1538,13 +1538,45 @@ RubyDialogCallback_isTableRowSelected(RDItem *item, int row)
 	} else return false;
 }
 
-char
+/*
+ char
 RubyDialogCallback_setTableRowSelected(RDItem *item, int row, int flag)
 {
 	if (wxDynamicCast((wxWindow *)item, MyListCtrl) != NULL) {
 		long state = (flag ? wxLIST_STATE_SELECTED : 0);
 		return ((MyListCtrl *)item)->SetItemState(row, state, wxLIST_STATE_SELECTED);
 	} else return false;
+}
+*/
+
+IntGroup *
+RubyDialogCallback_selectedTableRows(RDItem *item)
+{
+	if (wxDynamicCast((wxWindow *)item, MyListCtrl) != NULL) {
+		IntGroup *ig = IntGroupNew();
+		long i, count = ((MyListCtrl *)item)->dataSource->GetItemCount((MyListCtrl *)item);
+		for (i = 0; i < count; i++) {
+			if (((MyListCtrl *)item)->GetItemState(i, wxLIST_STATE_SELECTED) != 0)
+				IntGroupAdd(ig, i, 1);
+		}
+		return ig;
+	} else return NULL;
+}
+
+char 
+RubyDialogCallback_setSelectedTableRows(RDItem *item, IntGroup *ig, int extend)
+{
+	if (wxDynamicCast((wxWindow *)item, MyListCtrl) != NULL) {
+		long i, count = ((MyListCtrl *)item)->dataSource->GetItemCount((MyListCtrl *)item);
+		for (i = 0; i < count; i++) {
+			int flag = (IntGroupLookup(ig, i, NULL) != 0);
+			if (extend && !flag)
+				continue;  /*  Don't change  */
+			((MyListCtrl *)item)->SetItemState(i, (flag ? wxLIST_STATE_SELECTED : 0), wxLIST_STATE_SELECTED);
+		}
+		return true;
+	}
+	return false;
 }
 
 void

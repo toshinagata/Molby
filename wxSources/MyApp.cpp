@@ -1097,6 +1097,10 @@ MyApp::OnUpdateUI(wxUpdateUIEvent& event)
 		event.Enable(enabled != 0);
 	} else if (uid >= myMenuID_PredefinedFragment && uid <= myMenuID_PredefinedFragment + m_CountNamedFragments) {
 		event.Enable(true);
+#if defined(__WXMAC__)
+	} else if (uid >= wxID_OSX_MENU_FIRST && uid <= wxID_OSX_MENU_LAST) {
+		event.Enable(true);
+#endif
 	} else {
 		switch (uid) {
 			case myMenuID_ExecuteScript:

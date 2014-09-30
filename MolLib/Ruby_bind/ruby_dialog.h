@@ -18,7 +18,16 @@
 #ifndef __ruby_dialog_h__
 #define __ruby_dialog_h__
 
-//#include "Molby_extern.h"
+/*  'IntGroup' is an opaque pointer used for setting/getting selection of a 'Table' dialog item.
+    We only need the following functions:
+    IntGroup *IntGroupFromValue(VALUE val);  //  Get an opaque IntGroup pointer from a Ruby value
+    VALUE ValueFromIntGroup(IntGroup *ip);   //  Create a Ruby value from an IntGroup pointer
+    void IntGroupRelease(IntGroup *ip);      //  Release an IntGroup pointer. 
+  We need to call IntGroupRelease() after we are done with the IntGroup pointer. Note that
+  we call it after calling ValueFromIntGroup(ip) (because we are 'done' with ip).
+*/
+
+#include "IntGroup.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,6 +43,7 @@ enum {
 #define RubyValue_is_Defined
 typedef void *RubyValue;
 #define RubyNil (RubyValue)4
+#define RubyFalse (RubyValue)0
 #endif
 
 #ifndef STUB
@@ -158,7 +168,9 @@ STUB char RubyDialogCallback_insertTableColumn(RDItem *item, int col, const char
 STUB char RubyDialogCallback_deleteTableColumn(RDItem *item, int col);
 STUB int RubyDialogCallback_countTableColumn(RDItem *item);
 STUB char RubyDialogCallback_isTableRowSelected(RDItem *item, int row);
-STUB char RubyDialogCallback_setTableRowSelected(RDItem *item, int row, int flag);
+STUB IntGroup *RubyDialogCallback_selectedTableRows(RDItem *item);
+STUB char RubyDialogCallback_setSelectedTableRows(RDItem *item, IntGroup *ig, int extend);
+// STUB char RubyDialogCallback_setTableRowSelected(RDItem *item, int row, int flag);
 STUB void RubyDialogCallback_refreshTable(RDItem *item);
 
 STUB int RubyDialogCallback_savePanel(const char *title, const char *dirname, const char *wildcard, char *buf, int bufsize);

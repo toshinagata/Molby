@@ -16,6 +16,7 @@
 */
 
 #include <ruby.h>
+#include <math.h>   /*  For floor()  */
 #include "ruby_dialog.h"
 #include "IntGroup.h"
 
@@ -328,12 +329,14 @@ s_RubyDialogItem_SetAttr(VALUE self, VALUE key, VALUE val)
 		/*  Selection (for Table == MyListCtrl item)  */
 		if (type == sTableSymbol) {
 			IntGroup *ig = IntGroupFromValue(val);
-			int row, count;
+			RubyDialogCallback_setSelectedTableRows((RDItem *)view, ig, 0);
+			IntGroupRelease(ig);
+		/*	int row, count;
 			count = RubyDialog_GetTableItemCount((RubyValue)dialog_val, (RDItem *)view);
 			for (row = 0; row < count; row++) {
 				int flag = (IntGroupLookup(ig, row, NULL) != 0);
 				RubyDialogCallback_setTableRowSelected((RDItem *)view, row, flag);
-			}
+			} */
 		}
 	} else if (key == sColumnsSymbol) {
 		/*  Columns (for Table == MyListCtrl item)  */
@@ -537,14 +540,16 @@ s_RubyDialogItem_Attr(VALUE self, VALUE key)
 	} else if (key == sSelectionSymbol) {
 		/*  Selection (for Table == MyTextCtrl item)  */
 		if (type == sTableSymbol) {
-			IntGroup *ig = IntGroupNew();
-			int row, count;
+			IntGroup *ig = RubyDialogCallback_selectedTableRows((RDItem *)view);
+			val = ValueFromIntGroup(ig);
+			IntGroupRelease(ig);
+		/*	int row, count;
 			count = RubyDialog_GetTableItemCount((RubyValue)dialog_val, (RDItem *)view);
 			for (row = 0; row < count; row++) {
 				if (RubyDialogCallback_isTableRowSelected((RDItem *)view, row))
 					IntGroupAdd(ig, row, 1);
 			}
-			val = ValueFromIntGroup(ig);
+			val = ValueFromIntGroup(ig); */
 		} else val = Qnil;
 	} else {
 		val = rb_ivar_get(self, key_id);
