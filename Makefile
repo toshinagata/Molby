@@ -19,7 +19,7 @@ ifeq ($(TARGET_PLATFORM),MSW)
  WX_ARCH_DIR = $(WX_LIB_DIR)/wx/include/msw-unicode-static-3.0
  WX_CPPFLAGS = -isystem $(WX_ARCH_DIR) -isystem $(WX_DIR)/include -D_LARGEFIILE_SOURCE=unknown -D__WXMSW__
  WX_LDFLAGS = -L$(WX_LIB_DIR) -Wl,--subsystem,windows -mwindows -lwx_mswu_gl-3.0 -lopengl32 -lglu32 -lwx_mswu-3.0 -lwxregexu-3.0 -lwxexpat-3.0 -lwxtiff-3.0 -lwxjpeg-3.0 -lwxpng-3.0 -lwxzlib-3.0 -lrpcrt4 -loleaut32 -lole32 -luuid -lwinspool -lwinmm -lshell32 -lcomctl32 -lcomdlg32 -ladvapi32 -lwsock32 -lgdi32
- CPP_EXTRA_FLAGS = -isystem $(PWD)/../../CLAPACK-3.1.1.1-mingw/INCLUDE -isystem $(PWD)/../../fftw-3.3.2/msw-build/include
+ CPP_EXTRA_FLAGS = -isystem $(PWD)/../../CLAPACK-3.1.1.1-mingw/INCLUDE -isystem $(PWD)/../../fftw-3.3.2/msw-build/include -I$(PWD)/../MolLib
  LD_EXTRA_FLAGS = -L$(PWD)/../../CLAPACK-3.1.1.1-mingw/lib -L$(PWD)/../../fftw-3.3.2/msw-build/lib -llapackMinGW -lblasMinGW -lf2c_nomain -lfftw3 -static-libgcc
  RUBY_DIR = $(PWD)/../../ruby-2.0.0-p353
  RUBY_CFLAGS = -isystem $(RUBY_DIR)/msw-build/include/ruby-2.0.0 -I$(RUBY_DIR) -I$(RUBY_DIR)/msw-build/include/ruby-2.0.0/i386-mingw32

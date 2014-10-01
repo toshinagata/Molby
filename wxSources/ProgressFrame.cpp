@@ -21,6 +21,7 @@
 #include "wx/stattext.h"
 #include "wx/gauge.h"
 #include "wx/sizer.h"
+#include "wx/evtloop.h"
 
 #if __WXMAC__
 #include <Carbon/Carbon.h>
@@ -113,6 +114,10 @@ ProgressFrame::CheckInterrupt()
 		return save;
 	}
 
+#if 1
+	wxEventLoopBase * const loop = wxEventLoopBase::GetActive();
+	loop->YieldFor(wxEVT_CATEGORY_UI);
+#else
 #if __WXMAC__
 	::wxYield();
 #else
@@ -124,6 +129,7 @@ ProgressFrame::CheckInterrupt()
 		//	activeWin = GetMainFrame()->GetActiveChild();
 		::wxSafeYield(activeWin);
 	}
+#endif
 #endif
 	if (::wxGetKeyState(WXK_ESCAPE))
 		return 1;
