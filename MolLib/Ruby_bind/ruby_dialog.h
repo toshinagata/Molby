@@ -99,6 +99,7 @@ STUB void RubyDialogCallback_release(RubyDialog *dref);
 STUB void RubyDialogCallback_setRubyObject(RubyDialog *dref, RubyValue val);
 STUB void RubyDialogCallback_setWindowTitle(RubyDialog *dref, const char *title);
 STUB int RubyDialogCallback_runModal(RubyDialog *dref);
+STUB int RubyDialogCallback_isModal(RubyDialog *dref);
 STUB void RubyDialogCallback_endModal(RubyDialog *dref, int status);
 STUB void RubyDialogCallback_destroy(RubyDialog *dref);
 STUB void RubyDialogCallback_close(RubyDialog *dref);

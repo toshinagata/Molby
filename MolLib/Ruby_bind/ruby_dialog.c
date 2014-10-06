@@ -2101,14 +2101,18 @@ s_RubyDialog_doItemAction(VALUE val)
 		rb_funcall(itval, SYM2ID(aval), 0);
 	} else if (aval == sReturnActionSym || aval == sEscapeActionSym) {
 		/*  Enter or escape is pressed on text field  */
-		rb_ivar_set(itval, SYM2ID(sIsProcessingActionSymbol), Qfalse);
-		itval = s_RubyDialog_ItemAtIndex(self, (aval == sReturnActionSym ? INT2FIX(0) : INT2FIX(1)));
-		s_RubyDialog_EndModal(1, &itval, self);		
+		if (RubyDialogCallback_isModal(dref)) {
+			rb_ivar_set(itval, SYM2ID(sIsProcessingActionSymbol), Qfalse);
+			itval = s_RubyDialog_ItemAtIndex(self, (aval == sReturnActionSym ? INT2FIX(0) : INT2FIX(1)));
+			s_RubyDialog_EndModal(1, &itval, self);		
+		}
 	} else {
 		/*  Default action (only for default buttons)  */
-		if (idx == 0 || idx == 1) {
-			rb_ivar_set(itval, SYM2ID(sIsProcessingActionSymbol), Qfalse);
-			s_RubyDialog_EndModal(1, &itval, self);
+		if (RubyDialogCallback_isModal(dref)) {
+			if (idx == 0 || idx == 1) {
+				rb_ivar_set(itval, SYM2ID(sIsProcessingActionSymbol), Qfalse);
+				s_RubyDialog_EndModal(1, &itval, self);
+			}
 		}
 	}
 

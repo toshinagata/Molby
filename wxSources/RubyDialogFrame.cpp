@@ -758,6 +758,12 @@ RubyDialogCallback_runModal(RubyDialog *dref)
 	else return 1;  /* Cancel */
 }
 
+int
+RubyDialogCallback_isModal(RubyDialog *dref)
+{
+	return ((RubyDialogFrame *)dref)->IsModal();
+}
+
 void
 RubyDialogCallback_endModal(RubyDialog *dref, int status)
 {
