@@ -220,8 +220,14 @@ class Molecule
   end
   
   def cmd_create_surface
+    if @surface_dialog_attr == nil
+	  @surface_dialog_attr = Hash.new
+	  @surface_dialog_attr["hidden"] = -1
+	end
+    surface_dialog_attr = @surface_dialog_attr
     mol = self
 	mol.open_auxiliary_window("MO Surface", nil, nil, :resizable=>true, :has_close_box=>true) {
+	  tags = ["mo_ao", "mo", "color", "opacity", "threshold", "expand", "grid"]
 	  motype = mol.get_mo_info(:type)
 	  alpha = mol.get_mo_info(:alpha)
 	  beta = mol.get_mo_info(:beta)
@@ -273,6 +279,23 @@ class Molecule
 		end
 		tabvals.push([a, n, label, a_idx])
 	  }
+	  on_update_attr = lambda {
+	    tags.each { |tag|
+		  surface_dialog_attr[tag] = item_with_tag(tag)[:value]
+		}
+		it = item_with_tag("hide")
+		case surface_dialog_attr["hidden"]
+		when -1
+		  it[:title] = "Hide"
+		  it[:enabled] = false
+		when 0
+		  it[:title] = "Hide"
+		  it[:enabled] = true
+		when 1
+		  it[:title] = "Show"
+		  it[:enabled] = true
+		end
+	  }
 	  on_get_value = lambda { |it, row, col|
 	    if col < 3
 		  tabvals[row][col]
@@ -320,6 +343,7 @@ class Molecule
 		  }
 		  item_with_tag("update")[:enabled] = should_update
 		end
+		on_update_attr.call
 	  }
 	  on_mo_action = lambda { |it|
 	    mo = it[:value]
@@ -355,6 +379,7 @@ class Molecule
 		end
 		item_with_tag("table")[:refresh] = true
 	    on_action.call(it)
+		on_update_attr.call
 	  }
 	  on_set_action = lambda { |it|
 	    if mo_ao != it[:value]
@@ -407,6 +432,7 @@ class Molecule
 		  h["mo"] = nil  # "Update" button is forced to be enabled
 		  on_mo_action.call(it0)
 		end
+		on_update_attr.call
 	  }
 	  on_update = lambda { |it|
 	    h.each_key { |key|
@@ -434,7 +460,10 @@ class Molecule
 		  mol.set_mo_coefficients(0, 0.0, coeffs)
 		end
 		mol.create_surface(idx, :npoints=>grid, :color=>color, :thres=>thres, :expand=>expand, :color0=>color0)
+		mol.show_surface
 		on_action.call(it)
+		surface_dialog_attr["hidden"] = 0
+		on_update_attr.call
 	  }
 	  layout(1,
 	    layout(2,
@@ -459,10 +488,37 @@ class Molecule
 		  :on_count=> lambda { |it| tabvals.count },
 		  :on_get_value=>on_get_value,
 		  :flex=>[0,0,0,0,1,1]),
-		item(:button, :tag=>"update", :title=>"Update", :action=>on_update, :flex=>[0,1,0,0,0,0]),
+		layout(3,
+		  item(:button, :tag=>"update", :title=>"Update", :action=>on_update),
+		  item(:button, :tag=>"clear", :title=>"Clear", :action=>lambda { |it|
+		    mol.clear_surface
+			item_with_tag("update")[:enabled] = true
+			surface_dialog_attr["hidden"] = -1
+			on_update_attr.call
+		    } ),
+		  item(:button, :tag=>"hide", :title=>"Hide", :action=>lambda { |it|
+		    case surface_dialog_attr["hidden"]
+			when 0
+			  surface_dialog_attr["hidden"] = 1
+			  mol.hide_surface
+			when 1
+			  surface_dialog_attr["hidden"] = 0
+			  mol.show_surface
+			end
+			on_update_attr.call
+			} ),
+		  :flex=>[0,1,0,0,0,0]),
 		:flex=>[0,0,0,0,1,1]
 	  )
+	  tags.each { |tag|
+	    if (val = surface_dialog_attr[tag]) != nil
+		  item_with_tag(tag)[:value] = val
+		end
+	  }
+	  mo_idx = surface_dialog_attr["mo"]
+	  on_update_attr.call
 	  on_set_action.call(item_with_tag("mo_ao"))
+	  item_with_tag("mo")[:value] = surface_dialog_attr["mo"] = mo_idx
 	  size = self.size
 	  set_min_size(size[0], 250)
 	  item_with_tag("table")[:refresh] = true

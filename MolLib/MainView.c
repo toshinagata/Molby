@@ -1233,7 +1233,7 @@ drawSurface(MainView *mview)
 	int i, sn, k;
 	GLfloat rgba[4];
 	MCube *mc;
-	if (mview->mol == NULL || mview->mol->mcube == NULL)
+	if (mview->mol == NULL || mview->mol->mcube == NULL || mview->mol->mcube->hidden != 0)
 		return;
 	mc = mview->mol->mcube;
 	for (sn = 0; sn <= 1; sn++) {

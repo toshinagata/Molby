@@ -10226,6 +10226,58 @@ s_Molecule_Cubegen(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
+ *     clear_surface
+ *
+ *  Clear the MO surface if present.
+ */
+static VALUE
+s_Molecule_ClearSurface(VALUE self)
+{
+    Molecule *mol;
+    Data_Get_Struct(self, Molecule, mol);
+	if (mol->mcube != NULL)
+		MoleculeClearMCube(mol, 0, 0, 0, NULL, 0.0, 0.0, 0.0);
+	return self;
+}
+
+/*
+ *  call-seq:
+ *     hide_surface
+ *
+ *  Hide the MO surface if present.
+ */
+static VALUE
+s_Molecule_HideSurface(VALUE self)
+{
+    Molecule *mol;
+    Data_Get_Struct(self, Molecule, mol);
+	if (mol->mcube != NULL) {
+		mol->mcube->hidden = 1;
+		MoleculeCallback_notifyModification(mol, 0);
+	}
+	return self;
+}
+
+/*
+ *  call-seq:
+ *     show_surface
+ *
+ *  Show the MO surface if present.
+ */
+static VALUE
+s_Molecule_ShowSurface(VALUE self)
+{
+    Molecule *mol;
+    Data_Get_Struct(self, Molecule, mol);
+	if (mol->mcube != NULL) {
+		mol->mcube->hidden = 0;
+		MoleculeCallback_notifyModification(mol, 0);
+	}
+	return self;
+}
+
+/*
+ *  call-seq:
  *     create_surface(mo, attr = nil)
  *
  *  Create a MO surface. The argument mo is the MO index (1-based); if mo is negative,
@@ -11555,6 +11607,9 @@ Init_Molby(void)
 	rb_define_method(rb_cMolecule, "selected_MO", s_Molecule_SelectedMO, 0);
 	rb_define_method(rb_cMolecule, "default_MO_grid", s_Molecule_GetDefaultMOGrid, -1);
 	rb_define_method(rb_cMolecule, "cubegen", s_Molecule_Cubegen, -1);
+	rb_define_method(rb_cMolecule, "clear_surface", s_Molecule_ClearSurface, 0);
+	rb_define_method(rb_cMolecule, "show_surface", s_Molecule_ShowSurface, 0);
+	rb_define_method(rb_cMolecule, "hide_surface", s_Molecule_HideSurface, 0);
 	rb_define_method(rb_cMolecule, "create_surface", s_Molecule_CreateSurface, -1);
 	rb_define_method(rb_cMolecule, "set_surface_attr", s_Molecule_SetSurfaceAttr, 1);
 	rb_define_method(rb_cMolecule, "nelpots", s_Molecule_NElpots, 0);
