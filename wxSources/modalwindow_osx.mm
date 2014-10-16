@@ -34,3 +34,14 @@ MacGetActiveWindow(void)
 {
 	return [NSApp mainWindow];
 }
+
+/*
+int
+MacCheckEscapeKeyPressed(void)
+{
+	NSEvent *ep = [NSApp nextEventMatchingMask:NSKeyDownMask untilDate:nil inMode:NSEventTrackingRunLoopMode dequeue:YES];
+	if (ep != nil && [[ep charactersIgnoringModifiers] characterAtIndex:0] == 0x1e) {
+		return 1;
+	} else return 0;
+}
+*/

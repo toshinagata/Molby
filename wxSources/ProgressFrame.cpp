@@ -116,7 +116,8 @@ ProgressFrame::CheckInterrupt()
 
 #if 1
 	wxEventLoopBase * const loop = wxEventLoopBase::GetActive();
-	loop->YieldFor(wxEVT_CATEGORY_UI);
+	if (loop != NULL)
+		loop->YieldFor(wxEVT_CATEGORY_UI);
 #else
 #if __WXMAC__
 	::wxYield();
