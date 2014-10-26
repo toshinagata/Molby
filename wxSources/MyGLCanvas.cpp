@@ -187,3 +187,15 @@ MyGLCanvas::OnEraseBackground(wxEraseEvent & WXUNUSED(event))
 {
     // Do nothing, to avoid flashing.
 }
+
+//  Force updating
+void
+MyGLCanvas::Update()
+{
+	wxClientDC dc(this);
+    context->SetCurrent(*this);
+    if (view) {
+		view->OnDraw(&dc);
+		SwapBuffers();
+	}
+}

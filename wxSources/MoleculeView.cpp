@@ -1085,9 +1085,9 @@ void
 MainViewCallback_display(MainView *mview)
 {
 	if (mview != NULL && mview->ref != NULL) {
-	  wxWindow *canvas = ((MoleculeView *)(mview->ref))->canvas;
-	  canvas->Refresh();
-	  canvas->Update();
+		wxWindow *canvas = ((MoleculeView *)(mview->ref))->canvas;
+		canvas->Refresh();
+		canvas->Update();
 	}
 }
 
