@@ -9424,6 +9424,66 @@ s_Molecule_ExportGraphic(int argc, VALUE *argv, VALUE self)
 
 #pragma mark ------ Graphics ------
 
+static void
+s_CalculateGraphicNormals(MainViewGraphic *gp)
+{
+	int i;
+	Vector v1, v2, v3;
+	if (gp == NULL || gp->npoints < 3)
+		return;
+	AssignArray(&gp->normals, &gp->nnormals, sizeof(GLfloat) * 3, gp->npoints - 1, NULL);
+	v1.x = gp->points[3] - gp->points[0];
+	v1.y = gp->points[4] - gp->points[1];
+	v1.z = gp->points[5] - gp->points[2];
+	/*  nv[i] = (v[i-1]-v[0]).cross(v[i]-v[0]) (i=2..n-1)  */
+	for (i = 2; i < gp->npoints; i++) {
+		v2.x = gp->points[i * 3] - gp->points[0];
+		v2.y = gp->points[i * 3 + 1] - gp->points[1];
+		v2.z = gp->points[i * 3 + 2] - gp->points[2];
+		VecCross(v3, v1, v2);
+		NormalizeVec(&v3, &v3);
+		gp->normals[i * 3] = v3.x;
+		gp->normals[i * 3 + 1] = v3.y;
+		gp->normals[i * 3 + 2] = v3.z;
+		v1 = v2;
+	}
+	/*  normals[0] = average of all nv[i] (i=2..n-1)  */
+	VecZero(v1);
+	for (i = 2; i < gp->npoints; i++) {
+		v1.x += gp->normals[i * 3];
+		v1.y += gp->normals[i * 3 + 1];
+		v1.z += gp->normals[i * 3 + 2];
+	}
+	NormalizeVec(&v1, &v1);
+	gp->normals[0] = v1.x;
+	gp->normals[1] = v1.y;
+	gp->normals[2] = v1.z;
+	/*  normals[1] = nv[2].normalize  */
+	v2.x = gp->normals[6];
+	v2.y = gp->normals[7];
+	v2.z = gp->normals[8];
+	NormalizeVec(&v1, &v2);
+	gp->normals[3] = v1.x;
+	gp->normals[4] = v1.y;
+	gp->normals[5] = v1.z;
+	/*  normals[i] = (nv[i] + nv[i+1]).normalize (i=2..n-2)  */
+	for (i = 2; i < gp->npoints; i++) {
+		if (i == gp->npoints - 1)
+			VecZero(v3);
+		else {
+			v3.x = gp->normals[i * 3 + 3];
+			v3.y = gp->normals[i * 3 + 4];
+			v3.z = gp->normals[i * 3 + 5];
+		}
+		VecInc(v2, v3);
+		NormalizeVec(&v1, &v2);
+		gp->normals[i * 3] = v1.x;
+		gp->normals[i * 3 + 1] = v1.y;
+		gp->normals[i * 3 + 2] = v1.z;
+		v2 = v3;
+	}
+}
+
 /*
  *  call-seq:
  *     insert_graphic(index, kind, color, points, fill = nil) -> integer
@@ -9530,6 +9590,10 @@ s_Molecule_InsertGraphic(int argc, VALUE *argv, VALUE self)
 		AssignArray(&g.points, &g.npoints, sizeof(GLfloat) * 3, 4, NULL);
 		g.points[6] = g.points[8] = g.points[9] = g.points[10] = 0;
 		g.points[7] = g.points[11] = g.points[3];
+	}
+	if (g.kind == kMainViewGraphicPoly) {
+		/*  Calculate normals  */
+		s_CalculateGraphicNormals(&g);
 	}
 	MainView_insertGraphic(mol->mview, idx, &g);
 	
@@ -9771,6 +9835,10 @@ s_Molecule_SetGraphicPoint(int argc, VALUE *argv, VALUE self)
 			gp->points[pindex * 3 + 1] = v.y;
 			gp->points[pindex * 3 + 2] = v.z;
 		}
+	}
+	if (gp->kind == kMainViewGraphicPoly) {
+		/*  Calculate normals  */
+		s_CalculateGraphicNormals(gp);
 	}
 	MolActionCallback_registerUndo(mol, act);
 	MolActionRelease(act);		

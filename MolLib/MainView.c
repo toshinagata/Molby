@@ -1468,26 +1468,28 @@ drawGraphics(MainView *mview)
 				enableLighting();
 				break;
 			case kMainViewGraphicPoly: {
-				Vector v0, v1, v2, v3;
+			/*	Vector v0, v1, v2, v3; */
 				glBegin(GL_TRIANGLE_FAN);
-				v1.x = g->points[0] - g->points[g->npoints - 3];
+			/*	v1.x = g->points[0] - g->points[g->npoints - 3];
 				v1.y = g->points[1] - g->points[g->npoints - 2];
 				v1.z = g->points[2] - g->points[g->npoints - 1];
-				v0 = v1;
+				v0 = v1;  */
 				for (j = 0; j < g->npoints; j++) {
-					v2.x = g->points[j * 3 + 3] - g->points[j * 3];
+				/*	v2.x = g->points[j * 3 + 3] - g->points[j * 3];
 					v2.y = g->points[j * 3 + 4] - g->points[j * 3 + 1];
 					v2.z = g->points[j * 3 + 5] - g->points[j * 3 + 2];
 					VecCross(v3, v1, v2);
 					if (NormalizeVec(&v3, &v3) == 0)
-						glNormal3f(v3.x, v3.y, v3.z);
+						glNormal3f(v3.x, v3.y, v3.z); */
+					glNormal3fv(&g->normals[j * 3]);
 					glVertex3fv(&g->points[j * 3]);
-					v1 = v2;
+				/*	v1 = v2; */
 				}
 				if (g->closed) {
-					VecCross(v3, v1, v0);
+				/*	VecCross(v3, v1, v0);
 					if (NormalizeVec(&v3, &v3) == 0)
-						glNormal3f(v3.x, v3.y, v3.z);
+						glNormal3f(v3.x, v3.y, v3.z); */
+					glNormal3fv(g->normals);
 					glVertex3fv(g->points);
 				}
 				glEnd();
