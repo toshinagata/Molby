@@ -29,6 +29,7 @@
 		E420BE22188574F600A2B983 /* ProgressFrame.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BE1D188574F600A2B983 /* ProgressFrame.cpp */; };
 		E420BE23188574F600A2B983 /* RubyDialogFrame.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BE1F188574F600A2B983 /* RubyDialogFrame.cpp */; };
 		E420BE24188574F600A2B983 /* wxKillAddition.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BE21188574F600A2B983 /* wxKillAddition.cpp */; };
+		E45B94621A170B9A008E95EB /* docview.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E45B94611A170B9A008E95EB /* docview.cpp */; };
 		E4653CB118A0CC7D0022377B /* textctrl_addition.mm in Sources */ = {isa = PBXBuildFile; fileRef = E4653CB018A0CC7D0022377B /* textctrl_addition.mm */; };
 		E49BFBFA1886E72000188237 /* MyVersion.c in Sources */ = {isa = PBXBuildFile; fileRef = E420BE18188574D700A2B983 /* MyVersion.c */; };
 		E49BFBFB1886E74600188237 /* IntGroup.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC777D183E4F3F0064FB2E /* IntGroup.c */; };
@@ -140,6 +141,7 @@
 		E420BE1F188574F600A2B983 /* RubyDialogFrame.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = RubyDialogFrame.cpp; sourceTree = "<group>"; };
 		E420BE20188574F600A2B983 /* RubyDialogFrame.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RubyDialogFrame.h; sourceTree = "<group>"; };
 		E420BE21188574F600A2B983 /* wxKillAddition.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = wxKillAddition.cpp; sourceTree = "<group>"; };
+		E45B94611A170B9A008E95EB /* docview.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = docview.cpp; sourceTree = "<group>"; };
 		E4653CB018A0CC7D0022377B /* textctrl_addition.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = textctrl_addition.mm; sourceTree = "<group>"; };
 		E49BFB761886E2E400188237 /* Molby_command */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Molby_command; sourceTree = BUILT_PRODUCTS_DIR; };
 		E4ACACE418C6D32300F08B67 /* ortep3 */ = {isa = PBXFileReference; lastKnownFileType = folder; path = ortep3; sourceTree = "<group>"; };
@@ -407,6 +409,7 @@
 			children = (
 				E420BDE81885746700A2B983 /* ConsoleFrame.cpp */,
 				E420BDE91885746700A2B983 /* ConsoleFrame.h */,
+				E45B94611A170B9A008E95EB /* docview.cpp */,
 				E420BDEA1885746700A2B983 /* filedlg.mm */,
 				E420BDEB1885746700A2B983 /* GlobalParameterFilesFrame.cpp */,
 				E420BDEC1885746700A2B983 /* GlobalParameterFilesFrame.h */,
@@ -631,6 +634,7 @@
 				E4D379A219C87C2200636D28 /* modalwindow.cpp in Sources */,
 				E4D37E0E19CC831500636D28 /* modalwindow_osx.mm in Sources */,
 				E4D3806619CEC7B600636D28 /* MyTextCtrl.cpp in Sources */,
+				E45B94621A170B9A008E95EB /* docview.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
