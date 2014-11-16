@@ -1858,6 +1858,7 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 					break;
 				if (mp->mview == NULL)
 					continue;  /*  Skip  */
+			redo:
 				if (strcmp(buf, "line\n") == 0) {
 					ibuf[0] = kMainViewGraphicLine;
 				} else if (strcmp(buf, "poly\n") == 0) {
@@ -1918,12 +1919,12 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 						}
 						if (j > 0)
 							NewArray(&gp->normals, &gp->nnormals, sizeof(GLfloat) * 3, j);
-					} else if (i >= gp->npoints + 3 && i < gp->npoints + gp->nnormals + 3) {
+					} else if (i >= gp->npoints + 4 && i < gp->npoints + gp->nnormals + 4) {
 						if (sscanf(buf, "%lf %lf %lf", &dbuf[0], &dbuf[1], &dbuf[2]) < 3) {
 							s_append_asprintf(errbuf, "line %d: the normal vector cannot be read for graphic object", lineNumber);
 							goto err_exit;
 						}
-						j = (i - gp->npoints - 3) * 3;
+						j = (i - gp->npoints - 4) * 3;
 						gp->normals[j++] = dbuf[0];
 						gp->normals[j++] = dbuf[1];
 						gp->normals[j] = dbuf[2];
@@ -1932,8 +1933,9 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 				}
 				MainView_insertGraphic(mp->mview, -1, gp);
 				free(gp);
-				if (buf[0] == '\n')
+				if (buf[0] == '\n' || buf[0] == 0)
 					break;
+				goto redo;
 			}
 			continue;
 		} else if (strncmp(buf, "!:@", 3) == 0) {
