@@ -1152,10 +1152,12 @@ end_of_header
 	keys = []
 	resAtoms = Hash.new
 	newBonds = []
+	#  arg can be either a String or an array of String.
+	#  Iterates for each line in the string or each member of the array.
+	if arg.is_a?(String)
+	  arg = arg.split("\n")
+	end
     arg.each { |line|
-      #  arg can be either a String or an array of String. If it is a string,
-	  #  arg.each iterates for each line in the string. If it is an array,
-	  #  arg.each iterates for each member of the array.
 	  if line =~ /^\#/
 	    format = line[1..-1]
 		keys = []
