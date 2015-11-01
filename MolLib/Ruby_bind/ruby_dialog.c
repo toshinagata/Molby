@@ -2170,8 +2170,11 @@ RubyDialog_doPaintAction(RubyValue self, RDItem *ip)
 	vp[0] = (void *)self;
 	vp[1] = ip;
 	rb_protect(s_RubyDialog_doPaintAction, (VALUE)vp, &status);
-	if (status != 0)
+	if (status != 0) {
+		/*  Stop timer before showing error dialog  */
+		RubyDialogCallback_stopIntervalTimer(s_RubyDialog_GetController((VALUE)self));
 		Ruby_showError(status);
+	}
 }
 
 static VALUE
@@ -2224,6 +2227,8 @@ RubyDialog_doKeyAction(RubyValue self, int keyCode)
 	values[1] = (void *)keyCode;
 	rb_protect(s_RubyDialog_doKeyAction, (VALUE)values, &status);
 	if (status != 0) {
+		/*  Stop timer before showing error dialog  */
+		RubyDialogCallback_stopIntervalTimer(s_RubyDialog_GetController((VALUE)self));
 		Ruby_showError(status);
 	}
 }
