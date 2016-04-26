@@ -460,7 +460,7 @@ RubyDialogFrame::OnChildFocus(wxChildFocusEvent &event)
 		}
 #endif
 		lastFocusedWindow = winp;
-	}
+	} else lastFocusedWindow = NULL;
 	event.Skip();
 }
 
