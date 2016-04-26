@@ -1201,7 +1201,7 @@ class Molecule
 		    item(:text, :title=>"Script to run before GAMESS execution:"),
 			item(:textview, :width=>400, :height=>200, :value=>s_pre, :tag=>"prefix"),
 		    item(:text, :title=>"Script to run after GAMESS execution:"),
-			item(:textview, :width=>400, :height=>200, :value=>s_pre, :tag=>"postfix"))
+			item(:textview, :width=>400, :height=>200, :value=>s_post, :tag=>"postfix"))
 		}
 		if h[:status] == 0
 		  set_global_settings("gamess.prefix_script", h["prefix"])
