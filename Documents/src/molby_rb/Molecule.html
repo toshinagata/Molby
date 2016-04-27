@@ -2922,21 +2922,22 @@ Change the point_index-th control point of graphic_index-th graphic object. If t
 </div>
 
 <div id="method-set_name" class="method-detail">
-<a name="set_name"></a>
+<a name="set_molecule"></a>
 <div class="method-heading">
-<span class="method-name">set_name(name) &rarr; self</span>
+<span class="method-name">set_molecule(Molecule) &rarr; self</span>
 </div>
 <div class="method-description">
 <p>
-Set the name of an untitled molecule. This method requires that the molecule is associated with a window and does not have an associated file yet. Otherwise, an exception is thrown.
+Let self be a duplicated copy of the given molecule. The present molecule must be empty. This method is intended to be used exclusively for associating a new document with an existing molecule.
 </p>
 </div>
 </div>
 
-<div id="method-set_parameter_attr" class="method-detail">
-<a name="set_parameter_attr"></a>
+
+<div id="method-set_name" class="method-detail">
+<a name="set_name"></a>
 <div class="method-heading">
-<span class="method-name">set_parameter_attr(type, index, key, value, src) &rarr; value</span>
+<span class="method-name">set_name(name) &rarr; self</span>
 </div>
 <div class="method-description">
 <p>

@@ -551,7 +551,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "if [ \"$BUILD_STYLE\" = \"Release\" ]; then\n  mkdir -p \"$PROJECT_DIR/../Products\" && rm -f \"$PROJECT_DIR/../Products/MolbyDoc.zip\"\n  (cd $PROJECT_DIR/../Documents && zip -r \"$PROJECT_DIR/../Products/MolbyDoc.zip\" MolbyDoc -x \\*.DS_Store -x \\*.svn*) || exit 1\nfi\n";
+			shellScript = "if [ \"$BUILD_STYLE\" = \"Release\" ]; then\n  mkdir -p \"$PROJECT_DIR/../latest_binaries\" && rm -f \"$PROJECT_DIR/../latest_binaries/MolbyDoc.zip\"\n  (cd $PROJECT_DIR/../Documents && zip -r \"$PROJECT_DIR/../latest_binaries/MolbyDoc.zip\" MolbyDoc -x \\*.DS_Store -x \\*.svn*) || exit 1\nfi\n";
 		};
 		E43C5DE818E57C56004FE397 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -564,7 +564,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "cp -a \"$BUILT_PRODUCTS_DIR/Molby.app/Contents/Resources\" \"$BUILT_PRODUCTS_DIR\" || exit 1\n(cd \"$BUILT_PRODUCTS_DIR\" && rm -rf Molby_resources && mv Resources Molby_resources) || exit 1\nif [ \"$BUILD_STYLE\" = \"Release\" ]; then\n  (mkdir -p \"$PROJECT_DIR/../Products/temp/Molby\" && cd \"$PROJECT_DIR/../Products/temp/Molby\" && rm -rf *) || exit 1\n  (cd \"$BUILT_PRODUCTS_DIR\" && cp -a Molby.app Molby_command Molby_resources \"$PROJECT_DIR/../Products/temp/Molby\") || exit 1\n  (cd \"$PROJECT_DIR/../Products/temp\" && rm -f ../MolbyMac.zip && zip -r ../MolbyMac.zip Molby -x \\*.DS_Store -x \\*.svn*) || exit 1\n  rm -rf \"$PROJECT_DIR/../Products/temp\" || exit 1\nfi\n";
+			shellScript = "cp -a \"$BUILT_PRODUCTS_DIR/Molby.app/Contents/Resources\" \"$BUILT_PRODUCTS_DIR\" || exit 1\n(cd \"$BUILT_PRODUCTS_DIR\" && rm -rf Molby_resources && mv Resources Molby_resources) || exit 1\nif [ \"$BUILD_STYLE\" = \"Release\" ]; then\n  (mkdir -p \"$PROJECT_DIR/../latest_binaries/temp/Molby\" && cd \"$PROJECT_DIR/../latest_binaries/temp/Molby\" && rm -rf *) || exit 1\n  (cd \"$BUILT_PRODUCTS_DIR\" && cp -a Molby.app Molby_command Molby_resources \"$PROJECT_DIR/../latest_binaries/temp/Molby\") || exit 1\n  (cd \"$PROJECT_DIR/../latest_binaries/temp\" && rm -f ../MolbyMac.zip && zip -r ../MolbyMac.zip Molby -x \\*.DS_Store -x \\*.svn*) || exit 1\n  rm -rf \"$PROJECT_DIR/../latest_binaries/temp\" || exit 1\nfi\n";
 		};
 		E4FC7B57183E516E0064FB2E /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
