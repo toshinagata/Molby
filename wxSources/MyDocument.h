@@ -38,7 +38,8 @@ enum {
 	MyDocumentEvent_insertFrameFromMD,
 	MyDocumentEvent_threadTerminated,
 	MyDocumentEvent_openFilesByIPC,
-	MyDocumentEvent_documentWillClose
+	MyDocumentEvent_documentWillClose,
+	MyDocumentEvent_openAuxiliaryDocuments
 };
 
 class MyDocument: public wxDocument
@@ -151,6 +152,7 @@ public:
 	void	OnInsertFrameFromMD(wxCommandEvent &event);
 	void	OnUpdateDisplay(wxCommandEvent &event);
 	void	OnSubThreadTerminated(wxCommandEvent &event);
+	void	OnOpenAuxiliaryDocuments(wxCommandEvent &event);
 	
 	void	OnUpdateUI(wxUpdateUIEvent &event);
 

@@ -5453,6 +5453,24 @@ s_Molecule_SetErrorMessage(VALUE klass, VALUE sval)
 	return sval;
 }
 
+/*
+ *  call-seq:
+ *     set_molecule(Molecule)
+ *
+ *  Duplicate the given molecule and set to self. The present molecule must be empty.
+ *  This method is exclusively used for associating a new document with an existing molecule.
+ */
+static VALUE
+s_Molecule_SetMolecule(VALUE self, VALUE mval)
+{
+	Molecule *mp1, *mp2;
+	Data_Get_Struct(self, Molecule, mp1);
+	mp2 = MoleculeFromValue(mval);
+	MoleculeInitWithMolecule(mp1, mp2);
+	MoleculeCallback_notifyModification(mp1, 1);
+	return self;
+}
+
 #pragma mark ------ Name attributes ------
 
 /*
@@ -11462,6 +11480,7 @@ Init_Molby(void)
     rb_define_method(rb_cMolecule, "savedcd", s_Molecule_Savedcd, 1);
     rb_define_method(rb_cMolecule, "molload", s_Molecule_Load, -1);
     rb_define_method(rb_cMolecule, "molsave", s_Molecule_Save, -1);
+    rb_define_method(rb_cMolecule, "set_molecule", s_Molecule_SetMolecule, 1);
 	rb_define_singleton_method(rb_cMolecule, "open", s_Molecule_Open, -1);
 	rb_define_singleton_method(rb_cMolecule, "error_message", s_Molecule_ErrorMessage, 0);
 	rb_define_singleton_method(rb_cMolecule, "set_error_message", s_Molecule_SetErrorMessage, 1);

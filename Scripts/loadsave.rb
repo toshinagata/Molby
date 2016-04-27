@@ -761,6 +761,7 @@ end_of_header
   alias :savegjf :savecom
   
   def loadcif(filename)
+    mol = self
     def getciftoken(fp)
 	  while @tokens.length == 0
 	    line = fp.gets
@@ -820,302 +821,329 @@ end_of_header
 	  end
 	  sym
 	end
-	def find_atom_by_name(name)
+	def find_atom_by_name(mol, name)
 	  name = name.delete(" ()")
-	  ap = self.atoms[name] rescue ap = nil
+	  ap = mol.atoms[name] rescue ap = nil
 	  return ap
 	end
-	warn_message = ""
-	verbose = nil
-	bond_defined = false
-	@tokens = []
-	special_positions = []
-	self.remove(All)
+	selfname = self.name
 	fp = open(filename, "rb")
-	cell = []
-	cell_trans = cell_trans_inv = Transform.identity
-	token = getciftoken(fp)
-	pardigits_re = /\(\d+\)/
-	calculated_atoms = []
-	while token != nil
-	  if token =~ /^_cell/
-		val = getciftoken(fp)
-		if token == "_cell_length_a"
-		  cell[0], cell[6] = float_strip_rms(val)
-		elsif token == "_cell_length_b"
-		  cell[1], cell[7] = float_strip_rms(val)
-		elsif token == "_cell_length_c"
-		  cell[2], cell[8] = float_strip_rms(val)
-		elsif token == "_cell_angle_alpha"
-		  cell[3], cell[9] = float_strip_rms(val)
-		elsif token == "_cell_angle_beta"
-		  cell[4], cell[10] = float_strip_rms(val)
-		elsif token == "_cell_angle_gamma"
-		  cell[5], cell[11] = float_strip_rms(val)
-		end
-		if cell.length == 12 && cell.all?
-		  self.cell = cell
-		  puts "Unit cell is set to #{cell.inspect}." if verbose
-		  cell = []
-		  cell_trans = self.cell_transform
-		  cell_trans_inv = cell_trans.inverse
-		end
-		token = getciftoken(fp)
-		next
-      elsif token.casecmp("#loop_") == 0
-	    labels = []
-		while (token = getciftoken(fp)) && token[0] == ?_
-		  labels.push(token)
-		end
-		if labels[0] =~ /symmetry_equiv_pos|atom_site_label|atom_site_aniso_label|geom_bond/
-		  hlabel = Hash.new(-10000000)
-		  labels.each_with_index { |lb, i|
-			hlabel[lb] = i
-		  }
-		  data = []
-		  n = labels.length
-		  a = []
-		  while 1
-			break if token == nil || token[0] == ?_ || token[0] == ?#
-			a.push(token)
-			if a.length == n
-			  data.push(a)
-			  a = []
-			end
+	data_identifier = nil
+	@tokens = []
+	count_up = 1
+	while true
+	  warn_message = ""
+	  verbose = nil
+	  bond_defined = false
+	  special_positions = []
+	  mol.remove(All)
+	  cell = []
+	  cell_trans = cell_trans_inv = Transform.identity
+	  token = getciftoken(fp)
+	  pardigits_re = /\(\d+\)/
+	  calculated_atoms = []
+	  while token != nil
+	    if token =~ /^\#data_/i
+		  if token.casecmp("#data_global") == 0
+		    token = getciftoken(fp)
+			next
+		  elsif data_identifier == nil
+		    #  Continue processing of this molecule
+		    data_identifier = token
 			token = getciftoken(fp)
+			next
+		  else
+		    #  Description of another molecule begins here
+			data_identifier = token
+			break
 		  end
-		  if labels[0] =~ /^_symmetry_equiv_pos/
-		    data.each { |d|
-			  symstr = d[hlabel["_symmetry_equiv_pos_as_xyz"]]
-			  symstr.delete("\"\'")
-			  exps = symstr.split(/,/)
-			  sym = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-			  exps.each_with_index { |s, i|
-			    terms = s.scan(/([-+]?)(([.0-9]+)(\/([0-9]+))?([xXyYzZ])?|([xXyYzZ]))/)
-				terms.each { |a|
-				  #  a[0]: sign, a[2]: numerator, a[4]: denometer
-				  if a[4] != nil
-				    #  The number part is a[2]/a[4]
-				    num = Float(a[2])/Float(a[4])
-				  elsif a[2] != nil
-				    #  The number part is either integer or a floating point
-				    num = Float(a[2])
-				  else
-				    num = 1.0
-				  end
-				  num = -num if a[0][0] == ?-
-				  xyz = (a[5] || a[6])
-				  if xyz == "x" || xyz == "X"
-				    sym[i] = num
-				  elsif xyz == "y" || xyz == "Y"
-				    sym[i + 3] = num
-				  elsif xyz == "z" || xyz == "Z"
-				    sym[i + 6] = num
-				  else
-				    sym[9 + i] = num
-				  end
-				}
-			  }
-			  puts "symmetry operation #{sym.inspect}" if verbose
-			  add_symmetry(Transform.new(sym))
-			}
-			puts "#{self.nsymmetries} symmetry operations are added" if verbose
-		  elsif labels[0] =~ /^_atom_site_label/
-			#  Create atoms
-			data.each { |d|
-			  name = d[hlabel["_atom_site_label"]]
-			  elem = d[hlabel["_atom_site_type_symbol"]]
-			  fx = d[hlabel["_atom_site_fract_x"]]
-			  fy = d[hlabel["_atom_site_fract_y"]]
-			  fz = d[hlabel["_atom_site_fract_z"]]
-			  uiso = d[hlabel["_atom_site_U_iso_or_equiv"]]
-			  biso = d[hlabel["_atom_site_B_iso_or_equiv"]]
-			  occ = d[hlabel["_atom_site_occupancy"]]
-			  calc = d[hlabel["_atom_site_calc_flag"]]
-			  name = name.delete(" ()")
-			  if elem == nil || elem == ""
-			    if name =~ /[A-Za-z]{1,2}/
-				  elem = $&.capitalize
-				else
-				  elem = "Du"
-				end
-			  end
-			  ap = self.add_atom(name, elem, elem)
-			  ap.fract_x, ap.sigma_x = float_strip_rms(fx)
-			  ap.fract_y, ap.sigma_y = float_strip_rms(fy)
-			  ap.fract_z, ap.sigma_z = float_strip_rms(fz)
-			  if biso
-			    ap.temp_factor, sig = float_strip_rms(biso)
-			  elsif uiso
-			    ap.temp_factor, sig = float_strip_rms(uiso)
-				ap.temp_factor *= 78.9568352087149          #  8*pi*pi
-			  end
-			  ap.occupancy, sig = float_strip_rms(occ)
-			  if calc == "c" || calc == "calc"
-			    calculated_atoms.push(ap.index)
-		      end
-			  #  Guess special positions
-			  (1...nsymmetries).each { |isym|
-			    sr = ap.fract_r
-			    sr = (transform_for_symop(isym) * sr) - sr;
-				nx = (sr.x + 0.5).floor
-				ny = (sr.y + 0.5).floor
-				nz = (sr.z + 0.5).floor
-				if (Vector3D[sr.x - nx, sr.y - ny, sr.z - nz].length2 < 1e-6)
-				  #  [isym, -nx, -ny, -nz] transforms this atom to itself
-				  #  The following line is equivalent to:
-				  #    if special_positions[ap.index] == nil; special_positions[ap.index] = []; end;
-				  #    special_positions[ap.index].push(...)
-				  (special_positions[ap.index] ||= []).push([isym, -nx, -ny, -nz])
-				end
-			  }
-			  if verbose && special_positions[ap.index]
-			    puts "#{name} is on the special position: #{special_positions[ap.index].inspect}"
-			  end
-			}
-			puts "#{self.natoms} atoms are created." if verbose
-		  elsif labels[0] =~ /^_atom_site_aniso_label/
-		    #  Set anisotropic parameters
-			c = 0
-			data.each { |d|
-			  name = d[hlabel["_atom_site_aniso_label"]]
-			  ap = find_atom_by_name(name)
-			  next if !ap
-			  u11 = d[hlabel["_atom_site_aniso_U_11"]]
-			  if u11
-			    usig = []
-			    u11, usig[0] = float_strip_rms(u11)
-			    u22, usig[1] = float_strip_rms(d[hlabel["_atom_site_aniso_U_22"]])
-			    u33, usig[2] = float_strip_rms(d[hlabel["_atom_site_aniso_U_33"]])
-			    u12, usig[3] = float_strip_rms(d[hlabel["_atom_site_aniso_U_12"]])
-			    u13, usig[4] = float_strip_rms(d[hlabel["_atom_site_aniso_U_13"]])
-			    u23, usig[5] = float_strip_rms(d[hlabel["_atom_site_aniso_U_23"]])
-			    ap.aniso = [u11, u22, u33, u12, u13, u23, 8] + usig
-				c += 1
-			  end
-			}
-			puts "#{c} anisotropic parameters are set." if verbose
-		  elsif labels[0] =~ /^_geom_bond/
-		    #  Create bonds
-			exbonds = []
-			data.each { |d|
-			  n1 = d[hlabel["_geom_bond_atom_site_label_1"]]
-			  n2 = d[hlabel["_geom_bond_atom_site_label_2"]]
-			  sym1 = d[hlabel["_geom_bond_site_symmetry_1"]] || "."
-			  sym2 = d[hlabel["_geom_bond_site_symmetry_2"]] || "."
-			  n1 = find_atom_by_name(n1)
-			  n2 = find_atom_by_name(n2)
-			  next if n1 == nil || n2 == nil
-		      n1 = n1.index
-			  n2 = n2.index
-			  sym1 = parse_symmetry_operation(sym1)
-			  sym2 = parse_symmetry_operation(sym2)
-			  if sym1 || sym2
-			    exbonds.push([n1, n2, sym1, sym2])
-			  else
-			    self.create_bond(n1, n2)
-			  end
-			  tr1 = (sym1 ? transform_for_symop(sym1) : Transform.identity)
-			  tr2 = (sym2 ? transform_for_symop(sym2) : Transform.identity)
-			  if special_positions[n1]
-				#  Add extra bonds for equivalent positions of n1
-				special_positions[n1].each { |symop|
-				  sym2x = symop_for_transform(tr1 * transform_for_symop(symop) * tr1.inverse * tr2)
-				  exbonds.push([n1, n2, sym1, sym2x])
-				}
-			  end
-			  if special_positions[n2]
-				#  Add extra bonds n2-n1.symop, where symop transforms n2 to self
-				tr = (sym1 ? transform_for_symop(sym1) : Transform.identity)
-				special_positions[n2].each { |symop|
-				  sym1x = symop_for_transform(tr2 * transform_for_symop(symop) * tr2.inverse * tr1)
-				  exbonds.push([n2, n1, sym2, sym1x])
-				}
-			  end				
-		    }
-			bond_defined = true
-			puts "#{self.nbonds} bonds are created." if verbose
-			if calculated_atoms.length > 0
-			  #  Guess bonds for calculated hydrogen atoms
-			  n1 = 0
-			  calculated_atoms.each { |ai|
-			    if atoms[ai].connects.length == 0
-				  as = find_close_atoms(ai)
-				  as.each { |aj|
-				    self.create_bond(ai, aj)
-					n1 += 1
-				  }
-				end
-			  }
-			  puts "#{n1} bonds are guessed." if verbose
-			end
-			if exbonds.length > 0
-			  h = Dialog.run("CIF Import: Symmetry Expansion") {
-			    layout(1,
-				  item(:text, :title=>"There are bonds including symmetry related atoms.\nWhat do you want to do?"),
-				  item(:radio, :title=>"Expand only atoms that are included in those extra bonds.", :tag=>"atoms_only"),
-				  item(:radio, :title=>"Expand fragments having atoms included in the extra bonds.", :tag=>"fragment", :value=>1),
-				  item(:radio, :title=>"Ignore these extra bonds.", :tag=>"ignore")
-				)
-				radio_group("atoms_only", "fragment", "ignore")
-			  }
-			  if h[:status] == 0 && h["ignore"] == 0
-			    atoms_only = (h["atoms_only"] != 0)
-				if !atoms_only
-				  fragments = []
-				  self.each_fragment { |f| fragments.push(f) }
-				end
-				debug = nil
-				exbonds.each { |ex|
-				  if debug; puts "extra bond #{ex[0]}(#{ex[2].inspect}) - #{ex[1]}(#{ex[3].inspect})"; end
-				  ex0 = ex.dup
-				  (2..3).each { |i|
-				    symop = ex[i]
-					if symop == nil
-					  ex[i + 2] = ex[i - 2]
-					else
-					  if debug; puts "  symop = #{symop.inspect}"; end
-					  #  Expand the atom or the fragment including the atom
-					  if atoms_only
-						ig = IntGroup[ex[i - 2]]
-						idx = 0
-					  else
-						ig = fragments.find { |f| f.include?(ex[i - 2]) }
-						ig.each_with_index { |n, ii| if n == ex[i - 2]; idx = ii; break; end }
-					  end
-					  symop[4] = ex[i - 2]  #  Base atom
-					  if debug; puts "  expanding #{ig} by #{symop.inspect}"; end
-					  a = self.expand_by_symmetry(ig, symop[0], symop[1], symop[2], symop[3])
-					  ex[i + 2] = a[idx]   #  Index of the expanded atom
-					end
-				  }
-				  if ex[4] && ex[5] && ex[4] != ex[5]
-				    if debug; puts "  creating bond #{ex[4]} - #{ex[5]}"; end
-				    self.create_bond(ex[4], ex[5])
-				  end
-				}
-			  end
-			end
-			puts "#{self.nbonds} bonds are created." if verbose
+	    elsif token =~ /^_cell/
+		  val = getciftoken(fp)
+		  if token == "_cell_length_a"
+		    cell[0], cell[6] = float_strip_rms(val)
+		  elsif token == "_cell_length_b"
+		    cell[1], cell[7] = float_strip_rms(val)
+		  elsif token == "_cell_length_c"
+		    cell[2], cell[8] = float_strip_rms(val)
+		  elsif token == "_cell_angle_alpha"
+		    cell[3], cell[9] = float_strip_rms(val)
+		  elsif token == "_cell_angle_beta"
+		    cell[4], cell[10] = float_strip_rms(val)
+		  elsif token == "_cell_angle_gamma"
+		    cell[5], cell[11] = float_strip_rms(val)
 		  end
+		  if cell.length == 12 && cell.all?
+		    mol.cell = cell
+		    puts "Unit cell is set to #{cell.inspect}." if verbose
+		    cell = []
+		    cell_trans = self.cell_transform
+		    cell_trans_inv = cell_trans.inverse
+		  end
+		  token = getciftoken(fp)
 		  next
-		else
-		#  puts "Loop beginning with #{labels[0]} is skipped"
-		end
-	  else
-	    #  Skip this token
-		token = getciftoken(fp)
+        elsif token.casecmp("#loop_") == 0
+	      labels = []
+		  while (token = getciftoken(fp)) && token[0] == ?_
+		    labels.push(token)
+		  end
+		  if labels[0] =~ /symmetry_equiv_pos|atom_site_label|atom_site_aniso_label|geom_bond/
+		    hlabel = Hash.new(-10000000)
+		    labels.each_with_index { |lb, i|
+		  	  hlabel[lb] = i
+		    }
+		    data = []
+		    n = labels.length
+		    a = []
+		    while true
+		   	  break if token == nil || token[0] == ?_ || token[0] == ?#
+			  a.push(token)
+			  if a.length == n
+			    data.push(a)
+			    a = []
+			  end
+			  token = getciftoken(fp)
+		    end
+		    if labels[0] =~ /^_symmetry_equiv_pos/
+		      data.each { |d|
+			    symstr = d[hlabel["_symmetry_equiv_pos_as_xyz"]]
+			    symstr.delete("\"\'")
+			    exps = symstr.split(/,/)
+			    sym = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+			    exps.each_with_index { |s, i|
+			      terms = s.scan(/([-+]?)(([.0-9]+)(\/([0-9]+))?([xXyYzZ])?|([xXyYzZ]))/)
+				  terms.each { |a|
+				    #  a[0]: sign, a[2]: numerator, a[4]: denometer
+				    if a[4] != nil
+				      #  The number part is a[2]/a[4]
+				      num = Float(a[2])/Float(a[4])
+				    elsif a[2] != nil
+				      #  The number part is either integer or a floating point
+				      num = Float(a[2])
+				    else
+				      num = 1.0
+				    end
+				    num = -num if a[0][0] == ?-
+				    xyz = (a[5] || a[6])
+				    if xyz == "x" || xyz == "X"
+				      sym[i] = num
+				    elsif xyz == "y" || xyz == "Y"
+				      sym[i + 3] = num
+				    elsif xyz == "z" || xyz == "Z"
+				      sym[i + 6] = num
+				    else
+				      sym[9 + i] = num
+				    end
+				  }
+			    }
+			    puts "symmetry operation #{sym.inspect}" if verbose
+			    mol.add_symmetry(Transform.new(sym))
+			  }
+			  puts "#{mol.nsymmetries} symmetry operations are added" if verbose
+		    elsif labels[0] =~ /^_atom_site_label/
+			  #  Create atoms
+			  data.each { |d|
+			    name = d[hlabel["_atom_site_label"]]
+			    elem = d[hlabel["_atom_site_type_symbol"]]
+			    fx = d[hlabel["_atom_site_fract_x"]]
+			    fy = d[hlabel["_atom_site_fract_y"]]
+			    fz = d[hlabel["_atom_site_fract_z"]]
+			    uiso = d[hlabel["_atom_site_U_iso_or_equiv"]]
+			    biso = d[hlabel["_atom_site_B_iso_or_equiv"]]
+			    occ = d[hlabel["_atom_site_occupancy"]]
+			    calc = d[hlabel["_atom_site_calc_flag"]]
+			    name = name.delete(" ()")
+			    if elem == nil || elem == ""
+			      if name =~ /[A-Za-z]{1,2}/
+				    elem = $&.capitalize
+				  else
+				    elem = "Du"
+				  end
+			    end
+			    ap = mol.add_atom(name, elem, elem)
+			    ap.fract_x, ap.sigma_x = float_strip_rms(fx)
+			    ap.fract_y, ap.sigma_y = float_strip_rms(fy)
+			    ap.fract_z, ap.sigma_z = float_strip_rms(fz)
+			    if biso
+			      ap.temp_factor, sig = float_strip_rms(biso)
+			    elsif uiso
+			      ap.temp_factor, sig = float_strip_rms(uiso)
+				  ap.temp_factor *= 78.9568352087149          #  8*pi*pi
+			    end
+			    ap.occupancy, sig = float_strip_rms(occ)
+			    if calc == "c" || calc == "calc"
+			      calculated_atoms.push(ap.index)
+		        end
+			    #  Guess special positions
+			    (1...mol.nsymmetries).each { |isym|
+			      sr = ap.fract_r
+			      sr = (mol.transform_for_symop(isym) * sr) - sr;
+				  nx = (sr.x + 0.5).floor
+				  ny = (sr.y + 0.5).floor
+				  nz = (sr.z + 0.5).floor
+				  if (Vector3D[sr.x - nx, sr.y - ny, sr.z - nz].length2 < 1e-6)
+				    #  [isym, -nx, -ny, -nz] transforms this atom to itself
+				    #  The following line is equivalent to:
+				    #    if special_positions[ap.index] == nil; special_positions[ap.index] = []; end;
+				    #    special_positions[ap.index].push(...)
+				    (special_positions[ap.index] ||= []).push([isym, -nx, -ny, -nz])
+				  end
+			    }
+			    if verbose && special_positions[ap.index]
+			      puts "#{name} is on the special position: #{special_positions[ap.index].inspect}"
+			    end
+			  }
+			  puts "#{mol.natoms} atoms are created." if verbose
+		    elsif labels[0] =~ /^_atom_site_aniso_label/
+		      #  Set anisotropic parameters
+			  c = 0
+			  data.each { |d|
+			    name = d[hlabel["_atom_site_aniso_label"]]
+			    ap = find_atom_by_name(mol, name)
+			    next if !ap
+			    u11 = d[hlabel["_atom_site_aniso_U_11"]]
+			    if u11
+			      usig = []
+			      u11, usig[0] = float_strip_rms(u11)
+			      u22, usig[1] = float_strip_rms(d[hlabel["_atom_site_aniso_U_22"]])
+			      u33, usig[2] = float_strip_rms(d[hlabel["_atom_site_aniso_U_33"]])
+			      u12, usig[3] = float_strip_rms(d[hlabel["_atom_site_aniso_U_12"]])
+			      u13, usig[4] = float_strip_rms(d[hlabel["_atom_site_aniso_U_13"]])
+			      u23, usig[5] = float_strip_rms(d[hlabel["_atom_site_aniso_U_23"]])
+			      ap.aniso = [u11, u22, u33, u12, u13, u23, 8] + usig
+				  c += 1
+			    end
+			  }
+			  puts "#{c} anisotropic parameters are set." if verbose
+		    elsif labels[0] =~ /^_geom_bond/
+		      #  Create bonds
+			  exbonds = []
+			  data.each { |d|
+			    n1 = d[hlabel["_geom_bond_atom_site_label_1"]]
+			    n2 = d[hlabel["_geom_bond_atom_site_label_2"]]
+			    sym1 = d[hlabel["_geom_bond_site_symmetry_1"]] || "."
+			    sym2 = d[hlabel["_geom_bond_site_symmetry_2"]] || "."
+			    n1 = find_atom_by_name(mol, n1)
+			    n2 = find_atom_by_name(mol, n2)
+			    next if n1 == nil || n2 == nil
+		        n1 = n1.index
+			    n2 = n2.index
+			    sym1 = parse_symmetry_operation(sym1)
+			    sym2 = parse_symmetry_operation(sym2)
+			    if sym1 || sym2
+			      exbonds.push([n1, n2, sym1, sym2])
+			    else
+			      mol.create_bond(n1, n2)
+			    end
+			    tr1 = (sym1 ? mol.transform_for_symop(sym1) : Transform.identity)
+			    tr2 = (sym2 ? mol.transform_for_symop(sym2) : Transform.identity)
+			    if special_positions[n1]
+				  #  Add extra bonds for equivalent positions of n1
+				  special_positions[n1].each { |symop|
+				    sym2x = mol.symop_for_transform(tr1 * mol.transform_for_symop(symop) * tr1.inverse * tr2)
+				    exbonds.push([n1, n2, sym1, sym2x])
+				  }
+			    end
+			    if special_positions[n2]
+				  #  Add extra bonds n2-n1.symop, where symop transforms n2 to self
+				  tr = (sym1 ? mol.transform_for_symop(sym1) : Transform.identity)
+				  special_positions[n2].each { |symop|
+				    sym1x = mol.symop_for_transform(tr2 * mol.transform_for_symop(symop) * tr2.inverse * tr1)
+				    exbonds.push([n2, n1, sym2, sym1x])
+				  }
+			    end				
+		      }
+			  bond_defined = true
+			  puts "#{mol.nbonds} bonds are created." if verbose
+			  if calculated_atoms.length > 0
+			    #  Guess bonds for calculated hydrogen atoms
+			    n1 = 0
+			    calculated_atoms.each { |ai|
+			      if mol.atoms[ai].connects.length == 0
+				    as = mol.find_close_atoms(ai)
+				    as.each { |aj|
+				      mol.create_bond(ai, aj)
+					  n1 += 1
+				    }
+				  end
+			    }
+			    puts "#{n1} bonds are guessed." if verbose
+			  end
+			  if exbonds.length > 0
+			    h = Dialog.run("CIF Import: Symmetry Expansion") {
+			      layout(1,
+				    item(:text, :title=>"There are bonds including symmetry related atoms.\nWhat do you want to do?"),
+				    item(:radio, :title=>"Expand only atoms that are included in those extra bonds.", :tag=>"atoms_only"),
+				    item(:radio, :title=>"Expand fragments having atoms included in the extra bonds.", :tag=>"fragment", :value=>1),
+				    item(:radio, :title=>"Ignore these extra bonds.", :tag=>"ignore")
+				  )
+				  radio_group("atoms_only", "fragment", "ignore")
+			    }
+			    if h[:status] == 0 && h["ignore"] == 0
+			      atoms_only = (h["atoms_only"] != 0)
+				  if !atoms_only
+				    fragments = []
+				    mol.each_fragment { |f| fragments.push(f) }
+				  end
+				  debug = nil
+				  exbonds.each { |ex|
+				    if debug; puts "extra bond #{ex[0]}(#{ex[2].inspect}) - #{ex[1]}(#{ex[3].inspect})"; end
+				    ex0 = ex.dup
+				    (2..3).each { |i|
+				      symop = ex[i]
+					  if symop == nil
+					    ex[i + 2] = ex[i - 2]
+					  else
+					    if debug; puts "  symop = #{symop.inspect}"; end
+					    #  Expand the atom or the fragment including the atom
+					    if atoms_only
+						  ig = IntGroup[ex[i - 2]]
+						  idx = 0
+					    else
+						  ig = fragments.find { |f| f.include?(ex[i - 2]) }
+						  ig.each_with_index { |n, ii| if n == ex[i - 2]; idx = ii; break; end }
+					    end
+					    symop[4] = ex[i - 2]  #  Base atom
+					    if debug; puts "  expanding #{ig} by #{symop.inspect}"; end
+					    a = mol.expand_by_symmetry(ig, symop[0], symop[1], symop[2], symop[3])
+					    ex[i + 2] = a[idx]   #  Index of the expanded atom
+					  end
+				    }
+				    if ex[4] && ex[5] && ex[4] != ex[5]
+				      if debug; puts "  creating bond #{ex[4]} - #{ex[5]}"; end
+				      mol.create_bond(ex[4], ex[5])
+				    end
+				  }
+			    end
+			  end
+			  puts "#{mol.nbonds} bonds are created." if verbose
+		    end
+		    next
+		  else
+		  #  puts "Loop beginning with #{labels[0]} is skipped"
+		  end
+	    else
+	      #  Skip this token
+		  token = getciftoken(fp)
+	    end
+	    #  Skip tokens until next tag or reserved word is detected
+	    while token != nil && token[0] != ?_ && token[0] != ?#
+		  token = getciftoken(fp)
+	    end
+	    next
 	  end
-	  #  Skip tokens until next tag or reserved word is detected
-	  while token != nil && token[0] != ?_ && token[0] != ?#
-		token = getciftoken(fp)
+      if !bond_defined
+		mol.guess_bonds
 	  end
-	  next
+	  if token != nil && token == data_identifier
+	    #  Process next molecule: open a new molecule and start adding atom on that
+		mol = Molecule.new
+		count_up += 1
+		(@aux_mols ||= []).push(mol)
+		next
+	  end
+	  break
 	end
 	fp.close
-	if !bond_defined
-	  self.guess_bonds
-	end
 #	self.undo_enabled = save_undo_enabled
 	return true
   end

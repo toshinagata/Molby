@@ -68,6 +68,7 @@ BEGIN_EVENT_TABLE(MyDocument, wxDocument)
 	EVT_COMMAND(MyDocumentEvent_insertFrameFromMD, MyDocumentEvent, MyDocument::OnInsertFrameFromMD)
 	EVT_COMMAND(MyDocumentEvent_updateDisplay, MyDocumentEvent, MyDocument::OnUpdateDisplay)
 	EVT_COMMAND(MyDocumentEvent_threadTerminated, MyDocumentEvent, MyDocument::OnSubThreadTerminated)
+	EVT_COMMAND(MyDocumentEvent_openAuxiliaryDocuments, MyDocumentEvent, MyDocument::OnOpenAuxiliaryDocuments)
 	EVT_MENU(myMenuID_Import, MyDocument::OnImport)
 	EVT_MENU(myMenuID_Export, MyDocument::OnExport)
 	EVT_MENU(myMenuID_ExportGraphic, MyDocument::OnExportGraphic)
@@ -229,6 +230,12 @@ MyDocument::DoOpenDocument(const wxString& file)
 		return false;
 	}
 	
+	/*  Does this document have multiple representation of molecules?  */
+	if (MolActionCreateAndPerform(newmol, SCRIPT_ACTION(";i"), "lambda { @aux_mols ? @aux_mols.count : 0 }", &len) == 0 && len > 0) {
+		wxCommandEvent myEvent(MyDocumentEvent, MyDocumentEvent_openAuxiliaryDocuments);
+		wxPostEvent(this, myEvent);
+	}
+	
 	if ((len = strlen(p)) > 4 && strcasecmp(p + len - 4, ".psf") == 0) {
 		//  Look for a ".pdb" file with the same basename 
 		char *buf;
@@ -252,6 +259,18 @@ MyDocument::DoOpenDocument(const wxString& file)
 	MoleculeCallback_notifyModification(newmol, 0);
 	SetUndoEnabled(true);
 	return true;
+}
+
+void
+MyDocument::OnOpenAuxiliaryDocuments(wxCommandEvent &event)
+{
+	MolActionCreateAndPerform(mol, SCRIPT_ACTION(""),
+									"lambda {\n"
+									"  fn = self.name\n"
+									"  @aux_mols.each_with_index { |am, i| \n"
+									"    m = Molecule.open; m.set_molecule(am)\n"
+									"    m.set_name(fn + \"[#{i + 2}]\")\n"
+									"}; @aux_mols = nil }");
 }
 
 bool
