@@ -925,7 +925,7 @@ static VALUE
 s_Kernel_CallSubProcess(int argc, VALUE *argv, VALUE self)
 {
 	VALUE cmd, procname, cproc, stdout_val, stderr_val;
-	int n;
+	int n, exitstatus, pid;
 	char *sout, *serr;
 	FILE *fpout, *fperr;
 
@@ -970,7 +970,7 @@ s_Kernel_CallSubProcess(int argc, VALUE *argv, VALUE self)
 		}
 	}
 
-	n = MyAppCallback_callSubProcess(StringValuePtr(cmd), StringValuePtr(procname), (cproc == Qnil ? NULL : s_Kernel_CallSubProcess_Callback), (cproc == Qnil ? NULL : (void *)cproc), fpout, fperr);
+	n = MyAppCallback_callSubProcess(StringValuePtr(cmd), StringValuePtr(procname), (cproc == Qnil ? NULL : s_Kernel_CallSubProcess_Callback), (cproc == Qnil ? NULL : (void *)cproc), fpout, fperr, &exitstatus, &pid);
 	
 	if (fpout != NULL && fpout != (FILE *)1)
 		fclose(fpout);
@@ -992,17 +992,17 @@ static VALUE
 s_Kernel_Backquote(VALUE self, VALUE cmd)
 {
 	char *buf;
-	int n;
+	int n, exitstatus, pid;
 	VALUE val;
-	n = MyAppCallback_callSubProcess(StringValuePtr(cmd), NULL, DUMMY_CALLBACK, &buf, NULL, NULL);
-	if (n != 0)
-		rb_raise(rb_eMolbyError, "Cannot invoke command '%s'", StringValuePtr(cmd));
-	if (buf != NULL) {
+	n = MyAppCallback_callSubProcess(StringValuePtr(cmd), NULL, DUMMY_CALLBACK, &buf, NULL, NULL, &exitstatus, &pid);
+	fprintf(stderr, "n = %d, exitstatus = %d, pid = %d\n", n, exitstatus, pid);
+	if (n >= 0 && buf != NULL) {
 		val = Ruby_NewEncodedStringValue(buf, 0);
 		free(buf);
 	} else {
 		val = Ruby_NewEncodedStringValue("", 0);
 	}
+	rb_last_status_set(exitstatus, pid);
 	return val;
 }
 

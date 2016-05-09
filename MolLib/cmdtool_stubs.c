@@ -173,7 +173,7 @@ MyAppCallback_getTextWithPrompt(const char *prompt, char *buf, int bufsize)
 }
 
 int
-MyAppCallback_callSubProcess(const char *cmdline, const char *procname, int (*callback)(void *), void *callback_data, FILE *output, FILE *errout)
+MyAppCallback_callSubProcess(const char *cmdline, const char *procname, int (*callback)(void *), void *callback_data, FILE *output, FILE *errout, int *exitstatus_p, int *pid_p)
 {
 	return system(cmdline);
 }

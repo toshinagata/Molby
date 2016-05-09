@@ -1310,7 +1310,7 @@ MyApp::OnEndProcess(wxProcessEvent &event)
 }
 
 int
-MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)(void *), void *callback_data, FILE *fpout, FILE *fperr)
+MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)(void *), void *callback_data, FILE *fpout, FILE *fperr, int *exitstatus_p, int *pid_p)
 {
 	int status = 0;
 	int callback_result = 0;
@@ -1366,6 +1366,8 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
 #endif
 		return -1;
 	}
+	if (pid_p != NULL)
+		*pid_p = pid;
 #if LOG_SUBPROCESS
 	fprintf(fplog, "[DEBUG]pid = %ld\n", pid);
 	fflush(fplog);
@@ -1434,10 +1436,14 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
 		}
 		if (m_processTerminated) {
 			//  OnEndProcess has been called
+			if (exitstatus_p != NULL)
+				*exitstatus_p = m_processExitCode;
 			if (m_processExitCode != 0) {
 				/*  Error from subprocess  */
 				status = (m_processExitCode & 255);
-			} else status = 0;
+			} else {
+				status = 0;
+			}
 			break;
 		}
 	
@@ -1541,6 +1547,8 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
 			}
 			m_process->Detach();
 			m_process = NULL;
+			if (exitstatus_p != NULL)
+				*exitstatus_p = status;
 			break;
 		}
 	}
@@ -2063,9 +2071,9 @@ void MyAppCallback_endUndoGrouping(void)
 	}
 }
 
-int MyAppCallback_callSubProcess(const char *cmdline, const char *procname, int (*callback)(void *), void *callback_data, FILE *output, FILE *errout)
+int MyAppCallback_callSubProcess(const char *cmdline, const char *procname, int (*callback)(void *), void *callback_data, FILE *output, FILE *errout, int *exitstatus_p, int *pid_p)
 {
-	return wxGetApp().CallSubProcess(cmdline, procname, callback, callback_data, output, errout);
+	return wxGetApp().CallSubProcess(cmdline, procname, callback, callback_data, output, errout, exitstatus_p, pid_p);
 }
 
 void MyAppCallback_showConsoleWindow(void)
