@@ -995,7 +995,7 @@ s_Kernel_Backquote(VALUE self, VALUE cmd)
 	int n, exitstatus, pid;
 	VALUE val;
 	n = MyAppCallback_callSubProcess(StringValuePtr(cmd), NULL, DUMMY_CALLBACK, &buf, NULL, NULL, &exitstatus, &pid);
-	fprintf(stderr, "n = %d, exitstatus = %d, pid = %d\n", n, exitstatus, pid);
+/*	fprintf(stderr, "n = %d, exitstatus = %d, pid = %d\n", n, exitstatus, pid); */
 	if (n >= 0 && buf != NULL) {
 		val = Ruby_NewEncodedStringValue(buf, 0);
 		free(buf);
