@@ -1041,6 +1041,13 @@ s_Kernel_SetGlobalSettings(VALUE self, VALUE key, VALUE value)
 
 #pragma mark ====== IO extension ======
 
+static VALUE
+s_Ruby_str_encode_protected(VALUE val)
+{
+	return rb_str_encode(val, rb_enc_from_encoding(rb_default_external_encoding()),
+				  ECONV_INVALID_REPLACE | ECONV_UNDEF_REPLACE, Qnil);
+}
+
 /*
  *  call-seq:
  *     gets_any_eol
@@ -1050,9 +1057,9 @@ s_Kernel_SetGlobalSettings(VALUE self, VALUE key, VALUE value)
 static VALUE
 s_IO_gets_any_eol(VALUE self)
 {
-	VALUE val, cval;
+	VALUE val, val2, cval;
 	char buf[1024];
-	int i, c;
+	int i, c, status;
 	static ID id_getbyte = 0, id_ungetbyte;
 	if (id_getbyte == 0) {
 		id_getbyte = rb_intern("getbyte");
@@ -1089,7 +1096,9 @@ s_IO_gets_any_eol(VALUE self)
 		val = rb_str_new(buf, i);
 	else if (i > 0)
 		rb_str_append(val, rb_str_new(buf, i));
-	val = rb_str_encode(val, rb_enc_from_encoding(rb_default_external_encoding()), 0, Qnil);
+	val2 = rb_protect(s_Ruby_str_encode_protected, val, &status); /*  Ignore exception  */
+	if (status == 0)
+		val = val2;
 	if (cval != Qnil) {
 		/*  Needs a end-of-line mark  */
 		cval = rb_gv_get("$/");

@@ -1340,9 +1340,9 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
 	int nn = 0;
 	{
 		char *dochome = MyAppCallback_getDocumentHomeDir();
-		snprintf(buf, sizeof buf, "%s/%s.log", dochome, (procname ? procname : "subprocess"));
+		snprintf(buf, sizeof buf, "%s/molby_subprocess.log", dochome);
 		free(dochome);
-		fplog = fopen(buf, "w");
+		fplog = fopen(buf, "a");
 		if (fplog == NULL)
 			return -1;
 	}
