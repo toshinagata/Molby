@@ -534,6 +534,8 @@ MyApp::CreateMenuBar(int kind, wxMenu **out_file_history_menu, wxMenu **out_edit
 void
 MyApp::MacNewFile()
 {
+	if (m_docManager == NULL)
+		return;  //  Initialization is not yet complete
 	m_docManager->CreateDocument(_T(""), wxDOC_NEW);
 }
 
