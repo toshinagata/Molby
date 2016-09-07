@@ -128,7 +128,7 @@ $(DESTPREFIX)/Ruby_bind.a : ../MolLib/Ruby_bind/*.[ch]
 
 ALL_OBJECTS = $(OBJECTS) $(EXTRA_OBJECTS) $(LIBS) $(RESOURCE)
 DESTOBJECTS = $(addprefix $(DESTPREFIX)/,$(ALL_OBJECTS))
-$(DESTPREFIX)/$(EXECUTABLE) : $(DESTOBJECTS)
+$(DESTPREFIX)/$(EXECUTABLE) : $(DESTOBJECTS) ../revisionInfo.txt
 ifeq ($(TARGET_PLATFORM),MAC)
 	sh ../record_build_date.sh --with-svn-status
 endif
