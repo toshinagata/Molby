@@ -10251,8 +10251,8 @@ s_Molecule_Cubegen(int argc, VALUE *argv, VALUE self)
 	
 	/*  Set up parameters  */
 	mono = NUM2INT(rb_Integer(mval));
-	if (mono <= 0 || mono > mol->bset->ncomps)
-		rb_raise(rb_eMolbyError, "The MO number (%d) is out of range (should be 1..%d)", mono, mol->bset->ncomps);
+	if (mono < 0 || mono > mol->bset->ncomps)
+		rb_raise(rb_eMolbyError, "The MO number (%d) is out of range (should be 1..%d, or 0 as 'arbitrary vector')", mono, mol->bset->ncomps);
 	if (RTEST(bval)) {
 		if (mol->bset->rflag != 0)
 			rb_raise(rb_eMolbyError, "Beta MO is requested but not present");
