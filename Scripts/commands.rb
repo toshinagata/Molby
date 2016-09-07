@@ -459,11 +459,19 @@ class Molecule
 		  idx = 0
 		  mol.set_mo_coefficients(0, 0.0, coeffs)
 		end
-		mol.create_surface(idx, :npoints=>grid, :color=>color, :thres=>thres, :expand=>expand, :color0=>color0)
-		mol.show_surface
-		on_action.call(it)
-		surface_dialog_attr["hidden"] = 0
-		on_update_attr.call
+		if it[:tag] == "create_cube"
+		  basename = File.basename(mol.path || mol.name, ".*")
+	      fname1 = Dialog.save_panel("Cube file name", mol.dir || Dir.pwd, basename + ".cube", "Gaussian cube file (*.cube)|*.cube")
+		  if fname1
+		    mol.cubegen(fname1, idx, grid, true)
+		  end
+		else
+		  mol.create_surface(idx, :npoints=>grid, :color=>color, :thres=>thres, :expand=>expand, :color0=>color0)
+		  mol.show_surface
+		  on_action.call(it)
+		  surface_dialog_attr["hidden"] = 0
+		  on_update_attr.call
+		end
 	  }
 	  layout(1,
 	    layout(2,
@@ -507,6 +515,7 @@ class Molecule
 			end
 			on_update_attr.call
 			} ),
+		  item(:button, :tag=>"create_cube", :title=>"Create Cube", :action=>on_update),
 		  :flex=>[0,1,0,0,0,0]),
 		:flex=>[0,0,0,0,1,1]
 	  )
