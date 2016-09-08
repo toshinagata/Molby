@@ -9419,24 +9419,24 @@ s_Molecule_SetBackgroundColor(int argc, VALUE *argv, VALUE self)
 
 /*
  *  call-seq:
- *     export_graphic(fname, scale = 1.0, bg_color = -1)
+ *     export_graphic(fname, scale = 1.0, bg_color = -1, width = 0, height = 0)
  *
  *  Export the current graphic to a PNG or TIF file (determined by the extension).
  *  bg_color: -1, same as screen; 0, transparent; 1, black; 2, white.
- *  
+ *  If either width or height is not specified, then the screen width/height is used instead.
  */
 static VALUE
 s_Molecule_ExportGraphic(int argc, VALUE *argv, VALUE self)
 {
 	Molecule *mol;
-	VALUE fval, sval, bval;
+	VALUE fval, sval, bval, wval, hval;
 	char *fname;
 	float scale;
-	int bg_color;
+	int bg_color, width, height;
     Data_Get_Struct(self, Molecule, mol);
 	if (mol->mview == NULL)
 		rb_raise(rb_eMolbyError, "The molecule has no associated graphic view");
-	rb_scan_args(argc, argv, "12", &fval, &sval, &bval);
+	rb_scan_args(argc, argv, "14", &fval, &sval, &bval, &wval, &hval);
 	fname = FileStringValuePtr(fval);
 	if (sval == Qnil)
 		scale = 1.0;
@@ -9444,7 +9444,13 @@ s_Molecule_ExportGraphic(int argc, VALUE *argv, VALUE self)
 	if (bval == Qnil)
 		bg_color = -1;
 	else bg_color = NUM2INT(rb_Integer(bval));
-	if (MainViewCallback_exportGraphic(mol->mview, fname, scale, bg_color) == 0)
+	if (wval == Qnil)
+		width = 0;
+	else width = NUM2INT(rb_Integer(wval));
+	if (hval == Qnil)
+		height = 0;
+	else height = NUM2INT(rb_Integer(hval));
+	if (MainViewCallback_exportGraphic(mol->mview, fname, scale, bg_color, width, height) == 0)
 		return fval;
 	else return Qnil;
 }

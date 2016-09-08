@@ -402,7 +402,7 @@ MyDocument::OnExportGraphic(wxCommandEvent& event)
 	if (dialog->ShowModal() == wxID_OK) {
 		wxString fnpath = dialog->GetPath();
 		MoleculeView *myview = (MoleculeView *)GetFirstView();
-		myview->DoExportGraphic(fnpath, scale, bg_color);
+		myview->DoExportGraphic(fnpath, scale, bg_color, 0, 0);
 	}
 	dialog->Destroy();
 }

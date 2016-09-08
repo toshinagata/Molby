@@ -61,8 +61,8 @@ public:
     void OnDraw(wxDC *dc);
     void OnUpdate(wxView *sender, wxObject *hint = (wxObject *) NULL);
     bool OnClose(bool deleteWindow = true);
-	wxImage *CaptureGLCanvas(float scale = 1.0, int bg_color = -1);
-	int	 DoExportGraphic(wxString& fname, float scale, int bg_color);
+	wxImage *CaptureGLCanvas(float scale = 1.0, int bg_color = -1, int width = 0, int height = 0);
+	int	 DoExportGraphic(wxString& fname, float scale, int bg_color, int width, int height);
 
 	virtual void Activate (bool activate);
 	virtual wxPrintout *OnCreatePrintout();

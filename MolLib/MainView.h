@@ -134,6 +134,7 @@ typedef struct MainView {
 	float dimension;
 	
 	float offline_scale;  /*  If non-zero, this is the expansion factor for offline-rendering  */
+	int offline_width, offline_height;  /*  If non-zero, then these are size for offline-rendering  */
 
 #if !defined(__CMDMAC__)
 	/*  The following members are used in GUI version only  */
@@ -268,7 +269,7 @@ STUB void MainViewCallback_setKeyboardFocus(MainView *mview);
 STUB int MainViewCallback_mouseCheck(MainView *mview);
 STUB void MainViewCallback_clearLabels(MainView *mview);
 STUB void MainViewCallback_drawLabel(MainView *mview, const float *pos, const char *label);
-STUB int MainViewCallback_exportGraphic(MainView *mview, const char *fname, float scale, int bg_color);
+STUB int MainViewCallback_exportGraphic(MainView *mview, const char *fname, float scale, int bg_color, int width, int height);
 	
 STUB void MainViewCallback_drawInfoText(MainView *mview, const char *label);
 STUB void MainViewCallback_selectMatrixCellForMode(MainView *mview, int mode);

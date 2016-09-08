@@ -312,7 +312,7 @@ MolActionCallback_registerUndo(Molecule *mol, MolAction *action)
 }
 
 int
-MainViewCallback_exportGraphic(MainView *mview, const char *fname, float scale, int bg_color)
+MainViewCallback_exportGraphic(MainView *mview, const char *fname, float scale, int bg_color, int width, int height)
 {
 	return 0;
 }

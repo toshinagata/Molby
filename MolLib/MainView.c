@@ -1737,8 +1737,16 @@ MainView_drawModel(MainView *mview)
 		scale = mview->offline_scale;
 
 	MainViewCallback_frame(mview, frame);
-	width = (frame[2] - frame[0]) * scale;
-	height = (frame[3] - frame[1]) * scale;
+	width = frame[2] - frame[0];
+	height = frame[3] - frame[1];
+
+	if (mview->offline_width > 0)
+		width = mview->offline_width;
+	if (mview->offline_height > 0)
+		height = mview->offline_height;
+	
+	width *= scale;
+	height *= scale;
 
     glViewport(0, 0, width, height);
     

@@ -425,14 +425,22 @@ MoleculeView::OnDraw(wxDC *dc)
 }
 
 wxImage *
-MoleculeView::CaptureGLCanvas(float scale, int bg_color)
+MoleculeView::CaptureGLCanvas(float scale, int bg_color, int width, int height)
 {
 	if (canvas && mview->mol != NULL) {
-		int x, y, width, height;
-		float bgcol[4];
+		int x, y, cwidth, cheight;
+		float bgcol[4], rx, ry;
 		
 		canvas->SetCurrent();
-		canvas->GetClientSize(&width, &height);
+		canvas->GetClientSize(&cwidth, &cheight);
+		if (width <= 0)
+			width = cwidth;
+		if (height <= 0)
+			height = cheight;
+		rx = (float)width / cwidth;
+		ry = (float)height / cheight;
+		if (rx > ry)
+			rx = ry;
 		width *= scale;
 		height *= scale;
 
@@ -455,7 +463,10 @@ MoleculeView::CaptureGLCanvas(float scale, int bg_color)
 
 		MainView_initializeOpenGL();
 
-		mview->offline_scale = scale;
+		mview->offline_scale = 1.0;  /*  Scale is handled in offline_width and offline_height  */
+		mview->offline_width = width;
+		mview->offline_height = height;
+		
 		for (x = 0; x < 4; x++) {
 			bgcol[x] = mview->background_color[x];
 		}
@@ -482,6 +493,8 @@ MoleculeView::CaptureGLCanvas(float scale, int bg_color)
 			mview->background_color[x] = bgcol[x];
 		}
 		mview->offline_scale = 0.0;
+		mview->offline_width = 0;
+		mview->offline_height = 0;
 
 		glReadBuffer(GL_COLOR_ATTACHMENT0_EXT);
 		unsigned char *glBitmapData = (unsigned char *)malloc(4 * width * height);
@@ -515,9 +528,9 @@ MoleculeView::CaptureGLCanvas(float scale, int bg_color)
 }
 
 int
-MoleculeView::DoExportGraphic(wxString& fname, float scale, int bg_color)
+MoleculeView::DoExportGraphic(wxString& fname, float scale, int bg_color, int width, int height)
 {
-	wxImage *img = CaptureGLCanvas(scale, bg_color);
+	wxImage *img = CaptureGLCanvas(scale, bg_color, width, height);
 	if (img == NULL)
 		return -1;
 	wxString ext = fname.AfterLast('.');
@@ -1370,11 +1383,11 @@ MainViewCallback_labelSize(struct Label *label, float *outSize)
 }
 
 int
-MainViewCallback_exportGraphic(MainView *mview, const char *fname, float scale, int bg_color)
+MainViewCallback_exportGraphic(MainView *mview, const char *fname, float scale, int bg_color, int width, int height)
 {
 	if (mview != NULL && mview->ref != NULL && ((MoleculeView *)(mview->ref))->MolDocument() != NULL) {
 		wxString fnamestr(fname, wxConvFile);
-		return ((MoleculeView *)(mview->ref))->DoExportGraphic(fnamestr, scale, bg_color);
+		return ((MoleculeView *)(mview->ref))->DoExportGraphic(fnamestr, scale, bg_color, width, height);
 	}
 	return -100;
 }
