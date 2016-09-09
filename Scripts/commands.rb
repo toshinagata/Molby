@@ -483,7 +483,7 @@ class Molecule
 		  item(:text, :title=>"Color"),
 		  item(:popup, :tag=>"color", :subitems=>["blue", "red", "green", "yellow", "cyan", "magenta", "black"], :action=>on_action),
 		  item(:text, :title=>"Opacity"),
-		  item(:textfield, :tag=>"opacity", :width=>80, :value=>"0.6", :action=>on_action),
+		  item(:textfield, :tag=>"opacity", :width=>80, :value=>"0.8", :action=>on_action),
 		  item(:text, :title=>"Threshold"),
 		  item(:textfield, :tag=>"threshold", :width=>80, :value=>"0.05", :action=>on_action),
 		  item(:text, :title=>"Box Limit"),
