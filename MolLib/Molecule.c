@@ -11658,8 +11658,15 @@ MoleculeOutputCube(Molecule *mp, Int index, const char *fname, const char *comme
 				/*  On Windows, the "%e" format writes the exponent in 3 digits, but
 				    this is not standard. So we avoid using %e  */
 				Double d = cp->dp[n++];
-				int exponent = (int)floor(log10(fabs(d)));
-				Double base = d * pow(10, -1.0 * exponent);
+				int exponent;
+				Double base;
+				if (d >= -1.0e-90 && d <= 1.0e-90) {
+					exponent = 0;
+					base = 0.0;
+				} else {
+					exponent = (int)floor(log10(fabs(d)));
+					base = d * pow(10, -1.0 * exponent);
+				}
 				fprintf(fp, " %8.5fe%+03d", base, exponent);
 			/*	fprintf(fp, " %12.5e", d); */
 				if (k == cp->nz - 1 || k % 6 == 5)
