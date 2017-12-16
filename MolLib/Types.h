@@ -17,6 +17,10 @@
 #ifndef __Types_h__
 #define __Types_h__
 
+#if defined(__WXMSW__)
+#include <windows.h>   /*  Include this as early as possible  */
+#endif
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -29,6 +33,16 @@
 #include <f2c.h>
 #include <blaswrap.h>
 #include <clapack.h>
+#endif
+
+#if defined(__WXMSW__)
+/*  MinGW may not have definition of DBL_EPSILON and FLT_EPSILON  */
+#ifndef DBL_EPSILON
+#define DBL_EPSILON __DBL_EPSILON__
+#endif
+#ifndef FLT_EPSILON
+#define FLT_EPSILON __FLT_EPSILON__
+#endif
 #endif
 
 /*  Get the eigenvalue/eigenvector for a real symmetric matrix (3x3)  */

@@ -19,7 +19,7 @@ $(OBJDIR)/MD/%.o: %.c
 
 $(DESTDIR)/MolLib.a : $(ALL_OBJECTS)
 	$(AR) $(ARFLAGS) $(DESTDIR)/MolLib.a $(ALL_OBJECTS)
-	ranlib $(DESTDIR)/MolLib.a
+	$(RANLIB) $(DESTDIR)/MolLib.a
 
 clean:
 	rm -f $(OBJDIR)/*.o

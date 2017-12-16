@@ -13,7 +13,7 @@ $(OBJDIR)/%.o: %.c
 
 $(DESTDIR)/Ruby_bind.a : $(ALL_OBJECTS)
 	$(AR) $(ARFLAGS) $(DESTDIR)/Ruby_bind.a $(ALL_OBJECTS)
-	ranlib $(DESTDIR)/Ruby_bind.a
+	$(RANLIB) $(DESTDIR)/Ruby_bind.a
 
 clean:
 	rm -f $(OBJDIR)/*.o

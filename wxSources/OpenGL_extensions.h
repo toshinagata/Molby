@@ -24,7 +24,7 @@
 #include <windows.h>
 #include <GL/gl.h>
 #include <GL/glu.h>
-#include <GL/glext.h>
+/*#include <GL/glext.h>*/
 
 #ifdef __cplusplus
 extern "C" {

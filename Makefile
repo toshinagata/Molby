@@ -14,16 +14,27 @@ ifeq ($(TARGET_PLATFORM),MAC)
 endif
 
 ifeq ($(TARGET_PLATFORM),MSW)
+ ifneq ($(CROSS_COMPILE),)
+  TOOL_PREFIX = i686-w64-mingw32-
+  CPP_EXTRA_FLAGS += -isystem /usr/local/mingw-w32/mingw/include
+  MSW_BUILD = mswx-build
+  LIB_SUFFIX = -3.0-i686-w64-mingw32
+  WINE_PATH=/Applications/EasyWine.app/Contents/Resources/wine/bin
+ else
+  MSW_BUILD = msw-build
+  LIB_SUFFIX = -3.0
+ endif
  WX_DIR = $(PWD)/../../wxWidgets-3.0.0
- WX_LIB_DIR = $(WX_DIR)/msw-build/lib
- WX_ARCH_DIR = $(WX_LIB_DIR)/wx/include/msw-unicode-static-3.0
+ WX_LIB_DIR = $(WX_DIR)/$(MSW_BUILD)/lib
+ WX_ARCH_DIR = $(WX_LIB_DIR)/wx/include/$(TOOL_PREFIX)msw-unicode-static-3.0
  WX_CPPFLAGS = -isystem $(WX_ARCH_DIR) -isystem $(WX_DIR)/include -D_LARGEFIILE_SOURCE=unknown -D__WXMSW__
- WX_LDFLAGS = -L$(WX_LIB_DIR) -Wl,--subsystem,windows -mwindows -lwx_mswu_gl-3.0 -lopengl32 -lglu32 -lwx_mswu-3.0 -lwxregexu-3.0 -lwxexpat-3.0 -lwxtiff-3.0 -lwxjpeg-3.0 -lwxpng-3.0 -lwxzlib-3.0 -lrpcrt4 -loleaut32 -lole32 -luuid -lwinspool -lwinmm -lshell32 -lcomctl32 -lcomdlg32 -ladvapi32 -lwsock32 -lgdi32
- CPP_EXTRA_FLAGS = -isystem $(PWD)/../../CLAPACK-3.1.1.1-mingw/INCLUDE -isystem $(PWD)/../../fftw-3.3.2/msw-build/include -I$(PWD)/../MolLib
- LD_EXTRA_FLAGS = -L$(PWD)/../../CLAPACK-3.1.1.1-mingw/lib -L$(PWD)/../../fftw-3.3.2/msw-build/lib -llapackMinGW -lblasMinGW -lf2c_nomain -lfftw3 -static-libgcc
+ WX_LDFLAGS = -L$(WX_LIB_DIR) -Wl,--subsystem,windows -mwindows -lwx_mswu_gl$(LIB_SUFFIX) -lopengl32 -lglu32 -lwx_mswu$(LIB_SUFFIX) -lwxregexu$(LIB_SUFFIX) -lwxexpat$(LIB_SUFFIX) -lwxtiff$(LIB_SUFFIX) -lwxjpeg$(LIB_SUFFIX) -lwxpng$(LIB_SUFFIX) -lwxzlib$(LIB_SUFFIX) -lrpcrt4 -loleaut32 -lole32 -luuid -lwinspool -lwinmm -lshell32 -lcomctl32 -lcomdlg32 -ladvapi32 -lwsock32 -lgdi32
+ CPP_EXTRA_FLAGS = -isystem $(PWD)/../../CLAPACK-3.1.1.1-mingw/INCLUDE -isystem $(PWD)/../../fftw-3.3.2/$(MSW_BUILD)/include -I$(PWD)/../MolLib
+ LD_EXTRA_FLAGS = -L$(PWD)/../../CLAPACK-3.1.1.1-mingw/$(MSW_BUILD)/lib -L$(PWD)/../../fftw-3.3.2/$(MSW_BUILD)/lib -llapackMinGW -lblasMinGW -lf2c_nomain -lfftw3 -static-libgcc -static-libstdc++
  RUBY_DIR = $(PWD)/../../ruby-2.0.0-p353
- RUBY_CFLAGS = -isystem $(RUBY_DIR)/msw-build/include/ruby-2.0.0 -I$(RUBY_DIR) -I$(RUBY_DIR)/msw-build/include/ruby-2.0.0/i386-mingw32
- RUBY_LDFLAGS = -L$(RUBY_DIR)/msw-build/lib -lmsvcrt-ruby200-static -lmsvcrt-ruby200 -lws2_32 -lshlwapi -limagehlp -lenc -ltrans
+ RUBY_CFLAGS = -isystem $(RUBY_DIR)/$(MSW_BUILD)/include/ruby-2.0.0 -I$(RUBY_DIR) -I$(RUBY_DIR)/$(MSW_BUILD)/include/ruby-2.0.0/i386-mingw32
+# RUBY_LDFLAGS = -L$(RUBY_DIR)/$(MSW_BUILD)/lib -lmsvcrt-ruby200-static -lmsvcrt-ruby200 -lws2_32 -lshlwapi -limagehlp -lenc -ltrans
+ RUBY_LDFLAGS = -L$(RUBY_DIR)/$(MSW_BUILD)/lib -lmsvcrt-ruby200-static -lws2_32 -lshlwapi -limagehlp -lenc -ltrans
  EXECUTABLE = _Molby.exe_
  FINAL_EXECUTABLE = Molby.exe
  EXE_SUFFIX = .exe
@@ -41,8 +52,10 @@ PRODUCT_DIR = Molby
 PRODUCT = $(PRODUCT_DIR)/$(EXECUTABLE)
 endif
 
-CPP = g++
-CC = gcc
+CPP = $(TOOL_PREFIX)g++
+CC = $(TOOL_PREFIX)gcc
+AR = $(TOOL_PREFIX)ar
+RANLIB = $(TOOL_PREFIX)ranlib
 
 ifeq ($(MAKECMDGOALS),debug)
  DEBUG = 1
@@ -63,7 +76,10 @@ export CFLAGS
 export LDFLAGS
 export DESTDIR
 export CC
+export CPP
+export AR
 export TARGET_PLATFORM
+export RANLIB
 
 release: all
 
@@ -88,11 +104,11 @@ RESOURCE = molby_rc.o
 #  on the Z: drive. 2009.7.24. Toshi Nagata
 HOMETEMP = $(HOME)/__molby_temp_build__
 $(DESTPREFIX)/$(RESOURCE) : molby.rc
-	mkdir -p $(HOMETEMP)/msw_build $(HOMETEMP)/bitmaps
-	cp molby.rc $(HOMETEMP)/msw_build
+	mkdir -p $(HOMETEMP)/$(MSW_BUILD) $(HOMETEMP)/bitmaps
+	cp molby.rc $(HOMETEMP)/$(MSW_BUILD)
 	cp ../bitmaps/*.ico $(HOMETEMP)/bitmaps
-	(cd $(HOMETEMP)/msw_build; windres -i molby.rc -o molby_rc.o -I$(WX_DIR)/include)
-	cp $(HOMETEMP)/msw_build/molby_rc.o $@
+	(cd $(HOMETEMP)/$(MSW_BUILD); $(TOOL_PREFIX)windres -i molby.rc -o molby_rc.o -I$(WX_DIR)/include)
+	cp $(HOMETEMP)/$(MSW_BUILD)/molby_rc.o $@
 	rm -rf $(HOMETEMP)
 endif
 
@@ -153,10 +169,11 @@ ifeq ($(TARGET_PLATFORM),MAC)
 	cp $(DESTPREFIX)/$(EXECUTABLE) $(DESTPREFIX)/$(PRODUCT)/Contents/MacOS
 endif
 ifeq ($(TARGET_PLATFORM),MSW)
+	echo PWD = $(PWD)
 	rm -rf $(DESTPREFIX)/$(PRODUCT_DIR)
 	mkdir -p $(DESTPREFIX)/$(PRODUCT_DIR)
 	cp $(DESTPREFIX)/$(EXECUTABLE) $(DESTPREFIX)/$(PRODUCT_DIR)/$(FINAL_EXECUTABLE)
-	cp `which mingwm10.dll` $(DESTPREFIX)/$(PRODUCT_DIR)
+	cp mingwm10.dll $(DESTPREFIX)/$(PRODUCT_DIR)
 	cp -r ../Scripts $(DESTPREFIX)/$(PRODUCT_DIR)
 	cp -r amber11 $(DESTPREFIX)/$(PRODUCT_DIR)
 	cp -r ortep3 $(DESTPREFIX)/$(PRODUCT_DIR)
@@ -165,9 +182,16 @@ ifeq ($(TARGET_PLATFORM),MSW)
 endif
 
 ifeq ($(TARGET_PLATFORM),MSW)
+install: setup
+
 setup: build/release/$(PRODUCT_DIR)/$(FINAL_EXECUTABLE)
 	mkdir -p ../latest_binaries
-	(/c/Program\ Files\ \(x86\)/Inno\ Setup\ 5/iscc molby.iss && mv Output/SetupMolbyWin.exe ../latest_binaries)
+ifneq ($(CROSS_COMPILE),)
+	($(WINE_PATH)/wine ../../Inno\ Setup\ 5/ISCC.exe molby.iss || exit 1)
+else
+	(/c/Program\ Files\ \(x86\)/Inno\ Setup\ 5/iscc molby.iss || exit 1)
+endif
+	mv Output/SetupMolbyWin.exe ../latest_binaries
 	(cd build/release/$(PRODUCT_DIR) && rm -rf $(MAKEDIR)/../latest_binaries/MolbyWin.zip && zip -r $(MAKEDIR)/../latest_binaries/MolbyWin.zip * -x \*.DS_Store \*.svn*)
 endif
 

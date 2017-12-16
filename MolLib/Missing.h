@@ -23,7 +23,7 @@
 #define MISSING_ASPRINTF 1
 #define MISSING_STRTOK_R 1
 #define MISSING_MERGESORT 1
-#define MISSING_STRDUP 1    /*  For debug with 'external' malloc library  */
+/*#define MISSING_STRDUP 1    *//*  For debug with 'external' malloc library  */
 #define PATH_SEPARATOR '\\'
 #else
 #define PATH_SEPARATOR '/'

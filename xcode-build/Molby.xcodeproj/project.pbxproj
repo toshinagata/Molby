@@ -6,6 +6,23 @@
 	objectVersion = 45;
 	objects = {
 
+/* Begin PBXAggregateTarget section */
+		E4CB370F1FE4FF0E001BB75E /* Molby (Mac Archive) */ = {
+			isa = PBXAggregateTarget;
+			buildConfigurationList = E4CB37101FE4FF0E001BB75E /* Build configuration list for PBXAggregateTarget "Molby (Mac Archive)" */;
+			buildPhases = (
+				E4CB37171FE4FF42001BB75E /* ShellScript */,
+			);
+			dependencies = (
+				E4CB37141FE4FF23001BB75E /* PBXTargetDependency */,
+				E4CB37161FE4FF23001BB75E /* PBXTargetDependency */,
+				E4CB37191FE50707001BB75E /* PBXTargetDependency */,
+			);
+			name = "Molby (Mac Archive)";
+			productName = "Molby (Mac Archive)";
+		};
+/* End PBXAggregateTarget section */
+
 /* Begin PBXBuildFile section */
 		E4196C66190B2FA500183E62 /* menu.mm in Sources */ = {isa = PBXBuildFile; fileRef = E4196C65190B2FA500183E62 /* menu.mm */; };
 		E420BDEF1885746700A2B983 /* ConsoleFrame.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BDE81885746700A2B983 /* ConsoleFrame.cpp */; };
@@ -59,6 +76,9 @@
 		E4D379A219C87C2200636D28 /* modalwindow.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E4D379A119C87C2200636D28 /* modalwindow.cpp */; };
 		E4D37E0E19CC831500636D28 /* modalwindow_osx.mm in Sources */ = {isa = PBXBuildFile; fileRef = E4D37E0D19CC831500636D28 /* modalwindow_osx.mm */; };
 		E4D3806619CEC7B600636D28 /* MyTextCtrl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E4D3806419CEC7B600636D28 /* MyTextCtrl.cpp */; };
+		E4DF3BCE1FDCEB120014F980 /* Scripts in CopyFiles */ = {isa = PBXBuildFile; fileRef = E4FC77D6183E4FFE0064FB2E /* Scripts */; };
+		E4DF3BCF1FDCEB120014F980 /* amber11 in CopyFiles */ = {isa = PBXBuildFile; fileRef = E4FC77D8183E503E0064FB2E /* amber11 */; };
+		E4DF3BD01FDCEB120014F980 /* ortep3 in CopyFiles */ = {isa = PBXBuildFile; fileRef = E4ACACE418C6D32300F08B67 /* ortep3 */; };
 		E4FC77A9183E4F3F0064FB2E /* Dcd.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC777B183E4F3F0064FB2E /* Dcd.c */; };
 		E4FC77AA183E4F3F0064FB2E /* IntGroup.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC777D183E4F3F0064FB2E /* IntGroup.c */; };
 		E4FC77AB183E4F3F0064FB2E /* MainView.c in Sources */ = {isa = PBXBuildFile; fileRef = E4FC777F183E4F3F0064FB2E /* MainView.c */; };
@@ -98,6 +118,45 @@
 		E4FC7CAD183F953E0064FB2E /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E4FC7CAC183F953E0064FB2E /* AudioToolbox.framework */; };
 		E4FC7F821840C22B0064FB2E /* molby_icon.icns in Resources */ = {isa = PBXBuildFile; fileRef = E4FC77D4183E4FF20064FB2E /* molby_icon.icns */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		E4CB37131FE4FF23001BB75E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 29B97313FDCFA39411CA2CEA /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 8D1107260486CEB800E47090;
+			remoteInfo = Molby;
+		};
+		E4CB37151FE4FF23001BB75E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 29B97313FDCFA39411CA2CEA /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E49BFB751886E2E400188237;
+			remoteInfo = Molby_command;
+		};
+		E4CB37181FE50707001BB75E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 29B97313FDCFA39411CA2CEA /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E4CB370B1FE2C1F7001BB75E;
+			remoteInfo = "Molby (Windows)";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		E4DF3BCD1FDCEAEE0014F980 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = Molby_resources;
+			dstSubfolderSpec = 16;
+			files = (
+				E4DF3BCE1FDCEB120014F980 /* Scripts in CopyFiles */,
+				E4DF3BCF1FDCEB120014F980 /* amber11 in CopyFiles */,
+				E4DF3BD01FDCEB120014F980 /* ortep3 in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		8D1107320486CEB800E47090 /* Molby.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Molby.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -146,7 +205,8 @@
 		E4653CB018A0CC7D0022377B /* textctrl_addition.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = textctrl_addition.mm; sourceTree = "<group>"; };
 		E49BFB761886E2E400188237 /* Molby_command */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Molby_command; sourceTree = BUILT_PRODUCTS_DIR; };
 		E4ACACE418C6D32300F08B67 /* ortep3 */ = {isa = PBXFileReference; lastKnownFileType = folder; path = ortep3; sourceTree = "<group>"; };
-		E4BC44821CEE970500B35736 /* utils.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = utils.mm; sourceTree = "<group>"; };
+		E4CB37081FDD4654001BB75E /* OpenGL_extensions.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = OpenGL_extensions.c; sourceTree = "<group>"; };
+		E4CB37091FDD4654001BB75E /* OpenGL_extensions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OpenGL_extensions.h; sourceTree = "<group>"; };
 		E4D379A019C87C1200636D28 /* modalwindow.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = modalwindow.h; sourceTree = "<group>"; };
 		E4D379A119C87C2200636D28 /* modalwindow.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = modalwindow.cpp; sourceTree = "<group>"; };
 		E4D37E0D19CC831500636D28 /* modalwindow_osx.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = modalwindow_osx.mm; sourceTree = "<group>"; };
@@ -458,12 +518,31 @@
 				E4D379A019C87C1200636D28 /* modalwindow.h */,
 				E4D379A119C87C2200636D28 /* modalwindow.cpp */,
 				E4D37E0D19CC831500636D28 /* modalwindow_osx.mm */,
+				E4CB37081FDD4654001BB75E /* OpenGL_extensions.c */,
+				E4CB37091FDD4654001BB75E /* OpenGL_extensions.h */,
 			);
 			name = wxSources;
 			path = ../wxSources;
 			sourceTree = SOURCE_ROOT;
 		};
 /* End PBXGroup section */
+
+/* Begin PBXLegacyTarget section */
+		E4CB370B1FE2C1F7001BB75E /* Molby (Windows) */ = {
+			isa = PBXLegacyTarget;
+			buildArgumentsString = "PATH=/usr/local/mingw-w32/bin:$PATH make $(ACTION)";
+			buildConfigurationList = E4CB370C1FE2C1F7001BB75E /* Build configuration list for PBXLegacyTarget "Molby (Windows)" */;
+			buildPhases = (
+			);
+			buildToolPath = /usr/bin/env;
+			buildWorkingDirectory = "$(PROJECT_DIR)/../mswx-build";
+			dependencies = (
+			);
+			name = "Molby (Windows)";
+			passBuildSettingsInEnvironment = 1;
+			productName = "Molby (Windows)";
+		};
+/* End PBXLegacyTarget section */
 
 /* Begin PBXNativeTarget section */
 		8D1107260486CEB800E47090 /* Molby */ = {
@@ -492,6 +571,7 @@
 			buildPhases = (
 				E49BFB731886E2E400188237 /* Sources */,
 				E49BFB741886E2E400188237 /* Frameworks */,
+				E4DF3BCD1FDCEAEE0014F980 /* CopyFiles */,
 				E43C5DE818E57C56004FE397 /* ShellScript */,
 			);
 			buildRules = (
@@ -508,6 +588,18 @@
 /* Begin PBXProject section */
 		29B97313FDCFA39411CA2CEA /* Project object */ = {
 			isa = PBXProject;
+			attributes = {
+				TargetAttributes = {
+					E4CB370B1FE2C1F7001BB75E = {
+						CreatedOnToolsVersion = 8.2.1;
+						ProvisioningStyle = Automatic;
+					};
+					E4CB370F1FE4FF0E001BB75E = {
+						CreatedOnToolsVersion = 8.2.1;
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
 			buildConfigurationList = C01FCF4E08A954540054247B /* Build configuration list for PBXProject "Molby" */;
 			compatibilityVersion = "Xcode 3.1";
 			developmentRegion = English;
@@ -524,6 +616,8 @@
 			targets = (
 				8D1107260486CEB800E47090 /* Molby */,
 				E49BFB751886E2E400188237 /* Molby_command */,
+				E4CB370B1FE2C1F7001BB75E /* Molby (Windows) */,
+				E4CB370F1FE4FF0E001BB75E /* Molby (Mac Archive) */,
 			);
 		};
 /* End PBXProject section */
@@ -554,7 +648,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "if [ \"$BUILD_STYLE\" = \"Release\" ]; then\n  mkdir -p \"$PROJECT_DIR/../latest_binaries\" && rm -f \"$PROJECT_DIR/../latest_binaries/MolbyDoc.zip\"\n  (cd $PROJECT_DIR/../Documents && zip -r \"$PROJECT_DIR/../latest_binaries/MolbyDoc.zip\" MolbyDoc -x \\*.DS_Store -x \\*.svn*) || exit 1\nfi\n";
+			shellScript = "if [ \"${BUILD_STYLE:=$CONFIGURATION}\" = \"Release\" ]; then\n  mkdir -p \"$PROJECT_DIR/../latest_binaries/Molby\" || exit 1\n  rm -rf \"$PROJECT_DIR/../latest_binaries/Molby/Molby.app\" || exit 1\n  (cd \"$TARGET_BUILD_DIR\"; cp -a Molby.app \"$PROJECT_DIR/../latest_binaries/Molby\") || exit 1\nfi\nexit 0\n";
 		};
 		E43C5DE818E57C56004FE397 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -567,7 +661,20 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "cp -a \"$BUILT_PRODUCTS_DIR/Molby.app/Contents/Resources\" \"$BUILT_PRODUCTS_DIR\" || exit 1\n(cd \"$BUILT_PRODUCTS_DIR\" && rm -rf Molby_resources && mv Resources Molby_resources) || exit 1\nif [ \"$BUILD_STYLE\" = \"Release\" ]; then\n  (mkdir -p \"$PROJECT_DIR/../latest_binaries/temp/Molby\" && cd \"$PROJECT_DIR/../latest_binaries/temp/Molby\" && rm -rf *) || exit 1\n  (cd \"$BUILT_PRODUCTS_DIR\" && cp -a Molby.app Molby_command Molby_resources \"$PROJECT_DIR/../latest_binaries/temp/Molby\") || exit 1\n  (cd \"$PROJECT_DIR/../latest_binaries/temp\" && rm -f ../MolbyMac.zip && zip -r ../MolbyMac.zip Molby -x \\*.DS_Store -x \\*.svn*) || exit 1\n  rm -rf \"$PROJECT_DIR/../latest_binaries/temp\" || exit 1\nfi\n";
+			shellScript = "if [ \"${BUILD_STYLE:=$CONFIGURATION}\" = \"Release\" ]; then\n  mkdir -p \"$PROJECT_DIR/../latest_binaries/Molby\" || exit 1\n  (cd \"$PROJECT_DIR/../latest_binaries/Molby\" && rm -rf Molby_command Molby_resources) || exit 1\n  (cd \"$TARGET_BUILD_DIR\"; cp -a Molby_command Molby_resources \"$PROJECT_DIR/../latest_binaries/Molby\") || exit 1\nfi\n";
+		};
+		E4CB37171FE4FF42001BB75E /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "if [ \"${BUILD_STYLE:=$CONFIGURATION}\" = \"Release\" ]; then\n  (cd \"$PROJECT_DIR/../latest_binaries\" && rm -f MolbyMac.zip && zip -r MolbyMac.zip Molby -x \\*.DS_Store -x \\*.svn*) || exit 1\n  (cd \"$PROJECT_DIR/../Documents\" && /usr/bin/ruby makedoc.rb && cp -a MolbyDoc \"$PROJECT_DIR/../latest_binaries\") || exit 1\n  (cd \"$PROJECT_DIR/../latest_binaries\" && zip -r MolbyDoc.zip MolbyDoc -x \\*.DS_Store -x \\*.svn*) || exit 1\n  (cd \"$PROJECT_DIR/../mswx-build\"; PATH=/usr/local/mingw-w32/bin:$PATH; make setup) || exit 1\nfi\n";
 		};
 		E4FC7B57183E516E0064FB2E /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -580,7 +687,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "export TARGET_PLATFORM=MAC\nexport PATH=/usr/local/bin:$PATH\n(cd $PROJECT_DIR; sh ../record_build_date.sh --with-svn-status)\nif [ \"$BUILD_STYLE\" = \"Release\" ]; then\n  (cd $PROJECT_DIR/..; /usr/bin/ruby \"update_version.rb\")\n  (cd $PROJECT_DIR/../Documents; /usr/bin/ruby \"makedoc.rb\")\nfi\n(cd $PROJECT_DIR; make -f ../Makefile_amber11)\n(cd $PROJECT_DIR; make -f ../Makefile_ortep3)\n";
+			shellScript = "cd $PROJECT_DIR; sh ../record_build_date.sh --with-svn-status\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -673,6 +780,24 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		E4CB37141FE4FF23001BB75E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 8D1107260486CEB800E47090 /* Molby */;
+			targetProxy = E4CB37131FE4FF23001BB75E /* PBXContainerItemProxy */;
+		};
+		E4CB37161FE4FF23001BB75E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E49BFB751886E2E400188237 /* Molby_command */;
+			targetProxy = E4CB37151FE4FF23001BB75E /* PBXContainerItemProxy */;
+		};
+		E4CB37191FE50707001BB75E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E4CB370B1FE2C1F7001BB75E /* Molby (Windows) */;
+			targetProxy = E4CB37181FE50707001BB75E /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
 		C01FCF4B08A954540054247B /* Debug */ = {
 			isa = XCBuildConfiguration;
@@ -680,6 +805,7 @@
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
 				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_ENABLE_FIX_AND_CONTINUE = YES;
 				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
@@ -689,6 +815,7 @@
 				GCC_PREFIX_HEADER = "";
 				GCC_REUSE_STRINGS = NO;
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_VERSION = 4.2;
 				HEADER_SEARCH_PATHS = (
 					"$(PROJECT_DIR)/../../fftw-3.3.2/osx-build/include",
 					"$(PROJECT_DIR)/../../wxWidgets-3.0.0/include",
@@ -739,13 +866,14 @@
 					ppc,
 					i386,
 				);
-				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEBUG_INFORMATION_FORMAT = dwarf;
 				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = NO;
 				GCC_PREFIX_HEADER = "";
 				GCC_REUSE_STRINGS = NO;
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_VERSION = 4.2;
 				HEADER_SEARCH_PATHS = (
 					"$(PROJECT_DIR)/../../fftw-3.3.2/osx-build/include",
 					"$(PROJECT_DIR)/../../wxWidgets-3.0.0/include",
@@ -800,6 +928,7 @@
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.5;
 				ONLY_ACTIVE_ARCH = YES;
 				PREBINDING = NO;
 				SDKROOT = macosx10.5;
@@ -818,6 +947,7 @@
 				GCC_OPTIMIZATION_LEVEL = 2;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.5;
 				PREBINDING = NO;
 				SDKROOT = macosx10.5;
 			};
@@ -859,7 +989,7 @@
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				COPY_PHASE_STRIP = YES;
-				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEBUG_INFORMATION_FORMAT = dwarf;
 				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				GCC_VERSION = 4.2;
@@ -883,6 +1013,104 @@
 				);
 				PREBINDING = NO;
 				PRODUCT_NAME = Molby_command;
+			};
+			name = Release;
+		};
+		E4CB370D1FE2C1F7001BB75E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUGGING_SYMBOLS = YES;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		E4CB370E1FE2C1F7001BB75E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+		E4CB37111FE4FF0E001BB75E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		E4CB37121FE4FF0E001BB75E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
 		};
@@ -915,6 +1143,22 @@
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
+		};
+		E4CB370C1FE2C1F7001BB75E /* Build configuration list for PBXLegacyTarget "Molby (Windows)" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E4CB370D1FE2C1F7001BB75E /* Debug */,
+				E4CB370E1FE2C1F7001BB75E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+		};
+		E4CB37101FE4FF0E001BB75E /* Build configuration list for PBXAggregateTarget "Molby (Mac Archive)" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E4CB37111FE4FF0E001BB75E /* Debug */,
+				E4CB37121FE4FF0E001BB75E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
 		};
 /* End XCConfigurationList section */
 	};
