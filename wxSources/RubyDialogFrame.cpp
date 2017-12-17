@@ -30,6 +30,8 @@
 #include "wx/settings.h"
 #include "wx/dcmemory.h"
 
+#include "wx/fontenum.h"
+
 #include "RubyDialogFrame.h"
 
 #include "../MolLib/Ruby_bind/Molby_extern.h"
@@ -1066,7 +1068,7 @@ RubyDialogCallback_createItem(RubyDialog *dref, const char *type, const char *ti
 	if (wxDynamicCast(control, wxTextCtrl) != NULL) {
 		/*  Set default font  */
 		wxTextAttr attr = ((wxTextCtrl *)control)->GetDefaultStyle();
-		attr.SetFont(wxSystemSettings::GetFont(wxSYS_SYSTEM_FONT));
+		attr.SetFont(wxSystemSettings::GetFont(wxSYS_DEFAULT_GUI_FONT));
 		((wxTextCtrl *)control)->SetDefaultStyle(attr);
 	}
 
