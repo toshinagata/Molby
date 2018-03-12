@@ -916,6 +916,9 @@ class Molecule
 	h = (hash["STATPT"] ||= Hash.new)
 	h["NSTEP"] ||= "400"
 	h["OPTTOL"] ||= "1.0E-06"
+    if hash["eliminate_freedom"] == 0
+      h["PROJCT"] ||= ".F."
+    end
 
 	h = (hash["SYSTEM"] ||= Hash.new)
 	h["MEMDDI"] ||= "0"
@@ -946,6 +949,17 @@ class Molecule
 	  h["PTSEL"] ||= "CONNOLLY"
 	end
 	
+    if (hash["include_nbo"] || 0) != 0
+      h = (hash["NBO"] ||= Hash.new)
+      s = ""
+      ["nao", "nbo", "nho", "nlmo", "pnao", "pnbo", "pnho", "pnlmo"].each { |nao|
+        if (hash[nao] || 0) != 0
+          s += " f" + nao + " ao" + nao
+        end
+      }
+      h[s] = ""
+    end
+
 	if fname
 	  fp = File.open(fname, "wb")
 	else
@@ -1089,7 +1103,7 @@ class Molecule
 	dft_desc = ["B3LYP"]
 	dft_internal = ["B3LYP"]
 
-	defaults = {"scftype"=>0, "runtype"=>0, "charge"=>"0", "mult"=>"1",
+	defaults = {"scftype"=>0, "runtype"=>0, "use_internal"=>1, "eliminate_freedom"=>1, "charge"=>"0", "mult"=>"1",
 	  "basis"=>4, "use_secondary_basis"=>0, "secondary_elements"=>"",
 	  "secondary_basis"=>8, "esp"=>0, "ncpus"=>"1"}
 
@@ -1208,14 +1222,16 @@ class Molecule
 		  set_global_settings("gamess.postfix_script", h["postfix"])
 		end
 	  end
+      nbos = ["nao", "nbo", "nho", "nlmo", "pnao", "pnbo", "pnho", "pnlmo"]
 	  layout(4,
 		item(:text, :title=>"SCF type"),
 		item(:popup, :subitems=>["RHF", "ROHF", "UHF"], :tag=>"scftype"),
 	    item(:text, :title=>"Run type"),
 		item(:popup, :subitems=>["Energy", "Property", "Optimize"], :tag=>"runtype",
 		  :action=>lambda { |it| set_attr("use_internal", :enabled=>(it[:value] == 2)) } ),
-
-		item(:checkbox, :title=>"Use internal coordinates for structure optimization", :tag=>"use_internal"),
+        item(:checkbox, :title=>"Use internal coordinates for structure optimization", :tag=>"use_internal"),
+        -1, -1, -1,
+		item(:checkbox, :title=>"Eliminate translation and rotational degrees of freedom", :tag=>"eliminate_freedom"),
 		-1, -1, -1,
 
 		item(:text, :title=>"Charge"),
@@ -1259,7 +1275,25 @@ class Molecule
 		item(:checkbox, :title=>"Calculate electrostatic potential (ESP)", :tag=>"esp"),
 		-1, -1, -1,
 	
-		item(:line),
+        item(:line),
+        -1, -1, -1,
+
+        item(:checkbox, :title=>"Include NBO instructions", :tag=>"include_nbo",
+             :action=>lambda { |it|
+               flag = (it[:value] != 0)
+               nbos.each { |nbo| set_attr(nbo, :enabled=>flag) }
+             }),
+        -1, -1, -1,
+        item(:checkbox, :title=>"NAO", :tag=>"nao"),
+        item(:checkbox, :title=>"NBO", :tag=>"nbo"),
+        item(:checkbox, :title=>"NHO", :tag=>"nho"),
+        item(:checkbox, :title=>"NLMO", :tag=>"nlmo"),
+        item(:checkbox, :title=>"PNAO", :tag=>"pnao"),
+        item(:checkbox, :title=>"PNBO", :tag=>"pnbo"),
+        item(:checkbox, :title=>"PNHO", :tag=>"pnho"),
+        item(:checkbox, :title=>"PNLMO", :tag=>"pnlmo"),
+             
+        item(:line),
 		-1, -1, -1,
 		
 		item(:checkbox, :title=>"Execute GAMESS on this machine", :tag=>"execute_local",
@@ -1322,6 +1356,9 @@ class Molecule
 	  set_attr("executable_path", :enabled=>(values["execute_local"] == 1))
 	  set_attr("select_path", :enabled=>(values["execute_local"] == 1))
 	  set_attr("ncpus", :enabled=>(values["execute_local"] == 1))
+      nbos.each { |nao|
+        set_attr(nao, :enabled=>(values["include_nbo"] == 1))
+      }
 	}
 	hash.each_pair { |key, value|
 	  next if key == :status

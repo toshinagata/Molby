@@ -727,3 +727,4 @@ Win: crash caused by the 'missing DLL' problems was fixed.
 Win: document_home is modified to use the Windows API, instead of hard-coded path (which was wrong on Windows Vista and later).
 Win: "backquote" method was not working well.
 Win: when the program is started twice, the second invocation was causing crash. Hopefully fixed.
+
