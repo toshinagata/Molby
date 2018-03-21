@@ -177,8 +177,8 @@ class MyApp: public wxApp
 
 	void OnActivate(wxActivateEvent &event);
 
-	void RequestOpenFilesByIPC(wxString& files);
-	void OnOpenFilesByIPC(wxCommandEvent& event);
+	void RequestOpenFilesByEvent(wxString& files);
+	void OnOpenFilesByEvent(wxCommandEvent& event);
 	
 	bool OnOpenFiles(const wxString &files);
 
@@ -226,7 +226,7 @@ protected:
 	MyDocument **m_TimerDocs;
 	wxTimer *m_Timer;
 
-	wxString *m_pendingFilesToOpen;  /*  Files to be processed by OnOpenFilesByIPC()  */
+	wxString *m_pendingFilesToOpen;  /*  Files to be processed by OnOpenFilesByEvent()  */
 
 	wxTopLevelWindow *m_frameToBeDestroyed;   /*  Used in CheckIfAllWindowsAreGone()  */
 	

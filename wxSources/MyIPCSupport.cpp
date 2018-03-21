@@ -74,7 +74,7 @@ MyServerConnection::OnExecute(const wxString& topic, const void *data, size_t si
 {
 	if (topic == MOLBY_IPC_TOPIC) {
 		wxString files((wxChar *)data);
-		wxGetApp().RequestOpenFilesByIPC(files);
+		wxGetApp().RequestOpenFilesByEvent(files);
 		return true;
 	} else return false;
 }

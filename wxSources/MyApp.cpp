@@ -88,7 +88,7 @@ IMPLEMENT_APP(MyApp)
 
 BEGIN_EVENT_TABLE(MyApp, wxApp)
 	EVT_COMMAND(MyDocumentEvent_scriptMenuModified, MyDocumentEvent, MyApp::OnScriptMenuModified)
-	EVT_COMMAND(MyDocumentEvent_openFilesByIPC, MyDocumentEvent, MyApp::OnOpenFilesByIPC)
+	EVT_COMMAND(MyDocumentEvent_openFilesByEvent, MyDocumentEvent, MyApp::OnOpenFilesByEvent)
 	EVT_UPDATE_UI_RANGE(myMenuID_MyFirstMenuItem, myMenuID_MyLastMenuItem, MyApp::OnUpdateUI)
 	EVT_MENU(myMenuID_ExecuteScript, MyApp::OnExecuteScript)
 	EVT_MENU(myMenuID_OpenConsoleWindow, MyApp::OnOpenConsoleWindow)
@@ -342,7 +342,7 @@ bool MyApp::OnInit(void)
 			files.append(argv[i]);
 			files.append(wxT("\n"));
 		}
-		OnOpenFiles(files);
+		RequestOpenFilesByEvent(files);
 	}
 	
 	gInitCompleted = true;
@@ -542,8 +542,8 @@ MyApp::MacNewFile()
 void
 MyApp::MacOpenFile(const wxString &fileName)
 {
-	wxString files(fileName);
-	OnOpenFiles(files);
+    wxString file(fileName);
+	RequestOpenFilesByEvent(file);
 }
 
 /*  Open given files: instead of calling MacOpenFile() for each entry, build a file list
@@ -1162,21 +1162,29 @@ MyApp::OnActivate(wxActivateEvent &event)
 }
 
 void
-MyApp::RequestOpenFilesByIPC(wxString& files)
+MyApp::RequestOpenFilesByEvent(wxString& files)
 {
 	if (m_pendingFilesToOpen != NULL)
 		m_pendingFilesToOpen->Append(files);
 	else
 		m_pendingFilesToOpen = new wxString(files);
-	wxCommandEvent myEvent(MyDocumentEvent, MyDocumentEvent_openFilesByIPC);
+    if (!m_pendingFilesToOpen->EndsWith(wxT("\n")))
+        m_pendingFilesToOpen->Append(wxT("\n"));
+	wxCommandEvent myEvent(MyDocumentEvent, MyDocumentEvent_openFilesByEvent);
 	wxPostEvent(this, myEvent);
 }
 
 void
-MyApp::OnOpenFilesByIPC(wxCommandEvent& event)
+MyApp::OnOpenFilesByEvent(wxCommandEvent& event)
 {
 	if (m_pendingFilesToOpen == NULL)
 		return;
+    if (!gInitCompleted) {
+        //  Repost this event and try again later
+        wxCommandEvent myEvent(MyDocumentEvent, MyDocumentEvent_openFilesByEvent);
+        wxPostEvent(this, myEvent);
+        return;
+    }
 	OnOpenFiles(*m_pendingFilesToOpen);
 	delete m_pendingFilesToOpen;
 	m_pendingFilesToOpen = NULL;
