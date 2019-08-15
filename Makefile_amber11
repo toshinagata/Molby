@@ -2,6 +2,10 @@
 #  Build AmberTools in ./build/amber11-build
 #  and copy necessary files into ./amber11
 #  Assumes the source tree of the original AmberTools is in ../amber11
+#  Note: make sure that the correct version of gcc/gfortran is found in PATH!
+#    In the author's environment: (as of 2019/08/15)
+#    Mac: export PATH=/usr/local/gcc8/bin:$PATH
+#    Win: enable_brew
 
 OPWD = $(PWD)
 

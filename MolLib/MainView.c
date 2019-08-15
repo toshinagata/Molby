@@ -2153,7 +2153,7 @@ MainView_mouseDragged(MainView *mview, const float *mousePos, int flags)
 {
 	float p[2];
 	if (mview->isDragging == 0) {
-		if (abs(mousePos[0] - mview->dragStartPos[0]) >= 3 || abs(mousePos[1] - mview->dragStartPos[1]) >= 3)
+		if (fabsf(mousePos[0] - mview->dragStartPos[0]) >= 3 || fabsf(mousePos[1] - mview->dragStartPos[1]) >= 3)
 			mview->isDragging = 1;
 		else return;
 	}

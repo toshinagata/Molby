@@ -176,7 +176,7 @@ MolActionNewArgv(const char *name, va_list ap)
 				arg.u.arval.nitems = nitems;
 				allocsize = itemsize * nitems + (arg.type == 's'); /* +1 for string type */
 				if (allocsize == 0)
-					arg.u.arval.ptr == NULL;
+					arg.u.arval.ptr = NULL;
 				else {
 					arg.u.arval.ptr = calloc(1, allocsize);
 					if (arg.u.arval.ptr == NULL)

@@ -1,2 +1,0 @@
-molbyicon ICON "../bitmaps/molby_icon.ico"
-#include "wx/msw/wx.rc"

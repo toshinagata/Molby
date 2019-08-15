@@ -1,5 +1,10 @@
 #  Usage: make -f ../Makefile_ortep3 (in XXXX_build directory)
 #  Copy source files to ./build/ortep-build and build ortep executable there
+#
+#  Note: make sure that the correct version of gcc/gfortran is found in PATH!
+#    In the author's environment: (as of 2019/08/15)
+#    Mac: export PATH=/usr/local/gcc8/bin:$PATH
+#    Win: enable_brew
 
 ifeq ($(TARGET_PLATFORM),)
 ifeq ($(findstring darwin,$(OSTYPE)),darwin)
@@ -10,10 +15,13 @@ endif
 endif
 
 ifeq ($(TARGET_PLATFORM),MAC)
-FFLAGS=-std=legacy -isysroot /Developer/SDKs/MacOSX10.5.sdk -mmacosx-version-min=10.5 -arch ppc -arch i386
-FLDFLAGS=-nodefaultlibs -lgfortran-static -lgcc -lc -m -lSystem -lSystemStubs -lgfortranbegin
+FFLAGS=-std=legacy -isysroot /Developer/SDKs/MacOSX10.6.sdk -mmacosx-version-min=10.6 -arch x86_64
+LIBQUADMATH=/usr/local/gcc8/lib/libquadmath.a
+#FLDFLAGS= -nodefaultlibs -lgfortran-static -lgcc -lc -lm -lSystem -lSystemStubs -lgfortranbegin
+FLDFLAGS= -lgcc -lc -lm -lSystem -static-libgfortran -static-libgcc $(LIBQUADMATH)
 EXE_SUFFIX=
 else
+CROSS_PREFIX=x86_64-w64-mingw32-
 FFLAGS=-std=legacy 
 FLDFLAGS=-Wl,--stack=33554432 -static-libgcc -static-libgfortran
 EXE_SUFFIX=.exe
@@ -31,7 +39,7 @@ ortep3/ortep3$(EXE_SUFFIX) : $(BUILDDIR)/ortep3$(EXE_SUFFIX)
 
 $(BUILDDIR)/ortep3$(EXE_SUFFIX) : $(TEPDIR)/$(TEPNAME).f
 	(mkdir -p $(OPWD)/$(BUILDDIR); cp -p $(TEPDIR)/$(TEPNAME).f $(OPWD)/$(BUILDDIR)/)
-	(cd $(OPWD)/$(BUILDDIR) && gfortran $(FFLAGS) -fno-automatic -O -w -c $(TEPNAME).f && gfortran $(FFLAGS) $(FLDFLAGS) -O -w -o ortep3$(EXE_SUFFIX) $(TEPNAME).o)
+	(cd $(OPWD)/$(BUILDDIR) && $(CROSS_PREFIX)gfortran $(FFLAGS) -fno-automatic -O -w -c $(TEPNAME).f && $(CROSS_PREFIX)gfortran $(FFLAGS) $(FLDFLAGS) -O -w -o ortep3$(EXE_SUFFIX) $(TEPNAME).o)
 
 clean :
 	rm -rf $(BUILDDIR)

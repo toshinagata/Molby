@@ -6,8 +6,12 @@
 # (1)  Location of the installation
 
 ifeq ($(TARGET_PLATFORM),MAC)
-ISYSROOT=-isysroot /Developer/SDKs/MacOSX10.4u.sdk -mmacosx-version-min=10.4 -arch ppc -arch i386
+ISYSROOT=-isysroot /Developer/SDKs/MacOSX10.6.sdk -mmacosx-version-min=10.6 -arch x86_64
 endif
+ifeq ($(TARGET_PLATFORM),MSW)
+CROSS_PREFIX=x86_64-w64-mingw32-
+endif
+
 BINDIR=$(AMBERHOME)/bin
 LIBDIR=$(AMBERHOME)/lib
 INCDIR=$(AMBERHOME)/include
@@ -48,18 +52,23 @@ SHELL=/bin/sh
 #          flex.
 
 ifeq ($(TARGET_PLATFORM),MAC)
-CC=gcc-4.0 $(ISYSROOT)
-CXX=g++-4.0 $(ISYSROOT)
-CPLUSPLUS=g++-4.0 $(ISYSROOT)
+CC=gcc $(ISYSROOT)
+CXX=g++ $(ISYSROOT)
+CPLUSPLUS=g++ $(ISYSROOT)
 CFLAGS= -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -DBINTRAJ $(AMBERBUILDFLAGS)
 OCFLAGS=-O3 -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -DBINTRAJ $(AMBERBUILDFLAGS)
 #NABFLAGS=
 LDFLAGS= $(AMBERBUILDFLAGS) -framework Accelerate
-FLDFLAGS= -nodefaultlibs -lgfortran-static -lgcc -lc -lm -lSystem -lSystemStubs -lgfortranbegin
+#  Full path of the libquadmath.a
+#  Note: you also need to remove "-lquadmath" from libgfortran.spec, which resides 
+#  in the same directory as libquadmath.a and other libraries.
+LIBQUADMATH=/usr/local/gcc8/lib/libquadmath.a
+#FLDFLAGS= -nodefaultlibs -lgfortran-static -lgcc -lc -lm -lSystem -lSystemStubs -lgfortranbegin
+FLDFLAGS= -lgcc -lc -lm -lSystem -static-libgfortran -static-libgcc $(LIBQUADMATH)
 else
-CC=gcc
-CXX=g++
-CPLUSPLUS=g++
+CC=$(CROSS_PREFIX)gcc
+CXX=$(CROSS_PREFIX)g++
+CPLUSPLUS=$(CROSS_PREFIX)g++
 CFLAGS= -DUSE_AMBER_C9XCOMPLEX -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE  $(AMBERBUILDFLAGS) -DWINDOWS=1
 OCFLAGS=-O3 -DUSE_AMBER_C9XCOMPLEX -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE $(AMBERBUILDFLAGS) -DWINDOWS=1
 NABFLAGS=
@@ -69,9 +78,9 @@ endif
 
 #LEX=   flex
 #YACC=  $(BINDIR)/yacc
-AR=    ar rv
+AR=    $(CROSS_PREFIX)ar rv
 M4=    m4
-RANLIB=ranlib
+RANLIB=$(CROSS_PREFIX)ranlib
 MAKE=make
 
 #  Set the C-preprocessor.  Code for a small preprocessor is in
@@ -115,14 +124,15 @@ endif
 
 ifeq ($(TARGET_PLATFORM),MAC)
 FC=gfortran $(ISYSROOT)
+FPP=cpp -traditional -P  -DNO_SANDER_DIVCON -DBINTRAJ 
 else
-FC=gfortran
+FC=$(CROSS_PREFIX)gfortran
+FPP=cpp -traditional -P  -DNO_SANDER_DIVCON -DBINTRAJ 
 endif
 FFLAGS= -O0 $(LOCALFLAGS) $(AMBERBUILDFLAGS)
 FOPTFLAGS= -O3 $(LOCALFLAGS) $(AMBERBUILDFLAGS)
 FREEFORMAT_FLAG= -ffree-form
 LM=-lm
-FPP=cpp -traditional -P  -DNO_SANDER_DIVCON -DBINTRAJ 
 FPPFLAGS=-P  -DNO_SANDER_DIVCON -DBINTRAJ 
 
 BUILD_SLEAP=install_sleap

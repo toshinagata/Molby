@@ -1730,7 +1730,7 @@ RubyDialogCallback_drawText(RDDeviceContext *dc, const char *s, float x, float y
 void
 RubyDialogCallback_setFont(RDDeviceContext *dc, void **args)
 {
-	int i, j;
+	long i, j;
 	wxDC *dcp = (wxDC *)dc;
 	if (dcp == NULL)
 		return;
@@ -1740,7 +1740,7 @@ RubyDialogCallback_setFont(RDDeviceContext *dc, void **args)
 			float size = *((float *)(args[i + 1]));
 			font.SetPointSize((int)size);
 		} else if (strcmp((const char *)args[i], "style") == 0) {
-			int style = (int)(args[i + 1]);
+			long style = (long)(args[i + 1]);
 			switch (style) {
 				case 0: style = wxFONTSTYLE_NORMAL; break;
 				case 1: style = wxFONTSTYLE_ITALIC; break;
@@ -1750,7 +1750,7 @@ RubyDialogCallback_setFont(RDDeviceContext *dc, void **args)
 			font.SetStyle(style);
 		} else if (strcmp((const char *)args[i], "family") == 0) {
 			wxFontFamily family;
-			j = (int)(args[i + 1]);
+			j = (long)(args[i + 1]);
 			switch (j) {
 				case 0: family = wxFONTFAMILY_DEFAULT; break;
 				case 1: family = wxFONTFAMILY_ROMAN; break;
@@ -1761,7 +1761,7 @@ RubyDialogCallback_setFont(RDDeviceContext *dc, void **args)
 			font.SetFamily(family);
 		} else if (strcmp((const char *)args[i], "weight") == 0) {
 			wxFontWeight weight;
-			j = (int)(args[i + 1]);
+			j = (long)(args[i + 1]);
 			switch (j) {
 				case 0: weight = wxFONTWEIGHT_NORMAL; break;
 				case 1: weight = wxFONTWEIGHT_LIGHT; break;
@@ -1793,7 +1793,7 @@ RubyDialogCallback_setPen(RDDeviceContext *dc, void **args)
 				float width = *((float *)(args[i + 1]));
 				pen.SetWidth((int)width);
 			} else if (strcmp((const char *)args[i], "style") == 0) {
-				int style = (int)(args[i + 1]);
+				long style = (long)(args[i + 1]);
 				switch (style) {
 					case 0: style = wxSOLID; break;
 					case 1: style = wxTRANSPARENT; break;
