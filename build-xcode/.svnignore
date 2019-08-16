@@ -1,6 +1,6 @@
 ortep3
 amber11
 build
-buildInfo.*
+buildInfo*
 .*
 

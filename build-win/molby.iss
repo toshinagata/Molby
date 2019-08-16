@@ -1,6 +1,6 @@
 [Setup]
 AppName = Molby
-AppVerName = Molby (v1.0b3)
+AppVerName = Molby (v1.0)
 DefaultDirName = {pf}\Molby
 DefaultGroupName = Molby
 UninstallDisplayIcon = {app}\Molby.exe
@@ -8,7 +8,6 @@ OutputBaseFileName = SetupMolbyWin
 
 [Files]
 Source: "build\release\Molby\Molby.exe"; DestDir: {app}
-Source: "build\release\Molby\mingwm10.dll"; DestDir: {app}
 Source: "build\release\Molby\amber11\bin\*"; DestDir: {app}\amber11\bin
 Source: "build\release\Molby\amber11\dat\antechamber\*"; DestDir: {app}\amber11\dat\antechamber
 Source: "build\release\Molby\amber11\dat\leap\parm\*"; DestDir: {app}\amber11\dat\leap\parm

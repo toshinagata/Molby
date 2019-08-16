@@ -15,8 +15,8 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "E4CB370F1FE4FF0E001BB75E"
-               BuildableName = "Molby (Mac Archive)"
-               BlueprintName = "Molby (Mac Archive)"
+               BuildableName = "Molby_archive"
+               BlueprintName = "Molby_archive"
                ReferencedContainer = "container:Molby.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -46,8 +46,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "E4CB370F1FE4FF0E001BB75E"
-            BuildableName = "Molby (Mac Archive)"
-            BlueprintName = "Molby (Mac Archive)"
+            BuildableName = "Molby_archive"
+            BlueprintName = "Molby_archive"
             ReferencedContainer = "container:Molby.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
@@ -64,8 +64,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "E4CB370F1FE4FF0E001BB75E"
-            BuildableName = "Molby (Mac Archive)"
-            BlueprintName = "Molby (Mac Archive)"
+            BuildableName = "Molby_archive"
+            BlueprintName = "Molby_archive"
             ReferencedContainer = "container:Molby.xcodeproj">
          </BuildableReference>
       </MacroExpansion>

@@ -1,2 +1,2 @@
-char *gLastBuildString = "2019-08-16 01:27:22 JST";
-int gRevisionNumber = 612;
+volatile char *gLastBuildString = "2019-08-16 21:40:23 JST";
+volatile int gRevisionNumber = 617;
