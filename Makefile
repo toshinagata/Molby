@@ -4,12 +4,14 @@ ifeq ($(TARGET_PLATFORM),MSW)
   MSW_BUILD = build-win
   LIB_SUFFIX = -3.0-x86_64-w64-mingw32
   WINE_PATH=/Applications/EasyWine.app/Contents/Resources/wine/bin
+  PRODUCT_SUFFIX = 64
  else
   TOOL_PREFIX = i686-w64-mingw32-
 #  CPP_EXTRA_FLAGS += -isystem /usr/local/mingw-w32/mingw/include
   MSW_BUILD = build-win32
   LIB_SUFFIX = -3.0-i686-w64-mingw32
   WINE_PATH=/Applications/EasyWine.app/Contents/Resources/wine/bin
+  PRODUCT_SUFFIX = 32
  endif
  WX_DIR = $(PWD)/../../wxWidgets-3.0.3
  WX_LIB_DIR = $(WX_DIR)/$(MSW_BUILD)/lib
@@ -177,12 +179,12 @@ install: setup
 setup: build/release/$(PRODUCT_DIR)/$(FINAL_EXECUTABLE)
 	mkdir -p ../latest_binaries
 ifneq ($(WINE_PATH),)
-	($(WINE_PATH)/wine ../../Inno\ Setup\ 5/ISCC.exe molby.iss || exit 1)
+	($(WINE_PATH)/wine ../../Inno\ Setup\ 5/ISCC.exe molby$(PRODUCT_SUFFIX).iss || exit 1)
 else
-	(/c/Program\ Files\ \(x86\)/Inno\ Setup\ 5/iscc molby.iss || exit 1)
+	(/c/Program\ Files\ \(x86\)/Inno\ Setup\ 5/iscc molby$(PRODUCT_SUFFIX).iss || exit 1)
 endif
-	mv Output/SetupMolbyWin.exe ../latest_binaries
-	(cd build/release/$(PRODUCT_DIR) && rm -rf $(MAKEDIR)/../latest_binaries/MolbyWin.zip && zip -r $(MAKEDIR)/../latest_binaries/MolbyWin.zip * -x \*.DS_Store \*.svn*)
+	mv Output/SetupMolbyWin$(PRODUCT_SUFFIX).exe ../latest_binaries
+	(cd build/release/$(PRODUCT_DIR) && rm -rf $(MAKEDIR)/../latest_binaries/MolbyWin$(PRODUCT_SUFFIX).zip && zip -r $(MAKEDIR)/../latest_binaries/MolbyWin$(PRODUCT_SUFFIX).zip * -x \*.DS_Store \*.svn*)
 endif
 
 clean:

@@ -14,14 +14,14 @@
 <div class="centered" lang="en">
 <h1>Molby</h1>
 <h2>Interactive Molecular Modeling Software<br />with Integrated Ruby Interpreter</h2>
-<h3>Version 1.0b3</h3> <!-- version -->
+<h3>Version 1.0</h3> <!-- version -->
 <h3>Toshi Nagata</h3>
 <p><a href="http://molby.osdn.jp/index-en.html">http://molby.osdn.jp/index-en.html</a></p>
 </div>
 <div class="centered" lang="ja">
 <h1>Molby</h1>
 <h2>対話型分子モデリングソフトウェア<br />（Ruby インタプリタ内蔵）</h2>
-<h3>Version 1.0b3</h3> <!-- version -->
+<h3>Version 1.0</h3> <!-- version -->
 <h3>永田　央</h3>
 <p><a href="http://molby.osdn.jp/index.html">http://molby.osdn.jp/index.html</a></p>
 </div>
@@ -96,8 +96,8 @@ Molby は、分子を 3D 表示して、画面上で分子モデルを構築す�
 Molby runs on the following platforms.
 </p>
 <ul>
-<li>Microsoft Windows (XP or later).</li>
-<li>Mac OS X (10.5 or later, PowerPC or Intel).</li>
+<li>Microsoft Windows (XP or later, 32 bit or 64 bit).</li>
+<li>Mac OS X (10.6 or later, 64 bit Intel).</li>
 </ul>
 
 <p>
@@ -149,8 +149,8 @@ Trash the Molby application in the "Applications" folder.
 Molbyは以下のプラットフォームで動作します。
 </p>
 <ul>
-<li>Microsoft Windows (XPまたはそれ以降).</li>
-<li>Mac OS X (10.5またはそれ以降, PowerPCまたはIntel).</li>
+<li>Microsoft Windows (XPまたはそれ以降, 32ビットまたは64ビット).</li>
+<li>Mac OS X (10.6 またはそれ以降、64ビット).</li>
 </ul>
 
 <p>
@@ -167,7 +167,7 @@ Molbyは以下のプラットフォームで動作します。
 <h3>3-1. Microsoft Windows</h3>
 
 <p>
-Windows版は、zip アーカイブ (<code>MolbyWin.zip</code> または標準のセットアップパッケージ (<code>SetupMolbyWin.exe</code>) で配布されています。どちらも内容は同じです。
+Windows版は、zip アーカイブ（<code>MolbyWin32.zip</code>:32 ビット版, <code>MolbyWin64.zip</code>: 64ビット版）、または標準のセットアップパッケージ (<code>SetupMolbyWin32.exe</code>: 32ビット版、<code>SetupMolbyWin64.exe</code>: 64ビット版) で配布されています。どちらも内容は同じです。
 </p>
 <p>
 Zip アーカイブを使う時は、最初に内容をすべて展開してください。展開したフォルダの中に Molby アプリケーションがあるので、ダブルクリックして起動してください。
@@ -181,7 +181,7 @@ Zip アーカイブを使う時は、最初に内容をすべて展開してく�
 Mac版は、zip アーカイブ (<code>MolbyMac.zip</code>) で配布されています。アーカイブをダブルクリックすると、内容が展開されて新しいフォルダができます。Molby アプリケーションがその中にありますので、ハードディスクの「アプリケーション」フォルダにドラッグコピーしてください。
 </p>
 <p>
-<span class="italic">注:</span> Mac 版は universal binary です。PowerPC, Intel の両方のマシンで動作します。
+<span class="italic">注:</span> Version 1.0 から、Mac 版は 64 bit のみになりました。
 </p>
 
 <h2>4. アンインストール</h2>
@@ -209,7 +209,7 @@ Mac版は、zip アーカイブ (<code>MolbyMac.zip</code>) で配布されて�
 Molby is a copyrighted product of Toshi Nagata.
 </p>
 <p>
-Copyright (C) 2008-2017 Toshi Nagata <!-- copyright -->
+Copyright (C) 2008-2019 Toshi Nagata <!-- copyright -->
 </p>
 <p>
 I ask for citation of the following paper in published works that utilize Molby:
@@ -255,7 +255,7 @@ Molby is distributed under the GNU General Public License (version 2).
 Molby: Interactive Molecular Modeling Software with Integrated Ruby Interpreter
 </p>
 <p>
-Copyright (C) 2008-2017 Toshi Nagata <!-- copyright -->
+Copyright (C) 2008-2019 Toshi Nagata <!-- copyright -->
 </p>
 <p>
 This program is free software; you can redistribute it and/or modify
@@ -278,7 +278,7 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 Molby の著作権は永田　央が保持しています。
 </p>
 <p>
-Copyright (C) 2008-2017 Toshi Nagata <!-- copyright -->
+Copyright (C) 2008-2019 Toshi Nagata <!-- copyright -->
 </p>
 <p>
 Molby を利用した成果を発表される際は、以下の論文を引用していただくようお願いします。
@@ -323,7 +323,7 @@ Molby は <a href="../etc/gpl.txt">GNU General Public License (GNU 一般公衆�
 Molby: 対話型分子モデルソフトウェア（Ruby インタプリタ内蔵）
 </p>
 <p>
-Copyright (C) 2008-2017 Toshi Nagata <!-- copyright -->
+Copyright (C) 2008-2019 Toshi Nagata <!-- copyright -->
 </p>
 <p>
 このプログラムはフリーソフトウェアです。あなたはこれを、フリーソフトウェア財団によって発行された GNU 一般公衆利用許諾契約書(バージョン2か、希望によってはそれ以降のバージョンのうちどれか)の定める条件の下で再頒布または改変することができます。
@@ -1845,11 +1845,13 @@ You can specify various settings in the dialog.
 <li><b>Use DFT:</b> Check if you want to use DFT.</li>
 <li><b>DFT type:</b> At present only B3LYP is available in this dialog.</li>
 <li><b>Basis set:</b> One of PM3, STO-3G, 3-21G, 6-31G, 6-31G(d), 6-31G(d, p), 6-311G, 6-311G(d, p), or LanL2DZ.</li>
+<li><b>Load Basis Set:</b> Additional basis set can be imported from a file. The file should be in the GAMESS standard format. See the "basis_sets" directory in the "Script" directory for examples.</li>
 <li><b>Use secondary basis set:</b> Check if you want to use another basis set for certain elements.</li>
 <li><b>Elements:</b> The elements (comma separated) to use secondary basis set.</li>
 <li><b>Basis set:</b> The secondary basis set.</li>
 <li><b>Calculate electrostatic potential:</b> This is used for RESP charge calculation for AMBER.</li>
-<li><b>Execite GAMESS on this machine:</b> (0.6.5 and later) Execute GAMESS, provided that GAMESS is installed on the same computer. Specify the full path of the GAMESS executable in "Path", and the number of CPU cores for calculation in "N of CPUs."<br />
+<li><b>Include NBO instructions:</b> When GAMESS is built with NBO (natural bond orbital) support, these checkboxes generate instructions for running NBO program for the designated properties.</li>
+<li><b>Execute GAMESS on this machine:</b> (0.6.5 and later) Execute GAMESS, provided that GAMESS is installed on the same computer. Specify the full path of the GAMESS executable in "Path", and the number of CPU cores for calculation in "N of CPUs."<br />
 (Note: GAMESS may not work depending on the version of the executable.)</li>
 </ul>
 <p>
@@ -1948,11 +1950,13 @@ GAMESS の入力を作成するのは Gaussian よりもずっと複雑なので
 <li><b>Use DFT:</b> DFT 計算を行うときチェックします。</li>
 <li><b>DFT type:</b> このダイアログでは B3LYP のみ指定できます。</li>
 <li><b>Basis set:</b> 以下の基底が指定できます：PM3, STO-3G, 3-21G, 6-31G, 6-31G(d), 6-31G(d, p), 6-311G, 6-311G(d, p), または LanL2DZ.</li>
+<li><b>Load Basis Set:</b> ファイルから追加の基底関数を読み込みます。ファイルは GAMESS の標準的なフォーマットに従っている必要があります。ファイルの例として、"Scripts" ディレクトリの中の "basis sets" ディレクトリを見てみてください。</li>
 <li><b>Use secondary basis set:</b> 特定の元素のみ別の基底を使いたいときチェックします。</li>
 <li><b>Elements:</b> 別の基底を使う元素（コンマで区切って複数指定できます）。</li>
 <li><b>Basis set:</b> 別の基底。</li>
 <li><b>Calculate electrostatic potential:</b> RESP 電荷を求めるための静電ポテンシャルの計算を行う。</li>
-<li><b>Execite GAMESS on this machine:</b> (0.6.5 以降) Molby と同じコンピュータに GAMESS がインストールされているとき、GAMESS を実行することができます。Path に GAMESS の実行ファイルのフルパス名、N of CPUs に使用する CPU のコア数を指定します。<br />
+<li><b>Include NBO instructions:</b> GAMESS が NBO (natural bond orbital) をサポートしている場合は、これらのチェックボックスで指定したものを NBO プログラムで計算させるように、コマンドを生成します。</li>
+<li><b>Execute GAMESS on this machine:</b> (0.6.5 以降) Molby と同じコンピュータに GAMESS がインストールされているとき、GAMESS を実行することができます。Path に GAMESS の実行ファイルのフルパス名、N of CPUs に使用する CPU のコア数を指定します。<br />
 （注： GAMESS のバージョンによっては動作しないことがあります。）</li>
 </ul>
 <p>
