@@ -81,8 +81,7 @@ Many methods of <a href="Molecule.html">Molecule</a> are described as "undoable"
 <div id="method-M000323" class="method-detail">
 <a name="M000323"></a>
 <div class="method-heading">
-<span class="method-name">
-Molecule[]          &rarr; <a href="Molecule.html">Molecule</a><br />
+<span class="method-name">Molecule[]          &rarr; <a href="Molecule.html">Molecule</a><br />
 Molecule[n]         &rarr; <a href="Molecule.html">Molecule</a><br />
 Molecule[name]      &rarr; <a href="Molecule.html">Molecule</a><br />
 Molecule[name, k]   &rarr; <a href="Molecule.html">Molecule</a><br />
@@ -262,8 +261,7 @@ an empry array.
 <div id="method-M000245" class="method-detail">
 <a name="M000245"></a>
 <div class="method-heading">
-<span class="method-name">
-add(molecule2)       &rarr; self<br />
+<span class="method-name">add(molecule2)       &rarr; self<br />
 </span>
 </div>
 <div class="method-description">
@@ -333,6 +331,24 @@ This operation is undoable.
 </div>
 </div>
 
+
+<div id="method-add_formula" class="method-detail">
+<a name="add_formula"></a>
+<div class="method-heading">
+<span class="method-name">add_formula(mol, mult)       &rarr; self<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Add a molecular fragment to self. The new connection is created at the position of the dummy atoms. The 'first' dummy atom in self is kept untouched wherever possible.
+</p>
+<p>
+Mult (multiplicity) is the number of dummy atoms removed from each fragment. If unspecified, it is the same as the number of the dummy atoms in the added fragment.
+</p>
+</div>
+</div>
+
+ 
 <div id="method-add_gaussian_orbital_shell" class="method-detail">
 <a name="add_gaussian_orbital_shell"></a>
 <div class="method-heading">
@@ -375,6 +391,19 @@ Atype is a String, which is one of the following: &quot;td&quot; (tetrahedral),
 </p>
 </div>
 </div>
+
+<div id="method-add_hydrogen_on_group" class="method-detail">
+<a name="add_hydrogen_on_group"></a>
+<div class="method-heading">
+<span class="method-name">add_hydrogen_on_group(group, atype, bond = 1.07, anum = 1)</span>
+</div>
+<div class="method-description">
+<p>
+Repeat <a href="#M000125">add_hydrogen</a> for the atoms in the given group. This operation is undoable.
+</p>
+</div>
+</div>
+
 
 <div id="method-M000256" class="method-detail">
 <a name="M000256"></a>
@@ -557,6 +586,34 @@ the atom with the lowest index is returned.
 </div>
 </div>
 
+<div id="method-atom_radius" class="method-detail">
+<a name="atom_radius"></a>
+<div class="method-heading">
+  <span class="method-name">atom_radius = Float<br />
+  <span class="method-name">atom_radius &rarr; Float<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Set the atom radius (multiple of the vdw radius) used in drawing the model in normal (non-line) mode. (Default = 0.4) If no argument is given, the current value is returned.
+</p>
+</div>
+</div>
+
+<div id="method-atom_resolution" class="method-detail">
+<a name="atom_resolution"></a>
+<div class="method-heading">
+  <span class="method-name">atom_resolution = Integer<br />
+  <span class="method-name">atom_resolution &rarr; Integer<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Set the atom resolution used in drawing the model in normal (non-line) mode. (Default = 12; minimum = 6)  If no argument is given, the current value is returned.
+</p>
+</div>
+</div>
+
 <div id="method-M000211" class="method-detail">
 <a name="M000211"></a>
 <div class="method-heading">
@@ -585,6 +642,33 @@ representing the array of atoms.
 Returns true if bond exists between atoms idx1 and idx2, otherwise returns false.
 Imaginary bonds between a pi-anchor and member atoms are not considered.
 </p>
+</div>
+</div>
+
+<div id="method-bond_radius" class="method-detail">
+<a name="bond_radius"></a>
+<div class="method-heading">
+  <span class="method-name">bond_radius = Float<br />
+  <span class="method-name">bond_radius &rarr; Float<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Set the bond radius (in angstrom) used in drawing the model in normal (non-line) mode. (Default = 0.1) If no argument is given, the current value is returned.</p>
+</div>
+</div>
+
+<div id="method-bond_resolution" class="method-detail">
+<a name="bond_resolution"></a>
+<div class="method-heading">
+  <span class="method-name">bond_resolution = Integer<br />
+  <span class="method-name">bond_resolution &rarr; Integer<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Set the bond resolution used in drawing the model in normal (non-line) mode. (Default = 8; minimum = 4) If no argument is given, the current value is returned.
+ </p>
 </div>
 </div>
 
@@ -909,6 +993,47 @@ Calculate the total charge (the sum of the "charge" attributes of atoms). If a g
 </div>
 </div>
 
+
+<div id="method-clear_basis_set" class="method-detail">
+<a name="clear_basis_set"></a>
+<div class="method-heading">
+<span class="method-name">clear_basis_set &rarr; self</span>
+</div>
+<div class="method-description">
+<p>
+Clear the existing basis set info. All gaussian coefficients, MO energies and coefficients, cube and marching cube information are discarded. Note: this operation is <b>not</b> undoable!
+</p>
+</div>
+</div>
+
+
+<div id="method-clear_mo_coefficients" class="method-detail">
+<a name="clear_mo_coefficients"></a>
+<div class="method-heading">
+<span class="method-name">clear_mo_coefficients &rarr; self</span>
+</div>
+<div class="method-description">
+<p>
+Clear the existing MO coefficients. Note: this operation is <b>not</b> undoable!
+</p>
+</div>
+</div>
+
+
+<div id="method-clear_surface" class="method-detail">
+<a name="clear_surface"></a>
+<div class="method-heading">
+<span class="method-name">clear_surface &rarr; self</span>
+</div>
+<div class="method-description">
+<p>
+Clear the MO surface if present.
+</p>
+<i>See Also:</i> <a href="Molecule.html#create_surface">Molecule#create_surface, 
+<a href="Molecule.html#set_surface_attr">Molecule#set_surface_attr</a>
+</div>
+</div>
+
 <div id="method-M000189" class="method-detail">
 <a name="M000189"></a>
 <div class="method-heading">
@@ -958,8 +1083,8 @@ Returns the number of bonds actually created. This operation is undoable.
 </div>
 </div>
 
-<div id="method-M000268" class="method-detail">
-<a name="M000268"></a>
+<div id="method-create_frame" class="method-detail">
+<a name="create_frame"></a>
 <div class="method-heading">
 <span class="method-name">create_frame(coordinates = nil) &rarr; Integer<br />
 create_frames(coordinates = nil) &rarr; Integer<br />
@@ -968,6 +1093,9 @@ create_frames(coordinates = nil) &rarr; Integer<br />
 <div class="method-description">
 <p>
 Same as <a href="Molecule.html#M000336">Molecule#insert_frames</a>(nil, coordinates).
+</p>
+<p>
+<i>See Also:</i> <a href="#remove_frames">Molecule#remove_frames</a>
 </p>
 </div>
 </div>
@@ -1022,54 +1150,32 @@ of component atoms (and their weights) can be retrived by <a href="AtomRef.html#
 </div>
 </div>
 
-<!--
-<div id="method-M000242" class="method-detail">
-<a name="create_pi_anchor_construct"></a>
+<div id="method-create_surface" class="method-detail">
+<a name="create_surface"></a>
 <div class="method-heading">
-<span class="method-name">create_pi_anchor_construct(n1, n2, n3 = nil, n4 = nil) &rarr; Integer
+<span class="method-name">create_surface(mo, attr = nil) &rarr; self<br />
 </span>
 </div>
 <div class="method-description">
 <p>
-Create a bond, angle, or dihedral including one or more pi anchor points.
-The arguments can either be an atom representation (atom index, atom name, res_seq:name)
-or a pi-anchor representation (pi-anchor index, pi-anchor name).
-The pi-anchor index is represented by a negative integer -N, which corresponds to the (N-1)-th pi anchor.
-Returns the index for the newly created construct.
-This operation is undoable.
-</p>
-</div>
-</div>
-
-<div id="method-M000242" class="method-detail">
-<a name="count_pi_anchors"></a>
-<div class="method-heading">
-<span class="method-name">count_pi_anchors &rarr; Integer
-</span>
-</div>
-<div class="method-description">
-<p>
-Return the number of currently defined pi anchors.
+Create a MO surface. The argument mo is the MO index (1-based); if mo is negative, then it denotes the beta orbital. If mo is nil, then the attributes of the current surface are modified.
 </p>
 <p>
-<i>See Also:</i> <a href="Molecule.html#insert_pi_anchor">Molecule#insert_pi_anchor</a>
+Attributes:
 </p>
-</div>
-</div>
-
-<div id="method-M000242" class="method-detail">
-<a name="count_pi_anchor_constructs"></a>
-<div class="method-heading">
-<span class="method-name">count_pi_anchor_constructs(IntGroup) &rarr; Integer
-</span>
-</div>
-<div class="method-description">
+<ul>
+<li>:npoints : the approximate number of grid points</li>
+<li>:expand  : the scale factor to expand/shrink the display box size for each atom</li>
+<li>:thres   : the threshold for the isovalue surface</li>
+</ul>
 <p>
-Returns the number of defined pi-anchor constructs.
+If the molecule does not contain MO information, raises exception.
+</p>
+<p>
+<i>See Also:</i> <a href="#clear_surface">Molecule#clear_surface</a>, <a href="#set_surface_attr">Molecule#set_surface_attr</a>
 </p>
 </div>
 </div>
--->
 
 <div id="method-M000318" class="method-detail">
 <a name="M000318"></a>
@@ -1532,8 +1638,7 @@ Get the atom attribute for the specified atom. Equivalent to <a href="Molecule.h
 <div id="method-get_bond_order" class="method-detail">
 <a name="get_bond_order"></a>
 <div class="method-heading">
-<span class="method-name">
-get_bond_order(idx) &rarr; Float <br />
+<span class="method-name">get_bond_order(idx) &rarr; Float <br />
 get_bond_orders(group) &rarr; Array
 </span>
 </div>
@@ -1555,6 +1660,78 @@ If no bond order information have been assigned, returns nil (the first form) or
 <div class="method-description">
 <p>
 Copy the coordinates from the specified frame. If group is specified, then only the atoms in the group are modified. The third argument (<code>cflag</code>) is now obsolete; it used to specify whether the cell information should be copied, but now they are always copied. This operation is undoable.
+</p>
+</div>
+</div>
+
+<div id="method-get_graphic_color" class="method-detail">
+<a name="get_graphic_color"></a>
+<div class="method-heading">
+<span class="method-name">get_graphic_color(graphic_index) &rarr; value<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get the color of graphic_index-th graphic object.</p>
+</div>
+</div>
+
+<div id="method-get_graphic_point" class="method-detail">
+<a name="get_graphic_point"></a>
+<div class="method-heading">
+<span class="method-name">get_graphic_point(graphic_index, point_index) &rarr; value
+get_graphic_points(graphic_index) &rarr; values
+</span>
+</div>
+<div class="method-description">
+<p>
+Get the point_index-th (or all) control point(s) of graphic_index-th graphic object.
+</p>
+</div>
+</div>
+
+<div id="method-get_mo_coefficients" class="method-detail">
+<a name="get_mo_coefficients"></a>
+<div class="method-heading">
+<span class="method-name">get_mo_coefficients(idx) &rarr; Array<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get an array of MO coefficients for the given MO index (1-based).
+</p>
+</div>
+</div>
+
+<div id="method-get_mo_energy" class="method-detail">
+<a name="get_mo_energy"></a>
+<div class="method-heading">
+<span class="method-name">get_mo_energy(idx) &rarr; Float<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get an array of MO coefficients for the given MO index (1-based).
+</p>
+</div>
+</div>
+
+<div id="method-get_property" class="method-detail">
+<a name="get_property"></a>
+<div class="method-heading">
+<span class="method-name">get_property(name[, index]) &rarr; value<br />
+get_property(name, group) &rarr; Array
+</span>
+</div>
+<div class="method-description">
+<p>
+Get molecular property. In the first form, a property value for a single frame is returned.
+(If index is omitted, then the value for the current frame is given)
+In the second form, an array of property values for the given frames is returned.
+If name is not one of known properties or a valid index integer, exception is raised.
+</p>
+<p>
+<i>See Also:</i> <a href="Molecule.html#property_names">Molecule#property_names</a>, <a href="Molecule.html#set_property">Molecule#set_property</a>
 </p>
 </div>
 </div>
@@ -1628,6 +1805,17 @@ Unset the visibility flag of the graphic_index-th graphic object.
 </p></div>
 </div>
 
+<div id="method-hide_surface" class="method-detail">
+<a name="hide_surface"></a>
+<div class="method-heading">
+<span class="method-name">hide_surface &rarr; self</span>
+</div>
+<div class="method-description">
+<p>
+Hide the MO surface if present.
+</p>
+</div>
+
 <div id="method-M000215" class="method-detail">
 <a name="M000215"></a>
 <div class="method-heading">
@@ -1646,8 +1834,8 @@ improper is represented by an array of four atom indices.
 </div>
 </div>
 
-<div id="method-M000269" class="method-detail">
-<a name="M000269"></a>
+<div id="method-insert_frame" class="method-detail">
+<a name="insert_frame"></a>
 <div class="method-heading">
 <span class="method-name">insert_frame(integer, coordinates = nil) &rarr; <a href="IntGroup.html">IntGroup</a><br />
 insert_frames(intGroup = nil, coordinates = nil) &rarr; <a href="IntGroup.html">IntGroup</a><br />
@@ -1662,29 +1850,26 @@ coordinates is given, it should be an array of arrays of Vector3Ds, and
 those coordinates are set to the new frame. Otherwise, the current coordinates are copied to the new frame. Returns an <a href="IntGroup.html">IntGroup</a> representing
 the inserted frames if successful, nil if not.
 </p>
+<p>
+<i>See Also:</i> <a href="#create_frame">Molecule#create_frame</a>,
+<a href="#remove_frames">Molecule#remove_frames</a>
+</p>
 </div>
 </div>
 
-<!--
-<div id="method-M000242" class="method-detail">
-<a name="insert_pi_anchor"></a>
+<div id="method-insert_graphic" class="method-detail">
+<a name="insert_graphic"></a>
 <div class="method-heading">
-<span class="method-name">insert_pi_anchor(index, name, type, group [, weights]) &rarr; index<br />
+<span class="method-name">insert_graphic(index, kind, color, points, fill = nil) &rarr; integer<br />
 </span>
 </div>
 <div class="method-description">
 <p>
-Create a "pi anchor", which is an anchor point to define a metal-pi bond, and insert at the given index.
-If index is negative or no less than the current number of pi anchors, the new anchor is placed at the end of the anchor list.
-Name and type are Strings, and are similar to those in atoms.
-Group is a group of atoms to define a pi system to be bound to the metal.
-Weights (optional) is an Array of Floats, which determine the significance
-of the component atoms. If not given, then 1.0/N (N is the number of atoms
-in the group) is assumed for all atoms. This operation is undoable.
+Create a new graphic object and insert at the given graphic index (if -1, then append at the last).
+The meaning of the other arguments are the same as <a href="#create_graphic">Molecule#create_graphic</a>.
 </p>
 </div>
 </div>
--->
 
 <div id="method-M000210" class="method-detail">
 <a name="M000210"></a>
@@ -1740,6 +1925,18 @@ self.line_mode = bool<br />
 <p>
 Set the flag whether to draw the model in line mode. If no argument is
 given, the current flag is returned.
+</p>
+</div>
+</div>
+
+<div id="method-loadcif" class="method-detail">
+<a name="loadcif"></a>
+<div class="method-heading">
+<span class="method-name">loadcif(filename) &rarr; bool</span>
+</div>
+<div class="method-description">
+<p>
+Load a molecule from a CIF (crystal information file) file.
 </p>
 </div>
 </div>
@@ -2335,38 +2532,45 @@ If the molecule has no associated document, then returns nil.
 </div>
 </div>
 
-<!--
-<div id="method-M000242" class="method-detail">
-<a name="pi_anchor"></a>
+<div id="method-plane" class="method-detail">
+<a name="plane"></a>
 <div class="method-heading">
-<span class="method-name">pi_anchor(index) &rarr; nil or [name, type, group, weights]<br />
+<span class="method-name">plane(group)  &rarr; Molby::Plane<br />
 </span>
 </div>
 <div class="method-description">
 <p>
-Return the attributes of the idx-th pi anchor if present, otherwise nil.
+Calculate best-fit plane for the given atoms. Returns a value of "Molby::Plane" type.
 </p>
 <p>
-<i>See Also:</i> <a href="Molecule.html#insert_pi_anchor">Molecule#insert_pi_anchor</a>
+Molby::Plane object has the following methods:
 </p>
+<ul>
+<li>inspect: returns a String describing the internal info.</li>
+<li>coeffs: an Array of coefficients [a, b, c, d].</li>
+<li>sigma: an Array of the standard deviations of the coefficients.</li>
+<li>distance: a distance and its standard deviation from the given atom (AtomRef) or a point (Vector3D).</li>
+<li>dihedral: a dihedral angle its standard deviation between this plane and another plane.</li>
+</ul>
 </div>
 </div>
--->
 
-<!--
-<div id="method-M000242" class="method-detail">
-<a name="pi_anchor_construct"></a>
+<div id="method-property_names" class="method-detail">
+<a name="property_names"></a>
 <div class="method-heading">
-<span class="method-name">pi_anchor_construct(index) &rarr; Array of Integers
+<span class="method-name">property_names       &rarr; Array<br />
 </span>
 </div>
 <div class="method-description">
 <p>
-Returns the elements representing the index-th pi anchor constructs.
+Get an array of property names
+</p>
+<p>
+<i>See Also:</i> <a href="Molecule.html#get_property">Molecule#get_property</a>, <a href="Molecule.html#set_property">Molecule#set_property</a>
 </p>
 </div>
 </div>
--->
+
 
 <div id="method-M000226" class="method-detail">
 <a name="M000226"></a>
@@ -2513,6 +2717,23 @@ If the given group corrensponds to all frames, then the current frame is retaine
 </div>
 </div>
 
+<div id="method-remove_frames" class="method-detail">
+<a name="remove_frames"></a>
+<div class="method-heading">
+<span class="method-name">remove_frames(IntGroup, wantCoordinates = false)<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Remove the frames at group. If wantsCoordinates is false (default), returns true if successful and nil otherwise. If wantsCoordinates is true, an array of arrays of the coordinates in the removed frames is returned if operation is successful. This operation is undoable.
+</p>
+<p>
+<i>See Also:</i> <a href="Molecule.html#create_frame">Molecule#create_frame</a>, 
+<a href="Molecule.html#insert_frame">Molecule#insert_frame</a>
+</p>
+</div>
+</div>
+
 <div id="method-remove_graphic" class="method-detail">
 <a name="remove_graphic"></a>
 <div class="method-heading">
@@ -2545,38 +2766,6 @@ This operation is undoable.
 </div>
 </div>
 
-<!--
-<div id="method-M000242" class="method-detail">
-<a name="remove_pi_anchor"></a>
-<div class="method-heading">
-<span class="method-name">remove_pi_anchor(index) &rarr; self<br />
-</span>
-</div>
-<div class="method-description">
-<p>
-Remove an existing "pi anchor". The bonds, angles, and dihedrals containing the pi anchor are also remove. This operation is undoable.
-</p>
-<p>
-<i>See Also:</i> <a href="Molecule.html#insert_pi_anchor">Molecule#insert_pi_anchor</a>
-</p>
-</div>
-</div>
-
-<div id="method-M000242" class="method-detail">
-<a name="remove_pi_anchor_constructs"></a>
-<div class="method-heading">
-<span class="method-name">remove_pi_anchor_constructs(IntGroup) &rarr; self <br />
-remove_pi_anchor_construct(IntGroup)
-</span>
-</div>
-<div class="method-description">
-<p>
-Remove pi anchor constructs (bond, angle, dihedral) with indices specified in IntGroup.
-This operation is undoable.
-</p>
-</div>
-</div>
--->
 
 <div id="method-M000243" class="method-detail">
 <a name="M000243"></a>
@@ -2609,20 +2798,18 @@ operation is undoable.
 </div>
 </div>
 
-<!--
-<div id="method-M000242" class="method-detail">
-<a name="replace_pi_anchor"></a>
+<div id="method-reorder_frames" class="method-detail">
+<a name="reorder_frames"></a>
 <div class="method-heading">
-<span class="method-name">replace_pi_anchor(index, name, type, group [, weights]) &rarr; index<br />
+<span class="method-name">reorder_frames(old_indices) &rarr; self<br />
 </span>
 </div>
 <div class="method-description">
 <p>
-Replace an existing "pi anchor", which is an anchor point to define a metal-pi bond, with the given parameters. For the meaning of the parameters, see the description in <a href="Molecule.html#insert_pi_anchor">Molecule#insert_pi_anchor</a>. This operation is undoable.
+Reorder the frames. The argument is an array of integers that specify the 'old' frame numbers. Thus, if the argument is [2,0,1], then the new frames 0/1/2 are the same as the old frames 2/0/1, respectively. The argument must have the same number of integers as the number of frames. This operation is undoable.
 </p>
 </div>
 </div>
--->
 
 <div id="method-M000216" class="method-detail">
 <a name="M000216"></a>
@@ -2815,6 +3002,18 @@ Returns an array of integers of size natoms, each entry designates the equivalen
 </div>
 </div>
 
+<div id="method-select_frame" class="method-detail">
+<a name="select_frame"></a>
+<div class="method-heading">
+<span class="method-name">select_frame(index) &rarr; bool<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Select the specified frame. If successful, returns true, otherwise returns false.</p>
+</div>
+</div>
+
 <div id="method-M000316" class="method-detail">
 <a name="M000316"></a>
 <div class="method-heading">
@@ -2942,6 +3141,38 @@ Let self be a duplicated copy of the given molecule. The present molecule must b
 <div class="method-description">
 <p>
 Set the name of an untitled molecule. This method requires that the molecule is associated with a window and does not have an associated file yet. Otherwise, an exception is thrown.
+</p>
+</div>
+</div>
+
+<div id="method-set_property" class="method-detail">
+<a name="set_property"></a>
+<div class="method-heading">
+<span class="method-name">set_property(name, value[, index]) &rarr; value<br />
+set_property(name, values, group) &rarr; values</span>
+</div>
+<div class="method-description">
+<p>
+Set molecular property. A property is a floating-point number with a specified name, and can be set for each frame separately. The name of the property is given as a String. The value can be a single floating point number, which is set to the current frame.
+</p>
+<p>
+<i>See Also:</i> <a href="#get_property">Molecule#get_property</a>, 
+<a href="#property_names">Molecule#property_names</a>
+</p>
+</div>
+</div>
+
+<div id="method-set_surface_attr" class="method-detail">
+<a name="set_surface_attr"></a>
+<div class="method-heading">
+<span class="method-name">set_surface_attr(attr = nil) &rarr; self</span>
+</div>
+<div class="method-description">
+<p>
+Set the drawing attributes of the surface. Attr is a hash containing the attributes.
+</p>
+<p>
+<i>See Also:</i> <a href="#create_surface">Molecule#create_surface</a>, <a href="#clear_surface">Molecule#clear_surface</a>
 </p>
 </div>
 </div>

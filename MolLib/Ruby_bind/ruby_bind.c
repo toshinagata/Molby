@@ -5446,7 +5446,7 @@ s_Molecule_ErrorMessage(VALUE klass)
  *     set_error_message(String)
  *     Molecule.error_message = String
  *
- *  Get the error_message from the last load/save method. If no error, returns nil.
+ *  Set the error_message for the present load/save method.
  */
 static VALUE
 s_Molecule_SetErrorMessage(VALUE klass, VALUE sval)

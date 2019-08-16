@@ -443,6 +443,9 @@ class Molby::Plane
     @metric_tensor = met
     self
   end
+  def coeffs
+    [@coeff.x, @coeff.x, @coeff.z, @const]
+  end
   def sigma
     [sqrt_safe(@error_matrix[0, 0]), sqrt_safe(@error_matrix[1, 1]), sqrt_safe(@error_matrix[2, 2]), sqrt_safe(@error_matrix[3, 3])]
   end
