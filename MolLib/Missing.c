@@ -129,35 +129,28 @@ strsep(char **stringp, const char *delim)
 #include <stdio.h>
 #include <errno.h>
 
+/*  Portable implementation of vsaprintf by use of vsnprintf  */
 int
 vasprintf(char **ret, const char *fmt, va_list ap)
 {
-	int size = 128;
-	char *buf;
-	buf = (char *)malloc(size);
+    int size, n;
+    char *buf;
+    va_list argcopy;
+    va_copy(argcopy, ap);
+    size = vsnprintf(NULL, 0, fmt, argcopy);  /*  Returns the number of output characters  */
+	buf = (char *)malloc(size + 1);
 	if (buf == NULL) {
 		*ret = NULL;
 		errno = ENOMEM;
 		return -1;
 	}
-	while (1) {
-		int n = vsnprintf(buf, size, fmt, ap);
-		if (n < 0)
-			break;
-		if (n >= size) {
-			size *= 2;
-			buf = (char *)realloc(buf, size);
-			if (buf == NULL)
-				break;
-			continue;
-		} else {
-			*ret = buf;
-			return n;
-		}
-	}
-	*ret = NULL;
-	errno = ENOMEM;
-	return -1;
+    n = vsnprintf(buf, size + 1, fmt, ap);
+    if (n < 0) {
+        free(buf);
+        return n;
+    }
+    *ret = buf;
+    return n;
 }
 
 int
