@@ -2269,11 +2269,19 @@ MainView_mouseUp(MainView *mview, const float *mousePos, int flags, int clickCou
 
 	if (clickCount == 2 && mview->isDragging == 0) {
 		/*  Create a new molecular fragment  */
-		int n1, n2, found;
+		int n1, n2, status, found;
+        char *p;
 		found = MainView_findObjectAtPoint(mview, mousePos, &n1, &n2, 0, 0);
-		buf[0] = 0;
+        status = MyAppCallback_getGlobalSettingsWithType("global.entered_formula", 's', &p);
+        if (status == 0) {
+            strncpy(buf, p, sizeof buf - 1);
+            buf[sizeof buf - 1] = 0;
+        } else {
+            buf[0] = 0;
+        }
 		if (MyAppCallback_getTextWithPrompt("Enter formula (e.g. CH2OCH3)", buf, sizeof buf) == 0)
 			return;
+        MyAppCallback_setGlobalSettingsWithType("global.entered_formula", 's', buf);
 		MolActionCreateAndPerform(mview->mol, SCRIPT_ACTION("si"), "cmd_fuse_or_dock", buf, n1);
 		goto exit;
 	}
@@ -2321,12 +2329,6 @@ MainView_mouseUp(MainView *mview, const float *mousePos, int flags, int clickCou
 					TransformVec(&offset, mview->mol->cell->rtr, &offset); */
 				MolActionCreateAndPerform(mview->mol, gMolActionTranslateAtoms, &offset, dupSelection);
 				IntGroupRelease(dupSelection);
-		/*	} else if (clickCount == 2) {
-				buf[0] = 0;
-				if (MyAppCallback_getTextWithPrompt("Enter formula (e.g. CH2OCH3)", buf, sizeof buf) == 0)
-					return;
-				MolActionCreateAndPerform(mview->mol, SCRIPT_ACTION("s"), "dock_formula", buf);
-		*/
 			}
 			break;
 		}

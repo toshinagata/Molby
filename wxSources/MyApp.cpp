@@ -1793,12 +1793,15 @@ MyAppCallback_setGlobalSettings(const char *key, const char *value)
 int
 MyAppCallback_getGlobalSettingsWithType(const char *key, int type, void *ptr)
 {
-	int retval;
+    int retval, temp;
 	char *s = MyAppCallback_getGlobalSettings(key);
 	char desc[] = SCRIPT_ACTION("s; ");
 	desc[sizeof(desc) - 2] = type;
+    temp = gMolActionNoErrorDialog;
+    gMolActionNoErrorDialog = 1;
 	retval = MolActionCreateAndPerform(NULL, desc, "eval", s, ptr);
 	free(s);
+    gMolActionNoErrorDialog = temp;
 	return retval;
 }
 
@@ -1807,11 +1810,11 @@ MyAppCallback_setGlobalSettingsWithType(const char *key, int type, const void *p
 {
 	const char *cmd = "set_global_settings";
 	switch (type) {
-		case 'i': return MolActionCreateAndPerform(NULL, SCRIPT_ACTION("i"), cmd, *((const Int *)ptr));
-		case 'd': return MolActionCreateAndPerform(NULL, SCRIPT_ACTION("d"), cmd, *((const Double *)ptr));
-		case 's': return MolActionCreateAndPerform(NULL, SCRIPT_ACTION("s"), cmd, (const char *)ptr);
-		case 'v': return MolActionCreateAndPerform(NULL, SCRIPT_ACTION("v"), cmd, (const Vector *)ptr);
-		case 't': return MolActionCreateAndPerform(NULL, SCRIPT_ACTION("t"), cmd, (const Transform *)ptr);
+		case 'i': return MolActionCreateAndPerform(NULL, SCRIPT_ACTION("si"), cmd, key, *((const Int *)ptr));
+		case 'd': return MolActionCreateAndPerform(NULL, SCRIPT_ACTION("sd"), cmd, key, *((const Double *)ptr));
+		case 's': return MolActionCreateAndPerform(NULL, SCRIPT_ACTION("ss"), cmd, key, (const char *)ptr);
+		case 'v': return MolActionCreateAndPerform(NULL, SCRIPT_ACTION("sv"), cmd, key, (const Vector *)ptr);
+		case 't': return MolActionCreateAndPerform(NULL, SCRIPT_ACTION("st"), cmd, key, (const Transform *)ptr);
 		default:
 			MyAppCallback_errorMessageBox("Internal error: unsupported format '%c' at line %d, file %s", type, __LINE__, __FILE__);
 			return -2;
@@ -1869,6 +1872,7 @@ MyAppCallback_getTextWithPrompt(const char *prompt, char *buf, int bufsize)
 		sizer1->Layout();
 		dialog->SetSizerAndFit(sizer1);
 		dialog->Centre(wxBOTH);
+        tctrl->SelectAll();
 		tctrl->SetFocus();
 	}
 	if (dialog->ShowModal() == wxID_OK) {

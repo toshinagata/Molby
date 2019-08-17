@@ -83,6 +83,9 @@ extern const char *gMolActionAmendBySymmetry;
 #define kMolActionPerformScript "script:s"
 #define SCRIPT_ACTION(sig) (kMolActionPerformScript sig)
 
+/*  A global flag to suppress RubyError dialog during execution  */
+extern int gMolActionNoErrorDialog;
+
 /*  Action record for reversible editing  */
 typedef struct MolAction {
 	int refCount;

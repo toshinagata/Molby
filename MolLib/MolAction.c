@@ -75,6 +75,9 @@ const char *gMolActionAmendBySymmetry = "amendBySymmetry:G;G";
 /*  A Ruby array to retain objects used in MolActionArg  */
 static VALUE sMolActionArgValues = Qfalse;
 
+/*  A global flag to suppress RubyError dialog during execution  */
+int gMolActionNoErrorDialog = 0;
+
 /*  Action arguments  */
 /*  (Simple types)  i: Int, d: double, s: string, v: Vector, t: Transform, u: UnionPar
  (Array types)   I: array of Int, D: array of double, V: array of Vector, C: array of char, T: array of Transform, U: array of UnionPars
@@ -547,7 +550,7 @@ s_MolActionPerformRubyScript(Molecule *mol, MolAction *action)
 		Ruby_SetInterruptFlag(save_interrupt);
 		MyAppCallback_endUndoGrouping();
 	}
-	if (result != 0) {
+	if (result != 0 && gMolActionNoErrorDialog == 0) {
 		Ruby_showError(result);
 	}
 	MyAppCallback_hideProgressPanel();  /*  In case when the progress panel is still onscreen */
