@@ -1,0 +1,54 @@
+!:atoms
+! idx seg_name res_seq res_name name type charge weight element atomic_number occupancy temp_factor int_charge
+0 MAIN 3 RES H1 hs 0.00000 1.00790 H 1 1.000000 0.000000 0
+1 MAIN 2 RES H2 ho 0.00000 1.00790 H 1 1.000000 0.000000 0
+2 MAIN 1 RES S2 s 0.00000 32.06600 S 16 1.000000 0.000000 0
+3 MAIN 1 RES O5 o 0.00000 15.99940 O 8 1.000000 0.000000 0
+4 MAIN 1 RES O6 o 0.00000 15.99940 O 8 1.000000 0.000000 0
+5 MAIN 2 RES O1 oh 0.00000 15.99940 O 8 1.000000 0.000000 0
+
+!:positions ; frame 0
+! idx x y z [sx sy sz]
+0 0.06138042 -0.12980594 -0.07185998
+1 2.85841283 -1.52612722 -0.92716404
+2 1.55008742 0.03399610 0.01132876
+3 2.04111470 1.25906318 -0.82915005
+4 2.06293505 -0.11310744 1.48226382
+5 1.90468028 -1.36242385 -0.82100022
+
+!:bonds
+! from1 to1 from2 to2 from3 to3 from4 to4
+2 3 2 4 5 1 2 5
+2 0
+
+!:angles
+! a1 b1 c1 a2 b2 c2 a3 b3 c3
+4 2 3 2 5 1 5 2 3
+5 2 4 0 2 3 0 2 4
+0 2 5
+
+!:dihedrals
+! a1 b1 c1 d1 a2 b2 c2 d2
+3 2 5 1 4 2 5 1
+0 2 5 1
+
+!:trackball
+! scale; trx try trz; theta_deg x y z
+0.656495
+-0.149907 0.006742 0.004839
+1.472817 -0.703661 0.068853 -0.706992
+
+!:view
+show_unit_cell 0
+show_periodic_box 1
+show_expanded_atoms 1
+show_ellipsoids 0
+show_hydrogens 1
+show_dummy_atoms 1
+show_rotation_center 0
+show_graphite_flag 0
+show_graphite 5
+show_periodic_image_flag 0
+show_periodic_image 0 0 0 0 0 0
+atom_radius 0.200000
+bond_radius 0.100000

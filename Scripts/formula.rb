@@ -209,7 +209,7 @@ class Molecule
 	sd = self.find_dummy_atoms
 	len2 = sd.length
 	if len2 < mult
-	  raise "Self has too few dummy atoms (#{len2}) to connect the given molecule (#{mult} bond order)"
+	  raise "self has too few dummy atoms (#{len2}) to connect the given molecule (#{mult} bond order)"
 	elsif len2 > mult
 	  sd.shift  #  Keep the first dummy atom untouched
 	  sd.slice!(mult..-1)
@@ -499,9 +499,9 @@ class Molecule
   end
 
   #  Define atom fragments
-  elements = %w(C H Li Be B C N O F Na Mg Al Si P S Cl)
-  valences = [4,1,1,2,3,4,3,2,1,1,2,3,4,3,2,1]
-  degrees = {"N"=>100, "O"=>110, "P"=>95, "S"=>108}
+  elements = %w(C H Li Be B C N O F Na Mg Al Si P S Cl Zn Ga Ge As Se Br Cd In Sn Sb Te I Hg Tl Pb Bi)
+  valences =   [4,1,1, 2, 3,4,3,2,1,1, 2, 3, 4, 3,2,1, 2, 3, 4, 3, 2, 1, 2, 3, 4, 3, 2, 1,2, 3, 4, 3]
+  degrees = {"N"=>100, "O"=>110, "P"=>95, "S"=>108, "As"=>92, "Se"=>91, "Sb"=>92, "Te"=>90, "Bi"=>90}
   elements.each_index { |i|
     name = elements[i]
 	angle = degrees[name]

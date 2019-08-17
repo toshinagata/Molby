@@ -82,20 +82,35 @@ class Molecule
 	["MX4 tetrahedral", "coordination/MX4t.mbsf"],
 	["MX4 square-planar", "coordination/MX4p.mbsf"],
 	["MX5 trigonal bipyramidal", "coordination/MX5.mbsf"],
-	["MX6 octahedral", "coordination/MX6.mbsf"]
+	["MX6 octahedral", "coordination/MX6.mbsf"],
+    
+    "...",
+    ["NO2", "fragments/NO2.mbsf", "H1"],
+    ["SO2O", "fragments/SO3H.mbsf", "H1", "H2"],
+    ["SO3", "fragments/SO3H.mbsf", "H1", "H2"],
+    ["SO3H", "fragments/SO3H.mbsf", "H1"],
+    ["SO", "fragments/SO.mbsf", "H1", "H2"]
   ]
 
   $named_fragments = []
+  subtitle = nil
   
   table.each { |t|
 	if t.is_a?(String)
-	  $named_fragments.push([t, "-"])  #  Subtitle
+      if t != "..."
+        subtitle = t
+	    $named_fragments.push([t, "-"])  #  Subtitle
+      else
+        subtitle = nil
+      end
 	  next
 	end
     fname = t[1]
     if fname =~ /\.mbsf$/
       f = new(MbsfPath + "/" + fname)  #  Molecule.new
-	  $named_fragments.push([t[0], t[1]]) #  Registered fragment
+      if subtitle
+  	    $named_fragments.push([t[0], t[1]]) #  Registered fragment
+      end
     else
       f = known_fragment(fname)
     end
