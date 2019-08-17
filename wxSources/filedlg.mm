@@ -113,12 +113,12 @@ bool HasAppKit_10_6()
 {
     BOOL showObject = YES;
     
-    NSString* resolvedLink = [[NSFileManager defaultManager] pathContentOfSymbolicLinkAtPath:filename];
+    NSString *resolvedLink = [[NSFileManager defaultManager] destinationOfSymbolicLinkAtPath:filename error:NULL];
     if ( resolvedLink != nil )
         filename = resolvedLink;
     
-    NSDictionary* fileAttribs = [[NSFileManager defaultManager]
-                                 fileAttributesAtPath:filename traverseLink:YES];
+    NSDictionary *fileAttribs = [[NSFileManager defaultManager] attributesOfItemAtPath:filename error:NULL];
+
     if (fileAttribs)
     {
         // check for packages

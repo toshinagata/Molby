@@ -36,7 +36,7 @@ MyThread::DetachNewThread(int (*entry_func)(void *, int), int (*exit_func)(void 
 MyThread::ExitCode
 MyThread::Entry()
 {
-	ExitCode code = (ExitCode)((*m_entry_func)(m_argptr, m_argnum));
+	ExitCode code = (ExitCode)(intptr_t)((*m_entry_func)(m_argptr, m_argnum));
 	if (m_exit_func)
 		(*m_exit_func)(m_argptr, m_argnum);
 //	Exit(code);

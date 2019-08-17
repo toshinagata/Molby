@@ -23,7 +23,7 @@
 #include "wx/sizer.h"
 #include "wx/panel.h"
 #include "wx/timer.h"
-#include "../Mollib/Ruby_bind/ruby_dialog.h"
+#include "../MolLib/Ruby_bind/ruby_dialog.h"
 #include "MyListCtrl.h"
 
 #include "modalwindow.h"

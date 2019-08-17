@@ -1767,7 +1767,7 @@ s_RubyDialog_doTableAction(VALUE val)
 
 	if (sym == sOnCountSymbol) {
 		retval = s_RubyDialog_CallActionProc(self, pval, 1, args);
-		vp[3] = (void *)(NUM2INT(rb_Integer(retval)));
+		vp[3] = (void *)(intptr_t)(NUM2INT(rb_Integer(retval)));
 		return retval;
 	} else if (sym == sOnGetValueSymbol) {
 		args[1] = INT2NUM((int)vp[3]);
@@ -1781,7 +1781,7 @@ s_RubyDialog_doTableAction(VALUE val)
 		args[2] = INT2NUM((int)vp[4]);
 		args[3] = rb_str_new2((char *)vp[5]);
 		retval = s_RubyDialog_CallActionProc(self, pval, 4, args);
-		vp[6] = (void *)(NUM2INT(rb_Integer(retval)));
+		vp[6] = (void *)(intptr_t)(NUM2INT(rb_Integer(retval)));
 		return retval;
 	} else if (sym == sOnDragSelectionToRowSymbol) {
 		args[1] = INT2NUM((int)vp[3]);
@@ -1791,15 +1791,15 @@ s_RubyDialog_doTableAction(VALUE val)
 		args[1] = INT2NUM((int)vp[3]);
 		args[2] = INT2NUM((int)vp[4]);
 		retval = s_RubyDialog_CallActionProc(self, pval, 3, args);
-		vp[5] = (void *)(RTEST(retval) ? 1 : 0);
+		vp[5] = (void *)(intptr_t)(RTEST(retval) ? 1 : 0);
 		return retval;
 	} else if (sym == sIsDragAndDropEnabledSymbol) {
 		retval = s_RubyDialog_CallActionProc(self, pval, 1, args);
-		vp[3] = (void *)(RTEST(retval) ? 1 : 0);
+		vp[3] = (void *)(intptr_t)(RTEST(retval) ? 1 : 0);
 		return retval;
 	} else if (sym == sOnSelectionChangedSymbol) {
 		retval = s_RubyDialog_CallActionProc(self, pval, 1, args);
-		vp[3] = (void *)(RTEST(retval) ? 1 : 0);
+		vp[3] = (void *)(intptr_t)(RTEST(retval) ? 1 : 0);
 		return retval;
 	} else if (sym == sOnSetColorSymbol) {
 		float *fg = (float *)vp[5];
@@ -1828,7 +1828,7 @@ s_RubyDialog_doTableAction(VALUE val)
 			}
 			n |= 2;
 		}
-		vp[7] = (void *)n;
+		vp[7] = (void *)(intptr_t)n;
 		return retval;
 	} else if (sym == sHasPopUpMenuSymbol) {
 		args[1] = INT2NUM((int)vp[3]);
@@ -1841,7 +1841,7 @@ s_RubyDialog_doTableAction(VALUE val)
 			char **titles;
 			retval = rb_ary_to_ary(retval);
 			n = RARRAY_LEN(retval);
-			vp[6] = (void *)n;
+			vp[6] = (void *)(intptr_t)n;
 			titles = ALLOC_N(char *, n);
 			*((char ***)vp[5]) = titles;
 			for (i = 0; i < n; i++) {
@@ -1877,7 +1877,7 @@ void
 RubyDialog_GetTableItemText(RubyValue self, RDItem *ip, int row, int column, char *buf, int buflen)
 {
 	int status;
-	void *vp[6] = { (void *)self, (void *)ip, (void *)sOnGetValueSymbol, (void *)row, (void *)column, NULL };
+	void *vp[6] = { (void *)(uintptr_t)self, (void *)ip, (void *)(uintptr_t)sOnGetValueSymbol, (void *)(intptr_t)row, (void *)(intptr_t)column, NULL };
 	VALUE val = rb_protect(s_RubyDialog_doTableAction, (VALUE)vp, &status);
 	if (status != 0 || val == Qnil) {
 		buf[0] = 0;
@@ -1891,7 +1891,7 @@ int
 RubyDialog_SetTableItemText(RubyValue self, RDItem *ip, int row, int column, const char *str)
 {
 	int status;
-	void *vp[7] = { (void *)self, (void *)ip, (void *)sOnSetValueSymbol, (void *)row, (void *)column, (void *)str, NULL };
+	void *vp[7] = { (void *)(uintptr_t)self, (void *)ip, (void *)(uintptr_t)sOnSetValueSymbol, (void *)(intptr_t)row, (void *)(intptr_t)column, (void *)str, NULL };
 	VALUE val = rb_protect(s_RubyDialog_doTableAction, (VALUE)vp, &status);
 	if (status != 0 || val == Qnil) {
 		return -1;
@@ -1903,7 +1903,7 @@ void
 RubyDialog_DragTableSelectionToRow(RubyValue self, RDItem *ip, int row)
 {
 	int status;
-	void *vp[5] = { (void *)self, (void *)ip, (void *)sOnDragSelectionToRowSymbol, (void *)row, NULL };
+	void *vp[5] = { (void *)(uintptr_t)self, (void *)ip, (void *)(uintptr_t)sOnDragSelectionToRowSymbol, (void *)(intptr_t)row, NULL };
 	rb_protect(s_RubyDialog_doTableAction, (VALUE)vp, &status);
 	if (status != 0)
 		Ruby_showError(status);
@@ -1913,7 +1913,7 @@ int
 RubyDialog_IsTableItemEditable(RubyValue self, RDItem *ip, int row, int column)
 {
 	int status;
-	void *vp[6] = { (void *)self, (void *)ip, (void *)sIsItemEditableSymbol, (void *)row, (void *)column, NULL };
+	void *vp[6] = { (void *)(uintptr_t)self, (void *)ip, (void *)(uintptr_t)sIsItemEditableSymbol, (void *)(intptr_t)row, (void *)(intptr_t)column, NULL };
 	VALUE val = rb_protect(s_RubyDialog_doTableAction, (VALUE)vp, &status);
 	if (status != 0 || val == Qnil)
 		return 0;
@@ -1924,7 +1924,7 @@ int
 RubyDialog_IsTableDragAndDropEnabled(RubyValue self, RDItem *ip)
 {
 	int status;
-	void *vp[4] = { (void *)self, (void *)ip, (void *)sIsDragAndDropEnabledSymbol, NULL };
+	void *vp[4] = { (void *)(uintptr_t)self, (void *)ip, (void *)(uintptr_t)sIsDragAndDropEnabledSymbol, NULL };
 	VALUE val = rb_protect(s_RubyDialog_doTableAction, (VALUE)vp, &status);
 	if (status != 0 || val == Qnil)
 		return 0;
@@ -1945,7 +1945,7 @@ int
 RubyDialog_SetTableItemColor(RubyValue self, RDItem *ip, int row, int column, float *fg, float *bg)
 {
 	int status;
-	void *vp[8] = { (void *)self, (void *)ip, (void *)sOnSetColorSymbol, (void *)row, (void *)column, (void *)fg, (void *)bg, NULL };
+	void *vp[8] = { (void *)(uintptr_t)self, (void *)ip, (void *)(uintptr_t)sOnSetColorSymbol, (void *)(intptr_t)row, (void *)(intptr_t)column, (void *)fg, (void *)bg, NULL };
 	VALUE val = rb_protect(s_RubyDialog_doTableAction, (VALUE)vp, &status);
 	if (status != 0 || val == Qnil)
 		return 0;
@@ -1956,7 +1956,7 @@ int
 RubyDialog_HasPopUpMenu(RubyValue self, RDItem *ip, int row, int column, char ***menu_titles)
 {
 	int status;
-	void *vp[7] = { (void *)self, (void *)ip, (void *)sHasPopUpMenuSymbol, (void *)row, (void *)column, (void *)menu_titles, NULL };
+	void *vp[7] = { (void *)(uintptr_t)self, (void *)ip, (void *)(uintptr_t)sHasPopUpMenuSymbol, (void *)(intptr_t)row, (void *)(intptr_t)column, (void *)menu_titles, NULL };
 	VALUE val = rb_protect(s_RubyDialog_doTableAction, (VALUE)vp, &status);
 	if (status != 0 || val == Qnil)
 		return 0;
@@ -1967,7 +1967,7 @@ void
 RubyDialog_OnPopUpMenuSelected(RubyValue self, RDItem *ip, int row, int column, int selected_index)
 {
 	int status;
-	void *vp[7] = { (void *)self, (void *)ip, (void *)sOnPopUpMenuSelectedSymbol, (void *)row, (void *)column, (void *)selected_index, NULL };
+	void *vp[7] = { (void *)(uintptr_t)self, (void *)ip, (void *)(uintptr_t)sOnPopUpMenuSelectedSymbol, (void *)(intptr_t)row, (void *)(intptr_t)column, (void *)(intptr_t)selected_index, NULL };
 	rb_protect(s_RubyDialog_doTableAction, (VALUE)vp, &status);
 	if (status != 0)
 		Ruby_showError(status);
@@ -2130,9 +2130,9 @@ RubyDialog_doItemAction(RubyValue self, RDItem *ip, int options)
 {
 	int status;
 	void *vp[3];
-	vp[0] = (void *)self;
+	vp[0] = (void *)(uintptr_t)self;
 	vp[1] = ip;
-	vp[2] = (void *)options;
+	vp[2] = (void *)(intptr_t)options;
 	rb_protect(s_RubyDialog_doItemAction, (VALUE)vp, &status);
 	if (status != 0)
 		Ruby_showError(status);
@@ -2224,7 +2224,7 @@ RubyDialog_doKeyAction(RubyValue self, int keyCode)
 	int status;
 	void *values[2];
 	values[0] = (void *)self;
-	values[1] = (void *)keyCode;
+	values[1] = (void *)(intptr_t)keyCode;
 	rb_protect(s_RubyDialog_doKeyAction, (VALUE)values, &status);
 	if (status != 0) {
 		/*  Stop timer before showing error dialog  */
@@ -2249,7 +2249,7 @@ s_RubyDialog_getFlexFlags(VALUE val)
 		return Qnil;  /*  Not set  */
 	else {
 		pval = rb_Integer(pval);
-		((void **)val)[2] = (void *)(NUM2INT(pval));
+		((void **)val)[2] = (void *)(intptr_t)(NUM2INT(pval));
 		return pval;
 	}
 }
@@ -2302,7 +2302,7 @@ RubyDialog_doCloseWindow(RubyValue self, int isModal)
 {
 	int status;
 	VALUE rval;
-	void *args[2] = { (void *)self, (void *)isModal };
+	void *args[2] = { (void *)(uintptr_t)self, (void *)(intptr_t)isModal };
 	rval = rb_protect(s_RubyDialog_doCloseWindow, (VALUE)args, &status);
 	if (status != 0) {
 		Ruby_showError(status);
@@ -2515,7 +2515,7 @@ s_RubyDialog_Font(int argc, VALUE *argv, VALUE self)
 					j = 2;
 				else j = 0;
 				args[i * 2] = "style";
-				args[i * 2 + 1] = (void *)j;
+				args[i * 2 + 1] = (void *)(intptr_t)j;
 				args[i * 2 + 2] = NULL;
 			} else if (kval == sWeightSymbol) {
 				if (aval == sMediumSymbol)
@@ -2526,7 +2526,7 @@ s_RubyDialog_Font(int argc, VALUE *argv, VALUE self)
 					j = 2;
 				else j = 0;
 				args[i * 2] = "weight";
-				args[i * 2 + 1] = (void *)j;
+				args[i * 2 + 1] = (void *)(intptr_t)j;
 				args[i * 2 + 2] = NULL;
 			} else if (kval == sFamilySymbol) {
 				if (aval == sDefaultSymbol)
@@ -2539,7 +2539,7 @@ s_RubyDialog_Font(int argc, VALUE *argv, VALUE self)
 					j = 3;
 				else j = 0;
 				args[i * 2] = "family";
-				args[i * 2 + 1] = (void *)j;
+				args[i * 2 + 1] = (void *)(intptr_t)j;
 				args[i * 2 + 2] = NULL;
 			}
 		}
@@ -2609,7 +2609,7 @@ s_RubyDialog_Pen(int argc, VALUE *argv, VALUE self)
 					j = 5;
 				else j = 0;
 				args[i * 2] = "style";
-				args[i * 2 + 1] = (void *)j;
+				args[i * 2 + 1] = (void *)(intptr_t)j;
 				args[i * 2 + 2] = NULL;
 			}
 		}

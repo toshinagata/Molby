@@ -146,20 +146,7 @@ endif
 	$(CC) -c buildInfo.c -o $(DESTPREFIX)/buildInfo.o $(CFLAGS)
 	$(CPP) -o $@ $(DESTOBJECTS) $(DESTPREFIX)/buildInfo.o $(CFLAGS) $(LDFLAGS)
 
-$(DESTPREFIX)/$(PRODUCT) : $(DESTPREFIX)/$(EXECUTABLE) ../Scripts/*.rb amber11 ortep3/ortep3$(EXE_SUFFIX)
-ifeq ($(TARGET_PLATFORM),MAC)
-	rm -rf $(DESTPREFIX)/$(PRODUCT)
-	mkdir -p $(DESTPREFIX)/$(PRODUCT)/Contents/MacOS
-	mkdir -p $(DESTPREFIX)/$(PRODUCT)/Contents/Resources
-	cp -f Info.plist $(DESTPREFIX)/$(PRODUCT)/Contents
-	echo -n "APPL????" > $(DESTPREFIX)/$(PRODUCT)/Contents/PkgInfo
-	cp -r ../Scripts $(DESTPREFIX)/$(PRODUCT)/Contents/Resources
-	cp -r amber11 $(DESTPREFIX)/$(PRODUCT)/Contents/Resources
-	cp -r ortep3 $(DESTPREFIX)/$(PRODUCT)/Contents/Resources
-	mkdir -p $(DESTPREFIX)/$(PRODUCT)/Contents/Resources/Scripts/lib
-	for i in $(RUBY_EXTLIB); do cp $(RUBY_DIR)/lib/$$i $(DESTPREFIX)/$(PRODUCT)/Contents/Resources/Scripts/lib; done
-	cp $(DESTPREFIX)/$(EXECUTABLE) $(DESTPREFIX)/$(PRODUCT)/Contents/MacOS
-endif
+$(DESTPREFIX)/$(PRODUCT) : $(DESTPREFIX)/$(EXECUTABLE) ../Scripts/*.rb ../bitmaps/bitmaps amber11 ortep3/ortep3$(EXE_SUFFIX)
 ifeq ($(TARGET_PLATFORM),MSW)
 	echo PWD = $(PWD)
 	rm -rf $(DESTPREFIX)/$(PRODUCT_DIR)
@@ -167,6 +154,7 @@ ifeq ($(TARGET_PLATFORM),MSW)
 	cp $(DESTPREFIX)/$(EXECUTABLE) $(DESTPREFIX)/$(PRODUCT_DIR)/$(FINAL_EXECUTABLE)
 #	cp mingwm10.dll $(DESTPREFIX)/$(PRODUCT_DIR)
 	cp -r ../Scripts $(DESTPREFIX)/$(PRODUCT_DIR)
+	cp -r ../bitmaps/bitmaps $(DESTPREFIX)/$(PRODUCT_DIR)
 	cp -r amber11 $(DESTPREFIX)/$(PRODUCT_DIR)
 	cp -r ortep3 $(DESTPREFIX)/$(PRODUCT_DIR)
 	mkdir -p $(DESTPREFIX)/$(PRODUCT_DIR)/Scripts/lib

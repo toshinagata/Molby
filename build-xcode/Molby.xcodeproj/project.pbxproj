@@ -26,6 +26,8 @@
 
 /* Begin PBXBuildFile section */
 		E4196C66190B2FA500183E62 /* menu.mm in Sources */ = {isa = PBXBuildFile; fileRef = E4196C65190B2FA500183E62 /* menu.mm */; };
+		E41A7F962307D61200C65830 /* bitmaps in Resources */ = {isa = PBXBuildFile; fileRef = E41A7F952307D61200C65830 /* bitmaps */; };
+		E41A7F972307D71200C65830 /* bitmaps in CopyFiles */ = {isa = PBXBuildFile; fileRef = E41A7F952307D61200C65830 /* bitmaps */; };
 		E420BDEF1885746700A2B983 /* ConsoleFrame.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BDE81885746700A2B983 /* ConsoleFrame.cpp */; };
 		E420BDF01885746700A2B983 /* filedlg.mm in Sources */ = {isa = PBXBuildFile; fileRef = E420BDEA1885746700A2B983 /* filedlg.mm */; };
 		E420BDF11885746700A2B983 /* GlobalParameterFilesFrame.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BDEB1885746700A2B983 /* GlobalParameterFilesFrame.cpp */; };
@@ -157,6 +159,7 @@
 			dstPath = Molby_resources;
 			dstSubfolderSpec = 16;
 			files = (
+				E41A7F972307D71200C65830 /* bitmaps in CopyFiles */,
 				E4DF3BCE1FDCEB120014F980 /* Scripts in CopyFiles */,
 				E4DF3BCF1FDCEB120014F980 /* amber11 in CopyFiles */,
 				E4DF3BD01FDCEB120014F980 /* ortep3 in CopyFiles */,
@@ -168,6 +171,7 @@
 /* Begin PBXFileReference section */
 		8D1107320486CEB800E47090 /* Molby.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Molby.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E4196C65190B2FA500183E62 /* menu.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = menu.mm; sourceTree = "<group>"; };
+		E41A7F952307D61200C65830 /* bitmaps */ = {isa = PBXFileReference; lastKnownFileType = folder; name = bitmaps; path = ../bitmaps/bitmaps; sourceTree = "<group>"; };
 		E420BDE81885746700A2B983 /* ConsoleFrame.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ConsoleFrame.cpp; sourceTree = "<group>"; };
 		E420BDE91885746700A2B983 /* ConsoleFrame.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ConsoleFrame.h; sourceTree = "<group>"; };
 		E420BDEA1885746700A2B983 /* filedlg.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = filedlg.mm; sourceTree = "<group>"; };
@@ -440,6 +444,7 @@
 			isa = PBXGroup;
 			children = (
 				E4FC77D4183E4FF20064FB2E /* molby_icon.icns */,
+				E41A7F952307D61200C65830 /* bitmaps */,
 				E4FC77D6183E4FFE0064FB2E /* Scripts */,
 				E4FC77D8183E503E0064FB2E /* amber11 */,
 				E4ACACE418C6D32300F08B67 /* ortep3 */,
@@ -654,6 +659,7 @@
 				E4FC7F821840C22B0064FB2E /* molby_icon.icns in Resources */,
 				E4FC77D7183E4FFE0064FB2E /* Scripts in Resources */,
 				E4FC7802183E503E0064FB2E /* amber11 in Resources */,
+				E41A7F962307D61200C65830 /* bitmaps in Resources */,
 				E4ACACE718C6D32300F08B67 /* ortep3 in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1070,7 +1076,7 @@
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
-				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_ARC = NO;
 				CLANG_WARN_BOOL_CONVERSION = YES;
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
@@ -1116,7 +1122,7 @@
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
-				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_ARC = NO;
 				CLANG_WARN_BOOL_CONVERSION = YES;
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
@@ -1154,7 +1160,7 @@
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
-				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_ARC = NO;
 				CLANG_WARN_BOOL_CONVERSION = YES;
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
@@ -1200,7 +1206,7 @@
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
-				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_ARC = NO;
 				CLANG_WARN_BOOL_CONVERSION = YES;
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;

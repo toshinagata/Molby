@@ -537,7 +537,6 @@ MoleculeView::DoExportGraphic(wxString& fname, float scale, int bg_color, int wi
 	wxBitmapType type = wxBITMAP_TYPE_PNG;
 	if (ext.CmpNoCase(_T("tif")) == 0)
 		type = wxBITMAP_TYPE_TIF;
-	MyAppCallback_initImageHandlers();
 	img->SaveFile(fname, type);
 	delete img;
 	return 0;

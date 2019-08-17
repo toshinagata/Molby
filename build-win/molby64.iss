@@ -18,8 +18,10 @@ Source: "build\release\Molby\Scripts\mbsf\aromatic\*"; DestDir: {app}\Scripts\mb
 Source: "build\release\Molby\Scripts\mbsf\heterocyclic\*"; DestDir: {app}\Scripts\mbsf\heterocyclic
 Source: "build\release\Molby\Scripts\mbsf\coordination\*"; DestDir: {app}\Scripts\mbsf\coordination
 Source: "build\release\Molby\Scripts\mbsf\solvents\*"; DestDir: {app}\Scripts\mbsf\solvents
+Source: "build\release\Molby\Scripts\mbsf\fragments\*"; DestDir: {app}\Scripts\mbsf\fragments
 Source: "build\release\Molby\Scripts\lib\*"; DestDir: {app}\Scripts\lib
 Source: "build\release\Molby\Scripts\basis_sets\*"; DestDir: {app}\Scripts\basis_sets
+Source: "build\release\Molby\bitmaps\*"; DestDir: {app}\bitmaps
 Source: "build\release\Molby\ortep3\*"; DestDir: {app}\ortep3
 
 [Icons]

@@ -338,8 +338,7 @@ MyDocument::OnExport(wxCommandEvent& event)
 {
 	wxString wildcard;
 	wxFileName fname(GetFilename());
-	wxString fnstr;
-	GetPrintableName(fnstr);
+    wxString fnstr = GetUserReadableName();
 	{
 		/*  File filter is built from MyDocManager information  */
 		wxString desc, filter, ext;
@@ -394,7 +393,7 @@ MyDocument::OnExportGraphic(wxCommandEvent& event)
 	i = MyAppCallback_getGlobalSettingsWithType("global.export_background_color", 'i', &bg_color);
 	if (i != 0)
 		bg_color = 0;
-	GetPrintableName(fnstr);
+	fnstr = GetUserReadableName();
 	if ((i = fnstr.Find('.', true)) != wxNOT_FOUND) {
 		fnstr = fnstr.Mid(0, i);
 	}
@@ -1673,7 +1672,7 @@ MoleculeCallback_displayName(Molecule *mol, char *buf, int bufsize)
   MyDocument *doc = MyDocumentFromMolecule(mol);
   if (doc != NULL) {
     wxString fname;
-    doc->GetPrintableName(fname);
+    fname = doc->GetUserReadableName();
     strncpy(buf, (const char*)fname.mb_str(wxConvFile), bufsize - 1);
     buf[bufsize - 1] = 0;
   } else {

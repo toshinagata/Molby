@@ -6203,7 +6203,7 @@ MoleculeSearchImpropersAcrossAtomGroup(Molecule *mp, IntGroup *atomgroup)
 	return sMoleculeSearchAcrossAtomGroup(mp->nimpropers, mp->impropers, 4, atomgroup, "impropers");
 }
 
-/*  Subroutine for MoleculeGuessBonds. It can be also used independently, but make sure that *outNbonds/*outBonds 
+/*  Subroutine for MoleculeGuessBonds. It can be also used independently, but make sure that *outNbonds / *outBonds
     _correctly_ represents an array of two integers (as in mp->nbonds/mp->bonds).  */
 /*  Find atoms within the given "distance" from the given position.  */
 /*  If limit is negative, its absolute value denotes the threshold distance in angstrom; otherwise,
@@ -9433,7 +9433,7 @@ MoleculeChangeResidueNumberWithArray(Molecule *mp, IntGroup *group, Int *resSeqs
 int
 MoleculeChangeResidueNumber(Molecule *mp, IntGroup *group, int resSeq)
 {
-	return MoleculeChangeResidueNumberWithArray(mp, group, (Int *)(resSeq * 2 + 1));
+	return MoleculeChangeResidueNumberWithArray(mp, group, (Int *)(intptr_t)(resSeq * 2 + 1));
 }
 
 /*  Offset the residue numbers by a certain amount. The argument nresidues, if non-negative,

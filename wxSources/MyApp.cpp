@@ -256,6 +256,9 @@ bool MyApp::OnInit(void)
 	new wxDocTemplate(m_docManager, _T("Z Matrix"), _T("*.zmat"), _T(""), _T("zmat"), _T("Molecule Doc"), _T("Molecule View"), CLASSINFO(MyDocument), CLASSINFO(MoleculeView));
 	new wxDocTemplate(m_docManager, _T("Any Molecule"), _T("*.*"), _T(""), _T(""), _T("Molecule Doc"), _T("Molecule View"), CLASSINFO(MyDocument), CLASSINFO(MoleculeView));
 
+    // Init image handlers
+    MyAppCallback_initImageHandlers();
+
 	// Create the main frame window
 	frame = new MyFrame((wxDocManager *) m_docManager, (wxFrame *) NULL,
                       _T("Molby"), wxPoint(0, 0), wxSize(800, 600),
@@ -1689,6 +1692,62 @@ MyApp::CheckIfAllWindowsAreGone(wxTopLevelWindow *frame)
 	this->AddPendingEvent(myEvent);
 }
 
+#pragma mark ====== AboutBox ======
+
+IMPLEMENT_CLASS(AboutDialog, wxDialog)
+BEGIN_EVENT_TABLE(AboutDialog, wxDialog)
+END_EVENT_TABLE()
+
+AboutDialog::AboutDialog():
+    wxDialog(NULL, -1, wxT("About Molby"))
+{
+    //  vsizer1 --> hsizer1 --> Molby icon
+    //          |           |-> vsizer2 --> "Molby"
+    //          |                       |-> version strings
+    //          |
+    //          |-> copyright messages
+
+    char *s1, *s2;
+    Molby_getDescription(&s1, &s2);
+    wxString str1(s1, WX_DEFAULT_CONV);
+    wxString str2(s2, WX_DEFAULT_CONV);
+    free(s1);
+    free(s2);
+#if defined(__WXMSW__)
+    wxFont *textFont0 = new wxFont(12, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD);
+    wxFont *textFont1 = new wxFont(10, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL);
+    wxFont *textFont2 = new wxFont(9, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL);
+#else
+    wxFont *textFont0 = new wxFont(14, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD);
+    wxFont *textFont1 = new wxFont(12, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL);
+    wxFont *textFont2 = new wxFont(11, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL);
+#endif
+    wxBoxSizer *vsizer1 = new wxBoxSizer(wxVERTICAL);
+    wxBoxSizer *vsizer2 = new wxBoxSizer(wxVERTICAL);
+    wxBoxSizer *hsizer1 = new wxBoxSizer(wxHORIZONTAL);
+    wxString tifname = wxGetApp().FindResourcePath() + wxFILE_SEP_PATH + wxT("bitmaps/molby_icon64.png");
+    wxBitmap *molbyBitmap = new wxBitmap(tifname, wxBITMAP_TYPE_PNG);
+    wxStaticText *stext1 = new wxStaticText(this, -1, wxT("Molby"));
+    stext1->SetFont(*textFont0);
+    wxStaticText *stext2 = new wxStaticText(this, -1, str1);
+    stext2->SetFont(*textFont1);
+    wxStaticBitmap *staticBitmap = new wxStaticBitmap(this, -1, *molbyBitmap);
+    vsizer2->Add(stext1, 0, wxALL | wxEXPAND, 2);
+    vsizer2->Add(stext2, 0, wxALL | wxEXPAND, 2);
+    hsizer1->AddSpacer(20);
+    hsizer1->Add(staticBitmap, 0, 0, 10);
+    hsizer1->AddSpacer(20);
+    hsizer1->Add(vsizer2, 0, wxALL | wxEXPAND, 5);
+    wxStaticText *stext3 = new wxStaticText(this, -1, str2);
+    stext3->SetFont(*textFont2);
+    vsizer1->Add(hsizer1, 0, wxALL | wxEXPAND, 5);
+    vsizer1->Add(stext3, 0, wxALL | wxEXPAND, 5);
+    vsizer1->Add(this->CreateButtonSizer(wxOK), 0, wxALL | wxEXPAND, 10);
+    vsizer1->Layout();
+    this->SetSizerAndFit(vsizer1);
+    this->Centre();
+}
+
 #pragma mark ====== MyFrame (top-level window) ======
 
 /*
@@ -1717,11 +1776,9 @@ MyFrame::MyFrame(wxDocManager *manager, wxFrame *frame, const wxString& title,
 
 void MyFrame::OnAbout(wxCommandEvent& WXUNUSED(event) )
 {
-	char *s;
-	s = Molby_getDescription();
-	wxString str(s, WX_DEFAULT_CONV);
-    (void)wxMessageBox(str, _T("Molby"));
-	free(s);
+    AboutDialog *d = new AboutDialog();
+    if ( d->ShowModal() == wxID_OK )
+    d->Destroy();
 }
 
 MyFrame *GetMainFrame(void)
@@ -1738,18 +1795,18 @@ MyAppCallback_getGUIDescriptionString(void)
 	if (desc == NULL) {
 		asprintf(&desc,
 			"AmberTools 1.3, http://ambermd.org/\n"
-			"  Copyright (C) Junmei Wang, Ross C. Walker, \n"
-			"  Michael F. Crowley, Scott Brozell and David A. Case\n"
+			"  Copyright (C) Junmei Wang, Ross C. Walker, "
+			  "Michael F. Crowley, Scott Brozell and David A. Case\n"
 			"ORTEP-III, http://web.ornl.gov/sci/ortep/\n"
-			"  Michael N. Burnett and Carroll K. Johnson, \n"
-			"  Oak Ridge National Laboratory Report ORNL-6895,\n"
-			"  1996.\n"
+			"  Michael N. Burnett and Carroll K. Johnson, "
+			  "Oak Ridge National Laboratory Report ORNL-6895, "
+			  "1996.\n"
 			"wxWidgets %d.%d.%d, http://www.wxwidgets.org/\n"
-		    "  Copyright (C) 1992-2013 Julian Smart, Vadim\n"
-			"  Zeitlin, Stefan Csomor, Robert Roebling,\n"
-			"  and other members of the wxWidgets team\n"
-			"  Portions (C) 1996 Artificial Intelligence \n"
-			"  Applications Institute\n",
+		    "  Copyright (C) 1992-2013 Julian Smart, Vadim "
+			  "Zeitlin, Stefan Csomor, Robert Roebling,\n"
+            "  and other members of the wxWidgets team\n"
+            "  Portions (C) 1996 Artificial Intelligence "
+			  "Applications Institute\n",
 			wxMAJOR_VERSION, wxMINOR_VERSION, wxRELEASE_NUMBER);
 	}
 	return desc;

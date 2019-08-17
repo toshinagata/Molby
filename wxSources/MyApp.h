@@ -244,6 +244,17 @@ private:
 
 DECLARE_APP(MyApp)
 
+// About dialog
+class AboutDialog: public wxDialog
+{
+    DECLARE_CLASS(AboutDialog)
+public:
+    AboutDialog();
+    void OnOKPressed(wxCommandEvent &event);
+private:
+    DECLARE_EVENT_TABLE()
+};
+
 // Define a new frame
 class MyFrame: public wxDocParentFrame
 {

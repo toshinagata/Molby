@@ -818,7 +818,7 @@ Ruby_UpdateUI(int index, Molecule *mol, int *outChecked, char **outTitle)
 	int status;
 	void *p[4];
 	VALUE retval;
-	p[0] = (void *)index;
+	p[0] = (void *)(intptr_t)index;
 	p[1] = mol;
 	p[2] = outChecked;
 	p[3] = outTitle;
@@ -4787,7 +4787,7 @@ s_MolEnumerable_Equal(VALUE self, VALUE val)
 
 #pragma mark ------ Allocate/Release/Accessor ------
 
-/*  An malloc'ed string buffer. Retains the error/warning message from the last ***load/***save method.  */
+/*  An malloc'ed string buffer. Retains the error/warning message from the last ***load / ***save method.  */
 /*  Accessible from Ruby as Molecule#error_message and Molecule#error_message=.  */
 char *gLoadSaveErrorMessage = NULL;
 
@@ -12090,19 +12090,20 @@ Ruby_showError(int status)
 	gMolbyRunLevel--;
 }
 
-char *
-Molby_getDescription(void)
+void
+Molby_getDescription(char **versionString, char **auxString)
 {
 	extern const char *gVersionString, *gCopyrightString;
 	extern int gRevisionNumber;
 	extern char *gLastBuildString;
-	char *s;
+    char *s1, *s2;
 	char *revisionString;
 	if (gRevisionNumber > 0) {
 		asprintf(&revisionString, ", revision %d", gRevisionNumber);
 	} else revisionString = "";
-	asprintf(&s, 
-			 "Molby %s%s\n%s\nLast compile: %s\n"
+	asprintf(&s1, "Molby %s%s\n%s\nLast compile: %s\n",
+             gVersionString, revisionString, gCopyrightString, gLastBuildString);
+    asprintf(&s2,
 #if !defined(__CMDMAC__)
 			 "\nIncluding:\n"
 			 "%s"
@@ -12112,16 +12113,19 @@ Molby_getDescription(void)
 			 "ruby %s, http://www.ruby-lang.org/\n"
 			 "%s\n"
 			 "FFTW 3.3.2, http://www.fftw.org/\n"
-			 "  Copyright (C) 2003, 2007-11 Matteo Frigo\n"
+			 "  Copyright (C) 2003, 2007-11 Matteo Frigo"
 			 "  and Massachusetts Institute of Technology",
-			 gVersionString, revisionString, gCopyrightString, gLastBuildString,
+			 
 #if !defined(__CMDMAC__)
 			 MyAppCallback_getGUIDescriptionString(),
 #endif
 			 gRubyVersion, gRubyCopyright);
 	if (revisionString[0] != 0)
 		free(revisionString);
-	return s;
+	if (versionString != NULL)
+        *versionString = s1;
+    if (auxString != NULL)
+        *auxString = s2;
 }
 
 void
@@ -12174,9 +12178,13 @@ Molby_startup(const char *script, const char *dir)
     } */
 
 #if defined(__CMDMAC__)
-	wbuf = Molby_getDescription();
-	printf("%s\n", wbuf);
-	free(wbuf);
+    {
+        char *wbuf2;
+        Molby_getDescription(&wbuf, &wbuf2);
+        printf("%s\n%s\n", wbuf, wbuf2);
+        free(wbuf);
+        free(wbuf2);
+    }
 #endif
 	
 	/*  Read atom display parameters  */
