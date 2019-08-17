@@ -1,8 +1,8 @@
 [Setup]
 AppName = Molby
 AppVerName = Molby (v1.0, 32bit)
-DefaultDirName = {pf}\Molby
-DefaultGroupName = Molby
+DefaultDirName = {pf}\Molby (32bit)
+DefaultGroupName = Molby (32bit)
 UninstallDisplayIcon = {app}\Molby.exe
 OutputBaseFileName = SetupMolbyWin32
 

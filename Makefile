@@ -5,6 +5,7 @@ ifeq ($(TARGET_PLATFORM),MSW)
   LIB_SUFFIX = -3.0-x86_64-w64-mingw32
   WINE_PATH=/Applications/EasyWine.app/Contents/Resources/wine/bin
   PRODUCT_SUFFIX = 64
+  TARGET_ARCH_DEFINE = -DTARGET_ARCH=64
  else
   TOOL_PREFIX = i686-w64-mingw32-
 #  CPP_EXTRA_FLAGS += -isystem /usr/local/mingw-w32/mingw/include
@@ -12,11 +13,13 @@ ifeq ($(TARGET_PLATFORM),MSW)
   LIB_SUFFIX = -3.0-i686-w64-mingw32
   WINE_PATH=/Applications/EasyWine.app/Contents/Resources/wine/bin
   PRODUCT_SUFFIX = 32
+#  FINAL_EXECUTABLE_SUFFIX = _32bit
+  TARGET_ARCH_DEFINE = -DTARGET_ARCH=32
  endif
  WX_DIR = $(PWD)/../../wxWidgets-3.0.3
  WX_LIB_DIR = $(WX_DIR)/$(MSW_BUILD)/lib
  WX_ARCH_DIR = $(WX_LIB_DIR)/wx/include/$(TOOL_PREFIX)msw-unicode-static-3.0
- WX_CPPFLAGS = -isystem $(WX_ARCH_DIR) -isystem $(WX_DIR)/include -D_LARGEFIILE_SOURCE=unknown -D__WXMSW__
+ WX_CPPFLAGS = -isystem $(WX_ARCH_DIR) -isystem $(WX_DIR)/include -D_LARGEFIILE_SOURCE=unknown -D__WXMSW__ $(TARGET_ARCH_DEFINE)
  WX_LDFLAGS = -L$(WX_LIB_DIR) -Wl,--subsystem,windows -mwindows -lwx_mswu_gl$(LIB_SUFFIX) -lopengl32 -lglu32 -lwx_mswu$(LIB_SUFFIX) -lwxregexu$(LIB_SUFFIX) -lwxexpat$(LIB_SUFFIX) -lwxtiff$(LIB_SUFFIX) -lwxjpeg$(LIB_SUFFIX) -lwxpng$(LIB_SUFFIX) -lwxzlib$(LIB_SUFFIX) -lrpcrt4 -loleaut32 -lole32 -luuid -lwinspool -lwinmm -lshell32 -lcomctl32 -lcomdlg32 -ladvapi32 -lwsock32 -lgdi32
  CPP_EXTRA_FLAGS = -isystem $(PWD)/../../CLAPACK-3.1.1.1-mingw/INCLUDE -isystem $(PWD)/../../fftw-3.3.2/$(MSW_BUILD)/include -I$(PWD)/../MolLib
  LD_EXTRA_FLAGS = -L$(PWD)/../../CLAPACK-3.1.1.1-mingw/$(MSW_BUILD)/lib -L$(PWD)/../../fftw-3.3.2/$(MSW_BUILD)/lib -llapackMinGW -lblasMinGW -lf2c_nomain -lfftw3 -static-libgcc -static-libstdc++ -Wl,-Bstatic,-lpthread
@@ -29,7 +32,7 @@ ifeq ($(TARGET_PLATFORM),MSW)
   RUBY_LDFLAGS = -L$(RUBY_DIR)/$(MSW_BUILD)/lib -lmsvcrt-ruby200-static -lws2_32 -lshlwapi -limagehlp -lenc -ltrans
  endif
  EXECUTABLE = _Molby.exe_
- FINAL_EXECUTABLE = Molby.exe
+ FINAL_EXECUTABLE = Molby$(FINAL_EXECUTABLE_SUFFIX).exe
  EXE_SUFFIX = .exe
 endif
 
@@ -151,7 +154,7 @@ ifeq ($(TARGET_PLATFORM),MSW)
 	echo PWD = $(PWD)
 	rm -rf $(DESTPREFIX)/$(PRODUCT_DIR)
 	mkdir -p $(DESTPREFIX)/$(PRODUCT_DIR)
-	cp $(DESTPREFIX)/$(EXECUTABLE) $(DESTPREFIX)/$(PRODUCT_DIR)/$(FINAL_EXECUTABLE)
+	cp $(DESTPREFIX)/$(EXECUTABLE) "$(DESTPREFIX)/$(PRODUCT_DIR)/$(FINAL_EXECUTABLE)"
 #	cp mingwm10.dll $(DESTPREFIX)/$(PRODUCT_DIR)
 	cp -r ../Scripts $(DESTPREFIX)/$(PRODUCT_DIR)
 	cp -r ../bitmaps/bitmaps $(DESTPREFIX)/$(PRODUCT_DIR)
@@ -171,7 +174,7 @@ ifneq ($(WINE_PATH),)
 else
 	(/c/Program\ Files\ \(x86\)/Inno\ Setup\ 5/iscc molby$(PRODUCT_SUFFIX).iss || exit 1)
 endif
-	mv Output/SetupMolbyWin$(PRODUCT_SUFFIX).exe ../latest_binaries
+	mv Output/SetupMolbyWin.exe ../latest_binaries
 	(cd build/release/$(PRODUCT_DIR) && rm -rf $(MAKEDIR)/../latest_binaries/MolbyWin$(PRODUCT_SUFFIX).zip && zip -r $(MAKEDIR)/../latest_binaries/MolbyWin$(PRODUCT_SUFFIX).zip * -x \*.DS_Store \*.svn*)
 endif
 

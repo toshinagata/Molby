@@ -1707,12 +1707,14 @@ AboutDialog::AboutDialog():
     //          |
     //          |-> copyright messages
 
-    char *s1, *s2;
-    Molby_getDescription(&s1, &s2);
+    char *s1, *s2, *s3;
+    s1 = "Molby";
+    Molby_getDescription(&s2, &s3);
     wxString str1(s1, WX_DEFAULT_CONV);
     wxString str2(s2, WX_DEFAULT_CONV);
-    free(s1);
+    wxString str3(s3, WX_DEFAULT_CONV);
     free(s2);
+    free(s3);
 #if defined(__WXMSW__)
     wxFont *textFont0 = new wxFont(12, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD);
     wxFont *textFont1 = new wxFont(10, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL);
@@ -1729,7 +1731,7 @@ AboutDialog::AboutDialog():
     wxBitmap *molbyBitmap = new wxBitmap(tifname, wxBITMAP_TYPE_PNG);
     wxStaticText *stext1 = new wxStaticText(this, -1, wxT("Molby"));
     stext1->SetFont(*textFont0);
-    wxStaticText *stext2 = new wxStaticText(this, -1, str1);
+    wxStaticText *stext2 = new wxStaticText(this, -1, str2);
     stext2->SetFont(*textFont1);
     wxStaticBitmap *staticBitmap = new wxStaticBitmap(this, -1, *molbyBitmap);
     vsizer2->Add(stext1, 0, wxALL | wxEXPAND, 2);
@@ -1738,7 +1740,7 @@ AboutDialog::AboutDialog():
     hsizer1->Add(staticBitmap, 0, 0, 10);
     hsizer1->AddSpacer(20);
     hsizer1->Add(vsizer2, 0, wxALL | wxEXPAND, 5);
-    wxStaticText *stext3 = new wxStaticText(this, -1, str2);
+    wxStaticText *stext3 = new wxStaticText(this, -1, str3);
     stext3->SetFont(*textFont2);
     vsizer1->Add(hsizer1, 0, wxALL | wxEXPAND, 5);
     vsizer1->Add(stext3, 0, wxALL | wxEXPAND, 5);

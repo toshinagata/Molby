@@ -12101,7 +12101,17 @@ Molby_getDescription(char **versionString, char **auxString)
 	if (gRevisionNumber > 0) {
 		asprintf(&revisionString, ", revision %d", gRevisionNumber);
 	} else revisionString = "";
-	asprintf(&s1, "Molby %s%s\n%s\nLast compile: %s\n",
+
+    asprintf(&s1, "%s %s%s\n%s\nLast compile: %s\n",
+#if defined(__WXMSW__)
+    #if TARGET_ARCH == 64
+             "Molby (64 bit)",
+    #else
+             "Molby (32 bit)",
+    #endif
+#else
+             "Molby",
+#endif
              gVersionString, revisionString, gCopyrightString, gLastBuildString);
     asprintf(&s2,
 #if !defined(__CMDMAC__)
