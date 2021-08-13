@@ -587,12 +587,11 @@ LAMatrixSingularValueDecomposition(LAMatrix *matU, LAMatrix *matW, LAMatrix *mat
 	n = mat->column;
 	lda = m;
 	num = (m < n ? m : n);
-	LAMatrixResize(matW, num, 1);
-	LAMatrixResize(matU, m, m);
-	LAMatrixResize(matV, n, n);
+    if (matW->row != num || matW->column != 1 || matU->row != m || matU->column != m || matV->row != n || matV->column != n)
+        return -1;  /*  Illegal dimension  */
 	matData = (__CLPK_doublereal *)malloc(sizeof(__CLPK_doublereal) * n * m);
 	memmove(matData, mat->data, sizeof(__CLPK_doublereal) * n * m);
-	iwork = (__CLPK_integer *)malloc(sizeof(__CLPK_integer) * num);
+	iwork = (__CLPK_integer *)malloc(sizeof(__CLPK_integer) * num * 8);
 	lwork = -1;
 	info = 0;
 	dgesdd_("A", &m, &n, matData, &lda, matW->data, matU->data, &m, matV->data, &n, &workSize, &lwork, iwork, &info);
