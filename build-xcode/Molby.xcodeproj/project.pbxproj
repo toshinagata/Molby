@@ -691,7 +691,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "if [ \"${BUILD_STYLE:=$CONFIGURATION}\" = \"Release\" ]; then\n  mkdir -p \"$PROJECT_DIR/../latest_binaries/Molby\" || exit 1\n  (cd \"$PROJECT_DIR/../latest_binaries/Molby\" && rm -rf Molby_command Molby_resources) || exit 1\n  (cd \"$TARGET_BUILD_DIR\"; cp -a Molby_command Molby_resources \"$PROJECT_DIR/../latest_binaries/Molby\") || exit 1\nfi\n";
+			shellScript = "if [ \"${BUILD_STYLE:=$CONFIGURATION}\" = \"Release\" ]; then\n  mkdir -p \"$PROJECT_DIR/../latest_binaries/Molby\" || exit 1\n  (cd \"$PROJECT_DIR/../latest_binaries/Molby\" && rm -rf Molby_command Molby_resources) || exit 1\n(cd \"$BUILT_PRODUCTS_DIR\"; echo $PWD; cp -a -H Molby_command Molby_resources \"$PROJECT_DIR/../latest_binaries/Molby\") || exit 1\nfi\n";
 		};
 		E49B3DF82306DB1800422E13 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;

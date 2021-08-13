@@ -6,6 +6,7 @@ ifeq ($(TARGET_PLATFORM),MSW)
   WINE_PATH=/Applications/EasyWine.app/Contents/Resources/wine/bin
   PRODUCT_SUFFIX = 64
   TARGET_ARCH_DEFINE = -DTARGET_ARCH=64
+  SETUP_NAME = SetupMolbyWin
  else
   TOOL_PREFIX = i686-w64-mingw32-
 #  CPP_EXTRA_FLAGS += -isystem /usr/local/mingw-w32/mingw/include
@@ -15,6 +16,7 @@ ifeq ($(TARGET_PLATFORM),MSW)
   PRODUCT_SUFFIX = 32
 #  FINAL_EXECUTABLE_SUFFIX = _32bit
   TARGET_ARCH_DEFINE = -DTARGET_ARCH=32
+  SETUP_NAME = SetupMolbyWin32
  endif
  WX_DIR = $(PWD)/../../wxWidgets-3.0.3
  WX_LIB_DIR = $(WX_DIR)/$(MSW_BUILD)/lib
@@ -174,7 +176,7 @@ ifneq ($(WINE_PATH),)
 else
 	(/c/Program\ Files\ \(x86\)/Inno\ Setup\ 5/iscc molby$(PRODUCT_SUFFIX).iss || exit 1)
 endif
-	mv Output/SetupMolbyWin.exe ../latest_binaries
+	mv Output/$(SETUP_NAME).exe ../latest_binaries
 	(cd build/release/$(PRODUCT_DIR) && rm -rf $(MAKEDIR)/../latest_binaries/MolbyWin$(PRODUCT_SUFFIX).zip && zip -r $(MAKEDIR)/../latest_binaries/MolbyWin$(PRODUCT_SUFFIX).zip * -x \*.DS_Store \*.svn*)
 endif
 

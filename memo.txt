@@ -728,3 +728,57 @@ Win: document_home is modified to use the Windows API, instead of hard-coded pat
 Win: "backquote" method was not working well.
 Win: when the program is started twice, the second invocation was causing crash. Hopefully fixed.
 
+2019.8.17.
+  Version 1.0。「ベータ」を外して正式版とする。
+
+"About" ダイアログの表示を改良。
+ダブルクリックで構造式を入力する時、直前の入力を覚えておくようにした。
+構造式で NO2, SO（スルホニル基）, SO3H を認識するようにした。
+Create GAMESS にオプションを追加。
+等高面の表示がおかしかったので修正。
+Create MO Surface: デフォルトの不透明度を 0.8 から 0.6 に変更。
+電子密度が非常に小さい (1e-100未満) 時に create cube が失敗していたので修正。
+Show MO Surface ダイアログに create cube ボタンを追加。
+複数構造を持つ CIF ファイルが開けるようにした（複数のドキュメントが開く）
+[Mac版]
+PowerPC と 32 bit Intel はサポートしない。64 bit Intel のみ。動作要件は 10.6 以上とする。
+アプリケーションアイコンに log ファイルをドラッグ＆ドロップしたときの不安定さを改善。
+スタートアップ時に、前回のファイルを読み込もうとしてクラッシュしていたのを修正。
+修正済みのドキュメントファイルをクローズボックスで閉じる時にクラッシュしていたのを修正。
+[Windows版]
+インストーラで 32bit/64bit の両方がインストールできるようにした（OS の仕様に合わせる）。zip アーカイブは 32bit と 64bit を別に用意する。
+Ruby ダイアログでテキストフィールドを使った時にエラーが出ていたのを修正。
+[組み込みRuby]
+モーダルダイアログがときどきクラッシュしていたのを修正。
+from_dump が機能していなかったので修正。
+エラーダイアログ表示中はタイマー割り込みを止めるようにした。
+create_graphic を :poly で使用した時の法線ベクトルの取り扱いを改善。
+ドキュメントを整備。
+export_graphic コマンドで画像の横・縦サイズを指定できるようにした。
+cubegen で mo=0 を可能にした。これは「任意のベクトル」を意味する。
+
+About dialog is improved.
+On double-clicking and entering formula, the last input string is remembered and shown as the default input
+NO2, SO (sulfonyl) and SO3H (sulfonic acid) are now recognized as known fragments.
+More options in Create GAMESS dialog.
+Handling of the surface normals was incomplete. Fixed.
+Create MO Surface: default opacity is set to 0.8 instead of 0.6.
+Creating cube file was failing when very small electron density (<1e-100) appeared. Fixed.
+Show MO surface dialog now has 'Create Cube' button.
+A CIF file with multiple structures now can be processed (multiple documents are opened in this case)
+[Mac]
+PowerPC and 32-bit intel are no longer supported. The binary is 64-bit Intel only. Minimum requirement is now 10.6.
+Fix unstable behavior on drag-and-dropping a log file on the application icon.
+On startup, re-opening the last opened documents was causing crash. Fixed.
+Fixed crash on closing a modified window with a close box.
+[Windows]
+The installer now can install 64bit or 32bit version according to the OS architecture.
+Fix assertion failure on using text field in Ruby dialog.
+[Embedded Ruby]
+Modal dialog caused crash sometimes on activation. Fixed (hopefully)
+from_dump was not working because String#each is no longer implemented. Fixed.
+Stop timer before showing error dialog
+In create_graphic with :poly argument, handling of the normal vectors is improved.
+Document for the Ruby extension is updated.
+export_graphic now allows specification of the width and height of the captured image.
+cubegen now accepts mo=0, which means 'arbitrary vector'
