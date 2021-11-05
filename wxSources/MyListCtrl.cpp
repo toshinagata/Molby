@@ -409,12 +409,18 @@ MyListCtrl::EndEditTextAndRestart(bool setValueFlag, int newRow, int newColumn)
 			Refresh();
 		}
 #endif
-		//  Temporarily hide until new editing starts
+        
+        //  Should we destroy editText every time?
+        //  (It would be safer anyway)
+        editText->Destroy();
+        editText = NULL;
+    
+        //  Temporarily hide until new editing starts
 		//  (editText is set to NULL to avoid recursive calling of EndEditText())
-		wxTextCtrl *saveEditText = editText;
-		editText = NULL;
-		saveEditText->Hide();
-		editText = saveEditText;
+		//wxTextCtrl *saveEditText = editText;
+		//editText = NULL;
+		//saveEditText->Hide();
+		//editText = saveEditText;
 		
 		if (setValueFlag && dataSource)
 			dataSource->SetItemText(this, editRow, editColumn, sval);
