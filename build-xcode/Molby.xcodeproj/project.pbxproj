@@ -576,6 +576,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = C01FCF4A08A954540054247B /* Build configuration list for PBXNativeTarget "Molby" */;
 			buildPhases = (
+				E471B4952734058600486093 /* ShellScript */,
 				E4FC7B57183E516E0064FB2E /* ShellScript */,
 				8D1107290486CEB800E47090 /* Resources */,
 				8D11072C0486CEB800E47090 /* Sources */,
@@ -692,6 +693,23 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "if [ \"${BUILD_STYLE:=$CONFIGURATION}\" = \"Release\" ]; then\n  mkdir -p \"$PROJECT_DIR/../latest_binaries/Molby\" || exit 1\n  (cd \"$PROJECT_DIR/../latest_binaries/Molby\" && rm -rf Molby_command Molby_resources) || exit 1\n(cd \"$BUILT_PRODUCTS_DIR\"; echo $PWD; cp -a -H Molby_command Molby_resources \"$PROJECT_DIR/../latest_binaries/Molby\") || exit 1\nfi\n";
+		};
+		E471B4952734058600486093 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "cd $PROJECT_DIR\nexport TARGET_PLATFORM=MAC\nexport TARGET_ARCH=x86_64\nPATH=/usr/local/gcc8/bin:$PATH\nif ! [ -e ortep3/ortep3 ]; then\n  make -f ../Makefile_ortep3\nfi\nif ! [ -e amber11/bin/sqm ]; then\n  make -f ../Makefile_amber11\nfi\n";
 		};
 		E49B3DF82306DB1800422E13 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;

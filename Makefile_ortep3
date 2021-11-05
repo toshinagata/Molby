@@ -7,24 +7,33 @@
 #    Win: enable_brew
 
 ifeq ($(TARGET_PLATFORM),)
-ifeq ($(findstring darwin,$(OSTYPE)),darwin)
-export TARGET_PLATFORM=MAC
-else
-export TARGET_PLATFORM=MSW
-endif
+  ifeq ($(findstring darwin,$(OSTYPE)),darwin)
+    export TARGET_PLATFORM=MAC
+  else
+    export TARGET_PLATFORM=MSW
+  endif
 endif
 
 ifeq ($(TARGET_PLATFORM),MAC)
-FFLAGS=-std=legacy -isysroot /Developer/SDKs/MacOSX10.6.sdk -mmacosx-version-min=10.6 -arch x86_64
-LIBQUADMATH=/usr/local/gcc8/lib/libquadmath.a
-#FLDFLAGS= -nodefaultlibs -lgfortran-static -lgcc -lc -lm -lSystem -lSystemStubs -lgfortranbegin
-FLDFLAGS= -lgcc -lc -lm -lSystem -static-libgfortran -static-libgcc $(LIBQUADMATH)
-EXE_SUFFIX=
+  FFLAGS=-std=legacy -isysroot /Developer/SDKs/MacOSX10.6.sdk -mmacosx-version-min=10.6 -arch x86_64
+  LIBQUADMATH=/usr/local/gcc8/lib/libquadmath.a
+# FLDFLAGS= -nodefaultlibs -lgfortran-static -lgcc -lc -lm -lSystem -lSystemStubs -lgfortranbegin
+# FSTATICFLAGS= -static-libgcc -Wl,-Bstatic -lgfortran -lquadmath -Wl,-Bdynamic -lm
+  FSTATICFLAGS= -static-libgfortran -static-libgcc $(LIBQUADMATH)
+  FLDFLAGS= -lgcc -lc -lm -lSystem $(FSTATICFLAGS)
+  EXE_SUFFIX=
+  FORTRAN=gfortran
 else
-CROSS_PREFIX=x86_64-w64-mingw32-
-FFLAGS=-std=legacy 
-FLDFLAGS=-Wl,--stack=33554432 -static-libgcc -static-libgfortran
-EXE_SUFFIX=.exe
+  ifeq ($(TARGET_ARCH),x86_64)
+    CROSS_PREFIX=x86_64-w64-mingw32-
+  else
+    CROSS_PREFIX=i686-w64-mingw32-
+  endif
+  FFLAGS=-std=legacy 
+  FSTATICFLAGS= -static-libgcc -Wl,-Bstatic -lgfortran -lquadmath -Wl,-Bdynamic -lm
+  FLDFLAGS=-Wl,--stack=33554432 $(FSTATICFLAGS)
+  EXE_SUFFIX=.exe
+  FORTRAN = gcc
 endif
 export FFLAGS
 export FLDFLAGS
@@ -39,7 +48,7 @@ ortep3/ortep3$(EXE_SUFFIX) : $(BUILDDIR)/ortep3$(EXE_SUFFIX)
 
 $(BUILDDIR)/ortep3$(EXE_SUFFIX) : $(TEPDIR)/$(TEPNAME).f
 	(mkdir -p $(OPWD)/$(BUILDDIR); cp -p $(TEPDIR)/$(TEPNAME).f $(OPWD)/$(BUILDDIR)/)
-	(cd $(OPWD)/$(BUILDDIR) && $(CROSS_PREFIX)gfortran $(FFLAGS) -fno-automatic -O -w -c $(TEPNAME).f && $(CROSS_PREFIX)gfortran $(FFLAGS) $(FLDFLAGS) -O -w -o ortep3$(EXE_SUFFIX) $(TEPNAME).o)
+	(cd $(OPWD)/$(BUILDDIR) && $(CROSS_PREFIX)$(FORTRAN) $(FFLAGS) -fno-automatic -O -w -c $(TEPNAME).f && $(CROSS_PREFIX)$(FORTRAN) -o ortep3$(EXE_SUFFIX) $(TEPNAME).o $(FFLAGS) $(FLDFLAGS) -O -w)
 
 clean :
 	rm -rf $(BUILDDIR)

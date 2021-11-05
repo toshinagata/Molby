@@ -9,7 +9,11 @@ ifeq ($(TARGET_PLATFORM),MAC)
 ISYSROOT=-isysroot /Developer/SDKs/MacOSX10.6.sdk -mmacosx-version-min=10.6 -arch x86_64
 endif
 ifeq ($(TARGET_PLATFORM),MSW)
-CROSS_PREFIX=x86_64-w64-mingw32-
+  ifeq ($(TARGET_ARCH),x86_64)
+    CROSS_PREFIX=x86_64-w64-mingw32-
+  else
+    CROSS_PREFIX=i686-w64-mingw32-
+  endif
 endif
 
 BINDIR=$(AMBERHOME)/bin
@@ -58,13 +62,15 @@ CPLUSPLUS=g++ $(ISYSROOT)
 CFLAGS= -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -DBINTRAJ $(AMBERBUILDFLAGS)
 OCFLAGS=-O3 -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -DBINTRAJ $(AMBERBUILDFLAGS)
 #NABFLAGS=
-LDFLAGS= $(AMBERBUILDFLAGS) -framework Accelerate
+LDFLAGS=  -static-libgcc $(AMBERBUILDFLAGS) -framework Accelerate
 #  Full path of the libquadmath.a
 #  Note: you also need to remove "-lquadmath" from libgfortran.spec, which resides 
 #  in the same directory as libquadmath.a and other libraries.
 LIBQUADMATH=/usr/local/gcc8/lib/libquadmath.a
 #FLDFLAGS= -nodefaultlibs -lgfortran-static -lgcc -lc -lm -lSystem -lSystemStubs -lgfortranbegin
-FLDFLAGS= -lgcc -lc -lm -lSystem -static-libgfortran -static-libgcc $(LIBQUADMATH)
+FSTATICFLAGS= -static-libgfortran -static-libgcc $(LIBQUADMATH)
+#FSTATICFLAGS= -static-libgcc -Wl,-Bstatic -lstdc++ -lgfortran -lquadmath -Wl,-Bdynamic -lm
+FLDFLAGS= -lgcc -lc -lm -lSystem $(FSTATICFLAGS)
 else
 CC=$(CROSS_PREFIX)gcc
 CXX=$(CROSS_PREFIX)g++
@@ -72,8 +78,9 @@ CPLUSPLUS=$(CROSS_PREFIX)g++
 CFLAGS= -DUSE_AMBER_C9XCOMPLEX -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE  $(AMBERBUILDFLAGS) -DWINDOWS=1
 OCFLAGS=-O3 -DUSE_AMBER_C9XCOMPLEX -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE $(AMBERBUILDFLAGS) -DWINDOWS=1
 NABFLAGS=
+FSTATICFLAGS= -static-libgcc -Wl,-Bstatic -lstdc++ -lgfortran -lquadmath -Wl,-Bdynamic -lm
 LDFLAGS=-Wl,--stack=0x01000000 $(AMBERBUILDFLAGS) -static-libgcc
-FLDFLAGS=-static-libgfortran
+FLDFLAGS= $(FSTATICFLAGS)
 endif
 
 #LEX=   flex
@@ -126,12 +133,12 @@ ifeq ($(TARGET_PLATFORM),MAC)
 FC=gfortran $(ISYSROOT)
 FPP=cpp -traditional -P  -DNO_SANDER_DIVCON -DBINTRAJ 
 else
-FC=$(CROSS_PREFIX)gfortran
+FC=$(CROSS_PREFIX)gcc
 FPP=cpp -traditional -P  -DNO_SANDER_DIVCON -DBINTRAJ 
 endif
-FFLAGS= -O0 $(LOCALFLAGS) $(AMBERBUILDFLAGS)
-FOPTFLAGS= -O3 $(LOCALFLAGS) $(AMBERBUILDFLAGS)
-FREEFORMAT_FLAG= -ffree-form
+FFLAGS= -O0 $(LOCALFLAGS) $(AMBERBUILDFLAGS) $(FSTATICFLAGS)
+FOPTFLAGS= -O3 $(LOCALFLAGS) $(AMBERBUILDFLAGS) $(FSTATICFLAGS)
+FREEFORMAT_FLAG= -ffree-form -std=legacy
 LM=-lm
 FPPFLAGS=-P  -DNO_SANDER_DIVCON -DBINTRAJ 
 

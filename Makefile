@@ -77,7 +77,9 @@ export CC
 export CPP
 export AR
 export TARGET_PLATFORM
+export TARGET_ARCH
 export RANLIB
+export PWD
 
 release: all
 

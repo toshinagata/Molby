@@ -34,6 +34,11 @@ libmc.a: $(LIBMCFILES)
 uninstall:
 	-rm -f $(LIBDIR)/libmc.a
 
+#  Somehow, build rule for %.o is broken here (I am sure I had done something wrong, but I cannot find
+#  what it was). So a trivial rule is placed here.  Toshi Nagata 2021/11/4
+%.o : %.c
+	$(CC) $(CFLAGS) -c $< -o $@ 
+
 clog.o: clog.c complex.h protos.h
 cmplx.o: cmplx.c complex.h protos.h
 clogf.o: clogf.c complex.h protos.h
