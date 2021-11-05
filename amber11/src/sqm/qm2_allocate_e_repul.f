@@ -22,7 +22,7 @@ subroutine qm2_allocate_qmqm_e_repul(n2el)
   integer :: ier=0
 
   allocate ( qm2_struct%qm_qm_2e_repul(n2el), stat=ier ) 
-  REQUIRE ( ier == 0 )
+  REQUIRE( ier == 0 )
 
   if (qmmm_nml%qmqm_erep_incore) then
      !only need the QM-QM electron repulsion integrals stored if we
@@ -38,7 +38,7 @@ subroutine qm2_allocate_qmqm_e_repul(n2el)
      allocate ( qm2_struct%qm_qm_e_repul(22, &
               (qmmm_struct%nquant_nlink * (qmmm_struct%nquant_nlink-1)/2)), stat=ier )
 #endif
-     REQUIRE ( ier == 0 )
+     REQUIRE( ier == 0 )
   end if
   return
 end subroutine qm2_allocate_qmqm_e_repul

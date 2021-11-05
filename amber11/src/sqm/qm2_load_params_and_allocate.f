@@ -238,45 +238,45 @@ subroutine qm2_load_params_and_allocate()
 
       qm2_struct%matsize = ishft(qm2_struct%norbs*(qm2_struct%norbs+1),-1) !ishift(x,-1) = integer divide by 2
       allocate ( qm2_struct%den_matrix(qm2_struct%matsize), stat=ier )
-      REQUIRE ( ier == 0 )
+      REQUIRE( ier == 0 )
       allocate ( qm2_struct%old_den_matrix(qm2_struct%matsize), stat=ier )
-      REQUIRE ( ier == 0 )
+      REQUIRE( ier == 0 )
       !zero the entire density matrix on the first call
       qm2_struct%den_matrix = 0.0d0; qm2_struct%old_den_matrix = 0.0d0;
 
       allocate ( qm2_struct%old2_density(qm2_struct%norbs), stat=ier )
-      REQUIRE ( ier == 0 ) !Used by qm2_cnvg as workspace.
+      REQUIRE( ier == 0 ) !Used by qm2_cnvg as workspace.
 
       if (qmmm_nml%density_predict == 1) then
         !We are using Niklasson et al. density matrix prediction.
         allocate ( qm2_struct%md_den_mat_guess1(qm2_struct%matsize), stat=ier )
-        REQUIRE ( ier == 0 )
+        REQUIRE( ier == 0 )
         allocate ( qm2_struct%md_den_mat_guess2(qm2_struct%matsize), stat=ier )
-        REQUIRE ( ier == 0 )
+        REQUIRE( ier == 0 )
       end if
 
       if (qmmm_nml%fock_predict == 1) then
         !We are using Pulay et al. Fock matrix prediction.
         allocate ( qm2_struct%fock_mat_final1(qm2_struct%matsize), stat=ier )
-        REQUIRE ( ier == 0 )
+        REQUIRE( ier == 0 )
         allocate ( qm2_struct%fock_mat_final2(qm2_struct%matsize), stat=ier )
-        REQUIRE ( ier == 0 )
+        REQUIRE( ier == 0 )
         allocate ( qm2_struct%fock_mat_final3(qm2_struct%matsize), stat=ier )
-        REQUIRE ( ier == 0 )
+        REQUIRE( ier == 0 )
         allocate ( qm2_struct%fock_mat_final4(qm2_struct%matsize), stat=ier )
-        REQUIRE ( ier == 0 )
+        REQUIRE( ier == 0 )
       end if
 
       allocate ( qm2_struct%fock_matrix(qm2_struct%matsize), stat=ier )
-      REQUIRE ( ier == 0 )
+      REQUIRE( ier == 0 )
       allocate ( qm2_struct%hmatrix(qm2_struct%matsize), stat=ier )
-      REQUIRE ( ier == 0 )
+      REQUIRE( ier == 0 )
 #ifdef MPI
 # ifndef USE_MPI_IN_PLACE
       !Allocate a temporary array for doing the reduce of P and F etc. Only needed if
       !we can't do things using MPI_IN_PLACE
       allocate ( qmmm_scratch%matsize_red_scratch(qm2_struct%matsize), stat=ier )
-      REQUIRE ( ier == 0 )
+      REQUIRE( ier == 0 )
 # endif
 #endif
       allocate (qm2_struct%fock2_ptot2(16,qmmm_struct%nquant_nlink),stat=ier)
