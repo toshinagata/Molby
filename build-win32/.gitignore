@@ -1,0 +1,6 @@
+build*
+ortep3
+amber11
+.*
+!.gitignore
+_*

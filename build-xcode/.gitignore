@@ -1,0 +1,10 @@
+build*
+ortep3
+amber11
+.*
+!.gitignore
+_*
+Molby.xcodeproj/*.mode1v3
+Molby.xcodeproj/*.pbxuser
+Molby.xcodeproj/project.xcworkspace/
+Molby.xcodeproj/xcuserdata/
