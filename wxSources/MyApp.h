@@ -127,6 +127,44 @@ extern const char *gSettingQuitOnCloseLastWindow;
 
 WX_DECLARE_STRING_HASH_MAP( wxString, MyStringHash );
 
+//  A support class for wxProcess
+//  When the process terminates, the exit status is kept inside the object
+class wxBetterProcess : public wxProcess
+{
+public:
+    wxBetterProcess(wxEvtHandler *parent, int id) : wxProcess(parent, id)
+    {
+        m_status = 0;
+        m_terminated = false;
+        m_killSignal = wxSIGNONE;
+    }
+    wxBetterProcess(int flags) : wxProcess(flags)
+    {
+        m_status = 0;
+        m_terminated = false;
+        m_killSignal = wxSIGNONE;
+    }
+    virtual ~wxBetterProcess() {}
+    virtual void OnTerminate(int pid, int status);
+    wxKillError KillProcess(wxSignal sig = wxSIGTERM, int flags = wxKILL_NOCHILDREN);
+    int PutLine(wxString str);
+    int GetLine(wxString &outStr);
+    int GetLineSub(wxString &outStr, wxInputStream *stream, wxMemoryBuffer &mbuf);
+    int GetErrorLine(wxString &outStr);
+    void CloseOutput();
+    bool IsTerminated() { return m_terminated; }
+    int GetStatus() { return m_status; }
+    int GetKillSignal() { return m_killSignal; }
+protected:
+    bool m_terminated;
+    int m_status;
+    int m_killSignal;
+    wxMemoryBuffer m_stdout;
+    wxMemoryBuffer m_stderr;
+    wxMemoryBuffer m_stdin;
+};
+
+
 // Define a new application
 class MyApp: public wxApp
 {
@@ -172,7 +210,7 @@ class MyApp: public wxApp
 	void OnViewParameterFilesList(wxCommandEvent &event);
 	void OnBringAllWindowsToFront(wxCommandEvent &event);
 	
-	void OnEndProcess(wxProcessEvent &event);
+//	void OnEndProcess(wxProcessEvent &event);
 	int CallSubProcess(const char *cmdline, const char *procname, int (*callback)(void *) = NULL, void *callback_data = NULL, FILE *fpout = NULL, FILE *fperr = NULL, int *exitstatus_p = NULL, int *pid_p = NULL);
 
 	void OnActivate(wxActivateEvent &event);
@@ -205,9 +243,9 @@ protected:
 	MyStringHash m_defaultSettings;
 
 	//  For CallSubProcess()
-	wxProcess *m_process;
-	bool m_processTerminated;
-	int m_processExitCode;
+	wxBetterProcess *m_process;
+//	bool m_processTerminated;
+//	int m_processExitCode;
 
 	ConsoleFrame *consoleFrame;
 	GlobalParameterFrame *parameterFrame;

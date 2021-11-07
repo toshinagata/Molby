@@ -99,7 +99,7 @@ BEGIN_EVENT_TABLE(MyApp, wxApp)
 #if defined(__WXMAC__)
 	EVT_ACTIVATE(MyApp::OnActivate)
 #endif
-	EVT_END_PROCESS(-1, MyApp::OnEndProcess)
+//	EVT_END_PROCESS(-1, MyApp::OnEndProcess)
 	EVT_TIMER(-1, MyApp::TimerInvoked)
 	EVT_COMMAND(myMenuID_Internal_CheckIfAllWindowsAreGone, MyDocumentEvent, MyApp::CheckIfAllWindowsAreGoneHandler)
 END_EVENT_TABLE()
@@ -164,8 +164,8 @@ MyApp::MyApp(void)
     m_docManager = NULL;
 	m_progressFrame = NULL;
 	m_process = NULL;
-	m_processTerminated = false;
-	m_processExitCode = 0;
+//	m_processTerminated = false;
+//	m_processExitCode = 0;
 	countScriptMenu = 0;
 	scriptMenuTitles = NULL;
 	scriptMenuPositions = NULL;
@@ -1309,6 +1309,7 @@ MyApp::GetGlobalParameterListCtrl()
 static FILE *fplog;
 #endif
 
+#if 0
 void
 MyApp::OnEndProcess(wxProcessEvent &event)
 {
@@ -1321,6 +1322,7 @@ MyApp::OnEndProcess(wxProcessEvent &event)
 //	delete m_process;
 //	m_process = NULL;
 }
+#endif
 
 int
 MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)(void *), void *callback_data, FILE *fpout, FILE *fperr, int *exitstatus_p, int *pid_p)
@@ -1362,12 +1364,12 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
 #endif
 
 	//  Create proc object and call subprocess
-	m_process = new wxProcess(this, -1);
+	m_process = new wxBetterProcess(this, -1);
 	m_process->Redirect();
 	int flag = wxEXEC_ASYNC;
 	flag |= wxEXEC_MAKE_GROUP_LEADER;
-	m_processTerminated = false;
-	m_processExitCode = 0;
+//	m_processTerminated = false;
+//	m_processExitCode = 0;
 	long pid = ::wxExecute(cmdstr, flag, m_process);
 	if (pid == 0) {
 		if (procname != NULL)
@@ -1387,13 +1389,16 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
 #endif
 	
 	//  Wait until process ends or user interrupts
-	wxInputStream *in;
-	wxInputStream *err;
-	len_total = 0;
-	char *membuf = NULL;
-	int memsize = 0;
+//	wxInputStream *in;
+//	wxInputStream *err;
+//	len_total = 0;
+//	char *membuf = NULL;
+//	int memsize = 0;
+    wxMemoryBuffer memBuffer;  //  Buffer to store standard output
 	bool processShouldTerminate = false;
-	while (1) {
+    wxString bufstr;
+    wxString buferrstr;
+    while (1) {
 		if (progress_panel == false) {
 			::wxSafeYield(NULL);  //  This seems necessary to get OnEndProcess called
 			if (++count == 40) {
@@ -1401,173 +1406,81 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
 				progress_panel = true;
 			}
 		}
-		while (m_process != NULL && (m_process->IsInputAvailable())) {
-			in = m_process->GetInputStream();
-			in->Read(buf, sizeof buf - 1);
-			if ((len = in->LastRead()) > 0) {
-				buf[len] = 0;
-				len_total += len;
+        m_process->GetLine(bufstr);
+        if (bufstr.Length() > 0) {
 #if LOG_SUBPROCESS
-				fprintf(fplog, "%s", buf);
-				fflush(fplog);
+            fprintf(fplog, "%s", (const char *)bufstr);
+            fflush(fplog);
 #endif
-				if (callback == DUMMY_CALLBACK) {
-					if (memsize < len_total + 1) {
-						char *p = (char *)realloc(membuf, len_total + 1);
-						if (p != NULL) {
-							membuf = p;
-							memmove(membuf + len_total - len, buf, len + 1);
-							memsize = len_total + 1;
-						}
-					}
-				} else if (fpout != NULL && fpout != (FILE *)1) {
-					fputs(buf, fpout);
-				} else if (fpout == (FILE *)1) {
-					MyAppCallback_setConsoleColor(0);
-					MyAppCallback_showScriptMessage("%s", buf);
-				}
-			} else break;
-		}
-		while (m_process != NULL && (m_process->IsErrorAvailable())) {
-			err = m_process->GetErrorStream();
-			err->Read(buf, sizeof buf - 1);
-			if ((len = err->LastRead()) > 0) {
-				buf[len] = 0;
-				len_total += len;
+            if (callback == DUMMY_CALLBACK) {
+                const char *p = (const char *)bufstr;
+                memBuffer.AppendData(p, strlen(bufstr));
+            } else if (fpout != NULL && fpout != (FILE *)1) {
+                fputs((const char *)bufstr, fpout);
+            } else if (fpout == (FILE *)1) {
+                MyAppCallback_setConsoleColor(0);
+                MyAppCallback_showScriptMessage("%s", (const char *)bufstr);
+            }
+        }
+        m_process->GetErrorLine(buferrstr);
+        if (buferrstr.Length() > 0) {
 #if LOG_SUBPROCESS
-				fprintf(fplog, "%s", buf);
-				fflush(fplog);
+            fprintf(fplog, "%s", buf);
+            fflush(fplog);
 #endif
-				if (fperr != NULL && fperr != (FILE *)1) {
-					fputs(buf, fperr);
-				} else if (fpout == (FILE *)1) {
-					MyAppCallback_setConsoleColor(1);
-					MyAppCallback_showScriptMessage("\n%s", buf);
-					MyAppCallback_setConsoleColor(0); 
-				}
-			} else break;
-		}
-		if (m_processTerminated) {
-			//  OnEndProcess has been called
-			if (exitstatus_p != NULL)
-				*exitstatus_p = m_processExitCode;
-			if (m_processExitCode != 0) {
-				/*  Error from subprocess  */
-				status = (m_processExitCode & 255);
-			} else {
-				status = 0;
-			}
-			break;
-		}
-	
-		/*  In some cases, wxProcess cannot detect the termination of the subprocess. */
-		/*  So here are the platform-dependent examination   */
-		/*  2014.3.23. This part of code is removed, in the hope that as of 3.0.0
-		    wxWidgets now reports the termination of the subprocess correctly. (T.Nagata) */
+            if (fperr != NULL && fperr != (FILE *)1) {
+                fputs((const char *)buferrstr, fperr);
+            } else if (fpout == (FILE *)1) {
+                MyAppCallback_setConsoleColor(1);
+                MyAppCallback_showScriptMessage("\n%s", (const char *)buferrstr);
+                MyAppCallback_setConsoleColor(0);
+            }
+        }
+        ::wxMilliSleep(25);
+#if LOG_SUBPROCESS
+        if (++nn >= 10) {
+            fprintf(fplog, "[DEBUG]pid %ld exists\n", pid);
+            fflush(fplog);
+            nn = 0;
+        }
+#endif
+        if (m_process->IsTerminated()) {
+            /*  The subprocess has terminated  */
+            status = m_process->GetStatus();
+            break;
+        } else if (wxGetApp().IsInterrupted()
+                   || (callback != NULL
+                       && callback != DUMMY_CALLBACK
+                       && (callback_result = (*callback)(callback_data)) != 0)) {
+            /*  User interrupt  */
+            int kflag = wxKILL_CHILDREN;
+            wxKillError rc;
+            if (
 #if __WXMSW__
-		if (0) {
-		 // get the process handle to operate on
-			HANDLE hProcess = ::OpenProcess(SYNCHRONIZE |
-										PROCESS_TERMINATE |
-										PROCESS_QUERY_INFORMATION,
-										false, // not inheritable
-										(DWORD)pid);
-			if (hProcess == NULL) {
-				if (::GetLastError() != ERROR_ACCESS_DENIED) {
-					processShouldTerminate = true;
-					status = 255;
-				}
-			} else {
-				DWORD exitCode;
-				if (::GetExitCodeProcess(hProcess, &exitCode) && exitCode != STILL_ACTIVE) {
-					processShouldTerminate = true;
-					status = exitCode & 255;
-				}
-				::CloseHandle(hProcess);
-			}
-		}
+                myKillAllChildren(pid, wxSIGKILL, &rc) != 0
 #else
-		if (0 && waitpid(pid, &status, WNOHANG) != 0) {
-			processShouldTerminate = true;
-			//proc->Detach();
-			status = WEXITSTATUS(status);
-			//break;
-		}
+                ::wxKill(pid, wxSIGTERM, &rc, kflag) != 0
 #endif
-		if (processShouldTerminate) {
-			int count1;
-#if LOG_SUBPROCESS
-			if (fplog) {
-				fprintf(fplog, "OnEndProcess *NOT* called\n");
-				fflush(fplog);
-			}
-#endif
-			for (count1 = 100; count1 > 0; count1--) {
-				if (!wxProcess::Exists(pid))
-					break;
-				::wxMilliSleep(10);
-			}
-			if (count1 == 0)
-				m_process->Detach();
-			{
-				char *dochome = MyAppCallback_getDocumentHomeDir();
-				FILE *fp1;
-				snprintf(buf, sizeof buf, "%s/%s.log", dochome, (procname ? procname : "subprocess"));
-				free(dochome);
-				fp1 = fopen(buf, "w");
-				if (fp1 != NULL) {
-					fprintf(fp1, "OnEndProcess *NOT* called: count1 = %d\n", count1);
-					::wxMilliSleep(500);
-					if (m_processTerminated)
-						fprintf(fp1, "It looks like OnEndProcess is called after our checking.\n");
-					fclose(fp1);
-				}
-			}
-			
-			break;
-		}
-		
-#if LOG_SUBPROCESS
-		if (++nn >= 10) {
-			fprintf(fplog, "[DEBUG]pid %ld exists\n", pid);
-			fflush(fplog);
-			nn = 0;
-		}
-#endif
-		::wxMilliSleep(25);
-		if (wxGetApp().IsInterrupted() || (callback != NULL && callback != DUMMY_CALLBACK && (callback_result = (*callback)(callback_data)) != 0)) {
-			/*  User interrupt  */
-			int kflag = wxKILL_CHILDREN;
-			wxKillError rc;
-			if (
-#if __WXMSW__
-				myKillAllChildren(pid, wxSIGKILL, &rc) != 0
-#else
-				::wxKill(pid, wxSIGTERM, &rc, kflag) != 0
-#endif
-				) {
-				switch (rc) {
-					case wxKILL_BAD_SIGNAL: status = -3; break; /* No such signal */
-					case wxKILL_ACCESS_DENIED: status = -4; break; /*  Permission denied  */
-					case wxKILL_NO_PROCESS: status = -5; break; /*  No such process  */
-					default: status = -6; break;  /*  unknown error  */
-				}
-			} else {
-				if (callback_result != 0)
-					status = -3;  /*  Interrupt from callback  */
-				else
-					status = -2;  /*  User interrupt  */
-			}
-			m_process->Detach();
-			m_process = NULL;
-			if (exitstatus_p != NULL)
-				*exitstatus_p = status;
-			break;
-		}
-	}
-#if LOG_SUBPROCESS
-	fclose(fplog);
-#endif
+                ) {
+                switch (rc) {
+                    case wxKILL_BAD_SIGNAL: status = -3; break; /* No such signal */
+                    case wxKILL_ACCESS_DENIED: status = -4; break; /*  Permission denied  */
+                    case wxKILL_NO_PROCESS: status = -5; break; /*  No such process  */
+                    default: status = -6; break;  /*  unknown error  */
+                }
+            } else {
+                if (callback_result != 0)
+                    status = -3;  /*  Interrupt from callback  */
+                else
+                    status = -2;  /*  User interrupt  */
+            }
+            m_process->Detach();
+            break;
+        }
+    }
+    
+    if (exitstatus_p != NULL)
+        *exitstatus_p = status;
 
 	if (progress_panel)
 		HideProgressPanel();
@@ -1578,20 +1491,28 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
 	}
 
 	if (callback == DUMMY_CALLBACK) {
+        char *membuf = NULL;
+        size_t memsize = 0;
+        memBuffer.AppendByte(0);
+        memsize = memBuffer.GetDataLen();
+        membuf = (char *)malloc(memsize);
+        if (membuf != NULL) {
+            memmove(membuf, memBuffer.GetData(), memsize);
 #if __WXMSW__
-		if (membuf != NULL) {
-			/*  Convert "\r\n" to "\n"  */
-			char *p, *pend;
-			p = pend = membuf + strlen(membuf);
-			while (--p >= membuf) {
-				if (*p == '\r') {
-					memmove(p, p + 1, pend - p);
-					pend--;
-				}
-			}
-		}
+            {
+                /*  Convert "\r\n" to "\n"  */
+                char *p, *pend;
+                p = pend = membuf + strlen(membuf) + 1;
+                while (--p >= membuf) {
+                    if (*p == '\r') {
+                        memmove(p, p + 1, pend - p);
+                        pend--;
+                    }
+                }
+            }
 #endif
-		*((char **)callback_data) = membuf;
+            *((char **)callback_data) = membuf;
+        }
 	}
 
 	return status;
@@ -1786,6 +1707,117 @@ void MyFrame::OnAbout(wxCommandEvent& WXUNUSED(event) )
 MyFrame *GetMainFrame(void)
 {
 	return frame;
+}
+
+#if 0
+#pragma mark ====== Better wxProcess ======
+#endif
+
+void
+wxBetterProcess::OnTerminate(int pid, int status)
+{
+    m_terminated = true;
+    m_status = status;
+}
+wxKillError
+wxBetterProcess::KillProcess(wxSignal sig, int flags)
+{
+    wxKillError retval = wxProcess::Kill(this->GetPid(), sig, flags);
+    if (retval == wxKILL_OK)
+        m_killSignal = sig;
+    return retval;
+}
+
+int
+wxBetterProcess::GetLineSub(wxString &outStr, wxInputStream *stream, wxMemoryBuffer &mbuf)
+{
+    int err = wxSTREAM_NO_ERROR;
+    int trial = 0;
+    char *p, *pp;
+    long len;
+    char buf[1024];
+    if (stream == NULL)
+        return -3;  //  No stderr stream
+    while (1) {
+        p = (char *)mbuf.GetData();
+        len = mbuf.GetDataLen();
+        pp = (char *)memchr(p, '\n', len);
+        if (pp == NULL)
+            pp = (char *)memchr(p, '\r', len);
+        if (pp == NULL && stream->GetLastError() == wxSTREAM_EOF) {
+            //  If EOF, then return all remaining data (without '\n')
+            pp = p + mbuf.GetDataLen() - 1;  //  Point to the last char
+        }
+        if (pp != NULL) {
+            //  Return one line and string length
+            outStr = wxString(p, wxConvUTF8, pp - p + 1);
+            memmove(p, pp + 1, len - (pp - p + 1));
+            m_stdout.SetDataLen(len - (pp - p + 1));
+            return pp - p + 1;
+        }
+        if (trial > 0) {
+            //  stream->Read() is called only once
+            if (err == wxSTREAM_EOF)
+                return -1;  //  EOF and no data left
+            return 0;  //  Not EOF, but no data is available at present
+        }
+        len = 0;
+        if (stream->CanRead()) {
+            //  We need to read by one character because wxInputStream has
+            //  no way to give the available number of bytes
+            stream->Read(buf, sizeof buf);
+            err = stream->GetLastError();
+            if (err != wxSTREAM_NO_ERROR && err != wxSTREAM_EOF)
+                return -2;  //  Some read error
+            len = stream->LastRead();
+        }
+        if (len > 0)
+            mbuf.AppendData(buf, len);
+        trial++;
+    }
+}
+
+int
+wxBetterProcess::GetLine(wxString &outStr)
+{
+    return GetLineSub(outStr, this->GetInputStream(), m_stdout);
+}
+
+int
+wxBetterProcess::GetErrorLine(wxString &outStr)
+{
+    return GetLineSub(outStr, this->GetErrorStream(), m_stderr);
+}
+
+int
+wxBetterProcess::PutLine(wxString str)
+{
+    wxOutputStream *stream = this->GetOutputStream();
+    if (stream == NULL)
+        return -3;  //  No stdin stream
+    const char *p = str.utf8_str();
+    long len = strlen(p);
+    if (len > 0)
+        m_stdin.AppendData(p, len);
+    char *pp = (char *)m_stdin.GetData();
+    len = m_stdin.GetDataLen();
+    if (len == 0)
+        return 0;
+    stream->Write(pp, len);
+    long len2 = stream->LastWrite();
+    if (len2 > 0) {
+        memmove(pp, pp + len2, len - len2);
+        m_stdin.SetDataLen(len - len2);
+    }
+    return len2;
+}
+
+void
+wxBetterProcess::CloseOutput()
+{
+    //  We must flush the data in the internal buffer before closing the output
+    while (PutLine("") > 0) {}
+    wxProcess::CloseOutput();  //  Call the original version
 }
 
 #pragma mark ====== Plain-C interface ======
