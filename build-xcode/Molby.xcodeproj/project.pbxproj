@@ -726,7 +726,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "cd $PROJECT_DIR; sh ../record_build_date.sh --with-svn-status >buildInfo_cmd.c\n";
+			shellScript = "cd $PROJECT_DIR; sh ../record_build_date.sh --with-git-status >buildInfo_cmd.c\n";
 		};
 		E4CB37171FE4FF42001BB75E /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
