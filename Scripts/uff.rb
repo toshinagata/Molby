@@ -606,9 +606,13 @@ def guess_uff_parameters
       }
       if attr != nil
         pref_new.set_attr(attr, val)
+        if attr == :r_eq && pref_new.r_eq14 == 0.0
+          pref_new.r_eq14 = val
+        elsif attr == :eps && pref_new.eps14 == 0.0
+          pref_new.eps14 = val
+        end
         arena.prepare(true)
       end
-      return pref_new
     }
     set_value = lambda { |it, row, col, val|
 	  old_val = get_value.call(it, row, col)
@@ -633,15 +637,9 @@ def guess_uff_parameters
         when 6
           ap0.weight = val.to_f
         when 7
-          pp = modify_parameter.call(mol, "vdw", nil, idx, :eps, val)
-          if pp.eps14 == 0.0
-            pp.eps14 = val.to_f
-          end
+          modify_parameter.call(mol, "vdw", nil, idx, :eps, val)
         when 8
-          pp = modify_parameter.call(mol, "vdw", nil, idx, :r_eq, val)
-          if pp.r_eq14 == 0.0
-            pp.r_eq14 = val.to_f
-          end
+          modify_parameter.call(mol, "vdw", nil, idx, :r_eq, val)
         when 9
           modify_parameter.call(mol, "vdw", nil, idx, :eps14, val)
         when 10
