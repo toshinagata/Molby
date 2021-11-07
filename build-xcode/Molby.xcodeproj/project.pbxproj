@@ -752,7 +752,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "cd $PROJECT_DIR; sh ../record_build_date.sh --with-git-status >buildInfo.c\n";
+			shellScript = "cd $PROJECT_DIR; sh ../record_build_date.sh --with-git-status >buildInfo.c\ncd ..; ruby -E utf-8:utf-8 update_version.rb\n\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 

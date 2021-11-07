@@ -5,7 +5,7 @@
     An Interactive Molecular Modeling Software
         with Integrated Ruby Interpreter
   
-          Version 1.0
+          Version 1.0.1
 
                   Toshi Nagata
 
@@ -29,7 +29,7 @@ Molby runs on Mac OS X (10.5 and later) and Microsoft Windows (XP and later). Ex
 
 Molby is a copyrighted product of Toshi Nagata.
 
-       Copyright (C) 2008-2019 Toshi Nagata
+       Copyright (C) 2008-2021 Toshi Nagata
 
 Molby includes (more technically: is statically linked to) the following softwares, which are copyrighted products as described below:
 

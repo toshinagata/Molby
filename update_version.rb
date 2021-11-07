@@ -4,7 +4,6 @@ require 'kconv'
 
 #  Get the version string
 #  version = "X.X.X"
-#  date = "yyyymmdd"
 version = nil
 date = nil
 eval IO.read("Version")
@@ -69,7 +68,7 @@ Dir["xcode-build/*.lproj/InfoPlist.strings"].each { |nm|
 }
 
 #  Modify Molby.iss
-modify_file("msw-build/molby.iss") { |s|
+modify_file("build-win/molby64.iss") { |s|
   if s =~ /AppVerName/ && s.sub!(/\(.*\)*/, "(#{verstr})")
     s
   else
@@ -77,6 +76,14 @@ modify_file("msw-build/molby.iss") { |s|
   end
 }
 
+modify_file("build-win32/molby32.iss") { |s|
+  if s =~ /AppVerName/ && s.sub!(/\(.*\)*/, "(#{verstr})")
+    s
+  else
+    nil
+  end
+  }
+  
 #  Modify MyVersion.c
 modify_file("wxSources/MyVersion.c") { |s|
   if s =~ /Version/ && s.sub!(/\".*\"/, "\"#{verstr}\"")
