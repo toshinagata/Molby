@@ -174,14 +174,14 @@ class MyApp: public wxApp
     int OnExit(void);
 
 	ConsoleFrame *GetConsoleFrame() { return consoleFrame; }
-	
+
 	void ShowProgressPanel(const char *mes);
 	void HideProgressPanel();
 	void SetProgressValue(double dval);
 	void SetProgressMessage(const char *mes);
 	int IsInterrupted();
-	ProgressFrame *GetProgressFrame() { return m_progressFrame; }
-
+	// ProgressFrame *GetProgressFrame() { return m_progressFrame; }
+    
     MyDocManager *DocManager() { return m_docManager; }
 
 	wxMenuBar *CreateMenuBar(int kind, wxMenu **out_file_history_menu = NULL, wxMenu **out_edit_menu = NULL);
@@ -237,9 +237,9 @@ class MyApp: public wxApp
 
 protected:
     MyDocManager* m_docManager;
-	ProgressFrame *m_progressFrame;
-	bool m_progressCanceled;
-	int m_progressValue;
+	wxProgressDialog *m_progressDialog;
+//	bool m_progressCanceled;
+//	int m_progressValue;
 	MyStringHash m_defaultSettings;
 
 	//  For CallSubProcess()

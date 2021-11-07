@@ -162,7 +162,7 @@ MyApp::FindResourcePath()
 MyApp::MyApp(void)
 {
     m_docManager = NULL;
-	m_progressFrame = NULL;
+	m_progressDialog = NULL;
 	m_process = NULL;
 //	m_processTerminated = false;
 //	m_processExitCode = 0;
@@ -672,7 +672,9 @@ void
 MyApp::ShowProgressPanel(const char *mes)
 {
 	wxString string((mes ? mes : ""), WX_DEFAULT_CONV);
-	if (m_progressFrame == NULL) {
+	if (m_progressDialog == NULL) {
+        m_progressDialog = new wxProgressDialog(wxT("Progress"), mes);
+/*
 #if __WXMAC__
 		{
 			wxMenuBar *mbar = ((wxFrame *)GetTopWindow())->GetMenuBar();
@@ -685,13 +687,19 @@ MyApp::ShowProgressPanel(const char *mes)
 		m_progressFrame = new ProgressFrame(_T("Progress"), string);
 		m_progressCanceled = false;
 		m_progressValue = -1;
-	}
+*/
+    }
 }
 
 void
 MyApp::HideProgressPanel()
 {
-	if (m_progressFrame != NULL) {
+    if (m_progressDialog != NULL) {
+        m_progressDialog->Destroy();
+        m_progressDialog = NULL;
+    }
+/*
+    if (m_progressFrame != NULL) {
 		m_progressFrame->Hide();
 		m_progressFrame->Destroy();
 		m_progressFrame = NULL;
@@ -705,30 +713,34 @@ MyApp::HideProgressPanel()
 		}
 #endif
 	}
+*/
 }
 
 void
 MyApp::SetProgressValue(double dval)
 {
-	if (m_progressFrame != NULL) {
-		m_progressFrame->SetProgressValue(dval);
-	}
+    if (m_progressDialog != NULL) {
+        if (dval >= 0)
+            m_progressDialog->Update((int)(dval * 100));
+        else
+            m_progressDialog->Pulse();
+    }
 }
 
 void
 MyApp::SetProgressMessage(const char *mes)
 {
-	if (m_progressFrame != NULL) {
+	if (m_progressDialog != NULL) {
 		wxString string((mes ? mes : ""), WX_DEFAULT_CONV);
-		m_progressFrame->SetProgressMessage(string);
+		m_progressDialog->Update(0, string);
 	}
 }
 
 int
 MyApp::IsInterrupted()
 {
-	if (m_progressFrame != NULL)
-		return m_progressFrame->CheckInterrupt();
+	if (m_progressDialog != NULL)
+        return m_progressDialog->WasCancelled();
 	else {
 		if (::wxGetKeyState(WXK_ESCAPE))
 			return 1;
@@ -1335,7 +1347,7 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
 	size_t len, len_total;
 	wxString cmdstr(cmdline, WX_DEFAULT_CONV);
 	wxLongLong startTime;
-	
+
 	if (m_process != NULL)
 		return -1;  //  Another process is already running (CallSubProcess() allows only one subprocess)
 	
@@ -1345,13 +1357,15 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
 	//  Show progress panel
 	if (procname != NULL) {
 		snprintf(buf, sizeof buf, "Running %s...", procname);
-		ShowProgressPanel(buf);
+        ShowProgressPanel(buf);
 		progress_panel = true;
 	}
 	startTime = wxGetUTCTimeMillis();
 	
 	//  Create log file in the document home directory
 #if LOG_SUBPROCESS
+    wxDateTime dateTime;
+    dateTime.SetToCurrent();
 	int nn = 0;
 	{
 		char *dochome = MyAppCallback_getDocumentHomeDir();
@@ -1368,12 +1382,10 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
 	m_process->Redirect();
 	int flag = wxEXEC_ASYNC;
 	flag |= wxEXEC_MAKE_GROUP_LEADER;
-//	m_processTerminated = false;
-//	m_processExitCode = 0;
 	long pid = ::wxExecute(cmdstr, flag, m_process);
 	if (pid == 0) {
-		if (procname != NULL)
-			HideProgressPanel();
+        if (progress_panel)
+            HideProgressPanel();
 		delete m_process;
 #if LOG_SUBPROCESS
 		fprintf(fplog, "Cannot start '%s'\n", cmdline);
@@ -1384,32 +1396,21 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
 	if (pid_p != NULL)
 		*pid_p = pid;
 #if LOG_SUBPROCESS
-	fprintf(fplog, "[DEBUG]pid = %ld\n", pid);
+	fprintf(fplog, "%s[DEBUG]pid = %ld\n", (const char *)(dateTime.FormatISOCombined(' ')), pid);
 	fflush(fplog);
 #endif
 	
 	//  Wait until process ends or user interrupts
-//	wxInputStream *in;
-//	wxInputStream *err;
-//	len_total = 0;
-//	char *membuf = NULL;
-//	int memsize = 0;
     wxMemoryBuffer memBuffer;  //  Buffer to store standard output
-	bool processShouldTerminate = false;
+    bool interrupted = false;
     wxString bufstr;
     wxString buferrstr;
     while (1) {
-		if (progress_panel == false) {
-			::wxSafeYield(NULL);  //  This seems necessary to get OnEndProcess called
-			if (++count == 40) {
-				ShowProgressPanel("Running subprocess...");
-				progress_panel = true;
-			}
-		}
         m_process->GetLine(bufstr);
         if (bufstr.Length() > 0) {
 #if LOG_SUBPROCESS
-            fprintf(fplog, "%s", (const char *)bufstr);
+            dateTime.SetToCurrent();
+            fprintf(fplog, "%s[STDOUT]%s", (const char *)(dateTime.FormatISOCombined(' ')), (const char *)bufstr);
             fflush(fplog);
 #endif
             if (callback == DUMMY_CALLBACK) {
@@ -1425,7 +1426,8 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
         m_process->GetErrorLine(buferrstr);
         if (buferrstr.Length() > 0) {
 #if LOG_SUBPROCESS
-            fprintf(fplog, "%s", buf);
+            dateTime.SetToCurrent();
+            fprintf(fplog, "%s[STDERR]%s", (const char *)(dateTime.FormatISOCombined(' ')), buf);
             fflush(fplog);
 #endif
             if (fperr != NULL && fperr != (FILE *)1) {
@@ -1436,10 +1438,23 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
                 MyAppCallback_setConsoleColor(0);
             }
         }
+
         ::wxMilliSleep(25);
+        if (callback != NULL && callback != DUMMY_CALLBACK) {
+            callback_result = (*callback)(callback_data);
+            if (callback_result != 0)
+                interrupted = true;
+        }
+        if (progress_panel) {
+            SetProgressValue(-1);
+            if (IsInterrupted())
+                interrupted = true;
+        }
+
 #if LOG_SUBPROCESS
         if (++nn >= 10) {
-            fprintf(fplog, "[DEBUG]pid %ld exists\n", pid);
+            dateTime.SetToCurrent();
+            fprintf(fplog, "%s[DEBUG]pid %ld exists\n", (const char *)(dateTime.FormatISOCombined(' ')), pid);
             fflush(fplog);
             nn = 0;
         }
@@ -1448,10 +1463,7 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
             /*  The subprocess has terminated  */
             status = m_process->GetStatus();
             break;
-        } else if (wxGetApp().IsInterrupted()
-                   || (callback != NULL
-                       && callback != DUMMY_CALLBACK
-                       && (callback_result = (*callback)(callback_data)) != 0)) {
+        } else if (interrupted) {
             /*  User interrupt  */
             int kflag = wxKILL_CHILDREN;
             wxKillError rc;
@@ -1482,9 +1494,10 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
     if (exitstatus_p != NULL)
         *exitstatus_p = status;
 
-	if (progress_panel)
-		HideProgressPanel();
-
+    if (progress_panel) {
+        HideProgressPanel();
+    }
+    
 	if (m_process != NULL) {
 		delete m_process;
 		m_process = NULL;

@@ -62,7 +62,14 @@ MyListCtrl::Create(wxWindow* parent, wxWindowID wid, const wxPoint& pos, const w
 {
 	this->wxGenericListCtrl::Create(parent, wid, pos, size, wxLC_REPORT | wxLC_VIRTUAL | wxBORDER_SIMPLE);
 	dataSource = NULL;
-	editText = NULL;
+
+    /*  Create a TextCtrl for editing Text  */
+    /*  m_mainWin is a protected member in wxGenericListCtrl  */
+    editText = new wxTextCtrl((wxWindow *)m_mainWin, -1, wxT(""), wxDefaultPosition, wxDefaultSize, wxTE_PROCESS_ENTER | wxTE_PROCESS_TAB);
+    editText->Hide();
+    editText->Connect(wxID_ANY, wxEVT_KEY_DOWN, wxKeyEventHandler(MyListCtrl::OnKeyDownOnEditText), NULL, this);
+    editText->Connect(wxID_ANY, wxEVT_KILL_FOCUS, wxFocusEventHandler(MyListCtrl::OnKillFocusOnEditText), NULL, this);
+
 	selectionChangeNotificationSent = false;
 	selectionChangeNotificationEnabled = true;
 	subTitleRowAttr = new wxListItemAttr;
@@ -412,15 +419,15 @@ MyListCtrl::EndEditTextAndRestart(bool setValueFlag, int newRow, int newColumn)
         
         //  Should we destroy editText every time?
         //  (It would be safer anyway)
-        editText->Destroy();
-        editText = NULL;
+        //editText->Destroy();
+        //editText = NULL;
     
         //  Temporarily hide until new editing starts
 		//  (editText is set to NULL to avoid recursive calling of EndEditText())
-		//wxTextCtrl *saveEditText = editText;
-		//editText = NULL;
-		//saveEditText->Hide();
-		//editText = saveEditText;
+		wxTextCtrl *saveEditText = editText;
+		editText = NULL;
+		saveEditText->Hide();
+		editText = saveEditText;
 		
 		if (setValueFlag && dataSource)
 			dataSource->SetItemText(this, editRow, editColumn, sval);
