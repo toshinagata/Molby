@@ -1090,6 +1090,7 @@ MyDocument::OnInsertFrameFromMD(wxCommandEvent &event)
 		}
 		ring->count = 0;
 		mol->needsMDCopyCoordinates = 0;  /*  This flag needs to be negated because the coordinates come from the MD run  */
+        MainViewCallback_updateCanvas(GetMainView());
 	}
 	MoleculeUnlock(mol);
 }

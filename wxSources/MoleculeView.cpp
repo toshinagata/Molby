@@ -702,6 +702,7 @@ MoleculeView::OnSliderAction(wxCommandEvent& event)
 	int mouseStatus = sender->GetMouseStatus();
 	MoleculeLock(mview->mol);
 	MainView_rotateBySlider(mview, angle * 3.1415927 * 2, mode, mouseStatus, MainViewCallback_modifierFlags(NULL));
+    MainViewCallback_updateCanvas(mview);
 	MoleculeUnlock(mview->mol);
 }
 
@@ -1118,6 +1119,14 @@ MainViewCallback_setNeedsDisplay(MainView *mview, int flag)
     if (flag)
       ((MoleculeView *)(mview->ref))->canvas->Refresh();
   }
+}
+
+void
+MainViewCallback_updateCanvas(MainView *mview)
+{
+    if (mview != NULL && mview->ref != NULL) {
+        ((MoleculeView *)(mview->ref))->canvas->Update();
+    }
 }
 
 void

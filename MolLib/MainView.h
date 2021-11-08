@@ -265,6 +265,7 @@ STUB void MainViewCallback_frame(MainView *mview, float *rect);
 STUB void MainViewCallback_display(MainView *mview);
 STUB void MainViewCallback_makeFront(MainView *mview);
 STUB void MainViewCallback_setNeedsDisplay(MainView *mview, int flag);
+STUB void MainViewCallback_updateCanvas(MainView *mview);
 STUB void MainViewCallback_setKeyboardFocus(MainView *mview);
 STUB int MainViewCallback_mouseCheck(MainView *mview);
 STUB void MainViewCallback_clearLabels(MainView *mview);
