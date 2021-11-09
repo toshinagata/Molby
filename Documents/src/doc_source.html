@@ -14,14 +14,14 @@
 <div class="centered" lang="en">
 <h1>Molby</h1>
 <h2>Interactive Molecular Modeling Software<br />with Integrated Ruby Interpreter</h2>
-<h3>Version 1.0.1</h3> <!-- version -->
+<h3>Version 1.0.2</h3> <!-- version -->
 <h3>Toshi Nagata</h3>
 <p><a href="http://molby.osdn.jp/index-en.html">http://molby.osdn.jp/index-en.html</a></p>
 </div>
 <div class="centered" lang="ja">
 <h1>Molby</h1>
 <h2>対話型分子モデリングソフトウェア<br />（Ruby インタプリタ内蔵）</h2>
-<h3>Version 1.0.1</h3> <!-- version -->
+<h3>Version 1.0.2</h3> <!-- version -->
 <h3>永田　央</h3>
 <p><a href="http://molby.osdn.jp/index.html">http://molby.osdn.jp/index.html</a></p>
 </div>
@@ -1569,25 +1569,21 @@ Next, we need to assign the "UFF types" to each atoms. In fact, the UFF types ar
 </p>
 <p><img src="../etc/coord_18.png" /></p>
 <p>
-There is another important step before estimating the UFF parameters. Click on the "Bonds" button, and the bond length table is shown as below.
+Now we need to assign UFF parameters for the metal atoms. Click the button "Guess UFF Parameters for Bonds and Angles Including Metal Atoms".
 </p>
-<p><img src="../etc/coord_19.png" /></p>
+<p><img src="../etc/coord_24.png" /></p>
 <p>
-Look at the rightmost two columns, named "r0" and "real_r". The value "r0" is the equilibrium bond length, and "real_r" is the present bond length. You see that "r0" is 0.000 for Pt-Cl and Pt-N bonds. If you do not give values, then the values in the "real_r" column are used. Apparently these bond lengths are too small, so we correct the "r0" values. Appropriate values would be 2.30 for Pt-Cl and 2.00 for Pt-N. If you have other favorite values based on your experience, please feel free to use them.
+Open the "Bonds" page, and check the columns "k" and "r0". You will find there the proposed values of force constant and equilibrium bond length, according to the UFF force field. If you find, by some reason, the values are not appropriate, then you can change them by hand.
 </p>
-<p><img src="../etc/coord_20.png" /></p>
+<p><img src="../etc/coord_25.png" /></p>
 <p>
-You can check the "Angles" page as well. In this case, all values can be left as 0.0.
+You can check the "Angles" page as well. Check the columns "k" and "a0", for the force constant and equilibrium bond angle. Note that, in the case of square planar or octahedral metal center, there are "cis" and "trans" angles. The program will assign "trans" if the current bond angle is larger than 135 degree, and "cis" otherwise. So, if your starting geometry is not quite optimal, be careful to check the angle parameters.
 </p>
-<p><img src="../etc/coord_21.png" /></p>
-<p>
-Now you can hit the "Guess UFF Parameters for Bonds..." button. Make sure that the "k" and "a0" values are now set. Look at the "Bonds" and "Atoms" pages as well and see how the parameters are changed.
-</p>
-<p><img src="../etc/coord_22.png" /></p>
+<p><img src="../etc/coord_26.png" /></p>
 <p>
 Close this dialog, and go into MM/MD calculations as usual. For example, you can perform energy minimization and get the structure like below.
 </p>
-<p><img src="../etc/coord_23.png" /></p>
+<p><img src="../etc/coord_27.png" /></p>
 <h2>2. Compounds Containing Metal-π Bonds</h2>
 <p>
 Compounds containing metal-π bonds are also problematic in molecular mechanics calculations. The implementation of metal-π bonds in Molby is based on the proposal by Doman and coworkers (<i>J. Am. Chem. Soc.</i> <b>114,</b> 7262-7272 (1992)). Herein we will see how to build a molecular model of ferrocene.
@@ -1704,26 +1700,23 @@ Antechamber を走らせると、表は下のようになります。"type" 列�
 次に、各原子の "UFF type" を設定します。前の段階で UFF type を仮に設定してありますが、一通り見直して、必要なら変更してください。UFF type はポップアップメニューで選択することができます。
 </p>
 <p><img src="../etc/coord_18.png" /></p>
+
 <p>
-UFF パラメータの設定にはもう一つ大切な作業があります。"Bonds" ボタンを押して、結合テーブルを下のように表示してください。
+今度は、金属原子のパラメータを設定します。"Guess UFF Parameters for Bonds and Angles Including Metal Atoms" ボタンを押してください。
 </p>
-<p><img src="../etc/coord_19.png" /></p>
+<p><img src="../etc/coord_24.png" /></p>
 <p>
-一番右の２つの列、"r0" と "real_r" を見てください。"r0" の値は平均結合長で、"real_r" は現在の結合長です。Pt-Cl と Pt-N 結合を見ますと、"r0" の値はどちらも 0.000 になっています。このままだと、分子力学計算の結合長（結合エネルギーが最小になる距離）として "real_r" の値がそのまま使われます。現在の real_r の値は、Pt-Cl, Pt-N の距離としては短すぎます。Pt-Cl は 2.30 &Aring;, Pt-N は 2.00 &Aring; 程度が適当でしょう。他に適当な値の候補があるなら、それを使っていただいて構いません。
+"Bonds" ページを開いて、"k" と "r0" の列を見てください。UFF 分子力場から予測された「力の定数」と「結合長」が入っているはずです。何らかの理由で、値が適切ではないと考えた場合は、手動で変更することもできます。
 </p>
-<p><img src="../etc/coord_20.png" /></p>
+<p><img src="../etc/coord_25.png" /></p>
 <p>
-"Angle" のページも同様にチェックしましょう。今回は、角度の方はすべて 0.0 のままで構いません。
+"Angles" ページも同じようにチェックしてください。"k" と "a0" の列に「力の定数」と「結合角」が入っています。金属中心が、平面正方形、または八面体構造の場合は、"cis" と "trans" の角度があります。プログラムは、現在の結合角が 135度よりも大きければ "trans" とみなし、小さければ "cis" とみなします。現在の構造が理想的な構造から離れている場合は、角度のパラメータを注意深くチェックしてください。
 </p>
-<p><img src="../etc/coord_21.png" /></p>
-<p>
-"Guess UFF Parameters for Bonds..." ボタンを押します。"k", "a0" の値がセットされたことを確かめてください。"Bonds", "Atoms" のページに戻り、これらのパラメータもセットされていることを確かめてください。
-</p>
-<p><img src="../etc/coord_22.png" /></p>
+<p><img src="../etc/coord_26.png" /></p>
 <p>
 このダイアログを閉じて、MM/MD 計算を通常のように進めます。例えば、エネルギー最小化を行うと、下のような構造が得られます。
 </p>
-<p><img src="../etc/coord_23.png" /></p>
+<p><img src="../etc/coord_27.png" /></p>
 <h2>2. 金属-π 結合を持つ化合物</h2>
 <p>
 分子力学計算では、金属-π結合を持つ化合物の取り扱いも厄介です。Molby は、Doman らの方法 (<i>J. Am. Chem. Soc.</i> <b>114,</b> 7262-7272 (1992)) に準じて金属-π結合の分子力学計算を実装しています。ここでは、フェロセンの分子モデルを作成してみます。
