@@ -43,10 +43,14 @@ def modify_file(name, &block)
 end
 
 #  Modify Info.plist
-nm = "xcode-build/Info.plist"
+nm = "build-xcode/Molby-Info.plist"
 version = false
 modify_file(nm) { |s|
-  if version
+  if s =~ /Copyright/
+    s.sub(/[-0-9]+ Toshi Nagata/, "#{yrange} Toshi Nagata")
+  elsif s =~ /Version \d+\.\d+/
+    "\t<string>Version #{ver}</string>\n"
+  elsif version
     version = false
     "\t<string>#{verstr}</string>\n"
   else

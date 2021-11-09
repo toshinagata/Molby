@@ -213,6 +213,7 @@
 		E420BE20188574F600A2B983 /* RubyDialogFrame.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RubyDialogFrame.h; sourceTree = "<group>"; };
 		E420BE21188574F600A2B983 /* wxKillAddition.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = wxKillAddition.cpp; sourceTree = "<group>"; };
 		E45B94611A170B9A008E95EB /* docview.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = docview.cpp; sourceTree = "<group>"; };
+		E460B2DC2739716500CD9407 /* Version */ = {isa = PBXFileReference; lastKnownFileType = text; name = Version; path = ../Version; sourceTree = "<group>"; };
 		E4653CB018A0CC7D0022377B /* textctrl_addition.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = textctrl_addition.mm; sourceTree = "<group>"; };
 		E49B3DF62306D9F500422E13 /* buildInfo_cmd.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = buildInfo_cmd.c; sourceTree = "<group>"; };
 		E49BFB761886E2E400188237 /* Molby_command */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = Molby_command; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -358,6 +359,7 @@
 				E4FC7779183E4F3F0064FB2E /* MolLib */,
 				E4FC7CA5183F94D30064FB2E /* buildInfo.c */,
 				E49B3DF62306D9F500422E13 /* buildInfo_cmd.c */,
+				E460B2DC2739716500CD9407 /* Version */,
 			);
 			name = Sources;
 			sourceTree = "<group>";
@@ -578,6 +580,7 @@
 			buildPhases = (
 				E471B4952734058600486093 /* ShellScript */,
 				E4FC7B57183E516E0064FB2E /* ShellScript */,
+				E460B2DD273A94C600CD9407 /* ShellScript */,
 				8D1107290486CEB800E47090 /* Resources */,
 				8D11072C0486CEB800E47090 /* Sources */,
 				8D11072E0486CEB800E47090 /* Frameworks */,
@@ -693,6 +696,23 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "if [ \"${BUILD_STYLE:=$CONFIGURATION}\" = \"Release\" ]; then\n  mkdir -p \"$PROJECT_DIR/../latest_binaries/Molby\" || exit 1\n  (cd \"$PROJECT_DIR/../latest_binaries/Molby\" && rm -rf Molby_command Molby_resources) || exit 1\n(cd \"$BUILT_PRODUCTS_DIR\"; echo $PWD; cp -a -H Molby_command Molby_resources \"$PROJECT_DIR/../latest_binaries/Molby\") || exit 1\nfi\n";
+		};
+		E460B2DD273A94C600CD9407 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "cd $PROJECT_DIR/../Documents\nif [ ! -e MolbyDoc/ja/index.html ] || [ src/doc_source.html -nt MolbyDoc/ja/index.html ]; then\n  ruby makedoc.rb\nfi\n";
 		};
 		E471B4952734058600486093 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
