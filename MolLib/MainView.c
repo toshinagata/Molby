@@ -232,6 +232,8 @@ MainView_resizeToFit(MainView *mview)
 {
 	Vector p;
 	double f[4];
+    if (!gUseGUI)
+        return;
 	if (mview == NULL || mview->mol == NULL)
 		return;
 	if (mview->mol->natoms == 0) {
@@ -560,6 +562,8 @@ MainView_screenCenterPointOfAtom(MainView *mview, int index, float *outScreenPos
 void
 MainView_getCamera(MainView *mview, Vector *outCamera, Vector *outLookAt, Vector *outUp)
 {
+    if (!gUseGUI)
+        return;
 	if (mview != NULL) {
 		*outCamera = mview->camera;
 		*outLookAt = mview->lookat;
@@ -3686,6 +3690,8 @@ MainView_dragTableSelectionToRow(MainView *mview, int row)
 IntGroup *
 MainView_selectedMO(MainView *mview)
 {
+    if (!gUseGUI)
+        return NULL;
 	if (mview == NULL || mview->mol == NULL || mview->tableIndex != kMainViewMOTableIndex)
 		return NULL;
 	return MainViewCallback_getTableSelection(mview);  /*  Note: the indices are 0 based  */

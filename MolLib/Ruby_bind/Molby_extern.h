@@ -30,6 +30,9 @@ typedef void *RubyValue;
 #define RubyNil ((RubyValue)4)
 #endif
 
+extern int gSuppressConsole;
+extern int gUseGUI;
+    
 extern char *gRubyVersion;
 extern char *gRubyCopyright;
 
@@ -37,6 +40,7 @@ extern void Ruby_showError(int status);
 extern int Ruby_showValue(RubyValue value, char **outValueString);
 extern int Ruby_UpdateUI(int index, Molecule *mol, int *outChecked, char **outTitle);
 
+extern int Molby_loadScript(const char *script, int from_file);
 extern void Molby_startup(const char *script_path, const char *dir);
 extern void Molby_getDescription(char **versionString, char **auxString);
 extern RubyValue Molby_evalRubyScriptOnMolecule(const char *script, Molecule *mol, const char *fname, int *status);

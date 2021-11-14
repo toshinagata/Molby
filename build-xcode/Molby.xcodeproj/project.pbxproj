@@ -191,7 +191,7 @@
 		E420BDFC1885749000A2B983 /* MyCommand.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MyCommand.h; sourceTree = "<group>"; };
 		E420BE02188574AD00A2B983 /* MyDocManager.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MyDocManager.cpp; sourceTree = "<group>"; };
 		E420BE03188574AD00A2B983 /* MyDocManager.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MyDocManager.h; sourceTree = "<group>"; };
-		E420BE04188574AD00A2B983 /* MyDocument.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MyDocument.cpp; sourceTree = "<group>"; };
+		E420BE04188574AD00A2B983 /* MyDocument.cpp */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 2; lastKnownFileType = sourcecode.cpp.cpp; path = MyDocument.cpp; sourceTree = "<group>"; tabWidth = 2; };
 		E420BE05188574AD00A2B983 /* MyDocument.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MyDocument.h; sourceTree = "<group>"; };
 		E420BE06188574AD00A2B983 /* MyGLCanvas.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MyGLCanvas.cpp; sourceTree = "<group>"; };
 		E420BE07188574AD00A2B983 /* MyGLCanvas.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MyGLCanvas.h; sourceTree = "<group>"; };

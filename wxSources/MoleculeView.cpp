@@ -1097,7 +1097,7 @@ MainViewCallback_frame(MainView *mview, float *rect)
 void
 MainViewCallback_display(MainView *mview)
 {
-	if (mview != NULL && mview->ref != NULL) {
+	if (gUseGUI && mview != NULL && mview->ref != NULL) {
 		wxWindow *canvas = ((MoleculeView *)(mview->ref))->canvas;
 		canvas->Refresh();
 		canvas->Update();
@@ -1107,7 +1107,7 @@ MainViewCallback_display(MainView *mview)
 void
 MainViewCallback_makeFront(MainView *mview)
 {
-	if (mview != NULL && mview->ref != NULL) {
+	if (gUseGUI && mview != NULL && mview->ref != NULL) {
 		((MoleculeView *)(mview->ref))->GetFrame()->Raise();
 	}
 }
@@ -1115,7 +1115,7 @@ MainViewCallback_makeFront(MainView *mview)
 void
 MainViewCallback_setNeedsDisplay(MainView *mview, int flag)
 {
-  if (mview != NULL && mview->ref != NULL) {
+  if (gUseGUI && mview != NULL && mview->ref != NULL) {
     if (flag)
       ((MoleculeView *)(mview->ref))->canvas->Refresh();
   }
@@ -1124,7 +1124,7 @@ MainViewCallback_setNeedsDisplay(MainView *mview, int flag)
 void
 MainViewCallback_updateCanvas(MainView *mview)
 {
-    if (mview != NULL && mview->ref != NULL) {
+    if (gUseGUI && mview != NULL && mview->ref != NULL) {
         ((MoleculeView *)(mview->ref))->canvas->Update();
     }
 }
@@ -1132,7 +1132,7 @@ MainViewCallback_updateCanvas(MainView *mview)
 void
 MainViewCallback_setKeyboardFocus(MainView *mview)
 {
-	if (mview != NULL && mview->ref != NULL) {
+	if (gUseGUI && mview != NULL && mview->ref != NULL) {
 		((MoleculeView *)(mview->ref))->canvas->SetFocus();
 	}
 }
@@ -1183,7 +1183,7 @@ MainViewCallback_drawLabel(MainView *mview, const float *pos, const char *label)
 void
 MainViewCallback_drawInfoText(MainView *mview, const char *label)
 {
-	if (mview != NULL && mview->ref != NULL) {
+	if (gUseGUI && mview != NULL && mview->ref != NULL) {
 		wxString labelstr(label, WX_DEFAULT_CONV);
 		((MoleculeView *)(mview->ref))->infotext->SetLabel(labelstr);
 	}
@@ -1393,6 +1393,8 @@ MainViewCallback_labelSize(struct Label *label, float *outSize)
 int
 MainViewCallback_exportGraphic(MainView *mview, const char *fname, float scale, int bg_color, int width, int height)
 {
+    if (!gUseGUI)
+        return 0;
 	if (mview != NULL && mview->ref != NULL && ((MoleculeView *)(mview->ref))->MolDocument() != NULL) {
 		wxString fnamestr(fname, wxConvFile);
 		return ((MoleculeView *)(mview->ref))->DoExportGraphic(fnamestr, scale, bg_color, width, height);

@@ -340,8 +340,11 @@ static VALUE
 s_Kernel_ExportToClipboard(VALUE self, VALUE sval)
 {
 #if !defined(__CMDMAC__)
-	const char *s = StringValuePtr(sval);
+    const char *s;
 	char *ns;
+    if (!gUseGUI)
+        return Qnil;
+    s = StringValuePtr(sval);
 #if __WXMSW__
 	/*  Convert the end-of-line characters  */
 	{	const char *p; int nc; char *np;
@@ -5395,6 +5398,11 @@ s_Molecule_Open(int argc, VALUE *argv, VALUE self)
 	const char *p;
 	Molecule *mp;
 	VALUE iflag;
+    
+    if (!gUseGUI) {
+        rb_raise(rb_eMolbyError, "Molecule.open is not usable in non-GUI mode. Use Molecule.new instead.");
+    }
+    
 	rb_scan_args(argc, argv, "01", &fname);
 	if (NIL_P(fname))
 		p = NULL;
@@ -12065,29 +12073,66 @@ void
 Ruby_showError(int status)
 {
 	static const int tag_raise = 6;
+    char *main_message = "Molby script error";
 	char *msg = NULL, *msg2;
 	VALUE val, backtrace;
 	int interrupted = 0;
+    int exit_status = -1;
 	if (status == tag_raise) {
 		VALUE errinfo = rb_errinfo();
 		VALUE eclass = CLASS_OF(errinfo);
 		if (eclass == rb_eInterrupt) {
-			msg = "Interrupt";
+            main_message = "Molby script interrupted";
+            msg = "Interrupt";
 			interrupted = 1;
-		}
+        } else if (eclass == rb_eSystemExit) {
+            main_message = "Molby script exit";
+            interrupted = 2;
+            val = rb_eval_string_protect("$!.status", &status);
+            if (status == 0) {
+                exit_status = NUM2INT(rb_Integer(val));
+                asprintf(&msg, "Molby script exit with status %d", exit_status);
+            } else {
+                asprintf(&msg, "Molby script exit with unknown status");
+            }
+        }
 	}
 	gMolbyRunLevel++;
-	backtrace = rb_eval_string_protect("$backtrace = $!.backtrace.join(\"\\n\")", &status);
-	if (msg == NULL) {
-		val = rb_eval_string_protect("$!.to_s", &status);
-		if (status == 0)
-			msg = RSTRING_PTR(val);
-		else msg = "(message not available)";
-	}
-	asprintf(&msg2, "%s\n%s", msg, RSTRING_PTR(backtrace));
-	MyAppCallback_messageBox(msg2, (interrupted == 0 ? "Molby script error" : "Molby script interrupted"), 0, 3);
+    if (exit_status != 0) {
+        backtrace = rb_eval_string_protect("$backtrace = $!.backtrace.join(\"\\n\")", &status);
+        if (msg == NULL) {
+            val = rb_eval_string_protect("$!.to_s", &status);
+            if (status == 0)
+                msg = RSTRING_PTR(val);
+            else
+                msg = "(message not available)";
+        }
+        asprintf(&msg2, "%s\n%s", msg, RSTRING_PTR(backtrace));
+    } else {
+        msg2 = strdup(msg);
+    }
+	MyAppCallback_messageBox(msg2, main_message, 0, 3);
 	free(msg2);
+    if (interrupted == 2) {
+        free(msg);
+        if (!gUseGUI && exit_status == 0)
+            exit(0);  // Capture exit(0) here and force exit
+    }
 	gMolbyRunLevel--;
+}
+
+/*  Wrapper function for rb_load_protect or rb_eval_string_protect. Used only in non-GUI mode.  */
+int
+Molby_loadScript(const char *script, int from_file)
+{
+    int status;
+    gMolbyRunLevel++;
+    if (from_file)
+        rb_load_protect(rb_str_new2(script), 0, &status);
+    else
+        rb_eval_string_protect(script, &status);
+    gMolbyRunLevel--;
+    return status;
 }
 
 void
@@ -12113,23 +12158,28 @@ Molby_getDescription(char **versionString, char **auxString)
              "Molby",
 #endif
              gVersionString, revisionString, gCopyrightString, gLastBuildString);
-    asprintf(&s2,
-#if !defined(__CMDMAC__)
-			 "\nIncluding:\n"
-			 "%s"
-#else
-			 "Including "
-#endif
-			 "ruby %s, http://www.ruby-lang.org/\n"
-			 "%s\n"
-			 "FFTW 3.3.2, http://www.fftw.org/\n"
-			 "  Copyright (C) 2003, 2007-11 Matteo Frigo"
-			 "  and Massachusetts Institute of Technology",
-			 
-#if !defined(__CMDMAC__)
-			 MyAppCallback_getGUIDescriptionString(),
-#endif
-			 gRubyVersion, gRubyCopyright);
+    if (gUseGUI) {
+        asprintf(&s2,
+                 "\nIncluding:\n"
+                 "%s"
+                 "ruby %s, http://www.ruby-lang.org/\n"
+                 "%s\n"
+                 "FFTW 3.3.2, http://www.fftw.org/\n"
+                 "  Copyright (C) 2003, 2007-11 Matteo Frigo"
+                 "  and Massachusetts Institute of Technology",
+                 MyAppCallback_getGUIDescriptionString(),
+                 gRubyVersion, gRubyCopyright);
+    } else {
+        asprintf(&s2,
+                 "Including "
+                 "ruby %s, http://www.ruby-lang.org/\n"
+                 "%s\n"
+                 "FFTW 3.3.2, http://www.fftw.org/\n"
+                 "  Copyright (C) 2003, 2007-11 Matteo Frigo"
+                 "  and Massachusetts Institute of Technology",
+                 gRubyVersion, gRubyCopyright);
+
+    }
 	if (revisionString[0] != 0)
 		free(revisionString);
 	if (versionString != NULL)
@@ -12150,11 +12200,7 @@ Molby_startup(const char *script, const char *dir)
 	{
 		gRubyVersion = strdup(ruby_version);
 		asprintf(&gRubyCopyright, "%sCopyright (C) %d-%d %s",
-#if defined(__CMDMAC__)
-				 "",
-#else
 				 "  ",  /*  Indent for displaying in About dialog  */
-#endif
 				 RUBY_BIRTH_YEAR, RUBY_RELEASE_YEAR, RUBY_AUTHOR);
 	}
 	
@@ -12187,44 +12233,34 @@ Molby_startup(const char *script, const char *dir)
 		}
     } */
 
-#if defined(__CMDMAC__)
-    {
+    if (!gUseGUI) {
         char *wbuf2;
         Molby_getDescription(&wbuf, &wbuf2);
-        printf("%s\n%s\n", wbuf, wbuf2);
+        MyAppCallback_showScriptMessage("%s\n%s\n", wbuf, wbuf2);
         free(wbuf);
         free(wbuf2);
     }
-#endif
 	
 	/*  Read atom display parameters  */
 	if (ElementParameterInitialize("element.par", &wbuf) != 0) {
-#if defined(__CMDMAC__)
-		fprintf(stderr, "%s\n", wbuf);
-#else
-		MyAppCallback_setConsoleColor(1);
-		MyAppCallback_showScriptMessage("%s", wbuf);
-		MyAppCallback_setConsoleColor(0);
-#endif
+        MyAppCallback_setConsoleColor(1);
+        MyAppCallback_showScriptMessage("%s", wbuf);
+        MyAppCallback_setConsoleColor(0);
 		free(wbuf);
 	}
 	
 	/*  Read default parameters  */
 	ParameterReadFromFile(gBuiltinParameters, "default.par", &wbuf, NULL);
 	if (wbuf != NULL) {
-#if defined(__CMDMAC__)
-		fprintf(stderr, "%s\n", wbuf);
-#else
-		MyAppCallback_setConsoleColor(1);
-		MyAppCallback_showScriptMessage("%s", wbuf);
-		MyAppCallback_setConsoleColor(0);
-#endif
+        MyAppCallback_setConsoleColor(1);
+        MyAppCallback_showScriptMessage("%s", wbuf);
+        MyAppCallback_setConsoleColor(0);
 		free(wbuf);
 	}
 		
 	/*  Initialize Ruby interpreter  */
 #if __WXMSW__
-	{
+	if (gUseGUI) {
 		/*  On Windows, fileno(stdin|stdout|stderr) returns -2 and
 		    it causes rb_bug() (= fatal error) during ruby_init().
 		    As a workaround, these standard streams are reopend as
@@ -12264,7 +12300,8 @@ Molby_startup(const char *script, const char *dir)
 
 	/*  Define Molby classes  */
 	Init_Molby();
-	RubyDialogInitClass();
+    if (gUseGUI)
+        RubyDialogInitClass();
 
 	rb_define_const(rb_mMolby, "ResourcePath", val);
 	val = Ruby_NewFileStringValue(dir);
@@ -12283,32 +12320,29 @@ Molby_startup(const char *script, const char *dir)
 	rb_define_const(rb_mMolby, "DocumentDirectory", val);
 	free(p);
 	
-#if defined(__CMDMAC__)
-	rb_define_const(rb_mMolby, "HasGUI", Qfalse);
-#else
-	rb_define_const(rb_mMolby, "HasGUI", Qtrue);
-#endif
+    if (gUseGUI)
+        rb_define_const(rb_mMolby, "HasGUI", Qtrue);
+    else
+        rb_define_const(rb_mMolby, "HasGUI", Qfalse);
 
-#if !__CMDMAC__
-	
-	/*  Create objects for stdout and stderr  */
-	val = rb_funcall(rb_cObject, rb_intern("new"), 0);
-	rb_define_singleton_method(val, "write", s_StandardOutput, 1);
-	rb_define_singleton_method(val, "flush", s_FlushConsoleOutput, 0);
-	rb_gv_set("$stdout", val);
-	val = rb_funcall(rb_cObject, rb_intern("new"), 0);
-	rb_define_singleton_method(val, "write", s_StandardErrorOutput, 1);
-	rb_define_singleton_method(val, "flush", s_FlushConsoleOutput, 0);
-	rb_gv_set("$stderr", val);
+    {
+        /*  Create objects for stdout and stderr  */
+        val = rb_funcall(rb_cObject, rb_intern("new"), 0);
+        rb_define_singleton_method(val, "write", s_StandardOutput, 1);
+        rb_define_singleton_method(val, "flush", s_FlushConsoleOutput, 0);
+        rb_gv_set("$stdout", val);
+        val = rb_funcall(rb_cObject, rb_intern("new"), 0);
+        rb_define_singleton_method(val, "write", s_StandardErrorOutput, 1);
+        rb_define_singleton_method(val, "flush", s_FlushConsoleOutput, 0);
+        rb_gv_set("$stderr", val);
 
-	/*  Create objects for stdin  */
-	val = rb_funcall(rb_cObject, rb_intern("new"), 0);
-	rb_define_singleton_method(val, "gets", s_StandardInputGets, -1);
-	rb_define_singleton_method(val, "readline", s_StandardInputGets, -1);
-	rb_define_singleton_method(val, "method_missing", s_StandardInputMethodMissing, -1);
-	rb_gv_set("$stdin", val);
-	
-#endif
+        /*  Create objects for stdin  */
+        val = rb_funcall(rb_cObject, rb_intern("new"), 0);
+        rb_define_singleton_method(val, "gets", s_StandardInputGets, -1);
+        rb_define_singleton_method(val, "readline", s_StandardInputGets, -1);
+        rb_define_singleton_method(val, "method_missing", s_StandardInputMethodMissing, -1);
+        rb_gv_set("$stdin", val);
+    }
 	
 	/*  Global variable to hold error information  */
 	rb_define_variable("$backtrace", &gMolbyBacktrace);
@@ -12321,15 +12355,12 @@ Molby_startup(const char *script, const char *dir)
 	gScriptMenuCommands = rb_ary_new();
 	gScriptMenuEnablers = rb_ary_new();
 	
-#if !__CMDMAC__
-	/*  Register interrupt check code  */
-	rb_add_event_hook(s_Event_Callback, RUBY_EVENT_ALL, Qnil);
-#endif
-	
-#if !__CMDMAC__
-	/*  Start interval timer (for periodic polling of interrupt); firing every 50 msec  */
-	s_SetIntervalTimer(0, 50);
-#endif
+    if (gUseGUI) {
+        /*  Register interrupt check code  */
+        rb_add_event_hook(s_Event_Callback, RUBY_EVENT_ALL, Qnil);
+        /*  Start interval timer (for periodic polling of interrupt); firing every 50 msec  */
+        s_SetIntervalTimer(0, 50);
+    }
 	
 	/*  Read the startup script  */
 	if (script != NULL && script[0] != 0) {

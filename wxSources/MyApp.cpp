@@ -82,6 +82,9 @@ MyFrame *frame = (MyFrame *) NULL;
 
 bool gInitCompleted = false;
 
+int gSuppressConsole = 0;  //  Non-zero if console output should be suppressed in non-GUI mode
+int gUseGUI = 1;
+
 IMPLEMENT_APP(MyApp)
 
 //IMPLEMENT_CLASS(MyApp, wxApp)
@@ -195,6 +198,57 @@ bool MyApp::OnInit(void)
 	wxSystemOptions::SetOption(wxT("mac.listctrl.always_use_generic"), 1);
 	wxSystemOptions::SetOption(wxT("osx.openfiledialog.always-show-types"), 1);
 #endif
+
+    //  Called with a batch mode?
+    if (argc > 1 && strcmp(argv[1], "-b") == 0) {
+        gUseGUI = 0;
+        gSuppressConsole = 1;
+        
+        if (argc > 2 && strcmp(argv[2], "-v") == 0)
+            gSuppressConsole = 0;
+
+        static const char fname[] = "startup.rb";
+        wxString dirname = FindResourcePath();
+        
+        dirname += wxFILE_SEP_PATH;
+        dirname += wxT("Scripts");
+        wxString cwd = wxGetCwd();
+        wxSetWorkingDirectory(dirname);
+        
+        wxString fnamestr(fname, wxConvFile);
+        Molby_startup(wxFileExists(fnamestr) ? fname : NULL, (const char *)dirname.mb_str(wxConvFile));
+
+        wxSetWorkingDirectory(cwd);
+        
+        //  Build ARGV
+        int c = (gSuppressConsole ? 2 : 3);
+        int i = 1;
+        int status;
+        if (c >= argc) {
+            if (gSuppressConsole) {
+                fprintf(stderr, "The script is not given\n");
+                exit(1);
+            } else exit(0);  //  Show startup message and exit
+        }
+        wxString argv_script;
+        while (i + c < argc) {
+            wxString arg(argv[i + c]);
+            arg.Replace(wxT("\'"), wxT("\\\'"));
+            argv_script += wxString::Format(wxT("ARGV[%d] = \'"), i - 1);
+            argv_script += arg;
+            argv_script += wxT("\'\n");
+            i++;
+        }
+        gSuppressConsole = 0;  //  Console output is no longer suppressed (startup is done)
+        status = Molby_loadScript(argv_script.mb_str(wxConvFile), 0);
+        if (status == 0)
+            status = Molby_loadScript(argv[c].mb_str(wxConvFile), 1);
+        if (status != 0) {
+            Ruby_showError(status);
+            exit(1);
+        }
+        exit(0);
+    }
 
 #if __WXMSW__
 	{
@@ -671,9 +725,10 @@ sModifyMenuForFilterMode(wxMenuBar *mbar)
 void
 MyApp::ShowProgressPanel(const char *mes)
 {
-	wxString string((mes ? mes : ""), WX_DEFAULT_CONV);
-	if (m_progressDialog == NULL) {
+    wxString string((mes ? mes : ""), WX_DEFAULT_CONV);
+    if (m_progressDialog == NULL) {
         m_progressDialog = new wxProgressDialog(wxT("Progress"), mes);
+    }
 /*
 #if __WXMAC__
 		{
@@ -688,7 +743,6 @@ MyApp::ShowProgressPanel(const char *mes)
 		m_progressCanceled = false;
 		m_progressValue = -1;
 */
-    }
 }
 
 void
@@ -739,13 +793,13 @@ MyApp::SetProgressMessage(const char *mes)
 int
 MyApp::IsInterrupted()
 {
-	if (m_progressDialog != NULL)
+    if (m_progressDialog != NULL)
         return m_progressDialog->WasCancelled();
-	else {
-		if (::wxGetKeyState(WXK_ESCAPE))
-			return 1;
-		else return 0;		
-	}
+    else {
+        if (::wxGetKeyState(WXK_ESCAPE))
+            return 1;
+        else return 0;
+    }
 }
 
 void
@@ -1862,12 +1916,16 @@ MyAppCallback_getGUIDescriptionString(void)
 void
 MyAppCallback_loadGlobalSettings(void)
 {
+    if (!gUseGUI)
+        return;
 	wxGetApp().LoadDefaultSettings();
 }
 
 void
 MyAppCallback_saveGlobalSettings(void)
 {
+    if (!gUseGUI)
+        return;
 	wxGetApp().SaveDefaultSettings();
 }
 
@@ -1881,14 +1939,18 @@ MyAppCallback_saveGlobalSettings(void)
 char *
 MyAppCallback_getGlobalSettings(const char *key)
 {
-	wxString wxkey(key, WX_DEFAULT_CONV);
-	wxString wxvalue = wxGetApp().GetDefaultSetting(wxkey);
-	return strdup(wxvalue.mb_str(WX_DEFAULT_CONV));
+    if (!gUseGUI)
+        return NULL;
+    wxString wxkey(key, WX_DEFAULT_CONV);
+    wxString wxvalue = wxGetApp().GetDefaultSetting(wxkey);
+    return strdup(wxvalue.mb_str(WX_DEFAULT_CONV));
 }
 
 void
 MyAppCallback_setGlobalSettings(const char *key, const char *value)
 {
+    if (!gUseGUI)
+        return;
 	wxString wxkey(key, WX_DEFAULT_CONV);
 	wxString wxvalue(value, WX_DEFAULT_CONV);
 	wxGetApp().SetDefaultSetting(wxkey, wxvalue);
@@ -1928,36 +1990,50 @@ MyAppCallback_setGlobalSettingsWithType(const char *key, int type, const void *p
 int
 MyAppCallback_checkInterrupt(void)
 {
-	return wxGetApp().IsInterrupted();
+    if (!gUseGUI)
+        return 0;
+    return wxGetApp().IsInterrupted();
 }
 
 void
 MyAppCallback_showProgressPanel(const char *msg)
 {
-	wxGetApp().ShowProgressPanel(msg);
+    if (!gUseGUI)
+        return;
+    wxGetApp().ShowProgressPanel(msg);
 }
 
 void
 MyAppCallback_hideProgressPanel(void)
 {
-	wxGetApp().HideProgressPanel();
+    if (!gUseGUI)
+        return;
+    wxGetApp().HideProgressPanel();
 }
 
 void
 MyAppCallback_setProgressValue(double dval)
 {
-	wxGetApp().SetProgressValue(dval);
+    if (!gUseGUI)
+        return;
+    wxGetApp().SetProgressValue(dval);
 }
 
 void
 MyAppCallback_setProgressMessage(const char *msg)
 {
-	wxGetApp().SetProgressMessage(msg);
+    if (!gUseGUI)
+        return;
+    wxGetApp().SetProgressMessage(msg);
 }
 
 int
 MyAppCallback_getTextWithPrompt(const char *prompt, char *buf, int bufsize)
 {
+    if (!gUseGUI) {
+        buf[0] = 0;
+        return 0;
+    }
 	wxDialog *dialog = new wxDialog(NULL, -1, _T("Input request"), wxDefaultPosition);
 	wxStaticText *stext;
 	wxTextCtrl *tctrl;
@@ -1995,6 +2071,11 @@ MyAppCallback_getTextWithPrompt(const char *prompt, char *buf, int bufsize)
 int
 MyAppCallback_messageBox(const char *message, const char *title, int flags, int icon)
 {
+    if (!gUseGUI) {
+        printf("%s\n%s\n", title, message);
+        return 1;
+    }
+    
 	int wxflags, wxicon, retval;
 	if (!wxGetApp().IsMainLoopRunning()) {
 		MyAppCallback_setConsoleColor(1);
@@ -2019,6 +2100,12 @@ MyAppCallback_messageBox(const char *message, const char *title, int flags, int 
 void
 MyAppCallback_errorMessageBox(const char *fmt, ...)
 {
+    if (!gUseGUI) {
+        va_list ap;
+        va_start(ap, fmt);
+        vfprintf(stderr, fmt, ap);
+        return;
+    }
 	char *s;
 	int need_free = 0;
 	va_list ap;
@@ -2075,18 +2162,26 @@ MyAppCallback_getDocumentHomeDir(void)
 int
 MyAppCallback_registerScriptMenu(const char *title)
 {
+    if (!gUseGUI)
+        return -1;
 	return wxGetApp().RegisterScriptMenu(title);
 }
 
 int
 MyAppCallback_lookupScriptMenu(const char *title)
 {
+    if (!gUseGUI)
+        return 0;
 	return wxGetApp().LookupScriptMenu(title);
 }
 
 RubyValue
 MyAppCallback_executeScriptFromFile(const char *cpath, int *status)
 {
+    if (!gUseGUI) {
+        return 0;
+    }
+    
 	RubyValue retval;
 	wxString cwd = wxFileName::GetCwd();
 	wxString path(cpath, wxConvFile);
@@ -2173,6 +2268,8 @@ MyAppCallback_executeScriptFromFile(const char *cpath, int *status)
 
 void MyAppCallback_beginUndoGrouping(void)
 {
+    if (!gUseGUI)
+        return;
 	wxList &doclist = wxGetApp().DocManager()->GetDocuments();
 	wxList::iterator iter;
 	for (iter = doclist.begin(); iter != doclist.end(); ++iter) {
@@ -2182,6 +2279,8 @@ void MyAppCallback_beginUndoGrouping(void)
 
 void MyAppCallback_endUndoGrouping(void)
 {
+    if (!gUseGUI)
+        return;
 	wxList &doclist = wxGetApp().DocManager()->GetDocuments();
 	wxList::iterator iter;
 	for (iter = doclist.begin(); iter != doclist.end(); ++iter) {
@@ -2191,11 +2290,15 @@ void MyAppCallback_endUndoGrouping(void)
 
 int MyAppCallback_callSubProcess(const char *cmdline, const char *procname, int (*callback)(void *), void *callback_data, FILE *output, FILE *errout, int *exitstatus_p, int *pid_p)
 {
+    if (!gUseGUI)
+        return system(cmdline);
 	return wxGetApp().CallSubProcess(cmdline, procname, callback, callback_data, output, errout, exitstatus_p, pid_p);
 }
 
 void MyAppCallback_showConsoleWindow(void)
 {
+    if (!gUseGUI)
+        return;
 	ConsoleFrame *frame = wxGetApp().GetConsoleFrame();
 	frame->Show(true);
 	frame->Raise();
@@ -2203,17 +2306,23 @@ void MyAppCallback_showConsoleWindow(void)
 
 void MyAppCallback_hideConsoleWindow(void)
 {
+    if (!gUseGUI)
+        return;
 	ConsoleFrame *frame = wxGetApp().GetConsoleFrame();
 	frame->Hide();
 }
 
 void MyAppCallback_bell(void)
 {
-	wxBell();
+    if (!gUseGUI)
+        return;
+    wxBell();
 }
 
 int MyAppCallback_playSound(const char *filename, int flag)
 {
+    if (!gUseGUI)
+        return 0;
 	unsigned uflag = wxSOUND_SYNC;
 	if (flag == 1)
 		uflag = wxSOUND_ASYNC;
@@ -2226,6 +2335,8 @@ int MyAppCallback_playSound(const char *filename, int flag)
 
 void MyAppCallback_stopSound(void)
 {
+    if (!gUseGUI)
+        return;
 	wxSound::Stop();
 }
 

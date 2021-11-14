@@ -523,6 +523,13 @@ ConsoleFrame::EmptyBuffer(bool showRubyPrompt)
 int
 MyAppCallback_showScriptMessage(const char *fmt, ...)
 {
+    if (!gUseGUI) {
+        if (!gSuppressConsole) {
+            va_list ap;
+            va_start(ap, fmt);
+            return vprintf(fmt, ap);
+        } else return 0;
+    }
 	if (fmt != NULL) {
 		char *p;
 		va_list ap;
@@ -552,6 +559,8 @@ MyAppCallback_showScriptMessage(const char *fmt, ...)
 void
 MyAppCallback_setConsoleColor(int color)
 {
+    if (!gUseGUI)
+        return;
 	wxGetApp().GetConsoleFrame()->SetConsoleColor(color);
 }
 

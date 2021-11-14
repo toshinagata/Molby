@@ -1520,6 +1520,8 @@ MyDocumentFromMolecule(Molecule *mp)
 Molecule *
 MoleculeCallback_openNewMolecule(const char *fname)
 {
+  if (!gUseGUI)
+    return NULL;
 	wxDocument *doc;
 	MyDocManager *manager = wxGetApp().DocManager();
 	if (fname == NULL || *fname == 0) {
@@ -1536,6 +1538,8 @@ MoleculeCallback_openNewMolecule(const char *fname)
 void
 MoleculeCallback_notifyModification(Molecule *mp, int now_flag)
 {
+  if (!gUseGUI)
+    return;
 	MyDocument *doc = MyDocumentFromMolecule(mp);
 	if (doc && !doc->isModifyNotificationSent) {
 		doc->isModifyNotificationSent = true;
@@ -1646,6 +1650,8 @@ MoleculeCallback_isDataInPasteboard(const char *type)
 Molecule *
 MoleculeCallback_currentMolecule(void)
 {
+  if (!gUseGUI)
+    return NULL;
   MainView *mview = MainViewCallback_activeView();
   if (mview != NULL)
     return mview->mol;
@@ -1655,6 +1661,8 @@ MoleculeCallback_currentMolecule(void)
 Molecule *
 MoleculeCallback_moleculeAtIndex(int idx)
 {
+  if (!gUseGUI)
+    return NULL;
   MainView *mview = MainViewCallback_viewWithTag(idx);
   if (mview != NULL)
     return mview->mol;
@@ -1670,6 +1678,10 @@ MoleculeCallback_moleculeAtOrderedIndex(int idx)
 void
 MoleculeCallback_displayName(Molecule *mol, char *buf, int bufsize)
 {
+  if (!gUseGUI) {
+    buf[0] = 0;
+    return;
+  }
   MyDocument *doc = MyDocumentFromMolecule(mol);
   if (doc != NULL) {
     wxString fname;
@@ -1684,6 +1696,13 @@ MoleculeCallback_displayName(Molecule *mol, char *buf, int bufsize)
 void
 MoleculeCallback_pathName(Molecule *mol, char *buf, int bufsize)
 {
+  if (!gUseGUI) {
+    if (mol != NULL && mol->path != NULL) {
+      strncpy(buf, mol->path, bufsize - 1);
+      buf[bufsize - 1] = 0;
+    } else buf[0] = 0;
+    return;
+  }
 	MyDocument *doc = MyDocumentFromMolecule(mol);
 	if (doc != NULL && doc->hasFile)
 		MainViewCallback_getFilename(mol->mview, buf, bufsize);
@@ -1693,6 +1712,9 @@ MoleculeCallback_pathName(Molecule *mol, char *buf, int bufsize)
 int
 MoleculeCallback_setDisplayName(Molecule *mol, const char *name)
 {
+  if (!gUseGUI) {
+    return 0;
+  }
 	MyDocument *doc = MyDocumentFromMolecule(mol);
 	if (doc == NULL || doc->hasFile)
 		return 1; /*  Cannot change file-associated window title  */
@@ -1705,13 +1727,15 @@ MoleculeCallback_setDisplayName(Molecule *mol, const char *name)
 void
 MoleculeCallback_lockMutex(void *mutex)
 {
-	((wxMutex *)mutex)->Lock();
+  if (gUseGUI)
+    ((wxMutex *)mutex)->Lock();
 }
 
 void
 MoleculeCallback_unlockMutex(void *mutex)
 {
-	((wxMutex *)mutex)->Unlock();
+  if (gUseGUI)
+    ((wxMutex *)mutex)->Unlock();
 }
 
 void
@@ -1747,6 +1771,8 @@ MoleculeCallback_cannotModifyMoleculeDuringMDError(Molecule *mol)
 int
 MoleculeCallback_callSubProcessAsync(Molecule *mol, const char *cmd, int (*callback)(Molecule *, int), int (*timerCallback)(Molecule *, int), FILE *output, FILE *errout)
 {
+  if (!gUseGUI)
+    return -1;
 	MyDocument *doc = MyDocumentFromMolecule(mol);
 	if (doc != NULL)
 		return doc->RunSubProcess(cmd, callback, timerCallback, output, errout);
@@ -1756,6 +1782,8 @@ MoleculeCallback_callSubProcessAsync(Molecule *mol, const char *cmd, int (*callb
 void
 MolActionCallback_registerUndo(Molecule *mol, MolAction *action)
 {
+  if (!gUseGUI)
+    return;
 	MyDocument *doc = MyDocumentFromMolecule(mol);
 	if (doc != NULL && doc->IsUndoEnabled())
 		doc->PushUndoAction(action);
@@ -1764,6 +1792,8 @@ MolActionCallback_registerUndo(Molecule *mol, MolAction *action)
 int
 MolActionCallback_setUndoRegistrationEnabled(Molecule *mol, int flag)
 {
+  if (!gUseGUI)
+    return 0;
 	MyDocument *doc = MyDocumentFromMolecule(mol);
 	if (doc != NULL) {
 		doc->SetUndoEnabled(flag);
@@ -1774,6 +1804,8 @@ MolActionCallback_setUndoRegistrationEnabled(Molecule *mol, int flag)
 int
 MolActionCallback_isUndoRegistrationEnabled(Molecule *mol)
 {
+  if (!gUseGUI)
+    return 0;
 	MyDocument *doc = MyDocumentFromMolecule(mol);
 	if (doc != NULL && doc->IsUndoEnabled())
 		return 1;
