@@ -15,7 +15,6 @@
 			);
 			dependencies = (
 				E4CB37141FE4FF23001BB75E /* PBXTargetDependency */,
-				E4CB37161FE4FF23001BB75E /* PBXTargetDependency */,
 				E4CB37191FE50707001BB75E /* PBXTargetDependency */,
 				E4B710FF2306BD0A000A77EB /* PBXTargetDependency */,
 			);
@@ -135,13 +134,6 @@
 			proxyType = 1;
 			remoteGlobalIDString = 8D1107260486CEB800E47090;
 			remoteInfo = Molby;
-		};
-		E4CB37151FE4FF23001BB75E /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 29B97313FDCFA39411CA2CEA /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = E49BFB751886E2E400188237;
-			remoteInfo = Molby_command;
 		};
 		E4CB37181FE50707001BB75E /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -682,7 +674,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "rm -rf \"$TARGET_BUILD_DIR/Molby.app/Contents/Resources/MolbyDoc\"\ncp -a \"$PROJECT_DIR/../Documents/MolbyDoc\" \"$TARGET_BUILD_DIR/Molby.app/Contents/Resources/\"\nif [ \"${BUILD_STYLE:=$CONFIGURATION}\" = \"Release\" ]; then\n  mkdir -p \"$PROJECT_DIR/../latest_binaries/Molby\" || exit 1\n  rm -rf \"$PROJECT_DIR/../latest_binaries/Molby/Molby.app\" || exit 1\n  (cd \"$TARGET_BUILD_DIR\"; cp -a Molby.app \"$PROJECT_DIR/../latest_binaries/Molby\") || exit 1\nfi\nexit 0\n";
+			shellScript = "rm -rf \"$TARGET_BUILD_DIR/Molby.app/Contents/Resources/MolbyDoc\"\ncp -a \"$PROJECT_DIR/../Documents/MolbyDoc\" \"$TARGET_BUILD_DIR/Molby.app/Contents/Resources/\"\nif [ \"${BUILD_STYLE:=$CONFIGURATION}\" = \"Release\" ]; then\n  rm -rf \"$PROJECT_DIR/../latest_binaries/Molby.app\" || exit 1\n  (cd \"$TARGET_BUILD_DIR\"; cp -a Molby.app \"$PROJECT_DIR/../latest_binaries\") || exit 1\nfi\nexit 0\n";
 		};
 		E43C5DE818E57C56004FE397 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -759,7 +751,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "if [ \"${BUILD_STYLE:=$CONFIGURATION}\" = \"Release\" ]; then\n  (cd \"$PROJECT_DIR/../latest_binaries\" && rm -f MolbyMac.zip && zip -r MolbyMac.zip Molby -x \\*.DS_Store -x \\*.svn*) || exit 1\n  (cd \"$PROJECT_DIR/../Documents\" && /usr/bin/ruby makedoc.rb && cp -a MolbyDoc \"$PROJECT_DIR/../latest_binaries\") || exit 1\n  (cd \"$PROJECT_DIR/../latest_binaries\" && zip -r MolbyDoc.zip MolbyDoc -x \\*.DS_Store -x \\*.svn*) || exit 1\n#(cd \"$PROJECT_DIR/../build-win32\"; PATH=/usr/local/homebrew/bin:$PATH; make setup) || exit 1\n  (cd \"$PROJECT_DIR/../build-win\"; PATH=/usr/local/homebrew/bin:$PATH; make setup) || exit 1\nfi\n";
+			shellScript = "if [ \"${BUILD_STYLE:=$CONFIGURATION}\" = \"Release\" ]; then\n  (cd \"$PROJECT_DIR/../latest_binaries\" && rm -f MolbyMac.zip && zip -r MolbyMac.zip Molby.app -x \\*.DS_Store -x \\*.svn*) || exit 1\n  (cd \"$PROJECT_DIR/../Documents\" && /usr/bin/ruby makedoc.rb && cp -a MolbyDoc \"$PROJECT_DIR/../latest_binaries\") || exit 1\n  (cd \"$PROJECT_DIR/../latest_binaries\" && zip -r MolbyDoc.zip MolbyDoc -x \\*.DS_Store -x \\*.svn*) || exit 1\n#(cd \"$PROJECT_DIR/../build-win32\"; PATH=/usr/local/homebrew/bin:$PATH; make setup) || exit 1\n  (cd \"$PROJECT_DIR/../build-win\"; PATH=/usr/local/homebrew/bin:$PATH; make setup) || exit 1\nfi\n";
 		};
 		E4FC7B57183E516E0064FB2E /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -874,11 +866,6 @@
 			isa = PBXTargetDependency;
 			target = 8D1107260486CEB800E47090 /* Molby */;
 			targetProxy = E4CB37131FE4FF23001BB75E /* PBXContainerItemProxy */;
-		};
-		E4CB37161FE4FF23001BB75E /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = E49BFB751886E2E400188237 /* Molby_command */;
-			targetProxy = E4CB37151FE4FF23001BB75E /* PBXContainerItemProxy */;
 		};
 		E4CB37191FE50707001BB75E /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
