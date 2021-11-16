@@ -235,6 +235,8 @@ class MyApp: public wxApp
 	void CheckIfAllWindowsAreGoneHandler(wxCommandEvent &event);
 	void CheckIfAllWindowsAreGone(wxTopLevelWindow *frame);
 
+    void OnHelp(wxCommandEvent& event);
+
 protected:
     MyDocManager* m_docManager;
 	wxProgressDialog *m_progressDialog;

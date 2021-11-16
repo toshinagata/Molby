@@ -99,6 +99,7 @@ BEGIN_EVENT_TABLE(MyApp, wxApp)
 	EVT_MENU(myMenuID_ViewGlobalParameters, MyApp::OnViewGlobalParameters)
 	EVT_MENU(myMenuID_ViewParameterFilesList, MyApp::OnViewParameterFilesList)
 	EVT_MENU(myMenuID_BringAllWindowsToFront, MyApp::OnBringAllWindowsToFront)
+    EVT_MENU(wxID_HELP, MyApp::OnHelp)
 #if defined(__WXMAC__)
 	EVT_ACTIVATE(MyApp::OnActivate)
 #endif
@@ -436,7 +437,8 @@ MyApp::CreateMenuBar(int kind, wxMenu **out_file_history_menu, wxMenu **out_edit
 		
 		wxMenu *help_menu = new wxMenu;
 		help_menu->Append(wxID_ABOUT, _T("&About...\tF1"));
-		
+        help_menu->Append(wxID_HELP, _T("&Molby Help"));
+
 		wxMenuBar *menu_bar = new wxMenuBar;
 		
 		menu_bar->Append(file_menu, _T("&File"));
@@ -559,7 +561,8 @@ MyApp::CreateMenuBar(int kind, wxMenu **out_file_history_menu, wxMenu **out_edit
 
 	wxMenu *help_menu = new wxMenu;
 	help_menu->Append(wxID_ABOUT, _T("&About...\tF1"));
-	
+    help_menu->Append(wxID_HELP, _T("&Molby Help"));
+
 	wxMenuBar *menu_bar = new wxMenuBar;
 	
 	menu_bar->Append(file_menu, _T("&File"));
@@ -1680,6 +1683,43 @@ MyApp::CheckIfAllWindowsAreGone(wxTopLevelWindow *frame)
 	this->AddPendingEvent(myEvent);
 }
 
+void
+MyApp::OnHelp(wxCommandEvent& WXUNUSED(event) )
+{
+    static wxString url;
+    if (url.IsEmpty()) {
+        url = FindResourcePath();
+#if defined(__WXMSW__)
+        if (url.SubString(0, 1) == wxT("\\\\")) {
+            //  Network drive: convert to the drive letter
+            wxBetterProcess *process = new wxBetterProcess(this, -1);
+            process->Redirect();
+            long pid = ::wxExecute("net use", wxEXEC_ASYNC | wxEXEC_MAKE_GROUP_LEADER, process);
+            if (pid != 0) {
+                wxRegEx re(wxT("^[[:space:]]+([A-Za-z]:)[[:space:]]+(.*)$"));
+                wxString bufstr;
+                while (process->GetLine(bufstr) >= 0) {
+                    bufstr = bufstr.Trim();
+                    if (!bufstr.IsEmpty() && re.Matches(bufstr)) {
+                        wxString dr = re.GetMatch(bufstr, 1);
+                        wxString path = re.GetMatch(bufstr, 2);
+                        if (url.Left(path.Length()) == path) {
+                            url = dr + url.Mid(path.Length());
+                            break;
+                        }
+                    }
+                }
+                process->Detach();
+            }
+        }
+#endif
+        url.Replace(wxFILE_SEP_PATH, wxT("/"));
+        url += "/MolbyDoc/ja/index.html";
+    }
+    wxLaunchDefaultBrowser(wxT("file:///") + url);
+}
+
+
 #pragma mark ====== AboutBox ======
 
 IMPLEMENT_CLASS(AboutDialog, wxDialog)
@@ -1808,19 +1848,21 @@ wxBetterProcess::GetLineSub(wxString &outStr, wxInputStream *stream, wxMemoryBuf
     while (1) {
         p = (char *)mbuf.GetData();
         len = mbuf.GetDataLen();
-        pp = (char *)memchr(p, '\n', len);
-        if (pp == NULL)
-            pp = (char *)memchr(p, '\r', len);
-        if (pp == NULL && stream->GetLastError() == wxSTREAM_EOF) {
-            //  If EOF, then return all remaining data (without '\n')
-            pp = p + mbuf.GetDataLen() - 1;  //  Point to the last char
-        }
-        if (pp != NULL) {
-            //  Return one line and string length
-            outStr = wxString(p, wxConvUTF8, pp - p + 1);
-            memmove(p, pp + 1, len - (pp - p + 1));
-            m_stdout.SetDataLen(len - (pp - p + 1));
-            return pp - p + 1;
+        if (len > 0) {
+            pp = (char *)memchr(p, '\n', len);
+            if (pp == NULL)
+                pp = (char *)memchr(p, '\r', len);
+            if (pp == NULL && stream->GetLastError() == wxSTREAM_EOF) {
+                //  If EOF, then return all remaining data (without '\n')
+                pp = p + mbuf.GetDataLen() - 1;  //  Point to the last char
+            }
+            if (pp != NULL) {
+                //  Return one line and string length
+                outStr = wxString(p, wxConvUTF8, pp - p + 1);
+                memmove(p, pp + 1, len - (pp - p + 1));
+                m_stdout.SetDataLen(len - (pp - p + 1));
+                return pp - p + 1;
+            }
         }
         if (trial > 0) {
             //  stream->Read() is called only once
@@ -1837,7 +1879,7 @@ wxBetterProcess::GetLineSub(wxString &outStr, wxInputStream *stream, wxMemoryBuf
             if (err != wxSTREAM_NO_ERROR && err != wxSTREAM_EOF)
                 return -2;  //  Some read error
             len = stream->LastRead();
-        }
+        } else err = stream->GetLastError();
         if (len > 0)
             mbuf.AppendData(buf, len);
         trial++;
