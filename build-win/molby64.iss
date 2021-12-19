@@ -32,6 +32,10 @@ Source: "build\release\Molby\Scripts\mbsf\fragments\*"; DestDir: {app}\Scripts\m
 Source: "build\release\Molby\Scripts\lib\*"; DestDir: {app}\Scripts\lib
 Source: "build\release\Molby\Scripts\basis_sets\*"; DestDir: {app}\Scripts\basis_sets
 Source: "build\release\Molby\bitmaps\*"; DestDir: {app}\bitmaps
-
+Source: "build\release\Molby\MolbyDoc\en\*"; DestDir: {app}\MolbyDoc\en
+Source: "build\release\Molby\MolbyDoc\en\molby_rb\*"; DestDir: {app}\MolbyDoc\en\molby_rb
+Source: "build\release\Molby\MolbyDoc\ja\*"; DestDir: {app}\MolbyDoc\ja
+Source: "build\release\Molby\MolbyDoc\ja\molby_rb\*"; DestDir: {app}\MolbyDoc\ja\molby_rb
+Source: "build\release\Molby\MolbyDoc\etc\*"; DestDir: {app}\MolbyDoc\etc
 [Icons]
 Name: "{group}\Molby"; Filename: "{app}\Molby.exe"
