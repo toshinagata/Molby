@@ -33,7 +33,7 @@ wxString *gIPCServiceName = NULL;
 bool
 MyClientConnection::OnDisconnect()
 {
-	wxGetApp().m_client->Disconnect();
+	return wxGetApp().m_client->Disconnect();
 }
 
 MyClient::MyClient()
@@ -46,13 +46,15 @@ MyClient::~MyClient()
 	Disconnect();
 }
 	
-void
+bool
 MyClient::Disconnect()
 {
 	if (m_clientConnection != NULL) {
-		m_clientConnection->Disconnect();
-		m_clientConnection = NULL;
-	}
+        if (m_clientConnection->Disconnect()) {
+            m_clientConnection = NULL;
+            return true;
+        } else return false;
+    } else return true;
 }
 
 wxConnectionBase *
@@ -66,7 +68,7 @@ MyClient::OnMakeConnection()
 bool
 MyServerConnection::OnDisconnect()
 {
-	wxGetApp().m_server->Disconnect();
+	return wxGetApp().m_server->Disconnect();
 }
 
 bool
@@ -89,13 +91,15 @@ MyServer::~MyServer()
 	Disconnect();
 }
 
-void
+bool
 MyServer::Disconnect()
 {
 	if (m_serverConnection != NULL) {
-		m_serverConnection->Disconnect();
-		m_serverConnection = NULL;
-	}
+        if (m_serverConnection->Disconnect()) {
+            m_serverConnection = NULL;
+            return true;
+        } else return false;
+    } else return true;
 }
 
 wxConnectionBase *

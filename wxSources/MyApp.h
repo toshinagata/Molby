@@ -237,6 +237,8 @@ class MyApp: public wxApp
 
     void OnHelp(wxCommandEvent& event);
 
+    int FilterEvent(wxEvent &event);
+
 protected:
     MyDocManager* m_docManager;
 	wxProgressDialog *m_progressDialog;

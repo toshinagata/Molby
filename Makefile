@@ -167,9 +167,6 @@ ifeq ($(TARGET_PLATFORM),MSW)
 	cp -r ../Documents/MolbyDoc $(DESTPREFIX)/$(PRODUCT_DIR)
 	mkdir -p $(DESTPREFIX)/$(PRODUCT_DIR)/Scripts/lib
 	for i in $(RUBY_EXTLIB); do cp $(RUBY_DIR)/lib/$$i $(DESTPREFIX)/$(PRODUCT_DIR)/Scripts/lib; done
-ifneq ($(DEBUG),1)
-	for i in $(DESTPREFIX)/$(PRODUCT_DIR)/*.exe $(DESTPREFIX)/$(PRODUCT_DIR)/amber11/bin/*.exe $(DESTPREFIX)/$(PRODUCT_DIR)/ortep3/*.exe; do $(TOOL_PREFIX)strip "$$i"; done
-endif
 endif
 
 ifeq ($(TARGET_PLATFORM),MSW)
@@ -177,6 +174,9 @@ ifneq ($(DEBUG),1)
 install: setup
 
 setup: $(DESTPREFIX) $(DESTPREFIX)/$(PRODUCT_DIR)/$(FINAL_EXECUTABLE)
+ifneq ($(DEBUG),1)
+	for i in $(DESTPREFIX)/$(PRODUCT_DIR)/*.exe $(DESTPREFIX)/$(PRODUCT_DIR)/amber11/bin/*.exe $(DESTPREFIX)/$(PRODUCT_DIR)/ortep3/*.exe; do $(TOOL_PREFIX)strip "$$i"; done
+endif
 	mkdir -p ../latest_binaries
 ifneq ($(WINE_PATH),)
 	($(WINE_PATH)/wine ../../Inno\ Setup\ 5/ISCC.exe molby$(PRODUCT_SUFFIX).iss || exit 1)

@@ -37,7 +37,7 @@ class MyClient: public wxClient
 public:
 	MyClient();
 	~MyClient();
-	void Disconnect();
+	bool Disconnect();
     wxConnectionBase *OnMakeConnection();
 	MyClientConnection *m_clientConnection;
 };
@@ -54,7 +54,7 @@ class MyServer: public wxServer
 public:
 	MyServer();
 	~MyServer();
-	void Disconnect();
+	bool Disconnect();
     wxConnectionBase *OnAcceptConnection(const wxString& topic);
 	MyServerConnection *m_serverConnection;
 };

@@ -1719,6 +1719,34 @@ MyApp::OnHelp(wxCommandEvent& WXUNUSED(event) )
     wxLaunchDefaultBrowser(wxT("file:///") + url);
 }
 
+int
+MyApp::FilterEvent(wxEvent &event)
+{
+#if 0
+    static FILE *fp_eventlog = NULL;
+    if (fp_eventlog == NULL) {
+        char buf[32];
+        int i = 0;
+        while (1) {
+            snprintf(buf, sizeof buf, "Molby_eventlog_%d.log", i);
+            fp_eventlog = fopen(buf, "r");
+            if (fp_eventlog == NULL) {
+                fp_eventlog = fopen(buf, "wt");
+                break;
+            } else {
+                fclose(fp_eventlog);
+                i++;
+            }
+        }
+    }
+    if (fp_eventlog != NULL) {
+        fprintf(fp_eventlog, "%d %d\n", event.GetEventType(), event.GetId());
+        }
+        fflush(fp_eventlog);
+    }
+#endif
+    return -1;
+}
 
 #pragma mark ====== AboutBox ======
 
