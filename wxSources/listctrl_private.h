@@ -151,6 +151,7 @@ protected:
               m_ypos;
     int       m_height;
     int       m_state;
+
 private:
     void Init();
 };
@@ -569,6 +570,9 @@ public:
     // start editing the label of the given item
     wxTextCtrl *EditLabel(long item,
                           wxClassInfo* textControlClass = wxCLASSINFO(wxTextCtrl));
+
+    bool EndEditLabel(bool cancel);
+
     wxTextCtrl *GetEditControl() const
     {
         return m_textctrlWrapper ? m_textctrlWrapper->GetText() : NULL;
@@ -865,6 +869,7 @@ private:
     DECLARE_EVENT_TABLE()
 
     friend class wxGenericListCtrl;
+    friend class wxListCtrlMaxWidthCalculator;
 };
 
 #endif // wxUSE_LISTCTRL
