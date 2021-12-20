@@ -12042,6 +12042,26 @@ Molby_evalRubyScriptOnMolecule(const char *script, Molecule *mol, const char *fn
 	return retval;
 }
 
+/*  For debug  */
+char *
+Ruby_inspectValue(RubyValue value)
+{
+    int status;
+    static char buf[256];
+    VALUE val = (VALUE)value;
+    gMolbyRunLevel++;
+    val = rb_protect(rb_inspect, val, &status);
+    gMolbyRunLevel--;
+    if (status == 0) {
+        char *str = StringValuePtr(val);
+        strncpy(buf, str, sizeof(buf) - 1);
+        buf[sizeof(buf) - 1] = 0;
+    } else {
+        snprintf(buf, sizeof(buf), "Error status = %d", status);
+    }
+    return buf;
+}
+
 int
 Ruby_showValue(RubyValue value, char **outValueString)
 {
@@ -12273,11 +12293,31 @@ Molby_startup(const char *script, const char *dir)
 	ruby_init();
 
 	{
-		extern void Init_shift_jis(void), Init_trans_japanese_sjis(void);
-		Init_shift_jis();
-		Init_trans_japanese_sjis();
+        /*  Initialize CP932/Windows-31J encodings  */
+		extern void Init_shift_jis(void), Init_windows_31j(void),  Init_trans_japanese_sjis(void);
+        extern int rb_enc_alias(const char *, const char *);
+        Init_shift_jis();
+        Init_windows_31j();
+        Init_trans_japanese_sjis();
+        rb_enc_alias("CP932", "Windows-31J");
+    }
+    
+#if defined(__WXMSW__)
+    {
+        /*  Set default external encoding  */
+        /*  The following snippet is taken from encoding.c  */
+        extern void rb_enc_set_default_external(VALUE encoding);
+        char cp[sizeof(int) * 8 / 3 + 22];
+        int status;
+        VALUE enc;
+        snprintf(cp, sizeof cp, "Encoding.find('CP%d')", AreFileApisANSI() ? GetACP() : GetOEMCP());
+        enc = rb_eval_string_protect(cp, &status);
+        if (status == 0 && !NIL_P(enc)) {
+            rb_enc_set_default_external(enc);
+        }
 	}
-	
+#endif
+
 	/*  Initialize loadpath; the specified directory, "lib" subdirectory, and "."  */
 	ruby_incpush(".");
 	asprintf(&libpath, "%s%clib", dir, PATH_SEPARATOR);
