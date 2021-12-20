@@ -1,3 +1,4 @@
+# coding: utf-8
 #
 #  This script is loaded from formula.rb
 #
