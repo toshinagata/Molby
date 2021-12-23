@@ -835,6 +835,7 @@ end_of_header
 	while true
 	  warn_message = ""
 	  verbose = nil
+      verbose = true
 	  bond_defined = false
 	  special_positions = []
 	  mol.remove(All)
@@ -845,11 +846,9 @@ end_of_header
 	  calculated_atoms = []
 	  while token != nil
 	    if token =~ /^\#data_/i
-		  if token.casecmp("#data_global") == 0
-		    token = getciftoken(fp)
-			next
-		  elsif data_identifier == nil
-		    #  Continue processing of this molecule
+		  if data_identifier == nil || mol.natoms == 0
+		    #  First block or no atoms yet
+            #  Continue processing of this molecule
 		    data_identifier = token
 			token = getciftoken(fp)
 			next
@@ -875,9 +874,9 @@ end_of_header
 		  end
 		  if cell.length == 12 && cell.all?
 		    mol.cell = cell
-		    puts "Unit cell is set to #{cell.inspect}." if verbose
+            puts "Unit cell is set to #{mol.cell.inspect}." if verbose
 		    cell = []
-		    cell_trans = self.cell_transform
+		    cell_trans = mol.cell_transform
 		    cell_trans_inv = cell_trans.inverse
 		  end
 		  token = getciftoken(fp)
@@ -887,7 +886,7 @@ end_of_header
 		  while (token = getciftoken(fp)) && token[0] == ?_
 		    labels.push(token)
 		  end
-		  if labels[0] =~ /symmetry_equiv_pos|atom_site_label|atom_site_aniso_label|geom_bond/
+		  if labels[0] =~ /symmetry_equiv_pos|space_group_symop|atom_site_label|atom_site_aniso_label|geom_bond/
 		    hlabel = Hash.new(-10000000)
 		    labels.each_with_index { |lb, i|
 		  	  hlabel[lb] = i
@@ -904,9 +903,9 @@ end_of_header
 			  end
 			  token = getciftoken(fp)
 		    end
-		    if labels[0] =~ /^_symmetry_equiv_pos/
+		    if labels[0] =~ /^_symmetry_equiv_pos/ || labels[0] =~ /^_space_group_symop/
 		      data.each { |d|
-			    symstr = d[hlabel["_symmetry_equiv_pos_as_xyz"]]
+			    symstr = d[hlabel["_symmetry_equiv_pos_as_xyz"]] || d[hlabel["_space_group_symop_operation_xyz"]]
 			    symstr.delete("\"\'")
 			    exps = symstr.split(/,/)
 			    sym = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
@@ -1053,7 +1052,9 @@ end_of_header
 				  }
 			    end				
 		      }
-			  bond_defined = true
+              if mol.nbonds > 0
+                bond_defined = true
+              end
 			  puts "#{mol.nbonds} bonds are created." if verbose
 			  if calculated_atoms.length > 0
 			    #  Guess bonds for calculated hydrogen atoms
