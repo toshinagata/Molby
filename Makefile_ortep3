@@ -30,7 +30,7 @@ else
     CROSS_PREFIX=i686-w64-mingw32-
   endif
   FFLAGS=-std=legacy 
-  FSTATICFLAGS= -static-libgcc -Wl,-Bstatic -lgfortran -lquadmath -Wl,-Bdynamic -lm
+  FSTATICFLAGS= -static-libgcc -Wl,-Bstatic -lgfortran -lquadmath -lpthread -Wl,-Bdynamic -lm
   FLDFLAGS=-Wl,--stack=33554432 $(FSTATICFLAGS)
   EXE_SUFFIX=.exe
   FORTRAN = gcc
