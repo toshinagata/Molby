@@ -835,7 +835,6 @@ end_of_header
 	while true
 	  warn_message = ""
 	  verbose = nil
-      verbose = true
 	  bond_defined = false
 	  special_positions = []
 	  mol.remove(All)
