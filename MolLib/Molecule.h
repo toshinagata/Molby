@@ -46,6 +46,7 @@ typedef struct Aniso {
 	char has_bsig;     /*  Has sigma values?  */
 	Double  bsig[6];   /*  sigma values  */
 	Mat33  pmat;      /*  A 3x3 matrix whose three column vectors are the principal axes of the ellipsoid. Note: If the B matrix is not positive definite, the axis length corresponding to the negative eigenvalue is replaced with 0.001.  */
+    Double eigval[3]; /*  Eigenvalues of the B matrix; this should be all non-negative */
 } Aniso;
 
 /*  Symmetry operation  */

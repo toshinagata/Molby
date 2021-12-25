@@ -206,6 +206,13 @@ def export_ortep(fp, attr = nil)
 	  }
 	end
     an = ap.aniso
+    if an != nil
+      eigval = ap.aniso_eigenvalues
+      if eigval && (eigval[0] < 0.0 || eigval[1] < 0.0 || eigval[2] < 0.0)
+          #  Non positive-definite anisotropic factor: fallback to isotropic
+          an = nil
+      end
+    end
     if an != nil && rad < 0.0
       fp.printf " %8.5f%9.6f%9.6f%9.6f%9.6f%9.6f%9d\n", an[0], an[1], an[2], an[3], an[4], an[5], 0
     else
@@ -1531,8 +1538,11 @@ def cmd_show_ortep
 	  Dir.chdir(cwd)
 	  if pid != 0
 	    msg = "ORTEP execution in #{tmp} failed with status #{pid}."
-	    message_box(msg, "ORTEP Failed", :ok, :warning)
-	  else
+        message_box(msg, "ORTEP Failed", :ok, :warning)
+	  elsif !FileTest.exist?(tmp + "/TEP001.ps")
+        msg = "ORTEP execution in #{tmp} failed with unknown error."
+        message_box(msg, "ORTEP Failed", :ok, :warning)
+      else
 	    open(tmp + "/TEP001.ps", "r") { |fp|
 		  tepdata.clear
 		  tepbounds = [100000, 100000, -100000, -100000]

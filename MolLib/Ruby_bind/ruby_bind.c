@@ -76,9 +76,9 @@ static VALUE
 	s_FractRSym, s_FractXSym, s_FractYSym, s_FractZSym,
 	s_SigmaSym, s_SigmaXSym, s_SigmaYSym, s_SigmaZSym,
 	s_VSym, s_FSym, s_OccupancySym, s_TempFactorSym,
-	s_AnisoSym, s_SymopSym, s_IntChargeSym, s_FixForceSym,
-	s_FixPosSym, s_ExclusionSym, s_MMExcludeSym, s_PeriodicExcludeSym,
-	s_HiddenSym, s_AnchorListSym, s_UFFTypeSym;
+	s_AnisoSym, s_AnisoEigvalSym, s_SymopSym, s_IntChargeSym,
+    s_FixForceSym, s_FixPosSym, s_ExclusionSym, s_MMExcludeSym,
+    s_PeriodicExcludeSym, s_HiddenSym, s_AnchorListSym, s_UFFTypeSym;
 
 /*  Symbols for parameter attributes  */
 static VALUE
@@ -3921,6 +3921,18 @@ static VALUE s_AtomRef_GetAniso(VALUE self) {
 	return retval;
 }
 
+static VALUE s_AtomRef_GetAnisoEigenValues(VALUE self) {
+    VALUE retval;
+    int i;
+    Atom *ap = s_AtomFromValue(self);
+    if (ap->aniso == NULL)
+        return Qnil;
+    retval = rb_ary_new();
+    for (i = 0; i < 3; i++)
+        rb_ary_push(retval, rb_float_new(ap->aniso->eigval[i]));
+    return retval;
+}
+
 static VALUE s_AtomRef_GetSymop(VALUE self) {
 	VALUE retval;
 	Atom *ap = s_AtomFromValue(self);
@@ -4360,6 +4372,11 @@ static VALUE s_AtomRef_SetAniso(VALUE self, VALUE val) {
 	return val;
 }
 
+static VALUE s_AtomRef_SetAnisoEigenValues(VALUE self, VALUE val) {
+    rb_raise(rb_eMolbyError, "Eigenvalues of anisotropic factors are read-only.");
+    return val; /* Not reached */
+}
+
 static VALUE s_AtomRef_SetSymop(VALUE self, VALUE val) {
 	Molecule *mol;
 	Atom *ap;
@@ -4594,6 +4611,7 @@ static struct s_AtomAttrDef {
 	{"occupancy",    &s_OccupancySym,    0, s_AtomRef_GetOccupancy,    s_AtomRef_SetOccupancy},
 	{"temp_factor",  &s_TempFactorSym,   0, s_AtomRef_GetTempFactor,   s_AtomRef_SetTempFactor},
 	{"aniso",        &s_AnisoSym,        0, s_AtomRef_GetAniso,        s_AtomRef_SetAniso},
+    {"aniso_eigenvalues", &s_AnisoEigvalSym, 0, s_AtomRef_GetAnisoEigenValues,        s_AtomRef_SetAnisoEigenValues},
 	{"symop",        &s_SymopSym,        0, s_AtomRef_GetSymop,        s_AtomRef_SetSymop},
 	{"int_charge",   &s_IntChargeSym,    0, s_AtomRef_GetIntCharge,    s_AtomRef_SetIntCharge},
 	{"fix_force",    &s_FixForceSym,     0, s_AtomRef_GetFixForce,     s_AtomRef_SetFixForce},

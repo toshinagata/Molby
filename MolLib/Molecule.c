@@ -10284,6 +10284,7 @@ MoleculeSetAniso(Molecule *mp, int n1, int type, Double x11, Double x22, Double 
 	}
 	MatrixSymDiagonalize(m1, val, axis);
 	for (u = 0; u < 3; u++) {
+        anp->eigval[u] = val[u];
 		if (val[u] < 0) {
 			fprintf(stderr, "Non-positive definite thermal parameters for atom %.4s\n", mp->atoms[n1].aname);
 			val[u] = 0.001;
