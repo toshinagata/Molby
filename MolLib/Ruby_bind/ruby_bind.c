@@ -928,6 +928,7 @@ static VALUE
 s_Kernel_CallSubProcess(int argc, VALUE *argv, VALUE self)
 {
 	VALUE cmd, procname, cproc, stdout_val, stderr_val;
+    VALUE save_interruptFlag;
 	int n, exitstatus, pid;
 	char *sout, *serr;
 	FILE *fpout, *fperr;
@@ -972,9 +973,11 @@ s_Kernel_CallSubProcess(int argc, VALUE *argv, VALUE self)
 				rb_raise(rb_eMolbyError, "Cannot open file for standard output (%s)", serr);
 		}
 	}
-
+    
+    save_interruptFlag = s_SetInterruptFlag(self, Qnil);
 	n = MyAppCallback_callSubProcess(StringValuePtr(cmd), StringValuePtr(procname), (cproc == Qnil ? NULL : s_Kernel_CallSubProcess_Callback), (cproc == Qnil ? NULL : (void *)cproc), fpout, fperr, &exitstatus, &pid);
-	
+    s_SetInterruptFlag(self, save_interruptFlag);
+    
 	if (fpout != NULL && fpout != (FILE *)1)
 		fclose(fpout);
 	if (fperr != NULL && fperr != (FILE *)1)

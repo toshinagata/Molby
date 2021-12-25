@@ -730,7 +730,7 @@ MyApp::ShowProgressPanel(const char *mes)
 {
     wxString string((mes ? mes : ""), WX_DEFAULT_CONV);
     if (m_progressDialog == NULL) {
-        m_progressDialog = new wxProgressDialog(wxT("Progress"), mes);
+        m_progressDialog = new wxProgressDialog(wxT("Progress"), mes, 100, NULL, wxPD_APP_MODAL | wxPD_CAN_ABORT);
     }
 /*
 #if __WXMAC__
@@ -752,6 +752,7 @@ void
 MyApp::HideProgressPanel()
 {
     if (m_progressDialog != NULL) {
+        m_progressDialog->Hide();
         m_progressDialog->Destroy();
         m_progressDialog = NULL;
     }
@@ -1516,7 +1517,7 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
             nn = 0;
         }
 #endif
-        if (m_process->IsTerminated()) {
+        if (m_process->IsTerminated() || !wxProcess::Exists(pid)) {
             /*  The subprocess has terminated  */
             status = m_process->GetStatus();
             break;
@@ -1544,6 +1545,7 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
                     status = -2;  /*  User interrupt  */
             }
             m_process->Detach();
+            m_process = NULL;
             break;
         }
     }
@@ -1556,7 +1558,7 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
     }
     
 	if (m_process != NULL) {
-		delete m_process;
+        m_process->Detach();
 		m_process = NULL;
 	}
 
@@ -1894,6 +1896,7 @@ wxBetterProcess::GetLineSub(wxString &outStr, wxInputStream *stream, wxMemoryBuf
         }
         if (trial > 0) {
             //  stream->Read() is called only once
+            outStr = _T("");
             if (err == wxSTREAM_EOF)
                 return -1;  //  EOF and no data left
             return 0;  //  Not EOF, but no data is available at present
