@@ -522,9 +522,6 @@ s_SetInterruptFlag(VALUE self, VALUE val)
 	oldval = s_interrupt_flag;
 	if (val != Qundef) {
 		s_interrupt_flag = val;
-		if (val == Qfalse) {
-			s_HideProgressPanel(self);
-		}
 	}
 	return oldval;
 }

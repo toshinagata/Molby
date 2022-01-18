@@ -553,7 +553,6 @@ s_MolActionPerformRubyScript(Molecule *mol, MolAction *action)
 	if (result != 0 && gMolActionNoErrorDialog == 0) {
 		Ruby_showError(result);
 	}
-	MyAppCallback_hideProgressPanel();  /*  In case when the progress panel is still onscreen */
 	return (result == 0 ? 0 : -1);
 }
 
