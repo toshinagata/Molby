@@ -68,11 +68,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "_test.mrb"
-            isEnabled = "NO">
-         </CommandLineArgument>
-         <CommandLineArgument
-            argument = "bpy-dipy-Cu.inp.mbsf"
+            argument = "/Users/toshi_n/test.rb"
             isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>

@@ -192,22 +192,20 @@ MyApp::MyApp(void)
 #endif
 }
 
-bool MyApp::OnInit(void)
+//  We override Initialize() instead of OnInit, because wxAppBase::Initialize() calls OnInitGui(), which
+//  makes the program run as a GUI application.
+//  So, we intercept here, and go directly to the execution in the batch mode.
+//  Otherwise, we call the inherited version of Initialize() and the program will run as a normal application.
+bool MyApp::Initialize(int& argc, wxChar **argv)
 {
-	//  Set defaults
-#ifdef __WXMAC__
-	wxSystemOptions::SetOption(wxT("mac.listctrl.always_use_generic"), 1);
-	wxSystemOptions::SetOption(wxT("osx.openfiledialog.always-show-types"), 1);
-#endif
-
     //  Called with a batch mode?
-    if (argc > 1 && strcmp(argv[1], "-b") == 0) {
+    if (argc > 1 && wcscmp(argv[1], L"-b") == 0) {
         gUseGUI = 0;
         gSuppressConsole = 1;
         
-        if (argc > 2 && strcmp(argv[2], "-v") == 0)
+        if (argc > 2 && wcscmp(argv[2], L"-v") == 0)
             gSuppressConsole = 0;
-
+        
         static const char fname[] = "startup.rb";
         wxString dirname = FindResourcePath();
         
@@ -218,7 +216,7 @@ bool MyApp::OnInit(void)
         
         wxString fnamestr(fname, wxConvFile);
         Molby_startup(wxFileExists(fnamestr) ? fname : NULL, (const char *)dirname.mb_str(wxConvFile));
-
+        
         wxSetWorkingDirectory(cwd);
         
         //  Build ARGV
@@ -242,14 +240,28 @@ bool MyApp::OnInit(void)
         }
         gSuppressConsole = 0;  //  Console output is no longer suppressed (startup is done)
         status = Molby_loadScript(argv_script.mb_str(wxConvFile), 0);
-        if (status == 0)
-            status = Molby_loadScript(argv[c].mb_str(wxConvFile), 1);
+        if (status == 0) {
+            wxString arg2(argv[c]);
+            status = Molby_loadScript(arg2.mb_str(wxConvFile), 1);
+        }
         if (status != 0) {
             Ruby_showError(status);
-            exit(1);
+            ::exit(1);
         }
-        exit(0);
+        ::exit(0);
+    } else {
+        //  Call the inherited version
+        return wxApp::Initialize(argc, argv);
     }
+}
+
+bool MyApp::OnInit(void)
+{
+	//  Set defaults
+#ifdef __WXMAC__
+	wxSystemOptions::SetOption(wxT("mac.listctrl.always_use_generic"), 1);
+	wxSystemOptions::SetOption(wxT("osx.openfiledialog.always-show-types"), 1);
+#endif
 
 #if __WXMSW__
 	{

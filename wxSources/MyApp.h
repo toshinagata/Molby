@@ -170,6 +170,7 @@ class MyApp: public wxApp
 {
   public:
     MyApp(void);
+    virtual bool Initialize(int& argc, wxChar **argv);
     bool OnInit(void);
     int OnExit(void);
 
