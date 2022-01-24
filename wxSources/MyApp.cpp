@@ -200,12 +200,20 @@ bool MyApp::Initialize(int& argc, wxChar **argv)
 {
     //  Called with a batch mode?
     if (argc > 1 && wcscmp(argv[1], L"-b") == 0) {
+
+        //  Disable any wxLog functionality (otherwise ::exit() may crash)
+        wxLog::EnableLogging(false);
+
         gUseGUI = 0;
         gSuppressConsole = 1;
         
         if (argc > 2 && wcscmp(argv[2], L"-v") == 0)
             gSuppressConsole = 0;
-        
+
+        //  We need these parameters in FindResourcePath(), so we assign them here
+        this->argc = argc;
+        this->argv = argv;
+
         static const char fname[] = "startup.rb";
         wxString dirname = FindResourcePath();
         
@@ -246,9 +254,9 @@ bool MyApp::Initialize(int& argc, wxChar **argv)
         }
         if (status != 0) {
             Ruby_showError(status);
-            ::exit(1);
         }
-        ::exit(0);
+        //  Force exit
+        ::exit(status);
     } else {
         //  Call the inherited version
         return wxApp::Initialize(argc, argv);
