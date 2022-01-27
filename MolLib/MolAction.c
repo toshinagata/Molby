@@ -457,7 +457,7 @@ s_MolActionToRubyArguments(VALUE vinfo)
 		info->method_id = rb_intern(s);
 	} else {
 		/*  Cannot be a method name: try to create a proc object and call it  */
-		VALUE procstr = rb_str_new2(s);
+		VALUE procstr = Ruby_NewEncodedStringValue2(s);
 		VALUE proc = rb_obj_instance_eval(1, &procstr, info->receiver);
 		info->receiver = proc;
 		info->method_id = rb_intern("call");

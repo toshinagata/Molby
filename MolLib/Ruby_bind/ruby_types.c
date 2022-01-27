@@ -2940,7 +2940,7 @@ s_IntGroup_Inspect(VALUE self)
 	s = IntGroupInspect(ig);
 	if (s == NULL)
 		rb_raise(rb_eMolbyError, "internal error during IntGroup#inspect");
-	retval = rb_str_new2(s);
+	retval = Ruby_NewEncodedStringValue2(s);
 	free(s);
 	return retval;
 /*	int i, sp, ep;

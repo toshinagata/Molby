@@ -779,7 +779,7 @@ s_MDArena_PrintSurfaceArea(VALUE self)
 	if (arena->sp_arena == NULL)
 		rb_raise(rb_eMolbyError, "surface potential is not available");
 	natoms = arena->mol->natoms;
-	retval = rb_str_new2("Atom     area    energy         forcex1000\n");
+	retval = Ruby_NewEncodedStringValue2("Atom     area    energy         forcex1000\n");
 	for (i = 0; i < natoms; i++) {
 		char buf[256];
 		Vector f = arena->forces[kSurfaceIndex * natoms + i];

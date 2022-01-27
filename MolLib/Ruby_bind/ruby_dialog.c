@@ -19,6 +19,9 @@
 #include <math.h>   /*  For floor()  */
 #include "ruby_dialog.h"
 
+/*  Encoded version of rb_str_new2()  (defined in ruby_bind.c)  */
+extern VALUE Ruby_NewEncodedStringValue2(const char *str);
+
 static VALUE
 	sTextSymbol, sTextFieldSymbol, sRadioSymbol, sButtonSymbol,
 	sCheckBoxSymbol, sToggleButtonSymbol, sPopUpSymbol, sTextViewSymbol,
@@ -425,13 +428,13 @@ s_RubyDialogItem_Attr(VALUE self, VALUE key)
 						val = INT2NUM(atoi(cp));
 					else
 						val = rb_float_new(atof(cp));
-				} else val = rb_str_new2(cp);
+				} else val = Ruby_NewEncodedStringValue2(cp);
 				free(cp);
 			}
 		} else if (type == sTextViewSymbol) {
 			cp = RubyDialogCallback_getStringPtrFromItem(view);
 			if (cp != NULL) {
-				val = rb_str_new2(cp);
+				val = Ruby_NewEncodedStringValue2(cp);
 				free(cp);
 			}
 		} else if (type == sPopUpSymbol) {
@@ -444,7 +447,7 @@ s_RubyDialogItem_Attr(VALUE self, VALUE key)
 	} else if (key == sTitleSymbol) {
 		cp = RubyDialogCallback_titleOfItem(view);
 		if (cp != NULL) {
-			val = rb_str_new2(cp);
+			val = Ruby_NewEncodedStringValue2(cp);
 			free(cp);
 		}
 	} else if (key == sEnabledSymbol) {
@@ -463,7 +466,7 @@ s_RubyDialogItem_Attr(VALUE self, VALUE key)
 		int i;
 		val = rb_ary_new();
 		for (i = 0; (cp = RubyDialogCallback_titleOfSubItem(view, i)) != NULL; i++) {
-			rb_ary_push(val, rb_str_new2(cp));
+			rb_ary_push(val, Ruby_NewEncodedStringValue2(cp));
 			free(cp);
 		}
 	} else if (key == sXSymbol || key == sYSymbol || key == sWidthSymbol || key == sHeightSymbol) {
@@ -681,7 +684,7 @@ s_RubyDialog_Initialize(int argc, VALUE *argv, VALUE self)
 		item = rb_class_new_instance(0, NULL, rb_cDialogItem);
 		rb_ivar_set(item, SYM2ID(sDialogSymbol), self);
 		rb_ivar_set(item, SYM2ID(sIndexSymbol), INT2NUM(i));
-		rb_ivar_set(item, SYM2ID(sTagSymbol), rb_str_new2(i == 0 ? "ok" : "cancel"));
+		rb_ivar_set(item, SYM2ID(sTagSymbol), Ruby_NewEncodedStringValue2(i == 0 ? "ok" : "cancel"));
 		rb_ivar_set(item, SYM2ID(sTypeSymbol), sButtonSymbol);
 		rb_ary_push(items, item);
 	}
@@ -1779,7 +1782,7 @@ s_RubyDialog_doTableAction(VALUE val)
 	} else if (sym == sOnSetValueSymbol) {
 		args[1] = INT2NUM((int)vp[3]);
 		args[2] = INT2NUM((int)vp[4]);
-		args[3] = rb_str_new2((char *)vp[5]);
+		args[3] = Ruby_NewEncodedStringValue2((char *)vp[5]);
 		retval = s_RubyDialog_CallActionProc(self, pval, 4, args);
 		vp[6] = (void *)(intptr_t)(NUM2INT(rb_Integer(retval)));
 		return retval;

@@ -120,7 +120,7 @@ Ruby_FileStringValuePtr(VALUE *valp)
 #if __WXMSW__
 	char *p = strdup(StringValuePtr(*valp));
 	translate_char(p, '/', '\\');
-	*valp = rb_str_new2(p);
+	*valp = Ruby_NewEncodedStringValue2(p);
 	free(p);
 	return StringValuePtr(*valp);
 #else
@@ -135,11 +135,11 @@ Ruby_NewFileStringValue(const char *fstr)
 	VALUE retval;
 	char *p = strdup(fstr);
 	translate_char(p, '\\', '/');
-	retval = rb_enc_str_new(p, strlen(p), rb_default_external_encoding());
+	retval = Ruby_NewEncodedStringValue2(p);
 	free(p);
 	return retval;
 #else
-	return rb_str_new2(fstr);
+	return Ruby_NewEncodedStringValue2(fstr);
 #endif
 }
 
@@ -157,6 +157,12 @@ Ruby_NewEncodedStringValue(const char *str, int len)
 	if (len <= 0)
 		len = strlen(str);
 	return rb_enc_str_new(str, len, rb_default_external_encoding());
+}
+
+VALUE
+Ruby_NewEncodedStringValue2(const char *str)
+{
+    return Ruby_NewEncodedStringValue(str, -1);
 }
 
 VALUE
@@ -250,7 +256,7 @@ s_Kernel_Ask(int argc, VALUE *argv, VALUE self)
 	} else buf[0] = 0;
 	retval = MyAppCallback_getTextWithPrompt(StringValuePtr(prompt), buf, sizeof buf);
 	if (retval)
-		return rb_str_new2(buf);
+		return Ruby_NewEncodedStringValue2(buf);
 	else
 		return Qnil;	
 }
@@ -434,7 +440,7 @@ static VALUE
 s_StandardInputGets(int argc, VALUE *argv, VALUE self)
 {
 	VALUE pval, rval;
-	pval = rb_str_new2("Enter a line:");
+	pval = Ruby_NewEncodedStringValue2("Enter a line:");
 	rval = s_Kernel_Ask(1, &pval, self);
 	if (rval == Qnil)
 		rb_interrupt();
@@ -1256,10 +1262,10 @@ static VALUE s_ParameterRef_GetParType(VALUE self) {
 	Int tp;
 	s_UnionParFromValue(self, &tp, 0);
 	if (tp == kElementParType)
-		return rb_str_new2("element");
+		return Ruby_NewEncodedStringValue2("element");
 	tp -= kFirstParType;
 	if (tp >= 0 && tp < sizeof(s_ParameterTypeNames) / sizeof(s_ParameterTypeNames[0]))
-		return rb_str_new2(s_ParameterTypeNames[tp]);
+		return Ruby_NewEncodedStringValue2(s_ParameterTypeNames[tp]);
 	else rb_raise(rb_eMolbyError, "Internal error: parameter type tag is out of range (%d)", tp);
 }
 
@@ -1692,7 +1698,7 @@ static VALUE s_ParameterRef_GetName(VALUE self) {
 		char name[5];
 		strncpy(name, up->atom.name, 4);
 		name[4] = 0;
-		return rb_str_new2(name);
+		return Ruby_NewEncodedStringValue2(name);
 	} else rb_raise(rb_eMolbyError, "invalid member name");
 }
 
@@ -1727,7 +1733,7 @@ static VALUE s_ParameterRef_GetFullName(VALUE self) {
 		char fullname[16];
 		strncpy(fullname, up->atom.fullname, 15);
 		fullname[15] = 0;
-		return rb_str_new2(fullname);
+		return Ruby_NewEncodedStringValue2(fullname);
 	} else rb_raise(rb_eMolbyError, "invalid member fullname");
 }
 
@@ -1744,7 +1750,7 @@ static VALUE s_ParameterRef_GetComment(VALUE self) {
 	com = up->bond.com;
 	if (com == 0)
 		return Qnil;
-	else return rb_str_new2(ParameterGetComment(com));
+	else return Ruby_NewEncodedStringValue2(ParameterGetComment(com));
 }
 
 /*
@@ -1763,7 +1769,7 @@ static VALUE s_ParameterRef_GetSource(VALUE self) {
 		return Qfalse;  /* undefined */
 	else if (src == 0)
 		return Qnil;  /*  local  */
-	else return rb_str_new2(ParameterGetComment(src));
+	else return Ruby_NewEncodedStringValue2(ParameterGetComment(src));
 }
 
 static void
@@ -2521,7 +2527,7 @@ s_ParameterRef_ToString(VALUE self)
 			snprintf(buf, sizeof buf, "element %2.2s %3d %6.3f %6.3f %6.3f %6.3f %8.4f %s %6.3f", up->atom.name, up->atom.number, up->atom.radius, up->atom.red / 65535.0, up->atom.green / 65535.0, up->atom.blue / 65535.0, up->atom.weight, up->atom.fullname, up->atom.vdw_radius);
 			break;
 	}
-	return rb_str_new2(buf);
+	return Ruby_NewEncodedStringValue2(buf);
 }
 
 /*
@@ -3407,10 +3413,10 @@ s_ParEnumerable_ParType(VALUE self) {
     Data_Get_Struct(self, ParEnumerable, pen);
 	tp = pen->parType;
 	if (tp == kElementParType)
-		return rb_str_new2("element");
+		return Ruby_NewEncodedStringValue2("element");
 	tp -= kFirstParType;
 	if (tp >= 0 && tp < sizeof(s_ParameterTypeNames) / sizeof(s_ParameterTypeNames[0]))
-		return rb_str_new2(s_ParameterTypeNames[tp]);
+		return Ruby_NewEncodedStringValue2(s_ParameterTypeNames[tp]);
 	else rb_raise(rb_eMolbyError, "Internal error: parameter type tag is out of range (%d)", tp);
 }
 
@@ -3772,7 +3778,7 @@ static VALUE s_AtomRef_GetSegSeq(VALUE self) {
 
 static VALUE s_AtomRef_GetSegName(VALUE self) {
 	char *p = s_AtomFromValue(self)->segName;
-	return rb_str_new(p, strlen_limit(p, 4));
+	return Ruby_NewEncodedStringValue(p, strlen_limit(p, 4));
 }
 
 static VALUE s_AtomRef_GetResSeq(VALUE self) {
@@ -3781,18 +3787,18 @@ static VALUE s_AtomRef_GetResSeq(VALUE self) {
 
 static VALUE s_AtomRef_GetResName(VALUE self) {
 	char *p = s_AtomFromValue(self)->resName;
-	return rb_str_new(p, strlen_limit(p, 4));
+	return Ruby_NewEncodedStringValue(p, strlen_limit(p, 4));
 }
 
 static VALUE s_AtomRef_GetName(VALUE self) {
 	char *p = s_AtomFromValue(self)->aname;
-	return rb_str_new(p, strlen_limit(p, 4));
+	return Ruby_NewEncodedStringValue(p, strlen_limit(p, 4));
 }
 
 static VALUE s_AtomRef_GetAtomType(VALUE self) {
 	int type = s_AtomFromValue(self)->type;
 	char *p = (type == 0 ? "" : AtomTypeDecodeToString(type, NULL));
-	return rb_str_new(p, strlen_limit(p, 6));
+	return Ruby_NewEncodedStringValue(p, strlen_limit(p, 6));
 }
 
 static VALUE s_AtomRef_GetCharge(VALUE self) {
@@ -3805,7 +3811,7 @@ static VALUE s_AtomRef_GetWeight(VALUE self) {
 
 static VALUE s_AtomRef_GetElement(VALUE self) {
 	char *p = s_AtomFromValue(self)->element;
-	return rb_str_new(p, strlen_limit(p, 4));
+	return Ruby_NewEncodedStringValue(p, strlen_limit(p, 4));
 }
 
 static VALUE s_AtomRef_GetAtomicNumber(VALUE self) {
@@ -4018,7 +4024,7 @@ static VALUE s_AtomRef_GetAnchorList(VALUE self) {
 
 static VALUE s_AtomRef_GetUFFType(VALUE self) {
 	char *p = s_AtomFromValue(self)->uff_type;
-	return rb_str_new(p, strlen_limit(p, 5));
+	return Ruby_NewEncodedStringValue(p, strlen_limit(p, 5));
 }
 
 static VALUE s_AtomRef_SetIndex(VALUE self, VALUE val) {
@@ -4718,7 +4724,7 @@ s_MolEnumerable_Aref(VALUE self, VALUE arg1)
 			if (idx2 < 0 || idx2 >= mol->nresidues)
 				rb_raise(rb_eIndexError, "residue index out of range (%d; should be %d..%d)", idx1, -mol->nresidues, mol->nresidues - 1);
 			p = mol->residues[idx2];
-			return rb_str_new(p, strlen_limit(p, 4));
+			return Ruby_NewEncodedStringValue(p, strlen_limit(p, 4));
 		}
 	}
 	return Qnil;
@@ -5464,7 +5470,7 @@ s_Molecule_ErrorMessage(VALUE klass)
 {
 	if (gLoadSaveErrorMessage == NULL)
 		return Qnil;
-	else return rb_str_new2(gLoadSaveErrorMessage);
+	else return Ruby_NewEncodedStringValue2(gLoadSaveErrorMessage);
 }
 
 /*
@@ -5525,7 +5531,7 @@ s_Molecule_Name(VALUE self)
 	if (buf[0] == 0)
 		return Qnil;
 	else
-		return rb_str_new2(buf);
+		return Ruby_NewEncodedStringValue2(buf);
 }
 
 /*
@@ -5589,7 +5595,7 @@ s_Molecule_Dir(VALUE self)
 		p = strrchr(buf, '/');
 		if (p != NULL)
 			*p = 0;
-		return rb_str_new2(buf);
+		return Ruby_NewEncodedStringValue2(buf);
 	}
 }
 
@@ -5611,7 +5617,7 @@ s_Molecule_Inspect(VALUE self)
 	if (buf[0] == 0) {
 		/*  No associated document  */
 		snprintf(buf, sizeof buf, "#<Molecule:0x%lx>", self);
-		return rb_str_new2(buf);
+		return Ruby_NewEncodedStringValue2(buf);
 	} else {
 		/*  Check whether the document name is duplicate  */
 		char buf2[256];
@@ -5630,7 +5636,7 @@ s_Molecule_Inspect(VALUE self)
 		} else {
 			snprintf(buf2, sizeof buf2, "Molecule[\"%s\"]", buf);
 		}
-		return rb_str_new2(buf2);
+		return Ruby_NewEncodedStringValue2(buf2);
 	}
 }
 
@@ -10724,7 +10730,7 @@ s_Molecule_GetGaussianComponentInfo(VALUE self, VALUE cval)
 	n = MoleculeGetGaussianComponentInfo(mol, c, &atom_idx, label, &shell_idx);
 	if (n != 0)
 		rb_raise(rb_eMolbyError, "Cannot get the shell info for component index (%d)", c);
-	return rb_ary_new3(3, INT2NUM(atom_idx), INT2NUM(shell_idx), rb_str_new2(label));
+	return rb_ary_new3(3, INT2NUM(atom_idx), INT2NUM(shell_idx), Ruby_NewEncodedStringValue2(label));
 }
 
 /*
@@ -10932,9 +10938,9 @@ s_Molecule_GetMOInfo(VALUE self, VALUE kval)
 		return Qnil;
 	if (kval == sTypeSym) {
 		switch (mol->bset->rflag) {
-			case 0: return rb_str_new2("UHF");
-			case 1: return rb_str_new2("RHF");
-			case 2: return rb_str_new2("ROHF");
+			case 0: return Ruby_NewEncodedStringValue2("UHF");
+			case 1: return Ruby_NewEncodedStringValue2("RHF");
+			case 2: return Ruby_NewEncodedStringValue2("ROHF");
 			default: return rb_str_to_str(INT2NUM(mol->bset->rflag));
 		}
 	} else if (kval == sAlphaSym) {
@@ -11249,7 +11255,7 @@ s_Molecule_PropertyNames(VALUE self)
     Data_Get_Struct(self, Molecule, mol);
 	rval = rb_ary_new();
 	for (i = mol->nmolprops - 1; i >= 0; i--) {
-		nval = rb_str_new2(mol->molprops[i].propname);
+		nval = Ruby_NewEncodedStringValue2(mol->molprops[i].propname);
 		rb_ary_store(rval, i, nval);
 	}
 	return rval;
@@ -11313,7 +11319,7 @@ s_Molecule_MoleculeAtIndex(int argc, VALUE *argv, VALUE klass)
 		for (idx = 0; (mol = MoleculeCallback_moleculeAtIndex(idx)) != NULL; idx++) {
 			VALUE name;
 			MoleculeCallback_displayName(mol, buf, sizeof buf);
-			name = rb_str_new2(buf);
+			name = Ruby_NewEncodedStringValue2(buf);
 			if (rb_reg_match(val, name) != Qnil && --k == 0)
 				break;
 		}	
@@ -11794,7 +11800,7 @@ Init_Molby(void)
 	rb_define_alias(rb_cAtomRef, "set_attr", "[]=");
 	rb_define_method(rb_cAtomRef, "[]", s_AtomRef_GetAttr, 1);
 	rb_define_alias(rb_cAtomRef, "get_attr", "[]");
-	s_SetAtomAttrString = rb_str_new2("set_atom_attr");
+	s_SetAtomAttrString = Ruby_NewEncodedStringValue2("set_atom_attr");
 	rb_global_variable(&s_SetAtomAttrString);
 	rb_define_method(rb_cAtomRef, "molecule", s_AtomRef_GetMolecule, 0);
 	rb_define_method(rb_cAtomRef, "==", s_AtomRef_Equal, 1);
@@ -12001,12 +12007,12 @@ s_evalRubyScriptOnMoleculeSub(VALUE val)
 #else
 		asprintf(&scr, "#coding:utf-8\n%s", (char *)ptr[0]);
 #endif
-		sval = rb_str_new2(scr);
+		sval = Ruby_NewEncodedStringValue2(scr);
 		free(scr);
-		fnval = rb_str_new2("(eval)");
+		fnval = Ruby_NewEncodedStringValue2("(eval)");
 		lnval = INT2FIX(0);
 	} else {
-		sval = rb_str_new2((char *)ptr[0]);
+		sval = Ruby_NewEncodedStringValue2((char *)ptr[0]);
 		fnval = Ruby_NewFileStringValue((char *)ptr[2]);
 		lnval = INT2FIX(1);
 	}
@@ -12166,7 +12172,7 @@ Molby_loadScript(const char *script, int from_file)
     int status;
     gMolbyRunLevel++;
     if (from_file)
-        rb_load_protect(rb_str_new2(script), 0, &status);
+        rb_load_protect(Ruby_NewEncodedStringValue2(script), 0, &status);
     else
         rb_eval_string_protect(script, &status);
     gMolbyRunLevel--;
@@ -12424,7 +12430,7 @@ Molby_startup(const char *script, const char *dir)
 	if (script != NULL && script[0] != 0) {
 		MyAppCallback_showScriptMessage("Evaluating %s...\n", script);
 		gMolbyRunLevel++;
-		rb_load_protect(rb_str_new2(script), 0, &status);
+		rb_load_protect(Ruby_NewEncodedStringValue2(script), 0, &status);
 		gMolbyRunLevel--;
 		if (status != 0)
 			Ruby_showError(status);
