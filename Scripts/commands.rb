@@ -121,6 +121,108 @@ class Molecule
 	end
   end
 
+  def cmd_concat_frames
+      n = nframes
+      return if n == 0
+      if Molecule.list.length == 1
+          message_box("No other molecule.", "", :ok)
+          return
+      end
+      ls = (0...Molecule.list.length).select { |i|
+          m = Molecule[i]
+          if m == self || m.natoms != self.natoms
+              false
+              else
+              if nil != (0...m.natoms).find { |n| m.atoms[n].atomic_number != self.atoms[n].atomic_number }
+                  false
+                  else
+                  true
+              end
+          end
+      }
+      if ls.length == 0
+          message_box("No molecule has the same atomic sequence as the present one.", "", :ok)
+          return
+      end
+      labels = []
+      label_hash = Hash.new   #  Check if documents with the same name are present
+      ls.each_with_index { |i, idx|  #  i is an index to Molecule, idx is an index to ls
+          m = Molecule[i]
+          label = m.name
+          idx_h = label_hash[label]  #  If non-nil, then duplicate name
+          label_hash[label] = idx
+          if idx_h
+              if labels[idx_h] == label
+                  labels[idx_h] = label + " (" + Molecule[ls[idx_h]].dir + ")"
+              end
+              label = label + " (" + Molecule[i].dir + ")"
+          end
+          labels.push(label)
+      }
+      nf = Molecule[ls[0]].nframes
+      hash = Dialog.run("Concatenate Frames") {
+          layout(2,
+                 item(:text, :title=>"From Molecule:"),
+                 item(:popup, :subitems=>labels, :tag=>"mol", :width=>240,
+                      :action=>lambda { |it|
+                      nf = Molecule[ls[it[:value]]].nframes
+                      set_attr("start_title", :title=>"Start (0-#{nf})")
+                      set_attr("end_title", :title=>"End (0-#{nf})")
+                      }),
+                 item(:radio, :title=>"All Frames", :tag=>"all_frames", :value=>1,
+                      :action=>lambda { |it|
+                      flag = (it[:value] == 0)
+                      set_attr("start_frame", :enabled=>flag)
+                      set_attr("end_frame", :enabled=>flag)
+                      }), -1,
+                 item(:radio, :title=>"Select Frames", :tag=>"select_frames",
+                      :action=>lambda { |it|
+                      flag = (it[:value] != 0)
+                      set_attr("start_frame", :enabled=>flag)
+                      set_attr("end_frame", :enabled=>flag)
+                      }), -1,
+                 item(:text, :title=>"Start (0-#{nf})", :tag=>"start_title"),
+                 item(:textfield, :value=>"0", :tag=>"start_frame", :enabled=>false),
+                 item(:text, :title=>"End (0-#{nf})", :tag=>"end_title"),
+                 item(:textfield, :value=>"0", :tag=>"end_frame", :enabled=>false))
+                 radio_group("all_frames", "select_frames")
+      }
+      if hash[:status] == 0
+          idx_h = Integer(hash["mol"])
+          m = Molecule[ls[idx_h]]
+          f = m.frame  #  Save the current frame number
+          nf = m.nframes
+          if hash["all_frame"] != 0
+              f1 = 0
+              f2 = nf - 1
+              else
+              f1 = Integer(hash["start_frame"])
+              f2 = Integer(hash["end_frame"])
+              f1 = 0 if f1 < 0
+              f1 = nf - 1 if f1 > nf - 1
+              f2 = 0 if f2 < 0
+              f2 = nf - 1 if f2 > nf - 1
+          end
+          if f1 <= f2
+              a = (f1..f2).to_a
+              else
+              a = (f2..f1).to_a.reverse
+          end
+          prop = m.property_names
+          na = m.natoms
+          a.each { |n|
+              self.create_frame()
+              m.select_frame(n)
+              na.times { |i|
+                  self.atoms[i].r = m.atoms[i].r
+              }
+              prop.each { |pr|
+                  self.set_property(pr, m.get_property(pr))
+              }
+          }
+      end
+  end
+
   def cmd_extra_properties
     mol = self
 	get_count = lambda { |it| mol.nframes }
@@ -591,6 +693,7 @@ register_menu("Sort by residue", :cmd_sort_by_residue, :non_empty)
 register_menu("", "")
 register_menu("Delete Frames...", :cmd_delete_frames, lambda { |m| m && m.nframes > 1 } )
 register_menu("Reverse Frames...", :cmd_reverse_frames, lambda { |m| m && m.nframes > 1 } )
+register_menu("Concatenate Frames...", :cmd_concat_frames, lambda { |m| m && m.nframes > 1 } )
 register_menu("", "")
 register_menu("Show Energy Window...", :cmd_show_energy, lambda { |m| m && m.property_names.include?("energy") } )
 register_menu("Show MO Surface...", :cmd_create_surface, lambda { |m| m && m.get_mo_info(:type) != nil } )
