@@ -1484,8 +1484,8 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
     wxString bufstr;
     wxString buferrstr;
     while (1) {
-        m_process->GetLine(bufstr);
-        if (bufstr.Length() > 0) {
+        int len1 = m_process->GetLine(bufstr);
+        if (len1 > 0) {
 #if LOG_SUBPROCESS
             dateTime.SetToCurrent();
             fprintf(fplog, "%s[STDOUT]%s", (const char *)(dateTime.FormatISOCombined(' ')), (const char *)bufstr);
@@ -1501,8 +1501,8 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
                 MyAppCallback_showScriptMessage("%s", (const char *)bufstr);
             }
         }
-        m_process->GetErrorLine(buferrstr);
-        if (buferrstr.Length() > 0) {
+        int len2 = m_process->GetErrorLine(buferrstr);
+        if (len2 > 0) {
 #if LOG_SUBPROCESS
             dateTime.SetToCurrent();
             fprintf(fplog, "%s[STDERR]%s", (const char *)(dateTime.FormatISOCombined(' ')), buf);
@@ -1517,6 +1517,11 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
             }
         }
 
+        if (len1 < 0 && len2 < 0) {
+            //  The standard/error outputs are exhausted; the process should have terminated
+            //  (Normally, this should be detected by wxBetterProcess::OnTerminate())
+            interrupted = true;
+        }
         ::wxMilliSleep(25);
         if (callback != NULL && callback != DUMMY_CALLBACK) {
             callback_result = (*callback)(callback_data);
@@ -1527,6 +1532,8 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
             SetProgressValue(-1);
             if (IsInterrupted())
                 interrupted = true;
+        } else {
+            ::wxSafeYield();  //  This allows updating console and wxProcess status
         }
 
 #if LOG_SUBPROCESS
