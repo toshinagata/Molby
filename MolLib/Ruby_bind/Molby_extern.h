@@ -30,6 +30,9 @@ typedef void *RubyValue;
 #define RubyNil ((RubyValue)4)
 #endif
 
+extern int gMolbyRunLevel;
+extern int gMolbyIsCheckingInterrupt;
+
 extern int gSuppressConsole;
 extern int gUseGUI;
     

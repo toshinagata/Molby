@@ -45,8 +45,6 @@ extern VALUE Ruby_DecrementInterruptLevel(VALUE dummy); */
 extern VALUE Ruby_DisableInterrupt(VALUE dummy); */
 
 /*  Flag to avoid multiple running ruby interpreter  */
-extern int gMolbyRunLevel;
-extern int gMolbyIsCheckingInterrupt;
 extern VALUE gMolbyBacktrace;
 
 extern VALUE Ruby_CallMethodWithInterrupt(VALUE receiver, ID method_id, VALUE args, int *status);

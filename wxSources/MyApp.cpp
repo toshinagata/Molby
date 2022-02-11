@@ -1257,6 +1257,11 @@ MyApp::OnActivate(wxActivateEvent &event)
 void
 MyApp::RequestOpenFilesByEvent(wxString& files)
 {
+    /*  We do not respond to "open file" event (either via IPC [MSW] or Apple Event [Mac])
+        while we are running something else  */
+    if (m_progressDialog != NULL || gMolbyIsCheckingInterrupt || gMolbyRunLevel > 0)
+        return;
+
 	if (m_pendingFilesToOpen != NULL)
 		m_pendingFilesToOpen->Append(files);
 	else
