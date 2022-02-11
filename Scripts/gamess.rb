@@ -831,7 +831,7 @@ class Molecule
 	#  Various settings
 	icharg = hash["charge"]
 	mult = hash["mult"]
-	runtyp = ["ENERGY", "PROP", "OPTIMIZE"][hash["runtype"].to_i]
+	runtyp = ["ENERGY", "PROP", "OPTIMIZE", "SADPOINT", "IRC"][hash["runtype"].to_i]
 	scftyp = ["RHF", "ROHF", "UHF"][hash["scftype"].to_i]
 	bssname = hash["basis"]
 	bssname2 = hash["secondary_basis"]
@@ -916,14 +916,28 @@ class Molecule
 	
 	h = (hash["STATPT"] ||= Hash.new)
 	h["NSTEP"] ||= "400"
-	h["OPTTOL"] ||= "1.0E-06"
+    if runtyp == "SADPOINT"
+        h["OPTTOL"] ||= "1.0E-05"
+        h["HESS"] ||= "CALC"
+        h["HSSEND"] ||= ".T."
+    elsif runtyp == "IRC"
+        h["OPTTOL"] ||= "1.0E-05"
+        h["HESS"] ||= "READ"
+        h["HSSEND"] ||= ".T."
+    else
+        h["OPTTOL"] ||= "1.0E-06"
+    end
     if hash["eliminate_freedom"] == 0
       h["PROJCT"] ||= ".F."
     end
 
 	h = (hash["SYSTEM"] ||= Hash.new)
 	h["MEMDDI"] ||= "0"
-	h["MWORDS"] ||= "16"
+    if runtyp == "SADPOINT" || runtyp == "IRC"
+        h["MWORDS"] ||= "32"
+    else
+        h["MWORDS"] ||= "16"
+    end
 	h["TIMLIM"] ||= "50000"
 	
 	h = (hash["GUESS"] ||= Hash.new)
@@ -940,6 +954,16 @@ class Molecule
 	  h["AUTO"] ||= ".T."
 	end
 	
+    if runtyp == "IRC"
+        h = (hash["IRC"] ||= Hash.new)
+        h["SADDLE"] = ".T."
+        h["TSENGY"] = ".T."
+        h["FORWRD"] = ".T."
+        h["NPOINT"] = "100"
+        h["STRIDE"] = "0.2"
+        h["OPTTOL"] = "1.0E-05"
+    end
+    
 	if (hash["esp"] || 0) != 0
 	  h = (hash["ELPOT"] ||= Hash.new)
 	  h["IEPOT"] ||= "1"
@@ -985,7 +1009,7 @@ class Molecule
 		elsif k == "SCF"
 		  ordered = ["CONV", "DIRSCF", "FDIFF", "DAMP"]
 		elsif k == "STATPT"
-		  ordered = ["NSTEP", "OPTTOL"]
+		  ordered = ["NSTEP", "OPTTOL", "HESS", "HSSEND"]
 		elsif k == "SYSTEM"
 		  ordered = ["MEMDDI", "MWORDS", "TIMLIM"]
 		elsif k == "GUESS"
@@ -998,6 +1022,8 @@ class Molecule
 		  ordered = ["IEPOT", "OUTPUT", "WHERE"]
 		elsif k == "PDC"
 		  ordered = ["CONSTR", "PTSEL"]
+        elsif k == "IRC"
+          ordered = ["SADDLE", "TSENGY", "FORWRD", "NPOINT", "STRIDE", "OPTTOL"]
 		else
 		  ordered = []
 		end
@@ -1074,21 +1100,58 @@ class Molecule
 	end
   end
   
-  def cmd_edit_gamess_input(s)
-    h = Dialog.run("Edit GAMESS Input", "OK", "Cancel", :resizable=>true) {
-	  layout(1,
-	    item(:textview, :value=>s, :tag=>"edit", :width=>400, :height=>400, :flex=>[0,0,0,0,1,1]),
-	    :flex=>[0,0,0,0,1,1]
-	  )
-	  set_min_size(300, 300)
-	}
-	if h[:status] == 0
-	  return h["edit"]
-	else
-	  return nil
-	end
+  def copy_section_from_gamess_output
+      fname = Dialog.open_panel("Select GAMESS Output:", self.dir, "*.log;*.dat")
+      if fname
+          fp = open(fname, "rb")
+          if fp
+              pos = 0
+              k = Hash.new
+              fp.each_line { |ln|
+                  if ln.start_with?(" $")
+                      keyword = ln.strip
+                      if keyword !~ /\$END/
+                          k[keyword] = pos
+                      end
+                  end
+                  pos += ln.length
+              }
+              keywords = k.keys.sort { |a, b| k[a] <=> k[b] }
+              h = Dialog.run("Select GAMESS section to copy", "Copy", "Cancel") {
+                  layout(1,
+                         item(:popup, :subitems=>keywords, :tag=>"section"))
+              }
+              if h[:status] == 0
+                  fp.seek(k[keywords[h["section"]]])
+                  s = ""
+                  fp.each_line { |ln|
+                      s += ln
+                      break if ln =~ /\$END/
+                  }
+                  export_to_clipboard(s)
+              end
+              fp.close
+          end
+      end
   end
   
+  def cmd_edit_gamess_input(s)
+      mol = self
+      h = Dialog.run("Edit GAMESS Input", "OK", "Cancel", :resizable=>true) {
+          layout(1,
+                 item(:textview, :value=>s, :tag=>"edit", :width=>400, :height=>400, :flex=>[0,0,0,0,1,1]),
+                 item(:button, :title=>"Copy Section from GAMESS Output...", :action=>lambda { |it| mol.copy_section_from_gamess_output } ),
+                 :flex=>[0,0,0,0,1,1]
+                 )
+                 set_min_size(300, 300)
+      }
+      if h[:status] == 0
+          return h["edit"]
+      else
+          return nil
+      end
+  end
+
   def cmd_create_gamess_input
 
     mol = self
@@ -1228,8 +1291,8 @@ class Molecule
 		item(:text, :title=>"SCF type"),
 		item(:popup, :subitems=>["RHF", "ROHF", "UHF"], :tag=>"scftype"),
 	    item(:text, :title=>"Run type"),
-		item(:popup, :subitems=>["Energy", "Property", "Optimize"], :tag=>"runtype",
-		  :action=>lambda { |it| set_attr("use_internal", :enabled=>(it[:value] == 2)) } ),
+		item(:popup, :subitems=>["Energy", "Property", "Optimize", "Sadpoint", "IRC"], :tag=>"runtype",
+		  :action=>lambda { |it| set_attr("use_internal", :enabled=>(it[:value] >= 2)) } ),
         item(:checkbox, :title=>"Use internal coordinates for structure optimization", :tag=>"use_internal"),
         -1, -1, -1,
 		item(:checkbox, :title=>"Eliminate translation and rotational degrees of freedom", :tag=>"eliminate_freedom"),
@@ -1353,7 +1416,7 @@ class Molecule
 	  set_attr("secondary_elements", :enabled=>(values["use_secondary_basis"] == 1))
 	  set_attr("secondary_basis", :enabled=>(values["use_secondary_basis"] == 1))
 	  set_attr("dfttype", :enabled=>(values["dft"] == 1))
-	  set_attr("use_internal", :enabled=>(values["runtype"] == 2))
+	  set_attr("use_internal", :enabled=>(values["runtype"] >= 2))
 	  set_attr("executable_path", :enabled=>(values["execute_local"] == 1))
 	  set_attr("select_path", :enabled=>(values["execute_local"] == 1))
 	  set_attr("ncpus", :enabled=>(values["execute_local"] == 1))
