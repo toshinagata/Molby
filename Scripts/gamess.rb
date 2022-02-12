@@ -896,7 +896,7 @@ class Molecule
 	if (hash["dft"] || 0) != 0 && hash["dfttype"]
 	  h["DFTTYP"] ||= hash["dfttype"]
 	end
-	if (hash["use_internal"] || 0) != 0 && (hash["runtype"] == 2 || h["RUNTYP"] == "OPTIMIZE")
+	if (hash["use_internal"] || 0) != 0 && (hash["runtype"] >= 2 || h["RUNTYP"] == "OPTIMIZE" || h["RUNTYP"] == "SADPOINT" || h["RUNTYP"] == "IRC")
 	  nzvar = natoms * 3 - 6  #  TODO: 3N-5 for linear molecules
 	  h["NZVAR"] ||= nzvar.to_s
 	else
