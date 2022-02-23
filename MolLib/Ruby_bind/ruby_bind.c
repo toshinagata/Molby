@@ -4931,10 +4931,13 @@ static IntGroup *
 s_Molecule_AtomGroupFromValue(VALUE self, VALUE val)
 {
 	IntGroup *ig;
+    Molecule *mp1;
+    Data_Get_Struct(self, Molecule, mp1);
 	val = rb_funcall(self, rb_intern("atom_group"), 1, val);
 	if (!rb_obj_is_kind_of(val, rb_cIntGroup))
 		rb_raise(rb_eMolbyError, "IntGroup instance is expected");
 	Data_Get_Struct(val, IntGroup, ig);
+    IntGroupRemove(ig, mp1->natoms, ATOMS_MAX_NUMBER); /* Limit the group member to existing atoms */
 	IntGroupRetain(ig);
 	return ig;
 }
@@ -6121,12 +6124,14 @@ s_Molecule_Remove(VALUE self, VALUE group)
 	Int i;
 	IntGroupIterator iter;
 
-    Data_Get_Struct(self, Molecule, mol1);
+    ig = s_Molecule_AtomGroupFromValue(self, group);
+/*    Data_Get_Struct(self, Molecule, mol1);
 	group = rb_funcall(self, rb_intern("atom_group"), 1, group);
 	if (!rb_obj_is_kind_of(group, rb_cIntGroup))
 		rb_raise(rb_eMolbyError, "IntGroup instance is expected");
-	Data_Get_Struct(group, IntGroup, ig);
-
+	Data_Get_Struct(group, IntGroup, ig); */
+    Data_Get_Struct(self, Molecule, mol1);
+    
 	/*  Remove the bonds between the two fragments  */
 	/*  (This is necessary for undo to work correctly)  */
 	IntGroupIteratorInit(ig, &iter);
@@ -8631,7 +8636,7 @@ s_Molecule_FitCoordinates(int argc, VALUE *argv, VALUE self)
 	if (gval == Qnil)
 		ig = IntGroupNewWithPoints(0, mol->natoms, -1);
 	else
-		ig = IntGroupFromValue(gval);
+		ig = s_Molecule_AtomGroupFromValue(self, gval);
 	if (ig == NULL || (nn = IntGroupGetCount(ig)) == 0) {
 		IntGroupRelease(ig);
 		rb_raise(rb_eMolbyError, "atom group is not given correctly");
@@ -10990,7 +10995,7 @@ s_Molecule_SearchEquivalentAtoms(int argc, VALUE *argv, VALUE self)
 		return Qnil;
 	rb_scan_args(argc, argv, "01", &val);
 	if (val != Qnil)
-		ig = IntGroupFromValue(val);
+		ig = s_Molecule_AtomGroupFromValue(self, val);
 	else ig = NULL;
 	result = MoleculeSearchEquivalentAtoms(mol, ig);
 	if (result == NULL)
@@ -11037,7 +11042,12 @@ s_Molecule_CreatePiAnchor(int argc, VALUE *argv, VALUE self)
 	gval = *argv++;
 	argc -= 2;
     Data_Get_Struct(self, Molecule, mol);
-	ig = IntGroupFromValue(gval);
+    if (gval == Qnil)
+        ig = NULL;
+    else
+        ig = s_Molecule_AtomGroupFromValue(self, gval);
+    if (ig == NULL || IntGroupGetCount(ig) == 0)
+    rb_raise(rb_eMolbyError, "atom group is not given correctly");
 	memset(&a, 0, sizeof(a));
 	memset(&an, 0, sizeof(an));
 	strncpy(a.aname, StringValuePtr(nval), 4);
