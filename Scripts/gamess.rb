@@ -1101,21 +1101,36 @@ class Molecule
   end
   
   def copy_section_from_gamess_output
-      fname = Dialog.open_panel("Select GAMESS Output:", self.dir, "*.log;*.dat")
+      if @gamess_output_fname
+          dir = File.dirname(@gamess_output_fname)
+      else
+          dir = self.dir
+      end
+      fname = Dialog.open_panel("Select GAMESS Output:", dir, "*.log;*.dat")
       if fname
           fp = open(fname, "rb")
           if fp
-              pos = 0
-              k = Hash.new
-              fp.each_line { |ln|
-                  if ln.start_with?(" $")
-                      keyword = ln.strip
-                      if keyword !~ /\$END/
-                          k[keyword] = pos
+              mtime = fp.mtime
+              if @gamess_output_fname == fname && @gamess_output_mtime == mtime
+                  #  Use the cached value
+                  k = @gamess_output_sections
+              else
+                  pos = 0
+                  k = Hash.new
+                  fp.each_line { |ln|
+                      if ln.start_with?(" $")
+                          keyword = ln.strip
+                          if keyword !~ /\$END/
+                              k[keyword] = pos
+                          end
                       end
-                  end
-                  pos += ln.length
-              }
+                      pos += ln.length
+                  }
+                  #  Cache the information
+                  @gamess_output_fname = fname
+                  @gamess_output_mtime = mtime
+                  @gamess_output_sections = k
+              end
               keywords = k.keys.sort { |a, b| k[a] <=> k[b] }
               h = Dialog.run("Select GAMESS section to copy", "Copy", "Cancel") {
                   layout(1,
