@@ -29,6 +29,7 @@
 /*  On Mac OS X, CLAPACK is in Accelerate.framework  */
 #include <vecLib/cblas.h>
 #include <vecLib/clapack.h>
+//#include <Accelerate/Accelerate.h>
 #else
 #include <f2c.h>
 #include <blaswrap.h>
