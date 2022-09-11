@@ -64,7 +64,7 @@
 		E4059FC128C46A6E0052B36B /* MyDocument.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BE04188574AD00A2B983 /* MyDocument.cpp */; };
 		E4059FC228C46A6E0052B36B /* MyGLCanvas.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BE06188574AD00A2B983 /* MyGLCanvas.cpp */; };
 		E4059FC328C46A6E0052B36B /* MyIPCSupport.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BE08188574AD00A2B983 /* MyIPCSupport.cpp */; };
-		E4059FC428C46A6E0052B36B /* MyListCtrl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BE0A188574AD00A2B983 /* MyListCtrl.cpp */; };
+		E4059FC428C46A6E0052B36B /* MyListCtrl_orig.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BE0A188574AD00A2B983 /* MyListCtrl_orig.cpp */; };
 		E4059FC528C46A6E0052B36B /* MyProgressIndicator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BE12188574D700A2B983 /* MyProgressIndicator.cpp */; };
 		E4059FC628C46A6E0052B36B /* MySlider.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BE14188574D700A2B983 /* MySlider.cpp */; };
 		E4059FC728C46A6E0052B36B /* MyThread.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BE16188574D700A2B983 /* MyThread.cpp */; };
@@ -92,13 +92,13 @@
 		E4059FDE28C46A6E0052B36B /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E4FC7B58183E53710064FB2E /* WebKit.framework */; };
 		E4059FDF28C46A6E0052B36B /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E4FC7CAC183F953E0064FB2E /* AudioToolbox.framework */; };
 		E4059FE728C46B330052B36B /* Molby_MacLegacy-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = E4059FE628C46B320052B36B /* Molby_MacLegacy-Info.plist */; };
-		E4196C66190B2FA500183E62 /* menu.mm in Sources */ = {isa = PBXBuildFile; fileRef = E4196C65190B2FA500183E62 /* menu.mm */; };
+		E41251B628C4B1AB00E12983 /* listctrl_wx32.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E41251B528C4B1AB00E12983 /* listctrl_wx32.cpp */; };
+		E41251B828CD92A100E12983 /* MyListCtrl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E41251B728CD92A100E12983 /* MyListCtrl.cpp */; };
+		E41251B928CD92A100E12983 /* MyListCtrl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E41251B728CD92A100E12983 /* MyListCtrl.cpp */; };
 		E41A7F962307D61200C65830 /* bitmaps in Resources */ = {isa = PBXBuildFile; fileRef = E41A7F952307D61200C65830 /* bitmaps */; };
 		E420BDEF1885746700A2B983 /* ConsoleFrame.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BDE81885746700A2B983 /* ConsoleFrame.cpp */; };
-		E420BDF01885746700A2B983 /* filedlg.mm in Sources */ = {isa = PBXBuildFile; fileRef = E420BDEA1885746700A2B983 /* filedlg.mm */; };
 		E420BDF11885746700A2B983 /* GlobalParameterFilesFrame.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BDEB1885746700A2B983 /* GlobalParameterFilesFrame.cpp */; };
 		E420BDF21885746700A2B983 /* GlobalParameterFrame.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BDED1885746700A2B983 /* GlobalParameterFrame.cpp */; };
-		E420BDFD1885749000A2B983 /* listctrl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BDF41885749000A2B983 /* listctrl.cpp */; };
 		E420BDFE1885749000A2B983 /* MoleculeView.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BDF51885749000A2B983 /* MoleculeView.cpp */; };
 		E420BDFF1885749000A2B983 /* MyApp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BDF71885749000A2B983 /* MyApp.cpp */; };
 		E420BE001885749000A2B983 /* MyClipboardData.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BDF91885749000A2B983 /* MyClipboardData.cpp */; };
@@ -107,7 +107,6 @@
 		E420BE0D188574AD00A2B983 /* MyDocument.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BE04188574AD00A2B983 /* MyDocument.cpp */; };
 		E420BE0E188574AD00A2B983 /* MyGLCanvas.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BE06188574AD00A2B983 /* MyGLCanvas.cpp */; };
 		E420BE0F188574AD00A2B983 /* MyIPCSupport.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BE08188574AD00A2B983 /* MyIPCSupport.cpp */; };
-		E420BE10188574AD00A2B983 /* MyListCtrl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BE0A188574AD00A2B983 /* MyListCtrl.cpp */; };
 		E420BE19188574D700A2B983 /* MyProgressIndicator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BE12188574D700A2B983 /* MyProgressIndicator.cpp */; };
 		E420BE1A188574D700A2B983 /* MySlider.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BE14188574D700A2B983 /* MySlider.cpp */; };
 		E420BE1B188574D700A2B983 /* MyThread.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BE16188574D700A2B983 /* MyThread.cpp */; };
@@ -189,6 +188,9 @@
 		8D1107320486CEB800E47090 /* Molby.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Molby.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E4059FE428C46A6E0052B36B /* Molby_MacLegacy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Molby_MacLegacy.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E4059FE628C46B320052B36B /* Molby_MacLegacy-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "Molby_MacLegacy-Info.plist"; sourceTree = "<group>"; };
+		E41251B528C4B1AB00E12983 /* listctrl_wx32.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = listctrl_wx32.cpp; sourceTree = "<group>"; };
+		E41251B728CD92A100E12983 /* MyListCtrl.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MyListCtrl.cpp; sourceTree = "<group>"; };
+		E41251BA28CD92AD00E12983 /* MyListCtrl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MyListCtrl.h; sourceTree = "<group>"; };
 		E4196C65190B2FA500183E62 /* menu.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = menu.mm; sourceTree = "<group>"; };
 		E41A7F952307D61200C65830 /* bitmaps */ = {isa = PBXFileReference; lastKnownFileType = folder; name = bitmaps; path = ../bitmaps/bitmaps; sourceTree = "<group>"; };
 		E420BDE81885746700A2B983 /* ConsoleFrame.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ConsoleFrame.cpp; sourceTree = "<group>"; };
@@ -216,8 +218,8 @@
 		E420BE07188574AD00A2B983 /* MyGLCanvas.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MyGLCanvas.h; sourceTree = "<group>"; };
 		E420BE08188574AD00A2B983 /* MyIPCSupport.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MyIPCSupport.cpp; sourceTree = "<group>"; };
 		E420BE09188574AD00A2B983 /* MyIPCSupport.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MyIPCSupport.h; sourceTree = "<group>"; };
-		E420BE0A188574AD00A2B983 /* MyListCtrl.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MyListCtrl.cpp; sourceTree = "<group>"; };
-		E420BE0B188574AD00A2B983 /* MyListCtrl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MyListCtrl.h; sourceTree = "<group>"; };
+		E420BE0A188574AD00A2B983 /* MyListCtrl_orig.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MyListCtrl_orig.cpp; sourceTree = "<group>"; };
+		E420BE0B188574AD00A2B983 /* MyListCtrl_orig.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MyListCtrl_orig.h; sourceTree = "<group>"; };
 		E420BE11188574D700A2B983 /* MyMBConv.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MyMBConv.h; sourceTree = "<group>"; };
 		E420BE12188574D700A2B983 /* MyProgressIndicator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MyProgressIndicator.cpp; sourceTree = "<group>"; };
 		E420BE13188574D700A2B983 /* MyProgressIndicator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MyProgressIndicator.h; sourceTree = "<group>"; };
@@ -524,6 +526,7 @@
 				E420BDEE1885746700A2B983 /* GlobalParameterFrame.h */,
 				E420BDF31885749000A2B983 /* listctrl_private.h */,
 				E420BDF41885749000A2B983 /* listctrl.cpp */,
+				E41251B528C4B1AB00E12983 /* listctrl_wx32.cpp */,
 				E4653CB018A0CC7D0022377B /* textctrl_addition.mm */,
 				E4196C65190B2FA500183E62 /* menu.mm */,
 				E420BDF51885749000A2B983 /* MoleculeView.cpp */,
@@ -542,8 +545,10 @@
 				E420BE07188574AD00A2B983 /* MyGLCanvas.h */,
 				E420BE08188574AD00A2B983 /* MyIPCSupport.cpp */,
 				E420BE09188574AD00A2B983 /* MyIPCSupport.h */,
-				E420BE0A188574AD00A2B983 /* MyListCtrl.cpp */,
-				E420BE0B188574AD00A2B983 /* MyListCtrl.h */,
+				E420BE0A188574AD00A2B983 /* MyListCtrl_orig.cpp */,
+				E420BE0B188574AD00A2B983 /* MyListCtrl_orig.h */,
+				E41251B728CD92A100E12983 /* MyListCtrl.cpp */,
+				E41251BA28CD92AD00E12983 /* MyListCtrl.h */,
 				E4D3806419CEC7B600636D28 /* MyTextCtrl.cpp */,
 				E4D3806519CEC7B600636D28 /* MyTextCtrl.h */,
 				E420BE11188574D700A2B983 /* MyMBConv.h */,
@@ -872,6 +877,7 @@
 				E4FC77B7183E4F3F0064FB2E /* Object.c in Sources */,
 				E4FC77B8183E4F3F0064FB2E /* Parameter.c in Sources */,
 				E4FC77BA183E4F3F0064FB2E /* ruby_bind.c in Sources */,
+				E41251B628C4B1AB00E12983 /* listctrl_wx32.cpp in Sources */,
 				E4FC77BB183E4F3F0064FB2E /* ruby_dialog.c in Sources */,
 				E4FC77BC183E4F3F0064FB2E /* ruby_md.c in Sources */,
 				E4FC77BD183E4F3F0064FB2E /* ruby_types.c in Sources */,
@@ -879,10 +885,9 @@
 				E4FC77BF183E4F3F0064FB2E /* Types.c in Sources */,
 				E4FC7CA6183F94D30064FB2E /* buildInfo.c in Sources */,
 				E420BDEF1885746700A2B983 /* ConsoleFrame.cpp in Sources */,
-				E420BDF01885746700A2B983 /* filedlg.mm in Sources */,
 				E420BDF11885746700A2B983 /* GlobalParameterFilesFrame.cpp in Sources */,
+				E41251B828CD92A100E12983 /* MyListCtrl.cpp in Sources */,
 				E420BDF21885746700A2B983 /* GlobalParameterFrame.cpp in Sources */,
-				E420BDFD1885749000A2B983 /* listctrl.cpp in Sources */,
 				E420BDFE1885749000A2B983 /* MoleculeView.cpp in Sources */,
 				E420BDFF1885749000A2B983 /* MyApp.cpp in Sources */,
 				E420BE001885749000A2B983 /* MyClipboardData.cpp in Sources */,
@@ -891,7 +896,6 @@
 				E420BE0D188574AD00A2B983 /* MyDocument.cpp in Sources */,
 				E420BE0E188574AD00A2B983 /* MyGLCanvas.cpp in Sources */,
 				E420BE0F188574AD00A2B983 /* MyIPCSupport.cpp in Sources */,
-				E420BE10188574AD00A2B983 /* MyListCtrl.cpp in Sources */,
 				E420BE19188574D700A2B983 /* MyProgressIndicator.cpp in Sources */,
 				E420BE1A188574D700A2B983 /* MySlider.cpp in Sources */,
 				E420BE1B188574D700A2B983 /* MyThread.cpp in Sources */,
@@ -900,7 +904,6 @@
 				E420BE23188574F600A2B983 /* RubyDialogFrame.cpp in Sources */,
 				E420BE24188574F600A2B983 /* wxKillAddition.cpp in Sources */,
 				E4653CB118A0CC7D0022377B /* textctrl_addition.mm in Sources */,
-				E4196C66190B2FA500183E62 /* menu.mm in Sources */,
 				E4D379A219C87C2200636D28 /* modalwindow.cpp in Sources */,
 				E4D37E0E19CC831500636D28 /* modalwindow_osx.mm in Sources */,
 				E4D3806619CEC7B600636D28 /* MyTextCtrl.cpp in Sources */,
@@ -938,6 +941,7 @@
 				E4059FB828C46A6E0052B36B /* filedlg.mm in Sources */,
 				E4059FB928C46A6E0052B36B /* GlobalParameterFilesFrame.cpp in Sources */,
 				E4059FBA28C46A6E0052B36B /* GlobalParameterFrame.cpp in Sources */,
+				E41251B928CD92A100E12983 /* MyListCtrl.cpp in Sources */,
 				E4059FBB28C46A6E0052B36B /* listctrl.cpp in Sources */,
 				E4059FBC28C46A6E0052B36B /* MoleculeView.cpp in Sources */,
 				E4059FBD28C46A6E0052B36B /* MyApp.cpp in Sources */,
@@ -947,7 +951,7 @@
 				E4059FC128C46A6E0052B36B /* MyDocument.cpp in Sources */,
 				E4059FC228C46A6E0052B36B /* MyGLCanvas.cpp in Sources */,
 				E4059FC328C46A6E0052B36B /* MyIPCSupport.cpp in Sources */,
-				E4059FC428C46A6E0052B36B /* MyListCtrl.cpp in Sources */,
+				E4059FC428C46A6E0052B36B /* MyListCtrl_orig.cpp in Sources */,
 				E4059FC528C46A6E0052B36B /* MyProgressIndicator.cpp in Sources */,
 				E4059FC628C46A6E0052B36B /* MySlider.cpp in Sources */,
 				E4059FC728C46A6E0052B36B /* MyThread.cpp in Sources */,
@@ -1012,6 +1016,7 @@
 					"$(PROJECT_DIR)/../../ruby-2.0.0-p353",
 					"$(PROJECT_DIR)/../../ruby-2.0.0-p353/build-osx/include/ruby-2.0.0",
 					"$(PROJECT_DIR)/../../ruby-2.0.0-p353/build-osx/include/ruby-2.0.0/x86_64-darwin18.7.0",
+					/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk/System/Library/Frameworks/Accelerate.framework/Frameworks/vecLib.framework/Headers,
 				);
 				INFOPLIST_FILE = "Molby-Info.plist";
 				INSTALL_PATH = "$(HOME)/Applications";
@@ -1071,6 +1076,7 @@
 					"$(PROJECT_DIR)/../../ruby-2.0.0-p353",
 					"$(PROJECT_DIR)/../../ruby-2.0.0-p353/build-osx/include/ruby-2.0.0",
 					"$(PROJECT_DIR)/../../ruby-2.0.0-p353/build-osx/include/ruby-2.0.0/x86_64-darwin18.7.0",
+					/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk/System/Library/Frameworks/Accelerate.framework/Frameworks/vecLib.framework/Headers,
 				);
 				INFOPLIST_FILE = "Molby-Info.plist";
 				INSTALL_PATH = "$(HOME)/Applications";
