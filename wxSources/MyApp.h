@@ -187,7 +187,9 @@ class MyApp: public wxApp
 
 	wxMenuBar *CreateMenuBar(int kind, wxMenu **out_file_history_menu = NULL, wxMenu **out_edit_menu = NULL);
 
-	static wxString FindResourcePath();
+    wxString InitResourcePath(int& argc, wxChar **argv);
+
+    static wxString FindResourcePath();
 	static wxString DefaultSettingsPath();
 
 	void LoadDefaultSettings();
@@ -273,6 +275,8 @@ protected:
 
 	wxTopLevelWindow *m_frameToBeDestroyed;   /*  Used in CheckIfAllWindowsAreGone()  */
 	
+    wxString m_resourcePath;
+
 #if defined(__WXMSW__)
 public:
 	wxSingleInstanceChecker *m_checker;

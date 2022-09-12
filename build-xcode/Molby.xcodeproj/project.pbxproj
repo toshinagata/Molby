@@ -24,6 +24,7 @@
 /* End PBXAggregateTarget section */
 
 /* Begin PBXBuildFile section */
+		E403568428CF6A3D008E2C46 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E403568328CF6A3D008E2C46 /* QuartzCore.framework */; };
 		E4059F9B28C46A6E0052B36B /* molby_icon.icns in Resources */ = {isa = PBXBuildFile; fileRef = E4FC77D4183E4FF20064FB2E /* molby_icon.icns */; };
 		E4059F9C28C46A6E0052B36B /* Scripts in Resources */ = {isa = PBXBuildFile; fileRef = E4FC77D6183E4FFE0064FB2E /* Scripts */; };
 		E4059F9D28C46A6E0052B36B /* amber11 in Resources */ = {isa = PBXBuildFile; fileRef = E4FC77D8183E503E0064FB2E /* amber11 */; };
@@ -92,7 +93,6 @@
 		E4059FDE28C46A6E0052B36B /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E4FC7B58183E53710064FB2E /* WebKit.framework */; };
 		E4059FDF28C46A6E0052B36B /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E4FC7CAC183F953E0064FB2E /* AudioToolbox.framework */; };
 		E4059FE728C46B330052B36B /* Molby_MacLegacy-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = E4059FE628C46B320052B36B /* Molby_MacLegacy-Info.plist */; };
-		E41251B628C4B1AB00E12983 /* listctrl_wx32.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E41251B528C4B1AB00E12983 /* listctrl_wx32.cpp */; };
 		E41251B828CD92A100E12983 /* MyListCtrl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E41251B728CD92A100E12983 /* MyListCtrl.cpp */; };
 		E41251B928CD92A100E12983 /* MyListCtrl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E41251B728CD92A100E12983 /* MyListCtrl.cpp */; };
 		E41A7F962307D61200C65830 /* bitmaps in Resources */ = {isa = PBXBuildFile; fileRef = E41A7F952307D61200C65830 /* bitmaps */; };
@@ -114,7 +114,6 @@
 		E420BE22188574F600A2B983 /* ProgressFrame.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BE1D188574F600A2B983 /* ProgressFrame.cpp */; };
 		E420BE23188574F600A2B983 /* RubyDialogFrame.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BE1F188574F600A2B983 /* RubyDialogFrame.cpp */; };
 		E420BE24188574F600A2B983 /* wxKillAddition.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BE21188574F600A2B983 /* wxKillAddition.cpp */; };
-		E45B94621A170B9A008E95EB /* docview.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E45B94611A170B9A008E95EB /* docview.cpp */; };
 		E4653CB118A0CC7D0022377B /* textctrl_addition.mm in Sources */ = {isa = PBXBuildFile; fileRef = E4653CB018A0CC7D0022377B /* textctrl_addition.mm */; };
 		E4ACACE718C6D32300F08B67 /* ortep3 in Resources */ = {isa = PBXBuildFile; fileRef = E4ACACE418C6D32300F08B67 /* ortep3 */; };
 		E4D379A219C87C2200636D28 /* modalwindow.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E4D379A119C87C2200636D28 /* modalwindow.cpp */; };
@@ -186,9 +185,9 @@
 
 /* Begin PBXFileReference section */
 		8D1107320486CEB800E47090 /* Molby.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Molby.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		E403568328CF6A3D008E2C46 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = /System/Library/Frameworks/QuartzCore.framework; sourceTree = "<absolute>"; };
 		E4059FE428C46A6E0052B36B /* Molby_MacLegacy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Molby_MacLegacy.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E4059FE628C46B320052B36B /* Molby_MacLegacy-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "Molby_MacLegacy-Info.plist"; sourceTree = "<group>"; };
-		E41251B528C4B1AB00E12983 /* listctrl_wx32.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = listctrl_wx32.cpp; sourceTree = "<group>"; };
 		E41251B728CD92A100E12983 /* MyListCtrl.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MyListCtrl.cpp; sourceTree = "<group>"; };
 		E41251BA28CD92AD00E12983 /* MyListCtrl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MyListCtrl.h; sourceTree = "<group>"; };
 		E4196C65190B2FA500183E62 /* menu.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = menu.mm; sourceTree = "<group>"; };
@@ -316,6 +315,7 @@
 			files = (
 				E4FC7811183E50DC0064FB2E /* Accelerate.framework in Frameworks */,
 				E4FC7838183E50F00064FB2E /* AGL.framework in Frameworks */,
+				E403568428CF6A3D008E2C46 /* QuartzCore.framework in Frameworks */,
 				E4FC784C183E51180064FB2E /* Carbon.framework in Frameworks */,
 				E4FC784D183E51180064FB2E /* Cocoa.framework in Frameworks */,
 				E4FC784E183E51180064FB2E /* GLUT.framework in Frameworks */,
@@ -489,6 +489,7 @@
 		E4FC780D183E50AF0064FB2E /* Linked Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				E403568328CF6A3D008E2C46 /* QuartzCore.framework */,
 				E4FC7CAC183F953E0064FB2E /* AudioToolbox.framework */,
 				E4FC7810183E50DC0064FB2E /* Accelerate.framework */,
 				E4FC7837183E50F00064FB2E /* AGL.framework */,
@@ -526,7 +527,6 @@
 				E420BDEE1885746700A2B983 /* GlobalParameterFrame.h */,
 				E420BDF31885749000A2B983 /* listctrl_private.h */,
 				E420BDF41885749000A2B983 /* listctrl.cpp */,
-				E41251B528C4B1AB00E12983 /* listctrl_wx32.cpp */,
 				E4653CB018A0CC7D0022377B /* textctrl_addition.mm */,
 				E4196C65190B2FA500183E62 /* menu.mm */,
 				E420BDF51885749000A2B983 /* MoleculeView.cpp */,
@@ -877,7 +877,6 @@
 				E4FC77B7183E4F3F0064FB2E /* Object.c in Sources */,
 				E4FC77B8183E4F3F0064FB2E /* Parameter.c in Sources */,
 				E4FC77BA183E4F3F0064FB2E /* ruby_bind.c in Sources */,
-				E41251B628C4B1AB00E12983 /* listctrl_wx32.cpp in Sources */,
 				E4FC77BB183E4F3F0064FB2E /* ruby_dialog.c in Sources */,
 				E4FC77BC183E4F3F0064FB2E /* ruby_md.c in Sources */,
 				E4FC77BD183E4F3F0064FB2E /* ruby_types.c in Sources */,
@@ -907,7 +906,6 @@
 				E4D379A219C87C2200636D28 /* modalwindow.cpp in Sources */,
 				E4D37E0E19CC831500636D28 /* modalwindow_osx.mm in Sources */,
 				E4D3806619CEC7B600636D28 /* MyTextCtrl.cpp in Sources */,
-				E45B94621A170B9A008E95EB /* docview.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -54,21 +54,21 @@ MyProgressIndicator::MyProgressIndicator(wxWindow* parent, wxWindowID id, const 
 #include "../bitmaps/pi09.xpm"
 #include "../bitmaps/pi10.xpm"
 #include "../bitmaps/pi11.xpm"
-		sStopMiniIcons[0] = new wxBitmap(stop_mini_grey, wxBITMAP_TYPE_XPM);
-		sStopMiniIcons[1] = new wxBitmap(stop_mini, wxBITMAP_TYPE_XPM);
-		sStopMiniIcons[2] = new wxBitmap(stop_mini_dark, wxBITMAP_TYPE_XPM);
-		sProgressIndicatorIcons[0] = new wxBitmap(pi00, wxBITMAP_TYPE_XPM);
-		sProgressIndicatorIcons[1] = new wxBitmap(pi01, wxBITMAP_TYPE_XPM);
-		sProgressIndicatorIcons[2] = new wxBitmap(pi02, wxBITMAP_TYPE_XPM);
-		sProgressIndicatorIcons[3] = new wxBitmap(pi03, wxBITMAP_TYPE_XPM);
-		sProgressIndicatorIcons[4] = new wxBitmap(pi04, wxBITMAP_TYPE_XPM);
-		sProgressIndicatorIcons[5] = new wxBitmap(pi05, wxBITMAP_TYPE_XPM);
-		sProgressIndicatorIcons[6] = new wxBitmap(pi06, wxBITMAP_TYPE_XPM);
-		sProgressIndicatorIcons[7] = new wxBitmap(pi07, wxBITMAP_TYPE_XPM);
-		sProgressIndicatorIcons[8] = new wxBitmap(pi08, wxBITMAP_TYPE_XPM);
-		sProgressIndicatorIcons[9] = new wxBitmap(pi09, wxBITMAP_TYPE_XPM);
-		sProgressIndicatorIcons[10] = new wxBitmap(pi10, wxBITMAP_TYPE_XPM);
-		sProgressIndicatorIcons[11] = new wxBitmap(pi11, wxBITMAP_TYPE_XPM);
+		sStopMiniIcons[0] = new wxBitmap(stop_mini_grey);
+		sStopMiniIcons[1] = new wxBitmap(stop_mini);
+		sStopMiniIcons[2] = new wxBitmap(stop_mini_dark);
+		sProgressIndicatorIcons[0] = new wxBitmap(pi00);
+		sProgressIndicatorIcons[1] = new wxBitmap(pi01);
+		sProgressIndicatorIcons[2] = new wxBitmap(pi02);
+		sProgressIndicatorIcons[3] = new wxBitmap(pi03);
+		sProgressIndicatorIcons[4] = new wxBitmap(pi04);
+		sProgressIndicatorIcons[5] = new wxBitmap(pi05);
+		sProgressIndicatorIcons[6] = new wxBitmap(pi06);
+		sProgressIndicatorIcons[7] = new wxBitmap(pi07);
+		sProgressIndicatorIcons[8] = new wxBitmap(pi08);
+		sProgressIndicatorIcons[9] = new wxBitmap(pi09);
+		sProgressIndicatorIcons[10] = new wxBitmap(pi10);
+		sProgressIndicatorIcons[11] = new wxBitmap(pi11);
 	}
 }
 

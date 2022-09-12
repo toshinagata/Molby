@@ -113,24 +113,26 @@ END_EVENT_TABLE()
 //  Windows: the directory in which the application executable is located.
 //  UNIX: ?
 wxString
-MyApp::FindResourcePath()
+MyApp::InitResourcePath(int& argc, wxChar **argv)
 {
 #if defined(__WXMAC__)
 	CFBundleRef mainBundle = CFBundleGetMainBundle();
 	CFURLRef ref = CFBundleCopyResourcesDirectoryURL(mainBundle);
 	if (ref != NULL) {
-		UInt8 buffer[256];
+		UInt8 buffer[4096];
 		if (CFURLGetFileSystemRepresentation(ref, true, buffer, sizeof buffer)) {
 			wxString dirname((const char *)buffer, WX_DEFAULT_CONV);
 			CFRelease(ref);
+            m_resourcePath = dirname;
 			return dirname;
 		}
 		CFRelease(ref);
 	}
+    m_resourcePath = wxEmptyString;
 	return wxEmptyString;
 #elif defined(__WXMSW__)
     wxString str;
-	wxString argv0 = wxTheApp->argv[0];
+	wxString argv0 = argv[0];
 	//  Fix dosish path (when invoked from MSYS console, the path may be unix-like)
 	//  Note: absolute paths like /c/Molby/... (== c:\Molby\...) is not supported
 	{
@@ -141,26 +143,38 @@ MyApp::FindResourcePath()
 	}
 	//  Is it an absolute path?
     if (wxIsAbsolutePath(argv0)) {
-        return wxPathOnly(argv0);
+        m_resourcePath = wxPathOnly(argv0);
+        return m_resourcePath;
     } else {
         //  Is it a relative path?
         wxString currentDir = wxGetCwd();
         if (currentDir.Last() != wxFILE_SEP_PATH)
             currentDir += wxFILE_SEP_PATH;		
         str = currentDir + argv0;
-        if (wxFileExists(str))
-            return wxPathOnly(str);
+        if (wxFileExists(str)) {
+            m_resourcePath = wxPathOnly(str);
+            return m_resourcePath;
+        }
     }
 	//  Search PATH
     wxPathList pathList;
     pathList.AddEnvList(wxT("PATH"));
     str = pathList.FindAbsoluteValidPath(argv0);
-    if (!str.IsEmpty())
-        return wxPathOnly(str);
-    return wxEmptyString;
+    if (!str.IsEmpty()) {
+        m_resourcePath = wxPathOnly(str);
+        return m_resourcePath;
+    }
+    m_resourcePath = wxEmptyString;
+    return m_resourcePath;
 #else
 #error "FindResourcePath is not defined for UNIXes."
 #endif
+}
+
+wxString
+MyApp::FindResourcePath()
+{
+    return wxGetApp().m_resourcePath;
 }
 
 MyApp::MyApp(void)
@@ -211,9 +225,12 @@ bool MyApp::Initialize(int& argc, wxChar **argv)
             gSuppressConsole = 0;
 
         //  We need these parameters in FindResourcePath(), so we assign them here
-        this->argc = argc;
-        this->argv = argv;
+        //this->argc = argc;
+        //this->argv = argv;
 
+        //  Initialize the internal m_resourcePath member
+        InitResourcePath(argc, argv);
+        
         static const char fname[] = "startup.rb";
         wxString dirname = FindResourcePath();
         
@@ -379,6 +396,7 @@ bool MyApp::OnInit(void)
 	{
 		extern int gRevisionNumber;
 		static const char fname[] = "startup.rb";
+        InitResourcePath(argc, argv);
 		wxString dirname = FindResourcePath();
 	
 		dirname += wxFILE_SEP_PATH;

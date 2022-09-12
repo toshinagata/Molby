@@ -112,24 +112,60 @@ MyListCtrl::SetDataSource(MyListCtrlDataSource *source)
 	RefreshTable();
 }
 
+int
+MyListCtrl::GetColumnCount()
+{
+    return colNames.Count();
+}
+
+bool
+MyListCtrl::DeleteColumn(int col)
+{
+    if (col < 0 || col >= GetColumnCount())
+        return false;
+    colNames.RemoveAt(col);
+    colWidths.erase(colWidths.begin() + col);
+    colFormats.erase(colFormats.begin() + col);
+    SetNeedsReload();
+    return true;
+}
+
+bool
+MyListCtrl::InsertColumn(int col, const wxString &heading, int format, int width)
+{
+    if (col < 0 || col > GetColumnCount())
+        return false;
+    colNames.Insert(heading, col);
+    colWidths.insert(colWidths.begin() + col, width);
+    colFormats.insert(colFormats.begin() + col, format);
+    SetNeedsReload();
+    return true;
+}
+
 void
-MyListCtrl::RefreshTable()
+MyListCtrl::SetColumnWidth(int col, int width)
+{
+    if (col < 0 || col > GetColumnCount())
+        return;
+    colWidths[col] = width;
+    SetNeedsReload();
+}
+
+void
+MyListCtrl::RefreshTable(bool refreshWindow)
 {
     if (dataSource == NULL) {
         nrows = ncols = 0;
     } else {
         int i;
         wxSize sz = header->GetSize();
-        nrows = dataSource->GetNumberOfRows(this);
-        ncols = dataSource->GetNumberOfColumns(this);
-        colWidths.resize(ncols, 10);
+        nrows = dataSource->GetItemCount(this);
+        ncols = GetColumnCount();
         pageWidth = 0;
         for (i = 0; i < ncols; i++) {
-            colWidths[i] = dataSource->GetColumnWidth(this, i);
             pageWidth += colWidths[i];
         }
         rowHeight = dataSource->GetRowHeight(this);
-        headerHeight = dataSource->GetHeaderHeight(this);
         //  "+4" is for drawing marker during cell dragging
         pageHeight = rowHeight * nrows + 4;
         //  Set the subwindow infos
@@ -140,7 +176,17 @@ MyListCtrl::RefreshTable()
         Fit();
         Layout();
     }
-    Refresh();
+    needsReload = false;
+    if (refreshWindow)
+        Refresh();
+}
+
+void
+MyListCtrl::SetNeedsReload(bool flag)
+{
+    needsReload = flag;
+    if (needsReload)
+        Refresh();
 }
 
 static wxBrush lightBlueBrush(wxColour(128, 128, 255));
@@ -150,6 +196,9 @@ MyListCtrl::OnPaint(wxPaintEvent &event)
 {
     if (dataSource == NULL)
         return;
+
+    if (needsReload)
+        RefreshTable(false);
 
     wxPaintDC dc(scroll);
     scroll->DoPrepareDC(dc);
@@ -183,9 +232,14 @@ MyListCtrl::OnPaint(wxPaintEvent &event)
                 }
                 if (y > sz.y + oy)
                     break;
-                str = dataSource->GetCellText(this, j, i);
-                if (dataSource->GetCellAttr(this, j, i, attr)) {
-                    // TODO: attribute change
+                str = dataSource->GetItemText(this, j, i);
+                float fg[4], bg[4];
+                int n = dataSource->SetItemColor(this, j, i, fg, bg);
+                if (n & 1) {
+                    //  TODO: Set foreground color
+                }
+                if (n & 2) {
+                    //  TODO: Set background color
                 }
                 if (IsRowSelected(j)) {
                     if (showDragTarget) {
@@ -234,12 +288,10 @@ MyListCtrl::OnPaintHeader(wxPaintEvent &event)
         for (i = 0; i < ncols; i++) {
             x1 = x + colWidths[i];
             if (x1 > 0) {
-                wxString str = dataSource->GetCellText(this, -1, i);
-                if (dataSource->GetCellAttr(this, -1, i, attr)) {
-                    //  TODO: do attribute change
-                }
+                wxString str = colNames[i];
                 dc.DrawText(str, x, 0);
             }
+            x = x1;
         }
     }
 }
@@ -254,6 +306,26 @@ MyListCtrl::PrepareSelectionChangeNotification()
     for (i = 0; i < selection.size(); i++)
         oldSelection[i] = selection[i];
     selectionChangeNotificationRequired = true;
+}
+
+int
+MyListCtrl::GetItemState(int item, int stateMask)
+{
+    if (stateMask & wxLIST_STATE_SELECTED)
+        return IsRowSelected(item) ? wxLIST_STATE_SELECTED : 0;
+    else return 0;
+}
+
+bool
+MyListCtrl::SetItemState(int item, int state, int stateMask)
+{
+    if (stateMask & wxLIST_STATE_SELECTED) {
+        if (state & wxLIST_STATE_SELECTED)
+            SelectRow(item);
+        else
+            UnselectRow(item);
+    }
+    return true;
 }
 
 bool
@@ -407,7 +479,7 @@ MyListCtrl::OnMotion(wxMouseEvent &event)
         if (mouseMode > 0 && !scroll->HasCapture()) {
             //  Start dragging
             scroll->CaptureMouse();
-            if (mouseMode != 3 && dataSource->IsDragEnabled(this, mouseRow)) {
+            if (mouseMode != 3 && dataSource->IsDragAndDropEnabled(this, mouseRow)) {
                 draggingRows = true;
             }
         }
@@ -435,7 +507,7 @@ MyListCtrl::OnLeftDClick(wxMouseEvent &event)
         }
         cx += colWidths[i];
     }
-    if (!dataSource->IsEditable(this, col, row))
+    if (!dataSource->IsItemEditable(this, row, col))
         return;
     StartEditText(col, row);
 }
@@ -443,9 +515,9 @@ MyListCtrl::OnLeftDClick(wxMouseEvent &event)
 void
 MyListCtrl::OnLeftUp(wxMouseEvent &event)
 {
-    int x, y, ux, uy, row, i;
+    int x, y, ux, uy, row;
     bool dragged = false;
-    bool selectionChanged = selectionChangeNotifiationRequired;
+    bool selectionChanged = selectionChangeNotificationRequired;
     x = event.GetX();
     y = event.GetY();
     scroll->CalcUnscrolledPosition(x, y, &ux, &uy);
@@ -485,7 +557,6 @@ MyListCtrl::OnScrollWin(wxScrollWinEvent &event)
     wxPoint cp = scroll->ScreenToClient(wxGetMousePosition());
     wxSize sz = scroll->GetClientSize();
     wxEventType etype = event.GetEventType();
-    wxEventType etype_org = etype;
     int vx, vy;
     int step = rowHeight;
     scroll->CalcUnscrolledPosition(0, 0, &vx, &vy);
@@ -570,9 +641,67 @@ MyListCtrl::FindItemAtPosition(const wxPoint &pos, int *row, int *col)
     return (r >= 0 && i >= 0);
 }
 
+//  The return rect is the client coordinate in MyListCtrl (not scroll)
+bool
+MyListCtrl::GetItemRectForRowAndColumn(wxRect &rect, int row, int col)
+{
+    int i, tx, ty, cx, cy;
+    if (col < 0 || col >= ncols || row < 0 || row >= nrows)
+        return false;
+    cy = rowHeight * row;
+    cx = 0;
+    for (i = 0; i < col; i++) {
+        cx += colWidths[i];
+    }
+    scroll->CalcScrolledPosition(cx, cy, &tx, &ty);
+    rect.x = tx;
+    rect.y = ty + headerHeight;
+    rect.width = colWidths[col];
+    rect.height = rowHeight;
+    return true;
+}
+
+
+bool
+MyListCtrl::EnsureVisible(int row, int col)
+{
+    wxRect r;
+    if (!GetItemRectForRowAndColumn(r, row, (col == -1 ? 0 : col)))
+        return false;
+    r.y -= headerHeight;  //  Convert to client coord in scroll
+    wxSize sz = scroll->GetClientSize();
+    int scx = -1, scy = -1;
+    int ux, uy;
+    scroll->CalcUnscrolledPosition(r.x, r.y, &ux, &uy);
+    if (col >= 0) {
+        if (r.x < 0) {
+            scx = floor(ux / rowHeight);
+        } else if (r.x + r.width > sz.x) {
+            scx = ceil((ux + r.width - sz.x) / rowHeight);
+            if (scx < 0)
+                scx = 0;
+        }
+    }  // If col is negative, then do not scroll horizontally
+    if (r.y < 0) {
+        scy = floor(uy / rowHeight);
+    } else if (r.y + r.height > sz.y) {
+        scy = ceil((uy + r.height - sz.y) / rowHeight);
+        if (scy < 0)
+            scy = 0;
+    }
+    if (scx >= 0 || scy >= 0) {
+        scroll->Scroll(scx, scy);
+        return true;
+    } else return false;
+}
+
 void
 MyListCtrl::StartEditText(int row, int col)
 {
+    wxRect r;
+    if (!GetItemRectForRowAndColumn(r, row, col))
+        return;
+    r.y -= headerHeight;  //  Convert to client coord in scroll
     int i, tx, ty;
     int cy = rowHeight * row;
     int cx = 0;
@@ -581,31 +710,14 @@ MyListCtrl::StartEditText(int row, int col)
     }
     scroll->CalcScrolledPosition(cx, cy, &tx, &ty);
     if (editText == NULL) {
-        editText = new wxTextCtrl(scroll, -1, "", wxPoint(tx - 2, ty - 2), wxSize(colWidths[col] + 4, rowHeight + 4), wxTE_PROCESS_ENTER);
+        editText = new wxTextCtrl(scroll, -1, "", wxPoint(r.x - 2, r.y - 2), wxSize(r.width + 4, r.height + 4), wxTE_PROCESS_ENTER);
         editText->Bind(wxEVT_CHAR, &MyListCtrl::OnCharInText, this);
     } else {
         FinalizeEdit();
-        editText->SetPosition(wxPoint(tx - 2, ty - 2));
-        editText->SetSize(wxSize(colWidths[col] + 4, rowHeight + 4));
+        editText->SetPosition(wxPoint(r.x - 2, r.y - 2));
+        editText->SetSize(wxSize(r.width + 4, r.height + 4));
     }
-    wxSize sz = scroll->GetClientSize();
-    int scx = -1, scy = -1;
-    if (tx < 0) {
-        scx = floor(cx / rowHeight);
-    } else if (tx + colWidths[col] > sz.x) {
-        scx = ceil((colWidths[col] - sz.x) / rowHeight);
-        if (scx < 0)
-            scx = 0;
-    }
-    if (ty < 0) {
-        scy = floor(cy / rowHeight);
-    } else if (ty + rowHeight > sz.y) {
-        scy = ceil((cy + rowHeight - sz.y) / rowHeight);
-        if (scy < 0)
-            scy = 0;
-    }
-    if (scx >= 0 || scy >= 0)
-        scroll->Scroll(scx, scy);
+    EnsureVisible(row, col);
     editText->Show();
     editText->SetFocus();
     editText->SelectAll();
@@ -614,6 +726,16 @@ MyListCtrl::StartEditText(int row, int col)
     if (selection.size() != 1 || !IsRowSelected(row)) {
         UnselectAllRows();
         SelectRow(row);
+    }
+}
+
+void
+MyListCtrl::FinalizeEdit()
+{
+    if (editText != NULL) {
+        wxString sval = editText->GetValue();
+        if (dataSource)
+            dataSource->SetItemText(this, editRow, editColumn, sval);
     }
 }
 
@@ -628,6 +750,7 @@ MyListCtrl::EndEditText(bool setValueFlag)
     editText->Destroy();
     editText = NULL;
 }
+
 void
 MyListCtrl::EndEditTextAndRestart(bool setValueFlag, int newRow, int newCol)
 {
@@ -659,7 +782,7 @@ MyListCtrl::OnCharInText(wxKeyEvent &event)
                     else
                         row++;
                 }
-            } while (row >= 0 && !dataSource->IsEditable(this, row, col));
+            } while (row >= 0 && !dataSource->IsItemEditable(this, row, col));
             if (row >= 0) {
                 StartEditText(row, col);
             } else {
@@ -687,7 +810,7 @@ MyListCtrl::OnCharInText(wxKeyEvent &event)
                         row = -1;
                 }
             }
-        } while (row >= 0 && !dataSource->IsEditable(this, row, col));
+        } while (row >= 0 && !dataSource->IsItemEditable(this, row, col));
         if (row >= 0)
             StartEditText(row, col);
         else

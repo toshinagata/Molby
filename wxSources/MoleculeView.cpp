@@ -234,7 +234,7 @@ MoleculeView::OnCreate(wxDocument *doc, long WXUNUSED(flags) )
 				wxBoxSizer *sizer31 = new wxBoxSizer(wxVERTICAL);
 				{	// "Rotate bond" button and mySlider
 					#include "../bitmaps/rotate_bond.xpm"
-					wxBitmap bmp1(rotate_bond_xpm, wxBITMAP_TYPE_XPM);
+					wxBitmap bmp1(rotate_bond_xpm);
 					wxBitmapButton *button1 = new wxBitmapButton(panel1, -1, bmp1, wxDefaultPosition, wxSize(21, 21), wxTOGGLEBUTTON_STYLE);
 					sizer31->Add(button1, 0, 0, 0);
 					button1->Disable();
@@ -257,7 +257,7 @@ MoleculeView::OnCreate(wxDocument *doc, long WXUNUSED(flags) )
 					wxBoxSizer *sizer321 = new wxBoxSizer(wxHORIZONTAL);
 					{
 						#include "../bitmaps/rotate_y.xpm"
-						wxBitmap bmp2(rotate_y_xpm, wxBITMAP_TYPE_XPM);
+						wxBitmap bmp2(rotate_y_xpm);
 						wxBitmapButton *button2 = new wxBitmapButton(panel1, -1, bmp2, wxDefaultPosition, wxSize(21, 21), wxTOGGLEBUTTON_STYLE);
 						sizer321->Add(button2, 0, 0, 0);
 						button2->Disable();
@@ -273,7 +273,7 @@ MoleculeView::OnCreate(wxDocument *doc, long WXUNUSED(flags) )
 				wxBoxSizer *sizer33 = new wxBoxSizer(wxVERTICAL);
 				{	// "Rotate bond" button and mySlider
 					#include "../bitmaps/rotate_x.xpm"
-					wxBitmap bmp3(rotate_x_xpm, wxBITMAP_TYPE_XPM);
+					wxBitmap bmp3(rotate_x_xpm);
 					wxBitmapButton *button3 = new wxBitmapButton(panel1, -1, bmp3, wxDefaultPosition, wxSize(21, 21), wxTOGGLEBUTTON_STYLE);
 					button3->Disable();
 					sizer33->Add(button3, 0, 0, 0);
@@ -298,13 +298,13 @@ MoleculeView::OnCreate(wxDocument *doc, long WXUNUSED(flags) )
 				sizer4->Add(frameSlider, 1, wxALL | wxEXPAND, 1);
 			
 				#include "../bitmaps/jump_to_start.xpm"
-				wxBitmap bmp41(jump_to_start_xpm, wxBITMAP_TYPE_XPM);
+				wxBitmap bmp41(jump_to_start_xpm);
 				wxBitmapButton *button41 = new wxBitmapButton(frameControlPanel, myID_JumpToStartButton, bmp41, wxDefaultPosition, wxSize(16, height), wxTOGGLEBUTTON_STYLE);
 				sizer4->Add(button41, 0, wxEXPAND);
 				ConnectMouseDownEvents(button41, MoleculeView::OnFrameButtonAction, this);
 
 				#include "../bitmaps/play_backward.xpm"
-				wxBitmap bmp42(play_backward_xpm, wxBITMAP_TYPE_XPM);
+				wxBitmap bmp42(play_backward_xpm);
 				wxBitmapButton *button42 = new wxBitmapButton(frameControlPanel, myID_PlayBackwardButton, bmp42, wxDefaultPosition, wxSize(16, height), wxTOGGLEBUTTON_STYLE);
 				sizer4->Add(button42, 0, wxEXPAND);
 				ConnectMouseDownEvents(button42, MoleculeView::OnFrameButtonAction, this);
@@ -320,13 +320,13 @@ MoleculeView::OnCreate(wxDocument *doc, long WXUNUSED(flags) )
 				}
 			
 				#include "../bitmaps/play_forward.xpm"
-				wxBitmap bmp43(play_forward_xpm, wxBITMAP_TYPE_XPM);
+				wxBitmap bmp43(play_forward_xpm);
 				wxBitmapButton *button43 = new wxBitmapButton(frameControlPanel, myID_PlayForwardButton, bmp43, wxDefaultPosition, wxSize(16, height), wxTOGGLEBUTTON_STYLE);
 				sizer4->Add(button43, 0, wxEXPAND);
 				ConnectMouseDownEvents(button43, MoleculeView::OnFrameButtonAction, this);
 
 				#include "../bitmaps/jump_to_end.xpm"
-				wxBitmap bmp44(jump_to_end_xpm, wxBITMAP_TYPE_XPM);
+				wxBitmap bmp44(jump_to_end_xpm);
 				wxBitmapButton *button44 = new wxBitmapButton(frameControlPanel, myID_JumpToEndButton, bmp44, wxDefaultPosition, wxSize(16, height), wxTOGGLEBUTTON_STYLE);
 				sizer4->Add(button44, 0, wxEXPAND);
 				ConnectMouseDownEvents(button44, MoleculeView::OnFrameButtonAction, this);

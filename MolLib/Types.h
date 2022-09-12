@@ -27,8 +27,8 @@
 
 #if defined(__WXMAC__) || defined(__CMDMAC__)
 /*  On Mac OS X, CLAPACK is in Accelerate.framework  */
-#include <vecLib/cblas.h>
-#include <vecLib/clapack.h>
+#include <cblas.h>
+#include <clapack.h>
 //#include <Accelerate/Accelerate.h>
 #else
 #include <f2c.h>

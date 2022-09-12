@@ -19,6 +19,7 @@
 #define __MyListCtrl_h__
 
 #include "wx/scrolwin.h"
+#include "wx/listctrl.h" //  some constants are included for compatibility
 
 #include "wx/string.h"
 #include "wx/textctrl.h"
@@ -42,8 +43,26 @@ enum MyListColumnFormat {
 /*  Data source protocol  */
 class MyListCtrlDataSource {
 public:
-    virtual int GetNumberOfRows(MyListCtrl *ctrl) { return 0; }
-    virtual int GetNumberOfColumns(MyListCtrl *ctrl) { return 0; }
+    virtual int GetItemCount(MyListCtrl *ctrl) { return 0; }
+    virtual wxString GetItemText(MyListCtrl *ctrl, long row, long column) const { return _T(""); }
+    virtual int SetItemText(MyListCtrl *ctrl, long row, long column, const wxString &value) { return 0; }
+    virtual void DragSelectionToRow(MyListCtrl *ctrl, long row) {}
+    virtual bool IsItemEditable(MyListCtrl *ctrl, long row, long column) { return false; }
+    virtual bool IsDragAndDropEnabled(MyListCtrl *ctrl, long row = -1) { return false; }
+    virtual void OnSelectionChanged(MyListCtrl *ctrl) {}
+    
+    //  If a popup menu is attached to the cell, then returns a positive integer, and *menu_titles should
+    //  contain a malloc()'ed array of char* pointers (that are also malloc()'ed or strdup()'ed)
+    virtual int HasPopUpMenu(MyListCtrl *ctrl, long row, long column, char ***menu_titles) { return 0; }
+    virtual void OnPopUpMenuSelected(MyListCtrl *ctrl, long row, long column, int selected_index) {}
+    
+    //  Return 1 if foreground color should be modified, 2 if background color should be modified, 3 if both
+    virtual int SetItemColor(MyListCtrl *ctrl, long row, long col, float *fg, float *bg) { return 0; }
+
+    virtual int GetRowHeight(MyListCtrl *ctrl, long row = -1) { return 12; }
+
+/*    virtual int GetNumberOfRows(MyListCtrl *ctrl) { return 0; }
+//    virtual int GetNumberOfColumns(MyListCtrl *ctrl) { return 0; }
     virtual int GetColumnWidth(MyListCtrl *ctrl, int index) { return 0; }
     virtual int GetRowHeight(MyListCtrl *ctrl) { return 0; }
     virtual int GetHeaderHeight(MyListCtrl *ctrl) { return 0; }
@@ -59,17 +78,8 @@ public:
 	//  contain a malloc()'ed array of char* pointers (that are also malloc()'ed or strdup()'ed)
 	virtual int HasPopUpMenu(MyListCtrl *ctrl, int row, int col, char ***menu_titles) { return 0; }
 	virtual void OnPopUpMenuSelected(MyListCtrl *ctrl, int row, int col, int selected_index) {}
-
-    //virtual int GetItemCount(MyListCtrl *ctrl) { return 0; }
-    //virtual wxString GetItemText(MyListCtrl *ctrl, long row, long column) const { return _T(""); }
-    //virtual int SetItemText(MyListCtrl *ctrl, long row, long column, const wxString &value) { return 0; }
-    //virtual void DragSelectionToRow(MyListCtrl *ctrl, long row) {}
-    //virtual bool IsItemEditable(MyListCtrl *ctrl, long row, long column) { return false; }
-    //virtual bool IsDragAndDropEnabled(MyListCtrl *ctrl) { return false; }
-    //virtual void OnSelectionChanged(MyListCtrl *ctrl) {}
+*/
     
-	//  Return 1 if foreground color should be modified, 2 if background color should be modified, 3 if both
-	//virtual int SetItemColor(MyListCtrl *ctrl, long row, long col, float *fg, float *bg) { return 0; }
 };
 
 class MyListCtrl: public wxWindow {
@@ -105,9 +115,16 @@ public:
 
 	void SetDataSource(MyListCtrlDataSource *source);
 
-	void RefreshTable();
+    void SetNeedsReload(bool flag = true);
+	void RefreshTable(bool refreshWindow = true);
 
     void PrepareSelectionChangeNotification();
+    
+    // wxListCtrl compatibility: only wxLIST_STATE_SELECTED is implemented
+    int GetItemCount() { return (dataSource ? dataSource->GetItemCount(this) : 0); }
+    int GetItemState(int item, int stateMask);
+    bool SetItemState(int item, int state, int stateMask);
+
     bool IsRowSelected(int row);
     bool SelectRow(int row);
     bool UnselectRow(int row);
@@ -124,6 +141,9 @@ public:
 //	bool GetItemRectForRowAndColumn(wxRect &rect, int row, int column);
 	bool FindItemAtPosition(const wxPoint &pos, int *col, int *row);
 	
+    bool GetItemRectForRowAndColumn(wxRect &rect, int row, int column);
+    bool EnsureVisible(int row, int col = -1);
+
 //	void SetItemTextForColumn(long item, long column, const wxString &text);
 
 	void StartEditText(int col, int row);
@@ -137,10 +157,13 @@ public:
 	
 //	void OnPaintCallback(wxDC *dc);
 
-//	bool DeleteColumn(int col);
-//	bool InsertColumn(int col, const wxString &heading, int width = -1, int format = MyLIST_FORMAT_LEFT);
-//  int GetNumberOfColumns();
-    
+    int GetColumnCount();
+	bool DeleteColumn(int col);
+	bool InsertColumn(int col, const wxString &heading, int format = MyLIST_FORMAT_LEFT, int width = -1);
+    void SetHeaderHeight(int headerHeight);
+    int GetHeaderHeight() { return headerHeight; }
+    void SetColumnWidth(int col, int width);
+
     void OnPaintHeader(wxPaintEvent &event);
     void OnPaint(wxPaintEvent &event);
     void OnLeftDown(wxMouseEvent &event);
@@ -169,6 +192,7 @@ public:
 	
 	bool selectionChangeNotificationRequired;
 	bool selectionChangeNotificationEnabled;
+    bool needsReload;
 	int lastPopUpColumn, lastPopUpRow;
 
 private:
