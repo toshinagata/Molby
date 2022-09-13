@@ -252,7 +252,7 @@ MoleculeView::OnCreate(wxDocument *doc, long WXUNUSED(flags) )
 					
 					//  Let the MyGLCanvas pass the keyboard event to this
 					canvas->Connect(-1, wxEVT_CHAR, wxKeyEventHandler(MoleculeView::OnChar), NULL, this);
-				}
+                }
 				{
 					wxBoxSizer *sizer321 = new wxBoxSizer(wxHORIZONTAL);
 					{
@@ -1093,6 +1093,15 @@ MainViewCallback_frame(MainView *mview, float *rect)
 		rect[0] = rect[1] = rect[2] = rect[3] = 0.0;
 	}
 }
+
+float
+MainViewCallback_getContentScaleFactor(MainView *mview)
+{
+    if (gUseGUI && mview != NULL && mview->ref != NULL) {
+        return ((MoleculeView *)(mview->ref))->canvas->GetContentScaleFactor();
+    } else return 1.0;
+}
+
 
 void
 MainViewCallback_display(MainView *mview)

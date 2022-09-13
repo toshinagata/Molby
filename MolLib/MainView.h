@@ -133,6 +133,7 @@ typedef struct MainView {
 	Byte  freezeScreen;
 	float dimension;
 	
+    float view_scale;     /*  scale factor for display (for high resolution screens)  */
 	float offline_scale;  /*  If non-zero, this is the expansion factor for offline-rendering  */
 	int offline_width, offline_height;  /*  If non-zero, then these are size for offline-rendering  */
 
@@ -262,6 +263,7 @@ STUB int MainViewCallback_clickCount(void *eventRef);
 STUB void MainViewCallback_lockFocus(MainView *mview);
 STUB void MainViewCallback_unlockFocus(MainView *mview);
 STUB void MainViewCallback_frame(MainView *mview, float *rect);
+STUB float MainViewCallback_getContentScaleFactor(MainView *mview);
 STUB void MainViewCallback_display(MainView *mview);
 STUB void MainViewCallback_makeFront(MainView *mview);
 STUB void MainViewCallback_setNeedsDisplay(MainView *mview, int flag);

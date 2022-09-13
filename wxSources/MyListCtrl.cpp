@@ -74,7 +74,7 @@ MyListCtrl::Create(wxWindow* parent, wxWindowID wid, const wxPoint& pos, const w
 	this->wxWindow::Create(parent, wid, pos, size);
 
     header = new wxWindow(this, 1001, wxPoint(0, 0), wxSize(size.x, 12));
-    scroll = new wxScrolledWindow(this, 1002, wxPoint(0, 12), wxSize(size.x, (size.y <= 12 ? 100 : size.y) - 12));
+    scroll = new wxScrolledWindow(this, 1002, wxPoint(0, 12), wxSize(size.x, (size.y <= 12 ? -1 : size.y - 12)));
     
     //  Set sizer
     wxBoxSizer *vsizer = new wxBoxSizer(wxVERTICAL);
@@ -173,7 +173,6 @@ MyListCtrl::RefreshTable(bool refreshWindow)
         header->SetMinSize(sz);
         scroll->SetScrollbars(rowHeight, rowHeight, floor((pageWidth + rowHeight - 1) / rowHeight), nrows);
         scroll->SetVirtualSize(pageWidth, pageHeight);
-        Fit();
         Layout();
     }
     needsReload = false;

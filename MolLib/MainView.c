@@ -283,18 +283,19 @@ MainView_convertScreenPositionToObjectPosition(MainView *mview, const GLfloat *s
     GLint viewport[4], n;
     GLfloat winZ;
     GLdouble posX, posY, posZ;
+    float scale = mview->view_scale;
 	if (mview == NULL)
 		return 0;
 	MainViewCallback_frame(mview, rect);
     viewport[0] = viewport[1] = 0;
-    viewport[2] = (GLint)(rect[2] - rect[0]);
-    viewport[3] = (GLint)(rect[3] - rect[1]);
+    viewport[2] = (GLint)(rect[2] - rect[0]) * scale;
+    viewport[3] = (GLint)(rect[3] - rect[1]) * scale;
 	MainViewCallback_lockFocus(mview);
     if (screenPos[2] >= 0.0)
         winZ = screenPos[2];
     else
-        glReadPixels(screenPos[0], screenPos[1], 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &winZ);
-    gluUnProject(screenPos[0], screenPos[1], winZ, mview->modelview_matrix, mview->projection_matrix, viewport, &posX, &posY, &posZ);
+        glReadPixels(screenPos[0] * scale, screenPos[1] * scale, 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &winZ);
+    gluUnProject(screenPos[0] * scale, screenPos[1] * scale, winZ, mview->modelview_matrix, mview->projection_matrix, viewport, &posX, &posY, &posZ);
     n = glGetError();
 	MainViewCallback_unlockFocus(mview);
 	objectPos[0] = posX;
@@ -312,17 +313,18 @@ MainView_convertObjectPositionToScreenPosition(MainView *mview, const double *ob
 	float rect[4];
     GLint viewport[4];
     GLdouble objX, objY, objZ;
+    float scale = mview->view_scale;
 	if (mview == NULL)
 		return 0;
 	MainViewCallback_frame(mview, rect);
     viewport[0] = viewport[1] = 0;
-    viewport[2] = (GLint)(rect[2] - rect[0]);
-    viewport[3] = (GLint)(rect[3] - rect[1]);
+    viewport[2] = (GLint)(rect[2] - rect[0]) * scale;
+    viewport[3] = (GLint)(rect[3] - rect[1]) * scale;
     gluProject(objectPos[0], objectPos[1], objectPos[2], mview->modelview_matrix, mview->projection_matrix, viewport, &objX, &objY, &objZ);
     if (glGetError() == GL_NO_ERROR) {
-		screenPos[0] = objX;
-		screenPos[1] = objY;
-		screenPos[2] = objZ;
+		screenPos[0] = objX / scale;
+		screenPos[1] = objY / scale;
+		screenPos[2] = objZ / scale;
 	/*	fprintf(stderr, "object(%.3f,%.3f,%.3f) screen(%.3f,%.3f,%.3f)\n", objectPos[0], objectPos[1], objectPos[2], screenPos[0], screenPos[1], screenPos[2]); */
 		return 1;
 	} else return 0;
@@ -1730,13 +1732,14 @@ MainView_drawModel(MainView *mview)
 
     if (!mview->isInitialized) {
         MainView_initializeOpenGL();
+        mview->view_scale = MainViewCallback_getContentScaleFactor(mview);
 		mview->isInitialized = 1;
     }
     
 	dimension = mview->dimension;
 
 	if (mview->offline_scale == 0.0)
-		scale = 1.0;
+        scale = mview->view_scale;
 	else
 		scale = mview->offline_scale;
 
@@ -1840,11 +1843,11 @@ MainView_drawModel(MainView *mview)
         glOrtho(0, width, 0, height, -1.0, 1.0);
         glColor3f(1.0, 1.0, 0.0);
         glBegin(GL_LINE_STRIP);
-		glVertex2f(mview->dragStartPos[0], mview->dragStartPos[1]);
-		glVertex2f(mview->dragStartPos[0], mview->dragEndPos[1]);
-		glVertex2f(mview->dragEndPos[0], mview->dragEndPos[1]);
-		glVertex2f(mview->dragEndPos[0], mview->dragStartPos[1]);
-		glVertex2f(mview->dragStartPos[0], mview->dragStartPos[1]);
+		glVertex2f(mview->dragStartPos[0] * scale, mview->dragStartPos[1] * scale);
+		glVertex2f(mview->dragStartPos[0] * scale, mview->dragEndPos[1] * scale);
+		glVertex2f(mview->dragEndPos[0] * scale, mview->dragEndPos[1] * scale);
+		glVertex2f(mview->dragEndPos[0] * scale, mview->dragStartPos[1] * scale);
+		glVertex2f(mview->dragStartPos[0] * scale, mview->dragStartPos[1] * scale);
         glEnd();
 		glEnable(GL_DEPTH_TEST);
 		enableLighting();

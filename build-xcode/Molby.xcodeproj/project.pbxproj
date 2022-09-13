@@ -25,6 +25,7 @@
 
 /* Begin PBXBuildFile section */
 		E403568428CF6A3D008E2C46 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E403568328CF6A3D008E2C46 /* QuartzCore.framework */; };
+		E403568528D0AD7E008E2C46 /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E4FC7845183E51180064FB2E /* Carbon.framework */; };
 		E4059F9B28C46A6E0052B36B /* molby_icon.icns in Resources */ = {isa = PBXBuildFile; fileRef = E4FC77D4183E4FF20064FB2E /* molby_icon.icns */; };
 		E4059F9C28C46A6E0052B36B /* Scripts in Resources */ = {isa = PBXBuildFile; fileRef = E4FC77D6183E4FFE0064FB2E /* Scripts */; };
 		E4059F9D28C46A6E0052B36B /* amber11 in Resources */ = {isa = PBXBuildFile; fileRef = E4FC77D8183E503E0064FB2E /* amber11 */; };
@@ -144,12 +145,10 @@
 		E4FC7802183E503E0064FB2E /* amber11 in Resources */ = {isa = PBXBuildFile; fileRef = E4FC77D8183E503E0064FB2E /* amber11 */; };
 		E4FC7811183E50DC0064FB2E /* Accelerate.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E4FC7810183E50DC0064FB2E /* Accelerate.framework */; };
 		E4FC7838183E50F00064FB2E /* AGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E4FC7837183E50F00064FB2E /* AGL.framework */; };
-		E4FC784C183E51180064FB2E /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E4FC7845183E51180064FB2E /* Carbon.framework */; };
 		E4FC784D183E51180064FB2E /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E4FC7846183E51180064FB2E /* Cocoa.framework */; };
 		E4FC784E183E51180064FB2E /* GLUT.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E4FC7847183E51180064FB2E /* GLUT.framework */; };
 		E4FC784F183E51180064FB2E /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E4FC7848183E51180064FB2E /* IOKit.framework */; };
 		E4FC7850183E51180064FB2E /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E4FC7849183E51180064FB2E /* OpenGL.framework */; };
-		E4FC7851183E51180064FB2E /* QuickTime.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E4FC784A183E51180064FB2E /* QuickTime.framework */; };
 		E4FC7852183E51180064FB2E /* System.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E4FC784B183E51180064FB2E /* System.framework */; };
 		E4FC7A17183E51570064FB2E /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E4FC7A15183E51570064FB2E /* AppKit.framework */; };
 		E4FC7A18183E51570064FB2E /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E4FC7A16183E51570064FB2E /* Foundation.framework */; };
@@ -316,12 +315,11 @@
 				E4FC7811183E50DC0064FB2E /* Accelerate.framework in Frameworks */,
 				E4FC7838183E50F00064FB2E /* AGL.framework in Frameworks */,
 				E403568428CF6A3D008E2C46 /* QuartzCore.framework in Frameworks */,
-				E4FC784C183E51180064FB2E /* Carbon.framework in Frameworks */,
 				E4FC784D183E51180064FB2E /* Cocoa.framework in Frameworks */,
 				E4FC784E183E51180064FB2E /* GLUT.framework in Frameworks */,
 				E4FC784F183E51180064FB2E /* IOKit.framework in Frameworks */,
+				E403568528D0AD7E008E2C46 /* Carbon.framework in Frameworks */,
 				E4FC7850183E51180064FB2E /* OpenGL.framework in Frameworks */,
-				E4FC7851183E51180064FB2E /* QuickTime.framework in Frameworks */,
 				E4FC7852183E51180064FB2E /* System.framework in Frameworks */,
 				E4FC7A17183E51570064FB2E /* AppKit.framework in Frameworks */,
 				E4FC7A18183E51570064FB2E /* Foundation.framework in Frameworks */,

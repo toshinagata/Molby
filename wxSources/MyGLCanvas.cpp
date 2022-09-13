@@ -168,13 +168,14 @@ MyGLCanvas::OnSize(wxSizeEvent &event)
 
     // set GL viewport (not called by wxGLCanvas::OnSize on all platforms...)
     int w, h;
+    double scale = GetContentScaleFactor();
     GetClientSize(&w, &h);
 #ifndef __WXMOTIF__
 //    if (GetContext())
 #endif
     {
         context->SetCurrent(*this);
-        glViewport(0, 0, (GLint) w, (GLint) h);
+        glViewport(0, 0, (GLint) (w * scale), (GLint) (h * scale));
     }
 #if defined(__WXMSW__)
 	//  On MSW, the window is not repainted upon resize event
