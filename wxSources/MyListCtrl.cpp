@@ -73,8 +73,8 @@ MyListCtrl::Create(wxWindow* parent, wxWindowID wid, const wxPoint& pos, const w
 {
 	this->wxWindow::Create(parent, wid, pos, size);
 
-    header = new wxWindow(this, 1001, wxPoint(0, 0), wxSize(size.x, 12));
-    scroll = new wxScrolledWindow(this, 1002, wxPoint(0, 12), wxSize(size.x, (size.y <= 12 ? -1 : size.y - 12)));
+    header = new wxWindow(this, 1001, wxPoint(0, 0), wxSize(size.x, 16));
+    scroll = new wxScrolledWindow(this, 1002, wxPoint(0, 16), wxSize(size.x, (size.y <= 16 ? -1 : size.y - 16)));
     
     //  Set sizer
     wxBoxSizer *vsizer = new wxBoxSizer(wxVERTICAL);
@@ -88,6 +88,7 @@ MyListCtrl::Create(wxWindow* parent, wxWindowID wid, const wxPoint& pos, const w
     scroll->Bind(wxEVT_LEFT_DOWN, &MyListCtrl::OnLeftDown, this);
     scroll->Bind(wxEVT_LEFT_UP, &MyListCtrl::OnLeftUp, this);
     scroll->Bind(wxEVT_LEFT_DCLICK, &MyListCtrl::OnLeftDClick, this);
+    scroll->Bind(wxEVT_MOTION, &MyListCtrl::OnMotion, this);
     scroll->Bind(wxEVT_SCROLLWIN_BOTTOM, &MyListCtrl::OnScrollWin, this);
     scroll->Bind(wxEVT_SCROLLWIN_TOP, &MyListCtrl::OnScrollWin, this);
     scroll->Bind(wxEVT_SCROLLWIN_LINEDOWN, &MyListCtrl::OnScrollWin, this);
@@ -97,8 +98,19 @@ MyListCtrl::Create(wxWindow* parent, wxWindowID wid, const wxPoint& pos, const w
     scroll->Bind(wxEVT_SCROLLWIN_THUMBRELEASE, &MyListCtrl::OnScrollWin, this);
     scroll->Bind(wxEVT_SCROLLWIN_THUMBTRACK, &MyListCtrl::OnScrollWin, this);
 
-    headerHeight = 12;
-    rowHeight = 12;
+    //  Set Fonts
+    cellFont = GetFont();
+    headerFont = cellFont.Smaller();
+    header->SetFont(headerFont);
+    {
+        //  Measure line height
+        wxClientDC dc(this);
+        int w, h, descent, leading;
+        dc.GetTextExtent(_T("M"), &w, &h, &descent, &leading, &cellFont);
+        rowHeight = h;
+        dc.GetTextExtent(_T("M"), &w, &h, &descent, &leading, &headerFont);
+        headerHeight = h;
+    }
     
 	selectionChangeNotificationRequired = false;
 	selectionChangeNotificationEnabled = true;
@@ -165,7 +177,7 @@ MyListCtrl::RefreshTable(bool refreshWindow)
         for (i = 0; i < ncols; i++) {
             pageWidth += colWidths[i];
         }
-        rowHeight = dataSource->GetRowHeight(this);
+        // rowHeight = dataSource->GetRowHeight(this);
         //  "+4" is for drawing marker during cell dragging
         pageHeight = rowHeight * nrows + 4;
         //  Set the subwindow infos
@@ -199,13 +211,14 @@ MyListCtrl::OnPaint(wxPaintEvent &event)
     if (needsReload)
         RefreshTable(false);
 
+    wxColour colour;
     wxPaintDC dc(scroll);
     scroll->DoPrepareDC(dc);
     int ox, oy;
     scroll->CalcUnscrolledPosition(0, 0, &ox, &oy);
     int col = -1, row, basex;
     wxSize sz = scroll->GetClientSize();
-    bool showDragTarget = (draggingRows && (dragTargetRow != mouseRow && dragTargetRow != mouseRow));
+    bool showDragTarget = (draggingRows && (dragTargetRow != mouseRow && dragTargetRow != mouseRow + 1));
     //  Draw background
     int i, j;
     basex = 0;
@@ -221,50 +234,98 @@ MyListCtrl::OnPaint(wxPaintEvent &event)
         wxTextAttr attr;
         wxString str;
         int x, y;
-        x = basex;
         row = floor(oy / rowHeight);
-        for (i = col; i < ncols; i++) {
-            for (j = row; j < nrows; j++) {
-                y = j * rowHeight;
-                if (showDragTarget && j >= dragTargetRow) {
-                    y += 5;
-                }
-                if (y > sz.y + oy)
-                    break;
-                str = dataSource->GetItemText(this, j, i);
+        //  TODO: exchange the order of i and j, and get the "all-column" attribute
+        //  from SetItemColor() with col = -1
+        for (j = row; j < nrows; j++) {
+            float fg0[4], bg0[4];
+            int n0 = dataSource->SetItemColor(this, j, -1, fg0, bg0);
+            y = j * rowHeight;
+            if (showDragTarget && j >= dragTargetRow) {
+                y += 5;
+            }
+            if (y > sz.y + oy)
+                break;
+            x = basex;
+            for (i = col; i < ncols; i++) {
                 float fg[4], bg[4];
-                int n = dataSource->SetItemColor(this, j, i, fg, bg);
-                if (n & 1) {
-                    //  TODO: Set foreground color
-                }
-                if (n & 2) {
-                    //  TODO: Set background color
-                }
+                int n;
+                str = dataSource->GetItemText(this, j, i);
+                n = dataSource->SetItemColor(this, j, i, fg, bg);
                 if (IsRowSelected(j)) {
                     if (showDragTarget) {
-                        dc.SetBrush(lightBlueBrush);
+                        if (n & 2) {
+                            bg[0] = bg[0] * 0.5 + 0.25;
+                            bg[1] = bg[1] * 0.5 + 0.25;
+                            bg[2] = bg[2] * 0.5 + 0.5;
+                        } else if (n0 & 2) {
+                            bg[0] = bg0[0] * 0.5 + 0.25;
+                            bg[1] = bg0[1] * 0.5 + 0.25;
+                            bg[2] = bg0[2] * 0.5 + 0.5;
+                        } else {
+                            bg[0] = bg[1] = 0.5;
+                            bg[2] = 1.0;
+                        }
                     } else {
-                        dc.SetBrush(*wxBLUE_BRUSH);
+                        if (n & 2) {
+                            bg[0] = bg[0] * 0.5;
+                            bg[1] = bg[1] * 0.5;
+                            bg[2] = bg[2] * 0.5 + 0.5;
+                        } else if (n0 & 2) {
+                            bg[0] = bg0[0] * 0.5;
+                            bg[1] = bg0[1] * 0.5;
+                            bg[2] = bg0[2] * 0.5 + 0.5;
+                        } else {
+                            bg[0] = bg[1] = 0;
+                            bg[2] = 1.0;
+                        }
                     }
-                    dc.SetPen(wxNullPen);
-                    dc.SetTextForeground(*wxWHITE);
+                    if (n & 1) {
+                        //  Leave fg[] as they are
+                    } else if (n0 & 1) {
+                        fg[0] = fg0[0];
+                        fg[1] = fg0[1];
+                        fg[2] = fg0[2];
+                    } else {
+                        fg[0] = fg[1] = fg[2] = 1.0;
+                    }
                 } else {
-                    dc.SetBrush(*wxWHITE_BRUSH);
-                    dc.SetPen(wxNullPen);
-                    dc.SetTextForeground(*wxBLACK);
+                    if (n & 2) {
+                        //  Leave bg[] as they are
+                    } else if (n0 & 2) {
+                        bg[0] = bg0[0];
+                        bg[1] = bg0[1];
+                        bg[2] = bg0[2];
+                    } else {
+                        bg[0] = bg[1] = bg[2] = 1.0;
+                    }
+                    if (n & 1) {
+                        //  Leave fg[] as they are
+                    } else if (n & 1) {
+                        fg[0] = fg0[0];
+                        fg[1] = fg0[1];
+                        fg[2] = fg0[2];
+                    } else {
+                        fg[0] = fg[1] = fg[2] = 0.0;
+                    }
                 }
+                colour.Set(bg[0] * 255, bg[1] * 255, bg[2] * 255);
+                dc.SetBrush(*wxTheBrushList->FindOrCreateBrush(colour));
+                dc.SetPen(*wxTRANSPARENT_PEN);
+                colour.Set(fg[0] * 255, fg[1] * 255, fg[2] * 255);
+                dc.SetTextForeground(colour);
                 dc.DrawRectangle(x, y, colWidths[i], rowHeight - 1);
                 dc.DrawText(str, x, y);
+                x += colWidths[i];
+                if (x > sz.y + ox)
+                    break;
             }
             if (showDragTarget) {
                 y = dragTargetRow * rowHeight + 1;
                 dc.SetBrush(*wxRED_BRUSH);
                 dc.SetPen(wxNullPen);
-                dc.DrawRectangle(x, y, colWidths[i], 3);
+                dc.DrawRectangle(basex, y, x - basex, 3);
             }
-            x += colWidths[i];
-            if (x > sz.y + ox)
-                break;
         }
     }
 }
@@ -508,7 +569,7 @@ MyListCtrl::OnLeftDClick(wxMouseEvent &event)
     }
     if (!dataSource->IsItemEditable(this, row, col))
         return;
-    StartEditText(col, row);
+    StartEditText(row, col);
 }
 
 void
@@ -565,7 +626,7 @@ MyListCtrl::OnScrollWin(wxScrollWinEvent &event)
     if (scroll->IsAutoScrolling()) {
         //  Autoscrolling
         if (mouseMode == 3) {
-            return;  //  Mouse is captured by do not autoscroll
+            return;  //  Mouse is captured but do not autoscroll
         }
         if (etype == wxEVT_SCROLLWIN_LINEUP || etype == wxEVT_SCROLLWIN_LINEDOWN) {
             if (orient == wxHORIZONTAL) {

@@ -1924,7 +1924,7 @@ RubyDialog_IsTableItemEditable(RubyValue self, RDItem *ip, int row, int column)
 }
 
 int
-RubyDialog_IsTableDragAndDropEnabled(RubyValue self, RDItem *ip)
+RubyDialog_IsTableDragAndDropEnabled(RubyValue self, RDItem *ip, int row)
 {
 	int status;
 	void *vp[4] = { (void *)(uintptr_t)self, (void *)ip, (void *)(uintptr_t)sIsDragAndDropEnabledSymbol, NULL };

@@ -996,7 +996,7 @@ MoleculeView::IsItemEditable(MyListCtrl *ctrl, long row, long column)
 }
 
 bool
-MoleculeView::IsDragAndDropEnabled(MyListCtrl *ctrl)
+MoleculeView::IsDragAndDropEnabled(MyListCtrl *ctrl, long row)
 {
 	/*  Only enabled for the atom table  */
 	return (MainView_tableType(mview) == 0);

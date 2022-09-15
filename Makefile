@@ -2,7 +2,7 @@ ifeq ($(TARGET_PLATFORM),MSW)
  ifeq ($(TARGET_ARCH),x86_64)
   TOOL_PREFIX = x86_64-w64-mingw32-
   MSW_BUILD = build-win
-  LIB_SUFFIX = -3.0-x86_64-w64-mingw32
+  LIB_SUFFIX = -3.2-x86_64-w64-mingw32
   WINE_PATH=/Applications/EasyWine.app/Contents/Resources/wine/bin
   PRODUCT_SUFFIX = 64
   TARGET_ARCH_DEFINE = -DTARGET_ARCH=64
@@ -11,18 +11,18 @@ ifeq ($(TARGET_PLATFORM),MSW)
   TOOL_PREFIX = i686-w64-mingw32-
 #  CPP_EXTRA_FLAGS += -isystem /usr/local/mingw-w32/mingw/include
   MSW_BUILD = build-win32
-  LIB_SUFFIX = -3.0-i686-w64-mingw32
+  LIB_SUFFIX = -3.2-i686-w64-mingw32
   WINE_PATH=/Applications/EasyWine.app/Contents/Resources/wine/bin
   PRODUCT_SUFFIX = 32
 #  FINAL_EXECUTABLE_SUFFIX = _32bit
   TARGET_ARCH_DEFINE = -DTARGET_ARCH=32
   SETUP_NAME = SetupMolbyWin32
  endif
- WX_DIR = $(PWD)/../../wxWidgets-3.0.3
+ WX_DIR = $(PWD)/../../wxWidgets-3.2.0
  WX_LIB_DIR = $(WX_DIR)/$(MSW_BUILD)/lib
- WX_ARCH_DIR = $(WX_LIB_DIR)/wx/include/$(TOOL_PREFIX)msw-unicode-static-3.0
+ WX_ARCH_DIR = $(WX_LIB_DIR)/wx/include/$(TOOL_PREFIX)msw-unicode-static-3.2
  WX_CPPFLAGS = -isystem $(WX_ARCH_DIR) -isystem $(WX_DIR)/include -D_LARGEFIILE_SOURCE=unknown -D__WXMSW__ $(TARGET_ARCH_DEFINE)
- WX_LDFLAGS = -L$(WX_LIB_DIR) -Wl,--subsystem,windows -mwindows -lwx_mswu_gl$(LIB_SUFFIX) -lopengl32 -lglu32 -lwx_mswu$(LIB_SUFFIX) -lwxregexu$(LIB_SUFFIX) -lwxexpat$(LIB_SUFFIX) -lwxtiff$(LIB_SUFFIX) -lwxjpeg$(LIB_SUFFIX) -lwxpng$(LIB_SUFFIX) -lwxzlib$(LIB_SUFFIX) -lrpcrt4 -loleaut32 -lole32 -luuid -lwinspool -lwinmm -lshell32 -lcomctl32 -lcomdlg32 -ladvapi32 -lwsock32 -lgdi32
+ WX_LDFLAGS = -L$(WX_LIB_DIR) -Wl,--subsystem,windows -mwindows $(WX_LIB_DIR)/libwx_mswu_gl$(LIB_SUFFIX).a -lopengl32 -lglu32 $(WX_LIB_DIR)/libwx_mswu$(LIB_SUFFIX).a -limm32 -lwxtiff$(LIB_SUFFIX) -lwxjpeg$(LIB_SUFFIX) -lwxpng$(LIB_SUFFIX) -lwxregexu$(LIB_SUFFIX) -lwxscintilla$(LIB_SUFFIX) -lwxexpat$(LIB_SUFFIX) -lwxzlib$(LIB_SUFFIX) -lrpcrt4 -loleaut32 -lole32 -luuid -luxtheme -lwinspool -lwinmm -lshell32 -lshlwapi -lcomctl32 -lcomdlg32 -ladvapi32 -lversion -lws2_32 -lgdi32 -loleacc -lwinhttp
  CPP_EXTRA_FLAGS = -isystem $(PWD)/../../CLAPACK-3.1.1.1-mingw/INCLUDE -isystem $(PWD)/../../fftw-3.3.2/$(MSW_BUILD)/include -I$(PWD)/../MolLib
  LD_EXTRA_FLAGS = -L$(PWD)/../../CLAPACK-3.1.1.1-mingw/$(MSW_BUILD)/lib -L$(PWD)/../../fftw-3.3.2/$(MSW_BUILD)/lib -llapackMinGW -lblasMinGW -lf2c_nomain -lfftw3 -static-libgcc -static-libstdc++ -Wl,-Bstatic,-lpthread
  RUBY_DIR = $(PWD)/../../ruby-2.0.0-p353
@@ -97,7 +97,8 @@ ortep3/ortep3$(EXE_SUFFIX) :
 	make -f ../Makefile_ortep3
 
 ifeq ($(TARGET_PLATFORM),MSW)
-EXTRA_OBJECTS = listctrl.o window_msw.o textctrl_msw.o OpenGL_extensions.o
+#EXTRA_OBJECTS = window_msw.o textctrl_msw.o OpenGL_extensions.o
+EXTRA_OBJECTS = OpenGL_extensions.o
 RESOURCE = molby_rc.o
 #  The following HOMETEMP kludges are to work around a bug where '#include "..."' 
 #  does not work when the include path is on the C: drive whereas the source is 

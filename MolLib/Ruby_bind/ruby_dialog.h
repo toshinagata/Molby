@@ -84,7 +84,7 @@ extern void RubyDialog_GetTableItemText(RubyValue self, RDItem *ip, int row, int
 extern int RubyDialog_SetTableItemText(RubyValue self, RDItem *ip, int row, int column, const char *str);
 extern void RubyDialog_DragTableSelectionToRow(RubyValue self, RDItem *ip, int row);
 extern int RubyDialog_IsTableItemEditable(RubyValue self, RDItem *ip, int row, int column);
-extern int RubyDialog_IsTableDragAndDropEnabled(RubyValue self, RDItem *ip);
+extern int RubyDialog_IsTableDragAndDropEnabled(RubyValue self, RDItem *ip, int row);
 extern void RubyDialog_OnTableSelectionChanged(RubyValue self, RDItem *ip);
 extern int RubyDialog_SetTableItemColor(RubyValue self, RDItem *ip, int row, int column, float *fg, float *bg);
 extern int RubyDialog_HasPopUpMenu(RubyValue self, RDItem *ip, int row, int column, char ***menu_titles);

@@ -125,7 +125,7 @@ public:
 	virtual int SetItemText(MyListCtrl *ctrl, long row, long column, const wxString &value);
 	virtual void DragSelectionToRow(MyListCtrl *ctrl, long row);
 	virtual bool IsItemEditable(MyListCtrl *ctrl, long row, long column);
-	virtual bool IsDragAndDropEnabled(MyListCtrl *ctrl);
+	virtual bool IsDragAndDropEnabled(MyListCtrl *ctrl, long row = -1);
 	virtual void OnSelectionChanged(MyListCtrl *ctrl);
 	virtual int SetItemColor(MyListCtrl *ctrl, long row, long col, float *fg, float *bg);
 	virtual int HasPopUpMenu(MyListCtrl *ctrl, long row, long column, char ***menu_titles);

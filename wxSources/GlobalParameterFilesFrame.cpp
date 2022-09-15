@@ -273,7 +273,7 @@ GlobalParameterFilesFrame::IsItemEditable(MyListCtrl *ctrl, long row, long colum
 }
 
 bool
-GlobalParameterFilesFrame::IsDragAndDropEnabled(MyListCtrl *ctrl)
+GlobalParameterFilesFrame::IsDragAndDropEnabled(MyListCtrl *ctrl, long row)
 {
 	return 0;
 }

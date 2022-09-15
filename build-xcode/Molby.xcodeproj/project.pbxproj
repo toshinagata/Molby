@@ -26,6 +26,7 @@
 /* Begin PBXBuildFile section */
 		E403568428CF6A3D008E2C46 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E403568328CF6A3D008E2C46 /* QuartzCore.framework */; };
 		E403568528D0AD7E008E2C46 /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E4FC7845183E51180064FB2E /* Carbon.framework */; };
+		E403568628D0B7B0008E2C46 /* MyListCtrl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E41251B728CD92A100E12983 /* MyListCtrl.cpp */; };
 		E4059F9B28C46A6E0052B36B /* molby_icon.icns in Resources */ = {isa = PBXBuildFile; fileRef = E4FC77D4183E4FF20064FB2E /* molby_icon.icns */; };
 		E4059F9C28C46A6E0052B36B /* Scripts in Resources */ = {isa = PBXBuildFile; fileRef = E4FC77D6183E4FFE0064FB2E /* Scripts */; };
 		E4059F9D28C46A6E0052B36B /* amber11 in Resources */ = {isa = PBXBuildFile; fileRef = E4FC77D8183E503E0064FB2E /* amber11 */; };
@@ -57,7 +58,6 @@
 		E4059FB828C46A6E0052B36B /* filedlg.mm in Sources */ = {isa = PBXBuildFile; fileRef = E420BDEA1885746700A2B983 /* filedlg.mm */; };
 		E4059FB928C46A6E0052B36B /* GlobalParameterFilesFrame.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BDEB1885746700A2B983 /* GlobalParameterFilesFrame.cpp */; };
 		E4059FBA28C46A6E0052B36B /* GlobalParameterFrame.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BDED1885746700A2B983 /* GlobalParameterFrame.cpp */; };
-		E4059FBB28C46A6E0052B36B /* listctrl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BDF41885749000A2B983 /* listctrl.cpp */; };
 		E4059FBC28C46A6E0052B36B /* MoleculeView.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BDF51885749000A2B983 /* MoleculeView.cpp */; };
 		E4059FBD28C46A6E0052B36B /* MyApp.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BDF71885749000A2B983 /* MyApp.cpp */; };
 		E4059FBE28C46A6E0052B36B /* MyClipboardData.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BDF91885749000A2B983 /* MyClipboardData.cpp */; };
@@ -66,7 +66,6 @@
 		E4059FC128C46A6E0052B36B /* MyDocument.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BE04188574AD00A2B983 /* MyDocument.cpp */; };
 		E4059FC228C46A6E0052B36B /* MyGLCanvas.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BE06188574AD00A2B983 /* MyGLCanvas.cpp */; };
 		E4059FC328C46A6E0052B36B /* MyIPCSupport.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BE08188574AD00A2B983 /* MyIPCSupport.cpp */; };
-		E4059FC428C46A6E0052B36B /* MyListCtrl_orig.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BE0A188574AD00A2B983 /* MyListCtrl_orig.cpp */; };
 		E4059FC528C46A6E0052B36B /* MyProgressIndicator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BE12188574D700A2B983 /* MyProgressIndicator.cpp */; };
 		E4059FC628C46A6E0052B36B /* MySlider.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BE14188574D700A2B983 /* MySlider.cpp */; };
 		E4059FC728C46A6E0052B36B /* MyThread.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BE16188574D700A2B983 /* MyThread.cpp */; };
@@ -93,9 +92,7 @@
 		E4059FDD28C46A6E0052B36B /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E4FC7A16183E51570064FB2E /* Foundation.framework */; };
 		E4059FDE28C46A6E0052B36B /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E4FC7B58183E53710064FB2E /* WebKit.framework */; };
 		E4059FDF28C46A6E0052B36B /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E4FC7CAC183F953E0064FB2E /* AudioToolbox.framework */; };
-		E4059FE728C46B330052B36B /* Molby_MacLegacy-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = E4059FE628C46B320052B36B /* Molby_MacLegacy-Info.plist */; };
 		E41251B828CD92A100E12983 /* MyListCtrl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E41251B728CD92A100E12983 /* MyListCtrl.cpp */; };
-		E41251B928CD92A100E12983 /* MyListCtrl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E41251B728CD92A100E12983 /* MyListCtrl.cpp */; };
 		E41A7F962307D61200C65830 /* bitmaps in Resources */ = {isa = PBXBuildFile; fileRef = E41A7F952307D61200C65830 /* bitmaps */; };
 		E420BDEF1885746700A2B983 /* ConsoleFrame.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BDE81885746700A2B983 /* ConsoleFrame.cpp */; };
 		E420BDF11885746700A2B983 /* GlobalParameterFilesFrame.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BDEB1885746700A2B983 /* GlobalParameterFilesFrame.cpp */; };
@@ -185,6 +182,8 @@
 /* Begin PBXFileReference section */
 		8D1107320486CEB800E47090 /* Molby.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Molby.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E403568328CF6A3D008E2C46 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = /System/Library/Frameworks/QuartzCore.framework; sourceTree = "<absolute>"; };
+		E403568728D0C859008E2C46 /* window_msw.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = window_msw.cpp; sourceTree = "<group>"; };
+		E403568828D0C8C4008E2C46 /* textctrl_msw.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = textctrl_msw.cpp; sourceTree = "<group>"; };
 		E4059FE428C46A6E0052B36B /* Molby_MacLegacy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Molby_MacLegacy.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E4059FE628C46B320052B36B /* Molby_MacLegacy-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "Molby_MacLegacy-Info.plist"; sourceTree = "<group>"; };
 		E41251B728CD92A100E12983 /* MyListCtrl.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MyListCtrl.cpp; sourceTree = "<group>"; };
@@ -526,6 +525,7 @@
 				E420BDF31885749000A2B983 /* listctrl_private.h */,
 				E420BDF41885749000A2B983 /* listctrl.cpp */,
 				E4653CB018A0CC7D0022377B /* textctrl_addition.mm */,
+				E403568828D0C8C4008E2C46 /* textctrl_msw.cpp */,
 				E4196C65190B2FA500183E62 /* menu.mm */,
 				E420BDF51885749000A2B983 /* MoleculeView.cpp */,
 				E420BDF61885749000A2B983 /* MoleculeView.h */,
@@ -565,6 +565,7 @@
 				E4D379A019C87C1200636D28 /* modalwindow.h */,
 				E4D379A119C87C2200636D28 /* modalwindow.cpp */,
 				E4D37E0D19CC831500636D28 /* modalwindow_osx.mm */,
+				E403568728D0C859008E2C46 /* window_msw.cpp */,
 				E4CB37081FDD4654001BB75E /* OpenGL_extensions.c */,
 				E4CB37091FDD4654001BB75E /* OpenGL_extensions.h */,
 			);
@@ -656,6 +657,7 @@
 		29B97313FDCFA39411CA2CEA /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
+				LastUpgradeCheck = 1030;
 				TargetAttributes = {
 					E4CB370B1FE2C1F7001BB75E = {
 						CreatedOnToolsVersion = 8.2.1;
@@ -712,7 +714,6 @@
 				E4059F9D28C46A6E0052B36B /* amber11 in Resources */,
 				E4059F9E28C46A6E0052B36B /* bitmaps in Resources */,
 				E4059F9F28C46A6E0052B36B /* ortep3 in Resources */,
-				E4059FE728C46B330052B36B /* Molby_MacLegacy-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -934,11 +935,10 @@
 				E4059FB528C46A6E0052B36B /* Types.c in Sources */,
 				E4059FB628C46A6E0052B36B /* buildInfo.c in Sources */,
 				E4059FB728C46A6E0052B36B /* ConsoleFrame.cpp in Sources */,
+				E403568628D0B7B0008E2C46 /* MyListCtrl.cpp in Sources */,
 				E4059FB828C46A6E0052B36B /* filedlg.mm in Sources */,
 				E4059FB928C46A6E0052B36B /* GlobalParameterFilesFrame.cpp in Sources */,
 				E4059FBA28C46A6E0052B36B /* GlobalParameterFrame.cpp in Sources */,
-				E41251B928CD92A100E12983 /* MyListCtrl.cpp in Sources */,
-				E4059FBB28C46A6E0052B36B /* listctrl.cpp in Sources */,
 				E4059FBC28C46A6E0052B36B /* MoleculeView.cpp in Sources */,
 				E4059FBD28C46A6E0052B36B /* MyApp.cpp in Sources */,
 				E4059FBE28C46A6E0052B36B /* MyClipboardData.cpp in Sources */,
@@ -947,7 +947,6 @@
 				E4059FC128C46A6E0052B36B /* MyDocument.cpp in Sources */,
 				E4059FC228C46A6E0052B36B /* MyGLCanvas.cpp in Sources */,
 				E4059FC328C46A6E0052B36B /* MyIPCSupport.cpp in Sources */,
-				E4059FC428C46A6E0052B36B /* MyListCtrl_orig.cpp in Sources */,
 				E4059FC528C46A6E0052B36B /* MyProgressIndicator.cpp in Sources */,
 				E4059FC628C46A6E0052B36B /* MySlider.cpp in Sources */,
 				E4059FC728C46A6E0052B36B /* MyThread.cpp in Sources */,
@@ -989,9 +988,9 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_OBJC_WEAK = YES;
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
@@ -1044,6 +1043,7 @@
 					"-lenc",
 					"-ltrans",
 				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.yourcompany.Molby;
 				PRODUCT_NAME = Molby;
 				SDKROOT = macosx10.12;
 			};
@@ -1053,9 +1053,9 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
 				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_OBJC_WEAK = YES;
 				CLANG_LINK_OBJC_RUNTIME = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
@@ -1104,6 +1104,7 @@
 					"-lenc",
 					"-ltrans",
 				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.yourcompany.Molby;
 				PRODUCT_NAME = Molby;
 				SDKROOT = macosx10.12;
 			};
@@ -1120,8 +1121,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 10.12;
 				ONLY_ACTIVE_ARCH = YES;
-				PREBINDING = NO;
-				SDKROOT = macosx10.12;
+				SDKROOT = macosx;
 			};
 			name = Debug;
 		};
@@ -1135,8 +1135,7 @@
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 10.12;
-				PREBINDING = NO;
-				SDKROOT = macosx10.12;
+				SDKROOT = macosx;
 			};
 			name = Release;
 		};
@@ -1149,7 +1148,6 @@
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				GCC_DYNAMIC_NO_PIC = NO;
-				GCC_ENABLE_FIX_AND_CONTINUE = YES;
 				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
 				GCC_MODEL_TUNING = G5;
 				GCC_OPTIMIZATION_LEVEL = 0;
@@ -1165,6 +1163,7 @@
 					"$(PROJECT_DIR)/../../ruby-2.0.0-p353",
 					"$(PROJECT_DIR)/../../ruby-2.0.0-p353/build-osx/include/ruby-2.0.0",
 					"$(PROJECT_DIR)/../../ruby-2.0.0-p353/build-osx/include/ruby-2.0.0/x86_64-darwin18.7.0",
+					/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.6.sdk/System/Library/Frameworks/Accelerate.framework/Frameworks/vecLib.framework/Headers,
 				);
 				INFOPLIST_FILE = "$(SRCROOT)/Molby_MacLegacy-Info.plist";
 				INSTALL_PATH = "$(HOME)/Applications";
@@ -1196,6 +1195,7 @@
 					"-lenc",
 					"-ltrans",
 				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.yourcompany.Molby;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx10.6;
 			};
@@ -1222,6 +1222,7 @@
 					"$(PROJECT_DIR)/../../ruby-2.0.0-p353",
 					"$(PROJECT_DIR)/../../ruby-2.0.0-p353/build-osx/include/ruby-2.0.0",
 					"$(PROJECT_DIR)/../../ruby-2.0.0-p353/build-osx/include/ruby-2.0.0/x86_64-darwin18.7.0",
+					/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.6.sdk/System/Library/Frameworks/Accelerate.framework/Frameworks/vecLib.framework/Headers,
 				);
 				INFOPLIST_FILE = "$(SRCROOT)/Molby_MacLegacy-Info.plist";
 				INSTALL_PATH = "$(HOME)/Applications";
@@ -1253,6 +1254,7 @@
 					"-lenc",
 					"-ltrans",
 				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.yourcompany.Molby;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx10.6;
 			};
@@ -1267,6 +1269,7 @@
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = NO;
+				CLANG_ENABLE_OBJC_WEAK = YES;
 				CLANG_WARN_BOOL_CONVERSION = YES;
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
@@ -1313,6 +1316,7 @@
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = NO;
+				CLANG_ENABLE_OBJC_WEAK = YES;
 				CLANG_WARN_BOOL_CONVERSION = YES;
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
@@ -1351,6 +1355,7 @@
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = NO;
+				CLANG_ENABLE_OBJC_WEAK = YES;
 				CLANG_WARN_BOOL_CONVERSION = YES;
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
@@ -1397,6 +1402,7 @@
 				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = NO;
+				CLANG_ENABLE_OBJC_WEAK = YES;
 				CLANG_WARN_BOOL_CONVERSION = YES;
 				CLANG_WARN_CONSTANT_CONVERSION = YES;
 				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
@@ -1429,6 +1435,7 @@
 		E4CB37111FE4FF0E001BB75E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -1436,6 +1443,7 @@
 		E4CB37121FE4FF0E001BB75E /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;

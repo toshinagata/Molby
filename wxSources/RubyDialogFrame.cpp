@@ -641,9 +641,9 @@ RubyDialogFrame::IsItemEditable(MyListCtrl *ctrl, long row, long column)
 }
 
 bool 
-RubyDialogFrame::IsDragAndDropEnabled(MyListCtrl *ctrl)
+RubyDialogFrame::IsDragAndDropEnabled(MyListCtrl *ctrl, long row)
 {
-	return RubyDialog_IsTableDragAndDropEnabled((RubyValue)dval, (RDItem *)ctrl);
+	return RubyDialog_IsTableDragAndDropEnabled((RubyValue)dval, (RDItem *)ctrl, row);
 }
 
 void 
