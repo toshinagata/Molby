@@ -56,6 +56,17 @@ class MyDocument;
 #define wxTOGGLEBUTTON_STYLE 0
 #endif
 
+#if wxCHECK_VERSION(3,1,0)
+#define FromFrameDIP(frame, x) frame->FromDIP(x)
+#define ToFrameDIP(frame, x) frame->ToDIP(x)
+#else
+#define FromFrameDIP(frame, x) (x)
+#define ToFrameDIP(frame, x) (x)
+#endif
+
+#define FromDCDIP FromFrameDIP
+#define ToDCDIP ToFrameDIP
+
 enum {
 	myMenuID_MyFirstMenuItem = 12000,
 	myMenuID_Import = 12001,

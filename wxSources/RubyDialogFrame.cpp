@@ -83,7 +83,7 @@ RubyDialogFrame::RubyDialogFrame(wxWindow* parent, wxWindowID wid, const wxStrin
 	buttonSizer = NULL;  //  Will be created later
 	myTimer = NULL;  //  Will be created when necessary
 	boxSizer = new wxBoxSizer(wxVERTICAL);
-	boxSizer->Add(contentSizer, 1, wxALL | wxEXPAND, 14);
+	boxSizer->Add(contentSizer, 1, wxALL | wxEXPAND, FromFrameDIP(this, 14));
 	this->SetSizer(boxSizer);
 	boxSizer->Layout();
 }
@@ -196,7 +196,7 @@ RubyDialogFrame::CreateStandardButtons(const char *oktitle, const char *cancelti
 		if (sizer == NULL)
 			return;  /*  Cannot create  */
 		if (buttonSizer == NULL) {
-			boxSizer->Add(sizer, 0, wxBOTTOM | wxLEFT | wxRIGHT | wxEXPAND, 14);
+			boxSizer->Add(sizer, 0, wxBOTTOM | wxLEFT | wxRIGHT | wxEXPAND, FromFrameDIP(this, 14));
 			buttonSizer = sizer;
 		} else {
 			boxSizer->Replace(buttonSizer, sizer);
@@ -872,7 +872,8 @@ wxRectFromRDRect(RDRect rframe)
 RDSize
 RubyDialogCallback_windowMinSize(RubyDialog *dref)
 {
-	wxSize minSize = ((RubyDialogFrame *)dref)->GetMinSize();
+    RubyDialogFrame *dframe = (RubyDialogFrame *)dref;
+    wxSize minSize = ToFrameDIP(dframe, dframe->GetMinSize());
 	RDSize rminSize;
 	rminSize.width = minSize.GetWidth();
 	rminSize.height = minSize.GetHeight();
@@ -882,16 +883,18 @@ RubyDialogCallback_windowMinSize(RubyDialog *dref)
 void
 RubyDialogCallback_setWindowMinSize(RubyDialog *dref, RDSize size)
 {
+    RubyDialogFrame *dframe = (RubyDialogFrame *)dref;
 	wxSize minSize;
 	minSize.x = (int)size.width;
 	minSize.y = (int)size.height;
-	((RubyDialogFrame *)dref)->SetMinSize(minSize);
+	dframe->SetMinSize(FromFrameDIP(dframe, minSize));
 }
 
 RDSize
 RubyDialogCallback_windowSize(RubyDialog *dref)
 {
-	wxSize minSize = ((RubyDialogFrame *)dref)->GetSize();
+    RubyDialogFrame *dframe = (RubyDialogFrame *)dref;
+    wxSize minSize = ToFrameDIP(dframe, dframe->GetSize());
 	RDSize rminSize;
 	rminSize.width = minSize.GetWidth();
 	rminSize.height = minSize.GetHeight();
@@ -900,9 +903,10 @@ RubyDialogCallback_windowSize(RubyDialog *dref)
 void
 RubyDialogCallback_setWindowSize(RubyDialog *dref, RDSize size)
 {
+    RubyDialogFrame *dframe = (RubyDialogFrame *)dref;
 	wxSize wsize((int)size.width, (int)size.height);
-	((RubyDialogFrame *)dref)->SetSize(wsize);
-	((RubyDialogFrame *)dref)->CentreOnScreen();
+	dframe->SetSize(FromFrameDIP(dframe, wsize));
+	dframe->CentreOnScreen();
 }
 
 void
@@ -969,10 +973,10 @@ RubyDialogCallback_createItem(RubyDialog *dref, const char *type, const char *ti
 		rect.SetPosition(wxDefaultPosition);
 		rect.SetSize(wxDefaultSize);
 	} else {	
-		rect.SetX(rect.x + offset.x);
-		rect.SetY(rect.y + offset.y);
-		rect.SetWidth(rect.width + offset.width);
-		rect.SetHeight(rect.height + offset.height);
+		rect.SetX(FromFrameDIP(parent, rect.x + offset.x));
+		rect.SetY(FromFrameDIP(parent, rect.y + offset.y));
+		rect.SetWidth(FromFrameDIP(parent, rect.width + offset.width));
+		rect.SetHeight(FromFrameDIP(parent, rect.height + offset.height));
 	}
 
 	if (strcmp(type, "text") == 0) {
@@ -1055,14 +1059,14 @@ RubyDialogCallback_createItem(RubyDialog *dref, const char *type, const char *ti
 	if (title[0] != 0 || strcmp(type, "textfield") == 0) {
 		/*  Resize the frame rect as necessary  */
 		RDSize minSize = RubyDialogCallback_sizeOfString((RDItem *)control, title);
-		wxSize size = control->GetSize();
+        wxSize size = ToFrameDIP(parent, control->GetSize());
 		if (size.GetHeight() < minSize.height)
 			size.SetHeight(minSize.height);
 		if (size.GetWidth() < minSize.width)
 			size.SetWidth(minSize.width);
 		size.SetWidth(size.GetWidth() + offset.width);
 		size.SetHeight(size.GetHeight() + offset.height);
-		control->SetSize(size);
+		control->SetSize(FromFrameDIP(parent, size));
 	}
 	
 	if (wxDynamicCast(control, wxTextCtrl) != NULL) {
@@ -1094,10 +1098,11 @@ RubyDialogCallback_indexOfItem(RubyDialog *dref, RDItem *item)
 void
 RubyDialogCallback_moveItemUnderView(RDItem *item, RDItem *superView, RDPoint origin)
 {
+    wxWindow *sv = (wxWindow *)superView;
 	if (item == NULL || superView == NULL || item == superView)
 		return;
-	if (((wxWindow *)item)->Reparent((wxWindow *)superView)) {
-		((wxWindow *)item)->Move(origin.x, origin.y);
+	if (((wxWindow *)item)->Reparent(sv)) {
+		((wxWindow *)item)->Move(FromFrameDIP(sv, origin.x), FromFrameDIP(sv, origin.y));
 	}
 }
 
@@ -1110,29 +1115,39 @@ RubyDialogCallback_superview(RDItem *item)
 RDRect
 RubyDialogCallback_frameOfItem(RDItem *item)
 {
-	wxRect rect = ((wxWindow *)item)->GetRect();
+    wxWindow *wp = (wxWindow *)item;
+	wxRect rect = wp->GetRect();
 	if (gRubyDialogIsFlipped) {
-		wxWindow *parent = ((wxWindow *)item)->GetParent();
+		wxWindow *parent = wp->GetParent();
 		if (parent != NULL) {
 			wxRect superRect = parent->GetRect();
 			rect.SetY(superRect.GetHeight() - rect.GetHeight() - rect.GetY());
 		}
 	}
+    rect.x = ToFrameDIP(wp, rect.x);
+    rect.y = ToFrameDIP(wp, rect.y);
+    rect.width = ToFrameDIP(wp, rect.width);
+    rect.height = ToFrameDIP(wp, rect.height);
 	return RDRectFromwxRect(rect);
 }
 
 void
 RubyDialogCallback_setFrameOfItem(RDItem *item, RDRect rect)
 {
+    wxWindow *wp = (wxWindow *)item;
 	wxRect wrect = wxRectFromRDRect(rect);
 	if (gRubyDialogIsFlipped) {
-		wxWindow *parent = ((wxWindow *)item)->GetParent();
+		wxWindow *parent = wp->GetParent();
 		if (parent != NULL) {
 			wxRect srect = parent->GetRect();
 			wrect.SetY(srect.GetHeight() - wrect.GetHeight() - wrect.GetY());
 		}
 	}
-	((wxWindow *)item)->SetSize(wrect);
+    wrect.x = FromFrameDIP(wp, wrect.x);
+    wrect.y = FromFrameDIP(wp, wrect.y);
+    wrect.width = FromFrameDIP(wp, wrect.width);
+    wrect.height = FromFrameDIP(wp, wrect.height);
+	wp->SetSize(wrect);
 }
 
 void
@@ -1303,14 +1318,14 @@ RubyDialogCallback_setFontForItem(RDItem *item, int size, int family, int style,
 	}
 	if (textctrl != NULL) {
 		wxTextAttr newAttr;
-		wxFont newFont(size, family, style, weight);
+		wxFont newFont(FromFrameDIP(textctrl, size), family, style, weight);
 		newAttr.SetFont(newFont);
 		textctrl->SetDefaultStyle(newAttr);
 #if __WXMAC__
 		textctrl->SetFont(newFont);
 #endif
 	} else {
-		ctrl->SetFont(wxFont(size, family, style, weight));
+		ctrl->SetFont(wxFont(FromFrameDIP(ctrl, size), family, style, weight));
 		wxString label = ctrl->GetLabel();
 		ctrl->SetLabel(_(""));
 		ctrl->SetLabel(label);  /*  Update the control size  */
@@ -1326,7 +1341,7 @@ RubyDialogCallback_getFontForItem(RDItem *item, int *size, int *family, int *sty
 		wxTextAttr attr = ctrl->GetDefaultStyle();
 		wxFont font = attr.GetFont();
 		if (size != NULL)
-			*size = font.GetPointSize();
+            *size = ToFrameDIP(ctrl, font.GetPointSize());
 		if (family != NULL) {
 			n = font.GetFamily();
 			*family = (n == wxFONTFAMILY_DEFAULT ? 1 :
@@ -1498,6 +1513,8 @@ RubyDialogCallback_sizeOfString(RDItem *item, const char *s)
 			break;
 		s1 = s2 + 1;
 	}
+    size.width = ToFrameDIP(((wxWindow *)item), size.width);
+    size.height = ToFrameDIP(((wxWindow *)item), size.height);
 	return size;
 }
 
@@ -1508,8 +1525,8 @@ RubyDialogCallback_resizeToBest(RDItem *item)
 	RDSize rsize;
 	size = ((wxWindow *)item)->GetBestSize();
 	((wxWindow *)item)->SetSize(size);
-	rsize.width = size.GetWidth();
-	rsize.height = size.GetHeight();
+    rsize.width = ToFrameDIP(((wxWindow *)item), size.GetWidth());
+    rsize.height = ToFrameDIP(((wxWindow *)item), size.GetHeight());
 	return rsize;
 }
 
@@ -1686,7 +1703,7 @@ RubyDialogCallback_drawEllipse(RDDeviceContext *dc, float x, float y, float r1, 
 	wxDC *dcp = (wxDC *)dc;
 	if (dcp == NULL)
 		return;
-	dcp->DrawEllipse(x - r1, y - r2, r1 * 2, r2 * 2);
+	dcp->DrawEllipse(FromDCDIP(dcp, x - r1), FromDCDIP(dcp, y - r2), FromDCDIP(dcp, r1 * 2), FromDCDIP(dcp, r2 * 2));
 }
 
 void
@@ -1698,8 +1715,8 @@ RubyDialogCallback_drawLine(RDDeviceContext *dc, int ncoords, float *coords)
 	wxPoint *pts = new wxPoint[ncoords];
 	int i;
 	for (i = 0; i < ncoords; i++) {
-		pts[i].x = (int)coords[i * 2];
-		pts[i].y = (int)coords[i * 2 + 1];
+        pts[i].x = FromDCDIP(dcp, (int)coords[i * 2]);
+        pts[i].y = FromDCDIP(dcp, (int)coords[i * 2 + 1]);
 	}
 	dcp->DrawLines(ncoords, pts);
 	delete [] pts;
@@ -1712,9 +1729,9 @@ RubyDialogCallback_drawRectangle(RDDeviceContext *dc, float x, float y, float wi
 	if (dcp == NULL)
 		return;
 	if (round > 0.0)
-		dcp->DrawRoundedRectangle((int)x, (int)y, (int)width, (int)height, (int)round);
+		dcp->DrawRoundedRectangle(FromDCDIP(dcp, x), FromDCDIP(dcp, y), FromDCDIP(dcp, width), FromDCDIP(dcp, height), FromDCDIP(dcp, round));
 	else
-		dcp->DrawRectangle((int)x, (int)y, (int)width, (int)height);
+		dcp->DrawRectangle(FromDCDIP(dcp, x), FromDCDIP(dcp, y), FromDCDIP(dcp, width), FromDCDIP(dcp, height));
 }
 
 void
@@ -1724,7 +1741,7 @@ RubyDialogCallback_drawText(RDDeviceContext *dc, const char *s, float x, float y
 	if (dcp == NULL)
 		return;
 	wxString str(s, WX_DEFAULT_CONV);
-	dcp->DrawText(str, (int)x, (int)y);
+	dcp->DrawText(str, FromDCDIP(dcp, x), FromDCDIP(dcp, y));
 }
 
 void
@@ -1737,7 +1754,7 @@ RubyDialogCallback_setFont(RDDeviceContext *dc, void **args)
 	wxFont font = dcp->GetFont();
 	for (i = 0; args[i] != NULL; i += 2) {
 		if (strcmp((const char *)args[i], "size") == 0) {
-			float size = *((float *)(args[i + 1]));
+            float size = FromDCDIP(dcp, *((float *)(args[i + 1])));
 			font.SetPointSize((int)size);
 		} else if (strcmp((const char *)args[i], "style") == 0) {
 			long style = (intptr_t)(args[i + 1]);
@@ -1790,7 +1807,7 @@ RubyDialogCallback_setPen(RDDeviceContext *dc, void **args)
 				wxColour col((int)(fp[0] * 255.0), (int)(fp[1] * 255.0), (int)(fp[2] * 255.0), (int)(fp[3] * 255.0));
 				pen.SetColour(col);
 			} else if (strcmp((const char *)args[i], "width") == 0) {
-				float width = *((float *)(args[i + 1]));
+                float width = FromDCDIP(dcp, *((float *)(args[i + 1])));
 				pen.SetWidth((int)width);
 			} else if (strcmp((const char *)args[i], "style") == 0) {
 				long style = (intptr_t)(args[i + 1]);

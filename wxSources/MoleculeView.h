@@ -22,11 +22,11 @@
 
 #include "../MolLib/MolLib.h"
 #include "MyListCtrl.h"
+#include "MyToggleButton.h"
 
 class MyDocument;
 class MyGLCanvas;
 class wxMenu;
-class wxToggleButton;
 class wxStaticText;
 class wxChoice;
 class MyProgressIndicator;
@@ -41,7 +41,7 @@ public:
 	MyListCtrl *listctrl;
 	wxMenu *file_history_menu;
 	wxMenu *edit_menu;
-	wxToggleButton *tbuttons[6];
+	MyToggleButton *tbuttons[6];
 	wxStaticText *infotext;
 	MyProgressIndicator *progress;
 	wxPanel *frameControlPanel;
@@ -55,7 +55,7 @@ public:
 
     MyDocument *MolDocument() { return (MyDocument *)m_viewDocument; }
 	MyListCtrl *GetListCtrl() { return listctrl; }
-	wxToggleButton *GetToggleButtonAtIndex(int i) { return (i >= 0 && i < 6 ? tbuttons[i] : NULL); }
+	MyToggleButton *GetToggleButtonAtIndex(int i) { return (i >= 0 && i < 6 ? tbuttons[i] : NULL); }
 
     bool OnCreate(wxDocument *doc, long flags);
     void OnDraw(wxDC *dc);

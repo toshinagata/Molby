@@ -67,9 +67,9 @@ GlobalParameterFilesFrame::OnCreate()
 	wxBoxSizer *sizer0;
 	sizer0 = new wxBoxSizer(wxVERTICAL);
 	listctrl = new MyListCtrl();
-	listctrl->Create(this, wxID_ANY, wxDefaultPosition, size);
-	listctrl->InsertColumn(0, _T("name"), wxLIST_FORMAT_LEFT, 80);
-	listctrl->InsertColumn(1, _T("directory"), wxLIST_FORMAT_LEFT, 240);
+	listctrl->Create(this, wxID_ANY, wxDefaultPosition, FromFrameDIP(this, size));
+	listctrl->InsertColumn(0, _T("name"), wxLIST_FORMAT_LEFT, FromFrameDIP(this, 80));
+	listctrl->InsertColumn(1, _T("directory"), wxLIST_FORMAT_LEFT, FromFrameDIP(this, 240));
 	sizer0->Add(listctrl, 1, wxLEFT | wxRIGHT | wxEXPAND, 0);
 	{
 		wxBoxSizer *sizer1;
@@ -100,7 +100,7 @@ GlobalParameterFilesFrame::CreateGlobalParameterFilesFrame(wxWindow *parent)
 	wxSize size(700, 240);
 #endif
 
-	GlobalParameterFilesFrame *frame = new GlobalParameterFilesFrame(parent, _T("Load/Unload Global Parameters"), origin, size, wxDEFAULT_FRAME_STYLE | wxNO_FULL_REPAINT_ON_RESIZE);
+	GlobalParameterFilesFrame *frame = new GlobalParameterFilesFrame(parent, _T("Load/Unload Global Parameters"), FromFrameDIP(parent, origin), FromFrameDIP(parent, size), wxDEFAULT_FRAME_STYLE | wxNO_FULL_REPAINT_ON_RESIZE);
 	
 	frame->OnCreate();
 	return frame;

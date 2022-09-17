@@ -112,6 +112,8 @@
 		E420BE22188574F600A2B983 /* ProgressFrame.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BE1D188574F600A2B983 /* ProgressFrame.cpp */; };
 		E420BE23188574F600A2B983 /* RubyDialogFrame.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BE1F188574F600A2B983 /* RubyDialogFrame.cpp */; };
 		E420BE24188574F600A2B983 /* wxKillAddition.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BE21188574F600A2B983 /* wxKillAddition.cpp */; };
+		E4589CEF28D5FD6400F55785 /* MyToggleButton.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E4589CEE28D5FD6400F55785 /* MyToggleButton.cpp */; };
+		E4589CF028D5FD6400F55785 /* MyToggleButton.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E4589CEE28D5FD6400F55785 /* MyToggleButton.cpp */; };
 		E4653CB118A0CC7D0022377B /* textctrl_addition.mm in Sources */ = {isa = PBXBuildFile; fileRef = E4653CB018A0CC7D0022377B /* textctrl_addition.mm */; };
 		E4ACACE718C6D32300F08B67 /* ortep3 in Resources */ = {isa = PBXBuildFile; fileRef = E4ACACE418C6D32300F08B67 /* ortep3 */; };
 		E4D379A219C87C2200636D28 /* modalwindow.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E4D379A119C87C2200636D28 /* modalwindow.cpp */; };
@@ -230,6 +232,8 @@
 		E420BE1F188574F600A2B983 /* RubyDialogFrame.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = RubyDialogFrame.cpp; sourceTree = "<group>"; };
 		E420BE20188574F600A2B983 /* RubyDialogFrame.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RubyDialogFrame.h; sourceTree = "<group>"; };
 		E420BE21188574F600A2B983 /* wxKillAddition.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = wxKillAddition.cpp; sourceTree = "<group>"; };
+		E4589CED28D5FD6400F55785 /* MyToggleButton.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MyToggleButton.h; sourceTree = "<group>"; };
+		E4589CEE28D5FD6400F55785 /* MyToggleButton.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MyToggleButton.cpp; sourceTree = "<group>"; };
 		E45B94611A170B9A008E95EB /* docview.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = docview.cpp; sourceTree = "<group>"; };
 		E460B2DC2739716500CD9407 /* Version */ = {isa = PBXFileReference; lastKnownFileType = text; name = Version; path = ../Version; sourceTree = "<group>"; };
 		E4653CB018A0CC7D0022377B /* textctrl_addition.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = textctrl_addition.mm; sourceTree = "<group>"; };
@@ -541,6 +545,8 @@
 				E420BE05188574AD00A2B983 /* MyDocument.h */,
 				E420BE06188574AD00A2B983 /* MyGLCanvas.cpp */,
 				E420BE07188574AD00A2B983 /* MyGLCanvas.h */,
+				E4589CEE28D5FD6400F55785 /* MyToggleButton.cpp */,
+				E4589CED28D5FD6400F55785 /* MyToggleButton.h */,
 				E420BE08188574AD00A2B983 /* MyIPCSupport.cpp */,
 				E420BE09188574AD00A2B983 /* MyIPCSupport.h */,
 				E420BE0A188574AD00A2B983 /* MyListCtrl_orig.cpp */,
@@ -881,6 +887,7 @@
 				E4FC77BD183E4F3F0064FB2E /* ruby_types.c in Sources */,
 				E4FC77BE183E4F3F0064FB2E /* Trackball.c in Sources */,
 				E4FC77BF183E4F3F0064FB2E /* Types.c in Sources */,
+				E4589CEF28D5FD6400F55785 /* MyToggleButton.cpp in Sources */,
 				E4FC7CA6183F94D30064FB2E /* buildInfo.c in Sources */,
 				E420BDEF1885746700A2B983 /* ConsoleFrame.cpp in Sources */,
 				E420BDF11885746700A2B983 /* GlobalParameterFilesFrame.cpp in Sources */,
@@ -937,6 +944,7 @@
 				E4059FB728C46A6E0052B36B /* ConsoleFrame.cpp in Sources */,
 				E403568628D0B7B0008E2C46 /* MyListCtrl.cpp in Sources */,
 				E4059FB828C46A6E0052B36B /* filedlg.mm in Sources */,
+				E4589CF028D5FD6400F55785 /* MyToggleButton.cpp in Sources */,
 				E4059FB928C46A6E0052B36B /* GlobalParameterFilesFrame.cpp in Sources */,
 				E4059FBA28C46A6E0052B36B /* GlobalParameterFrame.cpp in Sources */,
 				E4059FBC28C46A6E0052B36B /* MoleculeView.cpp in Sources */,

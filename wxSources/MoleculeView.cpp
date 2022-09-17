@@ -119,10 +119,11 @@ MoleculeView::OnCreate(wxDocument *doc, long WXUNUSED(flags) )
 	
 	// Make a document frame
 	frame = new wxDocChildFrame(doc, this, GetMainFrame(), wxID_ANY, _T("New Molby Document"),
-						   wxPoint(10, 24), wxSize(680, 400),
+						   wxDefaultPosition, wxDefaultSize,
 						   wxDEFAULT_FRAME_STYLE |
 						   wxNO_FULL_REPAINT_ON_RESIZE);
-
+    frame->SetPosition(FromFrameDIP(frame, wxPoint(10, 24)));
+    frame->SetClientSize(FromFrameDIP(frame, wxSize(680, 400)));
 	canvas = NULL;
 	mview = NULL;
 	listmenu = NULL;
@@ -202,16 +203,16 @@ MoleculeView::OnCreate(wxDocument *doc, long WXUNUSED(flags) )
 					myID_SelectButton, myID_BondButton, myID_EraseButton
 				};
 				for (i = 0; i < 6; i++) {
-					tbuttons[i] = new wxToggleButton(panel1, ids[i], labels[i], wxDefaultPosition, wxSize(40, 32), wxTOGGLEBUTTON_STYLE);
+					tbuttons[i] = new MyToggleButton(panel1, ids[i], labels[i], wxDefaultPosition, FromFrameDIP(frame, wxSize(40, 32)), wxTOGGLEBUTTON_STYLE);
 					if (ctrlFont)
 						tbuttons[i]->SetFont(*ctrlFont);
-					sizer2->Add(tbuttons[i], 0, wxALL | wxEXPAND, 3);
+					sizer2->Add(tbuttons[i], 0, wxALL | wxEXPAND, FromFrameDIP(frame, 3));
 				}
 				tbuttons[0]->SetValue(true);
 			}
 			{	// Information text
-				infotext = new wxStaticText(panel1, -1, wxT(""), wxDefaultPosition, wxSize(80, 32), wxST_NO_AUTORESIZE | wxBORDER_SUNKEN);
-				infotext->SetMinSize(wxSize(80, 32));
+				infotext = new wxStaticText(panel1, -1, wxT(""), wxDefaultPosition, FromFrameDIP(frame, wxSize(80, 32)), wxST_NO_AUTORESIZE | wxBORDER_SUNKEN);
+				infotext->SetMinSize(FromFrameDIP(frame, wxSize(80, 32)));
 #if defined(__WXMSW__)
 				infotext->SetFont(*wxSMALL_FONT);
 #else
@@ -221,7 +222,7 @@ MoleculeView::OnCreate(wxDocument *doc, long WXUNUSED(flags) )
 				sizer2->Add(infotext, 1, wxALL | wxEXPAND, 3);   // Can expand horizontally
 			}
 			{	// Custom progress indicator
-				progress = new MyProgressIndicator(panel1, myID_StopProgressButton, wxDefaultPosition, wxSize(12, 24));
+				progress = new MyProgressIndicator(panel1, myID_StopProgressButton, wxDefaultPosition, FromFrameDIP(frame, wxSize(12, 24)));
 				sizer2->Add(progress, 0, wxALL | wxEXPAND, 3);
 			}
 			sizer1->Add(sizer2, 0, wxALL | wxEXPAND, 0);
@@ -247,7 +248,7 @@ MoleculeView::OnCreate(wxDocument *doc, long WXUNUSED(flags) )
 			{	// Vertical sizer containing [Canvas, [button, mySlider]]
 				wxBoxSizer *sizer32 = new wxBoxSizer(wxVERTICAL);
 				{
-					canvas = new MyGLCanvas(this, panel1, wxDefaultPosition, wxSize(100, 100));
+					canvas = new MyGLCanvas(this, panel1, wxDefaultPosition, FromFrameDIP(frame, wxSize(100, 100)));
 					sizer32->Add(canvas, 1, wxALL | wxEXPAND, 0);
 					
 					//  Let the MyGLCanvas pass the keyboard event to this
@@ -258,10 +259,10 @@ MoleculeView::OnCreate(wxDocument *doc, long WXUNUSED(flags) )
 					{
 						#include "../bitmaps/rotate_y.xpm"
 						wxBitmap bmp2(rotate_y_xpm);
-						wxBitmapButton *button2 = new wxBitmapButton(panel1, -1, bmp2, wxDefaultPosition, wxSize(21, 21), wxTOGGLEBUTTON_STYLE);
+						wxBitmapButton *button2 = new wxBitmapButton(panel1, -1, bmp2, wxDefaultPosition, FromFrameDIP(frame, wxSize(21, 21)), wxTOGGLEBUTTON_STYLE);
 						sizer321->Add(button2, 0, 0, 0);
 						button2->Disable();
-						MySlider *slider2 = new MySlider(panel1, myID_RotateYSlider, wxHORIZONTAL, wxDefaultPosition, wxSize(21, 21));
+						MySlider *slider2 = new MySlider(panel1, myID_RotateYSlider, wxHORIZONTAL, wxDefaultPosition, FromFrameDIP(frame, wxSize(21, 21)));
 						sizer321->Add(slider2, 1, wxEXPAND);
 					}
 					sizer32->Add(sizer321, 0, wxEXPAND);
@@ -274,11 +275,11 @@ MoleculeView::OnCreate(wxDocument *doc, long WXUNUSED(flags) )
 				{	// "Rotate bond" button and mySlider
 					#include "../bitmaps/rotate_x.xpm"
 					wxBitmap bmp3(rotate_x_xpm);
-					wxBitmapButton *button3 = new wxBitmapButton(panel1, -1, bmp3, wxDefaultPosition, wxSize(21, 21), wxTOGGLEBUTTON_STYLE);
+					wxBitmapButton *button3 = new wxBitmapButton(panel1, -1, bmp3, wxDefaultPosition, FromFrameDIP(frame, wxSize(21, 21)), wxTOGGLEBUTTON_STYLE);
 					button3->Disable();
 					sizer33->Add(button3, 0, 0, 0);
 					
-					MySlider *slider3 = new MySlider(panel1, myID_RotateXSlider, wxVERTICAL, wxDefaultPosition, wxSize(21, 21));
+					MySlider *slider3 = new MySlider(panel1, myID_RotateXSlider, wxVERTICAL, wxDefaultPosition, FromFrameDIP(frame, wxSize(21, 21)));
 					sizer33->Add(slider3, 1, wxEXPAND);
 				}
 				sizer3->Add(sizer33, 0, wxALL | wxEXPAND, 0);
@@ -290,27 +291,27 @@ MoleculeView::OnCreate(wxDocument *doc, long WXUNUSED(flags) )
 		{	//  Horizontal sizer containing frame controls
 			
 			const int height = 18;
-			frameControlPanel = new wxPanel(panel1, myID_FrameControlPanel, wxDefaultPosition, wxSize(200, height));
+			frameControlPanel = new wxPanel(panel1, myID_FrameControlPanel, wxDefaultPosition, FromFrameDIP(frame, wxSize(200, height)));
 			wxBoxSizer *sizer4 = new wxBoxSizer(wxHORIZONTAL);
 			{
-				frameSlider = new wxSlider(frameControlPanel, myID_FrameSlider, 0, 0, 1, wxDefaultPosition, wxSize(40, height - 2));
+				frameSlider = new wxSlider(frameControlPanel, myID_FrameSlider, 0, 0, 1, wxDefaultPosition, FromFrameDIP(frame, wxSize(40, height - 2)));
 				frameSlider->Enable(false);
 				sizer4->Add(frameSlider, 1, wxALL | wxEXPAND, 1);
 			
 				#include "../bitmaps/jump_to_start.xpm"
 				wxBitmap bmp41(jump_to_start_xpm);
-				wxBitmapButton *button41 = new wxBitmapButton(frameControlPanel, myID_JumpToStartButton, bmp41, wxDefaultPosition, wxSize(16, height), wxTOGGLEBUTTON_STYLE);
+				wxBitmapButton *button41 = new wxBitmapButton(frameControlPanel, myID_JumpToStartButton, bmp41, wxDefaultPosition, FromFrameDIP(frame, wxSize(16, height)), wxTOGGLEBUTTON_STYLE);
 				sizer4->Add(button41, 0, wxEXPAND);
 				ConnectMouseDownEvents(button41, MoleculeView::OnFrameButtonAction, this);
 
 				#include "../bitmaps/play_backward.xpm"
 				wxBitmap bmp42(play_backward_xpm);
-				wxBitmapButton *button42 = new wxBitmapButton(frameControlPanel, myID_PlayBackwardButton, bmp42, wxDefaultPosition, wxSize(16, height), wxTOGGLEBUTTON_STYLE);
+				wxBitmapButton *button42 = new wxBitmapButton(frameControlPanel, myID_PlayBackwardButton, bmp42, wxDefaultPosition, FromFrameDIP(frame, wxSize(16, height)), wxTOGGLEBUTTON_STYLE);
 				sizer4->Add(button42, 0, wxEXPAND);
 				ConnectMouseDownEvents(button42, MoleculeView::OnFrameButtonAction, this);
 				
 				{
-					frameText = new wxTextCtrl(frameControlPanel, myID_FrameText, wxT(""), wxDefaultPosition, wxSize(40, height));
+					frameText = new wxTextCtrl(frameControlPanel, myID_FrameText, wxT(""), wxDefaultPosition, FromFrameDIP(frame, wxSize(40, height)));
 					if (ctrlFont) {
 						wxTextAttr attr(*wxBLACK, wxNullColour, *ctrlFont);
 						frameText->SetDefaultStyle(attr);
@@ -321,17 +322,17 @@ MoleculeView::OnCreate(wxDocument *doc, long WXUNUSED(flags) )
 			
 				#include "../bitmaps/play_forward.xpm"
 				wxBitmap bmp43(play_forward_xpm);
-				wxBitmapButton *button43 = new wxBitmapButton(frameControlPanel, myID_PlayForwardButton, bmp43, wxDefaultPosition, wxSize(16, height), wxTOGGLEBUTTON_STYLE);
+				wxBitmapButton *button43 = new wxBitmapButton(frameControlPanel, myID_PlayForwardButton, bmp43, wxDefaultPosition, FromFrameDIP(frame, wxSize(16, height)), wxTOGGLEBUTTON_STYLE);
 				sizer4->Add(button43, 0, wxEXPAND);
 				ConnectMouseDownEvents(button43, MoleculeView::OnFrameButtonAction, this);
 
 				#include "../bitmaps/jump_to_end.xpm"
 				wxBitmap bmp44(jump_to_end_xpm);
-				wxBitmapButton *button44 = new wxBitmapButton(frameControlPanel, myID_JumpToEndButton, bmp44, wxDefaultPosition, wxSize(16, height), wxTOGGLEBUTTON_STYLE);
+				wxBitmapButton *button44 = new wxBitmapButton(frameControlPanel, myID_JumpToEndButton, bmp44, wxDefaultPosition, FromFrameDIP(frame, wxSize(16, height)), wxTOGGLEBUTTON_STYLE);
 				sizer4->Add(button44, 0, wxEXPAND);
 				ConnectMouseDownEvents(button44, MoleculeView::OnFrameButtonAction, this);
 				
-				wxPanel *spacer = new wxPanel(frameControlPanel, -1, wxDefaultPosition, wxSize(21, height));
+				wxPanel *spacer = new wxPanel(frameControlPanel, -1, wxDefaultPosition, FromFrameDIP(frame, wxSize(21, height)));
 				sizer4->Add(spacer, 0, wxEXPAND);
 			}
 			frameControlPanel->SetSizer(sizer4);
@@ -349,7 +350,7 @@ MoleculeView::OnCreate(wxDocument *doc, long WXUNUSED(flags) )
 	frame->SetSizer(mainsizer);
 
 	mainsizer->Layout();
-	splitter->SetSashPosition(240, true);
+	splitter->SetSashPosition(FromFrameDIP(frame, 240), true);
 
 	//  Initialize table view
 	MainView_createColumnsForTableAtIndex(mview, 0);
@@ -1457,7 +1458,7 @@ MainViewCallback_addTableColumn(MainView *mview, const char *name, int width, in
 		return 0;
 	idx = listctrl->GetColumnCount();
 	listctrl->InsertColumn(idx, nstr, wxLIST_FORMAT_LEFT);
-	listctrl->SetColumnWidth(idx, width * 10);
+	listctrl->SetColumnWidth(idx, FromFrameDIP(listctrl, width * 10));
 	return idx;
 }
 

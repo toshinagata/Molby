@@ -142,7 +142,7 @@ ConsoleFrame::CreateConsoleFrame(wxFrame *parent)
 	ConsoleFrame *frame = new ConsoleFrame(parent, _T("Molby Console"), origin, wxDefaultSize, wxDEFAULT_FRAME_STYLE | wxNO_FULL_REPAINT_ON_RESIZE);
 
 	frame->OnCreate();
-	frame->SetClientSize(size);
+	frame->SetClientSize(FromFrameDIP(frame, size));
 	
 	return frame;
 }

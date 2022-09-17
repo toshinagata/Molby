@@ -353,8 +353,9 @@ bool MyApp::OnInit(void)
 
 	// Create the main frame window
 	frame = new MyFrame((wxDocManager *) m_docManager, (wxFrame *) NULL,
-                      _T("Molby"), wxPoint(0, 0), wxSize(800, 600),
+                      _T("Molby"), wxDefaultPosition, wxDefaultSize,
                       wxDEFAULT_FRAME_STYLE | wxNO_FULL_REPAINT_ON_RESIZE);
+    frame->SetClientSize(FromFrameDIP(frame, wxSize(800, 600)));
 
 	// Give it an icon (this is ignored in MDI mode: uses resources)
 #ifdef __WXMSW__
@@ -1824,13 +1825,13 @@ AboutDialog::AboutDialog():
     free(s2);
     free(s3);
 #if defined(__WXMSW__)
-    wxFont *textFont0 = new wxFont(12, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD);
-    wxFont *textFont1 = new wxFont(10, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL);
-    wxFont *textFont2 = new wxFont(9, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL);
+    wxFont *textFont0 = new wxFont(FromFrameDIP(this, 12), wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD);
+    wxFont *textFont1 = new wxFont(FromFrameDIP(this, 10), wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL);
+    wxFont *textFont2 = new wxFont(FromFrameDIP(this, 9), wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL);
 #else
-    wxFont *textFont0 = new wxFont(14, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD);
-    wxFont *textFont1 = new wxFont(12, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL);
-    wxFont *textFont2 = new wxFont(11, wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL);
+    wxFont *textFont0 = new wxFont(FromFrameDIP(this, 14), wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_BOLD);
+    wxFont *textFont1 = new wxFont(FromFrameDIP(this, 12), wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL);
+    wxFont *textFont2 = new wxFont(FromFrameDIP(this, 11), wxFONTFAMILY_SWISS, wxFONTSTYLE_NORMAL, wxFONTWEIGHT_NORMAL);
 #endif
     wxBoxSizer *vsizer1 = new wxBoxSizer(wxVERTICAL);
     wxBoxSizer *vsizer2 = new wxBoxSizer(wxVERTICAL);
@@ -1842,17 +1843,17 @@ AboutDialog::AboutDialog():
     wxStaticText *stext2 = new wxStaticText(this, -1, str2);
     stext2->SetFont(*textFont1);
     wxStaticBitmap *staticBitmap = new wxStaticBitmap(this, -1, *molbyBitmap);
-    vsizer2->Add(stext1, 0, wxALL | wxEXPAND, 2);
-    vsizer2->Add(stext2, 0, wxALL | wxEXPAND, 2);
-    hsizer1->AddSpacer(20);
-    hsizer1->Add(staticBitmap, 0, 0, 10);
-    hsizer1->AddSpacer(20);
-    hsizer1->Add(vsizer2, 0, wxALL | wxEXPAND, 5);
+    vsizer2->Add(stext1, 0, wxALL | wxEXPAND, FromFrameDIP(this, 2));
+    vsizer2->Add(stext2, 0, wxALL | wxEXPAND, FromFrameDIP(this, 2));
+    hsizer1->AddSpacer(FromFrameDIP(this, 20));
+    hsizer1->Add(staticBitmap, 0, 0, FromFrameDIP(this, 10));
+    hsizer1->AddSpacer(FromFrameDIP(this, 20));
+    hsizer1->Add(vsizer2, 0, wxALL | wxEXPAND, FromFrameDIP(this, 5));
     wxStaticText *stext3 = new wxStaticText(this, -1, str3);
     stext3->SetFont(*textFont2);
-    vsizer1->Add(hsizer1, 0, wxALL | wxEXPAND, 5);
-    vsizer1->Add(stext3, 0, wxALL | wxEXPAND, 5);
-    vsizer1->Add(this->CreateButtonSizer(wxOK), 0, wxALL | wxEXPAND, 10);
+    vsizer1->Add(hsizer1, 0, wxALL | wxEXPAND, FromFrameDIP(this, 5));
+    vsizer1->Add(stext3, 0, wxALL | wxEXPAND, FromFrameDIP(this, 5));
+    vsizer1->Add(this->CreateButtonSizer(wxOK), 0, wxALL | wxEXPAND, FromFrameDIP(this, 10));
     vsizer1->Layout();
     this->SetSizerAndFit(vsizer1);
     this->Centre();
@@ -2166,12 +2167,12 @@ MyAppCallback_getTextWithPrompt(const char *prompt, char *buf, int bufsize)
 	{	//  Vertical sizer containing [prompt, textbox, buttons]
 		wxBoxSizer *sizer1;
 		sizer1 = new wxBoxSizer(wxVERTICAL);
-		stext = new wxStaticText(dialog, -1, pstr, wxDefaultPosition, wxSize(200, 22));
-		sizer1->Add(stext, 0, wxEXPAND | wxALL, 6);
-		tctrl = new wxTextCtrl(dialog, -1, defstr, wxDefaultPosition, wxSize(200, 22));
-		sizer1->Add(tctrl, 0, wxEXPAND | wxALL, 6);
+		stext = new wxStaticText(dialog, -1, pstr, wxDefaultPosition, FromFrameDIP(dialog, wxSize(200, 22)));
+		sizer1->Add(stext, 0, wxEXPAND | wxALL, FromFrameDIP(dialog, 6));
+		tctrl = new wxTextCtrl(dialog, -1, defstr, wxDefaultPosition, FromFrameDIP(dialog, wxSize(200, 22)));
+		sizer1->Add(tctrl, 0, wxEXPAND | wxALL, FromFrameDIP(dialog, 6));
 		wxSizer *bsizer = dialog->CreateButtonSizer(wxOK | wxCANCEL);
-		sizer1->Add(bsizer, 0, wxEXPAND | wxALL, 6);
+		sizer1->Add(bsizer, 0, wxEXPAND | wxALL, FromFrameDIP(dialog, 6));
 		sizer1->Layout();
 		dialog->SetSizerAndFit(sizer1);
 		dialog->Centre(wxBOTH);

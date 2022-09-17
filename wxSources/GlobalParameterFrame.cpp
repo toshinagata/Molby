@@ -67,7 +67,7 @@ GlobalParameterFrame::CreateGlobalParameterFrame(wxWindow *parent)
 	wxPoint origin(26, 40);
 	wxSize size(774, 300);
 #endif
-	GlobalParameterFrame *frame = new GlobalParameterFrame(parent, _T("Global Parameters"), origin, size, wxDEFAULT_FRAME_STYLE | wxNO_FULL_REPAINT_ON_RESIZE);
+	GlobalParameterFrame *frame = new GlobalParameterFrame(parent, _T("Global Parameters"), FromFrameDIP(parent, origin), FromFrameDIP(parent, size), wxDEFAULT_FRAME_STYLE | wxNO_FULL_REPAINT_ON_RESIZE);
 	
 	frame->OnCreate();
 	return frame;
