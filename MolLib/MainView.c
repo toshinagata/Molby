@@ -3643,7 +3643,7 @@ void
 MainView_dragTableSelectionToRow(MainView *mview, int row)
 {
 	Int *new2old, i, n, count, natoms, start_idx, to_idx;
-	IntGroup *sel;
+    IntGroup *sel, *sel2;
 	if (mview == NULL || mview->mol == NULL)
 		return;
 	if (mview->tableIndex != kMainViewAtomTableIndex && mview->tableIndex != kMainViewXtalCoordTableIndex)
@@ -3685,9 +3685,31 @@ MainView_dragTableSelectionToRow(MainView *mview, int row)
 	MolActionCreateAndPerform(mview->mol, gMolActionRenumberAtoms, n, new2old);
 	
 	//  Change selection
+    //  Molecule selection (atom indices)
 	sel = IntGroupNewWithPoints(start_idx, count, -1);
 	MolActionCreateAndPerform(mview->mol, gMolActionSetSelection, sel);
+    //  Table selection (row numbers)
+    sel2 = IntGroupNew();
+    for (i = 0; i < count; i++) {
+        int row_i = MainView_indexToTableRow(mview, i + start_idx);
+        if (row_i >= 0)
+            IntGroupAdd(sel2, row_i, 1);
+    }
+    MainViewCallback_setTableSelection(mview, sel2);
+    IntGroupRelease(sel2);
 	IntGroupRelease(sel);
+}
+
+int
+MainView_isRowSelectable(MainView *mview, int row)
+{
+    if (mview->tableIndex == kMainViewParameterTableIndex) {
+        int src = ParameterTableGetItemSource(mview->mol->par, row);
+        if (src == -2) {  /* separator line */
+            return 0;
+        }
+    }
+    return 1;
 }
 
 IntGroup *

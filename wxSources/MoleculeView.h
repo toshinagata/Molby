@@ -105,6 +105,7 @@ public:
     virtual bool IsDragAndDropEnabled(MyListCtrl *ctrl, long row);
     virtual void OnSelectionChanged(MyListCtrl *ctrl);
 	virtual int SetItemColor(MyListCtrl *ctrl, long row, long col, float *fg, float *bg);
+    virtual bool IsRowSelectable(MyListCtrl *ctrl, long row);
 
 private:
     DECLARE_DYNAMIC_CLASS(MoleculeView)

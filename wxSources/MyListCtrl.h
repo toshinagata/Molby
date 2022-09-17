@@ -51,7 +51,8 @@ public:
     virtual bool IsItemEditable(MyListCtrl *ctrl, long row, long column) { return false; }
     virtual bool IsDragAndDropEnabled(MyListCtrl *ctrl, long row = -1) { return false; }
     virtual void OnSelectionChanged(MyListCtrl *ctrl) {}
-    
+    virtual bool IsRowSelectable(MyListCtrl *ctrl, long row) { return true; }
+
     //  If a popup menu is attached to the cell, then returns a positive integer, and *menu_titles should
     //  contain a malloc()'ed array of char* pointers (that are also malloc()'ed or strdup()'ed)
     virtual int HasPopUpMenu(MyListCtrl *ctrl, long row, long column, char ***menu_titles) { return 0; }

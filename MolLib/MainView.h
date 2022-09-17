@@ -254,6 +254,7 @@ void MainView_setSelectionFromTable(MainView *mview);
 int MainView_isTableItemEditable(MainView *mview, int column, int row);
 int MainView_tableType(MainView *mview);
 void MainView_dragTableSelectionToRow(MainView *mview, int row);
+int MainView_isRowSelectable(MainView *mview, int row);
 IntGroup *MainView_selectedMO(MainView *mview);
 
 /*  Stubs  */

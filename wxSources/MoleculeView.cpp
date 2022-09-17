@@ -1036,6 +1036,12 @@ MoleculeView::SetItemColor(MyListCtrl *ctrl, long row, long col, float *fg, floa
 	return 0;
 }
 
+bool
+MoleculeView::IsRowSelectable(MyListCtrl *ctrl, long row)
+{
+    return MainView_isRowSelectable(mview, row);
+}
+
 #pragma mark ====== Plain C interface ======
 
 int

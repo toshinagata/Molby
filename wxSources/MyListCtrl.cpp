@@ -107,9 +107,9 @@ MyListCtrl::Create(wxWindow* parent, wxWindowID wid, const wxPoint& pos, const w
         wxClientDC dc(this);
         int w, h, descent, leading;
         dc.GetTextExtent(_T("M"), &w, &h, &descent, &leading, &cellFont);
-        rowHeight = h;
+        rowHeight = h + 2;
         dc.GetTextExtent(_T("M"), &w, &h, &descent, &leading, &headerFont);
-        headerHeight = h;
+        headerHeight = h + 2;
     }
     
 	selectionChangeNotificationRequired = false;
@@ -220,6 +220,9 @@ MyListCtrl::OnPaint(wxPaintEvent &event)
     wxSize sz = scroll->GetClientSize();
     bool showDragTarget = (draggingRows && (dragTargetRow != mouseRow && dragTargetRow != mouseRow + 1));
     //  Draw background
+    dc.SetPen(wxNullPen);
+    dc.SetBrush(*wxWHITE_BRUSH);
+    dc.DrawRectangle(0, 0, sz.x, sz.y);
     int i, j;
     basex = 0;
     for (i = 0; i < ncols; i++) {
@@ -235,8 +238,6 @@ MyListCtrl::OnPaint(wxPaintEvent &event)
         wxString str;
         int x, y;
         row = floor(oy / rowHeight);
-        //  TODO: exchange the order of i and j, and get the "all-column" attribute
-        //  from SetItemColor() with col = -1
         for (j = row; j < nrows; j++) {
             float fg0[4], bg0[4];
             int n0 = dataSource->SetItemColor(this, j, -1, fg0, bg0);
@@ -315,9 +316,16 @@ MyListCtrl::OnPaint(wxPaintEvent &event)
                 colour.Set(fg[0] * 255, fg[1] * 255, fg[2] * 255);
                 dc.SetTextForeground(colour);
                 dc.DrawRectangle(x, y, colWidths[i], rowHeight - 1);
-                dc.DrawText(str, x, y);
+                dc.SetPen(*wxLIGHT_GREY_PEN);
+                dc.DrawLine(x, y + rowHeight - 1, x + colWidths[i], y + rowHeight - 1);
+                if (i == ncols - 1) {
+                    dc.DrawLine(x + colWidths[i], y, x + colWidths[i], y + rowHeight - 1);
+                }
+                dc.SetClippingRegion(x + 2, y, colWidths[i] - 4, rowHeight - 1);
+                dc.DrawText(str, x + 2, y);
+                dc.DestroyClippingRegion();
                 x += colWidths[i];
-                if (x > sz.y + ox)
+                if (x > ox + sz.x)
                     break;
             }
             if (showDragTarget) {
@@ -349,7 +357,10 @@ MyListCtrl::OnPaintHeader(wxPaintEvent &event)
             x1 = x + colWidths[i];
             if (x1 > 0) {
                 wxString str = colNames[i];
-                dc.DrawText(str, x, 0);
+                dc.DrawLine(x + colWidths[i], 0, x + colWidths[i], sz.y - 1);
+                dc.SetClippingRegion(x + 2, 0, colWidths[i] - 4, sz.y);
+                dc.DrawText(str, x + 2, 0);
+                dc.DestroyClippingRegion();
             }
             x = x1;
         }
@@ -403,6 +414,8 @@ bool
 MyListCtrl::SelectRow(int row)
 {
     int i;
+    if (!dataSource->IsRowSelectable(this, row))
+        return false;
     for (i = 0; i < selection.size(); i++) {
         if (selection[i] == row)
             return false;
@@ -506,7 +519,9 @@ MyListCtrl::OnLeftDown(wxMouseEvent &event)
         SelectRow(row);
         selectionChanged = true;
     }
-    if (!selectionChanged) {
+    if (selectionChanged) {
+        PostSelectionChangeNotification();
+    } else {
         //  Actually no change occurred
         selectionChangeNotificationRequired = false;
     }
@@ -588,7 +603,8 @@ MyListCtrl::OnLeftUp(wxMouseEvent &event)
         dragged = true;
         if (row != mouseRow) {
             if (draggingRows) {
-                //  TODO: move cells
+                //  TODO: change selection; it should be implemented in dataSource
+                dataSource->DragSelectionToRow(this, dragTargetRow);
                 selectionChanged = true;
             }
         }
@@ -603,7 +619,9 @@ MyListCtrl::OnLeftUp(wxMouseEvent &event)
         }
         lastMouseRow = row;
     }
-    if (!selectionChanged)
+    if (selectionChanged)
+        PostSelectionChangeNotification();
+    else
         selectionChangeNotificationRequired = false;
     mouseMode = 0;
     mouseRow = -1;
@@ -668,6 +686,7 @@ MyListCtrl::OnScrollWin(wxScrollWinEvent &event)
 void
 MyListCtrl::PostSelectionChangeNotification()
 {
+    dataSource->OnSelectionChanged(this);
 	if (selectionChangeNotificationRequired && selectionChangeNotificationEnabled) {
 		wxCommandEvent myEvent(MyListCtrlEvent, MyListCtrlEvent_tableSelectionChanged);
 		wxPostEvent(this, myEvent);
@@ -778,6 +797,8 @@ MyListCtrl::StartEditText(int row, int col)
         editText->SetSize(wxSize(r.width + 4, r.height + 4));
     }
     EnsureVisible(row, col);
+    wxString str = dataSource->GetItemText(this, row, col);
+    editText->SetValue(str);
     editText->Show();
     editText->SetFocus();
     editText->SelectAll();
@@ -786,6 +807,7 @@ MyListCtrl::StartEditText(int row, int col)
     if (selection.size() != 1 || !IsRowSelected(row)) {
         UnselectAllRows();
         SelectRow(row);
+        PostSelectionChangeNotification();
     }
 }
 
@@ -871,12 +893,14 @@ MyListCtrl::OnCharInText(wxKeyEvent &event)
                 }
             }
         } while (row >= 0 && !dataSource->IsItemEditable(this, row, col));
-        if (row >= 0)
+        if (row >= 0) {
             StartEditText(row, col);
-        else
+        } else
             EndEditText();
     } else
         event.Skip();
+    //  TODO: arrow up/down key should change selected row (if multiple rows are selected, then
+    //  start from the last clicked row)
 }
 
 void
