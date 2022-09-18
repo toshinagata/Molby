@@ -233,7 +233,7 @@ class Molecule
 	    sprintf("%.8f", mol.get_property(col - 1, row)) rescue ""
 	  end
     }
-    mol.open_auxiliary_window("Extra Props", nil, nil, :resizable=>true, :has_close_box=>true) {
+    mol.open_auxiliary_window("Extra Props", :resizable=>true, :has_close_box=>true) {
 	  names = nil
 	  @on_document_modified = lambda { |m|
 	    if (n = m.property_names) != names
@@ -252,7 +252,7 @@ class Molecule
 	  set_min_size(320, 200)
 	  # listen(mol, "documentModified", on_document_modified)
 	  # listen(mol, "documentWillClose", lambda { |m| close } )
-	  on_document_modified.call(mol)
+	  @on_document_modified.call(mol)
 	  show
 	}
   end
@@ -261,7 +261,7 @@ class Molecule
 	wave = [0.0, 0.0]
 	cur = 0
 	mol = self
-	d = open_auxiliary_window("Energy", nil, nil, :resizable=>true, :has_close_box=>true) {
+	d = open_auxiliary_window("Energy", :resizable=>true, :has_close_box=>true) {
 	  graph_item = nil   #  Forward declaration
 	  target_mol = nil
 	  draw_graph = lambda { |it|
@@ -329,7 +329,7 @@ class Molecule
 	end
     surface_dialog_attr = @surface_dialog_attr
     mol = self
-	mol.open_auxiliary_window("MO Surface", nil, nil, :resizable=>true, :has_close_box=>true) {
+	mol.open_auxiliary_window("MO Surface", :resizable=>true, :has_close_box=>true) {
 	  tags = ["mo_ao", "mo", "color", "opacity", "threshold", "expand", "grid"]
 	  motype = mol.get_mo_info(:type)
 	  alpha = mol.get_mo_info(:alpha)

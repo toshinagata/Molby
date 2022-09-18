@@ -679,7 +679,7 @@ end
 def cmd_plane
   plane_settings = @plane_settings || Hash.new
   mol = self
-  mol.open_auxiliary_window("Best-Fit Planes", "Close", nil) {
+  mol.open_auxiliary_window("Best-Fit Planes", :has_close_box=>true) {
     refresh_proc = lambda { |it|
       n = it[:tag][/\d/].to_i
       g = plane_settings["group#{n}"]
@@ -1044,7 +1044,7 @@ end
 
 def cmd_bond_angle_with_sigma
   mol = self
-  mol.open_auxiliary_window("Bond & Angle with Sigma", nil, nil) {
+  mol.open_auxiliary_window("Bond & Angle with Sigma", :has_close_box=>true) {
     values = []
 	clicked = []
 	sel = mol.selection
@@ -1105,7 +1105,7 @@ def cmd_bond_angle_with_sigma
     layout(1,
 	  item(:table, :width=>500, :height=>300, :tag=>"table",
 	    :columns=>[["atom1", 60], ["atom2", 60], ["atom3", 60],
-		  "value(sigma)", "symop1", "symop2", "symop3"],
+		  ["value(sigma)", 80], ["symop1", 80], ["symop2", 80], ["symop3", 80]],
 		:on_count=> lambda { |it| values.count },
 		:on_get_value=>on_get_value,
 		:on_selection_changed=>on_selection_changed),
@@ -1451,7 +1451,7 @@ def cmd_show_ortep
 	  ["H", "all", "Open", "black"]
 	]
   }
-  mol.open_auxiliary_window("Show ORTEP", nil, nil, :resizable=>true, :has_close_box=>true) {
+  mol.open_auxiliary_window("Show ORTEP", :resizable=>true, :has_close_box=>true) {
     tepview = nil  #  Forward declaration
 	tab = "Atoms"
 	columns = {

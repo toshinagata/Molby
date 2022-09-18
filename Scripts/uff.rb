@@ -281,7 +281,7 @@ def guess_uff_parameters
   arena.prepare(true)
   xatoms = IntGroup[]
   xbonds = xangles = xdihedrals = xfragments = []
-  mol.open_auxiliary_window("Guess UFF Parameters", nil, nil, :resizable=>true) {
+  mol.open_auxiliary_window("Guess UFF Parameters", :resizable=>true) {
     update_xatoms = lambda {
       xatoms = mol.atom_group { |ap| !exclude.member?(ap.atomic_number) }
       xfragments = mol.fragments(xatoms)

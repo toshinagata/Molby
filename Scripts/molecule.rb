@@ -727,14 +727,14 @@ class Molecule
   end
   
   #  Open a Ruby Dialog that is a "child" window of the molecule
-  def open_auxiliary_window(*args, &block)
-    title = args[0] || "(untitled)"
+  def open_auxiliary_window(title, options, &block)
+    title = title || "(untitled)"
 	mol = self
 	if (win = (@aux_windows ||= Hash.new)[title])
 	  win.show
 	else
-	  args[0] = self.name + ": " + title
-	  d = Dialog.new(*args)
+	  title = self.name + ": " + title
+	  d = Dialog.new(title, nil, nil, options)
 	  if block
 	    d.instance_eval(&block)
 		d.instance_eval { |_d|
@@ -742,9 +742,9 @@ class Molecule
 #	      listen(mol, "documentWillClose", lambda { |m| m.close_auxiliary_window(_d) } )
           if @on_close != nil
 		    save_on_close = @on_close
-		    @on_close = lambda { save_on_close.call; mol.close_auxiliary_window(_d, true); true}
+            @on_close = lambda { save_on_close.call; _d.hide; mol.close_auxiliary_window(_d, true); true}
 		  else
-		    @on_close = lambda { mol.close_auxiliary_window(_d, true); true }
+            @on_close = lambda { _d.hide; mol.close_auxiliary_window(_d, true); true }
 		  end
 		}
 	  end
