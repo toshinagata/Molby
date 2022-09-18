@@ -23,6 +23,7 @@
 #include "wx/glcanvas.h"
 #include "wx/menu.h"
 #include "wx/sizer.h"
+#include "wx/toplevel.h"
 
 #if wxCHECK_VERSION(3,1,0)
 #define FromFrameDIP(frame, x) frame->FromDIP(x)
@@ -219,6 +220,14 @@ MyListCtrl::OnPaint(wxPaintEvent &event)
         RefreshTable(false);
 
     wxColour colour;
+    bool isActive;
+    //  Get the nearest TopLevelWindow and see if it is active or not
+    wxWindow *win = this;
+    while (win != NULL && !win->IsKindOf(wxCLASSINFO(wxTopLevelWindow)))
+        win = win->GetParent();
+    if (win != NULL && ((wxTopLevelWindow *)win)->IsActive())
+        isActive = true;
+    else isActive = false;
     wxPaintDC dc(scroll);
     scroll->DoPrepareDC(dc);
     int ox, oy;
@@ -276,17 +285,24 @@ MyListCtrl::OnPaint(wxPaintEvent &event)
                             bg[2] = 1.0;
                         }
                     } else {
+                        float bgbase[3] = { 0, 0, 1 };
+                        if (!isActive) {
+                            bgbase[0] = 0.6;
+                            bgbase[1] = 0.6;
+                            bgbase[2] = 0.7;
+                        }
                         if (n & 2) {
-                            bg[0] = bg[0] * 0.5;
-                            bg[1] = bg[1] * 0.5;
-                            bg[2] = bg[2] * 0.5 + 0.5;
+                            bg[0] = (bg[0] + bgbase[0]) * 0.5;
+                            bg[1] = (bg[1] + bgbase[1]) * 0.5;
+                            bg[2] = (bg[2] + bgbase[2]) * 0.5;
                         } else if (n0 & 2) {
-                            bg[0] = bg0[0] * 0.5;
-                            bg[1] = bg0[1] * 0.5;
-                            bg[2] = bg0[2] * 0.5 + 0.5;
+                            bg[0] = (bg0[0] + bgbase[0]) * 0.5;
+                            bg[1] = (bg0[1] + bgbase[1]) * 0.5;
+                            bg[2] = (bg0[2] + bgbase[2]) * 0.5;
                         } else {
-                            bg[0] = bg[1] = 0;
-                            bg[2] = 1.0;
+                            bg[0] = bgbase[0];
+                            bg[1] = bgbase[1];
+                            bg[2] = bgbase[2];
                         }
                     }
                     if (n & 1) {
@@ -479,13 +495,51 @@ MyListCtrl::UnselectAllRows()
 void
 MyListCtrl::OnLeftDown(wxMouseEvent &event)
 {
-    int x, y, ux, uy, row, modifiers, i;
+    int ux, uy, row, col, modifiers, i, n;
+    wxPoint pos;
+    char **items;
     bool isRowSelected, selectionChanged = false;
     if (editText)
         EndEditText();
-    x = event.GetX();
-    y = event.GetY();
-    scroll->CalcUnscrolledPosition(x, y, &ux, &uy);
+    pos = event.GetPosition();
+    if (FindItemAtPosition(pos, &row, &col) && dataSource != NULL && (n = dataSource->HasPopUpMenu(this, row, col, &items)) > 0) {
+        wxMenu mnu;
+        for (i = 0; i < n; i++) {
+            char *p = items[i];
+            bool enabled = true;
+            if (*p == '-') {
+                if (p[1] == 0) {
+                    //  Separator
+                    mnu.AppendSeparator();
+                    p = NULL;
+                } else {
+                    //  Disabled item
+                    p++;
+                    enabled = false;
+                }
+            }
+            if (p != NULL) {
+                wxString itemStr(p, WX_DEFAULT_CONV);
+                mnu.Append(i + 1, itemStr);
+                if (!enabled)
+                    mnu.Enable(i + 1, false);
+            }
+            free(items[i]);
+            items[i] = NULL;
+        }
+        free(items);
+        lastPopUpColumn = col;
+        lastPopUpRow = row;
+        mnu.Bind(wxEVT_COMMAND_MENU_SELECTED, &MyListCtrl::OnPopUpMenuSelected, this);
+        PopupMenu(&mnu);
+        n = dataSource->GetItemCount(this);
+        for (i = 0; i < n; i++)
+            SetItemState(i, (i == row ? wxLIST_STATE_SELECTED : 0), wxLIST_STATE_SELECTED);
+        PostSelectionChangeNotification();
+        return;
+    }
+    
+    scroll->CalcUnscrolledPosition(pos.x, pos.y, &ux, &uy);
     row = floor(uy / rowHeight);
     isRowSelected = IsRowSelected(row);
     modifiers = event.GetModifiers();
@@ -534,6 +588,7 @@ MyListCtrl::OnLeftDown(wxMouseEvent &event)
         //  Actually no change occurred
         selectionChangeNotificationRequired = false;
     }
+    SetFocus();  //  Set focus to MyListCtrl, not wxScrolledWindow
     Refresh();
 }
 
@@ -704,32 +759,35 @@ MyListCtrl::PostSelectionChangeNotification()
 }
 
 //  Find item on list control
-//  Pos is the client coordinate in MyListCtrl (not scroll)
+//  Pos is the *client* coordinate in scroll (i.e. scrolled position)
 bool
 MyListCtrl::FindItemAtPosition(const wxPoint &pos, int *row, int *col)
 {
     int r, cx, i;
-    wxPoint p = this->ClientToScreen(pos);
-    p = scroll->ScreenToClient(p);
-    p = scroll->CalcUnscrolledPosition(p);
+    wxPoint p = scroll->CalcUnscrolledPosition(pos);
     r = floor(p.y / rowHeight);
-    if (r < 0 || r >= nrows)
+    if (r < 0)
         r = -1;
+    else if (r >= nrows)
+        r = nrows;
     cx = 0;
-    for (i = 0; i < ncols; i++) {
-        if (p.x >= cx && p.x < cx + colWidths[i])
-            break;
-    }
-    if (i >= ncols)
+    if (p.x < 0)
         i = -1;
+    else {
+        for (i = 0; i < ncols; i++) {
+            if (p.x >= cx && p.x < cx + colWidths[i])
+                break;
+            cx += colWidths[i];
+        }
+    }
     if (row != NULL)
         *row = r;
     if (col != NULL)
         *col = i;
-    return (r >= 0 && i >= 0);
+    return (r >= 0 && r < nrows && i >= 0 && i < ncols);
 }
 
-//  The return rect is the client coordinate in MyListCtrl (not scroll)
+//  The return rect is the *client* coordinate in scroll (i.e. scrolled position)
 bool
 MyListCtrl::GetItemRectForRowAndColumn(wxRect &rect, int row, int col)
 {
@@ -743,12 +801,51 @@ MyListCtrl::GetItemRectForRowAndColumn(wxRect &rect, int row, int col)
     }
     scroll->CalcScrolledPosition(cx, cy, &tx, &ty);
     rect.x = tx;
-    rect.y = ty + headerHeight;
+    rect.y = ty;
     rect.width = colWidths[col];
     rect.height = rowHeight;
     return true;
 }
 
+//  Get the left-top position in scroll unit (= rowHeight)
+void
+MyListCtrl::GetScrollPosition(int *xpos, int *ypos)
+{
+    *xpos = scroll->GetScrollPos(wxHORIZONTAL);
+    *ypos = scroll->GetScrollPos(wxVERTICAL);
+}
+
+//  Scroll so that (xpos, ypos) position is left-top
+//  Return false if the position is outside the scrolling limit
+bool
+MyListCtrl::SetScrollPosition(int xpos, int ypos)
+{
+    wxSize vsz = scroll->GetVirtualSize();
+    wxSize sz = scroll->GetSize();
+    bool retval = true;
+    int xlim = scroll->GetScrollLines(wxHORIZONTAL) - scroll->GetScrollPageSize(wxHORIZONTAL);
+    int ylim = scroll->GetScrollLines(wxVERTICAL) - scroll->GetScrollPageSize(wxVERTICAL);
+//    int xlim = (vsz.x - sz.x) / rowHeight;
+//    int ylim = (vsz.y - sz.y) / rowHeight;
+    if (xpos > xlim) {
+        retval = false;
+        xpos = xlim;
+    }
+    if (xpos < 0) {
+        retval = false;
+        xpos = 0;
+    }
+    if (ypos > ylim) {
+        retval = false;
+        ypos = ylim;
+    }
+    if (ypos < 0) {
+        retval = false;
+        ypos = 0;
+    }
+    scroll->Scroll(xpos, ypos);
+    return retval;
+}
 
 bool
 MyListCtrl::EnsureVisible(int row, int col)
@@ -756,7 +853,6 @@ MyListCtrl::EnsureVisible(int row, int col)
     wxRect r;
     if (!GetItemRectForRowAndColumn(r, row, (col == -1 ? 0 : col)))
         return false;
-    r.y -= headerHeight;  //  Convert to client coord in scroll
     wxSize sz = scroll->GetClientSize();
     int scx = -1, scy = -1;
     int ux, uy;
@@ -789,7 +885,6 @@ MyListCtrl::StartEditText(int row, int col)
     wxRect r;
     if (!GetItemRectForRowAndColumn(r, row, col))
         return;
-    r.y -= headerHeight;  //  Convert to client coord in scroll
     int i, tx, ty;
     int cy = rowHeight * row;
     int cx = 0;

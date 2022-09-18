@@ -95,6 +95,9 @@ public:
 	bool Create(wxWindow* parent, wxWindowID wid, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize);
 
 	void SetDataSource(MyListCtrlDataSource *source);
+    MyListCtrlDataSource *GetDataSource() { return dataSource; }
+    wxWindow *GetHeaderWindow() { return header; }
+    wxScrolledWindow *GetScrolledWindow() { return scroll; }
 
     void SetNeedsReload(bool flag = true);
 	void RefreshTable(bool refreshWindow = true);
@@ -115,6 +118,9 @@ public:
     
 	bool FindItemAtPosition(const wxPoint &pos, int *col, int *row);
 	
+    void GetScrollPosition(int *xpos, int *ypos);
+    bool SetScrollPosition(int xpos, int ypos);
+    
     bool GetItemRectForRowAndColumn(wxRect &rect, int row, int column);
     bool EnsureVisible(int row, int col = -1);
 
