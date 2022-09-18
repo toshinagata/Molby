@@ -1295,7 +1295,7 @@ RubyDialogCallback_setFontForItem(RDItem *item, int size, int family, int style,
 	if (size == 0)
 		size = font.GetPointSize();
 	if (family == 0)
-		family = font.GetFamily();
+        family = wxFONTFAMILY_DEFAULT;
 	else {
 		family = (family == 2 ? wxFONTFAMILY_ROMAN :
 				  (family == 3 ? wxFONTFAMILY_SWISS :
@@ -1303,14 +1303,14 @@ RubyDialogCallback_setFontForItem(RDItem *item, int size, int family, int style,
 					wxFONTFAMILY_DEFAULT)));
 	}
 	if (style == 0)
-		style = font.GetStyle();
+        style = wxFONTSTYLE_NORMAL;
 	else {
 		style = (style == 2 ? wxFONTSTYLE_SLANT :
 				 (style == 3 ? wxFONTSTYLE_ITALIC :
 				  wxFONTSTYLE_NORMAL));
 	}
 	if (weight == 0)
-		weight = font.GetWeight();
+        weight = wxFONTWEIGHT_NORMAL;
 	else {
 		weight = (weight == 2 ? wxFONTWEIGHT_BOLD :
 				  (weight == 3 ? wxFONTWEIGHT_LIGHT :
@@ -1318,14 +1318,14 @@ RubyDialogCallback_setFontForItem(RDItem *item, int size, int family, int style,
 	}
 	if (textctrl != NULL) {
 		wxTextAttr newAttr;
-		wxFont newFont(FromFrameDIP(textctrl, size), family, style, weight);
+		wxFont newFont(size, family, style, weight);
 		newAttr.SetFont(newFont);
 		textctrl->SetDefaultStyle(newAttr);
 #if __WXMAC__
 		textctrl->SetFont(newFont);
 #endif
 	} else {
-		ctrl->SetFont(wxFont(FromFrameDIP(ctrl, size), family, style, weight));
+		ctrl->SetFont(wxFont(size, family, style, weight));
 		wxString label = ctrl->GetLabel();
 		ctrl->SetLabel(_(""));
 		ctrl->SetLabel(label);  /*  Update the control size  */
@@ -1543,7 +1543,7 @@ RubyDialogCallback_insertTableColumn(RDItem *item, int col, const char *heading,
 {
 	if (wxDynamicCast((wxWindow *)item, MyListCtrl) != NULL) {
 		wxString hstr((heading ? heading : ""), WX_DEFAULT_CONV);
-		return ((MyListCtrl *)item)->InsertColumn(col, hstr, format, width);
+		return ((MyListCtrl *)item)->InsertColumn(col, hstr, format, FromFrameDIP(((MyListCtrl *)item), width));
 	} else return false;
 }
 
