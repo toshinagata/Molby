@@ -17,6 +17,7 @@
 
 #include "MyToggleButton.h"
 #include "wx/dcclient.h"
+#include "wx/toplevel.h"
 
 IMPLEMENT_DYNAMIC_CLASS(MyToggleButton, wxToggleButton)
 
@@ -33,12 +34,22 @@ MyToggleButton::OnPaint(wxPaintEvent &event)
     wxSize size = GetSize();
     dc.SetPen(*wxGREY_PEN);
     const wxBrush *brush;
+    bool isActive;
+    int col;
+    //  Get the nearest TopLevelWindow and see if it is active or not
+    wxWindow *win = this;
+    while (win != NULL && !win->IsKindOf(wxCLASSINFO(wxTopLevelWindow)))
+        win = win->GetParent();
+    if (win != NULL && ((wxTopLevelWindow *)win)->IsActive())
+        isActive = true;
+    else isActive = false;
     if (IsPressed())
-        brush = wxTheBrushList->FindOrCreateBrush(wxColour(128, 128, 128));
+        col = (isActive ? 128 : 180);
     else if (GetValue())
-        brush = wxTheBrushList->FindOrCreateBrush(wxColour(180, 180, 180));
+        col = (isActive ? 180 : 220);
     else
-        brush = wxTheBrushList->FindOrCreateBrush(wxColour(240, 240, 240));
+        col = 240;
+    brush = wxTheBrushList->FindOrCreateBrush(wxColour(col, col, col));
     dc.SetBrush(*brush);
     dc.DrawRectangle(0, 0, size.x, size.y);
     wxString label = GetLabel();
@@ -47,7 +58,10 @@ MyToggleButton::OnPaint(wxPaintEvent &event)
     dc.GetTextExtent(label, &w, &h, &descent);
     x = (size.x - w) / 2;
     y = (size.y - h) / 2;
-    dc.SetPen(*wxBLACK_PEN);
+    if (isActive)
+        dc.SetTextForeground(*wxBLACK);
+    else
+        dc.SetTextForeground(wxColour(128, 128, 128));
     dc.DrawText(label, x, y);
 }
 
@@ -62,17 +76,19 @@ MyToggleButton::OnLeftDown(wxMouseEvent &event)
 void
 MyToggleButton::OnLeftUp(wxMouseEvent &event)
 {
-    ReleaseMouse();
-    SetPressed(false);
-    int x = event.GetX();
-    int y = event.GetY();
-    wxSize sz = GetSize();
-    if (x > 0 && x < sz.x && y > 0 && y < sz.y) {
-        SetValue(!GetValue());
-        wxCommandEvent cmdevt(wxEVT_TOGGLEBUTTON, GetId());
-        cmdevt.SetInt(GetValue());
-        cmdevt.SetEventObject(this);
-        ProcessCommand(cmdevt);
-        Refresh();
+    if (HasCapture()) {
+        ReleaseMouse();
+        SetPressed(false);
+        int x = event.GetX();
+        int y = event.GetY();
+        wxSize sz = GetSize();
+        if (x > 0 && x < sz.x && y > 0 && y < sz.y) {
+            SetValue(!GetValue());
+            wxCommandEvent cmdevt(wxEVT_TOGGLEBUTTON, GetId());
+            cmdevt.SetInt(GetValue());
+            cmdevt.SetEventObject(this);
+            ProcessCommand(cmdevt);
+            Refresh();
+        }
     }
 }
