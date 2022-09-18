@@ -283,9 +283,10 @@ bool MyApp::Initialize(int& argc, wxChar **argv)
 bool MyApp::OnInit(void)
 {
 	//  Set defaults
-#ifdef __WXMAC__
+#if defined(__WXMAC__) || defined(__WXOSX__)
 	wxSystemOptions::SetOption(wxT("mac.listctrl.always_use_generic"), 1);
 	wxSystemOptions::SetOption(wxT("osx.openfiledialog.always-show-types"), 1);
+    wxSystemOptions::SetOption(wxOSX_FILEDIALOG_ALWAYS_SHOW_TYPES, 1);
 #endif
 
 #if __WXMSW__
