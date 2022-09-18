@@ -189,7 +189,8 @@ typedef struct MainView {
 	/*  Caches for the table view; recalculated in MainView_refreshCachedInfo  */
 	struct IntGroup *tableCache;     /* Indices of atoms etc. that are shown in the table */
 	struct IntGroup *tableSelection; /* Selected rows in the table  */
-
+    int cachedTableIndex;  /*  The value of tableIndex at the last call to MainView_refreshCachedInfo */
+    
 	/*  Print support  */
 	Byte  isPrinting;
 	

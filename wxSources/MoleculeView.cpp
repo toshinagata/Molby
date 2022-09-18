@@ -236,10 +236,10 @@ MoleculeView::OnCreate(wxDocument *doc, long WXUNUSED(flags) )
 				{	// "Rotate bond" button and mySlider
 					#include "../bitmaps/rotate_bond.xpm"
 					wxBitmap bmp1(rotate_bond_xpm);
-					wxBitmapButton *button1 = new wxBitmapButton(panel1, -1, bmp1, wxDefaultPosition, wxSize(21, 21), wxTOGGLEBUTTON_STYLE);
+					wxBitmapButton *button1 = new wxBitmapButton(panel1, -1, bmp1, wxDefaultPosition, FromFrameDIP(frame, wxSize(21, 21)), wxTOGGLEBUTTON_STYLE);
 					sizer31->Add(button1, 0, 0, 0);
 					button1->Disable();
-					MySlider *slider1 = new MySlider(panel1, myID_RotateBondSlider, wxVERTICAL, wxDefaultPosition, wxSize(21, 21));
+					MySlider *slider1 = new MySlider(panel1, myID_RotateBondSlider, wxVERTICAL, wxDefaultPosition, FromFrameDIP(frame, wxSize(21, 21)));
 					sizer31->Add(slider1, 1, wxEXPAND);
 				}
 				sizer3->Add(sizer31, 0, wxALL | wxEXPAND, 0);
@@ -376,7 +376,7 @@ MoleculeView::OnCreate(wxDocument *doc, long WXUNUSED(flags) )
 	wxGetApp().Connect(MyDocumentEvent_scriptMenuModified, MyDocumentEvent, wxCommandEventHandler(MoleculeView::OnScriptMenuModified), NULL, this);
 
 	//  Intercept the double-click handler of MyListCtrl
-	listctrl->Connect(wxEVT_LEFT_DCLICK, wxMouseEventHandler(MoleculeView::OnLeftDClickInListCtrl), NULL, this);
+	listctrl->GetScrolledWindow()->Bind(wxEVT_LEFT_DCLICK, &MoleculeView::OnLeftDClickInListCtrl, this);
 
 	//  Set data source for the list control
 	listctrl->SetDataSource(this);
@@ -562,13 +562,13 @@ MoleculeView::OnUpdate(wxView *WXUNUSED(sender), wxObject *WXUNUSED(hint))
 bool
 MoleculeView::OnClose(bool deleteWindow)
 {
-#if !defined(__WXMAC__)
+//#if !defined(__WXMAC__) && !defined(__WXOSX__)
 	//  On wxOSX, this causes invocation of MyDocument::Close() twice, which
 	//  apprently is not very good. However, on wxMSW this is not the case.
 	//  So we need to keep this code for wxMSW but not for wxOSX.
 	if (!GetDocument()->Close())
 		return false;
-#endif
+//#endif
 
 	//  Dispose relationship between this and Molecule (MainView)
 	MainView_setViewObject(mview, NULL);
@@ -609,6 +609,7 @@ MoleculeView::Activate(bool activate)
 		sActiveViews.Insert(this, 0);
 	}
 	wxView::Activate(activate);
+    frame->Refresh();
 }
 
 wxPrintout *
@@ -792,12 +793,46 @@ MoleculeView::OnStopProgressPressed(wxCommandEvent& event)
 void
 MoleculeView::OnDocumentModified(wxCommandEvent& event)
 {
+    int xpos, ypos, rowindex, newypos;
 	if (!mview->freezeScreen) {
 		if (canvas)
 			canvas->Refresh();
 		UpdateFrameControls();
 		MoleculeLock(mview->mol);
+        
+        //  Get the current row/column value; if the table index is the same, keep the
+        //  displayed position as close as possible
+        listctrl->GetScrollPosition(&xpos, &ypos);
+        if (mview->cachedTableIndex != mview->tableIndex) {
+            xpos = ypos = 0;  /*  Different table is shown; should reset the view  */
+        } else {
+            if (mview->tableIndex >= kMainViewAtomTableIndex && mview->tableIndex <= kMainViewImproperTableIndex) {
+                //  Atom, Bond, Angle, Dihedral, Improper; use the cache
+                int count = IntGroupGetCount(mview->tableCache);
+                if (ypos < count)
+                    rowindex = IntGroupGetNthPoint(mview->tableCache, ypos);
+                else if (count > 0)
+                    rowindex = IntGroupGetNthPoint(mview->tableCache, count - 1);
+                else rowindex = 0;
+            } else rowindex = ypos;
+        }
 		MainView_refreshTable(mview);
+        if (mview->tableIndex >= kMainViewAtomTableIndex && mview->tableIndex <= kMainViewImproperTableIndex) {
+            int ic, is, ie, i;
+            ic = IntGroupGetIntervalCount(mview->tableCache);
+            newypos = 0;
+            for (i = 0; i < ic; i++) {
+                is = IntGroupGetStartPoint(mview->tableCache, i);
+                ie = IntGroupGetEndPoint(mview->tableCache, i);
+                if (rowindex < ie) {
+                    if (rowindex >= is)
+                        newypos += (rowindex - is);
+                    break;
+                }
+                newypos += ie - is;
+            }
+        } else newypos = rowindex;
+        listctrl->SetScrollPosition(xpos, newypos);
 		MoleculeUnlock(mview->mol);
 	}
 	

@@ -223,6 +223,9 @@ MainView_refreshCachedInfo(MainView *mview)
 	for (i = 0; i < mol->natoms; i++) {
 		mview->visibleFlags[i] &= ~2;
 	}
+    
+    /*  Store the tableIndex value  */
+    mview->cachedTableIndex = mview->tableIndex;
 }
 
 #pragma mark ====== 2D/3D transform operations ======
@@ -324,7 +327,7 @@ MainView_convertObjectPositionToScreenPosition(MainView *mview, const double *ob
     if (glGetError() == GL_NO_ERROR) {
 		screenPos[0] = objX / scale;
 		screenPos[1] = objY / scale;
-		screenPos[2] = objZ / scale;
+		screenPos[2] = objZ;
 	/*	fprintf(stderr, "object(%.3f,%.3f,%.3f) screen(%.3f,%.3f,%.3f)\n", objectPos[0], objectPos[1], objectPos[2], screenPos[0], screenPos[1], screenPos[2]); */
 		return 1;
 	} else return 0;
