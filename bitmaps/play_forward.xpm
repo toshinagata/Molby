@@ -1,5 +1,5 @@
 /* XPM */
-static char *play_forward_xpm[] = {
+static const char *play_forward_xpm[] = {
 /* width height ncolors chars_per_pixel */
 "9 9 12 1",
 /* colors */

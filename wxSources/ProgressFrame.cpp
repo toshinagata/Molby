@@ -108,7 +108,7 @@ ProgressFrame::SetInterruptValue(int value)
 int
 ProgressFrame::CheckInterrupt()
 {
-	if (this != NULL && m_interruptValue) {
+	if (m_interruptValue) {
 		int save = m_interruptValue;
 		m_interruptValue = 0;
 		return save;

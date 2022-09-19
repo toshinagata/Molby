@@ -387,7 +387,7 @@ ConsoleFrame::OnEnterPressed()
 void
 ConsoleFrame::ShowHistory(bool up, bool option)
 {
-	char *p;
+	const char *p;
 	if (commandHistoryIndex == -1 && valueHistoryIndex == -1) {
 		if (!up)
 			return;

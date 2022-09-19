@@ -1,5 +1,5 @@
 /* XPM */
-static char *pi01[] = {
+static const char *pi01[] = {
 /* width height ncolors chars_per_pixel */
 "12 12 23 1",
 /* colors */

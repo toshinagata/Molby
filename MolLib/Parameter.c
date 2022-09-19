@@ -21,6 +21,7 @@
 #include <stdarg.h>
 #include <math.h>
 #include <float.h>
+#include "Missing.h"
 
 /*  Global parameter: it is initialized by the first call to ParameterReadFromFile()  */
 Parameter *gBuiltinParameters = NULL;

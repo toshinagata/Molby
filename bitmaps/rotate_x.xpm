@@ -1,5 +1,5 @@
 /* XPM */
-static char *rotate_x_xpm[] = {
+static const char *rotate_x_xpm[] = {
 /* width height ncolors chars_per_pixel */
 "18 18 29 2",
 /* colors */

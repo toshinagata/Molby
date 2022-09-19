@@ -126,7 +126,7 @@ pressure_control(MDArena *arena)
 	Transform tf;
 	Vector v;
 	Vector cello_new;
-	Mat33 celltr_save;
+	Transform celltr_save;
 	Double w, w0;
 	int i;
 	int needs_cell_recalculate = 0;

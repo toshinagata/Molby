@@ -239,7 +239,7 @@ class MyApp: public wxApp
 #if defined(__WXMAC__)
 	virtual void MacNewFile();
 	virtual void MacOpenFile(const wxString &fileName);
-	virtual short MacHandleAEODoc(const WXEVENTREF event, WXEVENTREF WXUNUSED(reply));
+    virtual void MacOpenFiles(const wxArrayString &fileNames);
 #endif
 	
 	void EnableTimerForDocument(MyDocument *doc);

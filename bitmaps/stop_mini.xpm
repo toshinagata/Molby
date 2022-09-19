@@ -1,5 +1,5 @@
 /* XPM */
-static char *stop_mini[] = {
+static const char *stop_mini[] = {
 /* width height ncolors chars_per_pixel */
 "12 12 34 2",
 /* colors */

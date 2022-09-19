@@ -407,7 +407,6 @@ MoleculeView::OnDraw(wxDC *dc)
 			wxImage *img = CaptureGLCanvas(scale);
 			if (img != NULL) {
 				wxBitmap bitmap(*img);
-				wxSize ppi = dc->GetPPI();
 				double sx, sy;
 				dc->GetUserScale(&sx, &sy);
 				dc->SetUserScale(sx / scale, sy / scale);
@@ -930,7 +929,8 @@ MoleculeView::OnLeftDClickInListCtrl(wxMouseEvent &event)
 	if (mview->tableIndex >= kMainViewBondTableIndex && mview->tableIndex <= kMainViewImproperTableIndex /* && mview->mol->par != NULL */ ) {
 		int row, col, i;
 		char indices[64], names[64], types[64], value[20], partypes[64], params[3][20];
-		char *ptype, *parstr;
+        const char *ptype;
+        char *parstr;
 		wxPoint pos = event.GetPosition();
 		if (!listctrl->FindItemAtPosition(pos, &row, &col) || col < 4)
 			return;
@@ -952,6 +952,7 @@ MoleculeView::OnLeftDClickInListCtrl(wxMouseEvent &event)
 		}
 		asprintf(&parstr, "%s %s %s", params[0], params[1], params[2]);
 		MolActionCreateAndPerform(mview->mol, SCRIPT_ACTION("sssssss"), "cmd_edit_local_parameter_in_mainview", ptype, indices, names, types, value, partypes, parstr);
+        free(parstr);
 	}
 }
 

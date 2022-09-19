@@ -25,7 +25,6 @@
 
 /* Begin PBXBuildFile section */
 		E403568428CF6A3D008E2C46 /* QuartzCore.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E403568328CF6A3D008E2C46 /* QuartzCore.framework */; };
-		E403568528D0AD7E008E2C46 /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E4FC7845183E51180064FB2E /* Carbon.framework */; };
 		E403568628D0B7B0008E2C46 /* MyListCtrl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E41251B728CD92A100E12983 /* MyListCtrl.cpp */; };
 		E4059F9B28C46A6E0052B36B /* molby_icon.icns in Resources */ = {isa = PBXBuildFile; fileRef = E4FC77D4183E4FF20064FB2E /* molby_icon.icns */; };
 		E4059F9C28C46A6E0052B36B /* Scripts in Resources */ = {isa = PBXBuildFile; fileRef = E4FC77D6183E4FFE0064FB2E /* Scripts */; };
@@ -114,6 +113,7 @@
 		E4589CEF28D5FD6400F55785 /* MyToggleButton.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E4589CEE28D5FD6400F55785 /* MyToggleButton.cpp */; };
 		E4589CF028D5FD6400F55785 /* MyToggleButton.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E4589CEE28D5FD6400F55785 /* MyToggleButton.cpp */; };
 		E4589CF228D6E89900F55785 /* docview.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E45B94611A170B9A008E95EB /* docview.cpp */; };
+		E4589CF528D82A5200F55785 /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E4FC7845183E51180064FB2E /* Carbon.framework */; };
 		E4653CB118A0CC7D0022377B /* textctrl_addition.mm in Sources */ = {isa = PBXBuildFile; fileRef = E4653CB018A0CC7D0022377B /* textctrl_addition.mm */; };
 		E4ACACE718C6D32300F08B67 /* ortep3 in Resources */ = {isa = PBXBuildFile; fileRef = E4ACACE418C6D32300F08B67 /* ortep3 */; };
 		E4D379A219C87C2200636D28 /* modalwindow.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E4D379A119C87C2200636D28 /* modalwindow.cpp */; };
@@ -321,7 +321,7 @@
 				E4FC784D183E51180064FB2E /* Cocoa.framework in Frameworks */,
 				E4FC784E183E51180064FB2E /* GLUT.framework in Frameworks */,
 				E4FC784F183E51180064FB2E /* IOKit.framework in Frameworks */,
-				E403568528D0AD7E008E2C46 /* Carbon.framework in Frameworks */,
+				E4589CF528D82A5200F55785 /* Carbon.framework in Frameworks */,
 				E4FC7850183E51180064FB2E /* OpenGL.framework in Frameworks */,
 				E4FC7852183E51180064FB2E /* System.framework in Frameworks */,
 				E4FC7A17183E51570064FB2E /* AppKit.framework in Frameworks */,

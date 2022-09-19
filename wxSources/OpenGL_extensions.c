@@ -63,7 +63,7 @@ InitializeOpenGLExtensions(void)
 {
     int n = 0;
     if (p_inited != 0)
-        return;
+        return 0;
     p_glIsRenderbufferEXT = (t_glIsRenderbufferEXT)wglGetProcAddress("glIsRenderbufferEXT");
     if (p_glIsRenderbufferEXT == NULL)
         n++;

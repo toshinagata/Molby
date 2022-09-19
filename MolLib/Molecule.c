@@ -9387,12 +9387,12 @@ MoleculeChangeResidueNumberWithArray(Molecule *mp, IntGroup *group, Int *resSeqs
 	Atom *ap;
 	
 	/*  If LSB of resSeqs is 1, then a constant value is used for all specified atoms  */
-	if (((int)resSeqs & 1) == 0) {
+	if (((uintptr_t)resSeqs & 1) == 0) {
 		withArray = 1;
 		resSeq = 0;
 	} else {
 		withArray = 0;
-		resSeq = ((int)resSeqs - 1) / 2;
+		resSeq = ((uintptr_t)resSeqs - 1) / 2;
 	}
 	
 	IntGroupIteratorInit(group, &iter);

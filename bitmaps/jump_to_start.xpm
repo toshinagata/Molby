@@ -1,5 +1,5 @@
 /* XPM */
-static char *jump_to_start_xpm[] = {
+static const char *jump_to_start_xpm[] = {
 /* width height ncolors chars_per_pixel */
 "9 9 8 1",
 /* colors */

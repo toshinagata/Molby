@@ -1294,38 +1294,41 @@ RubyDialogCallback_setFontForItem(RDItem *item, int size, int family, int style,
 	} else return;
 	if (size == 0)
 		size = font.GetPointSize();
+    wxFontFamily ffamily;
+    wxFontStyle fstyle;
+    wxFontWeight fweight;
 	if (family == 0)
-        family = wxFONTFAMILY_DEFAULT;
+        ffamily = wxFONTFAMILY_DEFAULT;
 	else {
-		family = (family == 2 ? wxFONTFAMILY_ROMAN :
+		ffamily = (family == 2 ? wxFONTFAMILY_ROMAN :
 				  (family == 3 ? wxFONTFAMILY_SWISS :
 				   (family == 4 ? wxFONTFAMILY_MODERN :
 					wxFONTFAMILY_DEFAULT)));
 	}
 	if (style == 0)
-        style = wxFONTSTYLE_NORMAL;
+        fstyle = wxFONTSTYLE_NORMAL;
 	else {
-		style = (style == 2 ? wxFONTSTYLE_SLANT :
+		fstyle = (style == 2 ? wxFONTSTYLE_SLANT :
 				 (style == 3 ? wxFONTSTYLE_ITALIC :
 				  wxFONTSTYLE_NORMAL));
 	}
 	if (weight == 0)
-        weight = wxFONTWEIGHT_NORMAL;
+        fweight = wxFONTWEIGHT_NORMAL;
 	else {
-		weight = (weight == 2 ? wxFONTWEIGHT_BOLD :
+		fweight = (weight == 2 ? wxFONTWEIGHT_BOLD :
 				  (weight == 3 ? wxFONTWEIGHT_LIGHT :
 				   wxFONTWEIGHT_NORMAL));
 	}
 	if (textctrl != NULL) {
 		wxTextAttr newAttr;
-		wxFont newFont(size, family, style, weight);
+        wxFont newFont(size, ffamily, fstyle, fweight);
 		newAttr.SetFont(newFont);
 		textctrl->SetDefaultStyle(newAttr);
 #if __WXMAC__
 		textctrl->SetFont(newFont);
 #endif
 	} else {
-		ctrl->SetFont(wxFont(size, family, style, weight));
+        ctrl->SetFont(wxFont(size, ffamily, fstyle, fweight));
 		wxString label = ctrl->GetLabel();
 		ctrl->SetLabel(_(""));
 		ctrl->SetLabel(label);  /*  Update the control size  */
@@ -1757,14 +1760,15 @@ RubyDialogCallback_setFont(RDDeviceContext *dc, void **args)
             float size = FromDCDIP(dcp, *((float *)(args[i + 1])));
 			font.SetPointSize((int)size);
 		} else if (strcmp((const char *)args[i], "style") == 0) {
-			long style = (intptr_t)(args[i + 1]);
+			int style = (intptr_t)(args[i + 1]);
+            wxFontStyle fstyle;
 			switch (style) {
-				case 0: style = wxFONTSTYLE_NORMAL; break;
-				case 1: style = wxFONTSTYLE_ITALIC; break;
-				case 2: style = wxFONTSTYLE_SLANT; break;
-				default: style = wxFONTSTYLE_NORMAL; break;
+				case 0: fstyle = wxFONTSTYLE_NORMAL; break;
+				case 1: fstyle = wxFONTSTYLE_ITALIC; break;
+				case 2: fstyle = wxFONTSTYLE_SLANT; break;
+				default: fstyle = wxFONTSTYLE_NORMAL; break;
 			}
-			font.SetStyle(style);
+			font.SetStyle(fstyle);
 		} else if (strcmp((const char *)args[i], "family") == 0) {
 			wxFontFamily family;
 			j = (intptr_t)(args[i + 1]);
@@ -1811,16 +1815,17 @@ RubyDialogCallback_setPen(RDDeviceContext *dc, void **args)
 				pen.SetWidth((int)width);
 			} else if (strcmp((const char *)args[i], "style") == 0) {
 				long style = (intptr_t)(args[i + 1]);
+                wxPenStyle pstyle;
 				switch (style) {
-					case 0: style = wxSOLID; break;
-					case 1: style = wxTRANSPARENT; break;
-					case 2: style = wxDOT; break;
-					case 3: style = wxLONG_DASH; break; 
-					case 4: style = wxSHORT_DASH; break;
-					case 5: style = wxDOT_DASH; break;
-					default: style = wxSOLID; break;
+					case 0: pstyle = wxPENSTYLE_SOLID; break;
+					case 1: pstyle = wxPENSTYLE_TRANSPARENT; break;
+					case 2: pstyle = wxPENSTYLE_DOT; break;
+					case 3: pstyle = wxPENSTYLE_LONG_DASH; break;
+					case 4: pstyle = wxPENSTYLE_SHORT_DASH; break;
+					case 5: pstyle = wxPENSTYLE_DOT_DASH; break;
+					default: pstyle = wxPENSTYLE_SOLID; break;
 				}
-				pen.SetStyle(style);
+				pen.SetStyle(pstyle);
 			}
 		}
 	}

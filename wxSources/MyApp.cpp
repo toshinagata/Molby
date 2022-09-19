@@ -627,7 +627,7 @@ MyApp::CreateMenuBar(int kind, wxMenu **out_file_history_menu, wxMenu **out_edit
 	return menu_bar;
 }
 
-#if __WXMAC__
+#if defined(__WXMAC__) || defined(__WXOSX__)
 /*  When the application is launched without any documents, an empty document is opened.
     This should be implemented by overriding this special method; parsing argc/argv does
     not work, because the list of files is passed through an Apple Event.  */
@@ -646,53 +646,21 @@ MyApp::MacOpenFile(const wxString &fileName)
 	RequestOpenFilesByEvent(file);
 }
 
-/*  Open given files: instead of calling MacOpenFile() for each entry, build a file list
-    and call MyApp::OnOpenFiles()  */
-short
-MyApp::MacHandleAEODoc(const WXEVENTREF event, WXEVENTREF WXUNUSED(reply))
+void
+MyApp::MacOpenFiles(const wxArrayString &fileNames)
 {
-    AEDescList docList;
-    AEKeyword keywd;
-    DescType returnedType;
-    Size actualSize;
-    long itemsInList;
-    OSErr err;
-    short i;
-	
-	return noErr;  /*  TODO: handle open Apple event  */
-	
-    err = AEGetParamDesc((AppleEvent *)event, keyDirectObject, typeAEList, &docList);
-    if (err != noErr)
-        return err;
-	
-    err = AECountItems(&docList, &itemsInList);
-    if (err != noErr)
-        return err;
-	
-    ProcessSerialNumber PSN ;
-    PSN.highLongOfPSN = 0 ;
-    PSN.lowLongOfPSN = kCurrentProcess ;
-    SetFrontProcess( &PSN ) ;
-	
-    wxString fName, fNameList;
-    FSRef theRef ;
-	
-    for (i = 1; i <= itemsInList; i++)
-    {
-        AEGetNthPtr(
-					&docList, i, typeFSRef, &keywd, &returnedType,
-					(Ptr)&theRef, sizeof(theRef), &actualSize);
-    //    fName = wxMacFSRefToPath( &theRef ) ;
-		fNameList.append(fName);
-		fNameList.append(wxT("\n"));
+    wxString fnames;
+    int i, n;
+    n = fileNames.GetCount();
+    for (i = 0; i < n; i++) {
+        fnames = fnames + fileNames[i];
+        if (i < n - 1)
+            fnames = fnames + wxT("\n");
     }
-	
-	OnOpenFiles(fNameList);
-	
-    return noErr;
+    OnOpenFiles(fnames);
 }
 
-#endif
+#endif  // WXMAC
 
 int
 MyApp::OnExit(void)
@@ -1444,10 +1412,8 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
 {
 	int status = 0;
 	int callback_result = 0;
-	int count = 0;
 	bool progress_panel = false;
 	char buf[256];
-	size_t len, len_total;
 	wxString cmdstr(cmdline, WX_DEFAULT_CONV);
 	wxLongLong startTime;
 
@@ -1817,7 +1783,8 @@ AboutDialog::AboutDialog():
     //          |
     //          |-> copyright messages
 
-    char *s1, *s2, *s3;
+    const char *s1;
+    char *s2, *s3;
     s1 = "Molby";
     Molby_getDescription(&s2, &s3);
     wxString str1(s1, WX_DEFAULT_CONV);

@@ -634,7 +634,7 @@ s_MolActionLog(Molecule *mol, MolAction *action, FILE *fp)
 				MoleculeCallback_displayName(argp->u.mval, buf, sizeof buf);
 				if (buf[0] == 0) {
 					/*  No associated document  */
-					snprintf(buf, sizeof buf, "#<Molecule:0x%lx>", (long unsigned)(void *)argp->u.mval);
+					snprintf(buf, sizeof buf, "#<Molecule:0x%lx>", (uintptr_t)(void *)argp->u.mval);
 				}
 				fprintf(fp, "%s", buf);
 				break;

@@ -1,5 +1,5 @@
 /* XPM */
-static char *stop_mini_dark[] = {
+static const char *stop_mini_dark[] = {
 /* width height ncolors chars_per_pixel */
 "12 12 42 2",
 /* colors */

@@ -789,7 +789,7 @@ static VALUE
 s_Ruby_UpdateUI_handler(VALUE data)
 {
 	void **p = (void **)data;
-	int index = (int)p[0];
+	int index = (intptr_t)p[0];
 	Molecule *mol = (Molecule *)p[1];
 	int *outChecked = (int *)p[2];
 	char **outTitle = (char **)p[3];
@@ -8626,7 +8626,7 @@ s_Molecule_FitCoordinates(int argc, VALUE *argv, VALUE self)
 	VALUE gval, rval, wval;
 	IntGroup *ig;
 	IntGroupIterator iter;
-	int nn, errno, i, j, in, status;
+	int nn, errnum, i, j, in, status;
 	Vector *ref;
 	Double *weights, dval[3];
 	Transform tr;
@@ -8647,7 +8647,7 @@ s_Molecule_FitCoordinates(int argc, VALUE *argv, VALUE self)
 	if (rb_obj_is_kind_of(rval, rb_cNumeric)) {
 		int fn = NUM2INT(rb_Integer(rval));
 		if (fn < 0 || fn >= MoleculeGetNumberOfFrames(mol)) {
-			errno = 1;
+			errnum = 1;
 			status = fn;
 			goto err;
 		}
@@ -8660,7 +8660,7 @@ s_Molecule_FitCoordinates(int argc, VALUE *argv, VALUE self)
 	} else if (rb_obj_is_kind_of(rval, rb_cLAMatrix)) {
 		LAMatrix *m = LAMatrixFromValue(rval, NULL, 0, 0);
 		if (m->row * m->column < nn * 3) {
-			errno = 2;
+			errnum = 2;
 			goto err;
 		}
 		for (i = 0; i < nn; i++) {
@@ -8672,24 +8672,24 @@ s_Molecule_FitCoordinates(int argc, VALUE *argv, VALUE self)
 		VALUE aval;
 		rval = rb_protect(rb_ary_to_ary, rval, &status);
 		if (status != 0) {
-			errno = 3;
+			errnum = 3;
 			goto err;
 		}
 		if (RARRAY_LEN(rval) < nn) {
-			errno = 2;
+			errnum = 2;
 			goto err;
 		}
 		if (rb_obj_is_kind_of((RARRAY_PTR(rval))[0], rb_cNumeric)) {
 			/*  Array of 3*nn numbers  */
 			if (RARRAY_LEN(rval) < nn * 3) {
-				errno = 2;
+				errnum = 2;
 				goto err;
 			}
 			for (i = 0; i < nn; i++) {
 				for (j = 0; j < 3; j++) {
 					aval = rb_protect(rb_Float, (RARRAY_PTR(rval))[i * 3 + j], &status);
 					if (status != 0) {
-						errno = 3;
+						errnum = 3;
 						goto err;
 					}
 					dval[j] = NUM2DBL(aval);
@@ -8707,18 +8707,18 @@ s_Molecule_FitCoordinates(int argc, VALUE *argv, VALUE self)
 				} else {
 					aval = rb_protect(rb_ary_to_ary, aval, &status);
 					if (status != 0) {
-						errno = 3;
+						errnum = 3;
 						goto err;
 					}
 					if (RARRAY_LEN(aval) < 3) {
-						errno = 4;
+						errnum = 4;
 						status = i;
 						goto err;
 					}
 					for (j = 0; j < 3; j++) {
 						VALUE aaval = rb_protect(rb_Float, (RARRAY_PTR(aval))[j], &status);
 						if (status != 0) {
-							errno = 3;
+							errnum = 3;
 							goto err;
 						}
 						dval[j] = NUM2DBL(aaval);
@@ -8740,17 +8740,17 @@ s_Molecule_FitCoordinates(int argc, VALUE *argv, VALUE self)
 	} else {
 		wval = rb_protect(rb_ary_to_ary, wval, &status);
 		if (status != 0) {
-			errno = 3;
+			errnum = 3;
 			goto err;
 		}
 		if (RARRAY_LEN(wval) < nn) {
-			errno = 5;
+			errnum = 5;
 			goto err;
 		}
 		for (i = 0; i < nn; i++) {
 			VALUE wwval = rb_protect(rb_Float, (RARRAY_PTR(wval))[i], &status);
 			if (status != 0) {
-				errno = 3;
+				errnum = 3;
 				goto err;
 			}
 			weights[i] = NUM2DBL(wwval);
@@ -8758,27 +8758,27 @@ s_Molecule_FitCoordinates(int argc, VALUE *argv, VALUE self)
 	}
 	dval[0] = s_Molecule_FitCoordinates_Sub(mol, ig, ref, weights, tr);
 	if (dval[0] < 0) {
-		errno = 6;
+		errnum = 6;
 		goto err;
 	}
-	errno = 0;
+	errnum = 0;
 err:
 	IntGroupIteratorRelease(&iter);
 	free(ref);
 	free(weights);
-	if (errno == 0) {
+	if (errnum == 0) {
 		return rb_ary_new3(2, ValueFromTransform(&tr), rb_float_new(dval[0]));
-	} else if (errno == 1) {
+	} else if (errnum == 1) {
 		rb_raise(rb_eMolbyError, "frame index (%d) is out of range", status);
-	} else if (errno == 2) {
+	} else if (errnum == 2) {
 		rb_raise(rb_eMolbyError, "insufficient number of reference coordinates");
-	} else if (errno == 3) {
+	} else if (errnum == 3) {
 		rb_jump_tag(status);
-	} else if (errno == 4) {
+	} else if (errnum == 4) {
 		rb_raise(rb_eMolbyError, "less than 3 elements for index %d of reference coordinates", status);
-	} else if (errno == 5) {
+	} else if (errnum == 5) {
 		rb_raise(rb_eMolbyError, "insufficient number of weight values");
-	} else if (errno == 6) {
+	} else if (errnum == 6) {
 		rb_raise(rb_eMolbyError, "matrix calculation failed during coordinate fitting");
 	}
 	return Qnil;  /*  Not reached  */

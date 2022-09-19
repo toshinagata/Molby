@@ -21,6 +21,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "Missing.h"
+
 extern int do_custom_bond_callback(MDArena *arena, Double r, void *procObj, Double *energy, Double *force);
 
 static void
