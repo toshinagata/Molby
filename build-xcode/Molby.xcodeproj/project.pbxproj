@@ -217,8 +217,6 @@
 		E420BE07188574AD00A2B983 /* MyGLCanvas.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MyGLCanvas.h; sourceTree = "<group>"; };
 		E420BE08188574AD00A2B983 /* MyIPCSupport.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MyIPCSupport.cpp; sourceTree = "<group>"; };
 		E420BE09188574AD00A2B983 /* MyIPCSupport.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MyIPCSupport.h; sourceTree = "<group>"; };
-		E420BE0A188574AD00A2B983 /* MyListCtrl_orig.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MyListCtrl_orig.cpp; sourceTree = "<group>"; };
-		E420BE0B188574AD00A2B983 /* MyListCtrl_orig.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MyListCtrl_orig.h; sourceTree = "<group>"; };
 		E420BE11188574D700A2B983 /* MyMBConv.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MyMBConv.h; sourceTree = "<group>"; };
 		E420BE12188574D700A2B983 /* MyProgressIndicator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MyProgressIndicator.cpp; sourceTree = "<group>"; };
 		E420BE13188574D700A2B983 /* MyProgressIndicator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MyProgressIndicator.h; sourceTree = "<group>"; };
@@ -549,8 +547,6 @@
 				E4589CED28D5FD6400F55785 /* MyToggleButton.h */,
 				E420BE08188574AD00A2B983 /* MyIPCSupport.cpp */,
 				E420BE09188574AD00A2B983 /* MyIPCSupport.h */,
-				E420BE0A188574AD00A2B983 /* MyListCtrl_orig.cpp */,
-				E420BE0B188574AD00A2B983 /* MyListCtrl_orig.h */,
 				E41251B728CD92A100E12983 /* MyListCtrl.cpp */,
 				E41251BA28CD92AD00E12983 /* MyListCtrl.h */,
 				E4D3806419CEC7B600636D28 /* MyTextCtrl.cpp */,
