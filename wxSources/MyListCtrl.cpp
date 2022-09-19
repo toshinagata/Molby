@@ -80,7 +80,7 @@ MyListCtrl::Create(wxWindow* parent, wxWindowID wid, const wxPoint& pos, const w
 {
 	this->wxWindow::Create(parent, wid, pos, size);
 
-    header = new wxWindow(this, 1001, wxPoint(0, 0), wxSize(size.x, 16));
+    header = new wxWindow(this, 1001, wxPoint(0, 0), wxSize(size.x, 16), wxWANTS_CHARS);
     scroll = new wxScrolledWindow(this, 1002, wxPoint(0, 16), wxSize(size.x, (size.y <= 16 ? -1 : size.y - 16)));
     
     //  Connect events
@@ -98,6 +98,9 @@ MyListCtrl::Create(wxWindow* parent, wxWindowID wid, const wxPoint& pos, const w
     scroll->Bind(wxEVT_SCROLLWIN_PAGEUP, &MyListCtrl::OnScrollWin, this);
     scroll->Bind(wxEVT_SCROLLWIN_THUMBRELEASE, &MyListCtrl::OnScrollWin, this);
     scroll->Bind(wxEVT_SCROLLWIN_THUMBTRACK, &MyListCtrl::OnScrollWin, this);
+    scroll->Bind(wxEVT_CHAR, &MyListCtrl::OnCharInScroll, this);
+    scroll->Bind(wxEVT_SET_FOCUS, &MyListCtrl::OnSetFocusInScroll, this);
+    scroll->Bind(wxEVT_KILL_FOCUS, &MyListCtrl::OnKillFocusInScroll, this);
 
     //  Set Fonts
     cellFont = GetFont();
@@ -108,10 +111,13 @@ MyListCtrl::Create(wxWindow* parent, wxWindowID wid, const wxPoint& pos, const w
         wxClientDC dc(this);
         int w, h, descent, leading;
         dc.GetTextExtent(_T("M"), &w, &h, &descent, &leading, &cellFont);
-        rowHeight = h + 2;
+        rowHeight = h + FromFrameDIP(scroll, 2);
         dc.GetTextExtent(_T("M"), &w, &h, &descent, &leading, &headerFont);
-        headerHeight = h + 2;
+        headerHeight = h + FromFrameDIP(scroll, 2);
         header->SetSize(wxSize(size.x, headerHeight));
+        pageHeight = rowHeight;
+        pageWidth = rowHeight;
+        scroll->SetScrollbars(rowHeight, rowHeight, 1, 1, true);
     }
 
     //  Set sizer
@@ -191,8 +197,12 @@ MyListCtrl::RefreshTable(bool refreshWindow)
         //  Set the subwindow infos
         sz.y = headerHeight;
         header->SetMinSize(sz);
-        scroll->SetScrollbars(rowHeight, rowHeight, floor((pageWidth + rowHeight - 1) / rowHeight), nrows);
         scroll->SetVirtualSize(pageWidth, pageHeight);
+        int pageSize = floor((pageWidth + rowHeight - 1) / rowHeight);
+        if (scroll->GetScrollPageSize(wxHORIZONTAL) != pageSize)
+            scroll->SetScrollPageSize(wxHORIZONTAL, pageSize);
+        if (scroll->GetScrollPageSize(wxVERTICAL) != pageSize)
+            scroll->SetScrollPageSize(wxVERTICAL, nrows);
         Layout();
     }
     needsReload = false;
@@ -221,13 +231,8 @@ MyListCtrl::OnPaint(wxPaintEvent &event)
 
     wxColour colour;
     bool isActive;
-    //  Get the nearest TopLevelWindow and see if it is active or not
-    wxWindow *win = this;
-    while (win != NULL && !win->IsKindOf(wxCLASSINFO(wxTopLevelWindow)))
-        win = win->GetParent();
-    if (win != NULL && ((wxTopLevelWindow *)win)->IsActive())
-        isActive = true;
-    else isActive = false;
+    isActive = scroll->HasFocus();
+    isPaintActive = isActive;
     wxPaintDC dc(scroll);
     scroll->DoPrepareDC(dc);
     int ox, oy;
@@ -236,9 +241,9 @@ MyListCtrl::OnPaint(wxPaintEvent &event)
     wxSize sz = scroll->GetClientSize();
     bool showDragTarget = (draggingRows && (dragTargetRow != mouseRow && dragTargetRow != mouseRow + 1));
     //  Draw background
-    dc.SetPen(wxNullPen);
+    dc.SetPen(*wxTRANSPARENT_PEN);
     dc.SetBrush(*wxWHITE_BRUSH);
-    dc.DrawRectangle(0, 0, sz.x, sz.y);
+    dc.DrawRectangle(ox, oy, sz.x, sz.y);
     int i, j;
     basex = 0;
     for (i = 0; i < ncols; i++) {
@@ -501,6 +506,16 @@ MyListCtrl::OnLeftDown(wxMouseEvent &event)
     bool isRowSelected, selectionChanged = false;
     if (editText)
         EndEditText();
+    if (!isPaintActive) {
+        //  The scroll is still displayed in inactive state;
+        //  Set focus to scroll, and do nothing else.
+        //  This flag is used because we actually want to intercept the mouseDown
+        //  for 'just activate the listview', but wxWidgets may not allow processing
+        //  mouseDown event _before_ the scroll view gets focus.
+        scroll->SetFocus();
+        Refresh();
+        return;
+    }
     pos = event.GetPosition();
     if (FindItemAtPosition(pos, &row, &col) && dataSource != NULL && (n = dataSource->HasPopUpMenu(this, row, col, &items)) > 0) {
         wxMenu mnu;
@@ -588,7 +603,6 @@ MyListCtrl::OnLeftDown(wxMouseEvent &event)
         //  Actually no change occurred
         selectionChangeNotificationRequired = false;
     }
-    SetFocus();  //  Set focus to MyListCtrl, not wxScrolledWindow
     Refresh();
 }
 
@@ -667,11 +681,11 @@ MyListCtrl::OnLeftUp(wxMouseEvent &event)
         dragged = true;
         if (row != mouseRow) {
             if (draggingRows) {
-                //  TODO: change selection; it should be implemented in dataSource
                 dataSource->DragSelectionToRow(this, dragTargetRow);
                 selectionChanged = true;
             }
         }
+        lastMouseRow = dragTargetRow;
     }
     if (!dragged) {
         if (mouseMode == 1 || mouseMode == 4) {
@@ -820,8 +834,6 @@ MyListCtrl::GetScrollPosition(int *xpos, int *ypos)
 bool
 MyListCtrl::SetScrollPosition(int xpos, int ypos)
 {
-    wxSize vsz = scroll->GetVirtualSize();
-    wxSize sz = scroll->GetSize();
     bool retval = true;
     int xlim = scroll->GetScrollLines(wxHORIZONTAL) - scroll->GetScrollPageSize(wxHORIZONTAL);
     int ylim = scroll->GetScrollLines(wxVERTICAL) - scroll->GetScrollPageSize(wxVERTICAL);
@@ -843,7 +855,16 @@ MyListCtrl::SetScrollPosition(int xpos, int ypos)
         retval = false;
         ypos = 0;
     }
+    //  TextCtrl may be moved during the scroll, so amend the position
     scroll->Scroll(xpos, ypos);
+    if (editText) {
+        wxRect r;
+        int delta = FromFrameDIP(scroll, 2);
+        if (GetItemRectForRowAndColumn(r, editRow, editColumn)) {
+            editText->SetPosition(wxPoint(r.x - delta, r.y - delta));
+        }
+    }
+    header->Refresh();
     return retval;
 }
 
@@ -875,6 +896,7 @@ MyListCtrl::EnsureVisible(int row, int col)
     }
     if (scx >= 0 || scy >= 0) {
         scroll->Scroll(scx, scy);
+        header->Refresh();
         return true;
     } else return false;
 }
@@ -883,24 +905,24 @@ void
 MyListCtrl::StartEditText(int row, int col)
 {
     wxRect r;
+    int delta = FromFrameDIP(scroll, 2);
+    EnsureVisible(row, col);
     if (!GetItemRectForRowAndColumn(r, row, col))
         return;
-    int i, tx, ty;
-    int cy = rowHeight * row;
-    int cx = 0;
-    for (i = 0; i < col; i++) {
-        cx += colWidths[i];
-    }
-    scroll->CalcScrolledPosition(cx, cy, &tx, &ty);
     if (editText == NULL) {
-        editText = new wxTextCtrl(scroll, -1, "", wxPoint(r.x - 2, r.y - 2), wxSize(r.width + 4, r.height + 4), wxTE_PROCESS_ENTER);
+        editText = new wxTextCtrl(scroll, -1, "", wxPoint(r.x - delta, r.y - delta), wxSize(r.width + delta * 2, r.height + delta * 2), wxTE_PROCESS_ENTER | wxTE_PROCESS_TAB | wxWANTS_CHARS);
         editText->Bind(wxEVT_CHAR, &MyListCtrl::OnCharInText, this);
+        editText->Bind(wxEVT_CHAR_HOOK, &MyListCtrl::OnCharHookInText, this);
     } else {
         FinalizeEdit();
-        editText->SetPosition(wxPoint(r.x - 2, r.y - 2));
-        editText->SetSize(wxSize(r.width + 4, r.height + 4));
+        editText->SetPosition(wxPoint(r.x - delta, r.y - delta));
+        editText->SetSize(wxSize(r.width + delta * 2, r.height + delta * 2));
     }
-    EnsureVisible(row, col);
+    if (selection.size() != 1 || !IsRowSelected(row)) {
+        UnselectAllRows();
+        SelectRow(row);
+        PostSelectionChangeNotification();
+    }
     wxString str = dataSource->GetItemText(this, row, col);
     editText->SetValue(str);
     editText->Show();
@@ -908,11 +930,6 @@ MyListCtrl::StartEditText(int row, int col)
     editText->SelectAll();
     editRow = row;
     editColumn = col;
-    if (selection.size() != 1 || !IsRowSelected(row)) {
-        UnselectAllRows();
-        SelectRow(row);
-        PostSelectionChangeNotification();
-    }
 }
 
 void
@@ -935,6 +952,7 @@ MyListCtrl::EndEditText(bool setValueFlag)
     editText->Hide();
     editText->Destroy();
     editText = NULL;
+    scroll->SetFocus();
 }
 
 void
@@ -1003,8 +1021,62 @@ MyListCtrl::OnCharInText(wxKeyEvent &event)
             EndEditText();
     } else
         event.Skip();
-    //  TODO: arrow up/down key should change selected row (if multiple rows are selected, then
-    //  start from the last clicked row)
+}
+
+void
+MyListCtrl::OnCharHookInText(wxKeyEvent &event)
+{
+#if defined(__WXMAC__) || defined(__WXOSX__)
+    //  On macOS, shift-TAB is consumed by wxWidgets even when wxTE_PROCESS_TAB and wxWANTS_CHARS
+    //  are specified (why?); so, we intercept the TAB and shift-TAB here
+    int kc = event.GetKeyCode();
+    if (kc == WXK_TAB || kc == WXK_NUMPAD_TAB) {
+        OnCharInText(event);
+    } else event.Skip();
+#else
+    event.Skip();
+#endif
+}
+
+void
+MyListCtrl::OnCharInScroll(wxKeyEvent &event)
+{
+    int kc = event.GetKeyCode();
+    if (kc == WXK_DOWN || kc == WXK_UP) {
+        int row;
+        if (selection.size() > 0) {
+            if (selection.size() > 1) {
+                if (lastMouseRow >= 0 && lastMouseRow < nrows)
+                    row = lastMouseRow;
+                else if (kc == WXK_DOWN)
+                    row = selection[selection.size() - 1];
+                else
+                    row = selection[0];
+            } else row = selection[0];
+            if (kc == WXK_UP && row > 0)
+                row--;
+            else if (kc == WXK_DOWN && row < nrows - 1)
+                row++;
+            else return;  //  Ignore key
+            UnselectAllRows();
+            SelectRow(row);
+            PostSelectionChangeNotification();
+            Refresh();
+            lastMouseRow = row;  //  Fake as if this row was clicked
+        }
+    } else event.Skip();
+}
+
+void
+MyListCtrl::OnSetFocusInScroll(wxFocusEvent &event)
+{
+    Refresh();
+}
+
+void
+MyListCtrl::OnKillFocusInScroll(wxFocusEvent &event)
+{
+    Refresh();
 }
 
 void

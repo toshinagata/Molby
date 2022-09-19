@@ -144,6 +144,10 @@ public:
     void OnMotion(wxMouseEvent &event);
     void OnScrollWin(wxScrollWinEvent &event);
     void OnCharInText(wxKeyEvent &event);
+    void OnCharHookInText(wxKeyEvent &event);
+    void OnCharInScroll(wxKeyEvent &event);
+    void OnSetFocusInScroll(wxFocusEvent &event);
+    void OnKillFocusInScroll(wxFocusEvent &event);
     
 	void EnableSelectionChangeNotification(bool flag) { selectionChangeNotificationEnabled = flag; }
 
@@ -154,6 +158,7 @@ public:
 	bool selectionChangeNotificationRequired;
 	bool selectionChangeNotificationEnabled;
     bool needsReload;
+    bool isPaintActive; // Flag to show whether the scroll had focus in the last OnPaint call
 	int lastPopUpColumn, lastPopUpRow;
     wxFont cellFont;
     wxFont headerFont;
