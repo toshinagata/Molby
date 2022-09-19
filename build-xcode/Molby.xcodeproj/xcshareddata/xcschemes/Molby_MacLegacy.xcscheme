@@ -15,8 +15,8 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "E4059F9628C46A6E0052B36B"
-               BuildableName = "Molby_MacLegacy.app"
-               BlueprintName = "Molby_MacLegacy"
+               BuildableName = "MolbyMacLegacy.app"
+               BlueprintName = "MolbyMacLegacy"
                ReferencedContainer = "container:Molby.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -33,8 +33,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "E4059F9628C46A6E0052B36B"
-            BuildableName = "Molby_MacLegacy.app"
-            BlueprintName = "Molby_MacLegacy"
+            BuildableName = "MolbyMacLegacy.app"
+            BlueprintName = "MolbyMacLegacy"
             ReferencedContainer = "container:Molby.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
@@ -56,8 +56,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "E4059F9628C46A6E0052B36B"
-            BuildableName = "Molby_MacLegacy.app"
-            BlueprintName = "Molby_MacLegacy"
+            BuildableName = "MolbyMacLegacy.app"
+            BlueprintName = "MolbyMacLegacy"
             ReferencedContainer = "container:Molby.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -75,8 +75,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "E4059F9628C46A6E0052B36B"
-            BuildableName = "Molby_MacLegacy.app"
-            BlueprintName = "Molby_MacLegacy"
+            BuildableName = "MolbyMacLegacy.app"
+            BlueprintName = "MolbyMacLegacy"
             ReferencedContainer = "container:Molby.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>

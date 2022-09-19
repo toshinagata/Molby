@@ -59,6 +59,23 @@ modify_file(nm) { |s|
   end
 }
 
+#  Modify_MacLegacy Info.plist
+nm = "build-xcode/Molby_MacLegacy-Info.plist"
+version = false
+modify_file(nm) { |s|
+  if s =~ /Copyright/
+    s.sub(/[-0-9]+ Toshi Nagata/, "#{yrange} Toshi Nagata")
+  elsif s =~ /Version \d+\.\d+/
+    "\t<string>Version #{ver}</string>\n"
+  elsif version
+    version = false
+    "\t<string>#{verstr}</string>\n"
+  else
+    version = (s =~ /\bCFBundleVersion\b/)
+    nil
+  end
+}
+  
 #  Modify InfoPlist.strings
 Dir["xcode-build/*.lproj/InfoPlist.strings"].each { |nm|
   modify_file(nm) { |s|

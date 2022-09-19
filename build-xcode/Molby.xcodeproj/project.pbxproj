@@ -14,6 +14,7 @@
 				E4CB37171FE4FF42001BB75E /* ShellScript */,
 			);
 			dependencies = (
+				E4589CF728D856C200F55785 /* PBXTargetDependency */,
 				E4CB37141FE4FF23001BB75E /* PBXTargetDependency */,
 				E4CB37191FE50707001BB75E /* PBXTargetDependency */,
 				E4B710FF2306BD0A000A77EB /* PBXTargetDependency */,
@@ -158,6 +159,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		E4589CF628D856C200F55785 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 29B97313FDCFA39411CA2CEA /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = E4059F9628C46A6E0052B36B;
+			remoteInfo = Molby_MacLegacy;
+		};
 		E4B710FE2306BD0A000A77EB /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 29B97313FDCFA39411CA2CEA /* Project object */;
@@ -186,7 +194,7 @@
 		E403568328CF6A3D008E2C46 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = /System/Library/Frameworks/QuartzCore.framework; sourceTree = "<absolute>"; };
 		E403568728D0C859008E2C46 /* window_msw.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = window_msw.cpp; sourceTree = "<group>"; };
 		E403568828D0C8C4008E2C46 /* textctrl_msw.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = textctrl_msw.cpp; sourceTree = "<group>"; };
-		E4059FE428C46A6E0052B36B /* Molby_MacLegacy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Molby_MacLegacy.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		E4059FE428C46A6E0052B36B /* MolbyMacLegacy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MolbyMacLegacy.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E4059FE628C46B320052B36B /* Molby_MacLegacy-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "Molby_MacLegacy-Info.plist"; sourceTree = "<group>"; };
 		E41251B728CD92A100E12983 /* MyListCtrl.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MyListCtrl.cpp; sourceTree = "<group>"; };
 		E41251BA28CD92AD00E12983 /* MyListCtrl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MyListCtrl.h; sourceTree = "<group>"; };
@@ -356,7 +364,7 @@
 			isa = PBXGroup;
 			children = (
 				8D1107320486CEB800E47090 /* Molby.app */,
-				E4059FE428C46A6E0052B36B /* Molby_MacLegacy.app */,
+				E4059FE428C46A6E0052B36B /* MolbyMacLegacy.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -631,9 +639,9 @@
 			productReference = 8D1107320486CEB800E47090 /* Molby.app */;
 			productType = "com.apple.product-type.application";
 		};
-		E4059F9628C46A6E0052B36B /* Molby_MacLegacy */ = {
+		E4059F9628C46A6E0052B36B /* MolbyMacLegacy */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = E4059FE128C46A6E0052B36B /* Build configuration list for PBXNativeTarget "Molby_MacLegacy" */;
+			buildConfigurationList = E4059FE128C46A6E0052B36B /* Build configuration list for PBXNativeTarget "MolbyMacLegacy" */;
 			buildPhases = (
 				E4059F9728C46A6E0052B36B /* ShellScript */,
 				E4059F9828C46A6E0052B36B /* ShellScript */,
@@ -647,10 +655,10 @@
 			);
 			dependencies = (
 			);
-			name = Molby_MacLegacy;
+			name = MolbyMacLegacy;
 			productInstallPath = "$(HOME)/Applications";
 			productName = Molby;
-			productReference = E4059FE428C46A6E0052B36B /* Molby_MacLegacy.app */;
+			productReference = E4059FE428C46A6E0052B36B /* MolbyMacLegacy.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -689,7 +697,7 @@
 				E4CB370B1FE2C1F7001BB75E /* Molby_win32 */,
 				E4B710FA2306BC80000A77EB /* Molby_win64 */,
 				E4CB370F1FE4FF0E001BB75E /* Molby_archive */,
-				E4059F9628C46A6E0052B36B /* Molby_MacLegacy */,
+				E4059F9628C46A6E0052B36B /* MolbyMacLegacy */,
 			);
 		};
 /* End PBXProject section */
@@ -780,7 +788,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "rm -rf \"$TARGET_BUILD_DIR/Molby.app/Contents/Resources/MolbyDoc\"\ncp -a \"$PROJECT_DIR/../Documents/MolbyDoc\" \"$TARGET_BUILD_DIR/Molby.app/Contents/Resources/\"\nif [ \"${BUILD_STYLE:=$CONFIGURATION}\" = \"Release\" ]; then\n  rm -rf \"$PROJECT_DIR/../latest_binaries/Molby.app\" || exit 1\n  (cd \"$TARGET_BUILD_DIR\"; cp -a Molby.app \"$PROJECT_DIR/../latest_binaries\") || exit 1\nfi\nexit 0\n";
+			shellScript = "rm -rf \"$TARGET_BUILD_DIR/MolbyMacLegacy.app/Contents/Resources/MolbyDoc\"\ncp -a \"$PROJECT_DIR/../Documents/MolbyDoc\" \"$TARGET_BUILD_DIR/MolbyMacLegacy.app/Contents/Resources/\"\nif [ \"${BUILD_STYLE:=$CONFIGURATION}\" = \"Release\" ]; then\n  rm -rf \"$PROJECT_DIR/../latest_binaries/MolbyMacLegacy.app\" || exit 1\n  (cd \"$TARGET_BUILD_DIR\"; cp -a MolbyMacLegacy.app \"$PROJECT_DIR/../latest_binaries\") || exit 1\nfi\nexit 0\n";
 		};
 		E43C5D9518E553D9004FE397 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -840,7 +848,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "if [ \"${BUILD_STYLE:=$CONFIGURATION}\" = \"Release\" ]; then\n  (cd \"$PROJECT_DIR/../latest_binaries\" && rm -f MolbyMac.zip && zip -r MolbyMac.zip Molby.app -x \\*.DS_Store -x \\*.svn*) || exit 1\n  (cd \"$PROJECT_DIR/../Documents\" && /usr/bin/ruby makedoc.rb && cp -a MolbyDoc \"$PROJECT_DIR/../latest_binaries\") || exit 1\n  (cd \"$PROJECT_DIR/../latest_binaries\" && zip -r MolbyDoc.zip MolbyDoc -x \\*.DS_Store -x \\*.svn*) || exit 1\n#(cd \"$PROJECT_DIR/../build-win32\"; PATH=/usr/local/homebrew/bin:$PATH; make setup) || exit 1\n  (cd \"$PROJECT_DIR/../build-win\"; PATH=/usr/local/homebrew/bin:$PATH; make setup) || exit 1\nfi\n";
+			shellScript = "if [ \"${BUILD_STYLE:=$CONFIGURATION}\" = \"Release\" ]; then\n  (cd \"$PROJECT_DIR/../latest_binaries\" && rm -f MolbyMac.zip && zip -r MolbyMac.zip Molby.app -x \\*.DS_Store -x \\*.svn*) || exit 1\n  (cd \"$PROJECT_DIR/../latest_binaries\" && rm -f MolbyMacLegacy.zip && zip -r MolbyMacLegacy.zip MolbyMacLegacy.app -x \\*.DS_Store -x \\*.svn*) || exit 1\n  (cd \"$PROJECT_DIR/../Documents\" && /usr/bin/ruby makedoc.rb && cp -a MolbyDoc \"$PROJECT_DIR/../latest_binaries\") || exit 1\n  (cd \"$PROJECT_DIR/../latest_binaries\" && zip -r MolbyDoc.zip MolbyDoc -x \\*.DS_Store -x \\*.svn*) || exit 1\n#(cd \"$PROJECT_DIR/../build-win32\"; PATH=/usr/local/homebrew/bin:$PATH; make setup) || exit 1\n  (cd \"$PROJECT_DIR/../build-win\"; PATH=/usr/local/homebrew/bin:$PATH; make setup) || exit 1\nfi\n";
 		};
 		E4FC7B57183E516E0064FB2E /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -970,6 +978,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		E4589CF728D856C200F55785 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = E4059F9628C46A6E0052B36B /* MolbyMacLegacy */;
+			targetProxy = E4589CF628D856C200F55785 /* PBXContainerItemProxy */;
+		};
 		E4B710FF2306BD0A000A77EB /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = E4B710FA2306BC80000A77EB /* Molby_win64 */;
@@ -1473,7 +1486,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		E4059FE128C46A6E0052B36B /* Build configuration list for PBXNativeTarget "Molby_MacLegacy" */ = {
+		E4059FE128C46A6E0052B36B /* Build configuration list for PBXNativeTarget "MolbyMacLegacy" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				E4059FE228C46A6E0052B36B /* Debug */,
