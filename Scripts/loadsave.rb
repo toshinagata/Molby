@@ -520,7 +520,6 @@ class Molecule
     n = 0
     nf = 0
     energy = nil
-    hf_type = nil
   
     show_progress_panel("Loading Psi4 output file...")
 
@@ -531,6 +530,9 @@ class Molecule
     ats = []
     first_frame = nframes
     trans = nil
+    hf_type = nil
+    nalpha = nil
+    nbeta = nil
     while line = getline.call
       if line =~ /==> Geometry <==/
         #  Skip until line containing "------"
@@ -595,13 +597,20 @@ class Molecule
         elsif line =~ /ROHF/
           hf_type = "ROHF"
         end
+      elsif line =~ /^ *Nalpha *= *(\d+)/
+        nalpha = Integer($1)
+      elsif line =~ /^ *Nbeta *= *(\d+)/
+        nbeta = Integer($1)
       end
     end
     hide_progress_panel
-    @hf_type = hf_type
+    clear_basis_set
+    clear_mo_coefficients
+    set_mo_info(:type => hf_type, :alpha => nalpha, :beta => nbeta)
     return true
   end
 
+  #  mol.set_mo_info should be set before calling this function
   def sub_load_molden(fp)
     getline = lambda { @lineno += 1; return fp.gets }
     bohr = 0.529177210903
@@ -629,8 +638,6 @@ class Molecule
               break
             end
           end
-          clear_basis_set
-          clear_mo_coefficients
           redo  #  The next line will be the beginning of the next block
         elsif line =~ /^\[GTO\]/
           shell = 0
@@ -725,13 +732,6 @@ class Molecule
         end
       end   #  end while
     end     #  end catch
-    h = Hash.new
-    h[:alpha] = Integer(occ_alpha)
-    h[:beta] = Integer(occ_beta)
-    if @hf_type
-      h[:type] = @hf_type
-    end
-    set_mo_info(h)
     if errmsg
       message_box("The MOLDEN file was found but not imported. " + errmsg, "Psi4 import info", :ok)
       return false
