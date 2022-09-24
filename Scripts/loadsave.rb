@@ -511,18 +511,267 @@ class Molecule
 	(n > 0 ? true : false)
   end
 
+  def sub_load_psi4_log(fp)
+    if natoms == 0
+      new_unit = true
+    else
+      new_unit = false
+    end
+    n = 0
+    nf = 0
+    energy = nil
+    hf_type = nil
+  
+    show_progress_panel("Loading Psi4 output file...")
+
+    getline = lambda { @lineno += 1; return fp.gets }
+
+    #  Import coordinates and energies
+    vecs = []
+    ats = []
+    first_frame = nframes
+    trans = nil
+    while line = getline.call
+      if line =~ /==> Geometry <==/
+        #  Skip until line containing "------"
+        while line = getline.call
+          break if line =~ /------/
+        end
+        vecs.clear
+        index = 0
+        #  Read atom positions
+        while line = getline.call
+          line.chomp!
+          break if line =~ /^\s*$/
+          tokens = line.split(' ')
+          if natoms > 0 && first_frame == nframes
+            if index >= natoms || tokens[0] != atoms[index].element
+              hide_progress_panel
+              raise MolbyError, "The atom list does not match the current structure at line #{@lineno}"
+            end
+          end
+          vecs.push(Vector3D[Float(tokens[1]), Float(tokens[2]), Float(tokens[3])])
+          if natoms == 0
+            ats.push(tokens[0])
+          end
+          index += 1
+        end
+        if natoms == 0
+          #  Create molecule from the initial geometry
+          ats.each_with_index { |aname, i|
+            #  Create atoms
+            ap = add_atom(aname)
+            ap.element = aname
+            ap.atom_type = ap.element
+            ap.name = sprintf("%s%d", aname, i)
+            ap.r = vecs[i]
+          }
+          guess_bonds
+        else
+          if vecs.length != natoms
+            break  #  Log file is incomplete
+          end
+          #  Does this geometry differ from the last one?
+          vecs.length.times { |i|
+            if (atoms[i].r - vecs[i]).length2 > 1.0e-14
+              #  Create a new frame and break
+              create_frame
+              vecs.length.times { |j|
+                atoms[j].r = vecs[j]
+              }
+              break
+            end
+          }
+        end
+        #  end geometry
+      elsif line =~ /Final Energy: +([-.0-9]+)/
+        #  Energy for this geometry
+        energy = Float($1)
+        set_property("energy", energy)
+        if line =~ /RHF/
+          hf_type = "RHF"
+        elsif line =~ /UHF/
+          hf_type = "UHF"
+        elsif line =~ /ROHF/
+          hf_type = "ROHF"
+        end
+      end
+    end
+    hide_progress_panel
+    @hf_type = hf_type
+    return true
+  end
+
+  def sub_load_molden(fp)
+    getline = lambda { @lineno += 1; return fp.gets }
+    bohr = 0.529177210903
+    errmsg = nil
+    ncomps = 0  #  Number of components (AOs)
+    occ_alpha = 0  #  Number of occupied alpha orbitals
+    occ_beta = 0   #  Number of occupied beta orbitals
+    catch :ignore do
+      while line = getline.call
+        if line =~ /^\[Atoms\]/
+          i = 0
+          while line = getline.call
+            if line =~ /^[A-Z]/
+              #  element, index, atomic_number, x, y, z (in AU)
+              a = line.split(' ')
+              if atoms[i].atomic_number != Integer(a[2]) ||
+                (atoms[i].x - Float(a[3]) * bohr).abs > 1e-4 ||
+                (atoms[i].y - Float(a[4]) * bohr).abs > 1e-4 ||
+                (atoms[i].z - Float(a[5]) * bohr).abs > 1e-4
+                errmsg = "The atom list does not match the current molecule."
+                throw :ignore
+              end
+              i += 1
+            else
+              break
+            end
+          end
+          clear_basis_set
+          clear_mo_coefficients
+          redo  #  The next line will be the beginning of the next block
+        elsif line =~ /^\[GTO\]/
+          shell = 0
+          atom_index = 0
+          while line = getline.call
+            #  index, 0?
+            a = line.split(' ')
+            break if a.length != 2
+            #  loop for shells
+            while line = getline.call
+              #  type, no_of_primitives, 1.00?
+              a = line.split(' ')
+              break if a.length != 3   #  Terminated by a blank line
+              case a[0]
+              when "s"
+                sym = 0; n = 1
+              when "p"
+                sym = 1; n = 3
+              when "d"
+                sym = 2; n = 6    #  TODO: handle both spherical and cartesian
+              when "f"
+                sym = 3; n = 10
+              when "g"
+                sym = 4; n = 15
+              else
+                raise MolbyError, "Unknown gaussian shell type '#{a[0]}' at line #{@lineno} in MOLDEN file"
+              end
+              nprimitives = Integer(a[1])
+              nprimitives.times { |i|
+                line = getline.call   #  exponent, contraction
+                b = line.split(' ')
+                add_gaussian_primitive_coefficients(Float(b[0]), Float(b[1]), 0.0)
+              }
+              #  end of one shell
+              add_gaussian_orbital_shell(atom_index, sym, nprimitives)
+              shell += 1
+              ncomps += n
+            end
+            #  end of one atom
+            atom_index += 1
+          end
+          redo  #  The next line will be the beginning of the next block
+        elsif line =~ /^\[MO\]/
+          m = []
+          idx_alpha = 1   #  set_mo_coefficients() accepts 1-based index of MO
+          idx_beta = 1
+          while true
+            #  Loop for each MO
+            m.clear
+            ene = nil
+            spin = nil
+            sym = nil   #  Not used in Molby
+            occ = nil
+            i = 0
+            while line = getline.call
+              if line =~ /^ *Sym= *(\w+)/
+                sym = $1
+              elsif line =~ /^ *Ene= *([-+.0-9e]+)/
+                ene = Float($1)
+              elsif line =~ /^ *Spin= *(\w+)/
+                spin = $1
+              elsif line =~ /^ *Occup= *([-+.0-9e]+)/
+                occ = Float($1)
+                if occ > 0.0
+                  if spin == "Alpha"
+                    occ_alpha += 1
+                  else
+                    occ_beta += 1
+                  end
+                end
+              elsif line =~ /^ *([0-9]+) +([-+.0-9e]+)/
+                m[i] = Float($2)
+                i += 1
+                if i >= ncomps
+                  if spin == "Alpha"
+                    idx = idx_alpha
+                    idx_alpha += 1
+                  else
+                    idx = idx_beta
+                    idx_beta += 1
+                  end
+                  set_mo_coefficients(idx, ene, m)
+                  break
+                end
+              else
+                break
+              end
+            end
+            break if i < ncomps  #  no MO info was found
+          end
+          next
+        end
+      end   #  end while
+    end     #  end catch
+    h = Hash.new
+    h[:alpha] = Integer(occ_alpha)
+    h[:beta] = Integer(occ_beta)
+    if @hf_type
+      h[:type] = @hf_type
+    end
+    set_mo_info(h)
+    if errmsg
+      message_box("The MOLDEN file was found but not imported. " + errmsg, "Psi4 import info", :ok)
+      return false
+    end
+    return true
+  end
+  
   def loadout(filename)
-    retval = false
-    fp = open(filename, "rb")
-	while s = fp.gets
-	  if s =~ /Gaussian/
-	    retval = sub_load_gaussian_log(fp)
-		break
-	  elsif s =~ /GAMESS/
-	    retval = sub_load_gamess_log(fp)
-		break
-	  end
-	end
+  retval = false
+  fp = open(filename, "rb")
+  @lineno = 0
+  begin
+    while s = fp.gets
+      @lineno += 1
+      if s =~ /Gaussian/
+        retval = sub_load_gaussian_log(fp)
+        break
+      elsif s =~ /GAMESS/
+        retval = sub_load_gamess_log(fp)
+        break
+      elsif s =~ /Psi4/
+        retval = sub_load_psi4_log(fp)
+        if retval
+          #  If .molden file exists, then try to read it
+          mname = filename.gsub(/\.\w*$/, ".molden")
+          if File.exists?(mname)
+            fp2 = open(mname, "rb")
+            if fp2
+              flag = sub_load_molden(fp2)
+              fp2.close
+            end
+          end
+        end
+        break
+      end
+    end
+  rescue
+    hide_progress_panel
+    raise
+  end
 	fp.close
 	return retval
   end
