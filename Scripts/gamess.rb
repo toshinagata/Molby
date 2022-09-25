@@ -1596,6 +1596,7 @@ class Molecule
 
     #  Set PATH for psi4conda
     psi4folder = get_global_settings("psi4.psi4conda_folder")
+    ncpus = get_global_settings("psi4.ncpus").to_i
     orgpath = ENV["PATH"]
     orgdir = Dir.pwd
     if $platform == "win"
@@ -1605,9 +1606,25 @@ class Molecule
     end
     Dir.chdir(inpdir)
     cmdline = "psi4 #{inpbase}"
+    if ncpus > 0
+      cmdline += " -n #{ncpus}"
+    end
     hf_type = nil
     nalpha = nil
     nbeta = nil
+
+    outfile = inpdir + "/" + inpbody + ".out"
+    if File.exists?(outfile)
+      n = 1
+      while true
+        outbackfile = inpdir + "/" + inpbody + "~" + (n == 1 ? "" : "{#n}") + ".out"
+        break if !File.exists?(outbackfile)
+        n += 1
+      end
+      File.rename(outfile, outbackfile)
+    else
+      outbackfile = nil
+    end
 
     #  Timer callback
     timer_count = 0
@@ -1624,9 +1641,8 @@ class Molecule
         end
         timer_count = 0
         if fplog == nil
-          outfile = inpdir + "/" + inpbody + ".out"
           if File.exists?(outfile)
-            fplog = Kernel.open(inpdir + "/" + inpbody + ".out", "rt")
+            fplog = Kernel.open(outfile, "rt")
             if fplog == nil
               return true
             end
@@ -1712,65 +1728,80 @@ class Molecule
         return true
       rescue => e
         #  Some error occurred during callback. Show the message in the console and abort.
-        p e.message
-        p e.backtrace
+        $stderr.write("#{e.message}\n")
+        $stderr.write("#{e.backtrace.inspect}\n")
         return false
       end
     }
 
     #  Terminate callback
     term_callback = lambda { |m, n|
-    begin
-      msg = "Psi4 execution of #{inpbase} "
-      hmsg = "Psi4 "
-      if n == 0
-        msg += "succeeded."
-        hmsg += "Completed"
-        icon = :info
-      else
-        msg += "failed with status #{n}."
-        hmsg += "Failed"
-        icon = :error
-      end
-      msg += "\n(In directory #{inpdir})"
-      ENV["PATH"] = orgpath
-      Dir.chdir(orgdir)
-      if mol != nil
-        message_box(msg, hmsg, :ok, icon)
-      end
-      if n == 0
-        #  Try to load final lines of the logfile
-        timer_count = 100
-        timer_callback.call(m, n)
-        #  Try to load molden file if available
-        mol.clear_basis_set
-        mol.clear_mo_coefficients
-        mol.set_mo_info(:type => hf_type, :alpha => nalpha, :beta => nbeta)
-        molden = inpdir + "/" + inpbody +".molden"
-        if File.exists?(molden)
-          fp = Kernel.open(molden, "rt")
-          mol.instance_eval { @lineno = 0 }
-          begin
-            #  mol.@hf_type should be set before calling sub_load_molden
-            mol.sub_load_molden(fp)
-            fp.close
-          rescue => e
-            print(e.message + "\n")
-            print(e.backtrace.inspect + "\n")
+      begin
+        msg = "Psi4 execution of #{inpbase} "
+        hmsg = "Psi4 "
+        if n == -1
+          msg += "cannot be started. Please examine Psi4 installation."
+          hmsg += "Error"
+          icon = :error
+        else
+          if n == 0
+            msg += "succeeded."
+            hmsg += "Completed"
+            icon = :info
+          else
+            msg += "failed with status #{n}."
+            hmsg += "Failed"
+            icon = :error
+          end
+          msg += "\n(In directory #{inpdir})"
+        end
+        ENV["PATH"] = orgpath
+        Dir.chdir(orgdir)
+        if mol != nil
+          message_box(msg, hmsg, :ok, icon)
+        end
+        if n == 0
+          #  Try to load final lines of the logfile
+          timer_count = 100
+          timer_callback.call(m, n)
+          #  Try to load molden file if available
+          mol.clear_basis_set
+          mol.clear_mo_coefficients
+          mol.set_mo_info(:type => hf_type, :alpha => nalpha, :beta => nbeta)
+          molden = inpdir + "/" + inpbody +".molden"
+          if File.exists?(molden)
+            fp = Kernel.open(molden, "rt")
+            mol.instance_eval { @lineno = 0 }
+            begin
+              #  mol.@hf_type should be set before calling sub_load_molden
+              mol.sub_load_molden(fp)
+              fp.close
+            rescue => e
+              print(e.message + "\n")
+              print(e.backtrace.inspect + "\n")
+            end
+          end
+        elsif n == -1
+          #  The child process actually did not start
+          #  Restore the old file if outbackfile is not nil
+          if outbackfile && !File.exists?(outfile)
+            File.rename(outbackfile, outfile)
           end
         end
-      end
+        if outbackfile && File.exists?(outbackfile)
+          File.delete(outbackfile)
+        end
       rescue => e
-        print("#{e.message}\n")
-        print("#{e.backtrace.to_s}\n")
+        $stderr.write("#{e.message}\n")
+        $stderr.write("#{e.backtrace.inspect}\n")
       end
       true
     }
     
-    
     if mol
       pid = mol.call_subprocess_async(cmdline, term_callback, timer_callback)
       if pid < 0
+        #  This may not happen on OSX or Linux (don't know for MSW)
         error_message_box("Psi4 failed to start. Please examine Psi4 installation.")
         return -1
       end
@@ -1887,18 +1918,18 @@ class Molecule
         #item(:button, :title=>"Load Basis Set...", :action=>:load_basis_set_sub),
         #-1, -1, -1,
         #  Line 9
-        item(:checkbox, :title=>"Use secondary basis set", :tag=>"use_secondary_basis",
-          :action=>lambda { |it|
-            flag = (it[:value] != 0)
-            set_attr("secondary_elements", :enabled=>flag)
-            set_attr("secondary_basis", :enabled=>flag)
-          }),
-        -1, -1, -1,
+        #item(:checkbox, :title=>"Use secondary basis set", :tag=>"use_secondary_basis",
+        #  :action=>lambda { |it|
+        #    flag = (it[:value] != 0)
+        #    set_attr("secondary_elements", :enabled=>flag)
+        #    set_attr("secondary_basis", :enabled=>flag)
+        #  }),
+        #-1, -1, -1,
         #  Line 10
-        item(:text, :title=>"   Elements"),
-        item(:textfield, :width=>80, :tag=>"secondary_elements"),
-        item(:text, :title=>"Basis set"),
-        item(:popup, :subitems=>bset_desc, :tag=>"secondary_basis"),
+        #item(:text, :title=>"   Elements"),
+        #item(:textfield, :width=>80, :tag=>"secondary_elements"),
+        #item(:text, :title=>"Basis set"),
+        #item(:popup, :subitems=>bset_desc, :tag=>"secondary_basis"),
         #  Line 11
         item(:line),
         -1, -1, -1,
@@ -1961,11 +1992,11 @@ class Molecule
               h[tag] = it2[:value]
             end
           }
-          h["basis"] = bset_desc[h["basis"]]
-          h["secondary_basis"] = bset_desc[h["secondary_basis"]]
-          h["dfttype"] = dfttype_desc[h["dfttype"]]
-          h["runtype"] = runtype_desc[h["runtype"]]
-          h["scftype"] = scftype_desc[h["scftype"]]
+          h["basis"] = bset_desc[h["basis"] || 0]
+          h["secondary_basis"] = bset_desc[h["secondary_basis"] || 0]
+          h["dfttype"] = dfttype_desc[h["dfttype"] || 0]
+          h["runtype"] = runtype_desc[h["runtype"] || 0]
+          h["scftype"] = scftype_desc[h["scftype"] || 0]
           psi4_input_direct = mol.cmd_edit_psi4_input(mol.export_psi4(nil, h))
           if psi4_input_direct
             end_modal(0)
@@ -1983,8 +2014,8 @@ class Molecule
           end
         end
       }
-      set_attr("secondary_elements", :enabled=>(values["use_secondary_basis"] == 1))
-      set_attr("secondary_basis", :enabled=>(values["use_secondary_basis"] == 1))
+      #set_attr("secondary_elements", :enabled=>(values["use_secondary_basis"] == 1))
+      #set_attr("secondary_basis", :enabled=>(values["use_secondary_basis"] == 1))
       set_attr("dfttype", :enabled=>(values["dft"] == 1))
       set_attr("use_internal", :enabled=>((values["runtype"] || 0) >= 2))
       set_attr("psi4conda_folder", :enabled=>(values["execute_local"] == 1))
@@ -2000,11 +2031,11 @@ class Molecule
     }
     if hash[:status] == 0
       #  Specify basis by internal keys
-      hash["basis"] = bset_desc[hash["basis"]]
-      hash["secondary_basis"] = bset_desc[hash["secondary_basis"]]
-      hash["dfttype"] = dfttype_desc[hash["dfttype"]]
-      hash["runtype"] = runtype_desc[hash["runtype"]]
-      hash["scftype"] = scftype_desc[hash["scftype"]]
+      hash["basis"] = bset_desc[hash["basis"] || 0]
+      hash["secondary_basis"] = bset_desc[hash["secondary_basis"] || 0]
+      hash["dfttype"] = dfttype_desc[hash["dfttype"] || 0]
+      hash["runtype"] = runtype_desc[hash["runtype"] || 0]
+      hash["scftype"] = scftype_desc[hash["scftype"] || 0]
       basename = (self.path ? File.basename(self.path, ".*") : self.name)
       fname = Dialog.save_panel("Export Psi4 input file:", self.dir, basename + ".in", "Psi4 input file (*.in)|*.in|All files|*.*")
       return nil if !fname
