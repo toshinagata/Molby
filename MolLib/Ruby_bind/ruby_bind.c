@@ -753,12 +753,12 @@ s_Kernel_RegisterMenu(int argc, VALUE *argv, VALUE self)
 		sNonEmptySym = ID2SYM(rb_intern("non_empty"));
 		sSelectionSym = ID2SYM(rb_intern("selection"));
 		sMolProc = rb_eval_string("lambda { |m| m != nil }");
-		sNonEmptyProc = rb_eval_string("lambda { |m| m.is_a?(Molecule) && m.natoms > 0 }");
-		sSelectionProc = rb_eval_string("lambda { |m| m.is_a?(Molecule) && m.selection.count > 0 }");
-		sTrueProc = rb_eval_string("lambda { |m| true }");
         rb_define_variable("$is_a_molecule_proc", &sMolProc);
+		sNonEmptyProc = rb_eval_string("lambda { |m| m.is_a?(Molecule) && m.natoms > 0 }");
         rb_define_variable("$is_molecule_not_empty_proc", &sNonEmptyProc);
+		sSelectionProc = rb_eval_string("lambda { |m| m.is_a?(Molecule) && m.selection.count > 0 }");
         rb_define_variable("$has_molecule_selection_proc", &sSelectionProc);
+		sTrueProc = rb_eval_string("lambda { |m| true }");
         rb_define_variable("$always_true_proc", &sTrueProc);
 	}
 	
