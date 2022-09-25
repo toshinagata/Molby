@@ -756,10 +756,10 @@ s_Kernel_RegisterMenu(int argc, VALUE *argv, VALUE self)
 		sNonEmptyProc = rb_eval_string("lambda { |m| m.is_a?(Molecule) && m.natoms > 0 }");
 		sSelectionProc = rb_eval_string("lambda { |m| m.is_a?(Molecule) && m.selection.count > 0 }");
 		sTrueProc = rb_eval_string("lambda { |m| true }");
-		rb_global_variable(&sMolProc);
-		rb_global_variable(&sNonEmptyProc);
-		rb_global_variable(&sSelectionProc);
-		rb_global_variable(&sTrueProc);
+        rb_define_variable("$is_a_molecule_proc", &sMolProc);
+        rb_define_variable("$is_molecule_not_empty_proc", &sNonEmptyProc);
+        rb_define_variable("$has_molecule_selection_proc", &sSelectionProc);
+        rb_define_variable("$always_true_proc", &sTrueProc);
 	}
 	
 	if (pval == Qnil) {

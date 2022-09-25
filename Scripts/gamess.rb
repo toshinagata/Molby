@@ -1609,51 +1609,7 @@ class Molecule
     nalpha = nil
     nbeta = nil
 
-    term_callback = lambda { |m, n|
-    begin
-      msg = "Psi4 execution of #{inpbase}"
-      hmsg = "Psi4 "
-      if n == 0
-        msg += "succeeded."
-        hmsg += "Completed"
-        icon = :info
-      else
-        msg += "failed with status #{n}."
-        hmsg += "Failed"
-        icon = :error
-      end
-      msg += "\n(In directory #{inpdir})"
-      ENV["PATH"] = orgpath
-      Dir.chdir(orgdir)
-      if mol != nil
-        message_box(msg, hmsg, :ok, icon)
-      end
-      if n == 0
-        #  Try to load molden file if available
-        mol.clear_basis_set
-        mol.clear_mo_coefficients
-        mol.set_mo_info(:type => hf_type, :alpha => nalpha, :beta => nbeta)
-        molden = inpdir + "/" + inpbody +".molden"
-        if File.exists?(molden)
-          fp = Kernel.open(molden, "rt")
-          mol.instance_eval { @lineno = 0 }
-          begin
-            #  mol.@hf_type should be set before calling sub_load_molden
-            mol.sub_load_molden(fp)
-            fp.close
-          rescue => e
-            print(e.message + "\n")
-            print(e.backtrace.inspect + "\n")
-          end
-        end
-      end
-      rescue => e
-        print("#{e.message}\n")
-        print("#{e.backtrace.to_s}\n")
-      end
-      true
-    }
-    
+    #  Timer callback
     timer_count = 0
     fplog = nil
     last_size = 0
@@ -1668,11 +1624,16 @@ class Molecule
         end
         timer_count = 0
         if fplog == nil
-          fplog = Kernel.open(inpdir + "/" + inpbody + ".out", "rt")
-          if fplog == nil
-            return true
+          outfile = inpdir + "/" + inpbody + ".out"
+          if File.exists?(outfile)
+            fplog = Kernel.open(inpdir + "/" + inpbody + ".out", "rt")
+            if fplog == nil
+              return true
+            end
+            last_size = 0
+          else
+            return true  #  Skip until outfile is available
           end
-          last_size = 0
         end
         fplog.seek(0, IO::SEEK_END)
         current_size = fplog.tell
@@ -1745,7 +1706,7 @@ class Molecule
           end
         end
         if next_index > 0
-          lines.slice!(next_index, lines.length - next_index)
+          lines.slice!(0, next_index)
           next_index = 0
         end
         return true
@@ -1756,6 +1717,56 @@ class Molecule
         return false
       end
     }
+
+    #  Terminate callback
+    term_callback = lambda { |m, n|
+    begin
+      msg = "Psi4 execution of #{inpbase} "
+      hmsg = "Psi4 "
+      if n == 0
+        msg += "succeeded."
+        hmsg += "Completed"
+        icon = :info
+      else
+        msg += "failed with status #{n}."
+        hmsg += "Failed"
+        icon = :error
+      end
+      msg += "\n(In directory #{inpdir})"
+      ENV["PATH"] = orgpath
+      Dir.chdir(orgdir)
+      if mol != nil
+        message_box(msg, hmsg, :ok, icon)
+      end
+      if n == 0
+        #  Try to load final lines of the logfile
+        timer_count = 100
+        timer_callback.call(m, n)
+        #  Try to load molden file if available
+        mol.clear_basis_set
+        mol.clear_mo_coefficients
+        mol.set_mo_info(:type => hf_type, :alpha => nalpha, :beta => nbeta)
+        molden = inpdir + "/" + inpbody +".molden"
+        if File.exists?(molden)
+          fp = Kernel.open(molden, "rt")
+          mol.instance_eval { @lineno = 0 }
+          begin
+            #  mol.@hf_type should be set before calling sub_load_molden
+            mol.sub_load_molden(fp)
+            fp.close
+          rescue => e
+            print(e.message + "\n")
+            print(e.backtrace.inspect + "\n")
+          end
+        end
+      end
+      rescue => e
+        print("#{e.message}\n")
+        print("#{e.backtrace.to_s}\n")
+      end
+      true
+    }
+    
     
     if mol
       pid = mol.call_subprocess_async(cmdline, term_callback, timer_callback)
