@@ -1170,7 +1170,11 @@ MyApp::OnUpdateUI(wxUpdateUIEvent& event)
 		checked = -1;
 		title = NULL;
 		enabled = Ruby_UpdateUI(index, mol, &checked, &title);
-		if (checked >= 0 && event.IsCheckable())
+		if (checked >= 0
+#if wxCHECK_VERSION(3,2,0)
+            && event.IsCheckable()
+#endif
+            )
 			event.Check(checked != 0);
 		if (title != NULL) {
 			wxString wtext(title, WX_DEFAULT_CONV);
