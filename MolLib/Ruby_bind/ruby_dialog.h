@@ -72,7 +72,7 @@ extern const RDRect gZeroRect;
 	
 /*  Utility function  */
 extern int RubyDialog_validateItemContent(RubyValue self, RDItem *ip, const char *s);
-extern void RubyDialog_doItemAction(RubyValue self, RDItem *ip, int options);
+extern int RubyDialog_doItemAction(RubyValue self, RDItem *ip, int options);
 extern void RubyDialog_doTimerAction(RubyValue self);
 extern void RubyDialog_doKeyAction(RubyValue self, int keyCode);
 extern int RubyDialog_getFlexFlags(RubyValue self, RDItem *ip);

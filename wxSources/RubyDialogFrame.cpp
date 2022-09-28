@@ -269,7 +269,8 @@ RubyDialogFrame::OnTextUpdated(wxCommandEvent &event)
 void
 RubyDialogFrame::OnEnterProcessedOnText(wxCommandEvent &event)
 {
-	RubyDialog_doItemAction((RubyValue)dval, (RDItem *)(event.GetEventObject()), 2);
+	if (RubyDialog_doItemAction((RubyValue)dval, (RDItem *)(event.GetEventObject()), 2) == 0)
+        event.Skip();
 }
 
 void
@@ -282,7 +283,8 @@ RubyDialogFrame::OnKillFocusOnText(wxFocusEvent &event)
 void
 RubyDialogFrame::OnEscapeProcessedOnText(wxCommandEvent &event)
 {
-	RubyDialog_doItemAction((RubyValue)dval, (RDItem *)(event.GetEventObject()), 4);
+	if (RubyDialog_doItemAction((RubyValue)dval, (RDItem *)(event.GetEventObject()), 4) == 0)
+        event.Skip();
 }
 
 void

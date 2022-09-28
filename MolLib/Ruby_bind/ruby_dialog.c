@@ -2033,6 +2033,7 @@ s_RubyDialog_doItemAction(VALUE val)
 	int nitems = RARRAY_LEN(items);
 	int idx = RubyDialogCallback_indexOfItem(dref, ip);
 	static VALUE sTextActionSym = Qfalse, sEscapeActionSym, sReturnActionSym;
+    VALUE retval;
 
 	if (sTextActionSym == Qfalse) {
 		sTextActionSym = ID2SYM(rb_intern("text_action"));
@@ -2093,6 +2094,7 @@ s_RubyDialog_doItemAction(VALUE val)
 	}
 	
 	/*  If the item has the "action" attribute, call it  */
+    retval = Qtrue;
 	actval = s_RubyDialogItem_Attr(itval, aval);
 	if (actval != Qnil) {
 		if (TYPE(actval) == T_SYMBOL)
@@ -2111,34 +2113,34 @@ s_RubyDialog_doItemAction(VALUE val)
 		}
 	} else {
 		/*  Default action (only for default buttons)  */
-		if (RubyDialogCallback_isModal(dref)) {
-			if (idx == 0 || idx == 1) {
-				rb_ivar_set(itval, SYM2ID(sIsProcessingActionSymbol), Qfalse);
-				s_RubyDialog_EndModal(1, &itval, self);
-			}
-		}
+		if (RubyDialogCallback_isModal(dref) && (idx == 0 || idx == 1)) {
+            rb_ivar_set(itval, SYM2ID(sIsProcessingActionSymbol), Qfalse);
+            s_RubyDialog_EndModal(1, &itval, self);
+        } else retval = Qnil;
 	}
 
 	rb_ivar_set(itval, SYM2ID(sIsProcessingActionSymbol), Qfalse);
 	
-	return Qnil;
+    return retval;  /*  Qtrue: some action was performed, Qnil: none was performed  */
 }
 
 /*  Action for dialog items.
  Get the item number, and call "action" method of the RubyDialog object with
  the item number (integer) as the argument. The default "action" method is
  defined as s_RubyDialog_action.  */
-void
+int
 RubyDialog_doItemAction(RubyValue self, RDItem *ip, int options)
 {
 	int status;
+    VALUE retval;
 	void *vp[3];
 	vp[0] = (void *)(uintptr_t)self;
 	vp[1] = ip;
 	vp[2] = (void *)(intptr_t)options;
-	rb_protect(s_RubyDialog_doItemAction, (VALUE)vp, &status);
+	retval = rb_protect(s_RubyDialog_doItemAction, (VALUE)vp, &status);
 	if (status != 0)
 		Ruby_showError(status);
+    return (retval == Qnil ? 0 : 1);
 }
 
 static VALUE
