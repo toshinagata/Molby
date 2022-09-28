@@ -1999,8 +1999,12 @@ MyAppCallback_getGUIDescriptionString(void)
 			  "Oak Ridge National Laboratory Report ORNL-6895, "
 			  "1996.\n"
 			"wxWidgets %d.%d.%d, http://www.wxwidgets.org/\n"
-		    "  Copyright (C) 1992-2013 Julian Smart, Vadim "
-			  "Zeitlin, Stefan Csomor, Robert Roebling,\n"
+#if wxCHECK_VERSION(3,2,0)
+            "  Copyright (C) 1992-2022 Julian Smart, Vadim "
+#else
+            "  Copyright (C) 1992-2013 Julian Smart, Vadim "
+#endif
+            "Zeitlin, Stefan Csomor, Robert Roebling,\n"
             "  and other members of the wxWidgets team\n"
             "  Portions (C) 1996 Artificial Intelligence "
 			  "Applications Institute\n",
