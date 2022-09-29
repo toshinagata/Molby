@@ -1559,14 +1559,24 @@ class Molecule
         fp.printf " %d %d\n", charge, mult
       end
       atoms.each { |ap|
-        fp.printf "%-8s %10.6f %10.6f %10.6f\n", ap.element, ap.x, ap.y, ap.z
+        fp.printf "%-8s %16.12f %16.12f %16.12f\n", ap.element, ap.x, ap.y, ap.z
       }
+      use_symmetry = Integer(hash["use_symmetry"])
+      move_to_com = Integer(hash["move_to_com"])
+      do_reorient = Integer(hash["do_reorient"])
+      if move_to_com == 0
+        fp.print "nocom\n"
+      end
+      if do_reorient == 0
+        fp.print "noreorient\n"
+      end
+      if use_symmetry == 0
+        fp.print "symmetry c1\n"
+      end
       fp.print "units angstrom\n"
       fp.print "}\n"
       fp.print "set basis #{hash['basis']}\n"
-      if hash['scftype'] != "RHF"
-        fp.print "set reference #{hash['scftype']}\n"
-      end
+      fp.print "set reference #{hash['scftype']}\n"
       options = "return_wfn=True"
       if hash['dft'] != 0
         options += ", dft_functional='#{hash['dfttype']}'"
@@ -1585,7 +1595,7 @@ class Molecule
     end
   end
 
-  #  Execute Psi4 (inferior copy of rungms script)
+  #  Execute Psi4
   #  inpname is the input file
   #  mol (optional) is the molecule from which the Psi4 input was built.
   def Molecule.execute_psi4(inpname, mol = nil)
@@ -1691,7 +1701,7 @@ class Molecule
             end
             #  Does this geometry differ from the last one?
             vecs.length.times { |i|
-              if (mol.atoms[i].r - vecs[i]).length2 > 1.0e-14
+              if (mol.atoms[i].r - vecs[i]).length2 > 1.0e-20
                 #  Create a new frame and break
                 mol.create_frame
                 vecs.length.times { |j|
@@ -1707,6 +1717,7 @@ class Molecule
             energy = Float($1)
             mol.set_property("energy", energy)
             mol.show_text("Frame: #{mol.nframes - 1}\nEnergy: #{energy}")
+            print("Frame: #{mol.nframes - 1} Energy: #{energy}\n")
             if line =~ /RHF/
               hf_type = "RHF"
             elsif line =~ /UHF/
@@ -1842,7 +1853,8 @@ class Molecule
     scftype_desc = ["RHF", "ROHF", "UHF"]
 #   nbo_desc = ["nao", "nbo", "nho", "nlmo", "pnao", "pnbo", "pnho", "pnlmo"]
     user_input = Hash.new
-    defaults = {"scftype"=>0, "runtype"=>0, "use_internal"=>1, "eliminate_freedom"=>1, "charge"=>"0", "mult"=>"1",
+    defaults = {"scftype"=>0, "runtype"=>0, "move_to_com"=>0, "do_reorient"=>0,
+      "use_symmetry"=>0,  "charge"=>"0", "mult"=>"1",
       "basis"=>1, "use_secondary_basis"=>0, "secondary_elements"=>"",
       "secondary_basis"=>8, "esp"=>0, "ncpus"=>"1"}
     psi4_input_direct = nil
@@ -1883,41 +1895,43 @@ class Molecule
         set_attr("psi4conda_folder", :value=>fname)
       end
       layout(4,
-        #  Line 1
+        #  ------
         item(:text, :title=>"SCF type"),
         item(:popup, :subitems=>scftype_desc, :tag=>"scftype"),
         item(:text, :title=>"Run type"),
-        item(:popup, :subitems=>runtype_desc, :tag=>"runtype",
-          :action=>lambda { |it| set_attr("use_internal", :enabled=>(it[:value] >= 2)) } ),
-        #  Line 2
-        item(:checkbox, :title=>"Use internal coordinates for structure optimization", :tag=>"use_internal"),
+        item(:popup, :subitems=>runtype_desc, :tag=>"runtype"),
+        #  ------
+        item(:checkbox, :title=>"Detect symmetry", :tag=>"use_symmetry"),
         -1, -1, -1,
-        #  Line 3
-        item(:checkbox, :title=>"Eliminate translation and rotational degrees of freedom", :tag=>"eliminate_freedom"),
+        #  ------
+        item(:checkbox, :title=>"Move the molecule to the center of mass", :tag=>"move_to_com"),
         -1, -1, -1,
-        #  Line 4
+        #  ------
+        item(:checkbox, :title=>"Rotate the molecule to the symmetry principle axes", :tag=>"do_reorient"),
+        -1, -1, -1,
+        #  ------
         item(:text, :title=>"Charge"),
         item(:textfield, :width=>80, :tag=>"charge"),
         item(:text, :title=>"Multiplicity"),
         item(:textfield, :width=>80, :tag=>"mult"),
-        #  Line 5
+        #  ------
         item(:checkbox, :title=>"Use DFT", :tag=>"dft",
           :action=>lambda { |it| set_attr("dfttype", :enabled=>(it[:value] != 0)) } ),
         -1,
         item(:text, :title=>"DFT type"),
         item(:popup, :subitems=>dfttype_desc, :tag=>"dfttype"),
-        #  Line 6
+        #  ------
         item(:line),
         -1, -1, -1,
-        #  Line 7
+        #  ------
         item(:text, :title=>"Basis set"),
         item(:popup, :subitems=>bset_desc, :tag=>"basis"),
         -1,
         -1,
-        #  Line 8
+        #  ------
         #item(:button, :title=>"Load Basis Set...", :action=>:load_basis_set_sub),
         #-1, -1, -1,
-        #  Line 9
+        #  ------
         #item(:checkbox, :title=>"Use secondary basis set", :tag=>"use_secondary_basis",
         #  :action=>lambda { |it|
         #    flag = (it[:value] != 0)
@@ -1925,41 +1939,41 @@ class Molecule
         #    set_attr("secondary_basis", :enabled=>flag)
         #  }),
         #-1, -1, -1,
-        #  Line 10
+        #  ------
         #item(:text, :title=>"   Elements"),
         #item(:textfield, :width=>80, :tag=>"secondary_elements"),
         #item(:text, :title=>"Basis set"),
         #item(:popup, :subitems=>bset_desc, :tag=>"secondary_basis"),
-        #  Line 11
+        #  ------
         item(:line),
         -1, -1, -1,
-        #  Line 12
+        #  ------
         #item(:checkbox, :title=>"Calculate electrostatic potential (ESP)", :tag=>"esp"),
         #-1, -1, -1,
-        #  Line 13
+        #  ------
         #item(:line),
         #-1, -1, -1,
-        #  Line 14
+        #  ------
         #item(:checkbox, :title=>"Include NBO instructions", :tag=>"include_nbo",
         #    :action=>lambda { |it|
         #      flag = (it[:value] != 0)
         #      nbos.each { |nbo| set_attr(nbo, :enabled=>flag) }
         #    }),
         #-1, -1, -1,
-        #  Line 15
+        #  ------
         #item(:checkbox, :title=>"NAO", :tag=>"nao"),
         #item(:checkbox, :title=>"NBO", :tag=>"nbo"),
         #item(:checkbox, :title=>"NHO", :tag=>"nho"),
         #item(:checkbox, :title=>"NLMO", :tag=>"nlmo"),
-        #  Line 16
+        #  ------
         #item(:checkbox, :title=>"PNAO", :tag=>"pnao"),
         #item(:checkbox, :title=>"PNBO", :tag=>"pnbo"),
         #item(:checkbox, :title=>"PNHO", :tag=>"pnho"),
         #item(:checkbox, :title=>"PNLMO", :tag=>"pnlmo"),
-        #  Line 17
+        #  ------
         item(:line),
         -1, -1, -1,
-        #  Line 18
+        #  ------
         item(:checkbox, :title=>"Execute Psi4 on this machine", :tag=>"execute_local",
           :action=>lambda { |it|
             flag = (it[:value] != 0)
@@ -1968,23 +1982,23 @@ class Molecule
             set_attr("ncpus", :enabled=>flag)
           }),
         -1, -1, -1,
-        #  Line 19
+        #  ------
         item(:text, :title=>"   Folder"),
         item(:textfield, :width=>300, :tag=>"psi4conda_folder"),
         -1, -1,
-        #  Line 20
+        #  ------
         -1,
         item(:button, :title=>"Select Path...", :tag=>"select_path", :action=>:select_psi4_folder),
         -1, -1,
         # item(:button, :title=>"Optional Scripts...", :action=>:set_optional_scripts),
-        #  Line 21
+        #  ------
         item(:text, :title=>"   N of CPUs"),
         item(:textfield, :width=>80, :tag=>"ncpus"),
         -1, -1,
-        #  Line 22
+        #  ------
         item(:line),
         -1, -1, -1,
-        #  Line 23
+        #  ------
         item(:button, :title=>"Edit Psi4 Input and Go", :action=>lambda { |it|
           h = Hash.new
           each_item { |it2|
@@ -2017,7 +2031,6 @@ class Molecule
       #set_attr("secondary_elements", :enabled=>(values["use_secondary_basis"] == 1))
       #set_attr("secondary_basis", :enabled=>(values["use_secondary_basis"] == 1))
       set_attr("dfttype", :enabled=>(values["dft"] == 1))
-      set_attr("use_internal", :enabled=>((values["runtype"] || 0) >= 2))
       set_attr("psi4conda_folder", :enabled=>(values["execute_local"] == 1))
       set_attr("ncpus", :enabled=>(values["execute_local"] == 1))
       #nbos.each { |nao|
