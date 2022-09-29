@@ -698,11 +698,21 @@ MoleculeView::OnSliderAction(wxCommandEvent& event)
 {
 	int eventId = event.GetId();
 	int mode = eventId - myID_RotateBondSlider + 1;
+    char buf[256];
 	MySlider *sender = (MySlider *)event.GetEventObject();
 	float angle = sender->GetFloatValue();
+    float angledeg = angle * 360.0;
+    float fixangledeg = floor(angledeg / 15.0 + 0.5) * 15.0;  //  Nearest multiple of 15 deg
+    if (angledeg > fixangledeg - 0.9 && angledeg < fixangledeg + 0.9) {
+        angledeg = fixangledeg;  //  Snap to the nearest multiple of 15 deg
+        angle = angledeg / 360.0;
+    }
 	int mouseStatus = sender->GetMouseStatus();
+    
 	MoleculeLock(mview->mol);
 	MainView_rotateBySlider(mview, angle * 3.1415927 * 2, mode, mouseStatus, MainViewCallback_modifierFlags(NULL));
+    snprintf(buf, sizeof buf, "%.1f°", angledeg);
+    MainViewCallback_drawInfoText(mview, buf);
     MainViewCallback_updateCanvas(mview);
 	MoleculeUnlock(mview->mol);
 }
