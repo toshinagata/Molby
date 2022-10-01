@@ -388,6 +388,84 @@ s_Kernel_ExportToClipboard(VALUE self, VALUE sval)
 
 /*
  *  call-seq:
+ *     hartree_to_kcal(val)
+ *
+ *  Convert hartree to kcal/mol
+ */
+static VALUE
+s_Kernel_HartreeToKcal(VALUE self, VALUE fval)
+{
+    double d = NUM2DBL(rb_Float(fval));
+    return rb_float_new(d * 627.5094740630557);
+}
+
+/*
+ *  call-seq:
+ *     kcal_to_hartree(val)
+ *
+ *  Convert kcal/mol to hartree
+ */
+static VALUE
+s_Kernel_KcalToHartree(VALUE self, VALUE fval)
+{
+    double d = NUM2DBL(rb_Float(fval));
+    return rb_float_new(d / 627.5094740630557);
+}
+
+/*
+ *  call-seq:
+ *     hartree_to_kj(val)
+ *
+ *  Convert hartree to kJ/mol
+ */
+static VALUE
+s_Kernel_HartreeToKJ(VALUE self, VALUE fval)
+{
+    double d = NUM2DBL(rb_Float(fval));
+    return rb_float_new(d * 2625.4996394798253);
+}
+
+/*
+ *  call-seq:
+ *     kj_to_hartree(val)
+ *
+ *  Convert kJ/mol to hartree
+ */
+static VALUE
+s_Kernel_KJToHartree(VALUE self, VALUE fval)
+{
+    double d = NUM2DBL(rb_Float(fval));
+    return rb_float_new(d / 2625.4996394798253);
+}
+
+/*
+ *  call-seq:
+ *     bohr_to_angstrom(val)
+ *
+ *  Convert bohr to angstrom
+ */
+static VALUE
+s_Kernel_BohrToAngstrom(VALUE self, VALUE fval)
+{
+    double d = NUM2DBL(rb_Float(fval));
+    return rb_float_new(d * 0.529177210903);
+}
+
+/*
+ *  call-seq:
+ *     angstrom_to_bohr(val)
+ *
+ *  Convert angstrom to bohr
+ */
+static VALUE
+s_Kernel_AngstromToBohr(VALUE self, VALUE fval)
+{
+    double d = NUM2DBL(rb_Float(fval));
+    return rb_float_new(d / 0.529177210903);
+}
+
+/*
+ *  call-seq:
  *     stdout.write(str)
  *
  *  Put the message in the main text view in black color.
@@ -11935,6 +12013,12 @@ Init_Molby(void)
 	rb_define_method(rb_mKernel, "play_sound", s_Kernel_PlaySound, -1);
 	rb_define_method(rb_mKernel, "stop_sound", s_Kernel_StopSound, 0);
 	rb_define_method(rb_mKernel, "export_to_clipboard", s_Kernel_ExportToClipboard, 1);
+    rb_define_method(rb_mKernel, "hartree_to_kcal", s_Kernel_HartreeToKcal, 1);
+    rb_define_method(rb_mKernel, "hartree_to_kj", s_Kernel_HartreeToKJ, 1);
+    rb_define_method(rb_mKernel, "kcal_to_hartree", s_Kernel_KcalToHartree, 1);
+    rb_define_method(rb_mKernel, "kj_to_hartree", s_Kernel_KJToHartree, 1);
+    rb_define_method(rb_mKernel, "bohr_to_angstrom", s_Kernel_BohrToAngstrom, 1);
+    rb_define_method(rb_mKernel, "angstrom_to_bohr", s_Kernel_AngstromToBohr, 1);
 
 	/*  class IO  */
 	rb_define_method(rb_cIO, "gets_any_eol", s_IO_gets_any_eol, 0);
