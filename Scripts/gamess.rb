@@ -653,8 +653,8 @@ class Molecule
 				  ncomps = mol.sub_load_gamess_log_basis_set(bs_lines, lineno + i)
 				end
 			  rescue
-			    puts $!.to_s
-			    puts $!.backtrace.inspect
+          $stderr.write($!.to_s + "\n")
+          $stderr.write($!.backtrace.inspect + "\n")
 			  end
 			  last_i = j
 			else
@@ -706,8 +706,8 @@ class Molecule
 			    mol.sub_load_gamess_log_mo_coefficients(mo_lines, lineno + i, ncomps)
 			  end
 			rescue
-			  puts $!.to_s
-			  puts $!.backtrace.inspect
+			  $stderr.write($!.to_s + "\n")
+			  $stderr.write($!.backtrace.inspect + "\n")
 			end
 			last_i = j
           elsif line =~ /NSERCH: *([0-9]+)/
@@ -782,6 +782,7 @@ class Molecule
 		  lineno += last_i + 1
         end
       end
+      print("% ")
       true
     }
 
@@ -1788,8 +1789,8 @@ class Molecule
               mol.sub_load_molden(fp)
               fp.close
             rescue => e
-              print(e.message + "\n")
-              print(e.backtrace.inspect + "\n")
+              $stderr.write("#{e.message}\n")
+              $stderr.write("#{e.backtrace.inspect}\n")
             end
           end
         elsif n == -1
@@ -1806,6 +1807,7 @@ class Molecule
         $stderr.write("#{e.message}\n")
         $stderr.write("#{e.backtrace.inspect}\n")
       end
+      print("% ")
       true
     }
     
@@ -1978,17 +1980,17 @@ class Molecule
           :action=>lambda { |it|
             flag = (it[:value] != 0)
             set_attr("psi4conda_folder", :enabled=>flag)
-            set_attr("select_path", :enabled=>flag)
+            set_attr("select_folder", :enabled=>flag)
             set_attr("ncpus", :enabled=>flag)
           }),
         -1, -1, -1,
         #  ------
-        item(:text, :title=>"   Folder"),
+        item(:text, :title=>" Psi4 Folder"),
         item(:textfield, :width=>300, :tag=>"psi4conda_folder"),
         -1, -1,
         #  ------
         -1,
-        item(:button, :title=>"Select Path...", :tag=>"select_path", :action=>:select_psi4_folder),
+        item(:button, :title=>"Select Folder...", :tag=>"select_folder", :action=>:select_psi4_folder),
         -1, -1,
         # item(:button, :title=>"Optional Scripts...", :action=>:set_optional_scripts),
         #  ------
@@ -2032,6 +2034,7 @@ class Molecule
       #set_attr("secondary_basis", :enabled=>(values["use_secondary_basis"] == 1))
       set_attr("dfttype", :enabled=>(values["dft"] == 1))
       set_attr("psi4conda_folder", :enabled=>(values["execute_local"] == 1))
+      set_attr("select_folder", :enabled=>(values["execute_local"] == 1))
       set_attr("ncpus", :enabled=>(values["execute_local"] == 1))
       #nbos.each { |nao|
       #  set_attr(nao, :enabled=>(values["include_nbo"] == 1))
