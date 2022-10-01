@@ -278,8 +278,14 @@ class Molecule
       max = wave_max.call
       h = max - min
       h = (h == 0.0 ? 1.0 : height / h)
-      w = wave.count
-      w = (w == 0 ? 1.0 : Float(width) / w)
+      c = wave.count
+      if c == 0
+        w = 1.0
+      elsif c == 1
+        w = Float(width)
+      else
+        w = Float(width) / (c - 1)
+      end
       lines = []
       a = []
       #  Skip the points that have exactly 0.0 value
