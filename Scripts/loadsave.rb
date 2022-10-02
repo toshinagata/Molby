@@ -611,13 +611,22 @@ class Molecule
   end
 
   #  mol.set_mo_info should be set before calling this function
-  def sub_load_molden(fp)
+  #  Optional label is for importing JANPA output: "NAO" or "CPLO"
+  #  If label is not nil, then returns a hash containing the following key/value pairs:
+  #    :atoms => an array of [element_symbol, seq_num, atomic_num, x, y, z] (angstrom)
+  #    :gto => an array of an array of [sym, [ex0, c0, ex1, c1, ...]]
+  #    :moinfo => an array of [sym, energy, spin (0 or 1), occ]
+  #    :mo => an array of [c0, c1, ...]
+  def sub_load_molden(fp, label = nil)
     getline = lambda { @lineno += 1; return fp.gets }
     bohr = 0.529177210903
     errmsg = nil
     ncomps = 0  #  Number of components (AOs)
     occ_alpha = 0  #  Number of occupied alpha orbitals
     occ_beta = 0   #  Number of occupied beta orbitals
+    if label
+      hash = Hash.new
+    end
     catch :ignore do
       while line = getline.call
         if line =~ /^\[Atoms\]/
@@ -626,12 +635,16 @@ class Molecule
             if line =~ /^[A-Z]/
               #  element, index, atomic_number, x, y, z (in AU)
               a = line.split(' ')
-              if atoms[i].atomic_number != Integer(a[2]) ||
-                (atoms[i].x - Float(a[3]) * bohr).abs > 1e-4 ||
-                (atoms[i].y - Float(a[4]) * bohr).abs > 1e-4 ||
-                (atoms[i].z - Float(a[5]) * bohr).abs > 1e-4
-                errmsg = "The atom list does not match the current molecule."
-                throw :ignore
+              if label
+                (hash[:atoms] ||= []).push([a[0], Integer(a[1]), Integer(a[2]), Float(a[3]) * bohr, Float(a[4]) * bohr, Float(a[5]) * bohr])
+              else
+                if atoms[i].atomic_number != Integer(a[2]) ||
+                  (atoms[i].x - Float(a[3]) * bohr).abs > 1e-4 ||
+                  (atoms[i].y - Float(a[4]) * bohr).abs > 1e-4 ||
+                  (atoms[i].z - Float(a[5]) * bohr).abs > 1e-4
+                  errmsg = "The atom list does not match the current molecule."
+                  throw :ignore
+                end
               end
               i += 1
             else
@@ -642,6 +655,10 @@ class Molecule
         elsif line =~ /^\[GTO\]/
           shell = 0
           atom_index = 0
+          if label
+            gtos = []
+            hash[:gto] = []
+          end
           while line = getline.call
             #  index, 0?
             a = line.split(' ')
@@ -666,24 +683,40 @@ class Molecule
                 raise MolbyError, "Unknown gaussian shell type '#{a[0]}' at line #{@lineno} in MOLDEN file"
               end
               nprimitives = Integer(a[1])
+              if label
+                gtoline = [sym, []]
+                gtos.push(gtoline)
+              end
               nprimitives.times { |i|
                 line = getline.call   #  exponent, contraction
                 b = line.split(' ')
+                if label
+                  gtoline[1].push(Float(b[0]), Float(b[1]))
+                end
                 add_gaussian_primitive_coefficients(Float(b[0]), Float(b[1]), 0.0)
               }
               #  end of one shell
-              add_gaussian_orbital_shell(atom_index, sym, nprimitives)
+              if label == nil
+                add_gaussian_orbital_shell(atom_index, sym, nprimitives)
+              end
               shell += 1
               ncomps += n
             end
             #  end of one atom
             atom_index += 1
+            if label
+              hash[:gto].push(gtos)
+            end
           end
           redo  #  The next line will be the beginning of the next block
         elsif line =~ /^\[MO\]/
           m = []
           idx_alpha = 1   #  set_mo_coefficients() accepts 1-based index of MO
           idx_beta = 1
+          if label
+            hash[:mo] = []
+            hash[:moinfo] = []
+          end
           while true
             #  Loop for each MO
             m.clear
@@ -708,6 +741,9 @@ class Molecule
                     occ_beta += 1
                   end
                 end
+                if label
+                  hash[:moinfo].push([sym, ene, (spin == "Alpha" ? 0 : 1), occ])
+                end
               elsif line =~ /^ *([0-9]+) +([-+.0-9e]+)/
                 m[i] = Float($2)
                 i += 1
@@ -720,6 +756,9 @@ class Molecule
                     idx_beta += 1
                   end
                   set_mo_coefficients(idx, ene, m)
+                  if label
+                    hash[:mo].push(m.dup)
+                  end
                   break
                 end
               else
@@ -734,11 +773,96 @@ class Molecule
     end     #  end catch
     if errmsg
       message_box("The MOLDEN file was found but not imported. " + errmsg, "Psi4 import info", :ok)
-      return false
+      return (label ? nil : false)
     end
-    return true
+    return (label ? hash : true)
   end
-  
+
+  #  Import the JANPA log and related molden files
+  #  Files: inppath.{NAO.molden,CLPO.molden,janpa.log}
+  def sub_load_janpa_log(inppath)
+    begin
+      fp = File.open(inppath + ".janpa.log", "rt") rescue fp = nil
+      if fp == nil
+        message_box("Cannot open JANPA log file #{inppath + '.janpa.log'}: " + $!.to_s)
+        return false
+      end
+      print("Importing #{inppath}.janpa.log.\n")
+      lineno = 0
+      getline = lambda { lineno += 1; return fp.gets }
+      h = Hash.new
+      mfiles = Hash.new
+      while line = getline.call
+        if line =~ /^NAO \#/
+          h["NAO"] = []
+          while line = getline.call
+            break if line !~ /^\s*[1-9]/
+            num = Integer(line[0, 5])
+            name = line[5, 21]
+            occ = Float(line[26, 11])
+            #  like A1*: R1*s(0)
+            #  atom_number, occupied?, shell_number, orb_sym, angular_number
+            name =~ /\s*[A-Z]+([0-9]+)(\*?):\s* R([0-9]+)\*([a-z]+)\(([-0-9]+)\)/
+            anum = Integer($1)
+            occupied = $2
+            shell_num = Integer($3)
+            orb_sym = $4
+            ang_num = Integer($5)
+            h["NAO"].push([num, anum, occupied, shell_num, orb_sym, ang_num, occ])
+          end
+        elsif line =~ /^\s*CLPO\s+D e s c r i p t i o n\s+Occupancy\s+Composition/
+          h["CLPO"] = []
+          while line = getline.call
+            break if line =~ /^\s*$/
+            num = Integer(line[0, 5])
+            label1 = line[5, 6].strip
+            desc = line[11, 30].strip
+            desc =~ /\s*([-A-Za-z0-9]+)(,\s*(.*$))?/
+            desc1 = $1
+            desc2 = ($3 || "")
+            if desc2 =~ /^(.*)*\(NB\)\s*$/ && label1 == ""
+              label1 = "(NB)"
+              desc2 = $1.strip
+            end
+            #  like ["(BD)", "C1-H3", "Io = 0.2237"]
+            h["CLPO"][num - 1] = [label1, desc1, desc2]
+          end
+        elsif line =~ /^ -NAO_Molden_File: (\S*)/
+          mfiles["NAO"] = $1
+        elsif line =~ /^ -LHO_Molden_File: (\S*)/
+          mfiles["LHO"] = $1
+        elsif line =~ /^ -CLPO_Molden_File: (\S*)/
+          mfiles["CLPO"] = $1
+        elsif line =~ /^ -PNAO_Molden_File: (\S*)/
+          mfiles["PNAO"] = $1
+        elsif line =~ /^ -AHO_Molden_File: (\S*)/
+          mfiles["AHO"] = $1
+        elsif line =~ /^ -LPO_Molden_File: (\S*)/
+          mfiles["LPO"] = $1
+        end
+      end
+      fp.close
+      #  Read molden files
+      mfiles.each { |key, value|
+        fp = Kernel.open(value, "rt") rescue fp = nil
+        if fp
+          print("Importing #{value}.\n")
+          res = sub_load_molden(fp, key)
+          if res
+            #  Some kind of orbital based on AO
+            h["AO/#{key}"] = LAMatrix.new(res[:mo])
+          end
+          fp.close
+        end
+      }
+      @nbo = h
+      return true
+    rescue => e
+      $stderr.write(e.message + "\n")
+      $stderr.write(e.backtrace.inspect + "\n")
+    end
+  end
+
   def loadout(filename)
   retval = false
   fp = open(filename, "rb")
@@ -756,13 +880,19 @@ class Molecule
         retval = sub_load_psi4_log(fp)
         if retval
           #  If .molden file exists, then try to read it
-          mname = filename.gsub(/\.\w*$/, ".molden")
+          namepath = filename.gsub(/\.\w*$/, "")
+          mname = "#{namepath}.molden"
           if File.exists?(mname)
             fp2 = open(mname, "rb")
             if fp2
               flag = sub_load_molden(fp2)
               fp2.close
+              status = (flag ? 0 : -1)
             end
+          end
+          if File.exists?("#{namepath}.janpa.log")
+            flag = sub_load_janpa_log(namepath)
+            status = (flag ? 0 : -1)
           end
         end
         break

@@ -91,6 +91,8 @@
 		E4059FDD28C46A6E0052B36B /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E4FC7A16183E51570064FB2E /* Foundation.framework */; };
 		E4059FDE28C46A6E0052B36B /* WebKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E4FC7B58183E53710064FB2E /* WebKit.framework */; };
 		E4059FDF28C46A6E0052B36B /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E4FC7CAC183F953E0064FB2E /* AudioToolbox.framework */; };
+		E40C8B3328E85322003CE26E /* JANPA in Resources */ = {isa = PBXBuildFile; fileRef = E40C8B3228E8522F003CE26E /* JANPA */; };
+		E40C8B3428E85357003CE26E /* JANPA in Resources */ = {isa = PBXBuildFile; fileRef = E40C8B3228E8522F003CE26E /* JANPA */; };
 		E41251B828CD92A100E12983 /* MyListCtrl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E41251B728CD92A100E12983 /* MyListCtrl.cpp */; };
 		E41A7F962307D61200C65830 /* bitmaps in Resources */ = {isa = PBXBuildFile; fileRef = E41A7F952307D61200C65830 /* bitmaps */; };
 		E420BDEF1885746700A2B983 /* ConsoleFrame.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BDE81885746700A2B983 /* ConsoleFrame.cpp */; };
@@ -196,6 +198,7 @@
 		E403568828D0C8C4008E2C46 /* textctrl_msw.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = textctrl_msw.cpp; sourceTree = "<group>"; };
 		E4059FE428C46A6E0052B36B /* MolbyMacLegacy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MolbyMacLegacy.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E4059FE628C46B320052B36B /* Molby_MacLegacy-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "Molby_MacLegacy-Info.plist"; sourceTree = "<group>"; };
+		E40C8B3228E8522F003CE26E /* JANPA */ = {isa = PBXFileReference; lastKnownFileType = folder; name = JANPA; path = ../JANPA; sourceTree = "<group>"; };
 		E41251B728CD92A100E12983 /* MyListCtrl.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MyListCtrl.cpp; sourceTree = "<group>"; };
 		E41251BA28CD92AD00E12983 /* MyListCtrl.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MyListCtrl.h; sourceTree = "<group>"; };
 		E4196C65190B2FA500183E62 /* menu.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = menu.mm; sourceTree = "<group>"; };
@@ -489,6 +492,7 @@
 				E4ACACE418C6D32300F08B67 /* ortep3 */,
 				E4FC7C16183E54730064FB2E /* Molby-Info.plist */,
 				E4059FE628C46B320052B36B /* Molby_MacLegacy-Info.plist */,
+				E40C8B3228E8522F003CE26E /* JANPA */,
 			);
 			name = Resources;
 			sourceTree = "<group>";
@@ -707,6 +711,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E40C8B3328E85322003CE26E /* JANPA in Resources */,
 				E4FC7F821840C22B0064FB2E /* molby_icon.icns in Resources */,
 				E4FC77D7183E4FFE0064FB2E /* Scripts in Resources */,
 				E4FC7802183E503E0064FB2E /* amber11 in Resources */,
@@ -719,6 +724,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E40C8B3428E85357003CE26E /* JANPA in Resources */,
 				E4059F9B28C46A6E0052B36B /* molby_icon.icns in Resources */,
 				E4059F9C28C46A6E0052B36B /* Scripts in Resources */,
 				E4059F9D28C46A6E0052B36B /* amber11 in Resources */,

@@ -1419,7 +1419,7 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
 	bool progress_panel = false;
 	char buf[256];
 	wxString cmdstr(cmdline, WX_DEFAULT_CONV);
-	wxLongLong startTime;
+    wxLongLong startTime, lastTime, presentTime;
 
 	if (m_process != NULL)
 		return -1;  //  Another process is already running (CallSubProcess() allows only one subprocess)
@@ -1433,7 +1433,7 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
         ShowProgressPanel(buf);
 		progress_panel = true;
 	}
-	startTime = wxGetUTCTimeMillis();
+	startTime = lastTime = wxGetUTCTimeMillis();
 	
 	//  Create log file in the document home directory
 #if LOG_SUBPROCESS
@@ -1479,8 +1479,9 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
     wxString bufstr;
     wxString buferrstr;
     while (1) {
-        int len1 = m_process->GetLine(bufstr);
-        if (len1 > 0) {
+        int len1, len2;
+        lastTime = wxGetUTCTimeMillis();
+        while ((len1 = m_process->GetLine(bufstr)) > 0) {
 #if LOG_SUBPROCESS
             dateTime.SetToCurrent();
             fprintf(fplog, "%s[STDOUT]%s", (const char *)(dateTime.FormatISOCombined(' ')), (const char *)bufstr);
@@ -1495,9 +1496,13 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
                 MyAppCallback_setConsoleColor(0);
                 MyAppCallback_showScriptMessage("%s", (const char *)bufstr);
             }
+            presentTime = wxGetUTCTimeMillis();
+            if (presentTime > lastTime + 25) {
+                presentTime = lastTime;
+                break;
+            }
         }
-        int len2 = m_process->GetErrorLine(buferrstr);
-        if (len2 > 0) {
+        while ((len2 = m_process->GetErrorLine(buferrstr)) > 0) {
 #if LOG_SUBPROCESS
             dateTime.SetToCurrent();
             fprintf(fplog, "%s[STDERR]%s", (const char *)(dateTime.FormatISOCombined(' ')), buf);
@@ -1510,8 +1515,12 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
                 MyAppCallback_showScriptMessage("\n%s", (const char *)buferrstr);
                 MyAppCallback_setConsoleColor(0);
             }
+            presentTime = wxGetUTCTimeMillis();
+            if (presentTime > lastTime + 25) {
+                presentTime = lastTime;
+                break;
+            }
         }
-
         if (len1 < 0 && len2 < 0) {
             //  The standard/error outputs are exhausted; the process should have terminated
             //  (Normally, this should be detected by wxBetterProcess::OnTerminate())
@@ -1523,12 +1532,11 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
             if (callback_result != 0)
                 interrupted = true;
         }
+        ::wxSafeYield();  //  This allows updating console and wxProcess status
         if (progress_panel) {
             SetProgressValue(-1);
             if (IsInterrupted())
                 interrupted = true;
-        } else {
-            ::wxSafeYield();  //  This allows updating console and wxProcess status
         }
 
 #if LOG_SUBPROCESS

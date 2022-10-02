@@ -1012,6 +1012,7 @@ s_Kernel_CallSubProcess(int argc, VALUE *argv, VALUE self)
     VALUE save_interruptFlag;
 	int n, exitstatus, pid;
 	char *sout, *serr;
+    const char *pnamestr;
 	FILE *fpout, *fperr;
 
 	rb_scan_args(argc, argv, "23", &cmd, &procname, &cproc, &stdout_val, &stderr_val);
@@ -1056,7 +1057,10 @@ s_Kernel_CallSubProcess(int argc, VALUE *argv, VALUE self)
 	}
     
     save_interruptFlag = s_SetInterruptFlag(self, Qnil);
-	n = MyAppCallback_callSubProcess(StringValuePtr(cmd), StringValuePtr(procname), (cproc == Qnil ? NULL : s_Kernel_CallSubProcess_Callback), (cproc == Qnil ? NULL : (void *)cproc), fpout, fperr, &exitstatus, &pid);
+    if (procname != Qnil)
+        pnamestr = StringValuePtr(procname);
+    else pnamestr = NULL;
+	n = MyAppCallback_callSubProcess(StringValuePtr(cmd), pnamestr, (cproc == Qnil ? NULL : s_Kernel_CallSubProcess_Callback), (cproc == Qnil ? NULL : (void *)cproc), fpout, fperr, &exitstatus, &pid);
     s_SetInterruptFlag(self, save_interruptFlag);
     
 	if (fpout != NULL && fpout != (FILE *)1)

@@ -165,6 +165,7 @@ ifeq ($(TARGET_PLATFORM),MSW)
 	cp -r ../bitmaps/bitmaps $(DESTPREFIX)/$(PRODUCT_DIR)
 	cp -r amber11 $(DESTPREFIX)/$(PRODUCT_DIR)
 	cp -r ortep3 $(DESTPREFIX)/$(PRODUCT_DIR)
+	cp -r ../JANPA $(DESTPREFIX)/$(PRODUCT_DIR)
 	cp -r ../Documents/MolbyDoc $(DESTPREFIX)/$(PRODUCT_DIR)
 	mkdir -p $(DESTPREFIX)/$(PRODUCT_DIR)/Scripts/lib
 	for i in $(RUBY_EXTLIB); do cp $(RUBY_DIR)/lib/$$i $(DESTPREFIX)/$(PRODUCT_DIR)/Scripts/lib; done
