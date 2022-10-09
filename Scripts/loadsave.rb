@@ -780,10 +780,30 @@ class Molecule
 
   #  Import the JANPA log and related molden files
   #  Files: inppath.{NAO.molden,CLPO.molden,janpa.log}
-  def sub_load_janpa_log(inppath)
+  #  If mo_path is not nil, then clear existing mo info and load from mo_path
+  def sub_load_janpa_log(inppath, mo_path = nil)
     begin
+      if mo_path
+        fp = File.open(mo_path, "rt") rescue fp = nil
+        if fp == nil
+          hide_progress_panel  #  Close if it is open
+          message_box("Cannot open MO molden file #{mo_path}: " + $!.to_s)
+          return false
+        end
+        @lineno = 0
+        type = get_mo_info(:type)
+        alpha = get_mo_info(:alpha)
+        beta = get_mo_info(:beta)
+        clear_basis_set
+        set_mo_info(:type=>type, :alpha=>alpha, :beta=>beta)
+        #  mol.@hf_type should be set before calling sub_load_molden
+        @hf_type = type
+        sub_load_molden(fp)
+        fp.close
+      end
       fp = File.open(inppath + ".janpa.log", "rt") rescue fp = nil
       if fp == nil
+        hide_progress_panel  #  Close if it is open
         message_box("Cannot open JANPA log file #{inppath + '.janpa.log'}: " + $!.to_s)
         return false
       end
@@ -792,6 +812,10 @@ class Molecule
       getline = lambda { lineno += 1; return fp.gets }
       h = Hash.new
       mfiles = Hash.new
+      h["software"] = "JANPA"
+      nao_num = nil  #  Set later
+      nao_infos = [] #  index=atom_index, value=Hash with key "s", "px", "py" etc.
+      #  nao_infos[index][key]: array of [nao_num, occupancy], in the reverse order of appearance
       while line = getline.call
         if line =~ /^NAO \#/
           h["NAO"] = []
@@ -801,22 +825,65 @@ class Molecule
             name = line[5, 21]
             occ = Float(line[26, 11])
             #  like A1*: R1*s(0)
-            #  atom_number, occupied?, shell_number, orb_sym, angular_number
+            #  atom_number, occupied?, group_number, orb_sym, angular_number
             name =~ /\s*[A-Z]+([0-9]+)(\*?):\s* R([0-9]+)\*([a-z]+)\(([-0-9]+)\)/
             anum = Integer($1)
             occupied = $2
-            shell_num = Integer($3)
+            group_num = Integer($3)
             orb_sym = $4
             ang_num = Integer($5)
-            h["NAO"].push([num, anum, occupied, shell_num, orb_sym, ang_num, occ])
+            orb_desc = orb_sym
+            if orb_desc == "p"
+              orb_desc += ["z", "x", "y"][ang_num + 1]
+            elsif orb_desc == "d"
+            #  TODO: handle d, f, g orbitals
+            end
+            h["NAO"].push([num, anum, occupied, group_num, orb_desc, occ])
+            nao_num = h["NAO"].length
+            ((nao_infos[anum - 1] ||= Hash.new)[orb_desc] ||= []).unshift([nao_num, occ])
           end
-        elsif line =~ /^\s*CLPO\s+D e s c r i p t i o n\s+Occupancy\s+Composition/
-          h["CLPO"] = []
+          #  Create labels
+          h["NAO_L"] = []
+          nao_infos.each_with_index { |value, atom_index|
+            aname = self.atoms[atom_index].name
+            value.each { |orb_desc, ar|
+              ar.each_with_index { |v, group_index|
+                if v[1] > 1.9
+                  label = "core"
+                elsif v[1] > 0.01
+                  label = "val"
+                else
+                  label = "ryd"
+                end
+                principle = group_index + 1
+                orb_sym = orb_desc[0]
+                if orb_sym == "p"
+                  principle += 1
+                elsif orb_sym == "d"
+                  principle += 2
+                elsif orb_sym == "f"
+                  principle += 3
+                elsif orb_sym == "g"
+                  principle += 4
+                end
+                h["NAO_L"][v[0] - 1] = "#{aname} (#{principle}#{orb_desc}) (#{label})"
+              }
+            }
+          }
+        elsif line =~ /^\s*(C?)LPO\s+D e s c r i p t i o n\s+Occupancy\s+Composition/
+          if $1 == "C"
+            key = "CLPO"
+          else
+            key = "LPO"
+          end
+          h[key] = []
           while line = getline.call
             break if line =~ /^\s*$/
             num = Integer(line[0, 5])
             label1 = line[5, 6].strip
             desc = line[11, 30].strip
+            occ = line[41, 11].strip
+            comp = line[52, 1000].strip
             desc =~ /\s*([-A-Za-z0-9]+)(,\s*(.*$))?/
             desc1 = $1
             desc2 = ($3 || "")
@@ -824,9 +891,56 @@ class Molecule
               label1 = "(NB)"
               desc2 = $1.strip
             end
-            #  like ["(BD)", "C1-H3", "Io = 0.2237"]
-            h["CLPO"][num - 1] = [label1, desc1, desc2]
+            atoms = desc1.scan(/[A-Za-z]+(\d+)/)   # "C1-H3" -> [["1"], ["3"]]
+            atoms = atoms.map { |a| Integer(a[0]) }  # [1, 3]
+            hybrids_a = comp.scan(/h(\d+)@[A-Za-z]+(\d+)/)  #  "h8@C1...h13@H3" -> "[["8", "1"], ["13", "3"]]
+            hybrids = []
+            hybrids_a.each { |a|
+              i = atoms.find_index(Integer(a[1]))
+              if i != nil
+                hybrids[i] = Integer(a[0])
+              end
+            } # [8, 13]
+            #  like ["(BD)", [1, 3], "Io = 0.2237", occ, [8, 13]]
+            #  1, 3 are the atom indices (1-based)
+            #  8, 13 are the number of hybrid orbitals (1-based)
+            h[key][num - 1] = [label1, atoms, desc2, Float(occ), hybrids]
           end
+          h[key + "_L"] = []
+          if key == "CLPO"
+            #  Also register labels of "LHO"
+            h["LHO_L"] = [""] * nao_num
+          end
+          nao_num.times { |i|
+            val = h[key][i]
+            if val == nil
+              label = ""  #  The labels for Rydberg orbitals may be replaced later
+            else
+              aname1 = self.atoms[val[1][0] - 1].name rescue aname1 = ""
+              aname2 = self.atoms[val[1][1] - 1].name rescue aname2 = ""
+              if aname2 == ""
+                label = "#{aname1} #{val[0]}"
+              else
+                label = "#{aname1}(#{aname2}) #{val[0]}"
+              end
+            end
+            h[key + "_L"][i] = label
+            if key == "CLPO" && val != nil && val[0] != "(NB)"
+              hybrids = val[4]
+              kind = (val[0] == "(BD)" ? "(val)" : "(lp)")
+              if aname2 == ""
+                label = "#{aname1} #{kind}"
+              else
+                label = "#{aname1}(#{aname2}) #{kind}"
+              end
+              h["LHO_L"][hybrids[0] - 1] = label
+              if hybrids[1] != nil
+                #  aname2 should be non-empty
+                label = "#{aname2}(#{aname1}) #{kind}"
+                h["LHO_L"][hybrids[1] - 1] = label
+              end
+            end
+          }
         elsif line =~ /^ -NAO_Molden_File: (\S*)/
           mfiles["NAO"] = $1
         elsif line =~ /^ -LHO_Molden_File: (\S*)/
@@ -853,9 +967,49 @@ class Molecule
             h["AO/#{key}"] = LAMatrix.new(res[:mo])
           end
           fp.close
+          if key == "CLPO" || key == "LPO" || key == "LHO"
+            #  Set the label of Rydberg orbitals if possible
+            if h[key + "_L"] != nil
+              a = h["AO/#{key}"]
+              nao_num.times { |i|
+                label = h[key + "_L"][i]
+                if label == ""
+                  max_idx = nil
+                  max_val = -1.0
+                  nao_infos.each_with_index { |inf, atom_index|
+                    atomic_contrib = 0.0
+                    inf.each { |k, v| # k is "s", "px" etc, v is array of [nao_num, occupancy]
+                      #  Sum for all naos belonging to this atom
+                      v.each { |num_occ|
+                        atomic_contrib += a[i, num_occ[0] - 1] ** 2
+                      }
+                    }
+                    if atomic_contrib > max_val
+                      max_val = atomic_contrib
+                      max_idx = atom_index
+                    end
+                  }
+                  label = self.atoms[max_idx].name + " (ry)"
+                  h[key + "_L"][i] = label
+                end
+              }
+            end
+          end
         end
       }
       @nbo = h
+      if @nbo["AO/NAO"] && @nbo["AO/LHO"] && @nbo["AO/PNAO"]
+        #  Generate PLHO from PNAO, NAO, LHO
+        #  This protocol was suggested by the JANPA author in a private commnunication.
+        begin
+          nao2lho = @nbo["AO/NAO"].inverse * @nbo["AO/LHO"]
+          nao2pnao = @nbo["AO/NAO"].inverse * @nbo["AO/PNAO"]
+          sign = LAMatrix.diagonal((0...nao2pnao.column_size).map { |i| (nao2pnao[i, i] < 0 ? -1 : 1)})
+          @nbo["AO/PLHO"] = @nbo["AO/PNAO"] * sign * nao2lho
+        rescue
+          @nbo["AO/PLHO"] = nil
+        end
+      end
       return true
     rescue => e
       $stderr.write(e.message + "\n")

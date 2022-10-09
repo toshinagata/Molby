@@ -1429,7 +1429,10 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
 #endif
 	//  Show progress panel
 	if (procname != NULL) {
-		snprintf(buf, sizeof buf, "Running %s...", procname);
+        if (strncmp(procname, "Running ", 8) == 0)
+            snprintf(buf, sizeof buf, "%s...", procname);
+        else
+            snprintf(buf, sizeof buf, "Running %s...", procname);
         ShowProgressPanel(buf);
 		progress_panel = true;
 	}

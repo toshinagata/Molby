@@ -1616,28 +1616,41 @@ class Molecule
     status = 0
     if spherical
       cmd1 = "java -jar #{janpa_dir}/molden2molden.jar -NormalizeBF -i #{inppath}.da.molden -o #{inppath}.in.molden >#{inppath}.janpa.log"
+      cmd2 = ""
     else
-    cmd1 = "java -jar #{janpa_dir}/molden2molden.jar -frompsi4v1mo -NormalizeBF -cart2pure -i #{inppath}.da.molden -o #{inppath}.in.molden >#{inppath}.janpa.log"
+      cmd1 = "java -jar #{janpa_dir}/molden2molden.jar -frompsi4v1mo -NormalizeBF -cart2pure -i #{inppath}.da.molden -o #{inppath}.in.molden >#{inppath}.janpa.log"
+      cmd2 = "java -jar #{janpa_dir}/molden2molden.jar -frompsi4v1mo -NormalizeBF -cart2pure -i #{inppath}.molden -o #{inppath}.spherical.molden >>#{inppath}.janpa.log"
     end
+    cmd3 = "java -jar #{janpa_dir}/janpa.jar -i #{inppath}.in.molden"
+    ["nao", "pnao", "aho", "lho", "lpo", "clpo"].each { |type|
+      generate = (get_global_settings("psi4.#{type}").to_i != 0)
+      if type == "pnao" || type == "nao" || type == "lho"
+        #  PLHO is generated within Molby from JANPA NAO/PNAO/LHO
+        generate ||= (get_global_settings("psi4.plho").to_i != 0)
+      end
+      if generate
+        cmd3 += " -#{type.upcase}_Molden_File #{inppath}.#{type.upcase}.molden"
+      end
+    }
+    cmd3 += " >>#{inppath}.janpa.log"
+    show_progress_panel("Executing JANPA...")
     flag = system(cmd1)
-    if flag
-      cmd2 = "java -jar #{janpa_dir}/janpa.jar -i #{inppath}.in.molden"
-      ["nao", "pnao", "aho", "lho", "lpo", "clpo"].each { |type|
-        if (get_global_settings("psi4.#{type}").to_i != 0)
-          cmd2 += " -#{type.upcase}_Molden_File #{inppath}.#{type.upcase}.molden"
-        end
-      }
-      cmd2 += " >>#{inppath}.janpa.log"
+    if flag && cmd2 != ""
       flag = system(cmd2)
+      if flag
+        flag = system(cmd3)
+      end
     end
     if flag
       if mol
         #  import JANPA log and molden output
-        #  Files: inppath.japa.log, inppath.{NAO,PNAO,AHO,LHO,LPO,CLPO}.molden
-        mol.sub_load_janpa_log(inppath)
+        #  Files: inppath.janpa.log, inppath.{NAO,PNAO,AHO,LHO,LPO,CLPO}.molden
+        mol.sub_load_janpa_log(inppath, spherical)
       end
+      hide_progress_panel
     else
       status = $?.exitstatus
+      hide_progress_panel
       message_box("Execution of #{procname} failed with status #{status}.", "JANPA Failed")
     end
     return status
@@ -1818,11 +1831,6 @@ class Molecule
           end
           msg += "\n(In directory #{inpdir})"
         end
-        ENV["PATH"] = orgpath
-        Dir.chdir(orgdir)
-        if mol != nil
-          message_box(msg, hmsg, :ok, icon)
-        end
         if n == 0
           #  Try to load final lines of the logfile
           timer_count = 100
@@ -1846,6 +1854,7 @@ class Molecule
           end
           if (get_global_settings("psi4.run_janpa").to_i == 1)
             do_janpa = true
+            Molecule.execute_janpa(inpdir + "/" + inpbody, mol, spherical)
           end
         elsif n == -1
           #  The child process actually did not start
@@ -1857,8 +1866,10 @@ class Molecule
         if outbackfile && File.exists?(outbackfile)
           File.delete(outbackfile)
         end
-        if do_janpa
-          Molecule.execute_janpa(inpdir + "/" + inpbody, mol, spherical)
+        ENV["PATH"] = orgpath
+        Dir.chdir(orgdir)
+        if mol != nil
+          message_box(msg, hmsg, :ok, icon)
         end
       rescue => e
         $stderr.write("#{e.message}\n")
@@ -2025,9 +2036,13 @@ class Molecule
         item(:checkbox, :title=>"AHO", :tag=>"aho"),
         item(:checkbox, :title=>"LHO", :tag=>"lho"),
         #  ------
+        item(:checkbox, :title=>"PLHO*", :tag=>"plho"),
         item(:checkbox, :title=>"LPO", :tag=>"lpo"),
         item(:checkbox, :title=>"CLPO", :tag=>"clpo"),
-        -1, -1,
+        -1,
+        #  ------
+        item(:text, :title=>"* Not JANPA original; Molby extension", :font=>[9]),
+        -1, -1, -1,
         #  ------
         item(:line),
         -1, -1, -1,
