@@ -220,7 +220,8 @@ MainView_setViewObject(MainView *mview, void *ref)
 		mview->ref = ref;  /*  No retain  */
 		IntGroupClear(mview->tableCache);
 		IntGroupClear(mview->tableSelection);
-		MoleculeCallback_notifyModification(mview->mol, 0);
+        if (mview->ref != NULL)
+            MoleculeCallback_notifyModification(mview->mol, 0);
 	}
 }
 

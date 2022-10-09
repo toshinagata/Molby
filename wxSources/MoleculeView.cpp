@@ -569,10 +569,15 @@ MoleculeView::OnClose(bool deleteWindow)
 		return false;
 //#endif
 
+    wxDocChildFrame *saveFrame = frame;
+
 	//  Dispose relationship between this and Molecule (MainView)
 	MainView_setViewObject(mview, NULL);
 	mview = NULL;
-
+    //  We do not know about the frame anymore
+    frame = NULL;
+    canvas = NULL;
+    
 	//  Remove this from the active view list
 	sActiveViews.Remove(this);
 
@@ -582,11 +587,11 @@ MoleculeView::OnClose(bool deleteWindow)
 	wxGetApp().Disconnect(MyDocumentEvent_scriptMenuModified, MyDocumentEvent, wxCommandEventHandler(MoleculeView::OnScriptMenuModified), NULL, this);
 
 	if (deleteWindow) {
-		frame->Destroy();
+		saveFrame->Destroy();
 	}
 	
 	//  Check if all windows are gone
-	wxGetApp().CheckIfAllWindowsAreGone(frame);
+	wxGetApp().CheckIfAllWindowsAreGone(saveFrame);
 
 	return true;
 }
@@ -608,7 +613,8 @@ MoleculeView::Activate(bool activate)
 		sActiveViews.Insert(this, 0);
 	}
 	wxView::Activate(activate);
-    frame->Refresh();
+    if (frame != NULL)
+        frame->Refresh();
 }
 
 wxPrintout *
