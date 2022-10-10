@@ -574,9 +574,6 @@ MoleculeView::OnClose(bool deleteWindow)
 	//  Dispose relationship between this and Molecule (MainView)
 	MainView_setViewObject(mview, NULL);
 	mview = NULL;
-    //  We do not know about the frame anymore
-    frame = NULL;
-    canvas = NULL;
     
 	//  Remove this from the active view list
 	sActiveViews.Remove(this);
@@ -588,7 +585,7 @@ MoleculeView::OnClose(bool deleteWindow)
 
 	if (deleteWindow) {
 		saveFrame->Destroy();
-	}
+    } else saveFrame->Hide();
 	
 	//  Check if all windows are gone
 	wxGetApp().CheckIfAllWindowsAreGone(saveFrame);

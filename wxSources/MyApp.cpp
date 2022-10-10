@@ -1412,13 +1412,12 @@ MyApp::OnEndProcess(wxProcessEvent &event)
 #endif
 
 int
-MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)(void *), void *callback_data, FILE *fpout, FILE *fperr, int *exitstatus_p, int *pid_p)
+MyApp::CallSubProcess(const char **argv, const char *procname, int (*callback)(void *), void *callback_data, FILE *fpout, FILE *fperr, int *exitstatus_p, int *pid_p)
 {
 	int status = 0;
 	int callback_result = 0;
 	bool progress_panel = false;
 	char buf[256];
-	wxString cmdstr(cmdline, WX_DEFAULT_CONV);
     wxLongLong startTime, lastTime, presentTime;
 
 	if (m_process != NULL)
@@ -1456,13 +1455,23 @@ MyApp::CallSubProcess(const char *cmdline, const char *procname, int (*callback)
 	//  Create proc object and call subprocess
 	m_process = new wxBetterProcess(this, -1);
 	m_process->Redirect();
-	int flag = wxEXEC_ASYNC;
+    int flag = wxEXEC_ASYNC | wxEXEC_HIDE_CONSOLE;
 	flag |= wxEXEC_MAKE_GROUP_LEADER;
-	long pid = ::wxExecute(cmdstr, flag, m_process);
+    long pid;
+    if (argv[1] != NULL && argv[1][0] == 0) {
+        //  If the second argument is an empty string, then we handle the first string
+        //  as a single argument. (On the other hand, if the second argument is NULL,
+        //  then argv is given to wxExecute as an array containing a single string.)
+        pid = ::wxExecute(argv[0], flag, m_process);
+    } else {
+        //  Array of arguments
+        pid = ::wxExecute(argv, flag, m_process);
+    }
 	if (pid == 0) {
         if (progress_panel)
             HideProgressPanel();
 		delete m_process;
+        m_process = NULL;
 #if LOG_SUBPROCESS
 		fprintf(fplog, "Cannot start '%s'\n", cmdline);
 		fclose(fplog);
@@ -1922,9 +1931,9 @@ wxBetterProcess::GetLineSub(wxString &outStr, wxInputStream *stream, wxMemoryBuf
             }
             if (pp != NULL) {
                 //  Return one line and string length
-                outStr = wxString(p, wxConvUTF8, pp - p + 1);
+                outStr = wxString(p, WX_DEFAULT_CONV, pp - p + 1);
                 memmove(p, pp + 1, len - (pp - p + 1));
-                m_stdout.SetDataLen(len - (pp - p + 1));
+                mbuf.SetDataLen(len - (pp - p + 1));
                 return pp - p + 1;
             }
         }
@@ -2399,11 +2408,12 @@ void MyAppCallback_endUndoGrouping(void)
 	}
 }
 
-int MyAppCallback_callSubProcess(const char *cmdline, const char *procname, int (*callback)(void *), void *callback_data, FILE *output, FILE *errout, int *exitstatus_p, int *pid_p)
+int MyAppCallback_callSubProcess(const char **argv, const char *procname, int (*callback)(void *), void *callback_data, FILE *output, FILE *errout, int *exitstatus_p, int *pid_p)
 {
     if (!gUseGUI)
-        return system(cmdline);
-	return wxGetApp().CallSubProcess(cmdline, procname, callback, callback_data, output, errout, exitstatus_p, pid_p);
+        return ::wxExecute(argv, wxEXEC_SYNC | wxEXEC_HIDE_CONSOLE);
+    else
+        return wxGetApp().CallSubProcess(argv, procname, callback, callback_data, output, errout, exitstatus_p, pid_p);
 }
 
 void MyAppCallback_showConsoleWindow(void)

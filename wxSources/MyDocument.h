@@ -129,7 +129,7 @@ public:
 	void	OnMinimize(wxCommandEvent &event);
 	void	OnStopMDRun(wxCommandEvent &event);
 	
-	long	RunSubProcess(const char *cmd, int (*callback)(Molecule *, int), int (*timerCallback)(Molecule *, int), FILE *output, FILE *errout);
+	long	RunSubProcess(const char **argv, int (*callback)(Molecule *, int), int (*timerCallback)(Molecule *, int), FILE *output, FILE *errout);
 	void	OnEndSubProcess(wxProcessEvent &event);
 	void	FlushSubProcessOutput();
 

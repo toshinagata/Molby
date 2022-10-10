@@ -782,7 +782,6 @@ class Molecule
 		  lineno += last_i + 1
         end
       end
-      print("% ")
       true
     }
 
@@ -1607,21 +1606,57 @@ class Molecule
     end
   end
 
-  #  Execute JUNPA
+  def Molecule.is_java_available
+    if $platform == "win"
+      f = get_global_settings("java_home")
+      if f
+        ENV["JAVA_HOME"] = f
+        if !ENV["PATH"].split(";").find { |e| e == "#{f}\\bin" }
+          ENV["PATH"] = "#{f}\\bin;" + ENV["PATH"]
+        end
+      end
+    end
+    return call_subprocess("java -version", nil)
+  end
+  
+  def Molecule.make_java_available
+    if $platform == "win"
+      fname = Dialog.open_panel("Locate JDK Folder (if you have one):", "c:\\", nil, true)
+      return false if fname == nil
+      fname.sub!(/\//, "\\")
+      if File.exists?("#{fname}\\bin\\java.exe")
+        set_global_settings("java_home", fname)
+        if Molecule.is_java_available()
+          return true
+        end
+      end
+      error_message_box("Cannot run Java. Please examine your installation again.")
+      return false
+    elsif $platform == "mac"
+      message_box("Please download OpenJDK, and move it into /Library/Java/JavaVirtualMachines folder.", "Install Java", :ok)
+      return false
+    else
+      message_box("Please install Java virtual machine.", "Install Java", :ok)
+      return false
+    end
+  end
+  
+  #  Execute JANPA
   #  inppath is the input file minus extention
   #  mol is the molecule (may be nil)
   def Molecule.execute_janpa(inppath, mol, spherical)
     #    nbo_desc =   #  JANPA
     janpa_dir = "#{ResourcePath}/JANPA"
     status = 0
+    outfile = "#{inppath}.janpa.log"
     if spherical
-      cmd1 = "java -jar #{janpa_dir}/molden2molden.jar -NormalizeBF -i #{inppath}.da.molden -o #{inppath}.in.molden >#{inppath}.janpa.log"
-      cmd2 = ""
+      cmd1 = ["java", "-jar", "#{janpa_dir}/molden2molden.jar", "-NormalizeBF", "-i", "#{inppath}.da.molden", "-o", "#{inppath}.in.molden"]
+      cmd2 = nil
     else
-      cmd1 = "java -jar #{janpa_dir}/molden2molden.jar -frompsi4v1mo -NormalizeBF -cart2pure -i #{inppath}.da.molden -o #{inppath}.in.molden >#{inppath}.janpa.log"
-      cmd2 = "java -jar #{janpa_dir}/molden2molden.jar -frompsi4v1mo -NormalizeBF -cart2pure -i #{inppath}.molden -o #{inppath}.spherical.molden >>#{inppath}.janpa.log"
+      cmd1 = ["java", "-jar", "#{janpa_dir}/molden2molden.jar", "-frompsi4v1mo", "-NormalizeBF", "-cart2pure", "-i", "#{inppath}.da.molden", "-o", "#{inppath}.in.molden"]
+      cmd2 = ["java", "-jar", "#{janpa_dir}/molden2molden.jar", "-frompsi4v1mo", "-NormalizeBF", "-cart2pure", "-i", "#{inppath}.molden", "-o", "#{inppath}.spherical.molden"]
     end
-    cmd3 = "java -jar #{janpa_dir}/janpa.jar -i #{inppath}.in.molden"
+    cmd3 = ["java", "-jar", "#{janpa_dir}/janpa.jar", "-i", "#{inppath}.in.molden"]
     ["nao", "pnao", "aho", "lho", "lpo", "clpo"].each { |type|
       generate = (get_global_settings("psi4.#{type}").to_i != 0)
       if type == "pnao" || type == "nao" || type == "lho"
@@ -1629,17 +1664,19 @@ class Molecule
         generate ||= (get_global_settings("psi4.plho").to_i != 0)
       end
       if generate
-        cmd3 += " -#{type.upcase}_Molden_File #{inppath}.#{type.upcase}.molden"
+        cmd3.push("-#{type.upcase}_Molden_File", "#{inppath}.#{type.upcase}.molden")
       end
     }
-    cmd3 += " >>#{inppath}.janpa.log"
-    show_progress_panel("Executing JANPA...")
-    flag = system(cmd1)
-    if flag && cmd2 != ""
-      flag = system(cmd2)
-      if flag
-        flag = system(cmd3)
-      end
+    # show_progress_panel("Executing JANPA...")
+    procname = "molden2molden"
+    flag = call_subprocess(cmd1, procname, nil, outfile)
+    if flag && cmd2 != nil
+      procname = "molden2molden"
+      flag = call_subprocess(cmd2, procname, nil, ">>#{outfile}")
+    end
+    if flag
+      procname = "janpa"
+      flag = call_subprocess(cmd3, procname, nil, ">>#{outfile}")
     end
     if flag
       if mol
@@ -1676,9 +1713,9 @@ class Molecule
       ENV["PATH"] = "#{psi4folder}/bin:#{psi4folder}/condabin:" + ENV["PATH"]
     end
     Dir.chdir(inpdir)
-    cmdline = "psi4 #{inpbase}"
+    cmdargv = ["psi4", "#{inpbase}"]
     if ncpus > 0
-      cmdline += " -n #{ncpus}"
+      cmdargv.push("-n", "#{ncpus}")
     end
     hf_type = nil
     nalpha = nil
@@ -1689,7 +1726,7 @@ class Molecule
     if File.exists?(outfile)
       n = 1
       while true
-        outbackfile = inpdir + "/" + inpbody + "~" + (n == 1 ? "" : "{#n}") + ".out"
+        outbackfile = inpdir + "/" + inpbody + "~" + (n == 1 ? "" : "#{n}") + ".out"
         break if !File.exists?(outbackfile)
         n += 1
       end
@@ -1880,14 +1917,14 @@ class Molecule
     }
     
     if mol
-      pid = mol.call_subprocess_async(cmdline, term_callback, timer_callback)
+      pid = mol.call_subprocess_async(cmdargv, term_callback, timer_callback)
       if pid < 0
         #  This may not happen on OSX or Linux (don't know for MSW)
         error_message_box("Psi4 failed to start. Please examine Psi4 installation.")
         return -1
       end
     else
-      status = call_subprocess(cmdline, "Running Psi4")
+      status = call_subprocess(cmdargv, "Running Psi4")
       term_callback.call(nil, status)
       return status
     end
@@ -2133,6 +2170,13 @@ class Molecule
       end
       if hash["execute_local"] == 1
         @hf_type = hash["scftype"]
+        if hash["run_janpa"] == 1
+          if !Molecule.is_java_available()
+            if !Molecule.make_java_available()
+              return nil
+            end
+          end
+        end
         Molecule.execute_psi4(fname, self)
       end
     else

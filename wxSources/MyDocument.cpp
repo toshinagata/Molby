@@ -1131,7 +1131,7 @@ MyDocument::OnSubThreadTerminated(wxCommandEvent &event)
 
 /*  Run a subprocess asynchronically  */
 long
-MyDocument::RunSubProcess(const char *cmd, int (*callback)(Molecule *, int), int (*timerCallback)(Molecule *, int), FILE *output, FILE *errout)
+MyDocument::RunSubProcess(const char **argv, int (*callback)(Molecule *, int), int (*timerCallback)(Molecule *, int), FILE *output, FILE *errout)
 {
 	if (sCheckIsSubThreadRunning(mol, subThreadKind))
 		return -1;  /*  subProcess (or MM/MD subThread) is already running  */
@@ -1139,13 +1139,20 @@ MyDocument::RunSubProcess(const char *cmd, int (*callback)(Molecule *, int), int
 	mol->mutex = new wxMutex;
 	mol->requestAbortThread = 0;
 	
-	wxString cmdstr(cmd, WX_DEFAULT_CONV);
 	subProcess = new wxProcess(this, -1);
 	subProcess->Redirect();
 	subProcessStdout = output;
 	subProcessStderr = errout;
 
-	subProcessPID = ::wxExecute(cmdstr, wxEXEC_ASYNC | wxEXEC_MAKE_GROUP_LEADER, subProcess);
+  if (argv[1] != NULL && argv[1][0] == 0) {
+    //  If the second argument is an empty string, then we handle the first string
+    //  as a single argument. (On the other hand, if the second argument is NULL,
+    //  then argv is given to wxExecute as an array containing a single string.)
+    subProcessPID = ::wxExecute(argv[0], wxEXEC_ASYNC | wxEXEC_MAKE_GROUP_LEADER, subProcess);
+  } else {
+    // Array of arguments
+    subProcessPID = ::wxExecute(argv, wxEXEC_ASYNC | wxEXEC_MAKE_GROUP_LEADER, subProcess);
+  }
 	if (subProcessPID == 0) {
 		subProcess->Detach();
 		subProcess = NULL;
@@ -1769,13 +1776,13 @@ MoleculeCallback_cannotModifyMoleculeDuringMDError(Molecule *mol)
 }
 
 int
-MoleculeCallback_callSubProcessAsync(Molecule *mol, const char *cmd, int (*callback)(Molecule *, int), int (*timerCallback)(Molecule *, int), FILE *output, FILE *errout)
+MoleculeCallback_callSubProcessAsync(Molecule *mol, const char **argv, int (*callback)(Molecule *, int), int (*timerCallback)(Molecule *, int), FILE *output, FILE *errout)
 {
   if (!gUseGUI)
     return -1;
 	MyDocument *doc = MyDocumentFromMolecule(mol);
 	if (doc != NULL)
-		return doc->RunSubProcess(cmd, callback, timerCallback, output, errout);
+		return doc->RunSubProcess(argv, callback, timerCallback, output, errout);
 	else return -1;
 }
 

@@ -456,24 +456,24 @@ class Molecule
 	  ENV["AMBERHOME"] = amberhome
 	end
 	if calc_charge != 0
-	  opt = "-nc #{nc} -c bcc"
+	  opt = ["-nc", "#{nc}", "-c", "bcc"]
 	  if optimize_structure == 0
-	    opt += " -ek 'maxcyc=0'"
+	    opt.push(" -ek", "'maxcyc=0'")
 	  end
 	else
-	  opt = ""
+	  opt = []
 	end
 	if guess_atom_types == 0
-	  opt += " -j 0"
+	  opt.push("-j", "0")
     end
-	n = call_subprocess("#{ante_dir}/antechamber -i mol.pdb -fi pdb -o mol.ac -fo ac #{opt}", "Antechamber")
+	n = call_subprocess(["#{ante_dir}/antechamber", "-i", "mol.pdb", "-fi", "pdb", "-o", "mol.ac", "-fo", "ac"] + opt, "Antechamber")
 	if n != 0
 	  error_message_box("Antechamber failed: status = #{n}.")
 	  Dir.chdir(cwd)
 	  return n
 	else
 	  if guess_atom_types != 0
-	    n = call_subprocess("#{ante_dir}/parmchk -i mol.ac -f ac -o frcmod", "Parmchk")
+	    n = call_subprocess(["#{ante_dir}/parmchk", "-i", "mol.ac", "-f", "ac", "-o", "frcmod"], "Parmchk")
 	    if n != 0
 	      error_message_box("Parmchk failed: status = #{n}.")
 		  Dir.chdir(cwd)
@@ -1326,9 +1326,9 @@ class Molecule
 	  }
 	
 	  #  Create resp input by respgen
-	  status = call_subprocess("\"#{ante_dir}/respgen\" -i respgen_in.ac -o resp.input1 -f resp1", "respgen (stage 1)")
+      status = call_subprocess(["#{ante_dir}/respgen", "-i", "respgen_in.ac", "-o", "resp.input1", "-f", "resp1"], "respgen (stage 1)")
 	  if status == 0
-		status = call_subprocess("\"#{ante_dir}/respgen\" -i respgen_in.ac -o resp.input2 -f resp2", "respgen (stage 2)")
+		status = call_subprocess(["#{ante_dir}/respgen", "-i", "respgen_in.ac", "-o", "resp.input2", "-f", "resp2"], "respgen (stage 2)")
 	  end
 	  if status != 0
 	    error_message_box("Cannot run respgen: status = #{status}")
@@ -1353,9 +1353,9 @@ class Molecule
 	}
 
     #  Run resp
-	status = call_subprocess("\"#{ante_dir}/resp\" -O -i resp.input1 -o resp.output1 -e resp.esp -t qout_stage1", "resp (stage 1)")
+	status = call_subprocess(["#{ante_dir}/resp", "-O", "-i", "resp.input1", "-o", "resp.output1", "-e", "resp.esp", "-t", "qout_stage1"], "resp (stage 1)")
 	if status == 0
-	  status = call_subprocess("\"#{ante_dir}/resp\" -O -i resp.input2 -o resp.output2 -e resp.esp -q qout_stage1 -t qout_stage2", "resp (stage 2)")
+	  status = call_subprocess(["#{ante_dir}/resp", "-O", "-i", "resp.input2", "-o", "resp.output2", "-e", "resp.esp", "-q", "qout_stage1", "-t", "qout_stage2"], "resp (stage 2)")
 	  if status == 255 && File.exist?("punch")
 		status = 0   #  Ignore error at the second stage
 	  end

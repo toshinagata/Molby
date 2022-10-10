@@ -79,9 +79,9 @@ class Molecule
 	#  Execute mopac
 	Dir.chdir(scrdir)
 	if mol
-	  pid = mol.call_subprocess_async(mopexe, term_callback, timer_callback, "NUL", "NUL")
+	  pid = mol.call_subprocess_async([mopexe], term_callback, timer_callback, "NUL", "NUL")
 	else
-	  pid = call_subprocess(mopexe, "Running MOPAC", nil, "NUL", "NUL")
+	  pid = call_subprocess([mopexe], "Running MOPAC", nil, "NUL", "NUL")
 	  term_callback.call(nil, pid)
 	end
 	Dir.chdir(cwd)

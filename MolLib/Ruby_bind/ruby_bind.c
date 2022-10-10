@@ -192,7 +192,7 @@ static VALUE
 s_Kernel_MessageBox(int argc, VALUE *argv, VALUE self)
 {
 	char *str, *title, *s;
-	int buttons, icon;
+    int buttons, icon, retval;
 	VALUE sval, tval, bval, ival;
 	rb_scan_args(argc, argv, "22", &sval, &tval, &bval, &ival);
 	str = StringValuePtr(sval);
@@ -219,8 +219,8 @@ s_Kernel_MessageBox(int argc, VALUE *argv, VALUE self)
 		else
 			rb_raise(rb_eMolbyError, "the icon specification should be either :info, :warning or :error");
 	} else icon = 1;
-	MyAppCallback_messageBox(str, title, buttons, icon);
-	return Qnil;
+	retval = MyAppCallback_messageBox(str, title, buttons, icon);
+    return (retval ? Qtrue : Qfalse);
 }
 
 /*
@@ -998,6 +998,10 @@ s_Kernel_CallSubProcess_Callback(void *data)
  *
  *  Call subprocess. A progress dialog window is displayed, with a message
  *  "Running #{process_name}...".
+ *  cmd is either a single string of an array of string. If it is a single string, then
+ *  it will be given to wxExecute as a single argument. In this case, the string can be
+ *  split into arguments by whitespace. If this behavior is not intended, then use an array
+ *  containing a single string.
  *  A callback proc can be given, which is called periodically during execution. If the proc returns
  *  nil or false, then the execution will be interrupted.
  *  If stdout_file or stderr_file is a filename, then the message will be sent to the file; if the
@@ -1012,7 +1016,7 @@ s_Kernel_CallSubProcess(int argc, VALUE *argv, VALUE self)
     VALUE save_interruptFlag;
 	int n, exitstatus, pid;
 	char *sout, *serr;
-    const char *pnamestr;
+    const char *pnamestr, **cmdargv;
 	FILE *fpout, *fperr;
 
 	rb_scan_args(argc, argv, "23", &cmd, &procname, &cproc, &stdout_val, &stderr_val);
@@ -1060,9 +1064,23 @@ s_Kernel_CallSubProcess(int argc, VALUE *argv, VALUE self)
     if (procname != Qnil)
         pnamestr = StringValuePtr(procname);
     else pnamestr = NULL;
-	n = MyAppCallback_callSubProcess(StringValuePtr(cmd), pnamestr, (cproc == Qnil ? NULL : s_Kernel_CallSubProcess_Callback), (cproc == Qnil ? NULL : (void *)cproc), fpout, fperr, &exitstatus, &pid);
+    if (rb_obj_is_kind_of(cmd, rb_cString)) {
+        cmdargv = calloc(sizeof(cmdargv[0]), 3);
+        cmdargv[0] = StringValuePtr(cmd);
+        cmdargv[1] = "";
+        cmdargv[2] = NULL;
+    } else {
+        cmd = rb_ary_to_ary(cmd);
+        cmdargv = calloc(sizeof(cmdargv[0]), RARRAY_LEN(cmd) + 1);
+        for (n = 0; n < RARRAY_LEN(cmd); n++) {
+            cmdargv[n] = StringValuePtr(RARRAY_PTR(cmd)[n]);
+        }
+        cmdargv[n] = NULL;
+    }
+	n = MyAppCallback_callSubProcess(cmdargv, pnamestr, (cproc == Qnil ? NULL : s_Kernel_CallSubProcess_Callback), (cproc == Qnil ? NULL : (void *)cproc), fpout, fperr, &exitstatus, &pid);
     s_SetInterruptFlag(self, save_interruptFlag);
-    
+    free(cmdargv);
+
 	if (fpout != NULL && fpout != (FILE *)1)
 		fclose(fpout);
 	if (fperr != NULL && fperr != (FILE *)1)
@@ -1085,7 +1103,11 @@ s_Kernel_Backquote(VALUE self, VALUE cmd)
 	char *buf;
 	int n, exitstatus, pid;
 	VALUE val;
-	n = MyAppCallback_callSubProcess(StringValuePtr(cmd), NULL, DUMMY_CALLBACK, &buf, NULL, NULL, &exitstatus, &pid);
+    const char *cmdargv[3];
+    cmdargv[0] = StringValuePtr(cmd);
+    cmdargv[1] = "";
+    cmdargv[2] = NULL;
+	n = MyAppCallback_callSubProcess(cmdargv, NULL, DUMMY_CALLBACK, &buf, NULL, NULL, &exitstatus, &pid);
 /*	fprintf(stderr, "n = %d, exitstatus = %d, pid = %d\n", n, exitstatus, pid); */
 	if (n >= 0 && buf != NULL) {
 		val = Ruby_NewEncodedStringValue(buf, 0);
@@ -11506,6 +11528,10 @@ s_Molecule_CallSubProcessAsync_TimerCallback(Molecule *mol, int tcount)
  *     call_subprocess_async(cmd [, end_callback [, timer_callback [, standard_output_file [, error_output_file]]]])
  *
  *  Call subprocess asynchronically.
+ *  cmd is either a single string of an array of string. If it is a single string, then
+ *  it will be given to wxExecute as a single argument. In this case, the string can be
+ *  split into arguments by whitespace. If this behavior is not intended, then use an array
+ *  containing a single string.
  *  If end_callback is given, it will be called (with two arguments self and termination status)
  *  when the subprocess terminated.
  *  If timer_callback is given, it will be called (also with two arguments, self and timer count).
@@ -11522,6 +11548,7 @@ s_Molecule_CallSubProcessAsync(int argc, VALUE *argv, VALUE self)
 	VALUE cmd, end_proc, timer_proc, stdout_val, stderr_val;
 	Molecule *mol;
 	char *sout, *serr;
+    const char **cmdargv;
 	int n;
 	FILE *fpout, *fperr;
 	rb_scan_args(argc, argv, "14", &cmd, &end_proc, &timer_proc, &stdout_val, &stderr_val);
@@ -11569,7 +11596,21 @@ s_Molecule_CallSubProcessAsync(int argc, VALUE *argv, VALUE self)
 	/*  Register procs as instance variables  */
 	rb_ivar_set(self, rb_intern("end_proc"), end_proc);
 	rb_ivar_set(self, rb_intern("timer_proc"), timer_proc);
-	n = MoleculeCallback_callSubProcessAsync(mol, StringValuePtr(cmd), s_Molecule_CallSubProcessAsync_EndCallback, (timer_proc == Qnil ? NULL : s_Molecule_CallSubProcessAsync_TimerCallback), fpout, fperr);
+    
+    if (rb_obj_is_kind_of(cmd, rb_cString)) {
+        cmdargv = calloc(sizeof(cmdargv[0]), 3);
+        cmdargv[0] = StringValuePtr(cmd);
+        cmdargv[1] = "";
+        cmdargv[2] = NULL;
+    } else {
+        cmd = rb_ary_to_ary(cmd);
+        cmdargv = calloc(sizeof(cmdargv[0]), RARRAY_LEN(cmd) + 1);
+        for (n = 0; n < RARRAY_LEN(cmd); n++) {
+            cmdargv[n] = StringValuePtr(RARRAY_PTR(cmd)[n]);
+        }
+        cmdargv[n] = NULL;
+    }
+	n = MoleculeCallback_callSubProcessAsync(mol, cmdargv, s_Molecule_CallSubProcessAsync_EndCallback, (timer_proc == Qnil ? NULL : s_Molecule_CallSubProcessAsync_TimerCallback), fpout, fperr);
 	if (fpout != NULL && fpout != (FILE *)1)
 		fclose(fpout);
 	if (fperr != NULL && fperr != (FILE *)1)

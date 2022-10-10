@@ -225,7 +225,7 @@ class MyApp: public wxApp
 	void OnBringAllWindowsToFront(wxCommandEvent &event);
 	
 //	void OnEndProcess(wxProcessEvent &event);
-	int CallSubProcess(const char *cmdline, const char *procname, int (*callback)(void *) = NULL, void *callback_data = NULL, FILE *fpout = NULL, FILE *fperr = NULL, int *exitstatus_p = NULL, int *pid_p = NULL);
+	int CallSubProcess(const char **argv, const char *procname, int (*callback)(void *) = NULL, void *callback_data = NULL, FILE *fpout = NULL, FILE *fperr = NULL, int *exitstatus_p = NULL, int *pid_p = NULL);
 
 	void OnActivate(wxActivateEvent &event);
 

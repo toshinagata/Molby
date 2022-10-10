@@ -1531,7 +1531,7 @@ def cmd_show_ortep
 	  if FileTest.exist?("TEP001.PRN")
 	    File.unlink("TEP001.PRN")
 	  end
-	  pid = call_subprocess(tepexe, "Running ORTEP", nil, "NUL", "NUL")
+	  pid = call_subprocess([tepexe], "Running ORTEP", nil, "NUL", "NUL")
 	  if FileTest.exist?("TEP001.PRN")
 	    File.rename("TEP001.PRN", "TEP001.ps")
 	  end
