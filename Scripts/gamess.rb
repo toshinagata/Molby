@@ -1616,7 +1616,7 @@ class Molecule
         end
       end
     end
-    return call_subprocess("java -version", nil)
+    return (call_subprocess("java -version", nil) == 0)
   end
   
   def Molecule.make_java_available
@@ -2169,14 +2169,15 @@ class Molecule
         export_psi4(fname, hash)
       end
       if hash["execute_local"] == 1
-        @hf_type = hash["scftype"]
         if hash["run_janpa"] == 1
+          #  Check if Java is available
           if !Molecule.is_java_available()
             if !Molecule.make_java_available()
               return nil
             end
           end
         end
+        @hf_type = hash["scftype"]
         Molecule.execute_psi4(fname, self)
       end
     else
