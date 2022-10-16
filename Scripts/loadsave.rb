@@ -630,9 +630,11 @@ class Molecule
     #  The GTOs (orbital type, contractions and exponents) are stored in gtos[]
     #  and set just before first [MO] is processed.
     #  This is because we do not know whether the orbital type is cartesian or spherical
-    #  until we see "[5D]" or "[9G]".
+    #  until we see lines like "[5D]".
     gtos = []
-    spherical = false
+    spherical_d = false
+    spherical_f = false
+    spherical_g = false
     #  Number of components for each orbital type
     ncomp_hash = { 0=>1, 1=>3, -1=>4, 2=>6, -2=>5, 3=>10, -3=>7, 4=>15, -4=>9 }
     catch :ignore do
@@ -709,21 +711,25 @@ class Molecule
             hash[:gto] = gtos
           end
           redo  #  The next line will be the beginning of the next block
-        elsif line =~ /^\[5D\]/ || line =~ /^\[9G\]/
-          spherical = true
-          #  Change the orbital type if necessary
-          gtos.each_with_index { | atom_gtos, atom_index|
-            atom_gtos.each { |gtoline|
-              if gtoline[0] >= 2
-                gtoline[0] = -gtoline[0]  #  D5/F7/G9
-              end
-            }
-          }
+        elsif line =~ /^\[5D\]/ || line =~ /^\[5D7F\]/
+          spherical_d = spherical_f = true
+        elsif line =~ /^\[5D10F\]/
+          spherical_d = true
+          spherical_f = false
+        elsif line =~ /^\[7F\]/
+          spherical_f = true
+        elsif line =~ /^\[9G\]/
+          spherical_g = true
         elsif line =~ /^\[MO\]/
           #  Add shell info and primitive coefficients to molecule
           gtos.each_with_index { | atom_gtos, atom_index|
             atom_gtos.each { |gtoline|
               sym = gtoline[0]
+              #  Change orbital type if we use spherical functions
+              sym = -2 if sym == 2 && spherical_d
+              sym = -3 if sym == 3 && spherical_f
+              sym = -4 if sym == 4 && spherical_g
+              gtoline[0] = sym
               coeffs = gtoline[1]
               nprimitives = coeffs.length / 2
               add_exp = gtoline[2]
