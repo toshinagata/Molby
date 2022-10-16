@@ -1681,8 +1681,8 @@ class Molecule
     if flag
       if mol
         #  import JANPA log and molden output
-        #  Files: inppath.janpa.log, inppath.{NAO,PNAO,AHO,LHO,LPO,CLPO}.molden
-        mol.sub_load_janpa_log(inppath, spherical)
+        #  Files: inppath.janpa.log, inppath.{NAO,PNAO,AHO,LHO,LPO,CLPO,spherical}.molden
+        mol.sub_load_janpa_log(inppath)
       end
       hide_progress_panel
     else

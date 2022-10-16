@@ -1757,7 +1757,7 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 					s_append_asprintf(errbuf, "line %d: the atom index (%d) is out of range", lineNumber, ibuf[1]);
 					goto err_exit;
 				}
-				MoleculeAddGaussianOrbitalShell(mp, ibuf[1], ibuf[2], ibuf[0]);
+				MoleculeAddGaussianOrbitalShell(mp, ibuf[1], ibuf[2], ibuf[0], 0);
 				i = ibuf[0];
 				while (ReadLine(buf, sizeof buf, fp, &lineNumber) > 0) {
 					if (buf[0] == '!')
@@ -2710,7 +2710,7 @@ MoleculeLoadShelxFile(Molecule *mp, const char *fname, char **errbuf)
 
 /*  Add one gaussian orbital shell information (not undoable)  */
 int
-MoleculeAddGaussianOrbitalShell(Molecule *mol, Int a_idx, Int sym, Int nprims)
+MoleculeAddGaussianOrbitalShell(Molecule *mol, Int a_idx, Int sym, Int nprims, Int add_exp)
 {
 	BasisSet *bset;
 	ShellInfo *shellp;
@@ -2747,6 +2747,7 @@ MoleculeAddGaussianOrbitalShell(Molecule *mol, Int a_idx, Int sym, Int nprims)
 		shellp->m_idx = 0;
 		shellp->p_idx = 0;
 	}
+    shellp->add_exp = add_exp;
 	/*  Update the number of components (if not yet determined)  */
 	if (bset->ncomps < shellp->m_idx + shellp->ncomp)
 		bset->ncomps = shellp->m_idx + shellp->ncomp;

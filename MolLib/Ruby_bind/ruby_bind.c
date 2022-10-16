@@ -10690,22 +10690,56 @@ s_Molecule_ClearBasisSet(VALUE self)
 
 /*
  *  call-seq:
- *     add_gaussian_orbital_shell(atom_index, sym, no_of_primitives)
+ *     add_gaussian_orbital_shell(atom_index, sym, no_of_primitives[, additional_exponent])
  *
  *  To be used internally. Add a gaussian orbital shell with the atom index, symmetry code,
- *  and the number of primitives. Symmetry code: 0, S-type; 1, P-type; -1, SP-type; 2, D-type;
- *  -2, D5-type.
+ *  and the number of primitives.
+ *  Additional exponent is for JANPA only; implements an additinal r^N component that
+ *  appears in cartesian->spherical conversion.
+ *  Symmetry code: 0, S-type; 1, P-type; -1, SP-type; 2, D-type; -2, D5-type;
+ *                 3, F-type; -3, F7-type; 4, G-type; -4, G9-type.
+ *  Or: "s", S-type; "p", P-type; "sp", SP-type; "d", D-type; "d5", D5-type;
+ *      "f", F-type; "f7", F7-type; "g", G-type; "g9", G9-type
  */
 static VALUE
-s_Molecule_AddGaussianOrbitalShell(VALUE self, VALUE aval, VALUE symval, VALUE npval)
+s_Molecule_AddGaussianOrbitalShell(int argc, VALUE *argv, VALUE self)
 {
 	Molecule *mol;
-	int sym, nprims, a_idx, n;
+    int sym, nprims, a_idx, n, add_exp;
+    VALUE aval, symval, npval, addval;
     Data_Get_Struct(self, Molecule, mol);
+    rb_scan_args(argc, argv, "31", &aval, &symval, &npval, &addval);
+    if (rb_obj_is_kind_of(symval, rb_cString)) {
+        const char *p = StringValuePtr(symval);
+        if (strcasecmp(p, "s") == 0)
+            sym = 0;
+        else if (strcasecmp(p, "p") == 0)
+            sym = 1;
+        else if (strcasecmp(p, "sp") == 0)
+            sym = -1;
+        else if (strcasecmp(p, "d") == 0)
+            sym = 2;
+        else if (strcasecmp(p, "d5") == 0)
+            sym = -2;
+        else if (strcasecmp(p, "f") == 0)
+            sym = 3;
+        else if (strcasecmp(p, "f7") == 0)
+            sym = -3;
+        else if (strcasecmp(p, "g") == 0)
+            sym = 4;
+        else if (strcasecmp(p, "g9") == 0)
+            sym = -4;
+        else
+            rb_raise(rb_eArgError, "Unknown orbital type '%s'", p);
+    } else {
+        sym = NUM2INT(rb_Integer(symval));
+    }
 	a_idx = NUM2INT(rb_Integer(aval));
-	sym = NUM2INT(rb_Integer(symval));
 	nprims = NUM2INT(rb_Integer(npval));
-	n = MoleculeAddGaussianOrbitalShell(mol, a_idx, sym, nprims);
+    if (addval != Qnil)
+        add_exp = NUM2INT(rb_Integer(addval));
+    else add_exp = 0;
+	n = MoleculeAddGaussianOrbitalShell(mol, a_idx, sym, nprims, add_exp);
 	if (n == -1)
 		rb_raise(rb_eMolbyError, "Molecule is emptry");
 	else if (n == -2)
@@ -11882,7 +11916,7 @@ Init_Molby(void)
 	rb_define_method(rb_cMolecule, "nelpots", s_Molecule_NElpots, 0);
 	rb_define_method(rb_cMolecule, "elpot", s_Molecule_Elpot, 1);
 	rb_define_method(rb_cMolecule, "clear_basis_set", s_Molecule_ClearBasisSet, 0);
-	rb_define_method(rb_cMolecule, "add_gaussian_orbital_shell", s_Molecule_AddGaussianOrbitalShell, 3);
+	rb_define_method(rb_cMolecule, "add_gaussian_orbital_shell", s_Molecule_AddGaussianOrbitalShell, -1);
 	rb_define_method(rb_cMolecule, "add_gaussian_primitive_coefficients", s_Molecule_AddGaussianPrimitiveCoefficients, 3);
 	rb_define_method(rb_cMolecule, "get_gaussian_shell_info", s_Molecule_GetGaussianShellInfo, 1);
 	rb_define_method(rb_cMolecule, "get_gaussian_primitive_coefficients", s_Molecule_GetGaussianPrimitiveCoefficients, 1);

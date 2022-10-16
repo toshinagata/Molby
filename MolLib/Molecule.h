@@ -219,6 +219,7 @@ typedef struct ShellInfo {
 	signed char sym;     /*  Symmetry of the basis; S, P, ... */
 	signed char ncomp;   /*  Number of components (S: 1, P: 3, SP: 4, etc.)  */
 	signed char nprim;   /*  Number of primitives for this shell  */
+    signed char add_exp; /*  Additional exponent (for JANPA-Molden only)  */
 	Int p_idx;           /*  Index to the PrimInfo (exponent/coefficient) table  */
 	Int cn_idx;          /*  Index to the normalized (cached) contraction coefficient table  */
 	Int a_idx;           /*  Index to the atom which this primitive belongs to */
@@ -410,7 +411,7 @@ Molecule *MoleculeRetain(Molecule *mp);
 void MoleculeRelease(Molecule *mp);
 void MoleculeExchange(Molecule *mp1, Molecule *mp2);
 
-int MoleculeAddGaussianOrbitalShell(Molecule *mol, Int a_idx, Int sym, Int nprims);
+int MoleculeAddGaussianOrbitalShell(Molecule *mol, Int a_idx, Int sym, Int nprims, Int add_exp);
 int MoleculeAddGaussianPrimitiveCoefficients(Molecule *mol, Double exponent, Double contraction, Double contraction_sp);
 int MoleculeGetGaussianComponentInfo(Molecule *mol, Int comp_idx, Int *outAtomIdx, char *outLabel, Int *outShellIdx);
 int MoleculeSetMOCoefficients(Molecule *mol, Int idx, Double energy, Int ncomps, Double *coeffs);

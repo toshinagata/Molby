@@ -627,6 +627,14 @@ class Molecule
     if label
       hash = Hash.new
     end
+    #  The GTOs (orbital type, contractions and exponents) are stored in gtos[]
+    #  and set just before first [MO] is processed.
+    #  This is because we do not know whether the orbital type is cartesian or spherical
+    #  until we see "[5D]" or "[9G]".
+    gtos = []
+    spherical = false
+    #  Number of components for each orbital type
+    ncomp_hash = { 0=>1, 1=>3, -1=>4, 2=>6, -2=>5, 3=>10, -3=>7, 4=>15, -4=>9 }
     catch :ignore do
       while line = getline.call
         if line =~ /^\[Atoms\]/
@@ -655,61 +663,79 @@ class Molecule
         elsif line =~ /^\[GTO\]/
           shell = 0
           atom_index = 0
-          if label
-            gtos = []
-            hash[:gto] = []
-          end
           while line = getline.call
             #  index, 0?
             a = line.split(' ')
             break if a.length != 2
+            atom_gtos = []  #  [[sym1, [e11, c11, e12, c12, ...], add_exp1], [sym2, [e21, c22, ...], add_exp2], ...]
             #  loop for shells
             while line = getline.call
               #  type, no_of_primitives, 1.00?
               a = line.split(' ')
               break if a.length != 3   #  Terminated by a blank line
-              case a[0]
+              a[0] =~ /^([a-z]+)([0-9]+)?$/
+              symcode = $1
+              add_exp = ($2 == nil ? 0 : $2.to_i)
+              case symcode
               when "s"
-                sym = 0; n = 1
+                sym = 0
               when "p"
-                sym = 1; n = 3
+                sym = 1
               when "d"
-                sym = 2; n = 6    #  TODO: handle both spherical and cartesian
+                sym = 2
               when "f"
-                sym = 3; n = 10
+                sym = 3
               when "g"
-                sym = 4; n = 15
+                sym = 4
               else
                 raise MolbyError, "Unknown gaussian shell type '#{a[0]}' at line #{@lineno} in MOLDEN file"
               end
               nprimitives = Integer(a[1])
-              if label
-                gtoline = [sym, []]
-                gtos.push(gtoline)
-              end
+              gtoline = [sym, [], add_exp]
+              atom_gtos.push(gtoline)
               nprimitives.times { |i|
                 line = getline.call   #  exponent, contraction
                 b = line.split(' ')
-                if label
-                  gtoline[1].push(Float(b[0]), Float(b[1]))
-                end
-                add_gaussian_primitive_coefficients(Float(b[0]), Float(b[1]), 0.0)
+                gtoline[1].push(Float(b[0]), Float(b[1]))
               }
               #  end of one shell
-              if label == nil
-                add_gaussian_orbital_shell(atom_index, sym, nprimitives)
-              end
               shell += 1
-              ncomps += n
             end
             #  end of one atom
             atom_index += 1
-            if label
-              hash[:gto].push(gtos)
-            end
+            gtos.push(atom_gtos)
+          end
+          if label
+            hash[:gto] = gtos
           end
           redo  #  The next line will be the beginning of the next block
+        elsif line =~ /^\[5D\]/ || line =~ /^\[9G\]/
+          spherical = true
+          #  Change the orbital type if necessary
+          gtos.each_with_index { | atom_gtos, atom_index|
+            atom_gtos.each { |gtoline|
+              if gtoline[0] >= 2
+                gtoline[0] = -gtoline[0]  #  D5/F7/G9
+              end
+            }
+          }
         elsif line =~ /^\[MO\]/
+          #  Add shell info and primitive coefficients to molecule
+          gtos.each_with_index { | atom_gtos, atom_index|
+            atom_gtos.each { |gtoline|
+              sym = gtoline[0]
+              coeffs = gtoline[1]
+              nprimitives = coeffs.length / 2
+              add_exp = gtoline[2]
+              ncomps += ncomp_hash[sym]
+              if !label
+                add_gaussian_orbital_shell(atom_index, sym, nprimitives, add_exp)
+                nprimitives.times { |prim|
+                  add_gaussian_primitive_coefficients(coeffs[prim * 2], coeffs[prim * 2 + 1], 0.0)
+                }
+              end
+            }
+          }
           m = []
           idx_alpha = 1   #  set_mo_coefficients() accepts 1-based index of MO
           idx_beta = 1
@@ -767,8 +793,9 @@ class Molecule
             end
             break if i < ncomps  #  no MO info was found
           end
+          #  TODO: reorder D, F, G coefficients for Molby order
           next
-        end
+        end #  end if
       end   #  end while
     end     #  end catch
     if errmsg
@@ -780,27 +807,10 @@ class Molecule
 
   #  Import the JANPA log and related molden files
   #  Files: inppath.{NAO.molden,CLPO.molden,janpa.log}
-  #  If mo_path is not nil, then clear existing mo info and load from mo_path
-  def sub_load_janpa_log(inppath, mo_path = nil)
+  #  If inppath.spherical.molden is available, then clear existing mo info
+  #  and load from it (i.e. use the basis set converted by molden2molden)
+  def sub_load_janpa_log(inppath)
     begin
-      if mo_path
-        fp = File.open(mo_path, "rt") rescue fp = nil
-        if fp == nil
-          hide_progress_panel  #  Close if it is open
-          message_box("Cannot open MO molden file #{mo_path}: " + $!.to_s)
-          return false
-        end
-        @lineno = 0
-        type = get_mo_info(:type)
-        alpha = get_mo_info(:alpha)
-        beta = get_mo_info(:beta)
-        clear_basis_set
-        set_mo_info(:type=>type, :alpha=>alpha, :beta=>beta)
-        #  mol.@hf_type should be set before calling sub_load_molden
-        @hf_type = type
-        sub_load_molden(fp)
-        fp.close
-      end
       fp = File.open(inppath + ".janpa.log", "rt") rescue fp = nil
       if fp == nil
         hide_progress_panel  #  Close if it is open
@@ -817,7 +827,30 @@ class Molecule
       nao_infos = [] #  index=atom_index, value=Hash with key "s", "px", "py" etc.
       #  nao_infos[index][key]: array of [nao_num, occupancy], in the reverse order of appearance
       while line = getline.call
-        if line =~ /^NAO \#/
+        if line =~ /molden2molden: a conversion tool for MOLDEN/
+          while line = getline.call
+            break if line =~ /^All done!/
+            if line =~ /\.spherical\.molden/
+              #  The MOs are converted to spherical basis set
+              #  Clear the existing MO and load *.spherical.molden
+              sname = inppath + ".spherical.molden"
+              fps = File.open(sname, "rt") rescue fps = nil
+              if fps != nil
+                print("Importing #{sname}.\n")
+                @lineno = 0
+                type = get_mo_info(:type)
+                alpha = get_mo_info(:alpha)
+                beta = get_mo_info(:beta)
+                clear_basis_set
+                set_mo_info(:type=>type, :alpha=>alpha, :beta=>beta)
+                #  mol.@hf_type should be set before calling sub_load_molden
+                @hf_type = type
+                sub_load_molden(fps)
+                fps.close
+              end
+            end
+          end
+        elsif line =~ /^NAO \#/
           h["NAO"] = []
           while line = getline.call
             break if line !~ /^\s*[1-9]/
