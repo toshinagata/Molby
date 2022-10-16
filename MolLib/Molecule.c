@@ -2796,11 +2796,11 @@ MoleculeGetGaussianComponentInfo(Molecule *mol, Int comp_idx, Int *outAtomIdx, c
 		} else {
 			static const char *type_p = "xyz";
 			static const char *type_d = "xxyyzzxyxzyz";
-			static const char *type_d5[] = {"xy","yz","zz", "xz", "xx-yy"};
+			static const char *type_d5[] = {"zz-rr", "xy", "yz", "xx-yy", "xy"};
 			static const char *type_f = "xxxyyyzzzxxyxxzxyyyyzxzzyzzxyz";
-			static const char *type_f7[] = {"x3-3xy2", "x2z-y2z", "x(5z2-r2)", "z(5z2-3r2)", "y(5z2-r2)", "xyz", "3x2y-y3"};
-			static const char *type_g[] = {"x4", "y4", "z4", "x3y", "x3z", "xy3", "y3z", "xz3", "yz3", "x2y2", "x2z2", "y2z2", "x2yz", "x2yz", "xyz2"};
-			static const char *type_g9[] = {"x4+y4-6x2y2", "xz(x2-3y2)", "(x2-y2)(7z2-r2)", "xz(7z2-3r2)", "35z4-30z2r2+3r4", "yz(7z2-3r2)", "xy(7z2-r2)", "yz(3x2-y2)", "xy(x2-y2)"};
+			static const char *type_f7[] = {"z3-zr2", "xz2-xr2", "yz2-yr2", "x2z-y2z", "xyz", "x3-xy2", "x2y-y3"};
+			static const char *type_g[] = {"x4", "y4", "z4", "x3y", "x3z", "xy3", "y3z", "xz3", "yz3", "x2y2", "x2z2", "y2z2", "x2yz", "xy2z", "xyz2"};
+			static const char *type_g9[] = {"z4-z2r2+r4", "xz3-xzr2", "yz3-yzr2", "(x2-y2)(z2-r2)", "xyz2-xyr2", "x3z-xy2z", "x2yz-y3z", "x4-x2y2+y4", "x3y-xy3"};
 			*outAtomIdx = shellp->a_idx;
 			*outShellIdx = si;
 			switch (shellp->sym) {

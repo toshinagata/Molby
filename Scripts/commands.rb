@@ -395,16 +395,16 @@ class Molecule
 			  name2 = "Pre-orthogonal Natural Hybrid Orbitals"
 			elsif key2 == "PNBO"
 			  name2 = "Pre-orthogonal Natural Bond Orbitals"
-            elsif key2 == "AHO"
-              name2 = "Atomic Hybrid Orbitals"
-            elsif key2 == "LHO"
-              name2 = "Lewis Hybrid Orbitals"
-            elsif key2 == "PLHO"
-              name2 = "Pre-orthogonal Lewis Hybrid Orbitals"
-            elsif key2 == "LPO"
-              name2 = "Localized Property-optimized Orbitals"
-            elsif key2 == "CLPO"
-              name2 = "Chemist's Localized Property-optimized Orbitals"
+      elsif key2 == "AHO"
+        name2 = "Atomic Hybrid Orbitals"
+      elsif key2 == "LHO"
+        name2 = "Lewis Hybrid Orbitals"
+      elsif key2 == "PLHO"
+        name2 = "Pre-orthogonal Lewis Hybrid Orbitals"
+      elsif key2 == "LPO"
+        name2 = "Localized Property-optimized Orbitals"
+      elsif key2 == "CLPO"
+        name2 = "Chemist's Localized Property-optimized Orbitals"
 			end
 			mo_ao_items.push(name2)
 			mo_ao_keys.push(key2)
@@ -553,12 +553,12 @@ class Molecule
 				end
 		      end
 		      en = mol.get_mo_energy(i1 + (i2 == 0 ? ncomps : 0))
-		      sprintf("%d%s%s (%.8f)", i1, c1, c2, en)
+          sprintf("%d%s%s (%.8f)", i1, c1, c2, en)
 			}
 		  elsif mo_ao == 1
 		    mo_menu = []
 		    ncomps.times { |i|
-			  mo_menu[i] = sprintf("AO%d: %s (%s)", i + 1, tabvals[i][2], mol.atoms[tabvals[i][3]].name)
+			  mo_menu[i] = sprintf("%d: %s (%s)", i + 1, tabvals[i][2], mol.atoms[tabvals[i][3]].name)
 			}
 		  else
 		    mo_menu = []
@@ -568,9 +568,10 @@ class Molecule
 			  labels = nbo[key[1..-1] + "_L"]
 			end
 			ncomps.times { |i|
-			  lab = sprintf("%s%d", key, i + 1)
-			  if labels
-			    lab += ":" + labels[i]
+        if labels
+			    lab = sprintf("%d: %s", i + 1, labels[i])
+        else
+          lab = sprintf("%s%d", key, i + 1)
 			  end
 			  mo_menu[i] = lab
 			}
@@ -636,7 +637,7 @@ class Molecule
 		  item(:text, :title=>"Threshold"),
 		  item(:textfield, :tag=>"threshold", :width=>80, :value=>"0.05", :action=>on_action),
 		  item(:text, :title=>"Box Limit"),
-		  item(:textfield, :tag=>"expand", :width=>80, :value=>"1.0", :action=>on_action)),
+		  item(:textfield, :tag=>"expand", :width=>80, :value=>"1.4", :action=>on_action)),
 		layout(2,
 		  item(:text, :title=>"Number of Grid Points"),
 		  item(:textfield, :tag=>"grid", :width=>120, :value=>"512000", :action=>on_action)),

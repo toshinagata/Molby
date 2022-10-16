@@ -5396,7 +5396,7 @@ s_Molecule_Savedcd(VALUE self, VALUE fname)
 static VALUE
 s_Molecule_LoadSave(int argc, VALUE *argv, VALUE self, int loadFlag)
 {
-	VALUE rval;
+    VALUE rval, argv0;
 	char *argstr, *methname, *p, *type = "";
 	ID mid = 0;
 	int i;
@@ -5406,7 +5406,8 @@ s_Molecule_LoadSave(int argc, VALUE *argv, VALUE self, int loadFlag)
 	if (argc == 0)
 		return Qnil;
 
-	if (argc == 0 || (argstr = StringValuePtr(argv[0])) == NULL)
+    argv0 = argv[0]; /* Keep as a local variable to avoid GC  */
+	if (argc == 0 || (argstr = StringValuePtr(argv0)) == NULL)
 		rb_raise(rb_eMolbyError, "the first argument must be either filename or \":filetype\"");
 	if (argstr[0] == ':') {
 		/*  Call "loadXXX" (or "saveXXX") for type ":XXX"  */
@@ -5461,7 +5462,7 @@ s_Molecule_LoadSave(int argc, VALUE *argv, VALUE self, int loadFlag)
 		}
 	}
 failure:
-	rval = rb_str_to_str(argv[0]);
+	rval = rb_str_to_str(argv0);
 	asprintf(&p, "Failed to %s file %s", (loadFlag ? "load" : "save"), type);
 	s_Molecule_RaiseOnLoadSave(1, loadFlag, p, StringValuePtr(rval));
 	return Qnil;  /*  Does not reach here  */
@@ -5472,7 +5473,7 @@ success:
 		Molecule *mol;
 	/*	Atom *ap; */
 		Data_Get_Struct(self, Molecule, mol);
-		MoleculeSetPath(mol, StringValuePtr(argv[0]));
+		MoleculeSetPath(mol, StringValuePtr(argv0));
 		
 		/*  Check if all occupancy factors are zero; if that is the case, then all set to 1.0  */
 	/*	for (i = 0, ap = mol->atoms; i < mol->natoms; i++, ap = ATOM_NEXT(ap)) {

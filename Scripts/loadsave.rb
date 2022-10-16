@@ -799,7 +799,6 @@ class Molecule
             end
             break if i < ncomps  #  no MO info was found
           end
-          #  TODO: reorder D, F, G coefficients for Molby order
           next
         end #  end if
       end   #  end while
@@ -817,6 +816,10 @@ class Molecule
   #  and load from it (i.e. use the basis set converted by molden2molden)
   def sub_load_janpa_log(inppath)
     begin
+      m2name_p = {0=>"x", 1=>"y", -1=>"z"}
+      m2name_d = {0=>"zz-rr", 1=>"xz", -1=>"yz", 2=>"xx-yy", -2=>"xy"}
+      m2name_f = {0=>"z3-zr2", 1=>"xz2-xr2", -1=>"yz2-yr2", 2=>"x2z-y2z", -2=>"xyz", 3=>"x3-xy2", -3=>"x2y-y3"}
+      m2name_g = {0=>"z4-z2r2+r4", 1=>"xz3-xzr2", -1=>"yz3-yzr2", 2=>"(x2-y2)(z2-r2)", -2=>"xyz2-xyr2", 3=>"x3z-xy2z", -3=>"x2yz-y3z", 4=>"x4-x2y2+y4", -4=>"x3y-xy3"}
       fp = File.open(inppath + ".janpa.log", "rt") rescue fp = nil
       if fp == nil
         hide_progress_panel  #  Close if it is open
@@ -873,16 +876,24 @@ class Molecule
             ang_num = Integer($5)
             orb_desc = orb_sym
             if orb_desc == "p"
-              orb_desc += ["z", "x", "y"][ang_num + 1]
+              orb_desc += m2name_p[ang_num]
             elsif orb_desc == "d"
-            #  TODO: handle d, f, g orbitals
+              orb_desc += m2name_d[ang_num]
+            elsif orb_desc == "f"
+              orb_desc += m2name_f[ang_num]
+            elsif orb_desc == "g"
+              orb_desc += m2name_g[ang_num]
             end
             h["NAO"].push([num, anum, occupied, group_num, orb_desc, occ])
             nao_num = h["NAO"].length
             ((nao_infos[anum - 1] ||= Hash.new)[orb_desc] ||= []).unshift([nao_num, occ])
           end
-          #  Create labels
+          #  Create labels and reorder
+          #  h["NAOold2new"][i] = j, h["NAOnew2old"][j] = i
+          #  where i is the original NAO number, and j is reordered NAO number (0-based)
+          #  NAOs are ordered by (1) atom, (2) principle, (3) orbital, (4) original index
           h["NAO_L"] = []
+          reorder = []
           nao_infos.each_with_index { |value, atom_index|
             aname = self.atoms[atom_index].name
             value.each { |orb_desc, ar|
@@ -896,18 +907,32 @@ class Molecule
                 end
                 principle = group_index + 1
                 orb_sym = orb_desc[0]
+                orb = 0
                 if orb_sym == "p"
                   principle += 1
+                  orb = 1
                 elsif orb_sym == "d"
                   principle += 2
+                  orb = 2
                 elsif orb_sym == "f"
                   principle += 3
+                  orb = 3
                 elsif orb_sym == "g"
                   principle += 4
+                  orb = 4
                 end
-                h["NAO_L"][v[0] - 1] = "#{aname} (#{principle}#{orb_desc}) (#{label})"
+                h["NAO_L"][v[0] - 1] = "#{aname} (#{principle}#{orb_desc}) (#{label}, \##{v[0]})"
+                reorder[v[0] - 1] = [atom_index, principle, orb, v[0] - 1]
               }
             }
+          }
+          reorder = reorder.sort { |a, b| a[0] != b[0] ? a[0] <=> b[0] : (a[1] != b[1] ? a[1] <=> b[1] : (a[2] != b[2] ? a[2] <=> b[2] : a[3] <=> b[3])) }
+          h["NAOnew2old"] = []
+          h["NAOold2new"] = []
+          reorder.each_with_index { |a, i|
+            j = a[3]
+            h["NAOnew2old"][i] = j
+            h["NAOold2new"][j] = i
           }
         elsif line =~ /^\s*(C?)LPO\s+D e s c r i p t i o n\s+Occupancy\s+Composition/
           if $1 == "C"
@@ -916,6 +941,8 @@ class Molecule
             key = "LPO"
           end
           h[key] = []
+          reorder = []
+          reorder_h = []  #  Reorder of LHO (for key == "CLPO")
           while line = getline.call
             break if line =~ /^\s*$/
             num = Integer(line[0, 5])
@@ -930,6 +957,7 @@ class Molecule
               label1 = "(NB)"
               desc2 = $1.strip
             end
+            label1.gsub!(/[\(\)]/, "")  #  Strip parens
             atoms = desc1.scan(/[A-Za-z]+(\d+)/)   # "C1-H3" -> [["1"], ["3"]]
             atoms = atoms.map { |a| Integer(a[0]) }  # [1, 3]
             hybrids_a = comp.scan(/h(\d+)@[A-Za-z]+(\d+)/)  #  "h8@C1...h13@H3" -> "[["8", "1"], ["13", "3"]]
@@ -940,7 +968,7 @@ class Molecule
                 hybrids[i] = Integer(a[0])
               end
             } # [8, 13]
-            #  like ["(BD)", [1, 3], "Io = 0.2237", occ, [8, 13]]
+            #  like ["BD", [1, 3], "Io = 0.2237", occ, [8, 13]]
             #  1, 3 are the atom indices (1-based)
             #  8, 13 are the number of hybrid orbitals (1-based)
             h[key][num - 1] = [label1, atoms, desc2, Float(occ), hybrids]
@@ -952,34 +980,70 @@ class Molecule
           end
           nao_num.times { |i|
             val = h[key][i]
+            r = [100, nil, nil, i]  #  reorder elements
+            rh = []                 #  reorder elements for LHOs
             if val == nil
               label = ""  #  The labels for Rydberg orbitals may be replaced later
+              r[0] = 100   #  Rydberg orbitals are sorted in the back
             else
               aname1 = self.atoms[val[1][0] - 1].name rescue aname1 = ""
               aname2 = self.atoms[val[1][1] - 1].name rescue aname2 = ""
               if aname2 == ""
-                label = "#{aname1} #{val[0]}"
+                label = "#{aname1} (#{val[0]}, \##{i + 1})"
               else
-                label = "#{aname1}(#{aname2}) #{val[0]}"
+                label = "#{aname1}(#{aname2}) (#{val[0]}, \##{i + 1})"
               end
+              r[0] = (val[0] == "LP" ? 1 : (val[0] == "BD" ? 2 : 3))
+              r[1] = val[1][0]
+              r[2] = val[1][1] or -1
             end
             h[key + "_L"][i] = label
-            if key == "CLPO" && val != nil && val[0] != "(NB)"
+            reorder[i] = r
+            if key == "CLPO" && val != nil && val[0] != "NB"
               hybrids = val[4]
-              kind = (val[0] == "(BD)" ? "(val)" : "(lp)")
+              kind = (val[0] == "BD" ? "val" : "lp")
+              rh[0] = (val[0] == "BD" ? 2 : 1)
+              rh[1] = val[1][0]
+              rh[2] = val[1][1] or -1
               if aname2 == ""
-                label = "#{aname1} #{kind}"
+                label = "#{aname1} (#{kind}, \##{hybrids[0]})"
               else
-                label = "#{aname1}(#{aname2}) #{kind}"
+                label = "#{aname1}(#{aname2}) (#{kind}, \##{hybrids[0]})"
               end
               h["LHO_L"][hybrids[0] - 1] = label
+              rh[3] = hybrids[0] - 1
+              reorder_h[hybrids[0] - 1] = rh
               if hybrids[1] != nil
                 #  aname2 should be non-empty
-                label = "#{aname2}(#{aname1}) #{kind}"
+                label = "#{aname2}(#{aname1}) (#{kind}, \##{hybrids[1]})"
                 h["LHO_L"][hybrids[1] - 1] = label
+                reorder_h[hybrids[1] - 1] = [rh[0], rh[2], rh[1], hybrids[1] - 1]
               end
             end
           }
+          reorder = reorder.sort { |a, b| a[0] != b[0] ? a[0] <=> b[0] : (a[1] != b[1] ? a[1] <=> b[1] : (a[2] != b[2] ? a[2] <=> b[2] : a[3] <=> b[3])) }
+          h[key + "new2old"] = []
+          h[key + "old2new"] = []
+          reorder.each_with_index { |a, i|
+            j = a[3]
+            h[key + "new2old"][i] = j
+            h[key + "old2new"][j] = i
+          }
+          if key == "CLPO"
+            nao_num.times { |i|
+              if reorder_h[i] == nil
+                reorder_h[i] = [100, 0, 0, i]
+              end
+            }
+            reorder_h = reorder_h.sort { |a, b| a[0] != b[0] ? a[0] <=> b[0] : (a[1] != b[1] ? a[1] <=> b[1] : (a[2] != b[2] ? a[2] <=> b[2] : a[3] <=> b[3])) }
+            h["LHOnew2old"] = []
+            h["LHOold2new"] = []
+            reorder_h.each_with_index { |a, i|
+              j = a[3]
+              h["LHOnew2old"][i] = j
+              h["LHOold2new"][j] = i
+            }
+          end
         elsif line =~ /^ -NAO_Molden_File: (\S*)/
           mfiles["NAO"] = $1
         elsif line =~ /^ -LHO_Molden_File: (\S*)/
@@ -1003,6 +1067,31 @@ class Molecule
           res = sub_load_molden(fp, key)
           if res
             #  Some kind of orbital based on AO
+            #  Reorder the orbitals and labels
+            if key == "NAO" || key == "PNAO"
+              old2new = h["NAOold2new"]
+            elsif key == "LPO"
+              old2new = h["LPOold2new"]
+            elsif key == "CLPO"
+              old2new = h["CLPOold2new"]
+            elsif key == "AHO" || key == "LHO"
+              old2new = h["LHOold2new"]
+            end
+            if old2new
+              mo = []
+              nao_num.times { |i|
+                mo[old2new[i]] = res[:mo][i]
+              }
+              res[:mo] = mo
+              if h[key + "_L"]
+                labels = h[key + "_L"]
+                newlabels = []
+                nao_num.times { |i|
+                  newlabels[old2new[i]] = labels[i]
+                }
+                h[key + "_L"] = newlabels
+              end
+            end
             h["AO/#{key}"] = LAMatrix.new(res[:mo])
           end
           fp.close
@@ -1010,17 +1099,23 @@ class Molecule
             #  Set the label of Rydberg orbitals if possible
             if h[key + "_L"] != nil
               a = h["AO/#{key}"]
+              new2old = h[key + "new2old"]
               nao_num.times { |i|
                 label = h[key + "_L"][i]
                 if label == ""
+                  #  Sum for all orbitals belonging to each atom
+                  #  and look for the 'most significant' atom
                   max_idx = nil
                   max_val = -1.0
+                  old2new = h["NAOold2new"]
                   nao_infos.each_with_index { |inf, atom_index|
                     atomic_contrib = 0.0
                     inf.each { |k, v| # k is "s", "px" etc, v is array of [nao_num, occupancy]
                       #  Sum for all naos belonging to this atom
                       v.each { |num_occ|
-                        atomic_contrib += a[i, num_occ[0] - 1] ** 2
+                        n = num_occ[0] - 1
+                        n = old2new[n] if old2new
+                        atomic_contrib += a[i, n] ** 2
                       }
                     }
                     if atomic_contrib > max_val
@@ -1028,7 +1123,8 @@ class Molecule
                       max_idx = atom_index
                     end
                   }
-                  label = self.atoms[max_idx].name + " (ry)"
+                  j = (new2old ? new2old[i] : i)
+                  label = self.atoms[max_idx].name + " (ryd, \##{j + 1})"
                   h[key + "_L"][i] = label
                 end
               }
@@ -1048,6 +1144,10 @@ class Molecule
         rescue
           @nbo["AO/PLHO"] = nil
         end
+      end
+      if @nbo["AO/AHO"] && @nbo["LHO_L"]
+        #  Copy labels from LHO
+        @nbo["AHO_L"] = @nbo["LHO_L"].dup
       end
       return true
     rescue => e
