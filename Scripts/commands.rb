@@ -373,7 +373,7 @@ class Molecule
 	  ncomps = mol.get_mo_info(:ncomps)
 	  mo_index = 1
 	  mo_ao = nil
-	  coltable = [[0,0,1], [1,0,0], [0,1,0], [1,1,0], [0,1,1], [1,0,1], [0,0,0]]
+	  coltable = [[0,0,1], [1,0,0], [0,1,0], [1,1,0], [0,1,1], [1,0,1], [0,0,0], [1,1,1]]
 	  mo_ao_items = ["Molecular Orbitals", "Atomic Orbitals"]
 	  mo_ao_keys = ["MO", "AO"]
       if (nbo = mol.instance_eval { @nbo }) != nil
@@ -516,7 +516,14 @@ class Molecule
 		  end
 		else
 		  mo_index = mo
-		  occ_new = occ
+      occ_new = occ
+      if mo_menu[mo]
+        if mo_menu[mo] =~ /(\(ryd?)|(\(NB)|(\*)/
+          occ_new = 0
+        else
+          occ_new = 1
+        end
+      end
 		end
 		coeffs = nil
 		if occ_new != occ
@@ -578,7 +585,7 @@ class Molecule
 		  end
 		  it0 = item_with_tag("mo")
 		  it0[:subitems] = mo_menu
-		  it0[:value] = 0
+      #it0[:value] = 0   #  Keep the mo number invariant
 		  h["mo"] = nil  # "Update" button is forced to be enabled
 		  on_mo_action.call(it0)
 		end
@@ -631,7 +638,7 @@ class Molecule
 	      item(:popup, :tag=>"mo", :subitems=>mo_menu, :action=>on_mo_action)),
 		layout(4,
 		  item(:text, :title=>"Color"),
-		  item(:popup, :tag=>"color", :subitems=>["blue", "red", "green", "yellow", "cyan", "magenta", "black"], :action=>on_action),
+		  item(:popup, :tag=>"color", :subitems=>["blue", "red", "green", "yellow", "cyan", "magenta", "black", "white"], :action=>on_action),
 		  item(:text, :title=>"Opacity"),
 		  item(:textfield, :tag=>"opacity", :width=>80, :value=>"0.8", :action=>on_action),
 		  item(:text, :title=>"Threshold"),

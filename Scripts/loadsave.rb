@@ -760,11 +760,11 @@ class Molecule
             while line = getline.call
               if line =~ /^ *Sym= *(\w+)/
                 sym = $1
-              elsif line =~ /^ *Ene= *([-+.0-9e]+)/
+              elsif line =~ /^ *Ene= *([-+.0-9eE]+)/
                 ene = Float($1)
               elsif line =~ /^ *Spin= *(\w+)/
                 spin = $1
-              elsif line =~ /^ *Occup= *([-+.0-9e]+)/
+              elsif line =~ /^ *Occup= *([-+.0-9eE]+)/
                 occ = Float($1)
                 if occ > 0.0
                   if spin == "Alpha"
@@ -776,7 +776,7 @@ class Molecule
                 if label
                   hash[:moinfo].push([sym, ene, (spin == "Alpha" ? 0 : 1), occ])
                 end
-              elsif line =~ /^ *([0-9]+) +([-+.0-9e]+)/
+              elsif line =~ /^ *([0-9]+) +([-+.0-9eE]+)/
                 m[i] = Float($2)
                 i += 1
                 if i >= ncomps
@@ -787,9 +787,10 @@ class Molecule
                     idx = idx_beta
                     idx_beta += 1
                   end
-                  set_mo_coefficients(idx, ene, m)
                   if label
                     hash[:mo].push(m.dup)
+                  else
+                    set_mo_coefficients(idx, ene, m)
                   end
                   break
                 end
@@ -1148,6 +1149,31 @@ class Molecule
       if @nbo["AO/AHO"] && @nbo["LHO_L"]
         #  Copy labels from LHO
         @nbo["AHO_L"] = @nbo["LHO_L"].dup
+      end
+      if @nbo["AO/NAO"] && @nbo["NAO_L"]
+        #  Make distinction between "LP" and "core" orbitals
+        ["AHO", "LHO", "LPO", "CLPO"].each { |key|
+          next if !@nbo["AO/" + key] || !@nbo[key + "_L"]
+          nao2key = @nbo["AO/NAO"].inverse * @nbo["AO/" + key]
+          @nbo[key + "_L"].each_with_index { |label, index|
+            if label =~ /\(((LP)|(lp)),/
+              max_val = -1
+              max_idx = nil
+              nao_num.times { |idx|
+                w = nao2key[index, idx] ** 2
+                if w > max_val
+                  max_val = w
+                  max_idx = idx
+                end
+              }
+              nao_label = @nbo["NAO_L"][max_idx]
+              if nao_label =~ /\(core,/
+                label.gsub!(/\(((LP)|(lp)),/, "(core,")
+                @nbo[key + "_L"][index] = label
+              end
+            end
+          }
+        }
       end
       return true
     rescue => e

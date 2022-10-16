@@ -714,8 +714,14 @@ MoleculeView::OnSliderAction(wxCommandEvent& event)
     
 	MoleculeLock(mview->mol);
 	MainView_rotateBySlider(mview, angle * 3.1415927 * 2, mode, mouseStatus, MainViewCallback_modifierFlags(NULL));
+
+    //  We do not use here MainViewCallback_drawInfoText(), because the character
+    //  "°" here is written in UTF-8 encoding, whereas MainViewCallback_drawInfoText()
+    //  accepts a C string in native encoding (shift-JIS in Windows)
     snprintf(buf, sizeof buf, "%.1f°", angledeg);
-    MainViewCallback_drawInfoText(mview, buf);
+    wxString labelstr(buf, wxConvUTF8);  //  force UTF-8 encoding here
+    infotext->SetLabel(labelstr);
+
     MainViewCallback_updateCanvas(mview);
 	MoleculeUnlock(mview->mol);
 }

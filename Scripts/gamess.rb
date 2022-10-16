@@ -1958,7 +1958,7 @@ class Molecule
     dfttype_desc = ["B3LYP"]
     runtype_desc = ["Energy", "Optimize"]
     scftype_desc = ["RHF", "ROHF", "UHF"]
-    nbo_desc = ["nao", "pnao", "aho", "lho", "lpo", "clpo"]  #  JANPA
+    nbo_desc = ["nao", "pnao", "aho", "lho", "plho", "lpo", "clpo"]  #  JANPA
     user_input = Hash.new
     defaults = {"scftype"=>0, "runtype"=>0, "move_to_com"=>0, "do_reorient"=>0,
       "use_symmetry"=>0,  "charge"=>"0", "mult"=>"1",
