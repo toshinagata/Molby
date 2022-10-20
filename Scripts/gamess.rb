@@ -2065,6 +2065,7 @@ class Molecule
             :action=>lambda { |it|
               flag = (it[:value] != 0)
               nbo_desc.each { |nbo| set_attr(nbo, :enabled=>flag) }
+              set_attr("check_java", :enabled=>flag)
             }),
         -1, -1, -1,
         #  ------
@@ -2079,7 +2080,15 @@ class Molecule
         -1,
         #  ------
         item(:text, :title=>"* Not JANPA original; Molby extension", :font=>[9]),
-        -1, -1, -1,
+        -1, -1,
+        item(:button, :title=>"Check Java...", :tag=>"check_java",
+            :action=>lambda { |it|
+            if Molecule.is_java_available()
+            message_box("Java installation looks OK.", "", :ok)
+            else
+            Molecule.make_java_available()
+            end
+            }),
         #  ------
         item(:line),
         -1, -1, -1,
@@ -2144,9 +2153,8 @@ class Molecule
       set_attr("psi4conda_folder", :enabled=>(values["execute_local"] == 1))
       set_attr("select_folder", :enabled=>(values["execute_local"] == 1))
       set_attr("ncpus", :enabled=>(values["execute_local"] == 1))
-      #nbos.each { |nao|
-      #  set_attr(nao, :enabled=>(values["include_nbo"] == 1))
-      #}
+      nbo_desc.each { |nbo| set_attr(nbo, :enabled=>(values["run_janpa"] == 1)) }
+      set_attr("check_java", :enabled=>(values["run_janpa"] == 1))
     }  #  end Dialog.run
 
     hash.each_pair { |key, value|

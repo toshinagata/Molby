@@ -366,68 +366,59 @@ class Molecule
     surface_dialog_attr = @surface_dialog_attr
     mol = self
 	mol.open_auxiliary_window("MO Surface", :resizable=>true, :has_close_box=>true) {
-	  tags = ["mo_ao", "mo", "color", "opacity", "threshold", "expand", "grid"]
+	  tags = ["mo_ao", "mo", "color", "opacity", "threshold", "expand", "grid", "reverse", "basis"]
 	  motype = mol.get_mo_info(:type)
 	  alpha = mol.get_mo_info(:alpha)
 	  beta = mol.get_mo_info(:beta)
 	  ncomps = mol.get_mo_info(:ncomps)
-	  mo_index = 1
+	  mo_index = 0
 	  mo_ao = nil
 	  coltable = [[0,0,1], [1,0,0], [0,1,0], [1,1,0], [0,1,1], [1,0,1], [0,0,0], [1,1,1]]
 	  mo_ao_items = ["Molecular Orbitals", "Atomic Orbitals"]
 	  mo_ao_keys = ["MO", "AO"]
-      if (nbo = mol.instance_eval { @nbo }) != nil
+    if (nbo = mol.instance_eval { @nbo }) != nil
 	    nbo.keys.each { |key|
-		  if key[0..2] == "AO/"
-		    key2 = key[3..-1]
-			name2 = key2
-			if key2 == "NAO"
-			  name2 = "Natural Atomic Orbitals"
-			elsif key2 == "NBO"
-			  name2 = "Natural Bond Orbitals"
-			elsif key2 == "NHO"
-			  name2 = "Natural Hybrid Orbitals"
-			elsif key2 == "NLMO"
-			  name2 = "Natural Localized Molecular Orbitals"
-			elsif key2 == "PNAO"
-			  name2 = "Pre-orthogonal Natural Atomic Orbitals"
-			elsif key2 == "PNHO"
-			  name2 = "Pre-orthogonal Natural Hybrid Orbitals"
-			elsif key2 == "PNBO"
-			  name2 = "Pre-orthogonal Natural Bond Orbitals"
-      elsif key2 == "AHO"
-        name2 = "Atomic Hybrid Orbitals"
-      elsif key2 == "LHO"
-        name2 = "Lewis Hybrid Orbitals"
-      elsif key2 == "PLHO"
-        name2 = "Pre-orthogonal Lewis Hybrid Orbitals"
-      elsif key2 == "LPO"
-        name2 = "Localized Property-optimized Orbitals"
-      elsif key2 == "CLPO"
-        name2 = "Chemist's Localized Property-optimized Orbitals"
-			end
-			mo_ao_items.push(name2)
-			mo_ao_keys.push(key2)
-		  end
-		}
+        if key[0..2] == "AO/"
+          key2 = key[3..-1]
+          name2 = key2
+          if key2 == "NAO"
+            name2 = "Natural Atomic Orbitals"
+          elsif key2 == "NBO"
+            name2 = "Natural Bond Orbitals"
+          elsif key2 == "NHO"
+            name2 = "Natural Hybrid Orbitals"
+          elsif key2 == "NLMO"
+            name2 = "Natural Localized Molecular Orbitals"
+          elsif key2 == "PNAO"
+            name2 = "Pre-orthogonal Natural Atomic Orbitals"
+          elsif key2 == "PNHO"
+            name2 = "Pre-orthogonal Natural Hybrid Orbitals"
+          elsif key2 == "PNBO"
+            name2 = "Pre-orthogonal Natural Bond Orbitals"
+          elsif key2 == "AHO"
+            name2 = "Atomic Hybrid Orbitals"
+          elsif key2 == "LHO"
+            name2 = "Lewis Hybrid Orbitals"
+          elsif key2 == "PLHO"
+            name2 = "Pre-orthogonal Lewis Hybrid Orbitals"
+          elsif key2 == "LPO"
+            name2 = "Localized Property-optimized Orbitals"
+          elsif key2 == "CLPO"
+            name2 = "Chemist's Localized Property-optimized Orbitals"
+          end
+          mo_ao_items.push(name2)
+          mo_ao_keys.push(key2)
+        end
+      }
 	  end
 	  mult = (motype == "UHF" ? 2 : 1)
 	  mo_menu = ["1000 (-00.00000000)"]  #  Dummy entry; create later
 	  tabvals = []
-	  coeffs = nil
+    coeffs_matrix = nil  #  Coefficient matrix for showing surface
+    coeffs = nil   #  Coefficient array for showing surface
+    table_coeffs_matrix = nil  #  Coefficient matrix for table (based on "basis")
 	  a_idx_old = -1
 	  occ = nil
-	  ncomps.times { |i|
-	    a_idx, s_idx, label = mol.get_gaussian_component_info(i)
-		if a_idx_old != a_idx
-		  a_idx_old = a_idx
-		  a = a_idx.to_s
-		  n = mol.atoms[a_idx].name
-		else
-		  a = n = ""
-		end
-		tabvals.push([a, n, label, a_idx])
-	  }
 	  on_update_attr = lambda {
 	    tags.each { |tag|
 		  surface_dialog_attr[tag] = item_with_tag(tag)[:value]
@@ -445,23 +436,120 @@ class Molecule
 		  it[:enabled] = true
 		end
 	  }
+    update_mo_labels = lambda { |mo_ao_index|
+      m = []
+      if mo_ao_index == 0
+        m = (1..(ncomps * mult)).map { |n|
+          if motype == "UHF"
+            i1 = (n - 1) / 2 + 1
+            i2 = n % 2
+            c1 = (i2 == 0 ? "B" : "A")
+            c2 = (i1 > (i2 == 0 ? beta : alpha) ? "*" : "")
+            else
+            i1 = n
+            i2 = 1
+            c1 = ""
+            if i1 > beta && i1 > alpha
+              c2 = "*"
+              elsif i1 > beta || i1 > alpha
+              c2 = "S"
+              else
+              c2 = ""
+            end
+          end
+          en = mol.get_mo_energy(i1 + (i2 == 0 ? ncomps : 0))
+          sprintf("%d%s%s (%.8f)", i1, c1, c2, en)
+        }
+      elsif mo_ao_index == 1
+        m = []
+        ncomps.times { |i|
+          m[i] = sprintf("%d: %s (%s)", i + 1, tabvals[i][2], mol.atoms[tabvals[i][3]].name)
+        }
+      else
+        m = []
+        key = mo_ao_keys[mo_ao_index]
+        labels = nbo[key + "_L"]
+        if labels == nil && key[0] == ?P
+          labels = nbo[key[1..-1] + "_L"]
+        end
+        ncomps.times { |i|
+          if labels
+            lab = sprintf("%d: %s", i + 1, labels[i])
+          else
+            lab = sprintf("%s%d", key, i + 1)
+          end
+          m[i] = lab
+        }
+      end
+      return m
+    }
 	  on_get_value = lambda { |it, row, col|
-	    if col < 3
-		  tabvals[row][col]
-		else
-		  if coeffs == nil
-		    if mo_ao == 0
-		      coeffs = mol.get_mo_coefficients(mo_index)
-		    elsif mo_ao == 1
-		      coeffs = (0...ncomps).map { |i| (i == mo_index ? 1.0 : 0.0) }
-			else
-			  coeffs = nbo["AO/" + mo_ao_keys[mo_ao]].column(mo_index).to_a[0]
-			end
-		  end
-		  sprintf("%.6f", coeffs[row])
-		end
+    begin
+      if !table_coeffs_matrix || !coeffs_matrix
+        #  Update tabvals
+        tabvals = []
+        bs = value("basis")
+        if bs == 0  #  AO
+          ncomps.times { |i|
+            a_idx, s_idx, label = mol.get_gaussian_component_info(i)
+            if a_idx_old != a_idx
+              a_idx_old = a_idx
+              a = a_idx.to_s
+              n = mol.atoms[a_idx].name
+            else
+              a = n = ""
+            end
+            tabvals.push([a, n, label, a_idx])
+          }
+        else
+          labels = update_mo_labels.call(bs + 1)
+          ncomps.times { |i|
+            label = labels[i]
+            label = label.gsub(/^\d+: /, "")
+            tabvals.push([(i + 1).to_s, "", label, i])
+          }
+        end
+        #  Update coeffs_matrix
+        if !coeffs_matrix
+          #  coeffs_matrix = AO/(orbitals_to_display)
+          if mo_ao == 0
+            m = []
+            ncomps.times { |i|
+              mult.times { |j|
+                m.push(mol.get_mo_coefficients(i * mult + j + 1))
+              }
+            }
+            coeffs_matrix = LAMatrix.new(m)  #  Matrix AO/MO
+          elsif mo_ao == 1
+            coeffs_matrix = LAMatrix.identity(ncomps)  #  Matrix AO/AO  (identity)
+          else
+            coeffs_matrix = nbo["AO/" + mo_ao_keys[mo_ao]]
+          end
+        end
+        #  m2 = AO/(basis)
+        if bs == 0   #  AO
+          m2 = LAMatrix.identity(ncomps)
+        else
+          m2 = nbo["AO/" + mo_ao_keys[bs + 1]]
+        end
+        #  (basis)/(orbitals_to_display)
+        table_coeffs_matrix = m2.inverse * coeffs_matrix
+      end
+      #  Update coefficient array
+      if !coeffs
+        coeffs = coeffs_matrix.column(mo_index).to_a[0]
+      end
+      if col < 3
+        tabvals[row][col]
+      else
+        sprintf("%.6f", table_coeffs_matrix[mo_index, row])
+      end
+    rescue => e
+      $stderr.write(e.to_s + "\n")
+      $stderr.write(e.backtrace.inspect + "\n")
+    end
 	  }
-	  h = {"mo"=>nil, "color"=>nil, "opacity"=>nil, "threshold"=>nil, "expand"=>nil, "grid"=>nil}
+	  h = {"mo"=>nil, "color"=>nil, "opacity"=>nil, "threshold"=>nil, "expand"=>nil, "grid"=>nil, "reverse"=>nil, "basis"=>nil }
 	  should_update = true
 	  on_action = lambda { |it|
 	    tag = it[:tag]
@@ -475,10 +563,13 @@ class Molecule
 		  color0 = [1,1,1,opac]
 		  mol.set_surface_attr(:color=>color, :color0=>color0)
 		  h[tag] = value
-		elsif tag == "threshold"
-	      thres = it[:value].to_f
+    elsif tag == "threshold" || tag == "reverse"
+      thres = item_with_tag("threshold")[:value].to_f
 		  thres = 0.001 if thres >= 0.0 && thres < 0.001
 		  thres = -0.001 if thres <= 0.0 && thres > -0.001
+      if item_with_tag("reverse")[:value] == 1
+        thres = -thres
+      end
 		  mol.set_surface_attr(:thres=>thres)
 		  h[tag] = value
 		else
@@ -498,17 +589,17 @@ class Molecule
 	    mo = it[:value]
 		if mo_ao == 0
 		  if motype == "UHF"
-		    mo_index = (mo / 2) + (mo % 2 == 1 ? ncomps : 0) + 1
-			if mo_index <= alpha || (mo_index > ncomps && mo_index <= ncomps + beta)
+		    mo_index = (mo / 2) + (mo % 2 == 1 ? ncomps : 0)
+			if mo_index < alpha || (mo_index >= ncomps && mo_index < ncomps + beta)
 			  occ_new = 1
 			else
 			  occ_new = 0
 			end
 		  else
-		    mo_index = mo + 1
-			if mo_index <= alpha && mo_index <= beta
+		    mo_index = mo
+			if mo_index < alpha && mo_index < beta
 			  occ_new = 1
-			elsif mo_index <= alpha || mo_index <= beta
+			elsif mo_index < alpha || mo_index < beta
 			  occ_new = -1
 			else
 			  occ_new = 0
@@ -539,58 +630,25 @@ class Molecule
 	  }
 	  on_set_action = lambda { |it|
 	    if mo_ao != it[:value]
-		  mo_ao = it[:value]
-		  if mo_ao == 0
-		    mo_menu = (1..(ncomps * mult)).map { |n|
-	          if motype == "UHF"
-		        i1 = (n - 1) / 2 + 1
-		        i2 = n % 2
-		        c1 = (i2 == 0 ? "B" : "A")
-		        c2 = (i1 > (i2 == 0 ? beta : alpha) ? "*" : "")
-		      else
-		        i1 = n
-		        i2 = 1
-		        c1 = ""
-				if i1 > beta && i1 > alpha
-				  c2 = "*"
-				elsif i1 > beta || i1 > alpha
-				  c2 = "S"
-				else
-				  c2 = ""
-				end
-		      end
-		      en = mol.get_mo_energy(i1 + (i2 == 0 ? ncomps : 0))
-          sprintf("%d%s%s (%.8f)", i1, c1, c2, en)
-			}
-		  elsif mo_ao == 1
-		    mo_menu = []
-		    ncomps.times { |i|
-			  mo_menu[i] = sprintf("%d: %s (%s)", i + 1, tabvals[i][2], mol.atoms[tabvals[i][3]].name)
-			}
-		  else
-		    mo_menu = []
-			key = mo_ao_keys[mo_ao]
-			labels = nbo[key + "_L"]
-			if labels == nil && key[0] == ?P
-			  labels = nbo[key[1..-1] + "_L"]
-			end
-			ncomps.times { |i|
-        if labels
-			    lab = sprintf("%d: %s", i + 1, labels[i])
-        else
-          lab = sprintf("%s%d", key, i + 1)
-			  end
-			  mo_menu[i] = lab
-			}
-		  end
-		  it0 = item_with_tag("mo")
-		  it0[:subitems] = mo_menu
-      #it0[:value] = 0   #  Keep the mo number invariant
-		  h["mo"] = nil  # "Update" button is forced to be enabled
-		  on_mo_action.call(it0)
-		end
-		on_update_attr.call
+        mo_ao = it[:value]
+        mo_menu = update_mo_labels.call(mo_ao)
+        it0 = item_with_tag("mo")
+        val = it0[:value]
+        it0[:subitems] = mo_menu
+        it0[:value] = val   #  Keep the mo number invariant
+        h["mo"] = nil  # "Update" button is forced to be enabled
+        coeffs = nil
+        coeffs_matrix = nil  #  Matrix needs update
+        on_mo_action.call(it0)
+      end
+      on_update_attr.call
 	  }
+    on_basis_action = lambda { |it|
+      if h["basis"] != value("basis")
+        table_coeffs_matrix = nil
+        item_with_tag("table")[:refresh] = true
+      end
+    }
 	  on_update = lambda { |it|
 	    h.each_key { |key|
 		  h[key] = value(key)
@@ -603,6 +661,9 @@ class Molecule
 		thres = h["threshold"].to_f
 		thres = 0.001 if thres >= 0.0 && thres < 0.001
 		thres = -0.001 if thres <= 0.0 && thres > -0.001
+    if h["reverse"] == 1
+      thres = -thres
+    end
 		expand = h["expand"].to_f
 		expand = 0.01 if expand < 0.01
 		expand = 10.0 if expand > 10.0
@@ -611,7 +672,7 @@ class Molecule
 		  grid = 10000000
 		end
 		if mo_ao == 0
-		  idx = mo_index
+		  idx = mo_index + 1
 		else
 		  idx = 0
 		  mol.set_mo_coefficients(0, 0.0, coeffs)
@@ -643,14 +704,21 @@ class Molecule
 		  item(:textfield, :tag=>"opacity", :width=>80, :value=>"0.8", :action=>on_action),
 		  item(:text, :title=>"Threshold"),
 		  item(:textfield, :tag=>"threshold", :width=>80, :value=>"0.05", :action=>on_action),
-		  item(:text, :title=>"Box Limit"),
-		  item(:textfield, :tag=>"expand", :width=>80, :value=>"1.4", :action=>on_action)),
-		layout(2,
+      item(:checkbox, :tag=>"reverse", :title=>"Reverse Phase", :action=>on_action),
+      -1),
+		layout(4,
 		  item(:text, :title=>"Number of Grid Points"),
-		  item(:textfield, :tag=>"grid", :width=>120, :value=>"512000", :action=>on_action)),
-	    item(:table, :width=>300, :height=>300, :tag=>"table",
-		  :columns=>[["Atom", 60], ["Name", 60], ["Label", 60], ["Coeff", 120]],
-		  :on_count=> lambda { |it| tabvals.count },
+		  item(:textfield, :tag=>"grid", :width=>80, :value=>"512000", :action=>on_action),
+      item(:text, :title=>"Box Limit"),
+      item(:textfield, :tag=>"expand", :width=>80, :value=>"1.4", :action=>on_action)),
+    #  table coefficients are based on "basis" (AO, NAO, etc.)
+    #  MO is not allowed as basis, so the "basis" menu begins with "AO"
+    layout(2,
+           item(:text, :title=>"Coeffs based on:"),
+           item(:popup, :tag=>"basis", :subitems=>mo_ao_keys[1..-1], :value=>1, :action=>on_basis_action)),
+    item(:table, :width=>380, :height=>300, :tag=>"table",
+		  :columns=>[["Atom", 40], ["Name", 60], ["Label", 140], ["Coeff", 120]],
+		  :on_count=> lambda { |it| ncomps },
 		  :on_get_value=>on_get_value,
 		  :flex=>[0,0,0,0,1,1]),
 		layout(3,

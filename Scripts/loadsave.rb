@@ -547,7 +547,7 @@ class Molecule
           break if line =~ /^\s*$/
           tokens = line.split(' ')
           if natoms > 0 && first_frame == nframes
-            if index >= natoms || tokens[0] != atoms[index].element
+            if index >= natoms || tokens[0].upcase != atoms[index].element.upcase
               hide_progress_panel
               raise MolbyError, "The atom list does not match the current structure at line #{@lineno}"
             end
