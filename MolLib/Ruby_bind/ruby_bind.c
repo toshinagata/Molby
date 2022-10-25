@@ -12384,7 +12384,9 @@ Molby_getDescription(char **versionString, char **auxString)
                  "%s\n"
                  "FFTW 3.3.2, http://www.fftw.org/\n"
                  "  Copyright (C) 2003, 2007-11 Matteo Frigo"
-                 "  and Massachusetts Institute of Technology",
+                 "  and Massachusetts Institute of Technology\n"
+                 "JANPA 2.01, https://janpa.sourceforge.net/\n"
+                 "  Copyright (C) 2014, Tymofii Nikolaienko",
                  MyAppCallback_getGUIDescriptionString(),
                  gRubyVersion, gRubyCopyright);
     } else {
@@ -12394,7 +12396,9 @@ Molby_getDescription(char **versionString, char **auxString)
                  "%s\n"
                  "FFTW 3.3.2, http://www.fftw.org/\n"
                  "  Copyright (C) 2003, 2007-11 Matteo Frigo"
-                 "  and Massachusetts Institute of Technology",
+                 "  and Massachusetts Institute of Technology\n"
+                 "JANPA 2.01, https://janpa.sourceforge.net/\n"
+                 "  Copyright (C) 2014, Tymofii Nikolaienko",
                  gRubyVersion, gRubyCopyright);
 
     }
