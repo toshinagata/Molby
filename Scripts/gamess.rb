@@ -1659,7 +1659,13 @@ class Molecule
     cmd3 = ["java", "-jar", "#{janpa_dir}/janpa.jar", "-i", "#{inppath}.in.molden"]
     ["nao", "pnao", "aho", "lho", "lpo", "clpo"].each { |type|
       generate = (get_global_settings("psi4.#{type}").to_i != 0)
-      if type == "pnao" || type == "nao" || type == "lho"
+      if type == "nao"
+        #  NAO should be generated if AHO/LHO/PLHO/LPO/CLPO is to be generated
+        ["aho", "lho", "plho", "lpo", "clpo"].each { |type2|
+          generate ||= (get_global_settings("psi4.#{type2}").to_i != 0)
+        }
+      end
+      if type == "pnao" || type == "lho"
         #  PLHO is generated within Molby from JANPA NAO/PNAO/LHO
         generate ||= (get_global_settings("psi4.plho").to_i != 0)
       end
@@ -1954,7 +1960,7 @@ class Molecule
     end
     
     #  Basis sets Cf. https://psicode.org/psi4manual/master/basissets_tables.html#apdx-basistables
-    bset_desc = ["STO-3G", "3-21G", "6-31G", "6-31G(d)", "6-31G(d,p)", "6-311G", "6-311G(d)", "6-311G(d,p)", "LanL2DZ"]
+    bset_desc = ["STO-3G", "3-21G", "6-31G", "6-31G(d)", "6-31G(d,p)", "6-311G", "6-311G(d)", "6-311G(d,p)"]
     dfttype_desc = ["B3LYP"]
     runtype_desc = ["Energy", "Optimize"]
     scftype_desc = ["RHF", "ROHF", "UHF"]

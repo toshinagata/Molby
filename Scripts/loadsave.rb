@@ -820,7 +820,7 @@ class Molecule
       m2name_p = {0=>"x", 1=>"y", -1=>"z"}
       m2name_d = {0=>"zz-rr", 1=>"xz", -1=>"yz", 2=>"xx-yy", -2=>"xy"}
       m2name_f = {0=>"z3-zr2", 1=>"xz2-xr2", -1=>"yz2-yr2", 2=>"x2z-y2z", -2=>"xyz", 3=>"x3-xy2", -3=>"x2y-y3"}
-      m2name_g = {0=>"z4-z2r2+r4", 1=>"xz3-xzr2", -1=>"yz3-yzr2", 2=>"(x2-y2)(z2-r2)", -2=>"xyz2-xyr2", 3=>"x3z-xy2z", -3=>"x2yz-y3z", 4=>"x4-x2y2+y4", -4=>"x3y-xy3"}
+      m2name_g = {0=>"z4-z2r2+r4", 1=>"xz3-xzr2", -1=>"yz3-yzr2", 2=>"x2z2-y2z2", -2=>"xyz2-xyr2", 3=>"x3z-xy2z", -3=>"x2yz-y3z", 4=>"x4-x2y2+y4", -4=>"x3y-xy3"}
       fp = File.open(inppath + ".janpa.log", "rt") rescue fp = nil
       if fp == nil
         hide_progress_panel  #  Close if it is open
@@ -861,16 +861,27 @@ class Molecule
             end
           end
         elsif line =~ /^NAO \#/
-          h["NAO"] = []
+          h["NAO"] = []  #  [num, anum, occupied_p, group_num, orb_desc, occ, principle*10+orb, shelltype]
+          # num: NAO index (0-based), anum: atom index (0-based),
+          # occupied_p: true if marked occupied by JANPA
+          # group_num: NAO group number (same for same atom, same principle, same orbital type)
+          # orb_desc: like "s", "px|py|pz", "dxy|dyz|dzx|dx2-y2|dz2-r2", etc.
+          # occ: occupancy
+          # principle: principle number (calculated later from group_num)
+          # orb: 0:s, 1:p, 2:d, 3:f, 4:g
+          # shelltype: 0: core, 1: valence, 2: rydberg
+          nao_infos = []  #  nao_infos[atom_index] = {orb_desc=>[[nao0, occ0], [nao1, occ1] ...]}
+          # orb_desc: same as above
+          # nao, occ: nao index (0-based) and occupancy
           while line = getline.call
             break if line !~ /^\s*[1-9]/
-            num = Integer(line[0, 5])
+            num = Integer(line[0, 5]) - 1
             name = line[5, 21]
             occ = Float(line[26, 11])
             #  like A1*: R1*s(0)
             #  atom_number, occupied?, group_number, orb_sym, angular_number
             name =~ /\s*[A-Z]+([0-9]+)(\*?):\s* R([0-9]+)\*([a-z]+)\(([-0-9]+)\)/
-            anum = Integer($1)
+            anum = Integer($1) - 1
             occupied = $2
             group_num = Integer($3)
             orb_sym = $4
@@ -885,55 +896,55 @@ class Molecule
             elsif orb_desc == "g"
               orb_desc += m2name_g[ang_num]
             end
-            h["NAO"].push([num, anum, occupied, group_num, orb_desc, occ])
+            h["NAO"].push([num, anum, occupied, group_num, orb_desc, occ, nil, nil])
             nao_num = h["NAO"].length
-            ((nao_infos[anum - 1] ||= Hash.new)[orb_desc] ||= []).unshift([nao_num, occ])
+            ((nao_infos[anum] ||= Hash.new)[orb_desc] ||= []).unshift([num, occ])
           end
-          #  Create labels and reorder
-          #  h["NAOold2new"][i] = j, h["NAOnew2old"][j] = i
-          #  where i is the original NAO number, and j is reordered NAO number (0-based)
-          #  NAOs are ordered by (1) atom, (2) principle, (3) orbital, (4) original index
-          h["NAO_L"] = []
-          reorder = []
+          nao_num = h["NAO"].length
+          #  Set principle from nao_infos
+          val_occ = []  #  val_occ[atom_index][principle*10+orb] = (0: core, 1: valence, 2: ryd)
           nao_infos.each_with_index { |value, atom_index|
-            aname = self.atoms[atom_index].name
+            val_occ[atom_index] ||= []
             value.each { |orb_desc, ar|
-              ar.each_with_index { |v, group_index|
+              ar.each_with_index { |v, idx|
                 if v[1] > 1.9
-                  label = "core"
+                  val = 0  #  lp
                 elsif v[1] > 0.01
-                  label = "val"
+                  val = 1  #  valence
                 else
-                  label = "ryd"
+                  val = 2  #  ryd
                 end
-                principle = group_index + 1
+                principle = idx + 1
                 orb_sym = orb_desc[0]
                 orb = 0
                 if orb_sym == "p"
-                  principle += 1
                   orb = 1
                 elsif orb_sym == "d"
-                  principle += 2
                   orb = 2
                 elsif orb_sym == "f"
-                  principle += 3
                   orb = 3
                 elsif orb_sym == "g"
-                  principle += 4
                   orb = 4
                 end
-                h["NAO_L"][v[0] - 1] = "#{aname} (#{principle}#{orb_desc}) (#{label}, \##{v[0]})"
-                reorder[v[0] - 1] = [atom_index, principle, orb, v[0] - 1]
+                principle += orb
+                po = principle * 10 + orb
+                val1 = val_occ[atom_index][po]
+                if val1 == nil
+                  val_occ[atom_index][po] = val
+                elsif val1 != val
+                  val_occ[atom_index][po] = 1  #  core & val, core & ryd or val & ryd
+                else
+                  #  If all orbitals in the shell are "lp", then the shell should be core.
+                  #  If all orbitals in the shell are "ryd", then the shell should be ryd.
+                  #  Otherwise, the shell is valence.
+                end
+                h["NAO"][v[0]][6] = po
               }
             }
           }
-          reorder = reorder.sort { |a, b| a[0] != b[0] ? a[0] <=> b[0] : (a[1] != b[1] ? a[1] <=> b[1] : (a[2] != b[2] ? a[2] <=> b[2] : a[3] <=> b[3])) }
-          h["NAOnew2old"] = []
-          h["NAOold2new"] = []
-          reorder.each_with_index { |a, i|
-            j = a[3]
-            h["NAOnew2old"][i] = j
-            h["NAOold2new"][j] = i
+          nao_num.times { |nao_index|
+            nao = h["NAO"][nao_index]
+            nao[7] = val_occ[nao[1]][nao[6]]  #  shell type
           }
         elsif line =~ /^\s*(C?)LPO\s+D e s c r i p t i o n\s+Occupancy\s+Composition/
           if $1 == "C"
@@ -941,12 +952,18 @@ class Molecule
           else
             key = "LPO"
           end
-          h[key] = []
-          reorder = []
-          reorder_h = []  #  Reorder of LHO (for key == "CLPO")
+          h[key] = []  #  [[a1, a2], LP|BD|NB, desc, occ, [h1, h2], lpo_idx, nao_idx]
+                       # a1, a2: atom indices (0-based), h1, h2: hybrid indices (0-based)
+                       # lpo_idx: orbital index (0-based)
+                       # nao_idx: most significant nao (set later)
+          if key == "CLPO"
+            h["LHO"] = []  # [[a1, a2], lho_idx, nao_idx]
+                           # a1, a2: atom indices (0-based)
+                           # nao_idx: most significant nao (set later)
+          end
           while line = getline.call
             break if line =~ /^\s*$/
-            num = Integer(line[0, 5])
+            num = Integer(line[0, 5]) - 1
             label1 = line[5, 6].strip
             desc = line[11, 30].strip
             occ = line[41, 11].strip
@@ -960,91 +977,31 @@ class Molecule
             end
             label1.gsub!(/[\(\)]/, "")  #  Strip parens
             atoms = desc1.scan(/[A-Za-z]+(\d+)/)   # "C1-H3" -> [["1"], ["3"]]
-            atoms = atoms.map { |a| Integer(a[0]) }  # [1, 3]
+            atoms = atoms.map { |a| Integer(a[0]) - 1 }  # [0, 2]
             hybrids_a = comp.scan(/h(\d+)@[A-Za-z]+(\d+)/)  #  "h8@C1...h13@H3" -> "[["8", "1"], ["13", "3"]]
             hybrids = []
             hybrids_a.each { |a|
-              i = atoms.find_index(Integer(a[1]))
+              i = atoms.find_index(Integer(a[1]) - 1)
               if i != nil
-                hybrids[i] = Integer(a[0])
+                hybrids[i] = Integer(a[0]) - 1
               end
-            } # [8, 13]
-            #  like ["BD", [1, 3], "Io = 0.2237", occ, [8, 13]]
-            #  1, 3 are the atom indices (1-based)
-            #  8, 13 are the number of hybrid orbitals (1-based)
-            h[key][num - 1] = [label1, atoms, desc2, Float(occ), hybrids]
-          end
-          h[key + "_L"] = []
-          if key == "CLPO"
-            #  Also register labels of "LHO"
-            h["LHO_L"] = [""] * nao_num
-          end
-          nao_num.times { |i|
-            val = h[key][i]
-            r = [100, nil, nil, i]  #  reorder elements
-            rh = []                 #  reorder elements for LHOs
-            if val == nil
-              label = ""  #  The labels for Rydberg orbitals may be replaced later
-              r[0] = 100   #  Rydberg orbitals are sorted in the back
-            else
-              aname1 = self.atoms[val[1][0] - 1].name rescue aname1 = ""
-              aname2 = self.atoms[val[1][1] - 1].name rescue aname2 = ""
-              if aname2 == ""
-                label = "#{aname1} (#{val[0]}, \##{i + 1})"
-              else
-                label = "#{aname1}(#{aname2}) (#{val[0]}, \##{i + 1})"
-              end
-              r[0] = (val[0] == "LP" ? 1 : (val[0] == "BD" ? 2 : 3))
-              r[1] = val[1][0]
-              r[2] = val[1][1] or -1
-            end
-            h[key + "_L"][i] = label
-            reorder[i] = r
-            if key == "CLPO" && val != nil && val[0] != "NB"
-              hybrids = val[4]
-              kind = (val[0] == "BD" ? "val" : "lp")
-              rh[0] = (val[0] == "BD" ? 2 : 1)
-              rh[1] = val[1][0]
-              rh[2] = val[1][1] or -1
-              if aname2 == ""
-                label = "#{aname1} (#{kind}, \##{hybrids[0]})"
-              else
-                label = "#{aname1}(#{aname2}) (#{kind}, \##{hybrids[0]})"
-              end
-              h["LHO_L"][hybrids[0] - 1] = label
-              rh[3] = hybrids[0] - 1
-              reorder_h[hybrids[0] - 1] = rh
-              if hybrids[1] != nil
-                #  aname2 should be non-empty
-                label = "#{aname2}(#{aname1}) (#{kind}, \##{hybrids[1]})"
-                h["LHO_L"][hybrids[1] - 1] = label
-                reorder_h[hybrids[1] - 1] = [rh[0], rh[2], rh[1], hybrids[1] - 1]
+            } # [7, 12]
+            #  like ["BD", [0, 2], "Io = 0.2237", occ, [7, 12]]
+            #  0, 2 are the atom indices (0-based)
+            #  7, 12 are the number of hybrid orbitals (0-based)
+            h[key][num] = [atoms, label1, desc2, Float(occ), hybrids, num]
+            if key == "CLPO"
+              h["LHO"][hybrids[0]] = [atoms, hybrids[0]]
+              if hybrids[1]
+                h["LHO"][hybrids[1]] = [atoms.reverse, hybrids[1]]
               end
             end
-          }
-          reorder = reorder.sort { |a, b| a[0] != b[0] ? a[0] <=> b[0] : (a[1] != b[1] ? a[1] <=> b[1] : (a[2] != b[2] ? a[2] <=> b[2] : a[3] <=> b[3])) }
-          h[key + "new2old"] = []
-          h[key + "old2new"] = []
-          reorder.each_with_index { |a, i|
-            j = a[3]
-            h[key + "new2old"][i] = j
-            h[key + "old2new"][j] = i
-          }
-          if key == "CLPO"
-            nao_num.times { |i|
-              if reorder_h[i] == nil
-                reorder_h[i] = [100, 0, 0, i]
-              end
-            }
-            reorder_h = reorder_h.sort { |a, b| a[0] != b[0] ? a[0] <=> b[0] : (a[1] != b[1] ? a[1] <=> b[1] : (a[2] != b[2] ? a[2] <=> b[2] : a[3] <=> b[3])) }
-            h["LHOnew2old"] = []
-            h["LHOold2new"] = []
-            reorder_h.each_with_index { |a, i|
-              j = a[3]
-              h["LHOnew2old"][i] = j
-              h["LHOold2new"][j] = i
-            }
           end
+          nao_num.times { |idx|
+            if h[key][idx] == nil
+              h[key][idx] = [nil, nil, nil, nil, nil, idx]
+            end
+          }
         elsif line =~ /^ -NAO_Molden_File: (\S*)/
           mfiles["NAO"] = $1
         elsif line =~ /^ -LHO_Molden_File: (\S*)/
@@ -1060,79 +1017,173 @@ class Molecule
         end
       end
       fp.close
+
       #  Read molden files
+      keys = []
       mfiles.each { |key, value|
         fp = Kernel.open(value, "rt") rescue fp = nil
         if fp
           print("Importing #{value}.\n")
           res = sub_load_molden(fp, key)
           if res
-            #  Some kind of orbital based on AO
-            #  Reorder the orbitals and labels
-            if key == "NAO" || key == "PNAO"
-              old2new = h["NAOold2new"]
-            elsif key == "LPO"
-              old2new = h["LPOold2new"]
-            elsif key == "CLPO"
-              old2new = h["CLPOold2new"]
-            elsif key == "AHO" || key == "LHO"
-              old2new = h["LHOold2new"]
-            end
-            if old2new
-              mo = []
-              nao_num.times { |i|
-                mo[old2new[i]] = res[:mo][i]
-              }
-              res[:mo] = mo
-              if h[key + "_L"]
-                labels = h[key + "_L"]
-                newlabels = []
-                nao_num.times { |i|
-                  newlabels[old2new[i]] = labels[i]
-                }
-                h[key + "_L"] = newlabels
-              end
-            end
-            h["AO/#{key}"] = LAMatrix.new(res[:mo])
+            #  Temporarily assign: this array will be reordered later and converted to LAMatrix
+            h["AO/#{key}"] = res[:mo]
+            #h["AO/#{key}"] = LAMatrix.new(res[:mo])
           end
           fp.close
-          if key == "CLPO" || key == "LPO" || key == "LHO"
-            #  Set the label of Rydberg orbitals if possible
-            if h[key + "_L"] != nil
-              a = h["AO/#{key}"]
-              new2old = h[key + "new2old"]
+          keys.push(key)
+        end
+      }
+
+      #  Reorder orbitals
+      natoms = self.natoms
+      keys.each { |key|
+        if key == "NAO"
+          # [num, anum, occupied_p, group_num, orb_desc, occ, principle*10+orb, shelltype]
+          # reorder by (1) anum and shelltype (core/val first, ryd later),
+          # (2) principle*10+orb, (3) num
+          reorder = []
+          h["NAO"].each { |nao|
+            if nao[7] == 2
+              r = (nao[1] + natoms) * 3 + 2
+            else
+              r = nao[1] * 3 + nao[7]
+            end
+            r = r * 100 + nao[6]
+            r = r * nao_num + nao[0]
+            reorder.push(r)
+          }
+          h["NAOnew2old"] = (0...nao_num).to_a.sort { |a, b| reorder[a] <=> reorder[b] }
+          h["NAOold2new"] = []
+          h["NAOnew2old"].each_with_index { |i, j|
+            h["NAOold2new"][i] = j
+          }
+        else
+          #  LPO, CLPO: [[a1, a2], LP|BD|NB, desc, occ, [h1, h2], lpo_idx, nao_idx, shelltype]
+          #  LHO: [[a1, a2], lho_idx, nao_idx, shelltype]
+          if h[key]
+            #  Set the most significant nao
+            mo = LAMatrix.new(h["AO/NAO"]).inverse * LAMatrix.new(h["AO/#{key}"])
+            pos = (key == "LHO" ? 2 : 6)  #  position of nao_idx (new index)
+            nao_num.times { |o_idx|
+              o = (h[key][o_idx] ||= [])
+              if o[pos - 1] == nil
+                o[pos - 1] = o_idx  #  Original index
+              end
+              #  Find the NAO that has the largest contribution to this hybrid orbital
+              a_max = -1
+              i_max = nil
               nao_num.times { |i|
-                label = h[key + "_L"][i]
-                if label == ""
-                  #  Sum for all orbitals belonging to each atom
-                  #  and look for the 'most significant' atom
-                  max_idx = nil
-                  max_val = -1.0
-                  old2new = h["NAOold2new"]
-                  nao_infos.each_with_index { |inf, atom_index|
-                    atomic_contrib = 0.0
-                    inf.each { |k, v| # k is "s", "px" etc, v is array of [nao_num, occupancy]
-                      #  Sum for all naos belonging to this atom
-                      v.each { |num_occ|
-                        n = num_occ[0] - 1
-                        n = old2new[n] if old2new
-                        atomic_contrib += a[i, n] ** 2
-                      }
-                    }
-                    if atomic_contrib > max_val
-                      max_val = atomic_contrib
-                      max_idx = atom_index
-                    end
-                  }
-                  j = (new2old ? new2old[i] : i)
-                  label = self.atoms[max_idx].name + " (ryd, \##{j + 1})"
-                  h[key + "_L"][i] = label
+                a = mo[o_idx, i] ** 2
+                if a > a_max
+                  i_max = i
+                  a_max = a
                 end
               }
-            end
+              o[pos] = h["NAOold2new"][i_max]  #  new index
+              o[pos + 1] = h["NAO"][i_max][7]  #  0:core, 1:val, 2:ryd
+              if o[0] == nil
+                #  Set the atom which has the most significant NAO
+                o[0] = [h["NAO"][i_max][1]]
+              end
+            }
+            reorder = []
+            h[key].each_with_index { |o, o_idx|
+              #  Reorder by (1) atom and shelltype (core first, val second, ryd later),
+              #  if LP|BD|NB is present, then val/LP and val/BD come earlier than val/NB
+              #  (2) second atom if present, and (3) most significant NAO index
+              if o[pos + 1] == 2
+                r = (o[0][0] + natoms) * 4 + 3
+              else
+                r = o[0][0] * 4 + o[pos + 1]
+                if o[pos + 1] == 1 && (key == "LPO" || key == "CLPO") && o[1] == "NB"
+                  r = r + 1
+                end
+              end
+              r = r * (natoms + 1) + (o[0][1] || -1) + 1  #  Second atom index + 1 (0 if none)
+              r = r * nao_num + o[pos]
+              reorder.push(r)
+            }
+            h[key + "new2old"] = (0...nao_num).to_a.sort { |a, b| reorder[a] <=> reorder[b] }
+            h[key + "old2new"] = []
+            h[key + "new2old"].each_with_index { |i, j|
+              h[key + "old2new"][i] = j
+            }
           end
         end
       }
+      #print("h[\"NAO\"] = " + h["NAO"].inspect + "\n")
+      #print("h[\"LHO\"] = " + h["LHO"].inspect + "\n")
+      #print("h[\"LPO\"] = " + h["LPO"].inspect + "\n")
+      #print("h[\"CLPO\"] = " + h["CLPO"].inspect + "\n")
+
+      #  Do reorder and make matrices
+      keys.each { |key|
+        if key == "NAO" || key == "PNAO"
+          old2new = h["NAOold2new"]
+        elsif key == "LPO"
+          old2new = h["LPOold2new"]
+        elsif key == "CLPO"
+          old2new = h["CLPOold2new"]
+        elsif key == "AHO" || key == "LHO"
+          old2new = h["LHOold2new"]
+        end
+        if old2new
+          mo = []
+          nao_num.times { |i|
+            mo[old2new[i]] = h["AO/" + key][i]
+          }
+          h["AO/" + key] = mo
+        end
+        h["AO/" + key] = LAMatrix.new(h["AO/" + key])
+      }
+      
+      #  Create labels
+      keys.each { |key|
+        old2new = h[key + "old2new"]
+        if key == "NAO"
+          h["NAO_L"] = []
+          nao_num.times { |nao_idx|
+            # [num, anum, occupied_p, group_num, orb_desc, occ, principle*10+orb, shelltype]
+            nao = h["NAO"][nao_idx]
+            aname = self.atoms[nao[1]].name
+            orb_desc = nao[4]
+            principle = nao[6] / 10
+            shell = ["core", "val", "ryd"][nao[7]]
+            j = (old2new ? old2new[nao_idx] : nao_idx)
+            h["NAO_L"][j] = "#{aname} (#{principle}#{orb_desc}) (#{shell}, \##{nao_idx + 1})"
+          }
+        elsif key == "LHO"
+          h["LHO_L"] = []
+          nao_num.times { |lho_idx|
+            # [[a1, a2], lho_idx, nao_idx, shelltype]
+            lho = h["LHO"][lho_idx]
+            aname1 = self.atoms[lho[0][0]].name
+            aname2 = ("(" + self.atoms[lho[0][1]].name + ")") rescue ""
+            shell = ["core", "val", "ryd"][lho[3]]
+            j = (old2new ? old2new[lho_idx] : lho_idx)
+            h["LHO_L"][j] = "#{aname1}#{aname2} (#{shell}, \##{lho_idx + 1})"
+          }
+        elsif key == "LPO" || key == "CLPO"
+          h[key + "_L"] = []
+          nao_num.times { |key_idx|
+            # [[a1, a2], LP|BD|NB, desc, occ, [h1, h2], lpo_idx, nao_idx, shelltype]
+            o = h[key][key_idx]
+            aname1 = self.atoms[o[0][0]].name
+            aname2 = ("-" + self.atoms[o[0][1]].name) rescue ""
+            type = o[1]
+            shelltype = o[7]
+            if shelltype == 2
+              type = "RY"  #  Rydberg
+            elsif type == "LP" && shelltype == 0
+              type = "CR"  #  core
+            end
+            j = (old2new ? old2new[key_idx] : key_idx)
+            h[key + "_L"][j] = "#{aname1}#{aname2} (#{type}, \##{key_idx + 1})"
+          }
+        end
+      }
+      
       @nbo = h
       if @nbo["AO/NAO"] && @nbo["AO/LHO"] && @nbo["AO/PNAO"]
         #  Generate PLHO from PNAO, NAO, LHO
@@ -1149,31 +1200,6 @@ class Molecule
       if @nbo["AO/AHO"] && @nbo["LHO_L"]
         #  Copy labels from LHO
         @nbo["AHO_L"] = @nbo["LHO_L"].dup
-      end
-      if @nbo["AO/NAO"] && @nbo["NAO_L"]
-        #  Make distinction between "LP" and "core" orbitals
-        ["AHO", "LHO", "LPO", "CLPO"].each { |key|
-          next if !@nbo["AO/" + key] || !@nbo[key + "_L"]
-          nao2key = @nbo["AO/NAO"].inverse * @nbo["AO/" + key]
-          @nbo[key + "_L"].each_with_index { |label, index|
-            if label =~ /\(((LP)|(lp)),/
-              max_val = -1
-              max_idx = nil
-              nao_num.times { |idx|
-                w = nao2key[index, idx] ** 2
-                if w > max_val
-                  max_val = w
-                  max_idx = idx
-                end
-              }
-              nao_label = @nbo["NAO_L"][max_idx]
-              if nao_label =~ /\(core,/
-                label.gsub!(/\(((LP)|(lp)),/, "(core,")
-                @nbo[key + "_L"][index] = label
-              end
-            end
-          }
-        }
       end
       return true
     rescue => e

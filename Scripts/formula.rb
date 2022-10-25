@@ -310,6 +310,16 @@ class Molecule
 	  if key != nil
 	    f = known_fragment(key)
 		idx += key.length
+      else
+        if s =~ /^([A-Z][a-z]?)/
+          key = $1
+          if Parameter.builtin.element(key)
+            f = Molecule.new
+            f.add_atom(key, "", key)
+            idx += key.length
+            return f, idx
+          end
+        end
 	  end
 	  if f == nil
 	    ss = str[0..idx - 1] + "<?>" + str[idx..-1]

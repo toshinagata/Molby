@@ -609,7 +609,7 @@ class Molecule
 		  mo_index = mo
       occ_new = occ
       if mo_menu[mo]
-        if mo_menu[mo] =~ /(\(ryd?)|(\(NB)|(\*)/
+        if mo_menu[mo] =~ /(\(ryd)|(\(RY)|(\(NB)|(\*)/
           occ_new = 0
         else
           occ_new = 1
@@ -715,7 +715,7 @@ class Molecule
     #  MO is not allowed as basis, so the "basis" menu begins with "AO"
     layout(2,
            item(:text, :title=>"Coeffs based on:"),
-           item(:popup, :tag=>"basis", :subitems=>mo_ao_keys[1..-1], :value=>1, :action=>on_basis_action)),
+           item(:popup, :tag=>"basis", :subitems=>mo_ao_keys[1..-1], :value=>0, :action=>on_basis_action)),
     item(:table, :width=>380, :height=>300, :tag=>"table",
 		  :columns=>[["Atom", 40], ["Name", 60], ["Label", 140], ["Coeff", 120]],
 		  :on_count=> lambda { |it| ncomps },
