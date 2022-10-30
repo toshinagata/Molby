@@ -258,6 +258,7 @@ typedef struct MCubePoint {
 	
 typedef struct MCube {
 	char hidden;         /*  If non-zero, then this MCube is not drawn  */
+    char showbox;       /*  If non-zero, then show the boundary box  */
 	Int idn;             /*  MO number  */
 	Vector origin;       /*  Cube origin */
 	Double dx, dy, dz;   /*  Cube steps */

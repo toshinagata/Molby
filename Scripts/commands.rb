@@ -366,7 +366,7 @@ class Molecule
     surface_dialog_attr = @surface_dialog_attr
     mol = self
 	mol.open_auxiliary_window("MO Surface", :resizable=>true, :has_close_box=>true) {
-	  tags = ["mo_ao", "mo", "color", "opacity", "threshold", "expand", "grid", "reverse", "basis"]
+	  tags = ["mo_ao", "mo", "color", "opacity", "threshold", "expand", "grid", "showbox", "reverse", "basis"]
 	  motype = mol.get_mo_info(:type)
 	  alpha = mol.get_mo_info(:alpha)
 	  beta = mol.get_mo_info(:beta)
@@ -563,15 +563,18 @@ class Molecule
 		  color0 = [1,1,1,opac]
 		  mol.set_surface_attr(:color=>color, :color0=>color0)
 		  h[tag] = value
-    elsif tag == "threshold" || tag == "reverse"
-      thres = item_with_tag("threshold")[:value].to_f
+        elsif tag == "threshold" || tag == "reverse"
+          thres = item_with_tag("threshold")[:value].to_f
 		  thres = 0.001 if thres >= 0.0 && thres < 0.001
 		  thres = -0.001 if thres <= 0.0 && thres > -0.001
-      if item_with_tag("reverse")[:value] == 1
-        thres = -thres
-      end
+          if item_with_tag("reverse")[:value] == 1
+            thres = -thres
+          end
 		  mol.set_surface_attr(:thres=>thres)
 		  h[tag] = value
+        elsif tag == "showbox"
+          mol.set_surface_attr(:showbox=>value.to_i)
+          h[tag] = value
 		else
 	      should_update = false
 	      h.each_key { |key|
@@ -704,13 +707,15 @@ class Molecule
 		  item(:textfield, :tag=>"opacity", :width=>80, :value=>"0.8", :action=>on_action),
 		  item(:text, :title=>"Threshold"),
 		  item(:textfield, :tag=>"threshold", :width=>80, :value=>"0.05", :action=>on_action),
-      item(:checkbox, :tag=>"reverse", :title=>"Reverse Phase", :action=>on_action),
-      -1),
+          item(:checkbox, :tag=>"reverse", :title=>"Reverse Phase", :action=>on_action),
+          -1),
 		layout(4,
 		  item(:text, :title=>"Number of Grid Points"),
 		  item(:textfield, :tag=>"grid", :width=>80, :value=>"512000", :action=>on_action),
-      item(:text, :title=>"Box Limit"),
-      item(:textfield, :tag=>"expand", :width=>80, :value=>"1.4", :action=>on_action)),
+          item(:text, :title=>"Expand box"),
+          item(:textfield, :tag=>"expand", :width=>80, :value=>"1.0", :action=>on_action),
+          item(:checkbox, :tag=>"showbox", :title=>"Show box", :action=>on_action),
+          -1, -1, -1),
     #  table coefficients are based on "basis" (AO, NAO, etc.)
     #  MO is not allowed as basis, so the "basis" menu begins with "AO"
     layout(2,

@@ -1739,6 +1739,53 @@ drawUnitCell(MainView *mview)
 	enableLighting();
 }
 
+/*  For debugging surface view  */
+static void
+drawCubeBoundary(MainView *mview)
+{
+    MCube *mc;
+    GLfloat ox, oy, oz;
+    GLfloat px, py, pz;
+    if ((mc = mview->mol->mcube) == NULL || mc->showbox == 0)
+        return;
+    ox = mc->origin.x;
+    oy = mc->origin.y;
+    oz = mc->origin.z;
+    px = ox + mc->dx * mc->nx;
+    py = oy + mc->dy * mc->ny;
+    pz = oz + mc->dz * mc->nz;
+    glDisable(GL_LIGHTING);
+    glColor3f(0.0, 0.5, 0.75);
+    glBegin(GL_LINES);
+    glVertex3f(ox, oy, oz);
+    glVertex3f(px, oy, oz);
+    glVertex3f(ox, oy, oz);
+    glVertex3f(ox, py, oz);
+    glVertex3f(ox, oy, oz);
+    glVertex3f(ox, oy, pz);
+    glVertex3f(px, oy, oz);
+    glVertex3f(px, py, oz);
+    glVertex3f(px, oy, oz);
+    glVertex3f(px, oy, pz);
+    glVertex3f(ox, py, oz);
+    glVertex3f(px, py, oz);
+    glVertex3f(ox, py, oz);
+    glVertex3f(ox, py, pz);
+    glVertex3f(ox, oy, pz);
+    glVertex3f(px, oy, pz);
+    glVertex3f(ox, oy, pz);
+    glVertex3f(ox, py, pz);
+    glVertex3f(px, py, oz);
+    glVertex3f(px, py, pz);
+    glVertex3f(px, oy, pz);
+    glVertex3f(px, py, pz);
+    glVertex3f(ox, py, pz);
+    glVertex3f(px, py, pz);
+    glEnd();
+    
+    enableLighting();
+}
+
 static void
 drawRotationCenter(MainView *mview)
 {
@@ -1962,6 +2009,7 @@ MainView_drawModel(MainView *mview)
     drawModel(mview);
 	drawSurface(mview);
 	drawUnitCell(mview);
+    drawCubeBoundary(mview);
 	drawRotationCenter(mview);
 	drawGraphics(mview);
 	

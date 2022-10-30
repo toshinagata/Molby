@@ -10530,6 +10530,7 @@ s_Molecule_ShowSurface(VALUE self)
  *    :npoints : the approximate number of grid points
  *    :expand  : the scale factor to expand/shrink the display box size for each atom,
  *    :thres   : the threshold for the isovalue surface
+ *    :showbox : 0 (hide) or 1 (show) the boundary box
  *  If the molecule does not contain MO information, raises exception.
  */
 static VALUE
@@ -10538,6 +10539,7 @@ s_Molecule_CreateSurface(int argc, VALUE *argv, VALUE self)
     Molecule *mol;
 	Vector o, dx, dy, dz;
 	Int nmo, nx, ny, nz, i;
+    Int showbox = 0;
 	Int need_recalc = 0;
 	VALUE nval, hval, aval;
 	Int npoints;
@@ -10575,6 +10577,11 @@ s_Molecule_CreateSurface(int argc, VALUE *argv, VALUE self)
 	} else if (mol->mcube != NULL) {
 		thres = mol->mcube->thres;
 	} else thres = 0.05;
+    if (hval != Qnil && (aval = rb_hash_aref(hval, ID2SYM(rb_intern("showbox")))) != Qnil) {
+        showbox = (NUM2INT(rb_Integer(aval)) != 0);
+    } else if (mol->mcube != NULL) {
+        showbox = mol->mcube->showbox;
+    } else showbox = 0;
 	if (mol->mcube == NULL || npoints != mol->mcube->nx * mol->mcube->ny * mol->mcube->nz) {
 		if (MoleculeGetDefaultMOGrid(mol, npoints, &o, &dx, &dy, &dz, &nx, &ny, &nz) != 0)
 			rb_raise(rb_eMolbyError, "Cannot get default grid size (internal error?)");
@@ -10604,6 +10611,7 @@ s_Molecule_CreateSurface(int argc, VALUE *argv, VALUE self)
 		need_recalc = 1;
 	mol->mcube->thres = thres;
 	mol->mcube->expand = expand;
+    mol->mcube->showbox = showbox;
 	if (nmo < 0) {
 		if (mol->mcube->idn < 0)
 			return self;  /*  Only set attributes for now  */

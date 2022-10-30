@@ -11516,7 +11516,7 @@ sCalcMOPoint(Molecule *mp, const BasisSet *bset, Int index, const Vector *vp, Do
 				y *= mop[2] * tmpp[1];
 				z *= mop[3] * tmpp[2];
 				val += t + x + y + z;
-				break;
+                break;
 			}
 			case kGTOType_D: {
 				Double xx, yy, zz, xy, xz, yz;
@@ -11552,6 +11552,11 @@ sCalcMOPoint(Molecule *mp, const BasisSet *bset, Int index, const Vector *vp, Do
 					d2n += *cnp++ * tval;
 					pp++;
 				}
+                // D(0): GNC(2,a,n) * (1/2) * (3zz-rr) * r^n * exp(-a*r^2)
+                // D(+1): GNC(2,a,n) * sqrt(3) * xz * r^n * exp(-a*r^2)
+                // D(-1): GNC(2,a,n) * sqrt(3) * yz * r^n * exp(-a*r^2)
+                // D(+2): GNC(2,a,n) * (sqrt(3)/2) * (xx-yy) * r^n * exp(-a*r^2)
+                // D(-2): GNC(2,a,n) * sqrt(3) * xy * r^n * exp(-a*r^2)
 				d0 *= mop[0] * (3 * tmpp[2] * tmpp[2] - tmpp[3]);
 				d1p *= mop[1] * tmpp[0] * tmpp[2];
 				d1n *= mop[2] * tmpp[1] * tmpp[2];
@@ -12257,13 +12262,27 @@ static int sMarchingCubeTable[256][16] = {
 	{-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1}
 };
 
+/*  When estimating the boundary box of the orbital, the MO values are calculated
+    from radial distance only, ignoring the angular part. This may lead to too small
+    value for spherical basis set, because the real MO calculation assumes expression
+    like (3zz-rr) * r^n * exp(-a*r^2) (for D(0)). In this case, the angular part is
+    (3zz-rr)/rr, which can take a maximum value of 2.0 instead of 1.0. So, we need to
+    set a multiplication factor for spherical orbitals to account for this problem. */
+/*  [0][]: D5, [1][]: F7, [2][]: G9  */
+/*  See sCalcMOPoint() for representation of each spherical orbitals  */
+static double sMultiplyFactors[3][10] = {
+    { 2.0, 1.0, 1.0, 1.0, 1.0 },
+    { 2.0, 4.0, 4.0, 1.0, 1.0, 2.0, 2.0 },
+    { 8.0, 4.0, 4.0, 6.0, 6.0, 2.0, 2.0, 4.0, 1.0 }
+};
+
 /*  Recalculate the MCube  */
 /*  If idn < 0, then the current grid settings and values are unchanged, and */
 /*  only the marching cubes are regenerated.  */
 int
 MoleculeUpdateMCube(Molecule *mol, int idn)
 {
-	Int retval, step, sn;
+    Int retval, step, sn, mocount;
 	Int n, ix, iy, iz, nx, ny, nz;
 	Int nn, iix, iiy, iiz;
 	Int ncubepoints, c1, c2, c3;
@@ -12288,6 +12307,8 @@ MoleculeUpdateMCube(Molecule *mol, int idn)
 		ShellInfo *sp;
 		Double *mobasep, *mop, mopmax;
 		Double xmin, xmax, ymin, ymax, zmin, zmax;
+        Double thres, rthres;
+        Int k;
 		/*  Clear mcube values  */
 		for (ix = 0; ix < mc->nx * mc->ny * mc->nz; ix++) {
 			mc->dp[ix] = DBL_MAX;
@@ -12300,57 +12321,155 @@ MoleculeUpdateMCube(Molecule *mol, int idn)
 		if (mc->radii == NULL)
 			return -2;  /*  Out of memory  */
 		mc->nradii = mol->natoms;
-		if (mc->idn == mol->bset->nmos + 1) {
-			/*  Total electron density  */
-			for (ix = 0; ix < mol->natoms; ix++)
-				mc->radii[ix] = 1.0;
-			mopmax = 1.0;
-		} else {
-			memset(mc->radii, 0, sizeof(Double) * mc->nradii);
-			mobasep = mol->bset->mo + (mc->idn == 0 ? mol->bset->nmos : mc->idn - 1) * mol->bset->ncomps;
-			mopmax = 0.0;
-			for (ix = 0, sp = mol->bset->shells; ix < mol->bset->nshells; ix++, sp++) {
-				if (sp->a_idx >= mol->natoms)
-					continue;  /*  This may happen when molecule is edited after setting up MO info  */
-				mop = mobasep + sp->m_idx;
-				for (iy = 0; iy < sp->ncomp; iy++) {
-					dd = fabs(mop[iy]);
-					if (dd > mc->radii[sp->a_idx])
-						mc->radii[sp->a_idx] = dd;
-					if (dd > mopmax)
-						mopmax = dd;
-				}
-			}
-		}
-		xmin = ymin = zmin = 1e10;
-		xmax = ymax = zmax = -1e10;
-		for (ix = 0, ap = mol->atoms; ix < mol->natoms; ix++, ap = ATOM_NEXT(ap)) {
-			dd = RadiusForAtomicNumber(ap->atomicNumber);
-			dd = (dd * 2.0 + 1.0) * (mc->radii[ix] / mopmax) * (mc->expand > 0.0 ? mc->expand : 1.0);
-			mc->radii[ix] = dd;
-			p = ap->r;
-			dd += 0.1;
-			if (p.x - dd < xmin)
-				xmin = p.x - dd;
-			if (p.y - dd < ymin)
-				ymin = p.y - dd;
-			if (p.z - dd < zmin)
-				zmin = p.z - dd;
-			if (p.x + dd > xmax)
-				xmax = p.x + dd;
-			if (p.y + dd > ymax)
-				ymax = p.y + dd;
-			if (p.z + dd > zmax)
-				zmax = p.z + dd;
-		}
-		mc->origin.x = xmin;
-		mc->origin.y = ymin;
-		mc->origin.z = zmin;
-		mc->dx = (xmax - xmin) / mc->nx;
-		mc->dy = (ymax - ymin) / mc->ny;
-		mc->dz = (zmax - zmin) / mc->nz;
-	}
-	
+
+        /*  Reset the temporary array of radii  */
+        memset(mc->radii, 0, sizeof(Double) * mc->nradii);
+        /*  Base pointer for MO coefficients  */
+        mobasep = mol->bset->mo;
+        mocount = 1;  /*  Scan for only one MO, except for total density  */
+        thres = mc->thres * 0.2;  /*  Use lower threshold (for margin)  */
+        if (mc->idn == 0)
+            mobasep += mol->bset->nmos * mol->bset->ncomps;  /*  Arbitrary vector  */
+        else if (mc->idn < mol->bset->nmos + 1)
+            mobasep += (mc->idn - 1) * mol->bset->ncomps;
+        else
+            mocount = mol->bset->nmos;  /*  Total density; scan for all MO coefficients  */
+        mopmax = 0.0;
+        for (nn = 0; nn < mol->natoms; nn++) {
+            /*  Find the suitable 'box' for each atom  */
+            /*  Start from r = atomic_radius * 10, and scale r by 0.8 until fabs(p(r)) > thres */
+            /*  Then, start from r/0.8=r*1.25, and decrease r by 0.025r until fabs(p(r)) > thres */
+            Int pass = 1;
+            Double dr = 0.0;
+            Double *mp;
+            rthres = RadiusForAtomicNumber(mol->atoms[nn].atomicNumber) * 10;
+            while (1) {
+                /*  Calculate the MO value (or total density)  */
+                Double dd = 0.0;
+                for (n = 0; n < mocount; n++) {
+                    /*  Iterate over all shells, skipping those unrelated to the current atom */
+                    for (ix = 0, sp = mol->bset->shells; ix < mol->bset->nshells; ix++, sp++) {
+                        PrimInfo *pp;
+                        Double *cnp;
+                        if (sp->a_idx != nn)
+                            continue;  /*  Skip this shell  */
+                        pp = mol->bset->priminfos + sp->p_idx;
+                        cnp = mol->bset->cns + sp->cn_idx;
+                        mop = mobasep + (n * mol->bset->ncomps) + sp->m_idx;
+                        k = sp->add_exp;
+                        mp = NULL;
+                        switch (sp->sym) {
+                            case kGTOType_SP:
+                            case kGTOType_P: k += 1; break;
+                            case kGTOType_D: k += 2; break;
+                            case kGTOType_D5: k += 2; mp = sMultiplyFactors[0]; break;
+                            case kGTOType_F: k += 3; break;
+                            case kGTOType_F7: k += 3; mp = sMultiplyFactors[1]; break;
+                            case kGTOType_G: k += 4; break;
+                            case kGTOType_G9: k += 4; mp = sMultiplyFactors[2]; break;
+                        }
+                        /*  Iterate over all components and primitives */
+                        for (iy = 0; iy < sp->ncomp; iy++) {
+                            Int kk = k;
+                            Double ddd = 0.0;
+                            if (sp->sym == kGTOType_SP && iy > 0)
+                                kk++;
+                            for (iz = 0; iz < sp->nprim; iz++) {
+                                ddd += cnp[iz] * pow(rthres, kk) * exp(-pp[iz].A * rthres * rthres);
+                            }
+                            if (mp != NULL)
+                                ddd *= mp[iy];
+                            if (mc->idn == mol->bset->nmos + 1)
+                                dd += mop[iy] * mop[iy] * ddd * ddd;
+                            else
+                                dd += mop[iy] * fabs(ddd);
+                        } /* end for iy */
+                    } /* end for ix */
+                } /* end for n */
+                if (fabs(dd) > thres) {
+                    /*  End of this pass  */
+                    if (pass == 1) {
+                        dr = rthres * 0.025;
+                        rthres = rthres * 1.25;
+                    } else {
+                        if (dr < 0.01)
+                            break;
+                        rthres += dr;
+                        dr = dr / 10;
+                    }
+                    pass++;
+                    continue;
+                }
+                if (pass == 1) {
+                    rthres *= 0.8;
+                    if (rthres < 0.01) {
+                        /* The orbital value is less than thres for (almost) all r */
+                        rthres = 0.0;
+                        break;
+                    }
+                } else {
+                    rthres -= dr;
+                    if (rthres <= 0.0) {
+                        /*  This cannot happen, but just in case  */
+                        rthres = 0.0;
+                        break;
+                    }
+                }
+            } /* end while */
+            if (rthres > 0.0)
+                mc->radii[nn] = rthres * kBohr2Angstrom;
+        } /* end loop nn */
+        /*  Create box that encloses all atoms with radius mc->radii[nn] */
+        xmin = ymin = zmin = 1e10;
+        xmax = ymax = zmax = -1e10;
+        for (ix = 0, ap = mol->atoms; ix < mol->natoms; ix++, ap = ATOM_NEXT(ap)) {
+            Double atomic_rad;
+            dd = mc->radii[ix];
+            atomic_rad = RadiusForAtomicNumber(ap->atomicNumber);
+            if (dd == 0.0) {
+                mc->radii[ix] = atomic_rad;
+                continue;
+            }
+            if (atomic_rad > dd) {
+                dd = atomic_rad;
+                mc->radii[ix] = atomic_rad;
+            }
+            p = ap->r;
+            if (p.x - dd < xmin)
+                xmin = p.x - dd;
+            if (p.y - dd < ymin)
+                ymin = p.y - dd;
+            if (p.z - dd < zmin)
+                zmin = p.z - dd;
+            if (p.x + dd > xmax)
+                xmax = p.x + dd;
+            if (p.y + dd > ymax)
+                ymax = p.y + dd;
+            if (p.z + dd > zmax)
+                zmax = p.z + dd;
+        }
+        /*  Scale the box if specified so  */
+        if (mc->expand > 0.0) {
+            Double xexp, yexp, zexp;
+            xexp = (xmax - xmin) * (mc->expand - 1.0) * 0.5;
+            yexp = (ymax - ymin) * (mc->expand - 1.0) * 0.5;
+            zexp = (zmax - zmin) * (mc->expand - 1.0) * 0.5;
+            xmax += xexp;
+            xmin -= xexp;
+            ymax += yexp;
+            ymin -= yexp;
+            zmax += zexp;
+            zmin -= zexp;
+        }
+        mc->origin.x = xmin;
+        mc->origin.y = ymin;
+        mc->origin.z = zmin;
+        mc->dx = (xmax - xmin) / (mc->nx - 1);
+        mc->dy = (ymax - ymin) / (mc->ny - 1);
+        mc->dz = (zmax - zmin) / (mc->nz - 1);
+
+    }
+    
 	/*  Temporary work area  */
 	tmp = (Double *)calloc(sizeof(Double), mol->bset->natoms_bs * 4);
 	if (tmp == NULL)
