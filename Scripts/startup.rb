@@ -36,6 +36,20 @@ case RUBY_PLATFORM
 	$home_directory = ENV['HOME']
 end
 
+if $platform == "win"
+  #  Avoid unexpected error when the global setting string has bad encoding
+  module Kernel
+    alias __get_global_settings get_global_settings
+    def get_global_settings(s)
+      ss = __get_global_settings(s)
+      if ss.kind_of?(String) && ss.encoding == Encoding.find("ASCII-8BIT")
+        ss = ss.force_encoding('Shift_JIS') rescue ss.force_encoding('UTF-8') rescue ""
+      end
+      return ss
+    end
+  end
+end
+
 sdir = get_global_settings("global.scratch_dir")
 if sdir == nil || sdir == ""
   sdir = $home_directory
