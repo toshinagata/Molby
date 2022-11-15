@@ -230,7 +230,10 @@ MyDocument::DoOpenDocument(const wxString& file)
 		return false;
 	}
 	
-	/*  Does this document have multiple representation of molecules?  */
+  if (gLoadSaveErrorMessage != NULL)
+    MyAppCallback_showScriptMessage("On loading %s:\n%s\n", p, gLoadSaveErrorMessage);
+
+  /*  Does this document have multiple representation of molecules?  */
 	if (MolActionCreateAndPerform(newmol, SCRIPT_ACTION(";i"), "lambda { @aux_mols ? @aux_mols.count : 0 }", &len) == 0 && len > 0) {
 		wxCommandEvent myEvent(MyDocumentEvent, MyDocumentEvent_openAuxiliaryDocuments);
 		wxPostEvent(this, myEvent);
@@ -1151,7 +1154,7 @@ MyDocument::RunSubProcess(const char **argv, int (*callback)(Molecule *, int), i
     subProcessPID = ::wxExecute(argv[0], wxEXEC_ASYNC | wxEXEC_MAKE_GROUP_LEADER, subProcess);
   } else {
     // Array of arguments
-    subProcessPID = ::wxExecute(argv, wxEXEC_ASYNC | wxEXEC_MAKE_GROUP_LEADER, subProcess);
+    subProcessPID = ::wxExecuteArgv(argv, wxEXEC_ASYNC | wxEXEC_MAKE_GROUP_LEADER, subProcess);
   }
 	if (subProcessPID == 0) {
 		subProcess->Detach();

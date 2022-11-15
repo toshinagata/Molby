@@ -859,11 +859,11 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 				/* idx symop symbase */
 				if (sscanf(buf, "%d %d %d", &ibuf[0], &ibuf[1], &ibuf[2]) < 3) {
 					s_append_asprintf(errbuf, "line %d: symmetry operations cannot be read for atom %d", lineNumber, i + 1);
-					goto err_exit;
+					goto skip_section;
 				}
 				if (i >= mp->natoms) {
 					s_append_asprintf(errbuf, "line %d: too many atomic symmetry info\n", lineNumber);
-					goto err_exit;
+					goto skip_section;
 				}
 				ap = ATOM_AT_INDEX(mp->atoms, i);
 				ap->symop.sym = ibuf[1] / 1000000;
@@ -884,11 +884,11 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 				/* idx fix_force fix_pos */
 				if (sscanf(buf, "%d %lf %lf %lf %lf", &ibuf[0], &dbuf[0], &dbuf[1], &dbuf[2], &dbuf[3]) < 5) {
 					s_append_asprintf(errbuf, "line %d: fix atom info cannot be read for atom %d", lineNumber, i + 1);
-					goto err_exit;
+					goto skip_section;
 				}
 				if (i >= mp->natoms) {
 					s_append_asprintf(errbuf, "line %d: too many fix atom info\n", lineNumber);
-					goto err_exit;
+					goto skip_section;
 				}
 				ap = ATOM_AT_INDEX(mp->atoms, i);
 				ap->fix_force = dbuf[0];
@@ -908,11 +908,11 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 				/* idx uff_type */
 				if (sscanf(buf, "%d %6s", &ibuf[0], cbuf[0]) < 2) {
 					s_append_asprintf(errbuf, "line %d: uff type info cannot be read for atom %d", lineNumber, i + 1);
-					goto err_exit;
+					goto skip_section;
 				}
 				if (i >= mp->natoms) {
 					s_append_asprintf(errbuf, "line %d: too many uff type info\n", lineNumber);
-					goto err_exit;
+					goto skip_section;
 				}
 				ap = ATOM_AT_INDEX(mp->atoms, i);
 				strncpy(ap->uff_type, cbuf[0], 5);
@@ -929,11 +929,11 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 				/* idx mm_exclude periodic_exclude */
 				if (sscanf(buf, "%d %d %d", &ibuf[0], &ibuf[1], &ibuf[2]) < 3) {
 					s_append_asprintf(errbuf, "line %d: mm_exclude flags cannot be read for atom %d", lineNumber, i + 1);
-					goto err_exit;
+					goto skip_section;
 				}
 				if (i >= mp->natoms) {
 					s_append_asprintf(errbuf, "line %d: too many mm_exclude flags\n", lineNumber);
-					goto err_exit;
+					goto skip_section;
 				}
 				ap = ATOM_AT_INDEX(mp->atoms, i);
 				ap->mm_exclude = (ibuf[1] != 0);
@@ -950,7 +950,7 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 				/* idx count */
 				if ((j = sscanf(buf, "%d %d", &ibuf[0], &ibuf[1])) < 2) {
 					s_append_asprintf(errbuf, "line %d: bad format for pi_anchor", lineNumber);
-					goto err_exit;
+					goto skip_section;
 				}
 				i = ibuf[0];
 				ap = ATOM_AT_INDEX(mp->atoms, i);
@@ -963,7 +963,7 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 				ap->anchor = (PiAnchor *)calloc(sizeof(PiAnchor), 1);
 				if (ibuf[1] < 2 || ibuf[1] >= mp->natoms) {
 					s_append_asprintf(errbuf, "line %d: bad number of components for pi_anchor", lineNumber);
-					goto err_exit;
+					goto skip_section;
 				}
 				AtomConnectResize(&ap->anchor->connect, ibuf[1]);
 				ip = AtomConnectData(&ap->anchor->connect);
@@ -976,15 +976,15 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 					}
 					if (sscanf(buf, "%d %lf", &ibuf[0], &dbuf[0]) < 2) {
 						s_append_asprintf(errbuf, "line %d: bad format for pi_anchor", lineNumber);
-						goto err_exit;
+						goto skip_section;
 					}
 					if (ibuf[0] < 0 || ibuf[0] >= mp->natoms) {
 						s_append_asprintf(errbuf, "line %d: atom index out of range", lineNumber);
-						goto err_exit;
+						goto skip_section;
 					}
 					if (dbuf[0] <= 0.0) {
 						s_append_asprintf(errbuf, "line %d: the pi anchor weights should be positive", lineNumber);
-						goto err_exit;
+						goto skip_section;
 					}
 					ip[i] = ibuf[0];
 					ap->anchor->coeffs[i] = dbuf[0];
@@ -1005,11 +1005,11 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 				}
 				if (j > 4 && nframes != 0) {
 					s_append_asprintf(errbuf, "line %d: atom position sigma can only be given for frame 0", lineNumber);
-					goto err_exit;
+					goto skip_section;
 				}
 				if (j > 4 && j != 7) {
 					s_append_asprintf(errbuf, "line %d: atom position sigma cannot be read for atom %d frame %d", lineNumber, i + 1, nframes);
-					goto err_exit;
+					goto skip_section;
 				}
 				if (i >= mp->natoms) {
 					s_append_asprintf(errbuf, "line %d: too many atom position records\n", lineNumber);
@@ -1050,7 +1050,7 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 				i = sscanf(buf, "%d %d %d %d %d %d %d %d", &ibuf[0], &ibuf[1], &ibuf[2], &ibuf[3], &ibuf[4], &ibuf[5], &ibuf[6], &ibuf[7]);
 				if (i < 2 || i % 2 != 0) {
 					s_append_asprintf(errbuf, "line %d: bad bond format", lineNumber);
-					goto err_exit;
+					goto skip_section;
 				}
 				for (j = 0; j < i; j += 2) {
 					iibuf[0] = ibuf[j];
@@ -1079,7 +1079,7 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 				i = sscanf(buf, "%lf %lf %lf %lf", &dbuf[0], &dbuf[1], &dbuf[2], &dbuf[3]);
 				if (i == 0) {
 					s_append_asprintf(errbuf, "line %d: bad bond order format", lineNumber);
-					goto err_exit;
+					goto skip_section;
 				}
 				for (j = 0; j < i; j++) {
 					AssignArray(&mp->bondOrders, &mp->nbondOrders, sizeof(Double), mp->nbondOrders, &dbuf[j]);
@@ -1109,7 +1109,7 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 				i = sscanf(buf, "%d %d %d %d %d %d %d %d %d", &ibuf[0], &ibuf[1], &ibuf[2], &ibuf[3], &ibuf[4], &ibuf[5], &ibuf[6], &ibuf[7], &ibuf[8]);
 				if (i == 0 || i % 3 != 0) {
 					s_append_asprintf(errbuf, "line %d: bad angle format", lineNumber);
-					goto err_exit;
+					goto skip_section;
 				}
 				for (j = 0; j < i; j += 3) {
 					iibuf[0] = ibuf[j];
@@ -1140,7 +1140,7 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 				i = sscanf(buf, "%d %d %d %d %d %d %d %d", &ibuf[0], &ibuf[1], &ibuf[2], &ibuf[3], &ibuf[4], &ibuf[5], &ibuf[6], &ibuf[7]);
 				if (i == 0 || i % 4 != 0) {
 					s_append_asprintf(errbuf, "line %d: bad dihedral format", lineNumber);
-					goto err_exit;
+					goto skip_section;
 				}
 				for (j = 0; j < i; j += 4) {
 					iibuf[0] = ibuf[j];
@@ -1172,7 +1172,7 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 				i = sscanf(buf, "%d %d %d %d %d %d %d %d", &ibuf[0], &ibuf[1], &ibuf[2], &ibuf[3], &ibuf[4], &ibuf[5], &ibuf[6], &ibuf[7]);
 				if (i == 0 || i % 4 != 0) {
 					s_append_asprintf(errbuf, "line %d: bad improper format", lineNumber);
-					goto err_exit;
+					goto skip_section;
 				}
 				for (j = 0; j < i; j += 4) {
 					iibuf[0] = ibuf[j];
@@ -1203,17 +1203,17 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 				/* a b c alpha beta gamma [sigmaflag] */ 
 				if ((j = sscanf(buf, "%lf %lf %lf %lf %lf %lf %d", &dbuf[0], &dbuf[1], &dbuf[2], &dbuf[3], &dbuf[4], &dbuf[5], &ibuf[0])) < 6) {
 					s_append_asprintf(errbuf, "line %d: bad xtalcell format", lineNumber);
-					goto err_exit;
+					goto skip_section;
 				}
 				MoleculeSetCell(mp, dbuf[0], dbuf[1], dbuf[2], dbuf[3], dbuf[4], dbuf[5], 0);
 				if (j == 7 && ibuf[0] != 0) {
 					if (ReadLine(buf, sizeof buf, fp, &lineNumber) <= 0) {
 						s_append_asprintf(errbuf, "line %d: sigma for xtalcell are missing", lineNumber);
-						goto err_exit;
+						goto skip_section;
 					}
 					if (sscanf(buf, "%lf %lf %lf %lf %lf %lf", &dbuf[0], &dbuf[1], &dbuf[2], &dbuf[3], &dbuf[4], &dbuf[5]) < 6) {
 						s_append_asprintf(errbuf,"line %d: bad xtalcell sigma format", lineNumber);
-						goto err_exit;
+						goto skip_section;
 					}
 					if (mp->cell != NULL) {
 						mp->cell->has_sigma = 1;
@@ -1237,7 +1237,7 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 				/* a11 a12 a13; a21 a22 a23; a31 a32 a33; t1 t2 t3 */
 				if (sscanf(buf, "%lf %lf %lf", &dbuf[0], &dbuf[1], &dbuf[2]) < 3) {
 					s_append_asprintf(errbuf, "line %d: bad symmetry_operation format", lineNumber);
-					goto err_exit;
+					goto skip_section;
 				}
 				if (i < 3) {
 					tr[i] = dbuf[0];
@@ -1265,11 +1265,11 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 				/* b11 b22 b33 b12 b13 b23 [has_sigma] */
 				if ((j = sscanf(buf, "%lf %lf %lf %lf %lf %lf %d", &dbuf[0], &dbuf[1], &dbuf[2], &dbuf[3], &dbuf[4], &dbuf[5], &ibuf[0])) < 6) {
 					s_append_asprintf(errbuf, "line %d: anisotropic thermal parameters cannot be read for atom %d", lineNumber, i + 1);
-					goto err_exit;
+					goto skip_section;
 				}
 				if (i >= mp->natoms) {
 					s_append_asprintf(errbuf, "line %d: too many anisotropic thermal parameters\n", lineNumber);
-					goto err_exit;
+					goto skip_section;
 				}
 				if (dbuf[0] == 0.0 && dbuf[1] == 0.0 && dbuf[2] == 0.0 && dbuf[3] == 0.0 && dbuf[4] == 0.0 && dbuf[5] == 0.0) {
 					/*  Skip it  */
@@ -1279,16 +1279,16 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 				if (j == 7 && ibuf[0] != 0) {
 					if (ReadLine(buf, sizeof buf, fp, &lineNumber) <= 0) {
 						s_append_asprintf(errbuf, "line %d: anisotropic thermal parameters sigma missing", lineNumber);
-						goto err_exit;
+						goto skip_section;
 					}
 					if (sscanf(buf, "%lf %lf %lf %lf %lf %lf", &dbuf[0], &dbuf[1], &dbuf[2], &dbuf[3], &dbuf[4], &dbuf[5]) < 6) {
 						s_append_asprintf(errbuf, "line %d: anisotropic thermal parameters sigma cannot be read for atom %d", lineNumber, i + 1);
-						goto err_exit;
+						goto skip_section;
 					}
 					ap = ATOM_AT_INDEX(mp->atoms, i);
 					if (ap->aniso == NULL) {
 						s_append_asprintf(errbuf, "line %d: anisotropic thermal parameters sigma are given while the parameters are not given", lineNumber);
-						goto err_exit;
+						goto skip_section;
 					}
 					ap->aniso->has_bsig = 1;
 					for (j = 0; j < 6; j++)
@@ -1320,7 +1320,7 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 				}
 				if ((j = sscanf(buf, "%d %d %d %d", &ibuf[0], &ibuf[1], &ibuf[2], &ibuf[3])) < 3) {
 					s_append_asprintf(errbuf, "line %d: bad periodic_box format", lineNumber);
-					goto err_exit;
+					goto skip_section;
 				}
 				if (j == 4 && ibuf[3] != 0)
 					has_sigma = 1;
@@ -1331,11 +1331,11 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 				if (has_sigma) {
 					if (ReadLine(buf, sizeof buf, fp, &lineNumber) <= 0) {
 						s_append_asprintf(errbuf, "line %d: sigma for cell parameters are missing", lineNumber);
-						goto err_exit;
+						goto skip_section;
 					}
 					if (sscanf(buf, "%lf %lf %lf %lf %lf %lf", &dbuf[0], &dbuf[1], &dbuf[2], &dbuf[3], &dbuf[4], &dbuf[5]) < 6) {
 						s_append_asprintf(errbuf, "line %d: bad periodic_box sigma format", lineNumber);
-						goto err_exit;
+						goto skip_section;
 					}
 					if (mp->cell != NULL) {
 						mp->cell->has_sigma = 1;
@@ -1360,7 +1360,7 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 					break;
 				if (sscanf(buf, "%lf %lf %lf", &dbuf[0], &dbuf[1], &dbuf[2]) < 3) {
 					s_append_asprintf(errbuf, "line %d: bad frame_periodic_box format", lineNumber);
-					goto err_exit;
+					goto skip_section;
 				}
 				vs[i].x = dbuf[0];
 				vs[i].y = dbuf[1];
@@ -1406,7 +1406,7 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 							if (k < '0' || k > '9') {
 								s_append_asprintf(errbuf, "line %d: too few flags in alchem_flags block", lineNumber + 1);
 								free(valp);
-								goto err_exit;
+								goto skip_section;
 							}
 							ReadLine(buf, sizeof buf, fp, &lineNumber);
 							bufp = buf;
@@ -1415,13 +1415,13 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 									if (i >= j) {
 										s_append_asprintf(errbuf, "line %d: too many flags in alchem_flags block", lineNumber);
 										free(valp);
-										goto err_exit;
+										goto skip_section;
 									}
 									valp[i++] = *bufp - '0';
 								} else if (*bufp != ' ' && *bufp != '\t' && *bufp != '\n') {
 									s_append_asprintf(errbuf, "line %d: strange character (0x%02x) in alchem_flags block", lineNumber, (int)*bufp);
 									free(valp);
-									goto err_exit;
+									goto skip_section;
 								}
 								bufp++;
 							}
@@ -1503,14 +1503,14 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 				if (strcmp(comp, "pressure") == 0) {
 					if (sscanf(valp, "%lf %lf %lf %lf %lf %lf %lf %lf %lf", &dbuf[0], &dbuf[1], &dbuf[2], &dbuf[3], &dbuf[4], &dbuf[5], &dbuf[6], &dbuf[7], &dbuf[8]) < 9) {
 						s_append_asprintf(errbuf, "line %d: bad format", lineNumber);
-						goto err_exit;
+						goto skip_section;
 					}
 					for (i = 0; i < 9; i++)
 						pressure->apply[i] = dbuf[i];
 				} else if (strcmp(comp, "pressure_cell_flexibility") == 0) {
 					if (sscanf(valp, "%lf %lf %lf %lf %lf %lf %lf %lf", &dbuf[0], &dbuf[1], &dbuf[2], &dbuf[3], &dbuf[4], &dbuf[5], &dbuf[6], &dbuf[7]) < 8) {
 						s_append_asprintf(errbuf, "line %d: bad format", lineNumber);
-						goto err_exit;
+						goto skip_section;
 					}
 					for (i = 0; i < 8; i++)
 						pressure->cell_flexibility[i] = dbuf[i];
@@ -1533,11 +1533,11 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 				/* idx vx vy vz */
 				if (sscanf(buf, "%d %lf %lf %lf", &ibuf[0], &dbuf[0], &dbuf[1], &dbuf[2]) < 4) {
 					s_append_asprintf(errbuf, "line %d: atom velocity cannot be read for atom %d", lineNumber, i + 1);
-					goto err_exit;
+					goto skip_section;
 				}
 				if (i >= mp->natoms) {
 					s_append_asprintf(errbuf, "line %d: too many atom velocity records\n", lineNumber);
-					goto err_exit;
+					goto skip_section;
 				}
 				ap = ATOM_AT_INDEX(mp->atoms, i);
 				ap->v.x = dbuf[0];
@@ -1556,11 +1556,11 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 				/* idx fx fy fz */
 				if (sscanf(buf, "%d %lf %lf %lf", &ibuf[0], &dbuf[0], &dbuf[1], &dbuf[2]) < 4) {
 					s_append_asprintf(errbuf, "line %d: atom force cannot be read for atom %d", lineNumber, i + 1);
-					goto err_exit;
+					goto skip_section;
 				}
 				if (i >= mp->natoms) {
 					s_append_asprintf(errbuf, "line %d: too many atom force records\n", lineNumber);
-					goto err_exit;
+					goto skip_section;
 				}
 				ap = ATOM_AT_INDEX(mp->atoms, i);
 				ap->f.x = dbuf[0];
@@ -1586,7 +1586,7 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 				if (j < 0) {
 					s_append_asprintf(errbuf, "%s", bufp);
 					free(bufp);
-					goto err_exit;
+					goto skip_section;
 				}
 				i += j;
 			}
@@ -1611,7 +1611,7 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 					|| (i == 2 && sscanf(buf, "%lf %lf %lf %lf",
 										 &dbuf[4], &dbuf[5], &dbuf[6], &dbuf[7]) < 4)) {
 					s_append_asprintf(errbuf, "line %d: bad trackball format", lineNumber);
-					goto err_exit;
+					goto skip_section;
 				}
 				if (i == 0)
 					TrackballSetScale(mp->mview->track, dbuf[0]);
@@ -1722,11 +1722,14 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 					continue;
 				if (buf[0] == '\n')
 					break;
-				/* sym nprims a_idx */
-				if (sscanf(buf, "%6s %d %d", cbuf[0], &ibuf[0], &ibuf[1]) < 3) {
+				/* sym nprims a_idx [add_exp] */
+                i = sscanf(buf, "%6s %d %d %d", cbuf[0], &ibuf[0], &ibuf[1], &ibuf[3]);
+                if (i < 3) {
 					s_append_asprintf(errbuf, "line %d: the gaussian primitive info cannot be read", lineNumber);
-					goto err_exit;
+					goto skip_section;
 				}
+                if (i == 3)
+                    ibuf[3] = 0;  /*  Additional exponent (JANPA extension)  */
 				if (strcasecmp(cbuf[0], "S") == 0) {
 					ibuf[2] = 0;
 				} else if (strcasecmp(cbuf[0], "P") == 0) {
@@ -1747,17 +1750,17 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 					ibuf[2] = -4;
 				} else {
 					s_append_asprintf(errbuf, "line %d: the gaussian primitive type %s is unknown", lineNumber, cbuf[0]);
-					goto err_exit;
+					goto skip_section;
 				}
 				if (ibuf[0] <= 0) {
 					s_append_asprintf(errbuf, "line %d: the number of primitive (%d) must be positive", lineNumber, ibuf[0]);
-					goto err_exit;
+					goto skip_section;
 				}
 				if (ibuf[1] < 0 || ibuf[1] >= mp->natoms) {
 					s_append_asprintf(errbuf, "line %d: the atom index (%d) is out of range", lineNumber, ibuf[1]);
-					goto err_exit;
+					goto skip_section;
 				}
-				MoleculeAddGaussianOrbitalShell(mp, ibuf[1], ibuf[2], ibuf[0], 0);
+				MoleculeAddGaussianOrbitalShell(mp, ibuf[1], ibuf[2], ibuf[0], ibuf[3]);
 				i = ibuf[0];
 				while (ReadLine(buf, sizeof buf, fp, &lineNumber) > 0) {
 					if (buf[0] == '!')
@@ -1766,7 +1769,7 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 						break;
 					if (sscanf(buf, "%lf %lf %lf", &dbuf[0], &dbuf[1], &dbuf[2]) < 3) {
 						s_append_asprintf(errbuf, "line %d: cannot read gaussian primitive coefficients", lineNumber);
-						goto err_exit;
+						goto skip_section;
 					}
 					MoleculeAddGaussianPrimitiveCoefficients(mp, dbuf[0], dbuf[1], dbuf[2]);
 					if (--i == 0)
@@ -1784,7 +1787,7 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 					break;
 				if (sscanf(buf, "%6s %d %d", cbuf[0], &ibuf[0], &ibuf[1]) < 3) {
 					s_append_asprintf(errbuf, "line %d: the MO info cannot be correctly read", lineNumber);
-					goto err_exit;
+					goto skip_section;
 				}
 				if (strcasecmp(cbuf[0], "RHF") == 0) {
 					ibuf[2] = 1;
@@ -1794,11 +1797,11 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 					ibuf[2] = 0;
 				} else {
 					s_append_asprintf(errbuf, "line %d: unknown HF type: %s", lineNumber, cbuf[0]);
-					goto err_exit;
+					goto skip_section;
 				}
 				if (ibuf[0] < 0 || ibuf[1] < 0) {
 					s_append_asprintf(errbuf, "line %d: incorrect number of electrons", lineNumber);
-					goto err_exit;
+					goto skip_section;
 				}
 				MoleculeSetMOInfo(mp, ibuf[2], ibuf[0], ibuf[1]);
 			}
@@ -1806,7 +1809,7 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 		} else if (strcmp(buf, "!:mo_coefficients") == 0) {
 			if (mp->bset == NULL || mp->bset->nshells == 0) {
 				s_append_asprintf(errbuf, "line %d: the :gaussian_primitive section must come before :mo_coefficients", lineNumber);
-				goto err_exit;
+				goto skip_section;
 			}
 			/*  Count the number of components  */
 			dp = (Double *)malloc(sizeof(Double) * mp->bset->ncomps);
@@ -1818,11 +1821,11 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 					break;
 				if (sscanf(buf, "MO %d %lf", &ibuf[0], &dbuf[6]) < 2) {
 					s_append_asprintf(errbuf, "line %d: cannot read the MO index or energy", lineNumber);
-					goto err_exit;
+					goto skip_section;
 				}
 				if (ibuf[0] != i) {
 					s_append_asprintf(errbuf, "line %d: the MO index (%d) must be in ascending order", lineNumber, ibuf[0]);
-					goto err_exit;
+					goto skip_section;
 				}
 				i = 0;
 				while (ReadLine(buf, sizeof buf, fp, &lineNumber) > 0) {
@@ -1844,7 +1847,7 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 				i = MoleculeSetMOCoefficients(mp, ibuf[0], dbuf[6], mp->bset->ncomps, dp);
 				if (i != 0) {
 					s_append_asprintf(errbuf, "line %d: cannot set MO coefficients", lineNumber);
-					goto err_exit;
+					goto skip_section;
 				}
 				i = ibuf[0] + 1;  /*  For next entry  */
 			}
@@ -1883,14 +1886,14 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 					if (i == 0) {
 						if (sscanf(buf, "%d %d", &ibuf[0], &ibuf[1]) < 2) {
 							s_append_asprintf(errbuf, "line %d: the closed/visible flags cannot be read for graphic object", lineNumber);
-							goto err_exit;
+							goto skip_section;
 						}
 						gp->closed = ibuf[0];
 						gp->visible = ibuf[1];
 					} else if (i == 1) {
 						if (sscanf(buf, "%lf %lf %lf %lf", &dbuf[0], &dbuf[1], &dbuf[2], &dbuf[3]) < 4) {
 							s_append_asprintf(errbuf, "line %d: the color cannot be read for graphic object", lineNumber);
-							goto err_exit;
+							goto skip_section;
 						}
 						for (j = 0; j < 4; j++)
 							gp->rgba[j] = dbuf[j];
@@ -1898,14 +1901,14 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 						j = atoi(buf);
 						if (j < 0) {
 							s_append_asprintf(errbuf, "line %d: the number of control points must be non-negative", lineNumber);
-							goto err_exit;
+							goto skip_section;
 						}
 						if (j > 0)
 							NewArray(&gp->points, &gp->npoints, sizeof(GLfloat) * 3, j);
 					} else if (i >= 3 && i < gp->npoints + 3) {
 						if (sscanf(buf, "%lf %lf %lf", &dbuf[0], &dbuf[1], &dbuf[2]) < 3) {
 							s_append_asprintf(errbuf, "line %d: the control point cannot be read for graphic object", lineNumber);
-							goto err_exit;
+							goto skip_section;
 						}
 						j = (i - 3) * 3;
 						gp->points[j++] = dbuf[0];
@@ -1915,14 +1918,14 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 						j = atoi(buf);
 						if (j < 0) {
 							s_append_asprintf(errbuf, "line %d: the number of normals must be non-negative", lineNumber);
-							goto err_exit;
+							goto skip_section;
 						}
 						if (j > 0)
 							NewArray(&gp->normals, &gp->nnormals, sizeof(GLfloat) * 3, j);
 					} else if (i >= gp->npoints + 4 && i < gp->npoints + gp->nnormals + 4) {
 						if (sscanf(buf, "%lf %lf %lf", &dbuf[0], &dbuf[1], &dbuf[2]) < 3) {
 							s_append_asprintf(errbuf, "line %d: the normal vector cannot be read for graphic object", lineNumber);
-							goto err_exit;
+							goto skip_section;
 						}
 						j = (i - gp->npoints - 4) * 3;
 						gp->normals[j++] = dbuf[0];
@@ -1938,6 +1941,34 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 				goto redo;
 			}
 			continue;
+        } else if (strcmp(buf, "!:nbo") == 0) {
+            Int stringLen;
+            char *stringBuf, *returnString;
+            i = strlen(buf) + 1;  /*  Including \n  */
+            NewArray(&stringBuf, &stringLen, sizeof(char), i + 1);
+            strcpy(stringBuf, buf);
+            strcat(stringBuf, "\n");
+            k = lineNumber;
+            while (ReadLine(buf, sizeof buf, fp, &lineNumber) > 0) {
+                /*  The comment lines are _not_ skipped  */
+                if (buf[0] == '\n')
+                    break;
+                j = strlen(buf);
+                AssignArray(&stringBuf, &stringLen, sizeof(char), i + j, NULL);
+                strncpy(stringBuf + i, buf, j);
+                i += j;
+            }
+            if (MolActionCreateAndPerform(mp, SCRIPT_ACTION("si;s"),
+                                          "proc { |s,i| mbsfstring2nbo(s,i) }",
+                                          stringBuf, k, &returnString) != 0) {
+                s_append_asprintf(errbuf, "line %d: cannot call mbsfstring2nbo at line ", lineNumber);
+                goto skip_section;
+            } else if (returnString[0] != 0) {
+                s_append_asprintf(errbuf, "%s", returnString);
+                goto skip_section;
+            }
+            free(stringBuf);
+            continue;
 		} else if (strncmp(buf, "!:@", 3) == 0) {
 			/*  Plug-in implemented in the ruby world  */
 			Int stringLen;
@@ -1959,15 +1990,16 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 										  "proc { |i| loadmbsf_plugin(i) rescue \"line #{i}: #{$i.to_s}\" }",
 										  stringBuf, k, &returnString) != 0) {
 				s_append_asprintf(errbuf, "line %d: cannot invoke Ruby plugin", lineNumber);
-				goto err_exit;
+				goto skip_section;
 			} else if (returnString[0] != 0) {
 				s_append_asprintf(errbuf, "%s", returnString);
-				goto err_exit;
+				goto skip_section;
 			}
 			free(stringBuf);
 			continue;
 		}
 		/*  Unknown sections are silently ignored  */
+    skip_section:;
 	}
 
 	MoleculeCleanUpResidueTable(mp);
@@ -2778,9 +2810,10 @@ MoleculeAddGaussianPrimitiveCoefficients(Molecule *mol, Double exponent, Double 
 }
 
 /*  Get the shell information from the component index  */
-/*  The outLabel must have space for at least 23 non-Null characters  */
+/*  The outLabel must have space for at least 31 non-Null characters  */
+/*  See also: sub load_janpa_log in loadsave.rb  */
 int
-MoleculeGetGaussianComponentInfo(Molecule *mol, Int comp_idx, Int *outAtomIdx, char *outLabel, Int *outShellIdx)
+MoleculeGetGaussianComponentInfo(Molecule *mol, Int comp_idx, Int *outAtomIdx, char outLabel[32], Int *outShellIdx)
 {
 	BasisSet *bset;
 	ShellInfo *shellp;
@@ -2800,8 +2833,8 @@ MoleculeGetGaussianComponentInfo(Molecule *mol, Int comp_idx, Int *outAtomIdx, c
 			static const char *type_f = "xxxyyyzzzxxyxxzxyyyyzxzzyzzxyz";
 			static const char *type_f7[] = {"z3-zr2", "xz2-xr2", "yz2-yr2", "x2z-y2z", "xyz", "x3-xy2", "x2y-y3"};
 			static const char *type_g[] = {"x4", "y4", "z4", "x3y", "x3z", "xy3", "y3z", "xz3", "yz3", "x2y2", "x2z2", "y2z2", "x2yz", "xy2z", "xyz2"};
-			static const char *type_g9[] = {"z4-z2r2+r4", "xz3-xzr2", "yz3-yzr2", "(x2-y2)(z2-r2)", "xyz2-xyr2", "x3z-xy2z", "x2yz-y3z", "x4-x2y2+y4", "x3y-xy3"};
-			*outAtomIdx = shellp->a_idx;
+			static const char *type_g9[] = {"z4-z2r2+r4", "xz3-xzr2", "yz3-yzr2", "x2z2-y2z2", "xyz2-xyr2", "x3z-xy2z", "x2yz-y3z", "x4-x2y2+y4", "x3y-xy3"};
+            *outAtomIdx = shellp->a_idx;
 			*outShellIdx = si;
 			switch (shellp->sym) {
 				case kGTOType_S:
@@ -2828,7 +2861,8 @@ MoleculeGetGaussianComponentInfo(Molecule *mol, Int comp_idx, Int *outAtomIdx, c
 					break;
 				case kGTOType_D5:
 					outLabel[0] = 'D';
-					strcpy(outLabel + 1, type_d5[comp_idx]);
+					strncpy(outLabel + 1, type_d5[comp_idx], 30);
+                    outLabel[31] = 0;
 					break;
 				case kGTOType_F:
 					outLabel[0] = 'F';
@@ -2837,19 +2871,30 @@ MoleculeGetGaussianComponentInfo(Molecule *mol, Int comp_idx, Int *outAtomIdx, c
 					break;
 				case kGTOType_F7:
 					outLabel[0] = 'F';
-					strcpy(outLabel + 1, type_f7[comp_idx]);
+					strncpy(outLabel + 1, type_f7[comp_idx], 30);
+                    outLabel[31] = 0;
 					break;
 				case kGTOType_G:
 					outLabel[0] = 'G';
-					strcpy(outLabel + 1, type_g[comp_idx]);
+					strncpy(outLabel + 1, type_g[comp_idx], 30);
+                    outLabel[31] = 0;
 					break;
 				case kGTOType_G9:
 					outLabel[0] = 'G';
-					strcpy(outLabel + 1, type_g9[comp_idx]);
+					strncpy(outLabel + 1, type_g9[comp_idx], 30);
+                    outLabel[31] = 0;
 					break;
 				default:
 					return -3;  /*  Unsupported orbital type (internal error) */
 			}
+            if (shellp->add_exp > 0) {
+                /*  Additional exponent (JANPA extension): like "s*r2", "dxx-yy*r4", etc. */
+                int len = strlen(outLabel);
+                if (len < 28) {
+                    snprintf(outLabel + len, 32 - len, "*r%d", shellp->add_exp);
+                }
+                outLabel[31] = 0;
+            }
 			return 0;
 		}
 	}
@@ -4770,7 +4815,7 @@ MoleculeWriteToMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 		ShellInfo *sp;
 		PrimInfo *pp;
 		fprintf(fp, "!:gaussian_primitives\n");
-		fprintf(fp, "! sym nprims a_idx; A C Csp\n");
+		fprintf(fp, "! sym nprims a_idx [add_exp]; A C Csp\n");
 		for (i = 0, sp = mp->bset->shells; i < mp->bset->nshells; i++, sp++) {
 			switch (sp->sym) {
 				case kGTOType_S:  p = "S";  break;
@@ -4784,7 +4829,10 @@ MoleculeWriteToMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 				case kGTOType_G9: p = "G9"; break;
 				default: snprintf(bufs[0], 8, "X%d", sp->sym); p = bufs[0]; break;
 			}
-			fprintf(fp, "%s %d %d\n", p, sp->nprim, sp->a_idx);
+            if (sp->add_exp == 0)
+                fprintf(fp, "%s %d %d\n", p, sp->nprim, sp->a_idx);
+            else
+                fprintf(fp, "%s %d %d %d\n", p, sp->nprim, sp->a_idx, sp->add_exp);
 			pp = mp->bset->priminfos + sp->p_idx;
 			for (j = 0; j < sp->nprim; j++, pp++) {
 				fprintf(fp, "%.18g %.18g %.18g\n", pp->A, pp->C, pp->Csp);
@@ -4843,10 +4891,20 @@ MoleculeWriteToMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 	/*  Plug-in in the Ruby world  */
 	{
 		char *outMessage;
+        /*  Save NBO information  */
+        if (MolActionCreateAndPerform(mp, SCRIPT_ACTION(";s"),
+                                      "proc { nbo2msbfstring rescue \"Plug-in error: #{$!.to_s}\" }", &outMessage) == 0) {
+            if (strncmp(outMessage, "Plug-in error", 13) == 0) {
+                s_append_asprintf(errbuf, "%s", outMessage);
+            }
+            fputs(outMessage, fp);
+            free(outMessage);
+        }
+        /*  Other Plug-in  */
 		if (MolActionCreateAndPerform(mp, SCRIPT_ACTION(";s"),
 									  "proc { savembsf_plugin rescue \"Plug-in error: #{$!.to_s}\" }", &outMessage) == 0) {
 			if (outMessage[0] != 0) {
-				if (strncmp(outMessage, "Plug-in", 7) == 0) {
+				if (strncmp(outMessage, "Plug-in error", 13) == 0) {
 					s_append_asprintf(errbuf, "%s", outMessage);
 				} else {
 					fprintf(fp, "%s\n", outMessage);

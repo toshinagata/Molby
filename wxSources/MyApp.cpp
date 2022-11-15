@@ -1465,7 +1465,7 @@ MyApp::CallSubProcess(const char **argv, const char *procname, int (*callback)(v
         pid = ::wxExecute(argv[0], flag, m_process);
     } else {
         //  Array of arguments
-        pid = ::wxExecute(argv, flag, m_process);
+        pid = ::wxExecuteArgv(argv, flag, m_process);
     }
 	if (pid == 0) {
         if (progress_panel)
@@ -2411,7 +2411,7 @@ void MyAppCallback_endUndoGrouping(void)
 int MyAppCallback_callSubProcess(const char **argv, const char *procname, int (*callback)(void *), void *callback_data, FILE *output, FILE *errout, int *exitstatus_p, int *pid_p)
 {
     if (!gUseGUI)
-        return ::wxExecute(argv, wxEXEC_SYNC | wxEXEC_HIDE_CONSOLE);
+        return ::wxExecuteArgv(argv, wxEXEC_SYNC | wxEXEC_HIDE_CONSOLE, NULL);
     else
         return wxGetApp().CallSubProcess(argv, procname, callback, callback_data, output, errout, exitstatus_p, pid_p);
 }

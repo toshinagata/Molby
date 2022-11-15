@@ -817,6 +817,7 @@ class Molecule
   #  and load from it (i.e. use the basis set converted by molden2molden)
   def sub_load_janpa_log(inppath)
     begin
+      #  See also: MoleculeGetGaussianComponentInfo() in Molecule.c
       m2name_p = {0=>"x", 1=>"y", -1=>"z"}
       m2name_d = {0=>"zz-rr", 1=>"xz", -1=>"yz", 2=>"xx-yy", -2=>"xy"}
       m2name_f = {0=>"z3-zr2", 1=>"xz2-xr2", -1=>"yz2-yr2", 2=>"x2z-y2z", -2=>"xyz", 3=>"x3-xy2", -3=>"x2y-y3"}
@@ -1208,6 +1209,119 @@ class Molecule
     end
   end
 
+  #  Convert @nbo info to an msbf string (multiline)
+  #  !:nbo
+  #  [XXX] (NAO, LHO, etc.)
+  #  nn (number of components)
+  #  (nao_labels)*nn, one per line
+  #  XXX n
+  #  (%.18g)*nn, at most 6 per line
+  def nbo2msbfstring
+    unless @nbo
+      return ""
+    end
+    keys = @nbo.keys.grep(/AO\/\w+/)
+    s = "!:nbo\n"
+    keys.each { |k|
+      k =~ /AO\/(\w+)/
+      key = $1
+      labels = @nbo[key + "_L"]
+      m = @nbo[k]
+      nc = m.column_size
+      s += "[#{key}]\n#{nc}\n"
+      nc.times { |i|
+        l = (labels ? labels[i] : "")
+        s += "#{key} #{i+1} #{l}\n"
+        nc.times { |j|
+          s += sprintf("%.18g%s", m[i, j], ((j == nc - 1 || j % 6 == 5) ? "\n" : " "))
+        }
+      }
+    }
+    s += "\n"
+    s
+  end
+
+  #  Read @nbo info from a multiline string and set to @nbo
+  def mbsfstring2nbo(s, first_lineno)
+    h = Hash.new
+    lineno = first_lineno - 1
+    errmsg = "Error reading NBO section: "
+    key = nil
+    nc = nil
+    labels = nil
+    mo_matrix = nil
+    mo = nil
+    s.each_line { |ln|
+      lineno += 1
+      next if lineno == first_lineno
+      ln.chomp!
+      if key == nil
+        if ln =~ /\[(\w+)\]/
+          key = $1
+        else
+          return errmsg + "keyword (like NBO, NHO, ...) is expected at line #{lineno}"
+        end
+        next
+      end
+      if nc == nil
+        nc = ln.to_i
+        labels = nil
+        mo_matrix = []
+        mo = []
+        next
+      end
+      if ln[0, key.length] == key
+        if mo == nil
+          return errmsg + "number of components is missing"
+        end
+        if mo.length > 0
+          return errmsg + "too few coefficients at line #{lineno}"
+        end
+        ln =~ /^(\w+) +(\d+) *(.*)$/
+        l = $3
+        if l != ""
+          labels ||= []
+          labels[mo_matrix.length] = l.strip
+        end
+        next
+      end
+      m = ln.split
+      begin
+        m = m.map { |c| Float(c) }
+      rescue
+        return errmsg + "cannot convert to number at line #{lineno}"
+      end
+      mo += m
+      if mo.length > nc
+        return errmsg + "too many coefficients at line #{lineno}"
+      end
+      if mo.length == nc
+        mo_matrix.push(mo)
+        mo = []
+        if mo_matrix.length == nc
+          #  All components are correctly read
+          if labels
+            #  Set the label if not specified
+            nc.times { |i|
+              if !labels[i] || labels[i] == ""
+                labels[i] = "#{key}#{i+1}"
+              end
+            }
+            h["#{key}_L"] = labels
+          end
+          h["AO/#{key}"] = LAMatrix.new(mo_matrix)
+          mo = nil
+          mo_matrix = nil
+          labels = nil
+          key = nil
+          nc = nil
+        end
+      end
+    }  #  end each_line
+    @nbo = h
+    return ""
+  end
+  
   def loadout(filename)
   retval = false
   fp = open(filename, "rb")

@@ -175,6 +175,11 @@ protected:
     wxMemoryBuffer m_stdin;
 };
 
+#if wxCHECK_VERSION(3,1,0)
+#define wxExecuteArgv(_argv, _flags, _process) wxExecute(_argv, _flags, _process)
+#else
+#define wxExecuteArgv(_argv, _flags, _process) wxExecute((char **)(_argv), _flags, _process)
+#endif
 
 // Define a new application
 class MyApp: public wxApp
