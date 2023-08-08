@@ -1,0 +1,117 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html lang='ja' xml:lang='ja' xmlns='http://www.w3.org/1999/xhtml'><head><meta content='text/html;charset=utf-8' http-equiv='Content-Type' lang='ja' xml:lang='ja' /><title>第七段階：分子動力学計算</title><link href='../etc/style.css' rel='stylesheet' type='text/css' /><link href='index.html' rel='Start' /><link href='tutorials.html' rel='Index' /><link href='mm_minimize.html' rel='Prev' /><link href='coordination.html' rel='Next' /></head><body><div class='topic_path'><a href='index.html'>Molby</a> &gt; <a href='tutorials.html'>チュートリアル</a> &gt; 第七段階：分子動力学計算 &nbsp;&nbsp; <a href='mm_minimize.html'>[前]</a> &nbsp;&nbsp; <a href='coordination.html'>[次]</a><span class='float_right'><a href='../en/md.html'>[English]</a></span></div><div class='contents' lang='ja' xml:lang='ja'>
+<h1>第七段階：分子動力学計算</h1>
+<h2>1. Molby 組み込みの分子動力学 (MD) 計算</h2>
+<p>
+Molby は分子動力学 (MD) 計算を実装しています。これは分子力学によるエネルギー最小化と同じ分子力場を使います。この機能は、パラメータのチェックなどの予備的な計算に使うことを想定しています。本格的な計算には、実績のある他のソフトウェアパッケージを使うことを強くおすすめします。
+</p>
+<p>
+予備的な MD 計算の例を示します。また 2,2'-ジメトキシビフェニルを使います。<a href='mm_minimize.html'>第六段階</a>と同様に、モデルを作成して分子力場パラメータを決定してください（原子上の部分電荷も）。
+</p>
+<p><img src='../etc/md_01.png' /></p>
+<p>
+MM/MD メニューの "Molecular Dynamics" を選ぶと、設定ダイアログが開きます。このダイアログは分子力場によるエネルギー最小化の時と似ていますが、MD 計算に使う他のパラメータを表示しています。
+</p>
+<p><img src='../etc/md_02.png' /></p>
+<p>
+"Timestep" パラメータは、運動方程式を解くときの最小時間刻みを表します。"Target temperature" は系の温度を表します。MD 計算が始まる際に、すべての原子はこの温度に対応するボルツマン分布に従ってランダムな速度を与えられます。さらに、MD 計算中は温度が一定に保たれるように速度が調整されます。"Steps per frame" と "number of frames" パラメータは分子力学によるエネルギー最小化の時と同じ意味を持ちます。このスクリーンショットでは "steps per frame" が 10 になっています。これはエネルギー最小化では適切な値ですが、分子動力学の場合はもう少し大きな値（たとえば 100）の方がより適切です。
+</p>
+<p>
+"Advanced..." ボタンを押すと、他のパラメータを持つ別のダイアログが開きます。これらのパラメータの意味は、内蔵 Ruby インタプリタのリファレンスで <a href='molby_rb/MDArena.html'>MDArena</a> のページに書かれています。 
+</p>
+<p><img src='../etc/md_03.png' /></p>
+<p>
+元の MD 設定ダイアログに戻り（詳細設定ダイアログで "Close" ボタンを押す）、"OK" を押します。MD 計算が始まり、新しいフレームが追加されて行きます。何か問題があったり、指定したフレーム数よりも前に計算を止めたいときは、コマンド-ピリオド (Mac) かコントロール-ピリオド (Windows) を使ってください。
+</p>
+<h2>2. AMBER とともに使う：入力の作成と出力結果のインポート</h2>
+<p>
+本格的な計算を行うために、Molby で AMBER への入力ファイルを作成することができます。具体的には、SANDER モジュールの入力となる "prmtop" と "inpcrd" ファイルを作ることができます。
+</p>
+<p class='note'>
+<span class='italic'>注：</span> Molby が AMBER 付属のモデリングツールと同じ入力ファイルを作成する保証はありませんし、SANDER モジュールへの正しい入力になっている保証もありません。手作業で修正が必要な場合もあるかもしれません。
+</p>
+<p>
+SANDER の入力ファイルを作るには、"MM/MD" メニューから "Create SANDER input..." コマンドを選んでください。
+</p>
+<p><img src='../etc/md_04.png' /></p>
+<p>
+最初に "prmtop" ファイルの名前を聞かれます。必ず ".prmtop" 拡張子をつけるようにしてください。もう一つの "inpcrd" ファイルは、".prmtop" を ".inpcrd" に置き換えた名前で保存されます。
+</p>
+<p><img src='../etc/md_05.png' /></p>
+<p>
+次に、prmtop ファイルの２つのバージョンのうち１つを選ぶように促されます。古い方、"AMBER8/NAMD" を使えば、NAMD ソフトウェアパッケージ（下記参照）でも使える入力ファイルができます。
+</p>
+<p><img src='../etc/md_06.png' /></p>
+<p>
+これで、SANDER が走るワークステーションにファイルを転送することができます。シミュレーションを実行するためには、SANDER の命令ファイルを作らなければなりませんが、AMBER をお使いの方ならやり方はよくご存知でしょう。
+</p>
+<p>
+計算が終了したら、トラジェクトリファイル ("mdcrd" ファイル) を取得して、Molby にインポートすることができます。"File" メニューの "Import..." コマンドを選び、ファイルタイプとして "AMBER mdcrd file (*.crd; *.mdcrd)" を選んで、ファイルを読み込んでください。
+</p>
+<p><img src='../etc/md_07.png' /></p>
+<h2>3. NAMD とともに使う：入力の作成と出力結果のインポート</h2>
+<p>
+本格的な計算を行うために NAMD を使うこともできます。NAMD はイリノイ大学アーバナ・シャンペーン校の理論生物物理グループが開発したソフトウェアパッケージです。公式ウェブサイトは <a href='http://www.ks.uiuc.edu/Research/namd/'>http://www.ks.uiuc.edu/Research/namd/</a> です。NAMD は AMBER の "prmtop" を入力として使うことができます（<code>amber yes</code> 命令を使う）。詳しくは NAMD のユーザーズガイドをご覧ください。
+</p>
+<p>
+NAMD の出力の dcd ファイルもインポートが可能です。"Import..." コマンドのファイルタイプで選択することができます。
+</p>
+<h2>4. 溶媒和構造の作成</h2>
+<p>
+明示的な溶媒中での MD シミュレーションを行うためには、目的分子の回りに溶媒分子の箱を作る必要があります。Molby でこのような溶媒和構造を作成することができます。
+</p>
+<p>
+溶媒和構造を作るためには、まず使用する溶媒の箱を読み込む必要があります。以下の溶媒の箱が Molby に同梱されており、"File" &rarr; "Open Predefined" &rarr; "Solvent boxes" サブメニューから選ぶことができます。Tip3box は AmberTool パッケージから得たものであり、他の溶媒箱は <a href='http://www.pharmacy.manchester.ac.uk/bryce/amber'>Amber parameter database</a> で公開されているものです。
+</p>
+<table border='1' cellspacing='0'>
+<tr><th>name</th><th>solvent</th><th>reference</th></tr>
+<tr><td>tip3pbox</td>
+<td>water</td>
+<td>Jorgensen, W. L.; Chandrasekhar, J.; Madura, J.; Klein, M. L.<br />
+<i>J. Chem. Phys.</i> <b>1983,</b> <i>79,</i> 926.
+</td></tr>
+<tr><td>chcl3box</td>
+<td>chloroform</td>
+<td>Cieplak, P.; Caldwell, J. W.; Kollman, P. A.<br />
+<i>J. Comp. Chem.</i> <b>2001,</b> <i>22,</i> 1048.<br />
+</td></tr>
+<tr><td>dmsobox</td>
+<td>dimethylsulfoxide</td>
+<td>Fox, T.; Kollman, P. A.<br />
+<i>J. Phys. Chem. B</i> <b>1998,</b> <i>102,</i> 8070.
+</td></tr>
+<tr><td>meohbox</td>
+<td>methanol</td>
+<td>Caldwell, J. W.; Kollman, P. A.<br />
+<i>J. Phys. Chem.</i> <b>1995,</b> <i>99,</i> 6208.
+</td></tr>
+<tr><td>nmabox</td>
+<td>N-methylacetamide</td>
+<td>Caldwell, J. W.; Kollman, P. A.<br />
+<i>J. Phys. Chem.</i> <b>1995,</b> <i>99,</i> 6208.
+</td></tr>
+</table>
+<p><img src='../etc/md_08.png' /><img src='../etc/md_09.png' /></p>
+<p>
+溶媒箱を開いたまま、目的とする分子（溶質）を新しいウィンドウで開くか作成します。溶質分子のウィンドウを最前面にした状態で、"MM/MD" メニューから "Solvate..." コマンドを選びます。
+</p>
+<p><img src='../etc/md_10.png' /></p>
+<p>
+ダイアログが開きます。
+</p>
+<p><img src='../etc/md_11.png' /></p>
+<p>
+ポップアップメニュー "Choose solvent box:" には、さきほど開いた溶媒箱がリストされているはずです。注意していただきたいのは、このポップアップメニューには周期境界（または単位格子）を持つすべての分子がリストされることです。このため、紛らわしいことに、別の溶媒和構造を同時に開いていると、その構造もこのポップアップメニューに登場してしまいます（溶媒和構造は必ず周期境界を持っていますから）。ですから、正しい溶媒箱を選ぶように十分に注意してください。
+</p>
+<p class='note'>
+"Open Predefined" メニューから選んで開いた溶媒箱はすぐに区別できます。名前の前後に * がついているからです ("*CHCl3*" のように）。
+</p>
+<p>
+"Box offset" パラメータは、溶質分子の回りを囲む溶媒層の厚さを指定します。言い換えると、これから作成する溶媒和構造の周期境界は次のように決められます：まず溶質を囲む最小の直方体を算出し、それぞれの面を外側に向かって Box offsect パラメータ分だけ移動させます。一方、x, y, z のそれぞれの方向に対して、周期境界の大きさを決めたい場合もあります。このときは、その方向の Box offset パラメータに負の値を指定してください。（たとえば、x 方向の周期境界を大きさを 40 &Aring; にしたい時は、"Box offset" の最初のパラメータを -40 にしてください。）
+</p>
+<p class='note'>
+周期境界の箱の大きさは、"Xtal" &rarr; "Define Unit Cell" メニューを選ぶと見ることができます。また、属性テーブルの "unit cell" でも見られます。</p>
+<p>
+"Exclusion limit distance" は、溶質分子と溶媒分子の原子間距離の最小値を定めます。溶媒分子のある原子が溶質分子からこの距離以内に近づいているとき、その溶媒分子は取り除かれます。
+</p>
+</div><div class='navigation'><a href='index.html'>[トップ]</a> <a href='tutorials.html'>[上: チュートリアル]</a> <a href='mm_minimize.html'>[前: 第六段階：分子力学計算によるエネルギー最小化]</a> <a href='coordination.html'>[次: 第八段階：配位化合物のMM/MD計算]</a> <span class='float_right'><a href='../en/md.html'>[English]</a></span></div></body></html>

@@ -1,0 +1,38 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html lang='en' xml:lang='en' xmlns='http://www.w3.org/1999/xhtml'><head><meta content='text/html;charset=utf-8' http-equiv='Content-Type' lang='en' xml:lang='en' /><title>Ruby Extension Reference</title><link href='../etc/style.css' rel='stylesheet' type='text/css' /><link href='index.html' rel='Start' /><link href='appendix.html' rel='Index' /><link href='filter_kit_howto.html' rel='Next' /></head><body><div class='topic_path'><a href='index.html'>Molby</a> &gt; <a href='appendix.html'>Appendix</a> &gt; Ruby Extension Reference &nbsp;&nbsp; <a href='ruby.html'>[Prev]</a> &nbsp;&nbsp; <a href='filter_kit_howto.html'>[Next]</a><span class='float_right'><a href='../ja/ruby_ref.html'>[Japanese]</a></span></div><div class='contents' lang='en' xml:lang='en'>
+<h1>Ruby Extension Reference</h1>
+<p>
+The following classes/module/exception are defined in the embedded Ruby interpreter in Molby. The methods defined in the module <code>Kernel</code> can be used as if they are builtin functions, like in the standard Ruby interpreter. All other classes and <code>MolbyError</code> exception are defined under the a module <code>Molby</code>. However, <code>Molby::</code> prefix is not necessary because <code>include Molby</code> is invoked on startup.
+</p>
+<p class='note'>
+On startup, <code>include Math</code> is also invoked, so that the methods and constants in the <code>Math</code> module can also be used without prefix.
+</p>
+<p>
+It is recommended for you to read the document of the most important class <a href='molby_rb/Molecule.html'>Molecule</a>. Follow the links as necessary, and you will understand how other classes are defined and used.
+</p>
+<h3 class='section-bar'>Classes</h3>
+<ul>
+<li><a href='molby_rb/AtomRef.html'>AtomRef</a></li>
+<li><a href='molby_rb/Dialog.html'>Dialog</a></li>
+<li><a href='molby_rb/DialogItem.html'>DialogItem</a></li>
+<li><a href='molby_rb/IntGroup.html'>IntGroup</a></li>
+<li><a href='molby_rb/LAMatrix.html'>LAMatrix</a></li>
+<li><a href='molby_rb/MDArena.html'>MDArena</a></li>
+<li><a href='molby_rb/MolEnumerable.html'>MolEnumerable</a></li>
+<li><a href='molby_rb/Molecule.html'>Molecule</a></li>
+<li><a href='molby_rb/Parameter.html'>Parameter</a></li>
+<li><a href='molby_rb/ParameterRef.html'>ParameterRef</a></li>
+<li><a href='molby_rb/ParEnumerable.html'>ParEnumerable</a></li>
+<li><a href='molby_rb/Transform.html'>Transform</a></li>
+<li><a href='molby_rb/Vector3D.html'>Vector3D</a></li>
+</ul>
+<h3 class='section-bar'>Module</h3>
+<ul>
+<li><a href='molby_rb/Kernel.html'>Kernel</a></li>
+<li><a href='molby_rb/MolbyModule.html'>Molby</a></li>
+</ul>
+<h3 class='section-bar'>Exception</h3>
+<ul>
+<li><a href='molby_rb/MolbyError.html'>MolbyError</a></li>
+</ul>
+</div><div class='navigation'><a href='index.html'>[Top]</a> <a href='appendix.html'>[Up: Appendix]</a> <a href='ruby.html'>[Prev: Step Eleven: Using Embedded Ruby Interpreter]</a> <a href='filter_kit_howto.html'>[Next: Filter Kit How-to]</a> <span class='float_right'><a href='../ja/ruby_ref.html'>[Japanese]</a></span></div></body></html>

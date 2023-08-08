@@ -1,0 +1,118 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html lang='en' xml:lang='en' xmlns='http://www.w3.org/1999/xhtml'><head><meta content='text/html;charset=utf-8' http-equiv='Content-Type' lang='en' xml:lang='en' /><title>Step Seven: Molecular Dynamics (MD) Calculation</title><link href='../etc/style.css' rel='stylesheet' type='text/css' /><link href='index.html' rel='Start' /><link href='tutorials.html' rel='Index' /><link href='mm_minimize.html' rel='Prev' /><link href='coordination.html' rel='Next' /></head><body><div class='topic_path'><a href='index.html'>Molby</a> &gt; <a href='tutorials.html'>Tutorials</a> &gt; Step Seven: Molecular Dynamics (MD) Calculation &nbsp;&nbsp; <a href='mm_minimize.html'>[Prev]</a> &nbsp;&nbsp; <a href='coordination.html'>[Next]</a><span class='float_right'><a href='../ja/md.html'>[Japanese]</a></span></div><div class='contents' lang='en' xml:lang='en'>
+<h1>Step Seven: Molecular Dynamics (MD) Calculation</h1>
+<h2>1. MD Calculation within Molby</h2>
+<p>
+Molby implements molecular dynamics (MD) calculation which uses the same force fields as the energy minimization by molecular mechanics (MM). This implementation is suitable only for preliminary calculations (to check parameters quickly, etc.); for production runs, it is strongly recommended that you use one of the established software packages.
+</p>
+<p>
+An example of preliminary MD run is presented here. We use 2,2'-dimethoxybiphenyl again. In a similar way as in the <a href='mm_minimize.html'>step six</a>, create a model and assign MM parameters (including the partial charges on the atoms).
+</p>
+<p><img src='../etc/md_01.png' /></p>
+<p>
+Select MM/MD &rarr; Molecular Dynamics. A setting dialog opens. Although this dialog resembles that in MM minimization, it shows different parameters that are relevant to the MD calculation.
+</p>
+<p><img src='../etc/md_02.png' /></p>
+<p>
+The "timestep" parameter defines the minimum time increment in solving the equation of motions. The "target temperature" defines the temperature of the system. Before running the MD calculation, all atoms are let to have random velocities with the Boltzmann distribution corresponding to the target temperature. In addition, the velocities are modified so that the temperature is kept constant. The "steps per frame" and "number of frames" parameters have the same meaning as in the MM minimization. The screenshot shows 10 as the "steps per frame"; this is an appropriate value for MM minimization, however for MD calculations a larger value would be more appropriate (like 100). 
+</p>
+<p>
+Pressing the "Advanced..." button opens another dialog with other parameters. The meanings of the parameters are described in the embedded Ruby document, in the <a href='molby_rb/MDArena.html'>MDArena</a> page.
+</p>
+<p><img src='../etc/md_03.png' /></p>
+<p>
+Return to the original MD dialog (by pressing "Close" in the advanced settings dialog), and press "OK". The MD run starts, and new frames are accumulated. If you find something is wrong, or want to stop before getting the specified number of frames, you can stop the MD run by pressing Command-period (Mac) or Control-period (Windows).
+</p>
+<h2>2. Using Molby with AMBER: Creating Inputs and Importing Outputs</h2>
+<p>
+For production runs, you can create AMBER input files from Molby. More specifically, you can create "prmtop" and "inpcrd" files for the SANDER module.
+</p>
+<p class='note'>
+<span class='italic'>Note:</span> There is no guarantee that Molby creates the exactly same input as the official AMBER modeling tools, nor the generated files are valid inputs for the SANDER module. You may need to modify them by hand.
+</p>
+<p>
+To creat SANDER input files, select "Create SANDER input..." command in the "MM/MD" menu.
+</p>
+<p><img src='../etc/md_04.png' /></p>
+<p>
+You will be asked first for the file name for the "prmtop" file. Please be sure to add ".prmtop" extension. The other file, "inpcrd" file, is created as the same name with the ".prmtop" extension replaced by the ".inpcrd" extension.
+</p>
+<p><img src='../etc/md_05.png' /></p>
+<p>
+Subsequently, you will be asked to select one of the two versions of the prmtop files. The older one, "AMBER8/NAMD", allows you to use the output file by NAMD (see below).
+</p>
+<p><img src='../etc/md_06.png' /></p>
+<p>
+Now you can transfer your files to the workstation running SANDER. To perform the simulation, you still need to create the instruction file for SANDER, which you should already know if you are using AMBER.
+</p>
+<p>
+After the simulation is over, you can get the trajectory file ("mdcrd" file) back and import to Molby. Use "Import..." command in the "File" menu, select "AMBER mdcrd file (*.crd; *.mdcrd)", and specify the file.
+</p>
+<p><img src='../etc/md_07.png' /></p>
+<h2>3. Using Molby with NAMD: Creating Inputs and Importing Outputs</h2>
+<p>
+You can also use the NAMD software package for production run. NAMD is developed by the Theoretical Biophysics Group in the University of Illinois at Urbana-Champaign, and the official information is found at their web site (<a href='http://www.ks.uiuc.edu/Research/namd/'>http://www.ks.uiuc.edu/Research/namd/</a>). NAMD can use the AMBER "prmtop" as the input, by use of the instruction <code>amber yes</code>. See NAMD Users' Guide for details.
+</p>
+<p>
+You can also import the NAMD output by importing the dcd file. The file format is also listed in the "Import..." file dialog.
+</p>
+<h2>4. Building Solvated Structures</h2>
+<p>
+When you want to perform MD simulations in explicit solvent, you need to build a box of solvent molecules around the target molecule. Molby can help creating solvated structures.
+</p>
+<p>
+To build a solvated structure, you need to open the file containing the predefined box of the desired solvent. The following solvent box is included in the Molby package, and can be accessed from "File" &rarr; "Open Predefined" &rarr; "Solvent boxes" submenu. The tip3box was taken from the AmberTool package, and other solvent boxes were taken from <a href='http://www.pharmacy.manchester.ac.uk/bryce/amber'>Amber parameter database</a>.
+</p>
+<table border='1' cellspacing='0'>
+<tr><th>name</th><th>solvent</th><th>reference</th></tr>
+<tr><td>tip3pbox</td>
+<td>water</td>
+<td>Jorgensen, W. L.; Chandrasekhar, J.; Madura, J.; Klein, M. L.<br />
+<i>J. Chem. Phys.</i> <b>1983,</b> <i>79,</i> 926.
+</td></tr>
+<tr><td>chcl3box</td>
+<td>chloroform</td>
+<td>Cieplak, P.; Caldwell, J. W.; Kollman, P. A.<br />
+<i>J. Comp. Chem.</i> <b>2001,</b> <i>22,</i> 1048.<br />
+</td></tr>
+<tr><td>dmsobox</td>
+<td>dimethylsulfoxide</td>
+<td>Fox, T.; Kollman, P. A.<br />
+<i>J. Phys. Chem. B</i> <b>1998,</b> <i>102,</i> 8070.
+</td></tr>
+<tr><td>meohbox</td>
+<td>methanol</td>
+<td>Caldwell, J. W.; Kollman, P. A.<br />
+<i>J. Phys. Chem.</i> <b>1995,</b> <i>99,</i> 6208.
+</td></tr>
+<tr><td>nmabox</td>
+<td>N-methylacetamide</td>
+<td>Caldwell, J. W.; Kollman, P. A.<br />
+<i>J. Phys. Chem.</i> <b>1995,</b> <i>99,</i> 6208.
+</td></tr>
+</table>
+<p><img src='../etc/md_08.png' /><img src='../etc/md_09.png' /></p>
+<p>
+While keeping the solvent box open, create or open the target (solute) molecule in a separate window. With this solute molecule in the front window, select "Solvate..." command in the "MM/MD" menu.
+</p>
+<p><img src='../etc/md_10.png' /></p>
+<p>
+A dialog box opens.
+</p>
+<p><img src='../etc/md_11.png' /></p>
+<p>
+In the popup menu "Choose solvent box:", you will find the solvent box you opened earlier. Note that this popup menu lists <span class='italic'>all</span> open molecules that have the associated periodic box (or unit cell). This can lead to a confusing situation that, if you have another solvated structure also open, that structure will also be listed in this popup menu, because a solvated structure always have a periodic box. Therefore, please take care so that you choose the right solvent box.</p>
+<p class='note'>
+If you open the solvent box from the "Open Predefined" menu, you can easily recognize it in the popup menu, because the name has asterisks at the beginning and the end, like "*CHCl3*".
+</p>
+<p>
+The "Box offset" parameters define the thickness of the solvent layer surrounding the solute molecule. More specifically, the periodic box of the solvated structure is determined as follows: the minimum cuboid that can surround the solute molecule is defined, and all the faces are offset by the "Box offset" distances to the outside direction. On the other hand, it is possible to define the size of the periodic box explicitly for any of the three (x, y, z) directions. If you wish to do this, give a negative number for that direction. (For example, if you want the periodic box to be 40 &Aring; in the x direction, give -40 as the first "Box offset" parameter.)
+</p>
+<p class='note'>
+The size of the periodic box can be checked by selecting "Xtal" &rarr; "Unit Cell..." menu command, or in the property table (the "unit cell" property).
+</p>
+<p>
+The "Exclusion limit distance" defines the minimum allowed distance between the solvent and solute molecules. The solvent molecule is removed when it has atoms with smaller distances than this parameter from the solute molecule.
+</p>
+
+</div><div class='navigation'><a href='index.html'>[Top]</a> <a href='tutorials.html'>[Up: Tutorials]</a> <a href='mm_minimize.html'>[Prev: Step Six: Energy Minimization by Molecular Mechanics]</a> <a href='coordination.html'>[Next: Step Eight: MM/MD Calculation of Coordination Compounds]</a> <span class='float_right'><a href='../ja/md.html'>[Japanese]</a></span></div></body></html>

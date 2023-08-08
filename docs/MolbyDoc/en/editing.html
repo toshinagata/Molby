@@ -1,0 +1,85 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html lang='en' xml:lang='en' xmlns='http://www.w3.org/1999/xhtml'><head><meta content='text/html;charset=utf-8' http-equiv='Content-Type' lang='en' xml:lang='en' /><title>Step Two: Edit a Molecule</title><link href='../etc/style.css' rel='stylesheet' type='text/css' /><link href='index.html' rel='Start' /><link href='tutorials.html' rel='Index' /><link href='drawing.html' rel='Prev' /><link href='cut_copy_paste.html' rel='Next' /></head><body><div class='topic_path'><a href='index.html'>Molby</a> &gt; <a href='tutorials.html'>Tutorials</a> &gt; Step Two: Edit a Molecule &nbsp;&nbsp; <a href='drawing.html'>[Prev]</a> &nbsp;&nbsp; <a href='cut_copy_paste.html'>[Next]</a><span class='float_right'><a href='../ja/editing.html'>[Japanese]</a></span></div><div class='contents' lang='en' xml:lang='en'>
+<h1>Step Two: Edit a Molecule</h1>
+<h2>1. Append a Substituent</h2>
+<p>
+Suppose you have a benzene molecule now, and want to append a methyl substituent to give a toluene.
+</p>
+<p>
+Press the button "Select", and click on the black area where no atom nor bond is present. The selection becomes canceled.
+</p>
+<p><img src='../etc/edit_01.png' /></p>
+<p>
+Select one of the hydrogen atoms. There are two ways to do this. You can click on the target atom, or you can drag to select atoms within a rectangular region.
+</p>
+<p><img src='../etc/edit_02.png' /> <img src='../etc/edit_03.png' /></p>
+<p>
+Double-click on the hydrogen atom. This time, be sure to hit the selection! Then you will see the dialog "enter formula" as shown below. Type "CH3" in the text box and hit "OK".
+</p>
+<p><img src='../etc/edit_04.png' /></p>
+<p>
+Now you get toluene.
+</p>
+<p><img src='../etc/edit_05.png' /></p>
+<p>
+You want to save the result to a file. Select "Save as..." from the File menu, choose the file format, enter the filename, and hit "Save".
+</p>
+<p>
+The "native" file format in Molby is "mbsf", i.e. <u>M</u>ol<u>b</u>y <u>S</u>tructure <u>F</u>ile. The mbsf format is a private format with no compatibility with any existing file format for chemistry. Nevertheless, it is a plain text file that is reasonably compact and easy to read. Unless you have a particular reason to choose other formats, it is recommended that you save the structues as a "mbsf" file.
+</p>
+<h2>2. Manipulate Molecular Fragments</h2>
+<p>
+After building a molecule, you may want to move some part of a molecule. Here are examples how you can do it.
+</p>
+<p>
+Select the methyl group of the toluene, if you have not done so yet <span class='note'>(Tip: you can add to the current selection by shift-clicking)</span>. Press the left rotation bar (marked "3" in the previous page), and drag up and down. You will see the methyl group rotates to the right and left.
+</p>
+<p><img src='../etc/edit_06.png' /></p>
+<p>
+The same manipulation can be achieved by selecting one bond and dragging the left rotation bar. In this case, you can also rotate the benzene ring (with the methyl group fixed) by pressing Option (Mac) or Alt (Win) key when dragging.
+</p>
+<p><img src='../etc/edit_07.png' /></p>
+<p>
+The selected atoms can be dragged to give a translational move. Use this feature with care, because it may result in a chemically unnatural structure.
+</p>
+<p><img src='../etc/edit_08.png' /></p>
+<h2>3. Adding and Deleting Atoms</h2>
+<p>
+We have already learned one way to add atoms: double-clicking on the selected part of the molecule (or on the black area where nothing is present), and type-in the formula. Actually, this is the most convenient way to add atoms in Molby. However, there are also other ways to add atoms.
+</p>
+<p>
+Look at our familiar toluene molecule. Suppose we want to convert it to indane.
+</p>
+<p><img src='../etc/indane.png' /> indane</p>
+<p>
+Rotate the molecule so that its orientation matches the chemical structure. We will start from C3, add two carbons, and then close the ring.
+</p>
+<p><img src='../etc/edit_09.png' /></p>
+<p>
+Press the "Erase" button above the black area. Click on the "H3" hydrogen. The hydrogen atom and the bond between C3 and H3 disappear.
+</p>
+<p><img src='../etc/edit_10.png' /></p>
+<p>
+Press the "Bond" button. Drag from the C3 atom to the right-bottom, and release the mouse button. A new atom and a bond to C3 are created. Drag from the new atom to the right-up, and another atom and bond are created.
+</p>
+<p><img src='../etc/edit_11.png' /> <img src='../etc/edit_12.png' /></p>
+<p>
+Press the "Erase" button again, and erase one hydrogen from the methyl group. Press the "Select" button, select the benzene-methylene bond, and rotate the methylene group as appropriate for the five-membered ring, by use of the left rotation bar.
+</p>
+<p><img src='../etc/edit_13.png' /> <img src='../etc/edit_14.png' /></p>
+<p>
+Now you can close the ring. Press the "Bond" button, and drag from the methylene carbon. When the mouse cursor comes close enough to the target carbon, the new atom will snap to the target and make a new bond. Then release the mouse button.
+</p>
+<p><img src='../etc/edit_15.png' /></p>
+<p>
+Finally, you want to add hydrogens to the newly created carbons. Press the "Select" button, and select these two carbons. Go to the "Edit" menu, and select the "Add Hydrogen" -&gt; "Tetrahedral sp3" menu command.
+</p>
+<p><img src='../etc/edit_16.png' /></p>
+<p>
+Here is the result.
+</p>
+<p><img src='../etc/edit_17.png' /></p>
+<p class='note'>
+A similar result can be achieved by selecting the hydrogen ortho to the methyl group, double-click it, type "CH2CH3" in, erase one hydrogen atom from each of the methyl groups, and make a bond. This is better because the newly created methylenes have reasonable bond lengths and angles as methylene groups. The above example is just for explanation of the editing features.
+</p>
+</div><div class='navigation'><a href='index.html'>[Top]</a> <a href='tutorials.html'>[Up: Tutorials]</a> <a href='drawing.html'>[Prev: Step One: Draw a New Molecule]</a> <a href='cut_copy_paste.html'>[Next: Step Three: Edit a Molecule: Cut/Copy/Paste]</a> <span class='float_right'><a href='../ja/editing.html'>[Japanese]</a></span></div></body></html>

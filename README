@@ -29,9 +29,9 @@ Molby runs on Mac OS X (10.12 and later) and Microsoft Windows (XP and later). E
 
 Molby is a copyrighted product of Toshi Nagata.
 
-       Copyright (C) 2008-2022 Toshi Nagata
+       Copyright (C) 2008-2023 Toshi Nagata
 
-Molby includes (more technically: is statically linked to) the following softwares, which are copyrighted products as described below:
+Molby includes the following softwares, which are copyrighted products as described below:
 
 - wxWidgets 3.2.0: Copyright (C) 1992-2022 Julian Smart, Robert Roebling, Vadim Zeitlin and other members of the wxWidgets team. Portions (c) 1996 Artificial Intelligence Applications Institute 
 - Ruby 2.0.0: Copyright (C) 1993-2013 Yukihiro Matsumoto

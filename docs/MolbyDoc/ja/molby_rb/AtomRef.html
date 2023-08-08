@@ -1,0 +1,662 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>Class: AtomRef</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Script-Type" content="text/javascript" />
+  <link rel="stylesheet" href="rdoc-style.css" type="text/css" media="screen" />
+</head>
+<body>
+
+<div id="navi">
+<a href="../index.html">[Molby Document Home]</a>
+<a href="../ruby_ref.html">[Contents]</a>
+</div>
+
+<div id="classHeader">
+<table class="header-table">
+<tr>
+<td><strong>Class:</strong></td>
+<td class="class-name-in-header">AtomRef</td>
+</tr>
+<tr>
+<td><strong>Parent:</strong></td>
+<td><a href="Object.html">Object</a></td>
+</tr>
+</table>
+</div>
+
+<div id="section">
+<h3 class="section-bar">Description</h3>
+<h4>Overview</h4>
+<p>
+The class <a href="AtomRef.html">AtomRef</a> points to an atom at a particular index in a <a href="Molecule.html">Molecule</a>. <a href="AtomRef.html">AtomRef</a> does not implement <span class="method-name">initialize</span> nor <span class="method-name">new</span> methods; i.e. an AtomRef object cannot be created explicitly by calling a constructor method. Instead, an AtomRef object is implicitly created as a return value from such methods like <a href="Molecule.html#M000184">Molecule#add_atom</a>, <a href="Molecule.html#M000249">Molecule#create_atom</a>, <a href="Molecule.html#M000250">Molecule#duplicate_atom</a> and <a href="MolEnumerable.html#M000002">MolEnumerable#[]</a>, or given as a block argument in some iterator methods such as <a href="Molecule.html#M000234">Molecule#each_atom</a> and <a href="MolEnumerable.html#M000004">MolEnumerable#each</a>.
+</p>
+<h4>Atom Attributes</h4>
+<p>
+An atom has many attributes, such as name, position, atom type, and so on. All atom attributes have the corresponding accessor (setter/getter) methods. Some attributes are read only, in which case the setter functions cause exception.
+</p>
+<h4>AtomRef and Editing Molecule</h4>
+<p>
+An <a href="AtomRef.html">AtomRef</a> object contains the parent <a href="Molecule.html">Molecule</a> and the index (non-negative integer). The index is <b>not</b> automatically updated when the parent <a href="Molecule.html">Molecule</a> is edited; in such case, the <a href="AtomRef.html">AtomRef</a> object may point to a different atom, or even cause out-of-range exception.
+</p>
+<pre>
+% <span class="molby-input">m = Molecule.from_formula("CH4")</span>
+<span class="molby-output">-->#&lt;Molecule:0x16400bf8&gt;</span>
+% <span class="molby-input">m.dump</span>
+   0 RES.1   C1   ""   C    0.000   0.000   0.000  0.000 [1,2,3,4]
+   1 RES.1   H1   ""   H   -0.355   0.000  -1.020  0.000 [0]
+   2 RES.1   H2   ""   H   -0.355  -0.883   0.510  0.000 [0]
+   3 RES.1   H3   ""   H   -0.355   0.883   0.510  0.000 [0]
+   4 RES.1   H4   ""   H    1.080   0.000   0.000  0.000 [0]
+<span class="molby-output">--></span>
+% <span class="molby-input">a = m.atoms[3]</span>  #  Points to "H3"
+<span class="molby-output">-->#&lt;AtomRef:0x164449e8&gt;</span>
+% <span class="molby-input">a.name</span>
+<span class="molby-output">-->"H3"</span>
+% <span class="molby-input">m.remove([0])</span>   #  Remove atom 0: now "a" points to "H4"
+<span class="molby-output">--></span>
+% <span class="molby-input">a.name</span>
+<span class="molby-output">-->"H4"</span>
+% <span class="molby-input">m.remove([0])</span>   #  Remove atom 0 again: "a" becomes out of range
+<span class="molby-output">--></span>
+% <span class="molby-input">a.name</span>
+("atom index out of range" exception)
+</pre>
+</div>
+
+<div id="methods">
+<h3 class="section-bar">Public Instance methods</h3>
+
+<div id="method-anchor_list" class="method-detail">
+<a name="anchor_list"></a>
+<div class="method-heading">
+<span class="method-name">anchor_list       &rarr; [n1, w1, n2, w2, ...]<br />
+self.anchor_list = [n1, w1, n2, w2, ...]
+</span>
+</div>
+<div class="method-description">
+<p>
+Get/set the list of component atoms for a pi-anchor. N1, n2, ... are the component atom indices from which the pi anchor is defined, and w1, w2, ... are the significance of each component atom.
+</p>
+</div>
+</div>
+
+<div id="method-aniso" class="method-detail">
+<a name="aniso"></a>
+<div class="method-heading">
+<span class="method-name">aniso       &rarr; [f11, f22, f33, f12, f13, f23]<br />
+self.aniso = [f11, f22, f33, f12, f13, f23]<br />
+self.aniso = [f11, f22, f33, f12, f13, f23, type]
+</span>
+</div>
+<div class="method-description">
+<p>
+Get/set the anisotropic thermal factors. If no anisotropic thermal factors are defined for this atom, the getter returns nil. The setter can accept nil as the right-hand value, which clears anisotropic thermal factors for this atom.
+</p>
+<p>
+The anisotropic thermal parameters are defined as in ORTEP type 0, with the following formula:
+</p>
+<p>
+&nbsp;&nbsp;&nbsp;exp(-(f11*h<sup>2</sup> + f22*k<sup>2</sup> + f33*l<sup>2</sup> + 2*f12*h*k + 2*f13*h*l + 2*f23*k*l))
+</p>
+<p>
+If the extra "type" value is given as in the third form, other types of thermal parameters can be specified. The type value corresponds to that of the ORTEP specification.
+</p>
+<p>
+For type = 0, 1, 2, 3, and 10:<br />
+&nbsp;&nbsp;&nbsp;pow(B, -D*(f11*h<sup>2</sup> + f22*k<sup>2</sup> + f33*l<sup>2</sup> + C*f12*h*k + C*f13*h*l + C*f23*k*l))
+</p>
+<ul>
+<li>type = 0: B = e, C = 2, D = 1 (default)</li>
+<li>type = 1: B = e, C = 1, D = 1</li>
+<li>type = 2: B = 2, C = 2, D = 1</li>
+<li>type = 3: B = 2, C = 1, D = 1</li>
+<li>type = 10: B = e, C = 2, D = 2*pi<sup>2</sup></li>
+</ul>
+<p>
+For type = 4, 5, 8, and 9:<br />
+&nbsp;&nbsp;&nbsp;exp[-D*(<span class="bold">a</span><sub>1</sub><sup>2</sup>*f11*h<sup>2</sup> + <span class="bold">a</span><sub>2</sub><sup>2</sup>*f22*k<sup>2</sup> + <span class="bold">a</span><sub>3</sub><sup>2</sup>*f33*l<sup>2</sup> + C*<span class="bold">a</span><sub>1</sub>*<span class="bold">a</span><sub>2</sub>*f12*h*k + C*<span class="bold">a</span><sub>2</sub>*<span class="bold">a</span><sub>3</sub>*f23*k*l + C*<span class="bold">a</span><sub>1</sub>*<span class="bold">a</span><sub>3</sub>*f13*h*l)]
+</p>
+<ul>
+<li>type = 4: C = 2, D = 1/4</li>
+<li>type = 5: C = 1, D = 1/4</li>
+<li>type = 8: C = 2, D = 2*pi<sup>2</sup></li>
+<li>type = 9: C = 1, D = 2*pi<sup>2</sup></li>
+</ul>
+
+<p>
+The thermal parameters are described in crystallographic coordinates, so that they are only meaningful when a crystallographic unit cell is defined (see also: <a href="Molecule.html#M000235">Molecule#cell</a>, <a href="Molecule.html#M000236">Molecule#cell=</a>). Nevertheless, setting anisotropic parameters without defining a unit cell does not cause exception, in which case a trivial unit cell ([1, 0, 0], [0, 1, 0], [0, 0, 1]) is implicitly assumed.
+</p>
+</div>
+</div>
+
+<div id="method-atom_type" class="method-detail">
+<a name="atom_type"></a>
+<div class="method-heading">
+<span class="method-name">atom_type       &rarr; String<br />
+self.atom_type = String
+</span>
+</div>
+<div class="method-description">
+<p>
+Get/set the atom type for molecular mechanics calculations. The atom type is a string consisting of up to 4 printable ASCII characters (case sensitive), with an optional "variant" part consisting of a period followed by one case-insensitive alphanumeric character. Thus, the following strings are all valid atom types: "ca", "C*", "Zn" ("zn" or "ZN" are different atom types), "CAHN.1".
+</p>
+<p>
+The atom type with a variant part behaves similarly as the same atom type without the variant, except when a parameter is explicitly defined for the variant-containing atom type. For example, suppose there is an atom with type "cp.1" bound to an atom with type "ca"; when a bond parameter "ca-cp.1" is defined, this parameter is used for this bond; otherwise, a bond parameter "ca-cp" is looked for, and if one is found it is used for this bond.
+</p>
+<p>
+The atom type "X" and "x" are reserved as wildcards. When parameters are looked for, these atom types match any atom types. Note that these are only wildcard atom types defined in Molby; atom types such as "C*" or "C?" are just individual atom types, with no "matching" behavior.
+</p>
+</div>
+</div>
+
+<div id="method-atom_type" class="method-detail">
+<a name="atomic_number"></a>
+<div class="method-heading">
+<span class="method-name">atomic_number       &rarr; Integer<br />
+self.atomic_number = Integer
+</span>
+</div>
+<div class="method-description">
+<p>
+Get/set the atomic number. Setting an atomic number also causes change of the <a href="AtomRef.html#element">element</a> and <a href="AtomRef.html#weight">weight</a> attributes.
+</p>
+<p>
+<i>See Also:</i> <a href="AtomRef.html#element">AtomRef#element</a>, <a href="AtomRef.html#weight">AtomRef#weight</a>.
+</p>
+</div>
+</div>
+
+<div id="method-atom_type" class="method-detail">
+<a name="charge"></a>
+<div class="method-heading">
+<span class="method-name">charge       &rarr; Float<br />
+self.charge = Float
+</span>
+</div>
+<div class="method-description">
+<p>
+Get/set the partial charge. The partial charge is a value used in molecular mechanics calculations for evaluation of electrostatic interactions, and is different from an integer charge as defined in PDB format. For the latter attribute, use <a href="AtomRef.html#int_charge">AtomRef#int_charge</a> and <a href="AtomRef.html#int_charge">AtomRef#int_charge=</a> methods.
+</p>
+</div>
+</div>
+
+<div id="method-atom_type" class="method-detail">
+<a name="connects"></a>
+<div class="method-heading">
+<span class="method-name">connects       &rarr; Array of Integers<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get the connection table. A connection table is a list of atoms that are connected to this atom, represented by an array of atom indices (0-based). This is a read-only attribute; if new bonds are to be created or removed, <a href="Molecule.html#M000251">Molecule#create_bond</a> or <a href="Molecule.html#remove_bond">Molecule#remove_bond</a> should be used.
+</p>
+</div>
+</div>
+
+<div id="method-atom_type" class="method-detail">
+<a name="element"></a>
+<div class="method-heading">
+<span class="method-name">element       &rarr; String<br />
+self.element = String<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get/set the chemical element. The chemical element is represented by a two-character string, the first uppercase character and the second (optional) lowercase character, although the right-hand argument for the setter is case-insensitive. It follows that the three-character element symbols for newly discovered elements cannot be used; they are hardly useful for molecular modeling anyway.
+</p>
+<p>
+Setting the chemical element also causes change of the <a href="AtomRef.html#atomic_number">atomic_number</a> and <a href="AtomRef.html#weight">weight</a> attributes.
+</p>
+<p>
+<i>See Also:</i> <a href="AtomRef.html#atomic_number">AtomRef#atomic_number</a>, <a href="AtomRef.html#weight">AtomRef#weight</a>.
+</p>
+</div>
+</div>
+
+<div id="method-atom_type" class="method-detail">
+<a name="exclusion"></a>
+<div class="method-heading">
+<span class="method-name">exclusion       &rarr; [[i1, i2, ...], [j1, j2, ...], [k1, k2, ...]]<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get the exclusion table, which is used to "exclude" the pair of atoms from the calculation of the non-bonding interaction. [i1, i2, ...] are the atoms which are directly connected to this atom (1-2 exclusion). [j1, j2, ...] are the atoms (other than self) that are connected to [i1, i2, ...] and not in the 1-2 exclusion list (1-3 exclusion). [k1, k2, ...] are the atoms (other than self) that are connected to [j1, j2, ...] and not in the 1-2 nor 1-3 exclusion list.
+</p>
+<p>
+This is a read-only attribute.
+</p>
+<p>
+This method requires that the <a href="MDArena.html">MDArena</a> object for the parent molecule is already established and <a href="MDArena.html#M000046">prepare</a>'d.
+</p>
+</div>
+</div>
+
+<div id="method-atom_type" class="method-detail">
+<a name="f"></a>
+<div class="method-heading">
+<span class="method-name">f       &rarr; <a href="Vector3D.html">Vector3D</a><br />
+self.f = <a href="Vector3D.html">Vector3D</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get the force value from the last MM/MD calculation. The value is in internal force unit, amu Å fs<sup>-2</sup> (amu is the atomic mass unit, fs is femtosecond). The setter method is also implemented, however it is seldom useful.
+</p>
+</div>
+</div>
+
+<div id="method-atom_type" class="method-detail">
+<a name="fix_force"></a>
+<div class="method-heading">
+<span class="method-name">fix_force       &rarr; Float<br />
+self.fix_force = Float<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get/set the force constant to fix the atom at the particular position during MM/MD calculations. The value is in kcal/mol. If the force constant is positive, an auxiliary harmonic potential is applied for this atom. If the force constant is negative, the forces are calculated as usual but the velocity of the atom is set to zero in every step. The latter is physically problematic, so use of negative force is not recommended.
+</p>
+<p>
+<i>See Also:</i> <a href="AtomRef.html#fix_pos">AtomRef#fix_pos</a>
+</p>
+</div>
+</div>
+
+<div id="method-atom_type" class="method-detail">
+<a name="fix_pos"></a>
+<div class="method-heading">
+<span class="method-name">fix_pos       &rarr; <a href="Vector3D.html">Vector3D</a><br />
+self.fix_pos = <a href="Vector3D>html">Vector3D</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get/set the position to fix the atom during MM/MD calculations. The <a href="AtomRef.html#fix_force">fix_force</a> should also be set.
+</p>
+<p>
+<i>See Also:</i> <a href="AtomRef.html#fix_force">AtomRef#fix_force</a>
+</p>
+</div>
+</div>
+
+<div id="method-atom_type" class="method-detail">
+<a name="fract_r"></a>
+<div class="method-heading">
+<span class="method-name">fract_r       &rarr; <a href="Vector3D.html">Vector3D</a><br />
+self.fract_r = <a href="Vector3D.html">Vector3D</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get/set the fractional coordinates as a <a href="Vector3D.html">Vector3D</a>. If the crystallographic unit cell is not defined, these methods are equivalent to <a href="AtomRef.html#r">AtomRef#r</a> and <a href="AtomRef.html#r">AtomRef#r=</a>, respectively.
+</p>
+</div>
+</div>
+
+<div id="method-atom_type" class="method-detail">
+<a name="fract_x"></a>
+<div class="method-heading">
+<span class="method-name">fract_x       &rarr; Float<br />
+self.fract_x = Float<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get/set the fractional coordinate x. If the crystallographic unit cell is not defined, these methods are equivalent to <a href="AtomRef.html#x">AtomRef#x</a> and <a href="AtomRef.html#x">AtomRef#x=</a>, respectively.
+</p>
+</div>
+</div>
+
+<div id="method-atom_type" class="method-detail">
+<a name="fract_y"></a>
+<div class="method-heading">
+<span class="method-name">fract_y       &rarr; Float<br />
+self.fract_y = Float<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get/set the fractional coordinate y. If the crystallographic unit cell is not defined, these methods are equivalent to <a href="AtomRef.html#y">AtomRef#y</a> and <a href="AtomRef.html#y">AtomRef#y=</a>, respectively.
+</p>
+</div>
+</div>
+
+<div id="method-atom_type" class="method-detail">
+<a name="fract_z"></a>
+<div class="method-heading">
+<span class="method-name">fract_z       &rarr; Float<br />
+self.fract_z = Float<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get/set the fractional coordinate z. If the crystallographic unit cell is not defined, these methods are equivalent to <a href="AtomRef.html#z">AtomRef#z</a> and <a href="AtomRef.html#z">AtomRef#z=</a>, respectively.
+</p>
+</div>
+</div>
+
+<div id="method-atom_type" class="method-detail">
+<a name="hidden"></a>
+<div class="method-heading">
+<span class="method-name">hidden       &rarr; Boolean<br />
+self.hidden = Boolean<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get/set the hidden flag. This is an atom attribute, and is independent with the Molecule attribute such as <a href="Molecule.html#show_hydrogens">Molecule#show_hydrogens</a>, <a href="Molecule.html#show_dummy_atoms">Molecule#show_dummy_atoms</a> and <a href="Molecule.html#show_expanded">Molecule#show_expanded</a>. If you want to examine the visibility of an atom by taking these attributes into consideration, try <a href="Molecule.html#is_atom_visible">Molecule#is_atom_visible</a>.
+</p>
+</div>
+</div>
+
+<div id="method-atom_type" class="method-detail">
+<a name="index"></a>
+<div class="method-heading">
+<span class="method-name">index       &rarr; Integer<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get the atom index as an integer. This is a read-only attribute; if you want to change the order of the atoms, you should use <a href="Molecule.html#M000260">Molecule#renumber_atoms</a>.
+</p>
+</div>
+</div>
+
+<div id="method-atom_type" class="method-detail">
+<a name="int_charge"></a>
+<div class="method-heading">
+<span class="method-name">int_charge       &rarr; Integer<br />
+self.int_charge = Integer<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get/set the integer charge. This is the integer charge of the atom as defined in PDB format, and different from the partial (fractional) charge used in MM/MD calculations. For the latter attribute, use <a href="AtomRef.html#charge">AtomRef#charge</a> and <a href="AtomRef.html#charge">AtomRef#charge=</a> methods.
+</p>
+</div>
+</div>
+
+<div id="method-atom_type" class="method-detail">
+<a name="mm_exclude"></a>
+<div class="method-heading">
+<span class="method-name">mm_exclude       &rarr; Integer<br />
+self.mm_exclude = Integer<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get/set the flag whether to exclude this atom from MM/MD calculation. The atom is to be excluded if the flag is non-zero.
+</p>
+</div>
+</div>
+
+<div id="method-atom_type" class="method-detail">
+<a name="molecule"></a>
+<div class="method-heading">
+<span class="method-name">molecule       &rarr; <a href="Molecule.html">Molecule</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get the parent molecule object.
+</p>
+</div>
+</div>
+
+<div id="method-name" class="method-detail">
+<a name="name"></a>
+<div class="method-heading">
+<span class="method-name">name       &rarr; String<br />
+self.name = String<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get/set the atom name. An atom name consists of up to 4 printable ASCII characters.
+</p>
+</div>
+</div>
+
+<div id="method-occupancy" class="method-detail">
+<a name="occupancy"></a>
+<div class="method-heading">
+<span class="method-name">occupancy       &rarr; Float<br />
+self.occupancy = Float<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get/set the occupancy.
+</p>
+</div>
+</div>
+
+<div id="method-periodic_exclude" class="method-detail">
+<a name="periodic_exclude"></a>
+<div class="method-heading">
+<span class="method-name">periodic_exclude       &rarr; Integer<br />
+self.periodic_exclude = Integer<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get/set the flag whether to exclude this atom from periodic calculation. The atom is to be excluded if the flag is non-zero.
+</p>
+</div>
+</div>
+
+<div id="method-r" class="method-detail">
+<a name="r"></a>
+<div class="method-heading">
+<span class="method-name">r       &rarr; <a href="Vector3D.html">Vector3D</a><br />
+self.r = <a href="Vector3D.html">Vector3D</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get/set the atom position as a <a href="Vector3D.html">Vector3D</a>. The atom positions are always in cartesian coordinates, even when the crystallographic unit cell is defined. To handle crystallographic fractional coordinates, use <a href="AtomRef.html#fract_r">AtomRef#fract_r</a> and <a href="AtomRef.html#fract_r">AtomRef#fract_r=</a>.
+</p>
+</div>
+</div>
+
+<div id="method-res_name" class="method-detail">
+<a name="res_name"></a>
+<div class="method-heading">
+<span class="method-name">res_name       &rarr; String<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get the residue name. A residue name consists of up to 4 printable ASCII characters. This is a read-only attribute; if a residue name is to be changed, use <a href="Molecule.html#M000258">Molecule#assign_residue</a>.
+</p>
+</div>
+</div>
+
+<div id="method-res_seq" class="method-detail">
+<a name="res_seq"></a>
+<div class="method-heading">
+<span class="method-name">res_seq       &rarr; Integer<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get the residue number. Residue numbers are 1-based, and the number 0 means "no residue assigned". This is a read-only attribute; if a residue number is to be changed, use <a href="Molecule.html#M000258">Molecule#assign_residue</a>.
+</p>
+</div>
+</div>
+
+<div id="method-seg_name" class="method-detail">
+<a name="seg_name"></a>
+<div class="method-heading">
+<span class="method-name">seg_name       &rarr; String<br />
+self.seg_name = String<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get/set the segment name. A segment name consists of up to 4 printable ASCII characters.
+</p>
+</div>
+</div>
+
+<div id="method-seg_seq" class="method-detail">
+<a name="seg_seq"></a>
+<div class="method-heading">
+<span class="method-name">seg_seq       &rarr; Integer<br />
+self.seg_seq = Integer<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get/set the segment number.
+</p>
+</div>
+</div>
+
+<div id="method-sigma" class="method-detail">
+<a name="sigma"></a>
+<div class="method-heading">
+<span class="method-name">sigma       &rarr; <a href="Vector3D.html">Vector3D</a><br />
+sigma_x     &rarr; Float</a><br /> 
+sigma_y     &rarr; Float</a><br /> 
+sigma_z     &rarr; Float</a><br /> 
+self.sigma = <a href="Vector3D.html">Vector3D</a><br />
+self.sigma_x = Float<br />
+self.sigma_y = Float<br />
+self.sigma_z = Float<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get/set the "sigma" (standard deviation) for the fractional coordinates. Usually these values are read from crystallographic data.
+</p>
+</div>
+</div>
+
+<div id="method-symop" class="method-detail">
+<a name="symop"></a>
+<div class="method-heading">
+<span class="method-name">symop       &rarr; nil or [sym, dx, dy, dz, base]<br />
+self.symop = [sym, dx, dy, dz, base]<br />
+self.symop = nil
+</span>
+</div>
+<div class="method-description">
+<p>
+Get/set the symmetry operation. If this atom is not symmetry expanded, then nil is returned. Otherwise, an array of symmetry operation index, cell translation (x, y, z), and the original atom index. When this attribute is set, you will be responsible for keeping the other attribute consistent (for example, the atomic number and atom types should be the same with the base atom). If the right-hand argument has less than five elements or some of the elements are nil, then that attribute is not changed.
+</p>
+<p>
+<i>See Also:</i> <a href="Molecule.html#M000292">Molecule#expand_by_symmetry</a>
+</p>
+</div>
+</div>
+
+<div id="method-temp_factor" class="method-detail">
+<a name="temp_factor"></a>
+<div class="method-heading">
+<span class="method-name">temp_factor       &rarr; Float<br />
+self.temp_factor = Float<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get/set the (isotropic) temperature factor. For anisotropic temperature factors, see <a href="AtomRef.html#aniso">AtomRef#aniso</a>.
+</p>
+</div>
+</div>
+
+<div id="method-uff_type" class="method-detail">
+<a name="uff_type"></a>
+<div class="method-heading">
+<span class="method-name">uff_type       &rarr; String<br />
+self.uff_type = String<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get/set the UFF atom type as a 5-character string.
+</p>
+</div>
+</div>
+
+<div id="method-v" class="method-detail">
+<a name="v"></a>
+<div class="method-heading">
+<span class="method-name">v       &rarr; <a href="Vector3D.html">Vector3D</a><br />
+self.v = <a href="Vector3D.html">Vector3D</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get/set the velocity value from the last MM/MD calculation. The value is in Å fs<sup>-1</sup> (fs is femtosecond).
+</p>
+</div>
+</div>
+
+<div id="method-weight" class="method-detail">
+<a name="weight"></a>
+<div class="method-heading">
+<span class="method-name">weight       &rarr; Float<br />
+self.weight = Float<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get/set the atomic weight. This attribute is automatically updated when <a href="AtomRef.html#atomic_number">atomic_number</a> or <a href="AtomRef.html#element">element</a> is modified, whereas changing the weight attribute does <b>not</b> cause automatic update of either <a href="AtomRef.html#atomic_number">atomic_number</a> or <a href="AtomRef.html#element">element</a> attribute.
+</p>
+</div>
+</div>
+
+<div id="method-x" class="method-detail">
+<a name="x"></a>
+<div class="method-heading">
+<span class="method-name">x       &rarr; Float<br />
+self.x = Float<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get/set the cartesian coordinate x. To handle crystallographic fractional coordinates, use <a href="AtomRef.html#fract_x">AtomRef#fract_x</a> and <a href="AtomRef.html#fract_x">AtomRef#fract_x=</a>.
+</p>
+</div>
+</div>
+
+<div id="method-y" class="method-detail">
+<a name="y"></a>
+<div class="method-heading">
+<span class="method-name">y       &rarr; Float<br />
+self.y = Float<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get/set the cartesian coordinate y. To handle crystallographic fractional coordinates, use <a href="AtomRef.html#fract_y">AtomRef#fract_y</a> and <a href="AtomRef.html#fract_y">AtomRef#fract_y=</a>.
+</p>
+</div>
+</div>
+
+<div id="method-z" class="method-detail">
+<a name="z"></a>
+<div class="method-heading">
+<span class="method-name">z       &rarr; Float<br />
+self.z = Float<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get/set the cartesian coordinate z. To handle crystallographic fractional coordinates, use <a href="AtomRef.html#fract_z">AtomRef#fract_z</a> and <a href="AtomRef.html#fract_z">AtomRef#fract_z=</a>.
+</p>
+</div>
+</div>
+
+</div>
+
+</body>
+</html>

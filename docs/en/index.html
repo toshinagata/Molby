@@ -1,0 +1,349 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html lang='ja' xml:lang='en' xmlns='http://www.w3.org/1999/xhtml'>
+<head>
+<meta lang='ja' xml:lang='en' content='text/html;charset=utf-8' http-equiv='Content-Type' />
+<title>Molby</title>
+<link href='../style.css' rel='stylesheet' type='text/css' />
+<link href='index.html' rel='Start' />
+</head>
+<body>
+
+<div id="navibox">
+
+<span id="bread_navi">
+&nbsp;
+</span>
+
+<span id="select_lang">
+<a href="../ja/index.html">[Japanese]</a>
+</span>
+
+</div> <!-- end navibox -->
+
+<div id="wholebox">
+
+<div id="headerbox">
+  <img id="topfig" src="../screen.png" alt="" width="280" height="200" />
+  <div id="titlebox">
+    <h1>Molby</h1>
+    <p>An Interactive Molecular Modeling Software</p>
+    <p>For Mac OS X and Windows</p>
+  </div>
+  <div id="downloadbox">
+  <a href="https://github.com/toshinagata/Molby/releases/">
+  To Download Page
+  </a>
+  </div>
+</div>
+
+<div id="content">
+
+<ul>
+<li><a href="../MolbyDoc/en/index.html">
+Molby Online Documents and Tutorials
+</a></li>
+<li><a href="gallery.html">
+Molby Gallery
+</a></li>
+<li><a href="https://github.com/toshinagata/Molby">
+Molby Project Page (GitHub)
+</a></li>
+</ul>
+
+<p>
+Molby is a software for building molecular models on the graphic screen. It works on Mac OS X and Windows. It can import and export files for other computational chemistry softwares such as GAMESS and Gaussian. It can also edit molecules by scripts running on the built-in Ruby interpreter.
+</p>
+<p>
+Molby is a free software, licensed under GPLv2.
+</p>
+
+<h2>News</h2>
+
+<dl>
+
+<dt>2019/08/17</dt>
+<dd>
+Version 1.0 is out. This is the first official release!<br />
+<ul>
+<li>About dialog is improved.</li>
+<li>On double-clicking and entering formula, the last input string is remembered and shown as the default input</li>
+<li>NO2, SO (sulfonyl) and SO3H (sulfonic acid) are now recognized as known fragments.</li>
+<li>More options in Create GAMESS dialog.</li>
+<li>Handling of the surface normals was incomplete. Fixed.</li>
+<li>Create MO Surface: default opacity is set to 0.8 instead of 0.6.</li>
+<li>Creating cube file was failing when very small electron density (<1e-100) appeared. Fixed.</li>
+<li>Show MO surface dialog now has 'Create Cube' button.</li>
+<li>A CIF file with multiple structures now can be processed (multiple documents are opened in this case)</li>
+</ul>
+[Mac]<br />
+<ul>
+<li>PowerPC and 32-bit intel are no longer supported. The binary is 64-bit Intel only. Minimum requirement is now 10.6.</li>
+<li>Fix unstable behavior on drag-and-dropping a log file on the application icon.</li>
+<li>On startup, re-opening the last opened documents was causing crash. Fixed.</li>
+<li>Fixed crash on closing a modified window with a close box.</li>
+</ul>
+[Windows]<br />
+<ul>
+<li>The installer now can install 64bit or 32bit version according to the OS architecture.</li>
+<li>Fix assertion failure on using text field in Ruby dialog.</li>
+</ul>
+[Embedded Ruby]<br />
+<ul>
+<li>Modal dialog caused crash sometimes on activation. Fixed (hopefully)</li>
+<li>from_dump was not working because String#each is no longer implemented. Fixed.</li>
+<li>Stop timer before showing error dialog</li>
+<li>In create_graphic with :poly argument, handling of the normal vectors is improved.</li>
+<li>Document for the Ruby extension is updated.</li>
+<li>export_graphic now allows specification of the width and height of the captured image.</li>
+<li>cubegen now accepts mo=0, which means 'arbitrary vector'</li>
+</ul>
+</dd>
+
+<dt>2014/10/26</dt>
+<dd>
+Version 1.0b03 is out.<br />
+<ul>
+<li>Displaying MO surface is implemented.</li>
+<li>Extra properties are assignable for each frame. On importing Gamess output, the energy values are set as the property.</li>
+<li>The graphic can be exported as a PNG file.</li>
+<li>Log files of Natural Bond Orbital can now be imported.</li>
+<li>The graphic objects are now saved into mbsf files.</li>
+</ul>
+</dd>
+
+<dt>2014/05/24</dt>
+<dd>Molby paper is now published! Please check out.<br />
+Toshi Nagata, "Molby - Graphical Molecular Modeling Software with Integrated Ruby Interpreter," <br />
+<i>Bull. Chem. Soc. Jpn.</i> <b>2014,</b> in press. DOI:<a href="http://dx.doi.org/10.1246/bcsj.20140093">10.1246/bcsj.20140093</a>
+</dd>
+
+<dt>2014/05/06</dt>
+<dd><a href="gallery.html">Molby Gallery</a> is now open.
+</dd>
+
+<dt>2014/04/26</dt>
+<dd>Version 1.0b02 is out.<br />
+<ul>
+<li>Common "Scratch" directory is used for all external programs, namely antechamber, resp, gamess and ortep. Note: the scratch directory cannot contain whitespace characters.</li>
+<li>In reading MM/MD parameters, check criteria for duplicate parameters are somewhat relaxed (i.e. comparison of floating numbers is allowed for rounding errors)</li>
+<li>Symmetry Operations dialog was not working for setting new symmetry. Fixed.</li>
+<li>GAMESS dialog is modified so that manual editing is possible.</li>
+<li>Mac: 'Window' menu is implemented.</li>
+<li>Win: crash caused by the 'missing DLL' problems was fixed.</li>
+<li>Win: document_home is modified to use the Windows API, instead of hard-coded path (which was wrong on Windows Vista and later).</li>
+<li>Win: "backquote" method was not working well.</li>
+<li>Win: when the program is started twice, the second invocation was causing crash. Hopefully fixed.</li>
+</ul>
+</dd>
+
+<dt>2014/03/28</dt>
+<dd>Version 1.0b01 is out. First beta release!<br />
+<ul>
+<li>The graphic toolkit is changed from wxWidgets 2.8 to wxWidgets 3.0.</li>
+<li>Windows: the application no longer uses MDI interface, but uses multi-window interface.</li>
+<li>Embedded Ruby is now 2.0.0 instead of 1.8.7.</li>
+<li>C60 fullerene, twist-boat cyclohexane, metal coordination motifs are introduced as the predefined structure.</li>
+<li>Antechamber can be called for charge and atom types separately.</li>
+<li>UFF parameters are included.</li>
+<li>Graphic drawing is implemented in Ruby Dialog (not documented yet).</li>
+<li>Main menu is rearranged (in particular, there is now a "Xtal" menu)</li>
+<li>ORTEP3 is included, and graphic user interface for drawing ORTEP is provided.</li>
+<li>Printing and exporting the main window is now supported.</li>
+<li>Space-filling view is implemented.</li>
+<li>Many bug fixes.</li>
+</ul>
+</dd>
+
+<dt>2013/06/15</dt>
+<dd>Version 0.6.5 is out.<br />
+New Features:
+<ul>
+<li>Local execution of GAMESS is implemented.</li>
+<li>For X-ray data (with standard deviations), calculation of bonds and angles with standard deviation is implemented.</li>
+<li>GAMESS log containing F and G type orbitals can now be imported (cube calculation is not yet implemented).</li>
+<li>In the 'GAMESS export' dialog, new basis sets can be loaded from external files.</li>
+<li>Particle mesh Ewald calculation is implemented (experimentally).</li>
+<li>"Pi-anchor" atoms (i.e. dummy atoms for cyclopentadienyl-metal bonds etc.) are implemented (experimentally).</li>
+<li>The Ruby console now has history capability.</li>
+</ul>
+Bug Fix:
+<ul>
+<li>CIF files from old TeXsan software cannot be loaded. Fixed.</li>
+<li>Symmetry expansion in CIF import is improved (may not be complete yet).</li>
+<li>Deleting bonds was causing bus error. Fixed.</li>
+<li>Two subsequent dragging of different atoms was causing undo failure. Fixed.</li>
+<li>Merging/unmerging molecules are revised, so that undo works more consistently.</li>
+<li>And many others.</li>
+</ul>
+</dd>
+
+<dt>2012/10/13</dt>
+<dd>Version 0.6.4 is out.
+<ul>
+<li>Opening bond/angle/dihedral/improper table now triggers searching MD parameters (but not rebuilding angle/dihedral/improper tables).</li>
+<li>Property table can now list the unit cell parameters.</li>
+<li>"Show Graphite" command was using _very_ wrong C-C bond length. Now it uses correct length (1.42 angstrom).</li>
+<li>Best-fit plane calculations are implemented.</li>
+<li>The revision number is displayed in the about dialog.</li>
+<li>Cell parameter minimization is implemented (still experimental).</li>
+<li>The restriction on the number of bonds (12) is removed.</li>
+<li>Ruby: Dialog#filter_kit is implemented. The how-to is described in the document (appendix).</li>
+<li>Ruby: LAMatrix#svd (singular value decomposition) was implemented.</li>
+<li>Ruby: The methods bond_par, angle_par, dihedral_par, improper_par, vdw_par are moved from Molecule to MDArena.</li>
+<li>Bug fixes (see the ChangeLog)</li>
+</ul>
+</dd>
+
+<dt>2012/06/18</dt>
+<dd>Version 0.6.3 is out.
+<ul>
+<li>Document for the LAMatrix class was written.</li>
+<li>Document for the collaboration with other quantum chemistry softwares was written.</li>
+<li>Mbsf files now retain sigmas for the crystallographic parameters (imported from CIF).</li>
+<li>New Ruby commands: Molecule#fit_coordinates, Molecule#amend_by_symmetry, Molecule#set(get)_view_center, Molecule#hidden_atoms, Molecule#set_hidden_atoms, Molecule#charge, Kernel#lookup_menu</li>
+<li>When the MM parameters are edited from the bond/angle table, the force constant can be guessed by Universal Force Field (UFF).</li>
+<li>The MM parameters can now be specified by explicit atom indices.</li>
+<li>Other bug fixes (see the change log).</li>
+</ul>
+</dd>
+
+<dt>2012/02/03</dt>
+<dd>Version 0.6.2 is out.
+<ul>
+<li>Graphic objects can be drawn together with the molecule (requires Ruby coding).</li>
+<li>Modeless operation of Ruby Dialog is implemented.</li>
+<li>The first comment line of the Ruby script (that is to be imported by "Execute Ruby Script" command) can now contain "coding:shift-jis" or "coding:utf-8" instruction. At present, only these two codings are recognized.</li>
+<li>LAMatrix (linear algebra matrix) class is implemented in Ruby, which allow matrix arithmetic of arbitrary dimension. No document is provided yet.</li>
+<li>Empty Console Window command is implemented.</li>
+<li>Document for MD calculation is written.</li>
+<li>Rms of crystallographic parameters (from the CIF file) are now kept in the molecule. Copying/saving of such parameters are not yet supported.</li>
+</ul>
+</dd>
+
+<dt>2011/11/30</dt>
+<dd>Version 0.6.1 is out.
+<ul>
+<li>Ring fusion can be performed by copy-paste or "double-click and type-in".</li>
+<li>Various ring structures (cycloalkanes, aromatics) and solvent boxes are accessible from "Open Predefined" menu.</li>
+<li>CIF import is improved, so that bonds including the calculated hydrogen atoms are created by guess.</li>
+<li>Import/export of dcd trajectory files is implemented.</li>
+<li>Creating AMBER input now allows to select between AMBER8 (also for NAMD) and AMBER11 formats.</li>
+</ul>
+</dd>
+
+<dt>2011/10/15</dt>
+<dd>Version 0.6 is out.
+<ul>
+<li>Mac: a command line version is included in the binary distribution.</li>
+<li>Some solvent box are included in Scripts/mbsf folder.</li>
+<li>Setting external forces during MM/MD is implemented.</li>
+<li>The MO info table is renamed to MO energy, and the alpha and beta orbitals of same indices are shown in the same row.</li>
+<li>Many other small changes and bug fixes.</li>
+</ul>
+</dd>
+
+<dt>2011/08/23</dt>
+<dd>Version 0.5.6.2 is out.
+<ul>
+<li>Fchk import was broken (enbug in 0.5.6.1); fixed.</li>
+<li>Final compile date/time is now shown in the 'About' window.</li>
+<li>Fix mdcrd import to allow coordinates using full 8 digits (like -123.456 or 1234.567).</li>
+<li>Occasional crash during minimization is fixed.</li>
+</ul>
+</dd>
+
+<dt>2011/08/03</dt>
+<dd>Version 0.5.6.1 is out.
+<ul>
+<li>Crash on running antechamber/parmchk on PPC Mac is (hopefully) fixed.</li>
+<li>Mac: resp and sqm (semiempirial QM calculation invoked by antechamber) caused crash unless gfortran is installed. To fix this, config.h/Makefiles for AmberTools is modified so that gfortran library is statically linked.</li>
+<li>Occasionally, termination of the subprocess (like antechamber) was not detected properly, and the subprocess was left as a zombie. Improved, but may not be completely fixed.</li>
+<li>Loading GAMESS dat file now can be interrupted by ESC.</li>
+<li>Disable close box of RubyDialogFrame.</li>
+<li>On importing frcmod, atom type with a single character (like "c") was not recognized properly. Fixed.</li>
+<li>MO import from GAMESS log/dat files are implemented.</li>
+</ul>
+
+<dt>2011/07/30</dt>
+<dd>Version 0.5.6 is out.
+<ul>
+<li>Gaff and parm99 parameters: the equilibrium bond lengths have now three significant digits after the decimal point.</li>
+<li>Crash on antechamber/parmchk dialog (and other Ruby-based dialogs as well) is fixed.</li>
+<li>Ruby: New methods: AtomRef#exclusion, Molecule#resize_to_fit, Molecule#bond_par/angle_par/dihedral_par/improper_par/vdw_par, $stdin.gets, $stdin.readline. Improved: Molecule#each_atom, Molecule#duplicate, Molecule#open, Kernel#message_box, Dialog#item.</li>
+<li>MM/MD: minimization gets improved stability; the "solvate" command now sets the segment name 'SOLV' for the solvent atoms.</li>
+<li>New menu commands: "Create New Atom", "Create New Parameter", "Create SANDER Input", "Import AMBER Lib", "Import AMBER Frcmod".</li>
+<li>New file formats: cif (import), AMBER mdcrd (import).</li>
+<li>Tables: cut/copy/paste in parameter table is improved. Mac: table did not get focus under certain conditions; fixed. </li>
+</ul>
+</dd>
+
+<dt>2011/04/26</dt>
+<dd>Version 0.5.5 is out.
+<ul>
+<li>Incomplete MM/MD re-initialization after modification of coordinates was fixed.</li>
+<li>The Ruby command wrap_unit_cell now works correctly.</li>
+<li>Periodic images can be displayed when a unit cell is defined.</li>
+<li>Wrong calculation of vdw/elect forces under periodic boundary conditions was fixed.</li>
+<li>The native format (mbsf) now preserves the display conditions, such as scale, orientation etc.</li>
+<li>Pasting MD parameters to a molecule with no parameters now works correctly.</li>
+<li>Importing GaussianW fch(k) files was not working; fixed. The extension ".fch" is now recognized as a Gaussian formatted checkpoint files.</li>
+</ul>
+</dd>
+
+<dt>2010/05/07</dt>
+<dd>Version 0.5.4 is out.
+<ul>
+<li>"Create GAMESS Input" dialog can now specify automatic generation of internal coordinates.</li>
+<li>Many bugs were fixed.</li>
+</ul>
+</dd>
+
+<dt>2010/04/25</dt>
+<dd>Version 0.5.3 is out.
+<ul>
+<li>Frames can now have variable unit cell parameters.</li>
+<li>Improved handling of copy/cut/paste in the parameter table.</li>
+<li>Fix the problem in the Mac version in which the hidden top-level window gets sometimes visible in the Window menu.</li>
+<li>Bugs in the list control were (hopefully) fixed.</li>
+</ul>
+</dd>
+
+<dt>2010/03/20</dt>
+<dd>
+Version 0.5.2 is out.
+<ul>
+<li>The reference for built-in Ruby is written. The features of the Ruby commands are cleaned up.</li>
+</ul>
+</dd>
+
+<dt>2010/02/06</dt>
+<dd>
+Version 0.5.1 is out.
+<ul>
+<li><a href="http://ambermd.org/">AmberTools 1.3</a>(partly) is included in the package. The tools make it easy to assign MM atom types and calculate am1-bcc partial atomic charges for organic molecules.</li>
+<li>Freeze problems after MM/MD is improved (it still happens sometimes).</li>
+<li>The document <a href="../doc/en/mm_minimize.html">"Energy minimization by molecular mechanics"</a> is written.</li>
+</ul>
+<p class="note">2010/02/07 Added：Links are given for AmberTools and the online document.</p>
+</dd>
+<dt>2010/02/01</dt>
+<dd>The English version of the home page (this page) is created.</dd>
+<dt>2010/01/21</dt>
+<dd>First public release.</dd>
+
+</dl>
+
+</div> <!-- end content -->
+
+</div> <!-- end wholebox -->
+
+<div id="navibox">
+
+<span id="bread_navi">
+&nbsp;
+</span>
+
+</div> <!-- end navibox -->
+</body>
+</html>

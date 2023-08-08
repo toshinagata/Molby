@@ -1,0 +1,321 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html lang='ja' xml:lang='ja' xmlns='http://www.w3.org/1999/xhtml'><head><meta content='text/html;charset=utf-8' http-equiv='Content-Type' lang='ja' xml:lang='ja' /><title>第十一段階：組み込み Ruby インタプリタを使う</title><link href='../etc/style.css' rel='stylesheet' type='text/css' /><link href='index.html' rel='Start' /><link href='tutorials.html' rel='Index' /><link href='xtal.html' rel='Prev' /></head><body><div class='topic_path'><a href='index.html'>Molby</a> &gt; <a href='tutorials.html'>チュートリアル</a> &gt; 第十一段階：組み込み Ruby インタプリタを使う &nbsp;&nbsp; <a href='xtal.html'>[前]</a> &nbsp;&nbsp; <a href='ruby_ref.html'>[次]</a><span class='float_right'><a href='../en/ruby.html'>[English]</a></span></div><div class='contents' lang='ja' xml:lang='ja'>
+<h1>第十一段階：組み込み Ruby インタプリタを使う</h1>
+<p>
+Molby の最も有用な機能の１つは、内蔵の Ruby インタプリタです。分子モデリングを行うとき、ある数学的な規則に従ってモデルを変更したいことがしばしばあります。また、分子のある種の情報を自動化された「スクリプト」（コンピュータプログラム）で抽出してテキストとして書き出し、グラフ描画ソフトウェアで処理することも有用です。内蔵 Ruby インタプリタは、このような場合に威力を発揮します。実は、Molby の機能の多くの部分は Ruby スクリプトで実装されているのです。
+</p>
+<p>
+Molby の内蔵 Ruby インタプリタを使うためには、プログラミング言語 Ruby の知識が必要です。インターネット上で良いオンラインチュートリアルを見つけてください。もっとも、以下の解説を読めば、ある程度のイメージはつかめるでしょう。
+</p>
+<h2>1. Ruby コンソールを使う</h2>
+<p>
+Molby が起動すると、Ruby の「コンソールウィンドウ」が開きます。
+</p>
+<p><img src='../etc/ruby_01.png' /></p>
+<p>
+このウィンドウ上で、Ruby スクリプトを対話的に実行することができます。いくつか試してみましょう。コンソールウィンドウをクリックしてアクティブにして、"1+2"、続いてリターンキーをタイプしてください。次のようになります。
+</p>
+<p class='code'>% <span class='blue'>1+2</span>
+<span class='red'>--&gt; 3</span>
+%
+</p>
+<p>
+Ruby インタプリタが "1+2" を計算し、答え (3) を次の行に表示したところです。
+</p>
+<p>
+カッコを含む長い式も計算できます。
+</p>
+<p class='code'>% <span class='blue'>(13.0*13.0+7.0*7.0)/1.365</span>
+<span class='red'>--&gt;159.70695970696</span>
+%
+</p>
+<p>
+数学関数も使うことができます。
+</p>
+<p class='code'>% <span class='blue'>exp(-2.0) * (sin(0.25) + cos(0.25))</span>
+<span class='red'>--&gt;0.1646105219232536</span>
+%
+</p>
+<p class='note'>通常 Ruby では、これらの数学関数を使うときには <code>Math.exp</code>, <code>Math.sin</code> のように書かなくてはなりません。Molby では、<code>Math</code> という接頭辞は必要ありません。これは Molby が起動時に <code>Math</code> モジュールを "include" するためです。</p>
+<p>
+文字列 <i>(Strings)</i> を使うこともできます。
+</p>
+<p class='code'>% <span class='blue'>"C" + "32"</span>
+<span class='red'>--&gt;"C32"</span>
+%
+</p>
+<p>
+ここの "32" は数ではなく文字列です。引用符で囲まれているからです。引用符を省略するとどうなるでしょう？
+</p>
+<p class='code'>% <span class='blue'>"C" + 32</span>
+</p>
+<p><img src='../etc/ruby_02.png' /></p>
+<p>
+Molby はエラーメッセージ "no implicit conversion of Fixnum into String" を表示します。これは、「整数」32 を「文字列」"C" に足すことはできないことを意味しています。このような「型が違う」エラーはとてもよく起きるので、どのように直せばいいかをよく理解しておいてください。
+</p>
+<p>
+Ruby のもう１つの便利な機能は「配列」<i>(Array)</i> です。これは、他の Ruby オブジェクトを順番に並べたものです。配列は、値をコンマで区切って角括弧 [] で囲むことで表します。
+</p>
+<p class='code'>% <span class='blue'>[1, 2, 3]</span>
+<span class='red'>--&gt;[1, 2, 3]</span>
+%
+</p>
+<p>
+Ruby のオブジェクトは「変数」に格納することができます。変数の名前は、小文字のアルファベットで始まり、数字またはアルファベット ("_" を含む) の並びでなくてはなりません。
+</p>
+<p class='code'>% <span class='blue'>a = ["apple", "orange", "grape"]</span>
+<span class='red'>--&gt;["apple", "orange", "grape"]</span>
+% <span class='blue'>a[0]</span>     <span class='comment'># 配列の要素を指定する</span>
+<span class='red'>--&gt;"apple"</span>
+</p>
+
+<h2>2. Molby スクリプトで分子を扱う</h2>
+<p>
+ここまでの例では、Ruby の組み込み型 <code>Integer</code>, <code>String</code>, <code>Array</code> を使ってきましたが、Molby スクリプトでは「分子」を扱うことが必要になります。ベンゼン分子があるとしましょう。
+</p>
+<p><img src='../etc/ruby_03.png' /></p>
+<p>
+これをクロロベンゼンに変えたいとします。グラフィックインターフェイスでは２つのやり方があります。H1原子をダブルクリックしてダイアログボックスに "Cl" と入力するか、属性テーブルの "element" のセルで "H" を "Cl" に変えます。これを Ruby スクリプトで行うには、次のようにします。
+</p>
+<p class='code'>% <span class='blue'>atoms[1].element = "Cl"</span>
+<span class='red'>--&gt;"Cl"</span>
+%
+</p>
+<p><img src='../etc/ruby_04.png' /></p>
+<p>
+この短いコードに、Molby でのコーディングの重要な技法が含まれています。まず、<code>atoms</code> は「現在の分子」（コンソールウィンドウを除いて最も手前側にあるウィンドウの分子）に含まれる原子の並びを表します。<code>atoms</code> は Ruby の配列 (<code>Array</code>) ではありませんが、多くの点で配列と同じように使うことができます。特に、「添字」をつけて特定の原子を指定することができます。
+</p>
+<p class='code'>atoms[i]   <span class='comment'>#  現在の分子の i 番目の原子</span>
+</p>
+<p>
+<code>atom[i]</code> ではなく <code>atoms[i]</code> であることに注意してください。混乱しますが、これは <code>atoms</code> が原子の並びで <code>[]</code> が「…番目の要素を取り出す」という機能を表すためです。
+</p>
+<p>
+次は <code>.element = "Cl"</code> です。Ruby では、ピリオド (<code>.</code>) に続けて単語 (<code>element</code>) を書くと、「メソッド呼び出し」になります。「メソッド」とはプログラミング言語 Ruby の用語で、ある対象（オブジェクト）に固有の動作を指します。この場合は、<code>atoms[1]</code> がオブジェクトで、<code>element=</code> という名前のメソッドを持っています（最後の '=' を含みます）。このメソッドは、「その原子の元素記号を右辺の文字列で表されたものに変える」という働きをします。このようにして、スクリプト <code>atoms[1].element = "Cl"</code> は、原子１の元素記号を Cl に変えます。
+</p>
+<p>
+もし、全部の水素原子を塩素に変えたいとしたらどうでしょう？　次のようにします。
+</p>
+<p class='code'>% <span class='blue'>natoms.times { |i| if atoms[i].element == "H"; atoms[i].element = "Cl"; end }</span>
+<span class='red'>--&gt;12</span>
+%
+</p>
+<p>
+これは前の例よりずっと複雑です。ステップごとに説明していきます。
+</p>
+<p>
+<code>natoms</code> は、現在の分子の原子数を整数で返します。これは実はメソッド呼び出しで、<code>Molecule</code> 型オブジェクトのメソッド <code>natoms</code> を呼んでいます。ピリオドがないのにメソッドが呼び出されているのはなぜでしょう？　これは Ruby 言語の仕様に、「暗黙のメソッド呼び出し」があるためです。あとでもう少し詳しく説明します。
+</p>
+<p class='code'>natoms   <span class='comment'># 12 となる</span>
+</p>
+<p>
+<code>times</code> は、<code>Integer</code> （これは Ruby の組み込み型です）のメソッドです。その後ろの中括弧 {} で囲まれたコードを、指定した回数実行します。
+</p>
+<p class='code'>natoms.times { ... }   <span class='comment'># { ... } が 12 回実行される</span>
+</p>
+<p class='note'>中括弧で囲んだコードを Ruby の用語で「ブロック」と呼びます。</p>
+<p>
+繰り返すコード（ブロック）の中で、「今実行しているのは何回目？」かを知りたいことがあります。このためには、ブロックの先頭で、２本の縦棒 "|" で囲んで変数を指定します。
+</p>
+<p class='code'>natoms.times { |i| ... }   <span class='comment'># { ... } の中で、変数 i は繰り返し回数を表す</span>
+</p>
+<p>
+次のようなコードがテストのためによく使われます。(<code>puts</code> は与えられたオブジェクトをコンソールに出力します。)
+</p>
+<p class='code'>% <span class='blue'>natoms.times { |i| puts i }</span>
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+<span class='red'>--&gt;12</span>
+</p>
+<p>
+最後の行の "12" は、<code>times</code> メソッドの「戻り値」です。その上の 0 から 11 の数は、<code>puts</code> メソッドからの出力です。ブロックが 12 回実行され、変数 <code>i</code> が 0 から 11 まで変化したことがわかりますね。
+</p>
+<p>
+ブロックの中には、<code>if</code> 文があります。
+</p>
+<p class='code'>if atoms[i].element == "H"; atoms[i].element = "Cl"; end
+</p>
+<p>
+<code>if</code> 文の一般形は次の通りです。
+</p>
+<p class='code'>if <i>&lt;条件&gt;</i>; <i>&lt;実行文&gt;</i>; end
+</p>
+<p>
+まず <i>&lt;条件&gt;</i> が評価されます。それが「真」ならば、<i>&lt;実行文&gt;</i> が実行されます。条件が「真」でなければ、<i>&lt;実行文&gt;</i> はスキップされます。
+</p>
+<p>
+<i>注:</i> Ruby は <code>false</code> と <code>nil</code> だけを「真でない」値とします。その他の値はすべて「真」です。特に、数値の <code>0</code>（ゼロ）と空の文字列 (<code>""</code>) も「真」となります（これは Perl などの他のプログラミング言語とは異なります）。多くの Ruby メソッドは、失敗したときに nil を返します。これらのメソッドは条件部分にそのまま使えます。
+</p>
+<p>
+最後に出てくる <code>element</code> メソッドは、先に出て来た <code>element=</code> メソッドとは違います。
+</p>
+<p class='code'>atoms[i].element == "H"
+</p>
+<p>
+この場合は、<code>element</code> の次に来る記号は "<code>==</code>" で、これは「２つの値は等しいか？」という意味です。この記号は "<code>=</code>" とは違います。後者は「右辺を左辺に代入する」という意味です。<code>element</code> という記号は、その次に "<code>=</code>" 記号が来るときに限って、"<code>element=</code>" メソッドとして解釈されます。この場合はそうではないので、<code>element</code> メソッドが呼び出されます。このメソッドは、現在の元素記号を <code>String</code> （文字列）として返します。
+</p>
+<p>
+スクリプトを実行したら、分子は次のようになるはずです。
+</p>
+<p><img src='../etc/ruby_05.png' /></p>
+
+<h2>3. 暗黙のメソッド呼び出し</h2>
+<p>
+前の節で、<code>natoms</code> は <code>Molecule</code> オブジェクトのメソッドであることを学びました。
+</p>
+<p class='code'>natoms     <span class='comment'># 12 （ベンゼンの場合）</span>
+</p>
+<p>
+なぜこの <code>natoms</code> はメソッド呼び出しと見なされるのでしょう？　実は、Ruby インタプリタ（Ruby スクリプトを実行するプログラム）は小文字のアルファベットで始まる単語を見つけると、まず変数（ローカル変数）を探し、それが見つからなければ「現在のオブジェクト」に属するメソッドであると見なすのです。Ruby は「オブジェクト指向言語」なので、Ruby スクリプトの実行中は必ず「現在のオブジェクト」が存在しています。これを <code>self</code> と呼びます。コンソールで試してみましょう：
+</p>
+<p class='code'>% <span class='blue'>self</span>
+<span class='red'>--&gt;Molecule["unnamed1"]</span>
+%
+</p>
+<p>
+この結果は、「現在のオブジェクト」が "unnamed1" という分子を表す <code>Molecule</code> オブジェクトであることを示しています。Molby コンソールでスクリプトを実行する時は、最前面にあるウィンドウの分子に対応する <code>Molecule</code> オブジェクトが「現在のオブジェクト」になります。
+</p>
+<p class='note'>分子のウィンドウが１つも開いていない時は、現在のオブジェクトは <code>main</code> になります。これは Ruby 起動時の「現在のオブジェクト」と同じものです。</p>
+<p>
+ときどき、<code>Molecule</code> が持つメソッド名と同じ名前の変数を作ってしまうことがあります。この場合、変数へのアクセスが優先されますので、メソッドを呼び出すことはできなくなります。
+</p>
+<p class='code'>% <span class='blue'>natoms = 2</span>    <span class='comment'># 変数 natoms を定義</span>
+<span class='red'>--&gt;2</span>
+% <span class='blue'>natoms</span>    <span class='comment'># これは変数へのアクセスになり、メソッド呼び出しではない</span>
+<span class='red'>--&gt;2</span>
+%
+</p>
+<p>
+この場合でも、<code>self</code> を指定すればメソッドを呼び出すことができます。
+</p>
+<p class='code'>% <span class='blue'>self.natoms</span>    <span class='comment'># これはメソッド呼び出し</span>
+<span class='red'>--&gt;12</span>
+%
+</p>
+<p>
+特に注意が必要なのは、代入記号 ("<code>=</code>") を持つメソッドです。例えば、<code>show_hydrogens=</code> というメソッドは、水素原子を表示するかどうかを指定するものです。しかし、<code>self</code> を使わないと、ローカル変数への代入になってしまいます。従って、この場合は常に <code>self</code> を指定する必要があります。
+</p>
+<p class='code'>% <span class='blue'>show_hydrogens = false</span>    <span class='comment'># これはローカル変数への代入で、分子の状態は変わらない</span>
+<span class='red'>--&gt;false</span>
+% <span class='blue'>self.show_hydrogens = false</span>    <span class='comment'># これはメソッド呼び出しで、分子の状態を変える</span>
+<span class='red'>--&gt;false</span>
+%
+</p>
+<h2>4. ファイル上の Ruby スクリプトを実行する</h2>
+<p>
+Ruby コンソール上では、１行のスクリプトしか実行できません。もっと複雑なスクリプトを実行したい時や、同じスクリプトを何度も実行したい時は、ファイルにスクリプトを格納して実行する方が便利です。"Script" メニューの "Execute Script..." コマンドでこれが実現できます。
+</p>
+<p><img src='../etc/ruby_06.png' /></p>
+<p>
+スクリプトには無限の可能性があります。いくつかの例をここに示します。最初のものは、「鉄原子を含む結合長のテーブルを作る」スクリプトです。
+</p>
+<p class='code'><span class='comment'>#  Create a bond table including Fe
+#  Requires Molby</span>
+fp = open("bond_table.txt", "w") <span class='comment'>#  Create an output file</span>
+atoms.each { |ap|  <span class='comment'>#  This is another way to repeat over all atoms;
+                   #  ap points to the atom on each iteration</span>
+  if ap.element == "Fe"
+    r1 = ap.r               <span class='comment'># The cartesian coordinate of Fe</span>
+    ap.connects.each { |n|  <span class='comment'># ap.connects is an array of atom indices connected to this atom</span>
+      ap2 = atoms[n]        <span class='comment'># The atom connected to Fe</span>
+      r2 = ap2.r            <span class='comment'># The cartesian coordinate of the atom</span>
+      d = (r - r2).length   <span class='comment'># The bond length</span>
+      fp.printf "%s-%s %.3f\n", ap.name, ap2.name, d <span class='comment'># Write a table entry to the file</span>
+    }                       <span class='comment'># End loop (ap.connects)</span>
+  end                       <span class='comment'># End if</span>
+}                           <span class='comment'># End loop (atoms.each)</span>
+fp.close                    <span class='comment'># We are done with this file</span>
+</p>
+<p>
+このテキストをファイルに保存し、"Execute Script..." コマンドを実行し（目的の分子が一番前のウィンドウに表示されていることを確かめて）、スクリプトファイルを選びます。実行後、"bond_table.txt" というファイルが、スクリプトファイルと同じディレクトリに作成されています。
+</p>
+<p>
+次の例は、MD トラジェクトリを処理するものです。各フレームに対して、原子 0 が原点、原子 1, 2 が xy 平面上（原子 1 が x 軸上）に来るように分子を再配向して、原子 6 から 11 の重心を計算します。このような処理は、MD の結果分子のある部分がどのように動くかを可視化するのに便利です。
+</p>
+<p class='code'><span class='comment'>#  Reorient the molecule and extract center of some group
+#  Requires Molby</span>
+fp = open("extract_group.txt", "w") <span class='comment'>#  Create an output file</span>
+each_frame { |n|  <span class='comment'>#  This is an idiom to iterate over all frames</span>
+  rotate_with_axis(1, 2, 0)  <span class='comment'>#  Reorientation of the molecule is so frequently used
+                             #  that the Molecule class has a method to do it</span>
+  r = center_of_mass(6..11)  <span class='comment'>#  Also has a method to calculate the center of mass</span>
+  fp.printf "%d %.6f %.6f %.6f\n", n, r.x, r.y, r.z  <span class='comment'>#  Write the coordinates</span>
+}
+fp.close                     <span class='comment'>#  We are done with this file</span>
+</p>
+<p>
+最後の例は、任意のキラリティ・長さのカーボンナノチューブのモデルを作成するスクリプトです。
+</p>
+<p class='code'><span class='comment'>#  Create a model of carbon nanotube
+#  Requires Molby</span>
+r = 1.42     <span class='comment'>#  The C-C bond length</span>
+n = 10       <span class='comment'>#  The default chirality index</span>
+m = 5        <span class='comment'>#  (ibid)</span>
+aspect = 5.0 <span class='comment'>#  The default aspect ratio (length / diameter)</span>
+
+#  Dialog to ask the chirality index and the aspect ratio
+h = Dialog.run("Create Carbon Nanotube") {
+  layout(3,
+    item(:text, :title=&gt;"Chirality Index"),
+    item(:textfield, :width=&gt;80, :tag=&gt;"n", :value=&gt;n.to_s),
+    item(:textfield, :width=&gt;80, :tag=&gt;"m", :value=&gt;m.to_s),
+    item(:text, :title=&gt;"Aspect Ratio"),
+    item(:textfield, :width=&gt;160, :tag=&gt;"aspect", :value=&gt;sprintf("%.1f", aspect)),
+    -1)
+}
+
+exit if h[:status] != 0
+aspect = h["aspect"].to_f
+n = h["n"].to_i
+m = h["m"].to_i
+
+k = aspect / (PI * sqrt(3.0))
+points = []
+<span class='comment'>#  The limiting points are (0, 0), (n, m), (k(n+2m), -k(2n+m)), (k(n+2m)+n, -k(2n+m)+n)
+#  Search for the lattice points that are within the parallelogram
+#  surrounded by the above points
+#  det is the determinant of the matrix that converts the unit cell to the above parallelogram </span>
+delta = 2 * k * (n * n + m * m + n * m)
+(0..(k * (n + 2 * m) + n).ceil).each { |s|
+  ((-k * (2 * n + m)).floor..m).each { |t|
+    [0, 2.0/3.0].each { |d|   <span class='comment'>#  For two lattice points within the unit cell</span>
+      ss = (k * (2 * n + m) * (s + d) + k * (n + 2 * m) * (t + d)) / delta
+      tt = (m * (s + d) - n * (t + d)) / delta
+      if ss &gt;= 0.0 &amp;&amp; ss &lt; 1.0 &amp;&amp; tt &gt;= 0.0 &amp;&amp; tt &lt;= 1.0
+        points.push([ss, tt, s, t])   <span class='comment'>#  This point is within the parallelogram</span>
+      end
+    }
+  }
+}
+<span class='comment'>#  Create nanotube: line up [ss, tt] into cylindric shape</span>
+rad = sqrt(3.0) * r * sqrt(n * n + m * m + n * m) / (2 * PI)
+len = rad * 2 * aspect
+mol = Molecule.new
+points.each { |p|
+  ap = mol.create_atom
+  ap.element = "C"
+  ap.atom_type = "ca"
+  ap.r = [rad * cos(2 * PI * p[0]), rad * sin(2 * PI * p[0]), len * p[1]]
+}
+mol.guess_bonds
+<span class='comment'>#  Show the result in a new window</span>
+mol2 = Molecule.open
+mol2.add(mol)
+</p>
+<p><img src='../etc/ruby_07.png' style='vertical-align: top;' /><img src='../etc/ruby_08.png' /></p>
+
+<h2>5. 次に学ぶべきこと</h2>
+<p>
+組み込み Ruby インタプリタは非常に強力であるため、この短いチュートリアルでは説明しきれません。興味があるなら、<a href='ruby_ref.html'>Ruby 拡張のリファレンス</a> に目を通してください。また、Molby アプリケーション本体にはたくさんの Ruby スクリプトが内蔵されています。"Scripts" フォルダを参照してください（Mac OS X では Molby アプリケーションパッケージの中、Windows では Molby アプリケーションと同じフォルダにあります）。
+</p>
+</div><div class='navigation'><a href='index.html'>[トップ]</a> <a href='tutorials.html'>[上: チュートリアル]</a> <a href='xtal.html'>[前: 第十段階：結晶構造を取り扱う]</a> <a href='ruby_ref.html'>[次: Ruby 拡張リファレンス]</a> <span class='float_right'><a href='../en/ruby.html'>[English]</a></span></div></body></html>

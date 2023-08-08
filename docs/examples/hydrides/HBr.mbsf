@@ -1,0 +1,35 @@
+!:atoms
+! idx seg_name res_seq res_name name type charge weight element atomic_number occupancy temp_factor int_charge
+0 MAIN 1 HBR H1 hc 0.20103 1.00790 H 1 1.000000 0.000000 0
+1 MAIN 1 HBR Br1 br -0.20103 79.90400 Br 35 1.000000 0.000000 0
+
+!:positions ; frame 0
+! idx x y z [sx sy sz]
+0 -0.43783954 0.00000000 0.00000212
+1 0.97501354 0.00000000 -0.00000012
+
+!:bonds
+! from1 to1 from2 to2 from3 to3 from4 to4
+1 0
+
+!:trackball
+! scale; trx try trz; theta_deg x y z
+0.996685
+0.000000 0.000000 0.000000
+0.480825 0.144729 0.967842 -0.207333
+
+!:view
+show_unit_cell 0
+show_periodic_box 1
+show_expanded_atoms 1
+show_ellipsoids 0
+show_hydrogens 1
+show_dummy_atoms 1
+show_rotation_center 0
+show_graphite_flag 0
+show_graphite 5
+show_periodic_image_flag 0
+show_periodic_image 0 0 0 0 0 0
+atom_radius 0.200000
+bond_radius 0.100000
+

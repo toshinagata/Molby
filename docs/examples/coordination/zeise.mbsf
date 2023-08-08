@@ -1,0 +1,196 @@
+!:atoms
+! idx seg_name res_seq res_name name type charge weight element atomic_number occupancy temp_factor int_charge
+0 MAIN 0 _ Pt1 Pt 0.35698 195.07800 Pt 78 1.000000 0.000000 0
+1 MAIN 0 _ Cl1 Cl -0.51427 35.45270 Cl 17 1.000000 0.000000 0
+2 MAIN 0 _ Cl2 Cl -0.51427 35.45270 Cl 17 1.000000 0.000000 0
+3 MAIN 0 _ Cl3 Cl -0.51427 35.45270 Cl 17 1.000000 0.000000 0
+4 MAIN 0 _ C1 c2 -0.19104 12.01070 C 6 1.000000 0.000000 0
+5 MAIN 0 _ H11 ha 0.14197 1.00790 H 1 1.000000 0.000000 0
+6 MAIN 0 _ H12 ha 0.14197 1.00790 H 1 1.000000 0.000000 0
+7 MAIN 0 _ C2 c2 -0.19104 12.01070 C 6 1.000000 0.000000 0
+8 MAIN 0 _ AN ## 0.00000 0.00000 _ 0 0.000000 0.000000 0
+9 MAIN 0 _ H21 ha 0.14197 1.00790 H 1 1.000000 0.000000 0
+10 MAIN 0 _ H22 ha 0.14197 1.00790 H 1 1.000000 0.000000 0
+
+!:uff_type
+! idx uff_type
+0 Pt4+2
+1 Cl
+2 Cl
+3 Cl
+4 C_2
+5 
+6 
+7 C_2
+8 
+9 
+10 
+
+!:pi_anchor
+! idx count; n1 weight1; n2 weight2; ...; nN weightN
+8 2
+4 0.500000
+7 0.500000
+
+!:positions ; frame 0
+! idx x y z [sx sy sz]
+0 2.20969689 0.03926303 1.62813651
+1 4.32996945 0.06666083 2.71540057
+2 2.19903341 2.43163419 1.39692974
+3 2.06469220 -2.35512416 1.77951462
+4 -0.02466125 0.07132431 1.24473883
+5 -0.37832477 -0.79932892 1.76249208
+6 -0.32694513 1.03145493 1.61616546
+7 0.59559206 -0.04252682 0.03805884
+8 0.28546540 0.01439875 0.64139884
+9 0.79185178 0.82609257 -0.56041159
+10 0.74047138 -1.00469097 -0.41408505
+
+!:bonds
+! from1 to1 from2 to2 from3 to3 from4 to4
+1 0 2 0 3 0 7 4
+7 9 7 10 4 5 4 6
+8 0
+
+!:angles
+! a1 b1 c1 a2 b2 c2 a3 b3 c3
+2 0 1 3 0 1 3 0 2
+9 7 4 10 7 4 10 7 9
+5 4 7 6 4 5 6 4 7
+8 0 1 8 0 2 8 0 3
+0 8 4 0 8 7
+
+!:dihedrals
+! a1 b1 c1 d1 a2 b2 c2 d2
+5 4 7 9 5 4 7 10
+6 4 7 9 6 4 7 10
+4 8 0 1 4 8 0 2
+4 8 0 3
+
+!:xtalcell
+! a b c alpha beta gamma
+! This information is redundant and overridden by the following periodic_box info
+10.750000 8.405000 4.836000 90.000000 97.730000 90.000000
+
+!:periodic_box
+! ax ay az; bx by bz; cx cy cz; ox oy oz; fa fb fc [sigma; sa sb sc s_alpha s_beta s_gamma]
+    10.75000000      0.00000000      0.00000000
+     0.00000000      8.40500000      0.00000000
+    -0.65046640      0.00000000      4.79205483
+     0.00000000      0.00000000      0.00000000
+1 1 1
+
+!:md_parameters
+log_file (null)
+coord_file (null)
+vel_file (null)
+force_file (null)
+debug_file (null)
+debug_output_level 0
+step 204000
+coord_output_freq 100
+energy_output_freq 100
+coord_frame 2401
+timestep 1
+cutoff 9
+electro_cutoff 9
+pairlist_distance 10
+switch_distance 8
+temperature 300
+andersen_freq 50
+andersen_coupling 0.1
+random_seed 0
+dielectric 4.8
+gradient_convergence 1e-06
+coordinate_convergence 1e-08
+use_xplor_shift 1
+scale14_vdw 0.5
+scale14_elect 0.83
+relocate_center 1
+surface_probe_radius 0
+surface_tension -0.005
+surface_potential_freq 5
+use_graphite 0
+alchemical_lambda 0
+alchemical_delta_lambda 0.1
+
+!:parameters
+! type1 type2 k r0
+bond c2 c2 589.700000 1.324000 ![gaff] SOURCE1   974    0.0048    0.0096
+bond c2 ha 344.300000 1.087000 ![gaff] SOURCE3   797    0.0030    0.0046
+bond 1 0 177.538052 2.382950
+bond 2 0 177.538052 2.403541
+bond 3 0 177.538052 2.403546
+bond 8 0 260.000000 2.162623
+! type1 type2 type3 k a0
+angle c2 c2 ha 50.000000 120.940000 ![gaff] SOURCE3  254   0.8639   1.3150
+angle ha c2 ha 38.000000 117.650000 ![gaff] SOURCE3  349   1.0413   1.3426
+angle 2 0 1 21.403191 92.085676
+angle 3 0 1 21.403163 92.085831
+angle 3 0 2 15.417494 175.828493
+angle 8 0 1 20.000000 179.999943
+angle 8 0 2 20.000000 87.914311
+angle 8 0 3 20.000000 87.914182
+angle 0 8 4 130.000000 90.000068
+angle 0 8 7 130.000000 89.999932
+! type1 type2 type3 type4 k periodicity phi0
+dihe X c2 c2 X 6.650000 2 180.000000 ![gaff] c2=c2 double bond, intrpol.bsd.on C6H6
+dihe 4 8 0 1 0.000000 2 180.000000
+dihe 4 8 0 2 0.000000 2 180.000000
+dihe 4 8 0 3 0.000000 2 180.000000
+! type eps r_eq eps14 r_eq14 atomic_number weight
+vdw Cl 0.265000 1.948000 0.265000 1.948000 17 35.450000 ![parm99] chlorine  (Applequist)
+vdw c2 0.086000 1.908000 0.086000 1.908000 6 12.010000 ![gaff] Sp2 C
+vdw ha 0.015000 1.459000 0.015000 1.459000 1 1.008000 ![gaff] H bonded to aromatic carbon
+vdw ## 0.000000 0.000000 0.000000 0.000000 0 0.000000 ![molby] Dummy atom for pi-metal bonds
+vdw 0 0.080000 1.377000 0.080000 1.377000 78 195.078000
+
+!:velocity
+! idx vx vy vz
+0 0.00000000 0.00000000 0.00000000
+1 0.00000000 0.00000000 0.00000000
+2 0.00000000 0.00000000 0.00000000
+3 0.00000000 0.00000000 0.00000000
+4 0.00000000 0.00000000 0.00000000
+5 0.00000000 0.00000000 0.00000000
+6 0.00000000 0.00000000 0.00000000
+7 0.00000000 0.00000000 0.00000000
+8 0.00000000 0.00000000 0.00000000
+9 0.00000000 0.00000000 0.00000000
+10 0.00000000 0.00000000 0.00000000
+
+!:force
+! idx fx fy fz
+0 0.00000000 0.00000000 0.00000000
+1 0.00000000 0.00000000 0.00000000
+2 0.00000000 0.00000000 0.00000000
+3 0.00000000 0.00000000 0.00000000
+4 0.00000000 0.00000000 0.00000000
+5 0.00000000 0.00000000 0.00000000
+6 0.00000000 0.00000000 0.00000000
+7 0.00000000 0.00000000 0.00000000
+8 0.00000000 0.00000000 0.00000000
+9 0.00000000 0.00000000 0.00000000
+10 0.00000000 0.00000000 0.00000000
+
+!:trackball
+! scale; trx try trz; theta_deg x y z
+0.547220
+-0.217878 0.000089 -0.163604
+62.191795 -0.611650 0.164990 -0.773733
+
+!:view
+show_unit_cell 0
+show_periodic_box 1
+show_expanded_atoms 1
+show_ellipsoids 0
+show_hydrogens 1
+show_dummy_atoms 1
+show_rotation_center 0
+show_graphite_flag 0
+show_graphite 5
+show_periodic_image_flag 0
+show_periodic_image 0 0 0 0 0 0
+atom_radius 0.200000
+bond_radius 0.100000
+

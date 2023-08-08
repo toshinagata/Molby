@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>Class: ParEnumerable</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Script-Type" content="text/javascript" />
+  <link rel="stylesheet" href="rdoc-style.css" type="text/css" media="screen" />
+</head>
+<body>
+
+<div id="navi">
+<a href="../index.html">[Molby Document Home]</a>
+<a href="../ruby_ref.html">[Contents]</a>
+</div>
+
+<div id="classHeader">
+<table class="header-table">
+<tr>
+<td><strong>Class:</strong></td>
+<td class="class-name-in-header">ParEnumerable</td>
+</tr>
+<tr>
+<td><strong>Parent:</strong></td>
+<td><a href="Object.html">Object</a></td>
+</tr>
+<tr>
+<td><strong>Includes:</strong></td>
+<td>Enumerable</td>
+</tr>
+</table>
+</div>
+
+<div id="section">
+<h3 class="section-bar">Description</h3>
+<a name="description-overview"></a>
+<h4>Overview</h4>
+<p>
+The class <a href="ParEnumerable.html">ParEnumerable</a> provides array-like interfaces (i.e. methods of the module Enumerable) for collective data in <a href="Parameter.html">Parameter</a>. <a href="ParEnumerable.html">ParEnumerable</a> does not implement <span class="method-name">initialize</span> nor <span class="method-name">new</span> methods. Instead, an instance of <a href="ParEnumerable.html">ParEnumerable</a> is created by methods of <a href="Parameter.html">Parameter</a>, i.e. <a href="Parameter.html#M000419">Parameter#angles</a>, <a href="Parameter.html#M000417">Parameter#bonds</a>, <a href="Parameter.html#M000421">Parameter#dihedrals</a>, <a href="Parameter.html#M000431">Parameter#elements</a>, <a href="Parameter.html#M000423">Parameter#impropers</a>, <a href="Parameter.html#M000429">Parameter#vdw_cutoffs</a>, <a href="Parameter.html#M000427">Parameter#vdw_pairs</a>, and <a href="Parameter.html#M000425">Parameter#vdws</a>. These methods give <a href="ParEnumerable.html">ParEnumerable</a> objects that are tied to the <a href="Parameter.html">Parameter</a> object and have a designated type (angle, atom, etc.)
+</p>
+<p>
+As described in <a href="Parameter.html">Parameter</a>, the parameters can either be global or local. The global parameters can be seen from anywhere in the application, whereas the local parameters are specific to a particular <a href="Molecule.html">Molecule</a>. <a href="ParEnumerable.html">ParEnumerable</a> objects are derived from <a href="Parameter.html">Parameter</a>, so that they also distinguish between global and local parameters. That is, the <a href="ParEnumerable.html">ParEnumerable</a> object derived from the local <a href="Parameter.html">Parameter</a> object does not touch the global parameter, and vice versa. The only exception is <a href="ParEnumerable.html#M000013">ParEnumerable#lookup</a> method of the local <a href="ParEnumerable.html">ParEnumerable</a> object, which may look for the global parameters as directed by the options (actually it does so by default).
+</p>
+<p>
+The index operator <a href="ParEnumerable.html#M000007">ParEnumerable#[]</a> returns a <a href="ParameterRef.html">ParameterRef</a> object, which gives an access to the index-th entry of the given type in the associated <a href="Parameter.html">Parameter</a>. The assignment operator ([]=) is not implemented, because any modification should be performed through methods of <a href="ParameterRef.html">ParameterRef</a>. On the other hand, <a href="ParEnumerable.html">ParEnumerable</a> implements <a href="ParEnumerable.html#M000011">insert</a> and <a href="ParEnumerable.html#M000012">delete</a> methods, which allow creating and removing parameters. These methods work for the local parameters only; the global parameters cannot be created or removed by use of these methods.
+</p>
+</div>
+
+<div id="section">
+
+<div id="methods">
+<h3 class="section-bar">Public Instance methods</h3>
+
+<div id="method-M000007" class="method-detail">
+<a name="M000007"></a>
+<div class="method-heading">
+<span class="method-name">self[idx]          &rarr; <a href="ParameterRef.html">ParameterRef</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Call the accessor of the <a href="Parameter.html">Parameter</a> object from
+which this <a href="ParEnumerable.html">ParEnumerable</a> object is derived
+from. Thus, if self is &quot;bond&quot; type, self[idx] is equivalent to
+p.bond(idx), where p is the parent <a href="Parameter.html">Parameter</a>
+object of self.
+</p>
+<p>
+<i>See Also:</i> <a href="Parameter.html#M000385">Parameter#bond</a>, <a
+href="Parameter.html#M000387">Parameter#angle</a>, <a
+href="Parameter.html#M000389">Parameter#dihedral</a>, <a
+href="Parameter.html#M000391">Parameter#improper</a>, <a
+href="Parameter.html#M000393">Parameter#vdw</a>, <a
+href="Parameter.html#M000395">Parameter#vdw_pair</a>, <a
+href="Parameter.html#M000397">Parameter#vdw_cutoff</a>, <a
+href="Parameter.html#M000399">Parameter#element</a>.
+</p>
+</div>
+</div>
+
+<div id="method-M000012" class="method-detail">
+<a name="M000012"></a>
+<div class="method-heading">
+<span class="method-name">delete(Integer)<br />
+delete(<a href="IntGroup.html">IntGroup</a>)<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Delete the parameter(s) specified by the argument. Throws an exception if self is associated to the global parameter.
+</p>
+</div>
+</div>
+
+<div id="method-M000009" class="method-detail">
+<a name="M000009"></a>
+<div class="method-heading">
+<span class="method-name">each {|pref| ...}<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Call the block for each parameter,
+passing a <a href="ParameterRef.html">ParameterRef</a> object as a block
+argument. Note that the same <a href="ParameterRef.html">ParameterRef</a> object is passed for every iteration. For example, the following code snippet does not work as expected, because all entries in <code>ary</code> will point to the last entry.
+</p>
+<pre>p = Molecule.current.parameter  #  Get the Parameter object
+ary = []
+p.bonds.each { |bp|
+  ary.push(bp)   #  Push the ParameterRef for each entry, but...
+}
+ary.each { |bp|
+  p bp           #  The same (last) instance is printed for all entries
+}
+</pre>
+</div>
+</div>
+
+<div id="method-M000011" class="method-detail">
+<a name="M000011"></a>
+<div class="method-heading">
+<span class="method-name">insert(idx = nil, pref = nil)       &rarr; <a href="ParameterRef.html">ParameterRef</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Insert a new parameter at the specified position (if idx is nil, then at
+the end). If a <a href="ParameterRef.html">ParameterRef</a> is given, then
+the content of the parameter is copied to the new parameter, and the
+parameter is marked as molecule-local. Otherwise, the new parameter is marked as undefined. Throws an exception if self is associated to the global parameter.
+</p>
+</div>
+</div>
+
+<div id="method-M000008" class="method-detail">
+<a name="M000008"></a>
+<div class="method-heading">
+<span class="method-name">length          &rarr; Integer<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns the number of parameters included in this enumerable.
+</p>
+</div>
+</div>
+
+<div id="method-M000013" class="method-detail">
+<a name="M000013"></a>
+<div class="method-heading">
+<span class="method-name">lookup(atom_types, options, ...) &rarr; <a href="ParameterRef.html">ParameterRef</a><br />
+lookup(atom_type_string, options, ...) &rarr; <a href="ParameterRef.html">ParameterRef</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Call <a href="Parameter.html#lookup">Parameter#lookup</a> with the parameter type as the first argument and the given atom types and options as the remaining arguments.
+</p>
+</div>
+</div>
+
+<div id="method-M000010" class="method-detail">
+<a name="par_type"></a>
+<div class="method-heading">
+<span class="method-name">par_type &rarr; String<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get the parameter type, like "bond", "angle", etc.
+</p>
+</div>
+</div>
+
+<div id="method-M000010" class="method-detail">
+<a name="M000010"></a>
+<div class="method-heading">
+<span class="method-name">reverse_each {|pref| ...}<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Call the block for each parameter
+in the reverse order, passing a <a
+href="ParameterRef.html">ParameterRef</a> object as a block argument. Note that the same <a href="ParameterRef.html">ParameterRef</a> object is passed for every iteration. See the note for <a href="ParEnumerable.html#M000009">ParEnumerable#each</a>.
+</p>
+</div>
+</div>
+
+</div>
+
+</div>
+
+</body>
+</html>

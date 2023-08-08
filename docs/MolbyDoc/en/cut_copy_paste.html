@@ -1,0 +1,61 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html lang='en' xml:lang='en' xmlns='http://www.w3.org/1999/xhtml'><head><meta content='text/html;charset=utf-8' http-equiv='Content-Type' lang='en' xml:lang='en' /><title>Step Three: Edit a Molecule: Cut/Copy/Paste</title><link href='../etc/style.css' rel='stylesheet' type='text/css' /><link href='index.html' rel='Start' /><link href='tutorials.html' rel='Index' /><link href='editing.html' rel='Prev' /><link href='ring_fusion.html' rel='Next' /></head><body><div class='topic_path'><a href='index.html'>Molby</a> &gt; <a href='tutorials.html'>Tutorials</a> &gt; Step Three: Edit a Molecule: Cut/Copy/Paste &nbsp;&nbsp; <a href='editing.html'>[Prev]</a> &nbsp;&nbsp; <a href='ring_fusion.html'>[Next]</a><span class='float_right'><a href='../ja/cut_copy_paste.html'>[Japanese]</a></span></div><div class='contents' lang='en' xml:lang='en'>
+<h1>Step Three: Edit a Molecule: Cut/Copy/Paste</h1>
+<p>
+Like any other decent "editing" applications, Molby has a capability of cut/copy/paste by use of a clipboard. These functions (especially copy and paste) are also quite useful for building complex molecules.
+</p>
+<p>
+We start from the toluene molecule again. Select the methyl group and do copy.
+</p>
+<p><img src='../etc/copy_01.png' /></p>
+<p>
+Unselect the methyl group, and do paste. Another methyl group appears, with no connection to the existing atoms. This is how "paste" works when nothing is selected beforehand.
+</p>
+<p><img src='../etc/copy_02.png' /></p>
+<p>
+Now we will see what happens when something is selected before pasting. As described above, start with the toluene molecule, select the methyl group, and copy it. Unselect the methyl group, and this time select the hydrogen atom that is "ortho" to the methyl group.
+</p>
+<p><img src='../etc/copy_03.png' /></p>
+<p>
+Do paste. The selected hydrogen atom is replaced with the pasted methyl group. Note that a new bond is created between the pasted methyl carbon and the ortho carbon, with an acceptable bond length and angles. 
+</p>
+<p class='note'>
+The dihedral angle may not be acceptable. In that case, you can rotate the pasted fragment by use of the left rotation bar until the dihedral angle looks good.
+</p>
+<p><img src='../etc/copy_04.png' /></p>
+<p>
+This "select and paste" technique is very useful for building large molecules. Suppose we want to build an oligobenzamide.
+</p>
+<p><img src='../etc/copy_05.png' /></p>
+<p>
+Create a "monomer", i.e. N-methyl-4-acetamidobenzamide. This is done by (1) create a benzene, (2) select H1, double-click, and enter "CONHCH3", (3) select H4, double-click, and enter "NHCOCH3". After entering each formula, you need to rotate the fragment to make the dihedral angle appropriate.
+</p>
+<p><img src='../etc/copy_06.png' /></p>
+<p>
+Select the whole molecule except for the COCH3 group at the left. Do copy.
+</p>
+<p><img src='../etc/copy_07.png' /></p>
+<p>
+Select the NHCH3 group at the right. Do paste.
+</p>
+<p><img src='../etc/copy_08.png' /></p>
+<p>
+A new amide bond is created and the dimer is formed.
+</p>
+<p><img src='../etc/copy_09.png' /></p>
+<p>
+Select "Fit to Screen" from the "Show" menu, to make the whole molecule visible.
+</p>
+<p><img src='../etc/copy_10.png' /></p>
+<p>
+Repeat these procedures to make the tetramer.
+</p>
+<p><img src='../etc/copy_11.png' /></p>
+<p><img src='../etc/copy_12.png' /></p>
+<p><img src='../etc/copy_13.png' /></p>
+<p><img src='../etc/copy_14.png' /></p>
+<p>
+Make one more iteration to make the octamer.
+</p>
+<p><img src='../etc/copy_15.png' /></p>
+</div><div class='navigation'><a href='index.html'>[Top]</a> <a href='tutorials.html'>[Up: Tutorials]</a> <a href='editing.html'>[Prev: Step Two: Edit a Molecule]</a> <a href='ring_fusion.html'>[Next: Step Four: Ring Fusion]</a> <span class='float_right'><a href='../ja/cut_copy_paste.html'>[Japanese]</a></span></div></body></html>

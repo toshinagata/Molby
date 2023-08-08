@@ -296,9 +296,9 @@
 		E4FC77A5183E4F3F0064FB2E /* Trackball.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Trackball.h; path = ../MolLib/Trackball.h; sourceTree = SOURCE_ROOT; };
 		E4FC77A6183E4F3F0064FB2E /* Types.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = Types.c; path = ../MolLib/Types.c; sourceTree = SOURCE_ROOT; };
 		E4FC77A7183E4F3F0064FB2E /* Types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Types.h; path = ../MolLib/Types.h; sourceTree = SOURCE_ROOT; };
-		E4FC77C5183E4FB00064FB2E /* makedoc.rb */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.ruby; name = makedoc.rb; path = ../Documents/makedoc.rb; sourceTree = SOURCE_ROOT; };
-		E4FC77C7183E4FBA0064FB2E /* doc_source.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; name = doc_source.html; path = ../Documents/src/doc_source.html; sourceTree = SOURCE_ROOT; };
-		E4FC77C9183E4FCD0064FB2E /* style.css */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.css; name = style.css; path = ../Documents/etc/style.css; sourceTree = SOURCE_ROOT; };
+		E4FC77C5183E4FB00064FB2E /* makedoc.rb */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.ruby; name = makedoc.rb; path = ../Document_Sources/makedoc.rb; sourceTree = SOURCE_ROOT; };
+		E4FC77C7183E4FBA0064FB2E /* doc_source.html */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.html; name = doc_source.html; path = ../Document_Sources/src/doc_source.html; sourceTree = SOURCE_ROOT; };
+		E4FC77C9183E4FCD0064FB2E /* style.css */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.css; name = style.css; path = ../Document_Sources/etc/style.css; sourceTree = SOURCE_ROOT; };
 		E4FC77D4183E4FF20064FB2E /* molby_icon.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = molby_icon.icns; path = ../bitmaps/molby_icon.icns; sourceTree = SOURCE_ROOT; };
 		E4FC77D6183E4FFE0064FB2E /* Scripts */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Scripts; path = ../Scripts; sourceTree = SOURCE_ROOT; };
 		E4FC77D8183E503E0064FB2E /* amber11 */ = {isa = PBXFileReference; lastKnownFileType = folder; path = amber11; sourceTree = SOURCE_ROOT; };
@@ -781,7 +781,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "cd $PROJECT_DIR/../Documents\nif [ ! -e MolbyDoc/ja/index.html ] || [ src/doc_source.html -nt MolbyDoc/ja/index.html ]; then\n  ruby makedoc.rb\nfi\n";
+			shellScript = "cd $PROJECT_DIR/../Documents\nif [ ! -e ../docs/MolbyDoc/ja/index.html ] || [ src/doc_source.html -nt ../docs/MolbyDoc/ja/index.html ]; then\n  ruby makedoc.rb\nfi\n";
 		};
 		E4059FE028C46A6E0052B36B /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -794,7 +794,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "rm -rf \"$TARGET_BUILD_DIR/MolbyMacLegacy.app/Contents/Resources/MolbyDoc\"\ncp -a \"$PROJECT_DIR/../Documents/MolbyDoc\" \"$TARGET_BUILD_DIR/MolbyMacLegacy.app/Contents/Resources/\"\nif [ \"${BUILD_STYLE:=$CONFIGURATION}\" = \"Release\" ]; then\n  rm -rf \"$PROJECT_DIR/../latest_binaries/MolbyMacLegacy.app\" || exit 1\n  (cd \"$TARGET_BUILD_DIR\"; cp -a MolbyMacLegacy.app \"$PROJECT_DIR/../latest_binaries\") || exit 1\nfi\nexit 0\n";
+			shellScript = "rm -rf \"$TARGET_BUILD_DIR/MolbyMacLegacy.app/Contents/Resources/MolbyDoc\"\ncp -a \"$PROJECT_DIR/../docs/MolbyDoc\" \"$TARGET_BUILD_DIR/MolbyMacLegacy.app/Contents/Resources/\"\nif [ \"${BUILD_STYLE:=$CONFIGURATION}\" = \"Release\" ]; then\n  rm -rf \"$PROJECT_DIR/../latest_binaries/MolbyMacLegacy.app\" || exit 1\n  (cd \"$TARGET_BUILD_DIR\"; cp -a MolbyMacLegacy.app \"$PROJECT_DIR/../latest_binaries\") || exit 1\nfi\nexit 0\n";
 		};
 		E43C5D9518E553D9004FE397 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -807,7 +807,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "rm -rf \"$TARGET_BUILD_DIR/Molby.app/Contents/Resources/MolbyDoc\"\ncp -a \"$PROJECT_DIR/../Documents/MolbyDoc\" \"$TARGET_BUILD_DIR/Molby.app/Contents/Resources/\"\nif [ \"${BUILD_STYLE:=$CONFIGURATION}\" = \"Release\" ]; then\n  rm -rf \"$PROJECT_DIR/../latest_binaries/Molby.app\" || exit 1\n  (cd \"$TARGET_BUILD_DIR\"; cp -a Molby.app \"$PROJECT_DIR/../latest_binaries\") || exit 1\nfi\nexit 0\n";
+			shellScript = "rm -rf \"$TARGET_BUILD_DIR/Molby.app/Contents/Resources/MolbyDoc\"\ncp -a \"$PROJECT_DIR/../docs/MolbyDoc\" \"$TARGET_BUILD_DIR/Molby.app/Contents/Resources/\"\nif [ \"${BUILD_STYLE:=$CONFIGURATION}\" = \"Release\" ]; then\n  rm -rf \"$PROJECT_DIR/../latest_binaries/Molby.app\" || exit 1\n  (cd \"$TARGET_BUILD_DIR\"; cp -a Molby.app \"$PROJECT_DIR/../latest_binaries\") || exit 1\nfi\nexit 0\n";
 		};
 		E460B2DD273A94C600CD9407 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -824,7 +824,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "cd $PROJECT_DIR/../Documents\nif [ ! -e MolbyDoc/ja/index.html ] || [ src/doc_source.html -nt MolbyDoc/ja/index.html ]; then\n  ruby makedoc.rb\nfi\n";
+			shellScript = "cd $PROJECT_DIR/../Document_Sources\nif [ ! -e ../docs/MolbyDoc/ja/index.html ] || [ src/doc_source.html -nt ../docs/MolbyDoc/ja/index.html ]; then\n  ruby makedoc.rb\nfi\n";
 		};
 		E471B4952734058600486093 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;

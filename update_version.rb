@@ -117,7 +117,7 @@ modify_file("wxSources/MyVersion.c") { |s|
 }
 
 #  Modify doc_source.html
-modify_file("Documents/src/doc_source.html") { |s|
+modify_file("Document_Sources/src/doc_source.html") { |s|
   if s =~ /Version/ && s =~ /<!-- version -->/ && s.sub!(/[Vv][-.0-9 A-Za-z_]*/, "Version #{ver}")
     s
   elsif s =~ /<!-- copyright -->/ && s.sub!(/\d\d\d\d(-\d\d\d\d)?/, yrange)

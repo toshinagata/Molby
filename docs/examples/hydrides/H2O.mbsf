@@ -1,0 +1,96 @@
+!:atoms
+! idx seg_name res_seq res_name name type charge weight element atomic_number occupancy temp_factor int_charge
+0 MAIN 1 HOH O1 oh -0.81614 15.99940 O 8 1.000000 0.000000 0
+1 MAIN 1 HOH H1 ho 0.40807 1.00790 H 1 1.000000 0.000000 0
+2 MAIN 1 HOH H2 ho 0.40807 1.00790 H 1 1.000000 0.000000 0
+
+!:positions ; frame 0
+! idx x y z [sx sy sz]
+0 0.00000047 0.06416161 0.00000000
+1 -0.75406591 -0.50924748 0.00000000
+2 0.75406644 -0.50924713 0.00000000
+
+!:bonds
+! from1 to1 from2 to2 from3 to3 from4 to4
+0 2 1 0
+
+!:angles
+! a1 b1 c1 a2 b2 c2 a3 b3 c3
+1 0 2
+
+!:md_parameters
+log_file (null)
+coord_file (null)
+vel_file (null)
+force_file (null)
+debug_file (null)
+debug_output_level 0
+step 0
+coord_output_freq 10
+energy_output_freq 10
+coord_frame 0
+timestep 1
+cutoff 9
+electro_cutoff 9
+pairlist_distance 10
+switch_distance 8
+temperature 300
+andersen_freq 50
+andersen_coupling 0.1
+random_seed 0
+dielectric 4.8
+gradient_convergence 1e-06
+coordinate_convergence 1e-08
+use_xplor_shift 1
+scale14_vdw 0.5
+scale14_elect 0.83
+relocate_center 1
+surface_probe_radius 0
+surface_tension -0.005
+surface_potential_freq 5
+use_graphite 0
+alchemical_lambda 0
+alchemical_delta_lambda 0.1
+
+!:parameters
+! type1 type2 k r0
+bond ho oh 369.600000 0.974000 ![gaff] SOURCE3   367    0.0069    0.0105
+! type1 type2 type3 k a0
+angle ho oh ho 41.900000 104.800000 ![gaff] SOURCE2    1   0.0000   0.0000
+! type eps r_eq eps14 r_eq14 atomic_number weight
+vdw oh 0.210400 1.721000 0.210400 1.721000 8 16.000000 ![gaff] Oxygen in hydroxyl group
+vdw ho 0.000000 0.000000 0.000000 0.000000 1 1.008000 ![gaff] Hydroxyl group
+
+!:velocity
+! idx vx vy vz
+0 0.00000000 0.00000000 0.00000000
+1 0.00000000 0.00000000 0.00000000
+2 0.00000000 0.00000000 0.00000000
+
+!:force
+! idx fx fy fz
+0 0.00000000 0.00000000 0.00000000
+1 0.00000000 0.00000000 0.00000000
+2 0.00000000 0.00000000 0.00000000
+
+!:trackball
+! scale; trx try trz; theta_deg x y z
+1.031000
+0.000000 0.000000 0.000000
+30.303029 -1.000000 0.000000 0.000000
+
+!:view
+show_unit_cell 0
+show_periodic_box 1
+show_expanded_atoms 1
+show_ellipsoids 0
+show_hydrogens 1
+show_dummy_atoms 1
+show_rotation_center 0
+show_graphite_flag 0
+show_graphite 5
+show_periodic_image_flag 0
+show_periodic_image 0 0 0 0 0 0
+atom_radius 0.200000
+bond_radius 0.100000
+

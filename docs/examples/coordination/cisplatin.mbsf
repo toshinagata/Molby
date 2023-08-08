@@ -1,0 +1,76 @@
+!:atoms
+! idx seg_name res_seq res_name name type charge weight element atomic_number occupancy temp_factor int_charge
+0 MAIN 1 CPT Pt Pt -0.21450 195.07800 Pt 78 1.000000 0.000000 0
+1 MAIN 1 CPT Cl1 Cl -0.30970 35.45270 Cl 17 1.000000 0.000000 0
+2 MAIN 1 CPT Cl2 Cl -0.30970 35.45270 Cl 17 1.000000 0.000000 0
+3 MAIN 1 CPT N1 N -0.19246 14.00670 N 7 1.000000 0.000000 0
+4 MAIN 1 CPT H11 hc 0.20314 1.00790 H 1 1.000000 0.000000 0
+5 MAIN 1 CPT H12 hc 0.20314 1.00790 H 1 1.000000 0.000000 0
+6 MAIN 1 CPT H13 hc 0.20314 1.00790 H 1 1.000000 0.000000 0
+7 MAIN 1 CPT N2 N -0.19246 14.00670 N 7 1.000000 0.000000 0
+8 MAIN 1 CPT H21 hc 0.20314 1.00790 H 1 1.000000 0.000000 0
+9 MAIN 1 CPT H22 hc 0.20314 1.00790 H 1 1.000000 0.000000 0
+10 MAIN 1 CPT H23 hc 0.20314 1.00790 H 1 1.000000 0.000000 0
+
+!:positions ; frame 0
+! idx x y z [sx sy sz]
+0 1.73089138 0.03025867 0.09108381
+1 1.28005226 -2.01312718 1.15870743
+2 2.26798435 1.18969304 2.06215470
+3 2.14528678 1.89475558 -0.81920957
+4 2.34811389 2.49863524 -0.01324536
+5 1.36379430 2.30050530 -1.33505381
+6 2.96764139 1.88887126 -1.42378456
+7 1.23403708 -1.06457578 -1.65047536
+8 2.00690805 -1.17141467 -2.30798971
+9 0.42455370 -0.69821431 -2.15191727
+10 0.99273483 -1.99365714 -1.28440029
+
+!:bonds
+! from1 to1 from2 to2 from3 to3 from4 to4
+1 0 2 0 3 0 7 0
+3 4 3 5 3 6 7 8
+7 9 7 10
+
+!:angles
+! a1 b1 c1 a2 b2 c2 a3 b3 c3
+2 0 1 3 0 1 3 0 2
+7 0 1 7 0 2 7 0 3
+4 3 0 5 3 0 5 3 4
+6 3 0 6 3 4 6 3 5
+8 7 0 9 7 0 9 7 8
+10 7 0 10 7 8 10 7 9
+
+!:dihedrals
+! a1 b1 c1 d1 a2 b2 c2 d2
+4 3 0 1 4 3 0 2
+4 3 0 7 5 3 0 1
+5 3 0 2 5 3 0 7
+6 3 0 1 6 3 0 2
+6 3 0 7 8 7 0 1
+8 7 0 2 8 7 0 3
+9 7 0 1 9 7 0 2
+9 7 0 3 10 7 0 1
+10 7 0 2 10 7 0 3
+
+!:trackball
+! scale; trx try trz; theta_deg x y z
+0.529814
+-0.165799 -0.005034 0.001549
+89.107375 -0.173927 0.982581 0.065450
+
+!:view
+show_unit_cell 0
+show_periodic_box 1
+show_expanded_atoms 1
+show_ellipsoids 0
+show_hydrogens 1
+show_dummy_atoms 1
+show_rotation_center 0
+show_graphite_flag 0
+show_graphite 5
+show_periodic_image_flag 0
+show_periodic_image 0 0 0 0 0 0
+atom_radius 0.200000
+bond_radius 0.100000
+

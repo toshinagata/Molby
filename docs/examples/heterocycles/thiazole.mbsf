@@ -1,0 +1,181 @@
+!:atoms
+! idx seg_name res_seq res_name name type charge weight element atomic_number occupancy temp_factor int_charge
+0 MAIN 1 THZ N1 nc -0.46676 14.00670 N 7 1.000000 0.000000 0
+1 MAIN 1 THZ C2 cd 0.16265 12.01070 C 6 1.000000 0.000000 0
+2 MAIN 1 THZ H2 h5 0.14281 1.00790 H 1 1.000000 0.000000 0
+3 MAIN 1 THZ S3 ss -0.02110 32.06600 S 16 1.000000 0.000000 0
+4 MAIN 1 THZ C4 cd -0.25566 12.01070 C 6 1.000000 0.000000 0
+5 MAIN 1 THZ H4 h4 0.20267 1.00790 H 1 1.000000 0.000000 0
+6 MAIN 1 THZ C5 cc 0.11790 12.01070 C 6 1.000000 0.000000 0
+7 MAIN 1 THZ H5 h4 0.11749 1.00790 H 1 1.000000 0.000000 0
+
+!:positions ; frame 0
+! idx x y z [sx sy sz]
+0 1.94328758 1.23935002 0.00000006
+1 1.06387501 2.16204458 0.00000000
+2 1.30336686 3.20749218 0.00000009
+3 -0.57857632 1.62683710 -0.00000012
+4 0.00000000 0.00000000 0.00000000
+5 -0.66387437 -0.83867380 -0.00000034
+6 1.34137868 0.00000000 0.00000000
+7 1.96027112 -0.87494954 0.00000034
+
+!:bonds
+! from1 to1 from2 to2 from3 to3 from4 to4
+0 1 0 6 1 2 1 3
+4 5 4 6 6 7 4 3
+
+!:angles
+! a1 b1 c1 a2 b2 c2 a3 b3 c3
+6 0 1 0 1 2 0 1 3
+0 6 4 0 6 7 3 1 2
+6 4 5 4 6 7 5 4 3
+6 4 3 4 3 1
+
+!:dihedrals
+! a1 b1 c1 d1 a2 b2 c2 d2
+6 0 1 2 6 0 1 3
+1 0 6 4 1 0 6 7
+5 4 6 0 5 4 6 7
+5 4 3 1 6 4 3 1
+0 1 3 4 2 1 3 4
+3 4 6 0 3 4 6 7
+
+!:impropers
+! a1 b1 c1 d1 a2 b2 c2 d2
+0 2 1 3 5 6 4 3
+0 4 6 7
+
+!:md_parameters
+log_file cyclopentadienyl.log
+coord_file (null)
+vel_file (null)
+force_file (null)
+debug_file (null)
+debug_output_level 0
+step 0
+coord_output_freq 10
+energy_output_freq 10
+coord_frame 22
+timestep 1
+cutoff 9
+electro_cutoff 9
+pairlist_distance 10
+switch_distance 8
+temperature 300
+andersen_freq 50
+andersen_coupling 0.1
+random_seed 0
+dielectric 4.8
+gradient_convergence 1e-06
+coordinate_convergence 1e-08
+use_xplor_shift 1
+scale14_vdw 0.5
+scale14_elect 0.83
+relocate_center 1
+surface_probe_radius 0
+surface_tension -0.005
+surface_potential_freq 5
+use_graphite 0
+alchemical_lambda 0
+alchemical_delta_lambda 0.1
+
+!:parameters
+! type1 type2 k r0
+bond cd nc 494.599991 1.335000 ![gaff] SOURCE3   203    0.0171    0.0239
+bond cc nc 431.599989 1.376000 ![gaff] SOURCE1    88    0.0000    0.0000
+bond cd h5 355.999995 1.079000 ![gaff] SOURCE3    40    0.0040    0.0051
+bond cd ss 279.299990 1.737000 ![gaff] SOURCE3    52    0.0162    0.0194
+bond cd h4 350.100004 1.083000 ![gaff] SOURCE3   599    0.0028    0.0037
+bond cc cd 504.000009 1.371000 ![gaff] SOURCE3   523    0.0156    0.0217
+bond cc h4 350.100004 1.083000 ![gaff] SOURCE3   599    0.0028    0.0037
+! type1 type2 type3 k a0
+angle cc nc cd 70.500001 107.470001 ! [gaff] SOURCE3   26   4.9214   5.4053
+angle h5 cd nc 50.099999 125.379993 ! [gaff] SOURCE3   40   1.6952   2.2157
+angle nc cd ss 66.500002 114.510000 ![gaff] SOURCE3    8   0.2795   0.3449
+angle cd cc nc 71.000000 114.980006 ! [gaff] SOURCE3   23   4.6219   5.3935
+angle h4 cc nc 49.999998 120.030002 ! [gaff] SOURCE3   16   1.9828   2.3863
+angle h5 cd ss 42.200002 122.000006 ! [gaff] SOURCE3    6   0.5719   0.7237
+angle cc cd h4 47.200002 129.110000 ![gaff] SOURCE3  418   2.0265   3.1355
+angle cd cc h4 47.200002 129.110000 ![gaff] SOURCE3  418   2.0265   3.1355
+angle h4 cd ss 43.000000 117.750002 ! [gaff] SOURCE3   40   2.0527   3.1156
+angle cc cd ss 63.599996 118.170004 ! [gaff] SOURCE3   37   3.1217   5.1653
+angle cd ss cd 67.000000 89.910001 ! [gaff] SOURCE3   11   2.0978   2.2164
+angle na c2 os 73.885003 112.565001 ! Calculated with empirical approach
+angle h5 c2 os 51.700000 116.110006 ! same as hc-c2-os
+angle na c2 ss 83.420994 114.785004 ! Calculated with empirical approach
+angle h5 c2 ss 43.400001 115.620008 ! same as hc-c2-ss
+! type1 type2 type3 type4 k periodicity phi0
+dihe X cd nc X 4.750000 2 180.000005 ! [gaff] statistiv value from parm94
+dihe X cc nc X 4.750000 2 180.000005 ! [gaff] statistic value from parm94
+dihe X cc cd X 4.000000 2 180.000005 ! [gaff] statistic value of parm94
+dihe cd ss cd h4 1.100000 2 180.000005 ! same as X -c2-ss-X
+dihe cc cd ss cd 1.100000 2 180.000005 ! same as X -c2-ss-X
+dihe cd ss cd nc 1.100000 2 180.000005 ! same as X -c2-ss-X
+dihe cd ss cd h5 1.100000 2 180.000005 ! same as X -c2-ss-X
+! type1 type2 type3 type4 k periodicity phi0
+impr cd h4 cc na 1.100000 2 180.000005 ! Using default value
+impr cc cd cd ha 1.100000 2 180.000005 ! Using default value
+impr cc cc na hn 1.100000 2 180.000005 ! General improper torsional angle (2 general atom types)
+impr h5 na cc nd 1.100000 2 180.000005 ! Using default value
+impr cc h4 cd nd 1.100000 2 180.000005 ! Using default value
+impr h5 na c2 os 1.100000 2 180.000005 ! Using default value
+impr c2 h4 c2 os 1.100000 2 180.000005 ! Using default value
+impr c2 h4 c2 na 1.100000 2 180.000005 ! Using default value
+impr c2 c2 na hn 1.100000 2 180.000005 ! General improper torsional angle (2 general atom types)
+impr h5 na c2 ss 1.100000 2 180.000005 ! Using default value
+impr c2 h4 c2 ss 1.100000 2 180.000005 ! Using default value
+impr h5 nc cd ss 1.100000 2 180.000005 ! Using default value
+impr cc h4 cd ss 1.100000 2 180.000005 ! Using default value
+impr cd h4 cc nc 1.100000 2 180.000005 ! Using default value
+! type eps r_eq eps14 r_eq14 atomic_number weight
+vdw nc 0.170000 1.824000 0.170000 1.824000 7 14.010000 ![gaff] Sp2 N in non-pure aromatic systems
+vdw cd 0.086000 1.908000 0.086000 1.908000 6 12.010000 ![gaff] Sp2 carbons in non-pure aromatic systems, identical to cc
+vdw h5 0.015000 1.359000 0.015000 1.359000 1 1.008000 ![gaff] H bonded to non-sp3 carbon with 2 electrwd. group
+vdw ss 0.250000 2.000000 0.250000 2.000000 16 32.060001 ![gaff] Sp3 S in thio-ester and thio-ether
+vdw h4 0.015000 1.409000 0.015000 1.409000 1 1.008000 ![gaff] H bonded to non-sp3 carbon with 1 electrwd. group
+vdw cc 0.086000 1.908000 0.086000 1.908000 6 12.010000 ![gaff] Sp2 carbons in non-pure aromatic systems
+
+!:velocity
+! idx vx vy vz
+0 0.00000000 0.00000000 0.00000000
+1 0.00000000 0.00000000 0.00000000
+2 0.00000000 0.00000000 0.00000000
+3 0.00000000 0.00000000 0.00000000
+4 0.00000000 0.00000000 0.00000000
+5 0.00000000 0.00000000 0.00000000
+6 0.00000000 0.00000000 0.00000000
+7 0.00000000 0.00000000 0.00000000
+
+!:force
+! idx fx fy fz
+0 0.00000000 0.00000000 0.00000000
+1 0.00000000 0.00000000 0.00000000
+2 0.00000000 0.00000000 0.00000000
+3 0.00000000 0.00000000 0.00000000
+4 0.00000000 0.00000000 0.00000000
+5 0.00000000 0.00000000 0.00000000
+6 0.00000000 0.00000000 0.00000000
+7 0.00000000 0.00000000 0.00000000
+
+!:trackball
+! scale; trx try trz; theta_deg x y z
+0.672641
+-0.062134 -0.092182 -0.000765
+92.756548 0.035862 0.074210 -0.996598
+
+!:view
+show_unit_cell 0
+show_periodic_box 1
+show_expanded_atoms 1
+show_ellipsoids 0
+show_hydrogens 1
+show_dummy_atoms 1
+show_rotation_center 0
+show_graphite_flag 0
+show_graphite 5
+show_periodic_image_flag 0
+show_periodic_image 0 0 0 0 0 0
+atom_radius 0.200000
+bond_radius 0.100000
+

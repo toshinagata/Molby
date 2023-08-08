@@ -1,0 +1,446 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>Class: Parameter</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Script-Type" content="text/javascript" />
+  <link rel="stylesheet" href="rdoc-style.css" type="text/css" media="screen" />
+</head>
+<body>
+
+<div id="navi">
+<a href="../index.html">[Molby Document Home]</a>
+<a href="../ruby_ref.html">[Contents]</a>
+</div>
+
+<div id="classHeader">
+<table class="header-table">
+<tr>
+<td><strong>Class:</strong></td>
+<td class="class-name-in-header">Parameter</td>
+</tr>
+<tr>
+<td><strong>Parent:</strong></td>
+<td><a href="Object.html">Object</a></td>
+</tr>
+</table>
+</div>
+
+<div id="section">
+<h3 class="section-bar">Description</h3>
+<a name="description-overview"></a>
+<h4>Overview</h4>
+<p>
+The class <a href="Parameter.html">Parameter</a> provides access to the MM/MD parameters. The MM/MD parameters are either global (accessible from all <a href="Molecule.html">Molecule</a> object) or local (only accessible from the associated molecule). The global parameter object can be retrieved by the constant <a href="Parameter.html#builtin">Parameter::Builtin</a> and the class method <a href="Parameter.html#M000384">Parameter#builtin</a> (both returns the same value). On the other hand, the local parameter object can be obtained by <a href="Molecule.html#M000315">Molecule#parameter</a>.
+</p>
+<p>
+The local parameter object does not touch the global parameter, and vice versa. The only exception is <a href="Parameter.html#lookup">Parameter#lookup</a> method of the local <a href="Parameter.html">Parameter</a> object, which may look for the global parameters as directed by the options (actually it does so by default).
+</p>
+<p>
+There are eight types of parameters; bond, angle, dihedral, improper, vdw, vdw_pair, vdw_cutoff, and element. For detailed description of these parameter types, see "<a href="ParameterRef.html#description_parameter_types">Parameter types</a>" in the <a href="ParameterRef.html">ParameterRef</a> document.
+</p>
+</div>
+
+<div id="section">
+
+<div id="constants">
+<h3 class="section-bar">Constant</h3>
+
+<div class="method-detail">
+<a name="builtin"></a>
+<div class="method-heading">
+<span class="method-name">Builtin</span>
+</div>
+<div class="method-description">
+<p>
+The instance that represents the global parameters.
+</p>
+</div>
+</div>
+
+</div>
+
+<div id="methods">
+<h3 class="section-bar">Public Class methods</h3>
+
+<div id="method-M000384" class="method-detail">
+<a name="M000384"></a>
+<div class="method-heading">
+<span class="method-name">builtin    &rarr; <a href="Parameter.html">Parameter</a><br />
+</span>
+</div>
+
+<div class="method-description">
+<p>
+Returns <a href="Parameter.html#builtin">Parameter::Builtin</a>.
+</p>
+</div>
+</div>
+
+<h3 class="section-bar">Public Instance methods</h3>
+
+<div id="method-M000387" class="method-detail">
+<a name="M000387"></a>
+<div class="method-heading">
+<span class="method-name">angle(idx)          &rarr; <a href="ParameterRef.html">ParameterRef</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+The idx-th angle parameter record is returned.
+</p>
+</div>
+</div>
+
+<div id="method-M000419" class="method-detail">
+<a name="M000419"></a>
+<div class="method-heading">
+<span class="method-name">angles          &rarr; <a href="ParEnumerable.html">ParEnumerable</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns a <a href="ParEnumerable.html">ParEnumerable</a> value that
+(formally) points to the collection of angle parameters. <a href="Parameter.html#M000419">Parameter#angles[x] is equivalent to <a href="Parameter.html#M000387">Parameter#angle(x)</a>.
+</p>
+</div>
+</div>
+
+<div id="method-M000385" class="method-detail">
+<a name="M000385"></a>
+<div class="method-heading">
+<span class="method-name">bond(idx)          &rarr; <a href="ParameterRef.html">ParameterRef</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+The idx-th bond parameter record is returned.
+</p>
+</div>
+</div>
+
+<div id="method-M000417" class="method-detail">
+<a name="M000417"></a>
+<div class="method-heading">
+<span class="method-name">bonds          &rarr; <a href="ParEnumerable.html">ParEnumerable</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns a <a href="ParEnumerable.html">ParEnumerable</a> value that
+(formally) points to the collection of bond parameters. <a
+href="Parameter.html#M000417">Parameter#bonds</a>[x] is equivalent to <a
+href="Parameter.html#M000385">Parameter#bond(x)</a>.
+</p>
+</div>
+</div>
+
+<div id="method-M000389" class="method-detail">
+<a name="M000389"></a>
+<div class="method-heading">
+<span class="method-name">dihedral(idx)            &rarr; <a href="ParameterRef.html">ParameterRef</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+The idx-th dihedral parameter record is returned.
+</p>
+</div>
+</div>
+
+<div id="method-M000421" class="method-detail">
+<a name="M000421"></a>
+<div class="method-heading">
+<span class="method-name">dihedrals          &rarr; <a href="ParEnumerable.html">ParEnumerable</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns a <a href="ParEnumerable.html">ParEnumerable</a> value that
+(formally) points to the collection of dihedral parameters. <a
+href="Parameter.html#M000421">Parameter#dihedrals</a>[x] is equivalent to
+<a href="Parameter.html#M000389">Parameter#dihedral(x)</a>.
+</p>
+</div>
+</div>
+
+<div id="method-M000399" class="method-detail">
+<a name="M000399"></a>
+<div class="method-heading">
+<span class="method-name">element(idx)            &rarr; <a href="ParameterRef.html">ParameterRef</a><br />
+element(t1)             &rarr; <a href="ParameterRef.html">ParameterRef</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+In the first form, the idx-th element
+parameter record is returned. In the second form, the parameter for t1 is looked up (the
+last index first). t1 is a String representing the element name (up to 4 characters).
+Self must be a global parameter, i.e. <a href="Parameter.html#builtin">Parameter::Builtin</a>.
+</p>
+</div>
+</div>
+
+<div id="method-M000431" class="method-detail">
+<a name="M000431"></a>
+<div class="method-heading">
+<span class="method-name">elements          &rarr; <a href="ParEnumerable.html">ParEnumerable</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns a <a href="ParEnumerable.html">ParEnumerable</a> value that
+(formally) points to the collection of element parameters. <a
+href="Parameter.html#M000431">Parameter#elements</a>[x] is equivalent to <a
+href="Parameter.html#M000399">Parameter#element(x)</a>.
+Self must be a global parameter.
+</p>
+</div>
+</div>
+
+<div id="method-M000391" class="method-detail">
+<a name="M000391"></a>
+<div class="method-heading">
+<span class="method-name">improper(idx)            &rarr; <a href="ParameterRef.html">ParameterRef</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+The idx-th improper parameter record is returned.
+</p>
+</div>
+</div>
+
+<div id="method-M000423" class="method-detail">
+<a name="M000423"></a>
+<div class="method-heading">
+<span class="method-name">impropers          &rarr; <a href="ParEnumerable.html">ParEnumerable</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns a <a href="ParEnumerable.html">ParEnumerable</a> value that
+(formally) points to the collection of improper parameters. <a
+href="Parameter.html#M000423">Parameter#impropers</a>[x] is equivalent to
+<a href="Parameter.html#M000391">Parameter#improper(x)</a>.
+</p>
+</div>
+</div>
+
+<div id="method-M000423" class="method-detail">
+<a name="lookup"></a>
+<div class="method-heading">
+<span class="method-name">lookup(par_type, atom_types, options, ...) &rarr; <a href="ParameterRef.html">ParameterRef</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Find the parameter record that matches the given atom types. The parameter type is given as a String, like "bond", "angle", etc. The atom types are given either as an array of string, or a single string delimited by whitespaces or hyphens. Options are given as symbols. Valid values are <code>:global</code> (look for global parameters), <code>:local</code> (look for local parameters), <code>:missing</code> (look for missing parameters), <code>:nowildcard</code> (do not allow wildcard matching), <code>:nobasetype</code> (the base type does not match for the variant types). If neither <code>:global</code> nor <code>:local</code> is specified, it behaves as if both of these were specified.
+</p>
+<p>
+This method is also implemented in <a href="ParEnumerable.html">ParEnumerable</a>. See <a href="ParEnumerable.html#M000013">ParEnumerable#lookup</a>.
+</p>
+</div>
+</div>
+
+<div id="method-M000403" class="method-detail">
+<a name="M000403"></a>
+<div class="method-heading">
+<span class="method-name">nangles          &rarr; Integer<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns the number of angle parameters.
+</p>
+</div>
+</div>
+
+<div id="method-M000401" class="method-detail">
+<a name="M000401"></a>
+<div class="method-heading">
+<span class="method-name">nbonds          &rarr; Integer<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns the number of bond parameters.
+</p>
+</div>
+</div>
+
+<div id="method-M000405" class="method-detail">
+<a name="M000405"></a>
+<div class="method-heading">
+<span class="method-name">ndihedrals          &rarr; Integer<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns the number of dihedral parameters.
+</p>
+</div>
+</div>
+
+<div id="method-M000415" class="method-detail">
+<a name="M000415"></a>
+<div class="method-heading">
+<span class="method-name">nelements          &rarr; Integer<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns the number of element parameters.
+</p>
+</div>
+</div>
+
+<div id="method-M000407" class="method-detail">
+<a name="M000407"></a>
+<div class="method-heading">
+<span class="method-name">nimpropers          &rarr; Integer<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns the number of improper parameters.
+</p>
+</div>
+</div>
+
+<div id="method-M000413" class="method-detail">
+<a name="M000413"></a>
+<div class="method-heading">
+<span class="method-name">nvdw_cutoffs          &rarr; Integer<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns the number of vdw cutoff parameters.
+</p>
+</div>
+</div>
+
+<div id="method-M000411" class="method-detail">
+<a name="M000411"></a>
+<div class="method-heading">
+<span class="method-name">nvdw_pairs          &rarr; Integer<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns the number of vdw pair parameters.
+</p>
+</div>
+</div>
+
+<div id="method-M000409" class="method-detail">
+<a name="M000409"></a>
+<div class="method-heading">
+<span class="method-name">nvdws          &rarr; Integer<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns the number of vdw parameters.
+</p>
+</div>
+</div>
+
+<div id="method-M000393" class="method-detail">
+<a name="M000393"></a>
+<div class="method-heading">
+<span class="method-name">vdw(idx)            &rarr; <a href="ParameterRef.html">ParameterRef</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+The idx-th vdw parameter record is returned.
+</p>
+</div>
+</div>
+
+<div id="method-M000397" class="method-detail">
+<a name="M000397"></a>
+<div class="method-heading">
+<span class="method-name">vdw_cutoff(idx)          &rarr; <a href="ParameterRef.html">ParameterRef</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+The idx-th vdw cutoff parameter record is returned.
+</p>
+</div>
+</div>
+
+<div id="method-M000429" class="method-detail">
+<a name="M000429"></a>
+<div class="method-heading">
+<span class="method-name">vdw_cutoffs          &rarr; <a href="ParEnumerable.html">ParEnumerable</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns a <a href="ParEnumerable.html">ParEnumerable</a> value that
+(formally) points to the collection of vdw cutoff parameters. <a
+href="Parameter.html#M000429">Parameter#vdw_cutoffs</a>[x] is equivalent to
+<a href="Parameter.html#M000397">Parameter#vdw_cutoff(x)</a>.
+</p>
+</div>
+</div>
+
+<div id="method-M000395" class="method-detail">
+<a name="M000395"></a>
+<div class="method-heading">
+<span class="method-name">vdw_pair(idx)          &rarr; <a href="ParameterRef.html">ParameterRef</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+The idx-th vdw-pair parameter record is returned.
+</p>
+</div>
+</div>
+
+<div id="method-M000427" class="method-detail">
+<a name="M000427"></a>
+<div class="method-heading">
+<span class="method-name">vdw_pairs          &rarr; <a href="ParEnumerable.html">ParEnumerable</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns a <a href="ParEnumerable.html">ParEnumerable</a> value that
+(formally) points to the collection of vdw pair parameters. <a
+href="Parameter.html#M000427">Parameter#vdw_pairs</a>[x] is equivalent to
+<a href="Parameter.html#M000395">Parameter#vdw_pair(x)</a>.
+</p>
+</div>
+</div>
+
+<div id="method-M000425" class="method-detail">
+<a name="M000425"></a>
+<div class="method-heading">
+<span class="method-name">vdws          &rarr; <a href="ParEnumerable.html">ParEnumerable</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns a <a href="ParEnumerable.html">ParEnumerable</a> value that
+(formally) points to the collection of vdw parameters. <a
+href="Parameter.html#M000425">Parameter#vdws</a>[x] is equivalent to <a
+href="Parameter.html#M000393">Parameter#vdw(x)</a>.
+</p>
+</div>
+</div>
+
+</div>
+
+</div>
+
+</body>
+</html>

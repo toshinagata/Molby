@@ -1,0 +1,61 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html lang='ja' xml:lang='ja' xmlns='http://www.w3.org/1999/xhtml'><head><meta content='text/html;charset=utf-8' http-equiv='Content-Type' lang='ja' xml:lang='ja' /><title>Filter Kit の使い方</title><link href='../etc/style.css' rel='stylesheet' type='text/css' /><link href='index.html' rel='Start' /><link href='appendix.html' rel='Index' /><link href='ruby_ref.html' rel='Prev' /></head><body><div class='topic_path'><a href='index.html'>Molby</a> &gt; <a href='appendix.html'>付録</a> &gt; Filter Kit の使い方 &nbsp;&nbsp; <a href='ruby_ref.html'>[前]</a><span class='float_right'><a href='../en/filter_kit_howto.html'>[English]</a></span></div><div class='contents' lang='ja' xml:lang='ja'>
+<h1>Filter Kit の使い方</h1>
+<p>
+化学の研究では、テキストファイルに簡単な処理を加えたいことがときどきあります。Ruby はこの目的に特に適しています。Ruby を簡単に使えるようにするため、Molby は "filter kit" という特別な機能を持っています（バージョン 0.6.4 以降）。Filter という名前は "UNIX" の文化から来ており、テキストを処理する小さなプログラムのことを指します。
+</p>
+<p>
+以下にフィルタスクリプトの作り方を解説します。説明のため、ごく単純な機能を持ったものを作ります。ファイルの各行に行番号をつけるものです。
+</p>
+<p><img src='../etc/filter_01.png' />&nbsp;&nbsp;&nbsp;<img src='../etc/filter_02.png' /></p>
+<p>
+フィルタを書くためには、新しいテキストファイルを作って、拡張子を ".rb" か ".mrb" とします。前者が Ruby スクリプトとして一般的なものですが、後者は Molby 専用のスクリプトを示すために使うことができます。
+</p>
+<p>
+まず次の行から始めます。
+</p>
+<p class='code'>Dialog.filter_kit("Filter Sample", "This is a sample filter.") { |args|
+</p>
+<p>
+<code>Dialog.filter_kit</code> というメソッドは２つの引数をとります。ウィンドウのタイトルと、メッセージです。この他にブロックが必要で、その中にメインプログラムを置きます。
+</p>
+<p>
+フィルタのユーザーが "Select Files" ボタンでファイルを選ぶと（複数のファイルを選択できます）、ブロックが実行され、選択されたファイル名の配列 (Array) が引数として渡されます。ブロックの本体は次のように書きます。
+</p>
+<p class='code'><span class='linenumber'>  1 </span> Dialog.filter_kit("Filter Sample", "This is a sample filter.") { |args|
+<span class='linenumber'>  2 </span>   args.each { |fname|
+<span class='linenumber'>  3 </span>    fp = open(fname, "r")
+<span class='linenumber'>  4 </span>    if fp == nil
+<span class='linenumber'>  5 </span>      error_message_box("Cannot open file: #{arg}")
+<span class='linenumber'>  6 </span>      next
+<span class='linenumber'>  7 </span>    end
+<span class='linenumber'>  8 </span>    puts fname
+<span class='linenumber'>  9 </span>    a = fp.readlines
+<span class='linenumber'> 10 </span>    fp.close
+<span class='linenumber'> 11 </span>    File.rename(fname, fname + "~")
+<span class='linenumber'> 12 </span>    fp2 = open(fname, "w")
+<span class='linenumber'> 13 </span>    a.each_with_index { |ln, n|
+<span class='linenumber'> 14 </span>      ln = (n + 1).to_s + "  " + ln
+<span class='linenumber'> 15 </span>      fp2.print ln
+<span class='linenumber'> 16 </span>    }
+<span class='linenumber'> 17 </span>    fp2.close
+<span class='linenumber'> 18 </span>  }
+</p>
+<ul>
+<li>2行: 以下のブレース (<code>{}</code>) 内のコードを各ファイルに対して繰り返します。</li>
+<li>3行: ファイルを読み取り用にオープンします。</li>
+<li>4-7行: ファイルがオープンできなければ、エラーメッセージを表示して、次のファイルに進みます。</li>
+<li>8行: ファイル名を表示します。出力は、ダイアログの中のテキストボックスに表示されます。</li>
+<li>9行: ファイルのすべての行を読み込んで配列に格納します。</li>
+<li>10行: 読み込みが終わったので、ファイルを閉じます。</li>
+<li>11行: ファイル名の後ろにチルダ (~) をつけます。（たとえば拡張子を変更する、などの処理も可能ですが、コードを書くには「正規表現」を学ぶ必要があります。）</li>
+<li>12行: ファイルを同じ名前で、今度は書き込み用にオープンします。本当は 4-7 行と同じようにエラー処理が必要ですが、ここでは簡単のため省略してあります。</li>
+<li>13行: 以下のブロック（ブレース内のコード）を配列内のすべての要素（つまりすべての行）について繰り返します。配列要素（つまりそれぞれの行）とそのインデックスがそれぞれ <code>ln</code> and <code>n</code> としてブロックに渡されます。</li>
+<li>14行: 行番号をつけます。<code>(n + 1)</code> が行番号になります（インデックスは０から始まるため）。<code>to_s</code> は整数を文字列に変換します。</li>
+<li>15行: 行をファイルに書き出します。</li>
+<li>17行: ファイルを閉じて書き込みを完結します。</li>
+</ul>
+<p>
+上のテキストを "filter_sample.rb" として保存します（拡張子が正しければ、ファイル名は何でも構いません）。このファイルを Molby で開けば、フィルタとして使うことができます。
+</p>
+</div><div class='navigation'><a href='index.html'>[トップ]</a> <a href='appendix.html'>[上: 付録]</a> <a href='ruby_ref.html'>[前: Ruby 拡張リファレンス]</a> <span class='float_right'><a href='../en/filter_kit_howto.html'>[English]</a></span></div></body></html>

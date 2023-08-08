@@ -1,0 +1,106 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html lang='en' xml:lang='en' xmlns='http://www.w3.org/1999/xhtml'><head><meta content='text/html;charset=utf-8' http-equiv='Content-Type' lang='en' xml:lang='en' /><title>Step Nine: Collaboration with Other Quantum Chemistry Softwares</title><link href='../etc/style.css' rel='stylesheet' type='text/css' /><link href='index.html' rel='Start' /><link href='tutorials.html' rel='Index' /><link href='coordination.html' rel='Prev' /><link href='xtal.html' rel='Next' /></head><body><div class='topic_path'><a href='index.html'>Molby</a> &gt; <a href='tutorials.html'>Tutorials</a> &gt; Step Nine: Collaboration with Other Quantum Chemistry Softwares &nbsp;&nbsp; <a href='coordination.html'>[Prev]</a> &nbsp;&nbsp; <a href='xtal.html'>[Next]</a><span class='float_right'><a href='../ja/qchem.html'>[Japanese]</a></span></div><div class='contents' lang='en' xml:lang='en'>
+<h1>Step Nine: Collaboration with Other Quantum Chemistry Softwares</h1>
+<p>
+Molby has a capability to export and import files for quantum chemistry softwares, namely <a href='http://www.gaussian.com/'>Gaussian</a> and <a href='http://www.msg.ameslab.gov/GAMESS/'>GAMESS</a>. At present, the capability is quite limited, and in many cases it would be much better to use other established softwares. Nevertheless, if you are already familiar with Molby, you may want to use Molby for creating input files for Gaussian and GAMESS and processing outputs. Here are instructions how to do it.
+</p>
+<p class='note'>
+Needless to say, you need to have access to Gaussian or GAMESS program packages. They can be on the same machine or on other machines (workstations) than Molby. Please learn how to use these packages before using Molby as described in this section.
+</p>
+<h2>1. Using Gaussian</h2>
+<p>
+The Gaussian input can be created by selecting "Export..." command in the "File" menu. The file extension is either "gjf" (as is the convention in GaussianW) or "com" (as in UNIX version of Gaussian).
+</p>
+<p><img src='../etc/qchem_01.png' style='vertical-align:top;' /><img src='../etc/qchem_02.png' /></p>
+<p>
+The output will look like this. Although Molby can create only one type of Gaussian input (optimize with PM3), it should be relatively easy to modify the generated input file by hand.
+</p>
+<p class='code'>%Chk=benzene.chk
+# PM3 Opt
+
+ unnamed1; created by Molby at Sat Feb 11 00:30:21 +0900 2012
+
+ 0 1
+C       -0.653000   0.585000  -1.068000
+H       -1.158000   1.039000  -1.898000
+C        0.729000   0.607000  -1.003000
+H        1.295000   1.076000  -1.783000
+C        1.382000   0.021000   0.069000
+H        2.452000   0.038000   0.119000
+C        0.651000  -0.586000   1.076000
+H        1.156000  -1.039000   1.906000
+C       -0.732000  -0.607000   1.012000
+H       -1.298000  -1.077000   1.792000
+C       -1.384000  -0.021000  -0.060000
+H       -2.455000  -0.038000  -0.110000
+
+</p>
+<p>
+When you do geometrical optimization, you may want to examine how the structure changes as the calculation proceeds. This can be done by importing the Gaussian output file. The extention should be either ".out" or ".log".
+</p>
+<p><img src='../etc/qchem_03.png' style='vertical-align:top;' /><img src='../etc/qchem_04.png' /></p>
+<h2>2. Using GAMESS</h2>
+<p>
+Creating GAMESS input can be more complicated than Gaussian, so that Molby provides a simple dialog to help creating GAMESS input. The dialog is accessible from the "Creating GAMESS input..." command in the "QChem" menu.
+</p>
+<p><img src='../etc/qchem_05.png' /></p>
+<p>
+You can specify various settings in the dialog.
+</p>
+<p><img src='../etc/qchem_06.png' /></p>
+<ul>
+<li><b>SCF Type:</b> RHF, ROHF, or UHF.</li>
+<li><b>Run Type:</b> Energy, Property, or Optimize.</li>
+<li><b>Use internal coordinates for structure optimization:</b> Add instructions for automatic generation of internal Z-matrix. (<i>Note:</i> It cannot be used for linear molecules.)</li>
+<li><b>Charge:</b> The (formal) charge of the molecule.</li>
+<li><b>Multiplicity:</b> The spin multiplicity.</li>
+<li><b>Use DFT:</b> Check if you want to use DFT.</li>
+<li><b>DFT type:</b> At present only B3LYP is available in this dialog.</li>
+<li><b>Basis set:</b> One of PM3, STO-3G, 3-21G, 6-31G, 6-31G(d), 6-31G(d, p), 6-311G, 6-311G(d, p), or LanL2DZ.</li>
+<li><b>Load Basis Set:</b> Additional basis set can be imported from a file. The file should be in the GAMESS standard format. See the "basis_sets" directory in the "Script" directory for examples.</li>
+<li><b>Use secondary basis set:</b> Check if you want to use another basis set for certain elements.</li>
+<li><b>Elements:</b> The elements (comma separated) to use secondary basis set.</li>
+<li><b>Basis set:</b> The secondary basis set.</li>
+<li><b>Calculate electrostatic potential:</b> This is used for RESP charge calculation for AMBER.</li>
+<li><b>Include NBO instructions:</b> When GAMESS is built with NBO (natural bond orbital) support, these checkboxes generate instructions for running NBO program for the designated properties.</li>
+<li><b>Execute GAMESS on this machine:</b> (0.6.5 and later) Execute GAMESS, provided that GAMESS is installed on the same computer. Specify the full path of the GAMESS executable in "Path", and the number of CPU cores for calculation in "N of CPUs."<br />
+(Note: GAMESS may not work depending on the version of the executable.)</li>
+</ul>
+<p>
+When the calculation of GAMESS is complete, you will find two output files, namely *.log and *.dat. Either format can be imported by use of the "Import..." menu command. Some informations are included in both (<i>e.g.</i> coordinates during structural optimization), but other informations are only in one of these files (<i>e.g.</i> the full description of gaussian functions is only in the *.log file, whereas the orbital coefficients with full precision are only in the *.dat file). You need to be familiar with the structure of the GAMESS output files to fully utilize the GAMESS import capability of Molby.
+</p>
+<h2 id='gamess_resp' name='gamess_resp'>3. Using GAMESS for calculation of the RESP charges</h2>
+<p>
+We already saw <a href='mm_minimize.html#electrostatic'>how to assign partial charges</a> for evaluation of electrostatic interactions in MM calculations. There we used semi-empirical calculations, although <i>ab initio</i> calculations will give better results if possible. Here are instructions how to do it using GAMESS.
+</p>
+<p>
+Select "MM/MD" &rarr; "GAMESS/RESP...".
+</p>
+<p><img src='../etc/qchem_07.png' /></p>
+<p>
+The following window pops up. As the first step, press the "Create GAMESS Input..." button.
+</p>
+<p><img src='../etc/qchem_08.png' /></p>
+<p>
+The familiar GAMESS dialog opens up. It is most important to turn on the "Calculate electrostatic potential (ESP)" checkbox (it should be turned on if you follow the steps as described here, but please double-check). Also make sure that the charge and multiplicity are correct, and select a suitable basis set (6-31G(d) is recommended).
+</p>
+<p><img src='../etc/qchem_09.png' /></p>
+<p>
+Press OK to create the GAMESS input, and send it to GAMESS. The calculation will take time, so that you can finish Molby (after saving the molecule as a msbf file!), and work on something else at this stage.
+</p>
+<p>
+After the GAMESS calculation is complete, open the same molecule, and select "MM/MD" &rarr; "Tools" &rarr; "GAMESS/RESP..." again. This time, follow the second step by pressing the "Import GAMESS dat..." button.
+</p>
+<p><img src='../etc/qchem_10.png' /></p>
+<p>
+Select the GAMESS dat file (which should be available when the GAMESS calculation ends successfully), and import it. When the import is complete, the "Run RESP..." button should be enabled. If it does not, the imported dat file does not have the electrostatic potential information. Start over from the step 1, and make sure that the "Calculate electrostatic potential (ESP)" checkbox is on.
+</p>
+<p><img src='../etc/qchem_11.png' /></p>
+<p>
+Press the "Run RESP..." button, and the following dialog opens. This is almost the same as the dialog for Antechamber <a href='mm_minimize.html#minimize'>described before</a>.
+</p>
+<p><img src='../etc/qchem_12.png' /></p>
+<p>
+Press the "OK" button, and the RESP charge will be assigned to the atoms.
+</p>
+</div><div class='navigation'><a href='index.html'>[Top]</a> <a href='tutorials.html'>[Up: Tutorials]</a> <a href='coordination.html'>[Prev: Step Eight: MM/MD Calculation of Coordination Compounds]</a> <a href='xtal.html'>[Next: Step Ten: Working with Crystal Structures]</a> <span class='float_right'><a href='../ja/qchem.html'>[Japanese]</a></span></div></body></html>

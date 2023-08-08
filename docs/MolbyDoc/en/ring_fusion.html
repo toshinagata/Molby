@@ -1,0 +1,60 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html lang='en' xml:lang='en' xmlns='http://www.w3.org/1999/xhtml'><head><meta content='text/html;charset=utf-8' http-equiv='Content-Type' lang='en' xml:lang='en' /><title>Step Four: Ring Fusion</title><link href='../etc/style.css' rel='stylesheet' type='text/css' /><link href='index.html' rel='Start' /><link href='tutorials.html' rel='Index' /><link href='cut_copy_paste.html' rel='Prev' /><link href='proptable.html' rel='Next' /></head><body><div class='topic_path'><a href='index.html'>Molby</a> &gt; <a href='tutorials.html'>Tutorials</a> &gt; Step Four: Ring Fusion &nbsp;&nbsp; <a href='cut_copy_paste.html'>[Prev]</a> &nbsp;&nbsp; <a href='proptable.html'>[Next]</a><span class='float_right'><a href='../ja/ring_fusion.html'>[Japanese]</a></span></div><div class='contents' lang='en' xml:lang='en'>
+<h1>Step Four: Ring Fusion</h1>
+<h2>1. Ring fusion by double-click and type-in</h2>
+<p>
+Molby has a capability to create a fused ring structure. As an example, here is presented yet another method to make indane. This time, we start from a benzene.
+</p>
+<p><img src='../etc/ring_01.png' /></p>
+<p>
+Choose "select" mode, and select C1 and C2 by clicking on the C1-C2 bond.
+</p>
+<p><img src='../etc/ring_02.png' /></p>
+<p>
+Double-click on the selection, and enter "cyclopentane" in the dialog box.
+</p>
+<p><img src='../etc/ring_03.png' /></p>
+<p>
+After pressing "OK", you will see a five-membered ring fused to the benzene ring.
+</p>
+<p><img src='../etc/ring_04.png' /></p>
+<p>
+Ring fusion also works when three or more atoms are selected in the original structure. For example, select the consecutive three carbons in indane as follows.
+</p>
+<p><img src='../etc/ring_05.png' /></p>
+<p>
+Double-click on the selection, and enter "C6H6" (or "benzene").
+</p>
+<p><img src='../etc/ring_06.png' /></p>
+<p>
+Now we have acenaphthene...almost.
+</p>
+<p><img src='../etc/ring_07.png' /></p>
+<p>
+As shown in the above figure, there is an extra, leftover hydrogen atom on one bridgehead carbon. After all, Molby is not so smart --- it just removes one hydrogen from each terminal carbon atoms in the selection, and connect a portion of the fusing fragment ("benzene" in this case) so that the newly created ring has the same number of atoms. Consequently, the stereochemistry may become strange when sp3 carbons are present either in the original structure or in the fusing fragment. You may need to remove/append hydrogen atoms and clean up structures (see <a href='mm_minimize.html'>"Energy Minimization"</a> for detail).
+</p>
+<h2>2. Ring fusion by copy-and-paste</h2>
+<p>
+There is another way to make a ring fused structure, which includes copy and paste. Starting again from a benzene.
+</p>
+<p><img src='../etc/ring_08.png' /></p>
+<p>
+Open the "File" menu, and select "Open Predefined" &rarr; "Alicyclic" &rarr; "cyclopentane".
+</p>
+<p><img src='../etc/ring_09.png' /></p>
+<p>
+A new window named "*cyclopentane*" opens with one cyclopentane molecule. Select a portion containing three CH2 groups, and copy it by command-C or ctrl-C.
+</p>
+<p><img src='../etc/ring_10.png' /></p>
+<p>
+Return to the benzene molecule again, and this time select H1 and H2 (not C1 and C2).
+</p>
+<p><img src='../etc/ring_11.png' /></p>
+<p>
+Do paste by command-V or ctrl-V. You now get a indane molecule.
+</p>
+<p><img src='../etc/ring_12.png' /></p>
+<p>
+This "copy-and-paste" actually works in a similar way to previously described example (see <a href='cut-copy-paste.html'>"Cut/Copy/Paste"</a>). When both the current selection and the fragment in the pasteboard have two terminals, they are connected and ring fusion takes place. This method of ring fusion is slightly more complicated than the "double-click and type-in" method, but it may be easier to understand.
+</p>
+</div><div class='navigation'><a href='index.html'>[Top]</a> <a href='tutorials.html'>[Up: Tutorials]</a> <a href='cut_copy_paste.html'>[Prev: Step Three: Edit a Molecule: Cut/Copy/Paste]</a> <a href='proptable.html'>[Next: Step Five: Edit a Molecule: Using a Property Table]</a> <span class='float_right'><a href='../ja/ring_fusion.html'>[Japanese]</a></span></div></body></html>

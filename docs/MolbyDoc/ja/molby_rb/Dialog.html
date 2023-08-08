@@ -1,0 +1,376 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>Class: Dialog</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Script-Type" content="text/javascript" />
+  <link rel="stylesheet" href="rdoc-style.css" type="text/css" media="screen" />
+</head>
+<body>
+
+<div id="navi">
+<a href="../index.html">[Molby Document Home]</a>
+<a href="../ruby_ref.html">[Contents]</a>
+</div>
+
+<div id="classHeader">
+<table class="header-table">
+<tr>
+<td><strong>Class:</strong></td>
+<td class="class-name-in-header">Dialog</td>
+</tr>
+<tr>
+<td><strong>Parent:</strong></td>
+<td><a href="Object.html">Object</a></td>
+</tr>
+</table>
+</div>
+
+<div id="section">
+<h3 class="section-bar">Description</h3>
+<a name="description-overview"></a>
+<h4>Overview</h4>
+<p>
+The class <a href="Dialog.html">Dialog</a> is a utility class, which is independent from the rest of the Ruby functionality of Molby. It provides a simple dialog on the screen, and let the user to enter information by use of controls, such as text fields, checkboxes, popup menus, etc. The class also provides system-standard open/save dialogs as class methods <a href="#M000097">Dialog#open_panel</a> and <a href="#M000096">Dialog#save_panel</a>.
+</p>
+<h4>How Dialog works</h4>
+<p>
+The steps for using Dialog are as follows:
+</p>
+<ul>
+<li>Create a Dialog object by <a href="#M000083">Dialog#new</a>. This accepts up to three arguments; the title of the dialog, the title of the "OK" button (optional), the title of the "Cancel" button (optional).</li>
+<li>Create dialog items by <a href="#M000087">Dialog#item</a>. If necessary, use <a href="#M000088">Dialog#layout</a> to place the items in a table-like arrangement.</li>
+<li>Call <a href="#M000086">Dialog#run</a> or <a href="#show">Dialog#show</a>. In <a href="#M000086">Dialog#run</a>, the dialog runs modally, and returns a hash containing the values for the "tagged" items. The returned hash also contains an entry with the key <code>:status</code> and the value 0 (OK) or 1 (Cancel). In <a href="#show">Dialog#show</a>, the dialog becomes modeless, and stays on screen until <a href="#hide">Dialog#hide</a> is invoked.</li>
+</ul>
+<p>
+<a href="Dialog.html">Dialog</a> also implements <a href="#M000082">run</a> as a class method, which allows the creation of dialog items within a block. A typical use of <a href="Dialog.html#M000082">Dialog#run</a> is shown below.
+</p>
+<pre>hash = Dialog.run("Sample Dialog", "OK", "Cancel") {
+  layout(2,
+    item(:text, :title=>"Text:"),
+    item(:textfield, :width=>80, :tag=>"text"))
+}
+p hash  #  { "text"=>"Input text", :status=>0 (for OK), 1 (for Cancel) }
+</pre>
+<h4>Dialog items</h4>
+<p>
+A dialog item is an object of class <a href="DialogItem.html">DialogItem</a>. There are two default dialog items ("OK" and "Cancel" buttons). Other items can be created by <a href="#M000087">Dialog#item</a>. The already existing items can be retrived by <a href="">Dialog#item_at_index</a> and <a href="">Dialog#item_with_tag</a>.
+</p>
+<h4>Dialog and item actions</h4>
+<p>
+Some dialog items perform actions when they are clicked and/or their values are changed. Such behavior is implemented by the <a href="DialogItem.html">DialogItem</a> attribute <code>:action</code>. If the dialog is to be closed from the action, <a href="#">Dialog#end_modal</a> can be used.
+</p>
+<pre>Dialog.run("Action Test", nil, nil) {  #  A dialog with only one button "Close"
+  layout(1,
+    item(:button, :title=>"Close", :action=>proc { |it| end_modal(0) }))
+}
+</pre>
+</div>
+
+<div id="methods">
+<h3 class="section-bar">Public Class methods</h3>
+
+<div id="method-M000083" class="method-detail">
+<a name="M000083"></a>
+<div class="method-heading">
+<span class="method-name">new(title1, title2 = "OK", title3 = "Cancel") { ... }</span>
+</div>
+<div class="method-description">
+<p>
+Create a new dialog. Title1, title2, and title3 are the titles for the dialog, the first button, and the second button, respectively. If nil is explicitly given as title2 and/or title3, the corresponding buttons are hidden.
+</p>
+<p>
+If a block is given, it is executed in the context of the created Dialog object (<i>i.e.</i> the Dialog object becomes <code>self</code> in the block).
+</p>
+</div>
+</div>
+
+<div id="method-M000097" class="method-detail">
+<a name="M000097"></a>
+<div class="method-heading">
+<span class="method-name">open_panel(message = nil, directory = nil, wildcard = nil, for_directories = false, multiple_selection = false) &rarr; String or Array<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Display the &quot;open&quot; dialog and returns the fullpath filename (if <code>multiple_selection</code> is false) or an array of the fullpath filenames (if <code>multiple_selection</code> is true). Note: <code>multiple_selection</code> can only be specified when <code>for_directories</code> is false.
+</p>
+</div>
+</div>
+
+<div id="method-M000082" class="method-detail">
+<a name="M000082"></a>
+<div class="method-heading">
+<span class="method-name">run(title1, title2 = "OK", title3 = "Cancel") { ... } &rarr; Hash</span>
+</div>
+<div class="method-description">
+<p>
+Create a new dialog by <a href="#M000083">Dialog#new</a>, and call <a href="#M000086">Dialog#run</a> (instance method).
+</p>
+</div>
+</div>
+
+<div id="method-M000096" class="method-detail">
+<a name="M000096"></a>
+<div class="method-heading">
+<span class="method-name">save_panel(message = nil, directory = nil, default_filename = nil, wildcard = nil) &rarr; String<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Display the &quot;save as&quot; dialog and returns the fullpath filename.
+</p>
+</div>
+</div>
+
+<h3 class="section-bar">Public Instance methods</h3>
+
+<div id="method-M000093" class="method-detail">
+<a name="M000093"></a>
+<div class="method-heading">
+<span class="method-name">attr(tag, key) &rarr; value<br />
+attr(index, key) &rarr; value<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Look for the dialog item with the tag or at the index, and get the item attribute designated by the key.
+</p>
+</div>
+</div>
+
+<div id="method-M000091" class="method-detail">
+<a name="M000091"></a>
+<div class="method-heading">
+<span class="method-name">each_item { |it| ...}<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Iterate the given block with each <a href="DialogItem.html">DialogItem</a> as the argument.
+</p>
+</div>
+</div>
+
+<div id="method-M000091" class="method-detail">
+<a name="end_modal"></a>
+<div class="method-heading">
+<span class="method-name">end_modal(n)<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+End the modal session (started by <a href="#M000086">Dialog#run</a>). The argument n will be available in the hash returned from <a href="#M000086">Dialog#run</a>, as the value for the key <code>:status</code>.
+</p>
+</div>
+</div>
+
+<div id="method-M000085" class="method-detail">
+<a name="hide"></a>
+<div class="method-heading">
+<span class="method-name">hide &rarr; self</span>
+</div>
+<div class="method-description">
+<p>
+Hide the modeless dialog. This is to be used with <a href="#show">Dialog#show</a> in pairs. Mixing Dialog#hide and <a href="#M000086">Dialog#run</a> will lead to unpredictable results, including crash.
+</p>
+</div>
+</div>
+
+<div id="method-M000087" class="method-detail">
+<a name="M000087"></a>
+<div class="method-heading">
+<span class="method-name">item(type, hash) &rarr; <a href="DialogItem.html">DialogItem</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Create a dialog item. Type is a symbol representing the item type; for the list of available types, see the "<a href="DialogItem.html#item_types">Item types</a>" section of the DialogItem document. Hash is the key/value pairs for the item attributes. Returns the created <a href="DialogItem.html">DialogItem</a> object.
+</p>
+</div>
+</div>
+
+<div id="method-M000087" class="method-detail">
+<a name="item_at_index"></a>
+<div class="method-heading">
+<span class="method-name">item_at_index(index) &rarr; <a href="DialogItem.html">DialogItem</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Retrieve the index-th dialog item.
+</p>
+</div>
+</div>
+
+<div id="method-M000087" class="method-detail">
+<a name="item_with_tag"></a>
+<div class="method-heading">
+<span class="method-name">item_with_tag(tval) &rarr; <a href="DialogItem.html">DialogItem</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Retrieve the dialog item which has the tag attribute tval. If such an item does not exist, nil is returned.
+</p>
+</div>
+</div>
+
+<div id="method-M000088" class="method-detail">
+<a name="M000088"></a>
+<div class="method-heading">
+<span class="method-name">layout(columns, i11, ..., i1c, i21, ..., i2c, ..., ir1, ..., irc [, options]) &rarr; <a href="DialogItem.html">DialogItem</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Layout items in a table. The first argument is the number of columns, and
+must be a positive integer. If the last argument is a hash, then it
+contains the layout options.
+The ixy arguments are <a href="DialogItem.html">DialogItem</a> objects or the item indices.
+If nil or a negative integer is given, that slot is made blank. In this case, layout is done so that the left neighboring cell expands to fill the blank slot.
+</p>
+<p>
+Returns the <a href="DialogItem.html">DialogItem</a> object representing the container view encapsulating the given items.
+</div>
+</div>
+
+<div id="method-M000090" class="method-detail">
+<a name="M000090"></a>
+<div class="method-heading">
+<span class="method-name">nitems &rarr; Integer<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns the number of items.
+</p>
+</div>
+</div>
+
+<div id="method-M000094" class="method-detail">
+<a name="M000094"></a>
+<div class="method-heading">
+<span class="method-name">radio_group(i1, i2, ...)<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Group radio buttons as a mutually exclusive group. The arguments represent the radio buttons, either as <a href="DialogItem.html">DialogItem</a> objects, item indices, or item tags.
+</p>
+</div>
+</div>
+
+<div id="method-M000086" class="method-detail">
+<a name="M000086"></a>
+<div class="method-heading">
+<span class="method-name">run &rarr; Hash<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Run the modal session for this dialog. The method does not return until "OK" or "Cancel" button is pressed, or <a href="#end_modal">self.end_modal</a> is called from one of the action methods of <a href="DialogItem.html">DialogItem</a>.
+</p>
+<p>
+The return value is a hash. On exit, all dialog items are scanned for the presence of the "tag" attribute, and if present the tag and the value of the dialog items are stored in the hash. In addition, the hash has an entry <code>:status=>val</code>, where val is 0 for "OK" and 1 for "Cancel" or, when <a href="#end_modal">self.end_modal</a> is called, the argument passed to <a href="#end_modal">end_modal</a>.
+</p>
+</div>
+</div>
+
+<div id="method-M000092" class="method-detail">
+<a name="M000092"></a>
+<div class="method-heading">
+<span class="method-name">set_attr(index, hash) &rarr; <a href="DialogItem.html">DialogItem</a><br />
+set_attr(tag, hash) &rarr; <a href="DialogItem.html">DialogItem</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Set the attributes of the dialog item designated by the index or the tag. The attribute names and values are given as a hash object.
+</p>
+</div>
+</div>
+
+<div id="method-M000085" class="method-detail">
+<a name="M000085"></a>
+<div class="method-heading">
+<span class="method-name">set_value(tag, value) &rarr; value</span>
+</div>
+<div class="method-description">
+<p>
+Equivalent to set_attr(tag, :value=>value), except that value is returned instead of the <a href="DialogItem.html">DialogItem</a>.
+</p>
+</div>
+</div>
+
+<div id="method-M000085" class="method-detail">
+<a name="show"></a>
+<div class="method-heading">
+<span class="method-name">show &rarr; self</span>
+</div>
+<div class="method-description">
+<p>
+Show the dialog modelessly. This is intended to be used with <a href="#hide">Dialog#hide</a> in pairs.
+</p>
+<p>
+To avoid garbage collection by Ruby interpreter, the dialog being shown is registered in a global variable, and unregistered when it is hidden. 
+</p>
+<p>
+Mixing Dialog#show and <a href="#M000086">Dialog#run</a> will lead to unpredictable results, including crash.
+</p>
+</div>
+</div>
+
+<div id="method-M000085" class="method-detail">
+<a name="start_timer"></a>
+<div class="method-heading">
+<span class="method-name">start_timer(interval, action = nil) &rarr; self</span>
+</div>
+<div class="method-description">
+<p>
+Start dialog-specific interval timer. The timer interval is described in seconds (floating point is allowed, however the resolution is not better than milliseconds on wxWidgets). If the timer is already running, it is stopped before new timer is run.
+</p>
+<p>
+The action is either a symbol (method name) or a Proc object. If no action is given, then the last set value is used.
+</p>
+<p>
+<i>See Also:</i> <a href="#stop_timer">Dialog#stop_timer</a>
+</p>
+</div>
+</div>
+
+<div id="method-M000085" class="method-detail">
+<a name="stop_timer"></a>
+<div class="method-heading">
+<span class="method-name">stop_timer &rarr; self</span>
+</div>
+<div class="method-description">
+<p>
+Stop dialog-specific interval timer. Do nothing if no timer is running.
+</p>
+<p>
+<i>See Also:</i> <a href="#start_timer">Dialog#start_timer</a>
+</p>
+</div>
+</div>
+
+<div id="method-M000084" class="method-detail">
+<a name="M000084"></a>
+<div class="method-heading">
+<span class="method-name">value(tag) &rarr; value</span>
+</div>
+<div class="method-description">
+<p>
+Equivalent to attr(tag, :value).
+</p>
+</div>
+</div>
+
+</div>
+
+</body>
+</html>

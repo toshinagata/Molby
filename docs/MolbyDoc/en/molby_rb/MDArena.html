@@ -1,0 +1,338 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>Class: MDArena</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Script-Type" content="text/javascript" />
+  <link rel="stylesheet" href="rdoc-style.css" type="text/css" media="screen" />
+</head>
+<body>
+
+<div id="navi">
+<a href="../index.html">[Molby Document Home]</a>
+<a href="../ruby_ref.html">[Contents]</a>
+</div>
+
+<div id="classHeader">
+<table class="header-table">
+<tr>
+<td><strong>Class:</strong></td>
+<td class="class-name-in-header">MDArena</td>
+</tr>
+<tr>
+<td><strong>Parent:</strong></td>
+<td><a href="Object.html">Object</a></td>
+</tr>
+</table>
+</div>
+
+<div id="section">
+<h3 class="section-bar">Description</h3>
+<a name="description-overview"></a>
+<h4>Overview</h4>
+<p>
+The class <a href="MDArena.html">MDArena</a> provides access to the MM/MD runtime information for a <a href="Molecule.html">Molecule</a>. To run a MM/MD calculation from script, the following steps should be followed.
+</p>
+<ul>
+<li>Obtain the <a href="MDArena.html">MDArena</a> object by <a href="Molecule.html#M000313">Molecule#md_arena</a>.</li>
+<li>Initialize the MM/MD runtime by <a href="MDArena.html#M000046">MDArena#prepare</a>. If it raises exception or returns nil, some of the settings need modification (providing missing parameters, etc.) before the MM/MD calculation can be run.</li>
+<li>Run an energy minimization by <a href="MDArena.html#M000045">MDArena#minimize</a>, or a simulation by <a href="MDArena.html#M000044">MDArena#run</a>.</li>
+</ul>
+<a name="description-attributes"></a>
+<h4>MDArena attributes</h4>
+<p>
+The MM/MD calculation uses many setting parameters and runtime information, which are accessible as attributes of <a href="MDArena.html">MDArena</a>. The available attributes are listed below:
+</p>
+<table border="1" cellspacing="0">
+<tr><th>name</th><th>value type</th><th>description</th></tr>
+<tr><td>timestep</td><td>Float</td><td>The timestep (in femtosecond) for solving the Newtonian equation of motion. Default: 1 fs.</td></tr>
+<tr><td>cutoff</td><td>Float</td><td>The cutoff distance (in Å) for van der Waals interaction. Default: 9.0 Å.</td></tr>
+<tr><td>electro_cutoff</td><td>Float</td><td>The cutoff distance (in Å) for electrostatic interaction. Default: 9.0 Å.</td></tr>
+<tr><td>pairlist_distance</td><td>Float</td><td>The threshold distance for making the pairlist table. The pairlist table records the interatomic distances, and is updated when the maximum displacement of any atom exceeds <code>(pairlist_distance - cutoff)</code> or <code>(pairlist_distance - electro_cutoff)</code>. The recommended value is <code>cutoff + 1.0</code> or <code>electro_cutoff + 1.0</code>, whichever is larger. Default: 10.0 Å.</td></tr>
+<tr><td>switch_distance</td><td>Float</td><td>The switching distance (in Å) for van der Waals interaction; between switch_distance and cutoff, the van der Waals potential decreases linearly to zero. Default: 8.0 Å.</td></tr>
+<tr><td>temperature</td><td>Float</td><td>The target temperature (in Kelvin). Default: 300.0 K.</td></tr>
+<tr><td>transient_temperature</td><td>Float</td><td>The transient temperature at the last MD step (in Kelvin). Read only.</td></tr>
+<tr><td>average_temperature</td><td>Float</td><td>The average temperature from the beginning of the MD run (in Kelvin). Read only.</td></tr>
+<tr><td>andersen_freq</td><td>Integer</td><td>The frequency to perform Andersen thermostat. Default: 50.</td></tr>
+<tr><td>andersen_coupling</td><td>Float</td><td>The coupling constant for Andersen thermostat. Default: 0.1.</td></tr>
+<tr><td>random_seed</td><td>Integer</td><td>The random seed. Default: 0 (new seed is generated at every initialization).</td></tr>
+<tr><td>dielectric</td><td>Float</td><td>The dielectric constant of the media. Default: 1.0.</td></tr>
+<tr><td>gradient_convergence</td><td>Float</td><td>The gradient threshold for terminating minimization. Default: 1e-6.</td></tr>
+<tr><td>coordinate_convergence</td><td>Float</td><td>The coordinate threshold for terminating minimization. Default: 1e-8.</td></tr>
+<tr><td>use_xplor_shift</td><td>Integer</td><td>If non-zero, use X-PLOR type shift for the electrostatic potential. Default: 1.</td></tr>
+<tr><td>scale14_vdw</td><td>Float</td><td>Scale factor for the van der Waals potentials for the 1-4 atom pair (i.e. the pair of atoms that are connected through 3 bonds). Default: 0.5.</td></tr>
+<tr><td>scale14_elect</td><td>Float</td><td>Scale factor for the electrostatic potentials for the 1-4 atom pair. Default: 0.83.</td></tr>
+<tr><td>relocate_center</td><td>Integer</td><td>If non-zero, then relocate the whole system so that the center of mass does not move. Default: 0.</td></tr>
+<tr><td>step</td><td>Integer</td><td>The current step. Read only.</td></tr>
+<tr><td>coord_frame</td><td>Integer</td><td>The last frame number created by this calculation. Read only.</td></tr>
+<tr><td>coord_file</td><td>String</td><td>The output file name for coordinates. The file is in the "crd" format. Default: nil (no output)</td></tr>
+<tr><td>vel_file</td><td>String</td><td>The output file name for velocities. The file is in the "crd" format. Default: nil (no output)</td></tr>
+<tr><td>force_file</td><td>String</td><td>The output file name for force. The file is in the "crd" format. Default: nil (no output)</td></tr>
+<tr><td>log_file</td><td>String</td><td>The output file name for the log. Default: nil (no output)</td></tr>
+<tr><td>debug_file</td><td>String</td><td>The output file name for the debug information. Default: nil (no output)</td></tr>
+<tr><td>coord_output_freq</td><td>Integer</td><td>Output the coordinates every this step. Default: 10.</td></tr>
+<tr><td>energy_output_freq</td><td>Integer</td><td>Output the energies every this step to the log file. Default: 10.</td></tr>
+<tr><td>debug_output_level</td><td>Integer</td><td>Set the verbosity of the debug information. Default: 0.</td></tr>
+<tr><td>use_graphite</td><td>Integer</td><td>If non-zero, an infinite array of graphite carbons are assumed in the xy plane. Default: 0.</td></tr>
+<tr><td>alchemical_lambda</td><td>Float</td><td>When the alchemical transformation is turned on, this parameter defines the population of the appearing group.</td></tr>
+<tr><td>alchemical_delta_lambda</td><td>Float</td><td>When the alchemical transformation is turned on, this parameter defines the increment width of the lambda parameter. Default: 0.1.</td></tr>
+<tr><td>alchemical_energy</td><td>Float</td><td>When the alchemical transformation is turned on, this parameter gives the energy difference for incremental change of the lambda parameter. Read only.</td></tr>
+<tr><td>minimize_cell</td><td>Boolean</td><td>Flag to determine whether the unit cell should be minimized. Default: false.</td></tr>
+<tr><td>use_ewald</td><td>Integer</td><td>If 1, the Particle Mesh Ewald technique is used. Default: 0.</td></tr>
+<tr><td>ewald_beta</td><td>Float</td><td>The beta parameter for the PME calculation. Default: 0.25</td></tr>
+<tr><td>ewald_order</td><td>Integer</td><td>The spline order for the PME calculation. Default: 8</td></tr>
+<tr><td>ewald_freq</td><td>Integer</td><td>The frequency to perform the PME calculation. Default: 2</td></tr>
+</table>
+</div>
+
+<div id="section">
+
+<div id="methods">
+<h3 class="section-bar">Public Instance methods</h3>
+
+<div id="method-M000048" class="method-detail">
+<a name="M000048"></a>
+<div class="method-heading">
+<span class="method-name">self[attr]<br />
+self[attr] = value
+</span>
+</div>
+<div class="method-description">
+<p>
+Get/set the attribute value. The attribute values also can be accessed by <code>self.attribute_name</code> and <code>self.attribute_name = value</code>. See the <a href="#description-attributes">MDArena attributes</a> section for the list of available attributes.
+</p>
+</div>
+</div>
+
+<div id="method-M000047" class="method-detail">
+<a name="angle_par"></a>
+<div class="method-heading">
+<span class="method-name">angle_par(idx) &rarr; <a href="ParameterRef.html">ParameterRef</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns a MM/MD parameter record that is used for the idx-th angle.
+</p>
+</div>
+</div>
+
+<div id="method-M000047" class="method-detail">
+<a name="bond_par"></a>
+<div class="method-heading">
+<span class="method-name">bond_par(idx) &rarr; <a href="ParameterRef.html">ParameterRef</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns a MM/MD parameter record that is used for the idx-th bond.
+</p>
+</div>
+</div>
+
+<div id="method-M000047" class="method-detail">
+<a name="dihedral_par"></a>
+<div class="method-heading">
+<span class="method-name">dihedral_par(idx) &rarr; <a href="ParameterRef.html">ParameterRef</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns a MM/MD parameter record that is used for the idx-th dihedral.
+</p>
+</div>
+</div>
+
+<div id="method-M000047" class="method-detail">
+<a name="M000047"></a>
+<div class="method-heading">
+<span class="method-name">energies &rarr; [total, bond, angle, dihedral, improper, vdw, electrostatic, auxiliary, surface, kinetic, net]<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get the <a href="MDArena.html#M000047">energies</a> at the last step of the MM/MD calculation. The unit is kcal/mol.
+</p>
+</div>
+</div>
+
+<div id="method-get_alchemical_perturbation" class="method-detail">
+<a name="get_alchemical_perturbation"></a>
+<div class="method-heading">
+<span class="method-name">get_alchemical_perturbation &rarr; [vanish_group, appear_group] or nil</span>
+</div>
+<div class="method-description">
+<p>
+Get the vanishing and appearing atom groups for alchemical perturbation. If alchemical perturbation is disabled, returns nil (not [nil, nil]).
+</p>
+</div>
+</div>
+
+<div id="method-M000047" class="method-detail">
+<a name="get_external_force"></a>
+<div class="method-heading">
+<span class="method-name">get_external_force(index) &rarr; <a href="Vector3D.html">Vector3D</a> or nil</span>
+</div>
+<div class="method-description">
+<p>
+Get the current external force for the atom. If the external force is not set, nil is returned.
+</p>
+</div>
+</div>
+
+<div id="method-M000047" class="method-detail">
+<a name="improper_par"></a>
+<div class="method-heading">
+<span class="method-name">improper_par(idx) &rarr; <a href="ParameterRef.html">ParameterRef</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns a MM/MD parameter record that is used for the idx-th improper torsion.
+</p>
+</div>
+</div>
+
+<div id="method-init_velocities" class="method-detail">
+<a name="init_velocities"></a>
+<div class="method-heading">
+<span class="method-name">init_velocities(temperature = nil) &rarr; self<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Give random velocities to the atoms according to the Boltzmann distribution. If temperature is given, it is also set as the 'temperature' attribute.
+</p>
+</div>
+</div>
+
+<div id="method-M000050" class="method-detail">
+<a name="keys"></a>
+<div class="method-heading">
+<span class="method-name">keys &rarr; Array<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns an array of attribute keys.
+</p>
+</div>
+</div>
+
+<div id="method-M000045" class="method-detail">
+<a name="M000045"></a>
+<div class="method-heading">
+<span class="method-name">minimize(n)       &rarr; self<br />
+minimize(n) { ... } &rarr; self<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Minimize the MM energy for n steps. If a block is given, it is executed when
+minimization is complete.
+</p>
+</div>
+</div>
+
+<div id="method-M000046" class="method-detail">
+<a name="M000046"></a>
+<div class="method-heading">
+<span class="method-name">prepare(check_only = false)         &rarr; self or nil<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Prepare for the MD calculation. The angles and dihedrals may be rebuilt so that they are consistent with the bond information, and the impropers may be added where the corresponding improper parameters are defined (even if the force constant is zero). These result in the modification of the angle/dihedral/improper tables of the Molecule, which are undoable (see "<a href="Molecule.html#description-undo-support">Undo support</a>" of the Molecule document).
+</p>
+<p>
+After the above rebuild is done, the MM parameters are looked for. If any necessary parameters are missing, then nil is returned at this point. If all parameters are found, and if the <code>check_only</code> argument is true, then self is returned at this point. Otherwise, the runtime fields for MM/MD calculation are initialized and self is returned.
+</p>
+</div>
+</div>
+
+<div id="method-M000044" class="method-detail">
+<a name="M000044"></a>
+<div class="method-heading">
+<span class="method-name">run(n)       &rarr; self<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Run the MD simulation for n steps.
+</p>
+</div>
+</div>
+
+<div id="method-scale_velocities" class="method-detail">
+<a name="scale_velocities"></a>
+<div class="method-heading">
+<span class="method-name">scale_velocities(temperature = nil) &rarr; self<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Scale the current velocities of the atoms according to the Boltzmann distribution. If temperature is given, it is also set as the 'temperature' attribute.
+</p>
+</div>
+</div>
+
+<div id="method-set_alchemical_perturbation" class="method-detail">
+<a name="set_alchemical_perturbation"></a>
+<div class="method-heading">
+<span class="method-name">set_alchemical_perturbation(vanish_group, appear_group) &rarr; [vanish_group, appear_group]</span>
+</div>
+<div class="method-description">
+<p>
+Set the vanishing and appearing atom groups for alchemical perturbation. To disable alchemical perturbation, give nil for the both groups.
+</p>
+</div>
+</div>
+
+<div id="method-M000047" class="method-detail">
+<a name="set_external_forces"></a>
+<div class="method-heading">
+<span class="method-name">set_external_forces(array) &rarr; self</span>
+</div>
+<div class="method-description">
+<p>
+Set external forces. Array should be an array of objects that can be converted to <a href="Vector3D.html">Vector3D</a>, or nil to remove all external forces.
+</p>
+</div>
+</div>
+
+<div id="method-M000050" class="method-detail">
+<a name="M000050"></a>
+<div class="method-heading">
+<span class="method-name">to_hash &rarr; Hash<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns a (frozen) hash that contains the current values of all attributes.
+</p>
+</div>
+</div>
+
+<div id="method-M000047" class="method-detail">
+<a name="vdw_par"></a>
+<div class="method-heading">
+<span class="method-name">vdw_par(idx) &rarr; <a href="ParameterRef.html">ParameterRef</a><br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns a MM/MD parameter record that is used for the van der Waals parameter of the idx-th atom.
+</p>
+</div>
+</div>
+
+</div>
+
+</div>
+
+</body>
+</html>

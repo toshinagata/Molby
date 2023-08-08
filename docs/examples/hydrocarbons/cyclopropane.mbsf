@@ -1,0 +1,147 @@
+!:atoms
+! idx seg_name res_seq res_name name type charge weight element atomic_number occupancy temp_factor int_charge
+0 MAIN 1 CPP C1 cx -0.25082 12.01070 C 6 1.000000 0.000000 0
+1 MAIN 1 CPP H11 hc 0.12541 1.00790 H 1 1.000000 0.000000 0
+2 MAIN 1 CPP H12 hc 0.12541 1.00790 H 1 1.000000 0.000000 0
+3 MAIN 1 CPP C2 cx -0.25082 12.01070 C 6 1.000000 0.000000 0
+4 MAIN 1 CPP H21 hc 0.12541 1.00790 H 1 1.000000 0.000000 0
+5 MAIN 1 CPP H22 hc 0.12541 1.00790 H 1 1.000000 0.000000 0
+6 MAIN 1 CPP C3 cx -0.25082 12.01070 C 6 1.000000 0.000000 0
+7 MAIN 1 CPP H31 hc 0.12541 1.00790 H 1 1.000000 0.000000 0
+8 MAIN 1 CPP H32 hc 0.12541 1.00790 H 1 1.000000 0.000000 0
+
+!:positions ; frame 0
+! idx x y z [sx sy sz]
+0 0.43392657 0.34677819 0.72704995
+1 0.13994072 1.18797449 0.12421963
+2 -0.31839425 0.02404579 1.42511890
+3 1.31396152 -0.69359437 0.10627000
+4 1.61627799 -0.55735546 -0.91719794
+5 1.15795080 -1.72127604 0.38371236
+6 1.87011191 0.23942341 1.13698741
+7 2.54927132 1.00787803 0.81192845
+8 2.09095342 -0.15605291 2.11283096
+
+!:bonds
+! from1 to1 from2 to2 from3 to3 from4 to4
+0 1 0 2 3 5 3 4
+6 8 6 7 3 6 0 3
+0 6
+
+!:angles
+! a1 b1 c1 a2 b2 c2 a3 b3 c3
+1 0 2 5 3 4 8 6 7
+5 3 6 4 3 6 3 6 8
+3 6 7 1 0 3 2 0 3
+0 3 5 0 3 4 0 3 6
+1 0 6 2 0 6 3 0 6
+0 6 8 0 6 7 0 6 3
+
+!:dihedrals
+! a1 b1 c1 d1 a2 b2 c2 d2
+5 3 6 8 5 3 6 7
+4 3 6 8 4 3 6 7
+1 0 3 5 1 0 3 4
+1 0 3 6 2 0 3 5
+2 0 3 4 2 0 3 6
+0 3 6 8 0 3 6 7
+1 0 6 8 1 0 6 7
+1 0 6 3 2 0 6 8
+2 0 6 7 2 0 6 3
+3 0 6 8 3 0 6 7
+6 0 3 5 6 0 3 4
+5 3 6 0 4 3 6 0
+
+!:md_parameters
+log_file cyclopentane.log
+coord_file (null)
+vel_file (null)
+force_file (null)
+debug_file (null)
+debug_output_level 0
+step 0
+coord_output_freq 10
+energy_output_freq 10
+coord_frame 141
+timestep 1
+cutoff 9
+electro_cutoff 9
+pairlist_distance 10
+switch_distance 8
+temperature 300
+andersen_freq 50
+andersen_coupling 0.1
+random_seed 0
+dielectric 4.8
+gradient_convergence 1e-06
+coordinate_convergence 1e-08
+use_xplor_shift 1
+scale14_vdw 0.5
+scale14_elect 0.83
+relocate_center 1
+surface_probe_radius 0
+surface_tension -0.005
+surface_potential_freq 5
+use_graphite 0
+alchemical_lambda 0
+alchemical_delta_lambda 0.1
+
+!:parameters
+! type1 type2 k r0
+bond cx hc 345.800001 1.086000 ![gaff] SOURCE3    44    0.0009    0.0011
+bond cx cx 337.299999 1.499000 ![gaff] SOURCE1  1204    0.0159    0.0183
+! type1 type2 type3 k a0
+angle hc cx hc 38.600000 114.470002 ! [gaff] SOURCE3   19   0.2816   0.3295
+angle cx cx hc 45.800000 117.919992 ! [gaff] SOURCE3   92   0.7174   1.1927
+angle cx cx cx 85.300004 63.750001 ! [gaff] SOURCE2   11   6.2810  11.0052
+! type1 type2 type3 type4 k periodicity phi0
+dihe X cx cx X 0.160000 3 0.000000 ![gaff] same as X-c3-c3-X
+! type eps r_eq eps14 r_eq14 atomic_number weight
+vdw cx 0.086000 1.908000 0.086000 1.908000 6 12.010000 ![gaff] Sp3 carbons in triangle systems
+vdw hc 0.015700 1.487000 0.015700 1.487000 1 1.008000 ![gaff] H bonded to aliphatic carbon without electrwd. group
+
+!:velocity
+! idx vx vy vz
+0 0.00000000 0.00000000 0.00000000
+1 0.00000000 0.00000000 0.00000000
+2 0.00000000 0.00000000 0.00000000
+3 0.00000000 0.00000000 0.00000000
+4 0.00000000 0.00000000 0.00000000
+5 0.00000000 0.00000000 0.00000000
+6 0.00000000 0.00000000 0.00000000
+7 0.00000000 0.00000000 0.00000000
+8 0.00000000 0.00000000 0.00000000
+
+!:force
+! idx fx fy fz
+0 0.00000000 0.00000000 0.00000000
+1 0.00000000 0.00000000 0.00000000
+2 0.00000000 0.00000000 0.00000000
+3 0.00000000 0.00000000 0.00000000
+4 0.00000000 0.00000000 0.00000000
+5 0.00000000 0.00000000 0.00000000
+6 0.00000000 0.00000000 0.00000000
+7 0.00000000 0.00000000 0.00000000
+8 0.00000000 0.00000000 0.00000000
+
+!:trackball
+! scale; trx try trz; theta_deg x y z
+0.757697
+-0.120600 0.003580 -0.065677
+97.846311 -0.932756 0.279246 -0.228010
+
+!:view
+show_unit_cell 0
+show_periodic_box 1
+show_expanded_atoms 1
+show_ellipsoids 0
+show_hydrogens 1
+show_dummy_atoms 1
+show_rotation_center 0
+show_graphite_flag 0
+show_graphite 5
+show_periodic_image_flag 0
+show_periodic_image 0 0 0 0 0 0
+atom_radius 0.200000
+bond_radius 0.100000
+

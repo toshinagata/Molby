@@ -1,0 +1,61 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html lang='en' xml:lang='en' xmlns='http://www.w3.org/1999/xhtml'><head><meta content='text/html;charset=utf-8' http-equiv='Content-Type' lang='en' xml:lang='en' /><title>Filter Kit How-to</title><link href='../etc/style.css' rel='stylesheet' type='text/css' /><link href='index.html' rel='Start' /><link href='appendix.html' rel='Index' /><link href='ruby_ref.html' rel='Prev' /></head><body><div class='topic_path'><a href='index.html'>Molby</a> &gt; <a href='appendix.html'>Appendix</a> &gt; Filter Kit How-to &nbsp;&nbsp; <a href='ruby_ref.html'>[Prev]</a><span class='float_right'><a href='../ja/filter_kit_howto.html'>[Japanese]</a></span></div><div class='contents' lang='en' xml:lang='en'>
+<h1>Filter Kit How-to</h1>
+<p>
+In the research of chemistry, we sometimes a simple processing of text files. Ruby is particularly suitable for such purposes. To make the use of Ruby easier, Molby provides a special capability called "filter kit" (version 0.6.4 and later). The name originates from the "UNIX" culture, where small programs for text processing are called "filters".
+</p>
+<p>
+Here is a description of making a filter script. As a demonstration, the filter here is a very simple function; it appends a sequential line number on each line.
+</p>
+<p><img src='../etc/filter_01.png' />&nbsp;&nbsp;&nbsp;<img src='../etc/filter_02.png' /></p>
+<p>
+To write a filter, we create a new text file, with extention ".rb" or ".mrb". Former is conventional as a Ruby script, but latter may be useful to specify Ruby scripts for Molby.
+</p>
+<p>
+We start from the following line:
+</p>
+<p class='code'>Dialog.filter_kit("Filter Sample", "This is a sample filter.") { |args|
+</p>
+<p>
+The method <code>Dialog.filter_kit</code> takes two arguments, the window title and the message. It also requires a block, which actually contains the main program.
+</p>
+<p>
+When the user presses the "Select Files" button and choose files (which can be multiple), the block is executed with the array of the chosen file names as the argument. The block body is written as follows:
+</p>
+<p class='code'><span class='linenumber'>  1 </span> Dialog.filter_kit("Filter Sample", "This is a sample filter.") { |args|
+<span class='linenumber'>  2 </span>   args.each { |fname|
+<span class='linenumber'>  3 </span>    fp = open(fname, "r")
+<span class='linenumber'>  4 </span>    if fp == nil
+<span class='linenumber'>  5 </span>      error_message_box("Cannot open file: #{arg}")
+<span class='linenumber'>  6 </span>      next
+<span class='linenumber'>  7 </span>    end
+<span class='linenumber'>  8 </span>    puts fname
+<span class='linenumber'>  9 </span>    a = fp.readlines
+<span class='linenumber'> 10 </span>    fp.close
+<span class='linenumber'> 11 </span>    File.rename(fname, fname + "~")
+<span class='linenumber'> 12 </span>    fp2 = open(fname, "w")
+<span class='linenumber'> 13 </span>    a.each_with_index { |ln, n|
+<span class='linenumber'> 14 </span>      ln = (n + 1).to_s + "  " + ln
+<span class='linenumber'> 15 </span>      fp2.print ln
+<span class='linenumber'> 16 </span>    }
+<span class='linenumber'> 17 </span>    fp2.close
+<span class='linenumber'> 18 </span>  }
+</p>
+<ul>
+<li>Line 2: The code in the following braces (<code>{}</code>) is repeated over all files.</li>
+<li>Line 3: Open the file for reading.</li>
+<li>Lines 4-7: If the file cannot be opened, then show the error message and continue to the next file.</li>
+<li>Line 8: Display the filename as information. The output will be displayed in the text box within the filter dialog.</li>
+<li>Line 9: Read all lines from the file and store in an array.</li>
+<li>Line 10: Now we are done with this file, so close the file.</li>
+<li>Line 11: Rename the file name with a tilda (~) at the end. (It is also possible to change the extension, for example; however, you need to learn about "regular expression" to write the code.)</li>
+<li>Line 12: Open the file with the same name, this time for writing. We also need error handling for this operation as in line 4-7, which is omitted here for clarity.</li>
+<li>Line 13: Repeat the following block (the code in the braces) for all elements in the array. The element and its index are given to the block as <code>ln</code> and <code>n</code>, respectively.</li>
+<li>Line 14: Append the line number. <code>(n + 1)</code> denotes the line number (because the array index begins with zero), and <code>to_s</code> generates a String object from an Integer.</li>
+<li>Line 15: Write the line to the file.</li>
+<li>Line 17: Close the file.</li>
+</ul>
+<p>
+The above text is saved as "filter_sample.rb" (the filename can be arbitrary except for the extension). Open it with Molby, and you will get the filter running.
+</p>
+</div><div class='navigation'><a href='index.html'>[Top]</a> <a href='appendix.html'>[Up: Appendix]</a> <a href='ruby_ref.html'>[Prev: Ruby Extension Reference]</a> <span class='float_right'><a href='../ja/filter_kit_howto.html'>[Japanese]</a></span></div></body></html>

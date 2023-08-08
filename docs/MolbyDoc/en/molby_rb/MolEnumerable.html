@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <title>Class: MolEnumerable</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Script-Type" content="text/javascript" />
+  <link rel="stylesheet" href="rdoc-style.css" type="text/css" media="screen" />
+</head>
+<body>
+
+<div id="navi">
+<a href="../index.html">[Molby Document Home]</a>
+<a href="../ruby_ref.html">[Contents]</a>
+</div>
+
+<div id="classHeader">
+<table class="header-table">
+<tr>
+<td><strong>Class</strong></td>
+<td class="class-name-in-header">MolEnumerable</td>
+</tr>
+<tr>
+<td><strong>Parent:</strong></td>
+<td><a href="Object.html">Object</a></td>
+</tr>
+<tr>
+<td><strong>Includes:</strong></td>
+<td>Enumerable</td>
+</tr>
+</table>
+</div>
+
+<div id="section">
+<h3 class="section-bar">Description</h3>
+<h4>Overview</h4>
+<p>
+The class <a href="MolEnumerable.html">MolEnumerable</a> provides array-like interfaces (i.e. methods of the module Enumerable) for collective data in <a href="Molecule.html">Molecule</a>. <a href="MolEnumerable.html">MolEnumerable</a> does not implement <span class="method-name">initialize</span> nor <span class="method-name">new</span> methods. Instead, an instance of <a href="MolEnumerable.html">MolEnumerable</a> is created by methods of <a href="Molecule.html">Molecule</a>, i.e. <a href="Molecule.html#M000211">Molecule#atoms</a>, <a href="Molecule.html#M000212">Molecule#bonds</a>, <a href="Molecule.html#M000213">Molecule#angles</a>, <a href="Molecule.html#M000214">Molecule#dihedrals</a>, <a href="Molecule.html#M000215">Molecule#impropers</a>, and <a href="Molecule.html#M000216">Molecule#residues</a>. These methods give <a href="MolEnumerable.html">MolEnumerable</a> objects that are tied to the <a href="Molecule.html">Molecule</a> object and have a designated type (atom, bond, etc.)
+</p>
+<p>
+The index operator <a href="MolEnumerable.html#M000002">MolEnumerable#[]</a> gives an access to the index-th entry of the given type in the associated <a href="Molecule.html">Molecule</a>. The assignment operator ([]=) is not implemented, because any modification should be performed through methods of <a href="Molecule.html">Molecule</a> or <a href="AtomRef.html">AtomRef</a>.
+</p>
+<p>
+Among the six types of <a href="MolEnumerable.html">MolEnumerable</a> objects, by far the most useful is the "atom" type object, which gives an <a href="AtomRef.html">AtomRef</a> object.
+</p>
+</div>
+
+<div id="methods">
+<h3 class="section-bar">Public Instance methods</h3>
+
+<div id="method-M000002" class="method-detail">
+<a name="M000002"></a>
+<div class="method-heading">
+<span class="method-name">
+self[n] &rarr; AtomRef<br />
+self[n] &rarr; Array of Integers<br />
+self[n] &rarr; String<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get the n-th atom, bond, etc. of the associated <a
+href="Molecule.html">Molecule</a>. For the atom, the return value is <a
+href="AtomRef.html">AtomRef</a>. For the residue, the return value is a
+String. Otherwise, the return value is an Array of Integers. For the atom type, a string description of the atom is also acceptable. See <a href="Molecule.html#description-atom-index">"Atom index"</a> description of <a href="Molecule.html">Molecule</a>.
+</p>
+<pre>% <span class="molby-input">mol.dump</span>
+   0 MNO.1   Mn1  Mn   Mn  10.802   3.764  12.297  0.000 [3,22,4,7,10,13]
+   1 MNO.1   Mn2  Mn   Mn  12.443   2.189  14.627  0.000 [3,33,11,14,16,19]
+   2 MNO.1   Mn3  Mn   Mn  10.196   4.404  15.428  0.000 [3,44,17,20,5,8]
+   3 MNO.1   O1   ox   O   11.148   3.452  14.117  0.000 [0,1,2]
+...
+<span class="molby-output">--&gt;</span>
+% <span class="molby-input">a = mol.atoms</span>  #  A MolEnumerable object
+<span class="molby-output">--&gt;#&lt;MolEnumerable:0x16493688&gt;</span>
+% <span class="molby-input">ap = a["Mn1"]</span>  #  Get an AtomRef object
+<span class="molby-output">--&gt;#&lt;AtomRef:0x1648a54c&gt;</span>
+% <span class="molby-input">ap.name</span>
+<span class="molby-output">--&gt;"Mn1"</span>
+%
+</pre>
+</div>
+</div>
+
+<div id="method-M000004" class="method-detail">
+<a name="M000004"></a>
+<div class="method-heading">
+<span class="method-name">each {|obj| ...}<br />
+</span>
+</div>
+
+<div class="method-description">
+<p>
+Call the block for each atom, bond, etc. The block argument is an <a
+href="AtomRef.html">AtomRef</a> for atoms, a String for residues, and an
+Array of Integers for others. For the atoms, a same <a
+href="AtomRef.html">AtomRef</a> object is passed (with different internal
+information) for each invocation
+of block. Otherwise, a new Ruby object will be created and passed for each iteration.
+</p>
+</div>
+</div>
+
+<div id="method-M000003" class="method-detail">
+<a name="M000003"></a>
+<div class="method-heading">
+<span class="method-name">
+length          &rarr; Integer<br />
+size          &rarr; Integer<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns the number of entries that can be accessed by this object.
+</p>
+</div>
+</div>
+
+</div>
+
+</body>
+</html>

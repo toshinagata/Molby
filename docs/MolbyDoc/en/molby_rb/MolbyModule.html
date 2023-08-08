@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>Module: Molby</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta http-equiv="Content-Script-Type" content="text/javascript" />
+<link rel="stylesheet" href="rdoc-style.css" type="text/css" media="screen" />
+</head>
+<body>
+
+<div id="navi">
+<a href="../index.html">[Molby Document Home]</a>
+<a href="../ruby_ref.html">[Contents]</a>
+</div>
+
+<div id="classHeader">
+<table class="header-table">
+<tr>
+<td><strong>Module:</strong></td>
+<td class="class-name-in-header">Molby</td>
+</tr>
+</table>
+</div>
+
+<div id="section">
+<h3 class="section-bar">Description</h3>
+<p>
+<a href="">Molby</a> is the module that bundles Molby-specific classes. Under Molby, the following classes are defined.
+</p>
+<ul>
+<li><a href="AtomRef.html">AtomRef</a></li>
+<li><a href="Dialog.html">Dialog</a></li>
+<li><a href="DialogItem.html">DialogItem</a></li>
+<li><a href="IntGroup.html">IntGroup</a></li>
+<li><a href="MDArena.html">MDArena</a></li>
+<li><a href="MolEnumerable.html">MolEnumerable</a></li>
+<li><a href="Molecule.html">Molecule</a></li>
+<li><a href="Parameter.html">Parameter</a></li>
+<li><a href="ParameterRef.html">ParameterRef</a></li>
+<li><a href="ParEnumerable.html">ParEnumerable</a></li>
+<li><a href="Transform.html">Transform</a></li>
+<li><a href="Vector3D.html">Vector3D</a></li>
+<li><a href="MolbyError.html">MolbyError</a></li>
+</ul>
+
+</div>
+
+<div id="constants">
+<h3 class="section-bar">Constant</h3>
+
+<div class="method-detail">
+<a name="hasgui"></a>
+<div class="method-heading">
+<span class="method-name">HasGUI</span>
+</div>
+<div class="method-description">
+<p>
+A boolean value to represent whether if the program is running in GUI mode or not.
+</p>
+</div>
+</div>
+
+<div class="method-detail">
+<a name="mbsfpath"></a>
+<div class="method-heading">
+<span class="method-name">MbsfPath</span>
+</div>
+<div class="method-description">
+<p>
+A String describing the full path of the directory containing pre-defined mbsf files. It is equivalent to <code>Molby::ResourcePath + "/Scripts/mbsf"</code>.
+</p>
+</div>
+</div>
+
+<div class="method-detail">
+<a name="resourcepath"></a>
+<div class="method-heading">
+<span class="method-name">ResourcePath</span>
+</div>
+<div class="method-description">
+<p>
+A String describing the full path of the directory containing <code>Scripts</code> and <code>amber11</code> resources. On Windows, it is something like <code>"C:/Program Files/Molby"</code>. On Mac, it is something like <code>"/Applications/Molby/Molby.app/Contents/Resources"</code>.
+</p>
+<p>
+Note: up to 0.5.6, this constant was defined as <a href="Kernel.html#molbyresourcepath">Kernel::MolbyResourcePath</a>. The old name is still available for backward compatibility. Also up to 0.5.6, the string on Windows contained backslashes instead of slashes. This changed in 0.5.7, to be more consistent with <a href="Molecule.html#M000209">Molecule#dir</a> or <a href="Molecule.html#M000208">Molecule#path</a>.
+</p>
+</div>
+</div>
+
+<div class="method-detail">
+<a name="scriptpath"></a>
+<div class="method-heading">
+<span class="method-name">ScriptPath</span>
+</div>
+<div class="method-description">
+<p>
+A String describing the full path of the directory containing pre-defined Ruby scripts. It is equivalent to <code>Molby::ResourcePath + "/Scripts"</code>.
+</p>
+</div>
+</div>
+
+</div>
+
+</body>
+</html>

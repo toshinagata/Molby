@@ -1,0 +1,60 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html lang='ja' xml:lang='ja' xmlns='http://www.w3.org/1999/xhtml'><head><meta content='text/html;charset=utf-8' http-equiv='Content-Type' lang='ja' xml:lang='ja' /><title>第四段階：縮環構造の作成</title><link href='../etc/style.css' rel='stylesheet' type='text/css' /><link href='index.html' rel='Start' /><link href='tutorials.html' rel='Index' /><link href='cut_copy_paste.html' rel='Prev' /><link href='proptable.html' rel='Next' /></head><body><div class='topic_path'><a href='index.html'>Molby</a> &gt; <a href='tutorials.html'>チュートリアル</a> &gt; 第四段階：縮環構造の作成 &nbsp;&nbsp; <a href='cut_copy_paste.html'>[前]</a> &nbsp;&nbsp; <a href='proptable.html'>[次]</a><span class='float_right'><a href='../en/ring_fusion.html'>[English]</a></span></div><div class='contents' lang='ja' xml:lang='ja'>
+<h1>第四段階：縮環構造の作成</h1>
+<h2>1. ダブルクリック／キー入力による縮環</h2>
+<p>
+Molby は縮環構造を作るための機能を持っています。例として、インダンを作るもう一つの方法を紹介します。今回は、ベンゼンから始めます。
+</p>
+<p><img src='../etc/ring_01.png' /></p>
+<p>
+"Select" モードにして、C1-C2 結合をクリックして C1 と C2 を選択します。
+</p>
+<p><img src='../etc/ring_02.png' /></p>
+<p>
+選択部分をダブルクリックして、ダイアログボックスに "cyclopentane" と入力します。
+</p>
+<p><img src='../etc/ring_03.png' /></p>
+<p>
+"OK" を押すと、５員環がベンゼン環に縮環します。
+</p>
+<p><img src='../etc/ring_04.png' /></p>
+<p>
+選択部分が３個以上の原子を含んでいても、縮環は可能です。例えば、インダンで図のように３つの連続した炭素原子を選択してみます。
+</p>
+<p><img src='../etc/ring_05.png' /></p>
+<p>
+選択部分をダブルクリックして、"C6H6"（または "benzene"）と入力します。
+</p>
+<p><img src='../etc/ring_06.png' /></p>
+<p>
+そうすると、アセナフテンができます...だいたい。
+</p>
+<p><img src='../etc/ring_07.png' /></p>
+<p>
+上の図に示したように、橋頭位の炭素に１つ余分な水素原子が残ってしまいます。実のところ、Molby はあんまり賢くありません。選択部分の両端の原子から水素原子を１つずつ取り除いて、縮環する分子（この場合はベンゼン）の一部をかわりに結合して、生成する環の原子数が一致するようにしているだけです。このため、元の選択部分または縮環する分子が sp3 炭素を含んでいると、立体化学が変になることがあります。水素原子を除いたり付け加えたりして、さらに構造を最適化する必要があるでしょう（詳しくは「<a href='mm_minimize.html'>エネルギー最小化</a>」を見てください）。
+</p>
+<h2>2. コピー／ペーストによる縮環</h2>
+<p>
+縮環構造を作るには、コピー／ペーストを使ったもう一つの方法があります。またベンゼンから始めましょう。
+</p>
+<p><img src='../etc/ring_08.png' /></p>
+<p>
+"File" メニューを開き、"Open Predefined" &rarr; "Alicyclic" &rarr; "cyclopentane" を選んでください。
+</p>
+<p><img src='../etc/ring_09.png' /></p>
+<p>
+"*cyclopentane*"という名前の新しいウィンドウが開き、シクロペンタン分子が入っています。３つのメチレン基を選択して、コマンド-C またはコントロール-C でコピーしてください。
+</p>
+<p><img src='../etc/ring_10.png' /></p>
+<p>
+ベンゼン分子に戻って、今度は H1 と H2（C1 と C2 ではなく）を選択してください。
+</p>
+<p><img src='../etc/ring_11.png' /></p>
+<p>
+コマンド-V またはコントロール-V でペーストしてください。インダンができます。
+</p>
+<p><img src='../etc/ring_12.png' /></p>
+<p>
+この「コピー／ペースト」は、実は前に説明したのと (<a href='cut-copy-paste.html'>カット／コピー／ペースト</a>) 同じように機能しています。現在の選択部分とクリップボードの内容がともに「２つの末端」を持っているとき、末端同士がつなぎあわされ、縮環したように見えるのです。この方法による縮環は「ダブルクリック／入力」の方法よりも少し複雑ですが、何が起きているかはこちらの方が理解しやすいかもしれません。
+</p>
+</div><div class='navigation'><a href='index.html'>[トップ]</a> <a href='tutorials.html'>[上: チュートリアル]</a> <a href='cut_copy_paste.html'>[前: 第三段階：分子を編集する：カット・コピー・ペースト]</a> <a href='proptable.html'>[次: 第五段階：分子を編集する：属性テーブルを使う]</a> <span class='float_right'><a href='../en/ring_fusion.html'>[English]</a></span></div></body></html>

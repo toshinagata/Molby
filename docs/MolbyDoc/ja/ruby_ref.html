@@ -1,0 +1,38 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html lang='ja' xml:lang='ja' xmlns='http://www.w3.org/1999/xhtml'><head><meta content='text/html;charset=utf-8' http-equiv='Content-Type' lang='ja' xml:lang='ja' /><title>Ruby 拡張リファレンス</title><link href='../etc/style.css' rel='stylesheet' type='text/css' /><link href='index.html' rel='Start' /><link href='appendix.html' rel='Index' /><link href='filter_kit_howto.html' rel='Next' /></head><body><div class='topic_path'><a href='index.html'>Molby</a> &gt; <a href='appendix.html'>付録</a> &gt; Ruby 拡張リファレンス &nbsp;&nbsp; <a href='ruby.html'>[前]</a> &nbsp;&nbsp; <a href='filter_kit_howto.html'>[次]</a><span class='float_right'><a href='../en/ruby_ref.html'>[English]</a></span></div><div class='contents' lang='ja' xml:lang='ja'>
+<h1>Ruby 拡張リファレンス</h1>
+<p>
+以下のクラス／モジュール／例外が Molby 内蔵の Ruby インタプリタに組み込まれています。<code>Kernel</code> モジュールのメソッドは、通常の Ruby インタプリタと同様に組み込み関数のように使うことができます。その他のクラスと <code>MolbyError</code> 例外は <code>Molby</code> モジュールの下に定義されています。ただし、起動時に <code>include Molby</code> が呼び出されるため、<code>Molby::</code> 接頭辞は必要ありません。
+</p>
+<p class='note'>
+起動時には <code>include Math</code> も呼び出されるため、<code>Math</code> モジュールのメソッドや定数も接頭辞なしで使うことができます。
+</p>
+<p>
+最も重要なクラスは <a href='molby_rb/Molecule.html'>Molecule</a> なので、このドキュメントを最初に読むことをお勧めします。ここから必要に応じてリンクをたどっていけば、他のクラスがどのように定義され使われるかが理解しやすくなります。
+</p>
+<h3 class='section-bar'>Classes</h3>
+<ul>
+<li><a href='molby_rb/AtomRef.html'>AtomRef</a></li>
+<li><a href='molby_rb/Dialog.html'>Dialog</a></li>
+<li><a href='molby_rb/DialogItem.html'>DialogItem</a></li>
+<li><a href='molby_rb/IntGroup.html'>IntGroup</a></li>
+<li><a href='molby_rb/LAMatrix.html'>LAMatrix</a></li>
+<li><a href='molby_rb/MDArena.html'>MDArena</a></li>
+<li><a href='molby_rb/MolEnumerable.html'>MolEnumerable</a></li>
+<li><a href='molby_rb/Molecule.html'>Molecule</a></li>
+<li><a href='molby_rb/Parameter.html'>Parameter</a></li>
+<li><a href='molby_rb/ParameterRef.html'>ParameterRef</a></li>
+<li><a href='molby_rb/ParEnumerable.html'>ParEnumerable</a></li>
+<li><a href='molby_rb/Transform.html'>Transform</a></li>
+<li><a href='molby_rb/Vector3D.html'>Vector3D</a></li>
+</ul>
+<h3 class='section-bar'>Module</h3>
+<ul>
+<li><a href='molby_rb/Kernel.html'>Kernel</a></li>
+<li><a href='molby_rb/MolbyModule.html'>Molby</a></li>
+</ul>
+<h3 class='section-bar'>Exception</h3>
+<ul>
+<li><a href='molby_rb/MolbyError.html'>MolbyError</a></li>
+</ul>
+</div><div class='navigation'><a href='index.html'>[トップ]</a> <a href='appendix.html'>[上: 付録]</a> <a href='ruby.html'>[前: 第十一段階：組み込み Ruby インタプリタを使う]</a> <a href='filter_kit_howto.html'>[次: Filter Kit の使い方]</a> <span class='float_right'><a href='../en/ruby_ref.html'>[English]</a></span></div></body></html>

@@ -1,0 +1,46 @@
+!:atoms
+! idx seg_name res_seq res_name name type charge weight element atomic_number occupancy temp_factor int_charge
+0 MAIN 1 MET C1 c3 -0.38557 12.01070 C 6 1.000000 0.000000 0
+1 MAIN 1 MET H1 hc 0.09639 1.00790 H 1 1.000000 0.000000 0
+2 MAIN 1 MET H2 hc 0.09639 1.00790 H 1 1.000000 0.000000 0
+3 MAIN 1 MET H3 hc 0.09639 1.00790 H 1 1.000000 0.000000 0
+4 MAIN 1 MET H4 hc 0.09639 1.00790 H 1 1.000000 0.000000 0
+
+!:positions ; frame 0
+! idx x y z [sx sy sz]
+0 0.00090975 0.00000000 -0.00000000
+1 -0.36030932 -0.00000000 -1.02168247
+2 -0.36030931 -0.88480297 0.51084123
+3 -0.36030931 0.88480297 0.51084123
+4 1.08456771 0.00000000 0.00000001
+
+!:bonds
+! from1 to1 from2 to2 from3 to3 from4 to4
+0 1 0 2 0 3 0 4
+
+!:angles
+! a1 b1 c1 a2 b2 c2 a3 b3 c3
+2 0 1 3 0 1 3 0 2
+4 0 1 4 0 2 4 0 3
+
+!:trackball
+! scale; trx try trz; theta_deg x y z
+0.956493
+-0.000091 -0.000000 0.000000
+0.000000 1.000000 0.000000 0.000000
+
+!:view
+show_unit_cell 0
+show_periodic_box 1
+show_expanded_atoms 1
+show_ellipsoids 0
+show_hydrogens 1
+show_dummy_atoms 1
+show_rotation_center 0
+show_graphite_flag 0
+show_graphite 5
+show_periodic_image_flag 0
+show_periodic_image 0 0 0 0 0 0
+atom_radius 0.200000
+bond_radius 0.100000
+

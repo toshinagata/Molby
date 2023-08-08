@@ -1,0 +1,106 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html lang='ja' xml:lang='ja' xmlns='http://www.w3.org/1999/xhtml'><head><meta content='text/html;charset=utf-8' http-equiv='Content-Type' lang='ja' xml:lang='ja' /><title>第九段階：他の量子化学ソフトウェアとの連携</title><link href='../etc/style.css' rel='stylesheet' type='text/css' /><link href='index.html' rel='Start' /><link href='tutorials.html' rel='Index' /><link href='coordination.html' rel='Prev' /><link href='xtal.html' rel='Next' /></head><body><div class='topic_path'><a href='index.html'>Molby</a> &gt; <a href='tutorials.html'>チュートリアル</a> &gt; 第九段階：他の量子化学ソフトウェアとの連携 &nbsp;&nbsp; <a href='coordination.html'>[前]</a> &nbsp;&nbsp; <a href='xtal.html'>[次]</a><span class='float_right'><a href='../en/qchem.html'>[English]</a></span></div><div class='contents' lang='ja' xml:lang='ja'>
+<h1>第九段階：他の量子化学ソフトウェアとの連携</h1>
+<p>
+Molby は量子化学計算ソフトウェア  <a href='http://www.gaussian.com/'>Gaussian</a>、<a href='http://www.msg.ameslab.gov/GAMESS/'>GAMESS</a> のファイルを作成／読み込みする機能を持っています。現状では、Molby には極めて制限された機能しかないため、おそらく他の実績あるソフトウェアを使った方がよいでしょう。しかし、Molby の操作に慣れているなら、Gaussian や GAMESS の入力を作成して結果を読み込むのに Molby を使いたいことがあるかもしれません。どのようにすればよいかを説明します。
+</p>
+<p class='note'>
+当然のことながら、Gaussian や GAMESS のプログラムパッケージが使えることが前提です。これらが走るのは、Molby と同じマシン上でも異なるマシン（ワークステーション）上でも構いません。この項で説明するやり方で Molby を使う前に、これらのプログラムパッケージをどのように使うかを学んでおいてください。
+</p>
+<h2>1. Gaussian を使う</h2>
+<p>
+Gaussian の入力は "File" &rarr; "Export..." コマンドを使えば作成することができます。ファイルの拡張子は "gjf"（GaussianW での習慣）、または "com"（UNIX 版での習慣）です。
+</p>
+<p><img src='../etc/qchem_01.png' style='vertical-align:top;' /><img src='../etc/qchem_02.png' /></p>
+<p>
+できあがったファイルは次のようになります。Molby が作成できるのは、一種類の Gaussian 入力ファイル（PM3 による構造最適化）だけですが、Gaussian の入力ファイルを手作業で修正するのは比較的簡単です。
+</p>
+<p class='code'>%Chk=benzene.chk
+# PM3 Opt
+
+ unnamed1; created by Molby at Sat Feb 11 00:30:21 +0900 2012
+
+ 0 1
+C       -0.653000   0.585000  -1.068000
+H       -1.158000   1.039000  -1.898000
+C        0.729000   0.607000  -1.003000
+H        1.295000   1.076000  -1.783000
+C        1.382000   0.021000   0.069000
+H        2.452000   0.038000   0.119000
+C        0.651000  -0.586000   1.076000
+H        1.156000  -1.039000   1.906000
+C       -0.732000  -0.607000   1.012000
+H       -1.298000  -1.077000   1.792000
+C       -1.384000  -0.021000  -0.060000
+H       -2.455000  -0.038000  -0.110000
+
+</p>
+<p>
+構造最適化を行ったあとは、構造がどのように変化するか見てみたいと思うでしょう。これは、Gaussian 出力ファイルを読み込めば実現できます。拡張子は ".out" または ".log" でなくてはなりません。
+</p>
+<p><img src='../etc/qchem_03.png' style='vertical-align:top;' /><img src='../etc/qchem_04.png' /></p>
+<h2>2. GAMESS を使う</h2>
+<p>
+GAMESS の入力を作成するのは Gaussian よりもずっと複雑なので、専用のダイアログが用意されています。このダイアログは、"QChem" &rarr; "Creating GAMESS input..." コマンドで開くことができます。
+</p>
+<p><img src='../etc/qchem_05.png' /></p>
+<p>
+このダイアログでは、いろいろな設定を決めることができます。
+</p>
+<p><img src='../etc/qchem_06.png' /></p>
+<ul>
+<li><b>SCF Type:</b> RHF, ROHF, または UHF.</li>
+<li><b>Run Type:</b> Energy, Property, または Optimize.</li>
+<li><b>Use internal coordinates for structure optimization:</b> 内部的に Z-matrix を自動生成するための命令を付け加えます。（<i>注：</i> 直線状分子には使えません。）</li>
+<li><b>Charge:</b> 分子の形式電荷。</li>
+<li><b>Multiplicity:</b> スピン多重度。</li>
+<li><b>Use DFT:</b> DFT 計算を行うときチェックします。</li>
+<li><b>DFT type:</b> このダイアログでは B3LYP のみ指定できます。</li>
+<li><b>Basis set:</b> 以下の基底が指定できます：PM3, STO-3G, 3-21G, 6-31G, 6-31G(d), 6-31G(d, p), 6-311G, 6-311G(d, p), または LanL2DZ.</li>
+<li><b>Load Basis Set:</b> ファイルから追加の基底関数を読み込みます。ファイルは GAMESS の標準的なフォーマットに従っている必要があります。ファイルの例として、"Scripts" ディレクトリの中の "basis sets" ディレクトリを見てみてください。</li>
+<li><b>Use secondary basis set:</b> 特定の元素のみ別の基底を使いたいときチェックします。</li>
+<li><b>Elements:</b> 別の基底を使う元素（コンマで区切って複数指定できます）。</li>
+<li><b>Basis set:</b> 別の基底。</li>
+<li><b>Calculate electrostatic potential:</b> RESP 電荷を求めるための静電ポテンシャルの計算を行う。</li>
+<li><b>Include NBO instructions:</b> GAMESS が NBO (natural bond orbital) をサポートしている場合は、これらのチェックボックスで指定したものを NBO プログラムで計算させるように、コマンドを生成します。</li>
+<li><b>Execute GAMESS on this machine:</b> (0.6.5 以降) Molby と同じコンピュータに GAMESS がインストールされているとき、GAMESS を実行することができます。Path に GAMESS の実行ファイルのフルパス名、N of CPUs に使用する CPU のコア数を指定します。<br />
+（注： GAMESS のバージョンによっては動作しないことがあります。）</li>
+</ul>
+<p>
+GAMESS の計算が終了すると、*.log と *.dat の２つのファイルができます。どちらも "Import..." コマンドで読み込むことができます。ある種の情報（たとえば構造最適化途中の座標）はどちらのファイルにも含まれていますが、その他の情報はどちらか一方にしか含まれません（たとえば、基底を構成する Gaussian 関数の完全な係数は *.log ファイルにしかなく、精度の高い軌道係数は *.dat にしかありません）。GAMESS 読み込み機能を十分に活用するには、GAMESS の出力が何を含んでいるかをよく理解する必要があります。
+</p>
+<h2 id='gamess_resp' name='gamess_resp'>3. GAMESS を用いて RESP 電荷を計算する</h2>
+<p>
+分子力学計算で静電相互作用を評価するための部分電荷の計算については<a href='mm_minimize.html#electrostatic'>すでに説明しました</a>。そこでは半経験的分子軌道計算を用いましたが、可能ならば ab initio 計算の方がよい結果を与えます。GAMESS を使って計算する方法を説明します。
+</p>
+<p>
+メニューより "MM/MD" &rarr; "GAMESS/RESP..." を選びます。
+</p>
+<p><img src='../etc/qchem_07.png' /></p>
+<p>
+次のウィンドウが開きます。第１のステップとして、"Create GAMESS Input..." ボタンを押します。
+</p>
+<p><img src='../etc/qchem_08.png' /></p>
+<p>
+GAMESS のダイアログが開きます。大切なのは、"Calculate electrostatic potential (ESP)" チェックボックスをオンにすることです（ここの手順に従えば、自動的にオンになっているはずですが、一応確認してください）。分子の電荷・スピン多重度が正しいことを確かめ，基底関数 (6-31G(d) がおすすめ) を指定してください。
+</p>
+<p><img src='../etc/qchem_09.png' /></p>
+<p>
+OK ボタンを押して GAMESS 入力を作成し、GAMESS で計算を実行してください。計算には時間がかかりますから、この時点で Molby を終了して他の作業をしていただいて構いません（ただし、分子ファイルを mbsf 形式で保存することを忘れないで！）。
+</p>
+<p>
+GAMESS 計算が完了したら、同じ分子ファイルを開き、"MM/MD" &rarr; "Tools" &rarr; "GAMESS/RESP..." をもう一度選択してください。今度は、第２ステップの "Import GAMESS dat..." ボタンを押します。
+</p>
+<p><img src='../etc/qchem_10.png' /></p>
+<p>
+GAMESS の dat ファイルを選択し（GAMESS の計算が成功すればこれができているはずです）、読み込んでください。読み込みが完了したら、"Run RESP..." ボタンが有効になっているはずです。もしそうならなかったら、読み込んだ dat ファイルに静電ポテンシャルのデータが含まれなかったということです。もう一度第１ステップからやり直し、特に "Calculate electrostatic potential (ESP)" チェックボックスがオンになっていることを確かめてください。
+</p>
+<p><img src='../etc/qchem_11.png' /></p>
+<p>
+"Run RESP..." ボタンを押すと、次のダイアログが開きます。これは、<a href='mm_minimize.html#minimize'>前に説明した</a> Antechamber のダイアログとほとんど同じです。
+</p>
+<p><img src='../etc/qchem_12.png' /></p>
+<p>
+"OK"ボタンを押すと、RESP 部分電荷が各原子に対してアサインされます。
+</p>
+</div><div class='navigation'><a href='index.html'>[トップ]</a> <a href='tutorials.html'>[上: チュートリアル]</a> <a href='coordination.html'>[前: 第八段階：配位化合物のMM/MD計算]</a> <a href='xtal.html'>[次: 第十段階：結晶構造を取り扱う]</a> <span class='float_right'><a href='../en/qchem.html'>[English]</a></span></div></body></html>

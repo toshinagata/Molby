@@ -1,0 +1,86 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html lang='ja' xml:lang='ja' xmlns='http://www.w3.org/1999/xhtml'><head><meta content='text/html;charset=utf-8' http-equiv='Content-Type' lang='ja' xml:lang='ja' /><title>第二段階：分子を編集する</title><link href='../etc/style.css' rel='stylesheet' type='text/css' /><link href='index.html' rel='Start' /><link href='tutorials.html' rel='Index' /><link href='drawing.html' rel='Prev' /><link href='cut_copy_paste.html' rel='Next' /></head><body><div class='topic_path'><a href='index.html'>Molby</a> &gt; <a href='tutorials.html'>チュートリアル</a> &gt; 第二段階：分子を編集する &nbsp;&nbsp; <a href='drawing.html'>[前]</a> &nbsp;&nbsp; <a href='cut_copy_paste.html'>[次]</a><span class='float_right'><a href='../en/editing.html'>[English]</a></span></div><div class='contents' lang='ja' xml:lang='ja'>
+<h1>第二段階：分子を編集する</h1>
+<h2>1. 置換基をつける</h2>
+<p>
+ベンゼン分子があり、これにメチル基をつけてトルエンを作りたいとします。
+</p>
+<p>
+"Select"ボタンを押して、編集エリアの原子や結合がないところをクリックします。選択が解除され、分子の表示が赤から原子ごとの色に変わります。
+</p>
+<p><img src='../etc/edit_01.png' /></p>
+<p>
+水素原子の一つを選択します。やり方は二つあります。選択したい原子をクリックするか、またはドラッグで現れる四角い領域の中の原子を選択します。
+</p>
+<p><img src='../etc/edit_02.png' /> <img src='../etc/edit_03.png' /></p>
+<p>
+水素原子の上でダブルクリックします。このとき、選択部分の上でダブルクリックするように注意してください。"Enter formula"というダイアログが出てきます。"CH3"と入力し、"OK"を押します。
+</p>
+<p><img src='../etc/edit_04.png' /></p>
+<p>
+トルエンができました。
+</p>
+<p><img src='../etc/edit_05.png' /></p>
+<p>
+ファイルに保存しておきたい時は、通常通り File メニューから "Save as..." を選び、ファイルフォーマットを選び、ファイル名をタイプして "Save" を押します。
+</p>
+<p>
+Molby の標準ファイルフォーマットは "mbsf" (<u>M</u>ol<u>b</u>y <u>S</u>tructure <u>F</u>ile) です。Mbsf フォーマットは独自のもので、既存の化学ファイルフォーマットとは互換性がありません。しかし、mbsfはテキストファイルであり、比較的コンパクトで、読みやすいものです。他のフォーマットで保存する積極的な理由がない場合は、"mbsf"フォーマットで保存しておくことをおすすめします。
+</p>
+
+<h2>2. 分子の一部を操作する</h2>
+<p>
+分子を組み立てたら、その一部を動かしたくなることがあります。ここでは、そのやり方の例を示します。
+</p>
+<p>
+トルエンのメチル基を選択します<span class='note'>（コツ：シフトキーを押しながらクリックすると、現在の選択範囲に原子を付け加えることができます）</span>。左の回転バー（前ページで③と書かれていたもの）でマウスボタンを押し、上下にドラッグしてください。メチル基が右左に回転するのがわかります。
+</p>
+<p><img src='../etc/edit_06.png' /></p>
+<p>
+同じ操作は、結合を１つ選択して左の回転バーをドラッグしてもできます。この場合、メチル基を固定してベンゼン環の方を回すこともできます。ドラッグの時にOptionキー(Mac)、Altキー(Win)を押してください。
+</p>
+<p><img src='../etc/edit_07.png' /></p>
+<p>
+選択した原子をドラッグすると平行移動できます。化学的に不自然な構造になりますので、注意が必要です。
+</p>
+<p><img src='../etc/edit_08.png' /></p>
+<h2>3. 原子を追加する・削除する</h2>
+<p>
+原子を追加する方法はすでに一つ説明しました。選択部分または編集エリアの何もないところをダブルクリックして、構造式をタイプする方法です。実際、Molbyで原子を追加するにはこれが最も便利です。しかし、他の方法もありますので、それを紹介します。
+</p>
+<p>
+先ほどのトルエン分子を使います。これをインダンに変えたいとします。
+</p>
+<p><img src='../etc/indane.png' /> インダン</p>
+<p>
+分子を回転させて、化学構造式と同じ向きになるようにします。C3から始めて、炭素原子を２つ追加し、環を閉じることにします。
+</p>
+<p><img src='../etc/edit_09.png' /></p>
+<p>
+編集エリアの上の"Erase"ボタンを押します。"H3"水素をクリックします。この水素原子と、C3-H3の結合が消えます。
+</p>
+<p><img src='../etc/edit_10.png' /></p>
+<p>
+"Bond"ボタンを押します。C3原子から右下にドラッグし、マウスボタンを離します。新しい原子と、その原子とC3の間の結合が新しく作られます。新しい原子から右上にドラッグすると、もう一つの原子と結合が作られます。
+</p>
+<p><img src='../etc/edit_11.png' /> <img src='../etc/edit_12.png' /></p>
+<p>
+"Erase"ボタンをもう一度押して、メチル基の原子を一つ消します。"Select"ボタンを押して、ベンゼン環とメチレン炭素（今水素原子を一つ消したところ）の間の結合を選択します。左の回転バーを使って、五員環に適切な向きになるようにメチレン基を回転させます。
+</p>
+<p><img src='../etc/edit_13.png' /> <img src='../etc/edit_14.png' /></p>
+<p>
+環を閉じます。"Bond"ボタンを押し、メチレン炭素原子から右下の炭素原子へドラッグします。マウスカーソルが目標の炭素原子に近づくと、ドラッグしてできた結合が炭素原子にくっつきます。ここでマウスボタンを離します。
+</p>
+<p><img src='../etc/edit_15.png' /></p>
+<p>
+最後に、新しく作った二つの炭素原子に水素原子を付加します。"Select"ボタンを押して、マウスを使って二つの炭素原子を選択します。"Edit"メニューから、"Add Hydrogen"-&gt;"Tetrahedral sp3"コマンドを実行します。
+</p>
+<p><img src='../etc/edit_16.png' /></p>
+<p>
+結果はこのようになります。
+</p>
+<p><img src='../etc/edit_17.png' /></p>
+<p class='note'>
+トルエンからインダンは次のような操作でも作ることができます。メチル基のオルト位の水素原子を選択、ダブルクリック、ダイアログが出たら"CH2CH3"と入力、二つのメチル基からそれぞれ水素原子を一つ削除、結合回転で向きを調整、結合を作成。この方法の方が、新しく作ったメチレン基の結合距離・結合角が正しくなるため、よりよい結果になります。上の例は、編集操作の説明のためのものと考えてください。
+</p>
+</div><div class='navigation'><a href='index.html'>[トップ]</a> <a href='tutorials.html'>[上: チュートリアル]</a> <a href='drawing.html'>[前: 第一段階：新しい分子を描く]</a> <a href='cut_copy_paste.html'>[次: 第三段階：分子を編集する：カット・コピー・ペースト]</a> <span class='float_right'><a href='../en/editing.html'>[English]</a></span></div></body></html>

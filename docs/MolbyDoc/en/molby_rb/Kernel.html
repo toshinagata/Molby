@@ -1,0 +1,401 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html 
+     PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<title>Module: Kernel</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta http-equiv="Content-Script-Type" content="text/javascript" />
+<link rel="stylesheet" href="rdoc-style.css" type="text/css" media="screen" />
+</head>
+<body>
+
+<div id="navi">
+<a href="../index.html">[Molby Document Home]</a>
+<a href="../ruby_ref.html">[Contents]</a>
+</div>
+
+<div id="classHeader">
+<table class="header-table">
+<tr>
+<td><strong>Module:</strong></td>
+<td class="class-name-in-header">Kernel</td>
+</tr>
+</table>
+</div>
+
+<div id="section">
+<h3 class="section-bar">Description</h3>
+<p>
+The methods described here are the extension of the standard "Kernel" module. They can be accessed from the top level, e.g. directly from the Molby console.
+</p>
+</div>
+
+<div id="constants">
+<h3 class="section-bar">Constant</h3>
+
+<div class="method-detail">
+<a name="molbyresourcepath"></a>
+<div class="method-heading">
+<span class="method-name">MolbyResourcePath (deprecated)</span>
+</div>
+<div class="method-description">
+<p>
+This constant is now available as <a href="MolbyModule.html#resourcepath">Molby::ResourcePath</a>.
+</p>
+</div>
+</div>
+
+</div>
+
+<div id="methods">
+<h3 class="section-bar">Public Instance methods</h3>
+
+<div id="method-M000376" class="method-detail">
+<a name="M000376"></a>
+<div class="method-heading">
+<span class="method-name">ask(prompt, default = nil) &rarr; string<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Open a modal dialog and get a line of text.
+</p>
+</div>
+</div>
+
+<div id="method-M000376" class="method-detail">
+<a name="backquote"></a>
+<div class="method-heading">
+<span class="method-name">backquote(string) &rarr; string<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Same as the built-in backquote operator, except that it does not show the console window on Windows platform.
+</p>
+</div>
+</div>
+
+<div id="method-bell" class="method-detail">
+<a name="bell"></a>
+<div class="method-heading">
+<span class="method-name">bell<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Ring the bell.
+</p>
+<p>
+<i>See Also:</i> <a href="#play_sound">play_sound</a>, <a href="#stop_sound">stop_sound</a>
+</p>
+</div>
+</div>
+
+<div id="method-M000375" class="method-detail">
+<a name="call_subprocess"></a>
+<div class="method-heading">
+<span class="method-name">call_subprocess(cmdline, cmdname, callback = nil) &rarr; Integer<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Call a subprocess by the given command line. A progress window is shown, and the argument <code>cmdname</code> is used to show an appropriate message. If <code>callback</code> is given (as a Proc object), it will be called periodically during execution; if <code>callback</code> returns <code>nil</code> or <code>false</code>, execution of the subprocess is interrupted.
+</p>
+<p>
+The standard output/error stream is directed to the Ruby Console. If stdout_file or stderr_file is given as a filename, the stdout/stderr output will be directed to that file. (If the filename begins with ">>", then the output will be appended to the end of the file; otherwise, the existing file will be replaced.) If it is "/dev/null" or "NUL", then the output will be lost.
+</p>
+<p>
+Returns an integer value with the same meaning as <code>Kernel.system</code>.
+</p>
+<p>
+<i>See Also:</i> <a href="Molecule.html#call_subprocess_async">Molecule#call_subprocess_async</a>
+</p>
+</div>
+</div>
+
+<div id="method-M000375" class="method-detail">
+<a name="M000375"></a>
+<div class="method-heading">
+<span class="method-name">check_interrupt &rarr; Integer<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Returns 1 if interrupted, 0 if not, -1 if interrupt is disabled.
+</p>
+</div>
+</div>
+
+<div id="method-M000381" class="method-detail">
+<a name="M000381"></a>
+<div class="method-heading">
+<span class="method-name">document_home &rarr; String<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get the directory suitable for storing user documents. On Windows it is the home directory + "My Documents". On other platforms it is the home directory.
+</p>
+</div>
+</div>
+
+<div id="method-M000383" class="method-detail">
+<a name="M000383"></a>
+<div class="method-heading">
+<span class="method-name">error_message_box(str)<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Show an error message box.
+</p>
+</div>
+</div>
+
+<div id="method-M000380" class="method-detail">
+<a name="M000380"></a>
+<div class="method-heading">
+<span class="method-name">execute_script(fname)<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Execute the script in the given file. If a molecule is active, then the script is evaluated as <a href="Molecule.html#M000322">Molecule.current</a>.instance_eval(script). Before entering the script, the current directory is set to the parent directory of the script.
+</p>
+</div>
+</div>
+
+<div id="method-M000380" class="method-detail">
+<a name="exit"></a>
+<div class="method-heading">
+<span class="method-name">exit(arg = nil)<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Stop the execution of the script and return to the Molby application. Only usable when the script is invoked from the file or from the Console. Internally, this method is equivalent to <code>throw :molby_top, arg</code>. When a script is executed from file and from console, it is internally wrapped by <code>catch(:molby_top) { ... }</code>.
+</p>
+<p>
+Standard implementation of <code>exit</code> (stop execution and quit) is not available, because it does not make much sense to stop execution of Molby application from inside the script.
+</p>
+</div>
+</div>
+
+<div id="method-M000380" class="method-detail">
+<a name="export_to_clipboard"></a>
+<div class="method-heading">
+<span class="method-name">export_to_clipboard(string)<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Copy a string to the clipboard (so that it can be pasted in other applications).
+</p>
+</div>
+</div>
+
+<div id="method-M000378" class="method-detail">
+<a name="M000378"></a>
+<div class="method-heading">
+<span class="method-name">get_global_settings(key) &rarr; value<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get a setting data for key from the application preferences.
+</p>
+</div>
+</div>
+
+<div id="method-M000378" class="method-detail">
+<a name="get_interrupt_flag"></a>
+<div class="method-heading">
+<span class="method-name">get_interrupt_flag &rarr; boolean<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Get the current interrupt flag. If interrupt is enabled, true is returned. Otherwise, false is returned.
+</p>
+</div>
+</div>
+
+<div id="method-hide_console_window" class="method-detail">
+<a name="hide_console_window"></a>
+<div class="method-heading">
+<span class="method-name">hide_console_window</span>
+</div>
+<div class="method-description">
+<p>
+Hide the console window.
+</p>
+<p><i>See Also:</i> <a href="#show_console_panel">show_console_window</a>
+</div>
+</div>
+
+<div id="method-M000378" class="method-detail">
+<a name="hide_progress_panel"></a>
+<div class="method-heading">
+<span class="method-name">hide_progress_panel</span>
+</div>
+<div class="method-description">
+<p>
+Hide the progress panel. If the panel is not yet shown or already dismissed, do nothing.
+</p>
+<p><i>See Also:</i> <a href="#show_progress_panel">show_progress_panel</a>
+</div>
+</div>
+
+<div id="method-M000378" class="method-detail">
+<a name="lookup_menu"></a>
+<div class="method-heading">
+<span class="method-name">lookup_menu(title) &rarr; Integer</span>
+</div>
+<div class="method-description">
+<p>
+Look up the title from the Script menu. If found, returns a non-negative integer. If not found, returns -1.
+</p>
+</div>
+</div>
+
+<div id="method-M000382" class="method-detail">
+<a name="M000382"></a>
+<div class="method-heading">
+<span class="method-name">message_box(str, title, button = nil, icon = :info)<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Show a message box. Button is nil ("OK" and "Cancel"), :ok ("OK" only) or :cancel ("Cancel" only). Icon is one of the following symbols; :info, :warning, :error.
+</p>
+</div>
+</div>
+
+<div id="method-play_sound" class="method-detail">
+<a name="play_sound"></a>
+<div class="method-heading">
+<span class="method-name">play_sound(filename, flag = 0)<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Play the sound (a WAV file) in the file. Flag: 0, pause until sound ends; 1, play the sound asynchronously; 3, play the sound with loop asynchronously. If flag = 1 or 3, the sound can be stopped by <a href="#stop_sound">stop_sound</a>, which is mandatory for flag = 3 (otherwise the sound will continue forever!).
+</p>
+<p><i>See Also:</i> <a href="#bell">bell</a>, <a href="#stop_sound">stop_sound</a>
+</div>
+</div>
+
+<div id="method-M000377" class="method-detail">
+<a name="M000377"></a>
+<div class="method-heading">
+<span class="method-name">register_menu(title, method)<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Register the method (specified as a symbol) in the script menu. The method must be either an instance method of <a href="Molecule.html">Molecule</a> with no argument, or a class method of <a href="Molecule.html">Molecule</a> with one argument (the current molecule). The menu associated with the class method can be invoked even when no document is open (the argument is
+set to nil in this case). On the other hand, the menu associated with the instance method can only be invoked when at least one document is active.
+</p>
+</div>
+</div>
+
+<div id="method-M000379" class="method-detail">
+<a name="M000379"></a>
+<div class="method-heading">
+<span class="method-name">set_global_settings(key, value)<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Set a setting data for key to the application preferences.
+</p>
+</div>
+</div>
+
+<div id="method-M000378" class="method-detail">
+<a name="set_interrupt_flag"></a>
+<div class="method-heading">
+<span class="method-name">set_interrupt_flag(value) &rarr; old_value<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Set the current interrupt flag (true to enable interrupt, false to disable interrupt). Returns the old interrupt flag.
+</p>
+</div>
+</div>
+
+<div id="method-M000378" class="method-detail">
+<a name="set_progress_message"></a>
+<div class="method-heading">
+<span class="method-name">set_progress_message(message)<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Set the message for the progress panel. If the progress panel is not shown, do nothing.
+</p>
+</div>
+</div>
+
+<div id="method-M000378" class="method-detail">
+<a name="set_progress_value"></a>
+<div class="method-heading">
+<span class="method-name">set_progress_value(value)<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Set the progress value. The value should be a Float. If 0 <= value <= 1, then the progress bar becomes determinant and shows the value as the length of the colored part (value 1 corresponds to 100% progress). If the value is negative, then the progress bar becomes indeterminant.
+</p>
+</div>
+</div>
+
+<div id="method-show_console_window" class="method-detail">
+<a name="show_console_window"></a>
+<div class="method-heading">
+<span class="method-name">show_console_window</span>
+</div>
+<div class="method-description">
+<p>
+Show the console window.
+</p>
+<p><i>See Also:</i> <a href="#hide_console_panel">hide_console_window</a>
+</div>
+</div>
+
+<div id="method-M000378" class="method-detail">
+<a name="show_progress_panel"></a>
+<div class="method-heading">
+<span class="method-name">show_progress_panel</span>
+</div>
+<div class="method-description">
+<p>
+Show the progress panel. The panel can be dismissed by pressing the escape key, in which case Interrupt exception is thrown.
+</p>
+<p><i>See Also:</i> <a href="#hide_progress_panel">hide_progress_panel</a>
+</div>
+</div>
+
+<div id="method-stop_sound" class="method-detail">
+<a name="stop_sound"></a>
+<div class="method-heading">
+<span class="method-name">stop_sound<br />
+</span>
+</div>
+<div class="method-description">
+<p>
+Stop the sound if playing.
+</p>
+<p><i>See Also:</i> <a href="#bell">bell</a>, <a href="#play_sound">play_sound</a>
+</div>
+</div>
+
+</div>
+
+</body>
+</html>
