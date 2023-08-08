@@ -51,10 +51,59 @@ Molby は、画面上でグラフィカルに分子モデルを組み立てる�
 <p>
 Molby はフリーソフトウェアです。ライセンスは GPLv3 です。
 </p>
+<p>
+Molby をご利用の場合は、以下の論文の引用をお願いします。
+</p>
+<p style="margin-left:2em">
+Toshi Nagata, "Molby - Graphical Molecular Modeling Software with Integrated Ruby Interpreter," <br />
+<i>Bull. Chem. Soc. Jpn.</i> <b>2014,</b> <i>87,</i> 902-904. DOI:<a href="http://dx.doi.org/10.1246/bcsj.20140093">10.1246/bcsj.20140093</a>
+</p>
 
 <h2>お知らせ</h2>
 
 <dl>
+
+<dt>2023/08/08</dt>
+<dd>
+プロジェクトを OSDN.net から GitHub へ移動しました。
+</dd>
+
+<dt>2022/09/19</dt>
+<dd>
+バージョン 1.1.0 を公開しました。このバージョンから、Mac のサポートは 10.12 以降となりました。10.6〜10.11 用には MolbyMacLegacy.app を当面提供します。<br />
+<ul>
+<li>バッチモードを実装した。Molby_command は提供しない。</li>
+<li>ドキュメントをアプリケーションに同梱した。Molby Help メニューコマンドから開ける。</li>
+<li>Windows: ドキュメントをダブルクリックした時のクラッシュを改善。</li>
+<li>Windows: エンコーティング違いによる意味不明なエラーを改善。</li>
+<li>CIF インポートを改善。新しい CIF ファイルが読めるようになった。</li>
+<li>ORTEP で温度因子が非正定置の場合に等方性温度因子で書くようにした。</li>
+<li>Concatenate Frames コマンドを実装した。</li>
+<li>GAMESS dialog: SADPOINT, IRC ランタイプを実装した。</li>
+<li>GAMESS ログからセクションをコピーする機能を実装した。</li>
+<li>wxWidgets 3.2 ベースに移行した。</li>
+<li>Windows and Mac: 高解像度ディスプレイをサポートした。</li>
+<li>リストウィンドウ（原子、結合など）の挙動を改善した。</li>
+<li>Ruby: open_auxiliary_window の API を変更した。デフォルトボタンを持たせるのはやめた。</li>
+<li>ソースコードを整理して、コンパイラ警告を大部分除去した。</li>
+</ul>
+</dd>
+
+<dt>2021/11/19</dt>
+<dd>
+バージョン 1.0.2 を公開しました。<br />
+<ul>
+<li>UFF の設定ダイアログで、結合長・結合角パラメータが自動的に入るようになった。八面体・平面正方形構造の cis/trans も自動的に処理する。</li>
+<li>UFF のパラメータ編集時にクラッシュしていたのを修正。</li>
+<li>Windows: 画面のアップデートを改善。</li>
+</ul>
+[開発者向け]<br />
+<ul>
+<li>バージョン情報とドキュメントの更新処理を Mac 版のビルドの際に行うようにした。</li>
+<li>同: ProgressDialog の扱いを改善。</li>
+<li>同: サブプロセスの呼び出しを改善。</li>
+</ul>
+</dd>
 
 <dt>2019/08/17</dt>
 <dd>
@@ -94,255 +143,9 @@ Molby はフリーソフトウェアです。ライセンスは GPLv3 です。
 </ul>
 </dd>
 
-<dt>2014/10/26</dt>
-<dd>
-バージョン 1.0b03 を公開しました。<br />
-<ul>
-<li>分子軌道のグラフィック表示を実装した。</li>
-<li>フレームごとに変化する数値を "extra property" として指定できる。GAMESS のログを読み込む時には、エネルギーの値が property として設定される。</li>
-<li>グラフィックを PNG ファイルとしてエキスポートできる。</li>
-<li>Natural bond orbital の計算ログを読み込むことができる。</li>
-<li>グラフィックオブジェクトを mbsf ファイルに保存できる。</li>
-</ul>
-</dd>
-
-<dt>2014/05/24</dt>
-<dd>Molby の論文が出ました。ご一読願えれば幸いです。<br />
-Toshi Nagata, "Molby - Graphical Molecular Modeling Software with Integrated Ruby Interpreter," <br />
-<i>Bull. Chem. Soc. Jpn.</i> <b>2014,</b> in press. DOI:<a href="http://dx.doi.org/10.1246/bcsj.20140093">10.1246/bcsj.20140093</a>
-</dd>
-
-<dt>2014/05/06</dt>
-<dd><a href="gallery.html">Molby ギャラリー</a>がオープンしました。
-</dd>
-
-<dt>2014/04/26</dt>
-<dd>
-バージョン 1.0b02 を公開しました。<br />
-<ul>
-<li>すべての外部プログラム (antechamber, resp, gamess, ortep) に対して共通のワーキングディレクトリを使用するようにした。（既定値はホームディレクトリ中の Molby）ワーキングディレクトリのパスは空白を含んでいてはいけない。</li>
-<li>MM/MD パラメータの読み込みの際に、同一パラメータの読み込み判定で丸め誤差を考慮するようにした。</li>
-<li>Symmetry Operation ダイアログで、新しい対称操作の追加ができなかったのを修正。</li>
-<li>GAMESS ダイアログで入力ファイルを編集できるようにした。</li>
-<li>Mac: "Window" メニューを実装した。</li>
-<li>Win: DLL がなくてクラッシュする問題を修正。</li>
-<li>Win: ドキュメントディレクトリを "My Documents" に決め打ちしていたのを修正。</li>
-<li>Win: "backquote" コマンドがうまく動いていなかったのを修正。</li>
-<li>Win: 二重に起動するとクラッシュしていた問題を修正。</li>
-</ul>
-</dd>
-
-<dt>2014/03/28</dt>
-<dd>
-バージョン 1.0b01 を公開しました。今回からベータ版です。<br />
-<ul>
-<li>グラフィックツールキットを wxWidgets 2.8 から wxWidgets 3.0 に変更。</li>
-<li>Windows: MDI インターフェイスを廃止し、マルチウィンドウにした。</li>
-<li>内蔵 Ruby を 1.8.7 から 2.0.0 に変更。</li>
-<li>C60 フラーレン、ねじれ舟型シクロヘキサン、金属の配位構造などを predefined structure として追加。</li>
-<li>Antechamber が原子タイプと電荷について別々に実行できるようにした。</li>
-<li>UFF パラメータを内蔵。</li>
-<li>Ruby ダイアログでグラフィック描画ができるようになった（ドキュメントはまだない）</li>
-<li>メニューを整理。特に "Xtal" メニューを新設した。</li>
-<li>ORTEP3 を内蔵。グラフィックインターフェイスも作成した。</li>
-<li>メインウィンドウの印刷・エキスポートを実装。</li>
-<li>スペースフィリング表示を実装。</li>
-<li>その他バグ修正多数。</li>
-</ul>
-</dd>
-
-<dt>2013/06/15</dt>
-<dd>
-バージョン 0.6.5 を公開しました。<br />
-新機能：
-<ul>
-<li>GAMESS を子プロセスとして実行できるようになった。</li>
-<li>X線データについて、結合距離・結合角を標準偏差つきで計算する機能を実装。</li>
-<li>GAMESS で F, G 型の軌道を含むログをインポートできるようになった（cube の計算は未実装）</li>
-<li>GAMESS エキスポートのダイアログで、基底関数系をファイルから読み込めるようになった。</li>
-<li>Particle mesh Ewald 計算を実装（試験的に）。</li>
-<li>"Pi アンカー" 原子を実装（試験的に）。シクロペンタジエニルと金属の結合などに使う。</li>
-<li>Ruby コンソールにヒストリ機能を実装。</li>
-</ul>
-バグ修正：
-<ul>
-<li>古い TeXsan で生成した CIF ファイルが読めなかったのを修正。</li>
-<li>CIF ファイルデータの対称操作による拡大の不具合改善（まだ不十分かも）。</li>
-<li>結合を削除するとバスエラーが発生していたのを修正。</li>
-<li>異なる２つの原子を別々にドラッグするとアンドゥが機能していなかったのを修正。</li>
-<li>分子の追加・削除機能を大幅書き直し。アンドゥの不具合が改善した。</li>
-<li>その他多くの不具合修正。</li>
-</ul>
-
-</dd>
-<dt>2012/10/13</dt>
-<dd>
-バージョン 0.6.4 を公開しました。
-<ul>
-<li>bond/angle/dihedral/improper の属性テーブルを開くと、分子力学パラメータを検索するようにした（ただし、結合情報から angle/dihedral テーブルの再構成はやらない。これは MM/MD ウィンドウを開いたときに起きる）</li>
-<li>属性テーブルに単位格子を表示できるようにした。</li>
-<li>"Show Graphite" コマンドが間違った C-C 結合距離を使っていたので修正。正しくは 1.42Å。</li>
-<li>最適平面計算を実装（Script メニューの Best-fit Plane）</li>
-<li>リビジョン番号を About ダイアログに表示するようにした。</li>
-<li>単位格子の最適化機能を実装（まだ実験的）</li>
-<li>原子当たりの結合数の上限 (12) を撤廃した。</li>
-<li>Ruby: Dialog#filter_kit を実装。使い方がドキュメントの付録に書かれている。</li>
-<li>Ruby: LAMatrix#svd (singular value decomposition) を実装。</li>
-<li>Ruby: bond_par, angle_par, dihedral_par, improper_par, vdw_par メソッドを Molecule から MDArena に移した。</li>
-<li>その他多くのバグ修正（ChangeLog 参照）</li>
-</ul>
-</dd>
-
-<dt>2012/06/18</dt>
-<dd>
-バージョン 0.6.3 を公開しました。
-<ul>
-<li>LAMatrix クラスのドキュメントを作成。</li>
-<li>量子化学計算ソフトウェアとの連携のドキュメントを作成。</li>
-<li>CIFファイルから読み込んだ座標値・異方性温度因子・セルパラメータの標準偏差を mbsf ファイルに保存するようにした。</li>
-<li>Ruby コマンド新設: Molecule#fit_coordinates, Molecule#amend_by_symmetry, Molecule#set(get)_view_center, Molecule#hidden_atoms, Molecule#set_hidden_atoms, Molecule#charge, Kernel#lookup_menu</li>
-<li>Bond, angle などのテーブルから分子力学パラメータを編集するとき、Universal Force Field (UFF) で力の定数を見積もる機能をつけた。</li>
-<li>分子力学パラメータを原子のインデックスで指定できるようにした（実はもともとあった機能だが、分子を編集してもパラメータが維持されるようになった）。</li>
-<li>その他バグ修正（ChangeLog を参照）</li>
-</ul>
-</dd>
-
-<dt>2012/02/03</dt>
-<dd>
-バージョン 0.6.2 を公開しました。
-<ul>
-<li>グラフィックオブジェクトを分子に重ねて書けるようにした。ただし Ruby でのコーディングが必要。</li>
-<li>Ruby ダイアログでモードレスな動作ができるようにした。</li>
-<li>Ruby スクリプトの先頭行コメントに coding:shift-jis または coding:utf-8 が書けるようにした。今のところこの２つしか認識しない。</li>
-<li>Ruby の LAMatrix (linear algebra matrix) クラスを実装し、任意の行列演算ができるようにした。ドキュメントはまだ書いていない。</li>
-<li>Empty Console Window コマンドを実装。</li>
-<li>分子動力学のドキュメントを作成。</li>
-<li>MM/MD で "log file" フィールドは明示的に指定しない限り空にするようにした。</li>
-<li>CIF ファイルの読み込みで、座標値の標準偏差を認識するようにした。ただしmbsfへの保存はされない。</li>
-</ul>
-</dd>
-
-<dt>2011/11/30</dt>
-<dd>
-バージョン 0.6.1 を公開しました。
-<ul>
-<li>縮環構造をコピー・ペースト、および「ダブルクリック＋構造入力」で作れるようにした。</li>
-<li>さまざまな環構造（シクロアルカン、芳香族）と溶媒ボックスが「Open Predefined」メニューから開けるようにした。</li>
-<li>CIFインポートを修正。計算で置いた水素原子を含む結合が表示されないことがあった。</li>
-<li>分子動力学の dcd トラジェクトリファイルのインポートを実装。</li>
-<li>AMBER の prmtop を作成する際に、AMBER8 コンパチブルなフォーマット（NAMD 等で使える）を指定可能。</li>
-</ul>
-</dd>
-
-<dt>2011/10/15</dt>
-<dd>
-バージョン 0.6 を公開しました。
-<ul>
-<li>Mac: リリースにコマンドライン版を加えた。</li>
-<li>溶媒ボックスを Scripts/msbf フォルダに同梱。</li>
-<li>MM/MD で外から力を加えられるようにした。(MDArena#set_external_forces)</li>
-<li>属性テーブルの "MO info" を "MO energy" に改名。Alpha, beta 軌道のエネルギーを並べて表示するようにした。</li>
-<li>その他修正多数。</li>
-</ul>
-</dd>
-
-<dt>2011/08/23</dt>
-<dd>
-バージョン 0.5.6.2 を公開しました。
-<ul>
-<li>Gaussian fchk のインポートができなくなっていた (0.5.6.1 で発生)。修正。</li>
-<li>最後にコンパイルした日時を 'About' ダイアログで表示するようにした。</li>
-<li>Amber mdcrd のインポートで、座標が８桁になる時にエラーが発生していたので修正。</li>
-<li>構造最適化で時々クラッシュしていたのを修正。</li>
-</ul>
-</dd>
-
-<dt>2011/08/03</dt>
-<dd>
-バージョン 0.5.6.1 を公開しました。
-<ul>
-<li>PPC Mac での antechamber/parmchk のクラッシュを修正。</li>
-<li>Mac: resp, sqm（半経験的量子化学計算）のクラッシュを修正。AmberTools の config.h/Makefile を修正して gfortran のライブラリを静的リンクするようにした。</li>
-<li>Antechamber などのサブプロセスの終了が検出できず、ゾンビになっていることがあった。一応修正したが、まだ問題があるかも。</li>
-<li>GAMESS dat ファイルの読み込みが ESC で中断できるようになった。</li>
-<li>RubyDialogFrame のクローズボタンをなくした。</li>
-<li>Frcmod インポート（antechamber/parmchk 後の読み込みを含む）で、原子タイプが一文字のものを正しく読めるように修正。</li>
-<li>GAMESS dat, log ファイルから MO を読み込むように修正。</li>
-</ul>
-</dd>
-
-<dt>2011/07/30</dt>
-<dd>
-バージョン 0.5.6 を公開しました。
-<ul>
-<li>Gaff, parm99 パラメータ: 結合長を小数点以下３桁まで有効にした。</li>
-<li>Antechamber/parmchk ダイアログ（および Ruby で書かれたその他のダイアログ）のクラッシュを修正。</li>
-<li>Ruby: 新しいメソッド: AtomRef#exclusion, Molecule#resize_to_fit, Molecule#bond_par/angle_par/dihedral_par/improper_par/vdw_par, $stdin.gets, $stdin.readline. 改良したメソッド: Molecule#each_atom, Molecule#duplicate, Molecule#open, Kernel#message_box, Dialog#item.</li>
-<li>分子力学: 構造最適化計算の安定性が向上。"Solvate" コマンドで溶媒分子に "SOLV" セグメント名が付与されるようになった。</li>
-<li>新しいメニューコマンド："Create New Atom", "Create New Parameter", "Create SANDER Input", "Import AMBER Lib", "Import AMBER Frcmod".</li>
-<li>新しいファイルフォーマット: cif（読み込み）, AMBER mdcrd（読み込み）。</li>
-<li>属性テーブルでのカット／コピー／ペーストの安定性が向上。</li>
-<li>Mac: 属性テーブルがときどきフォーカスされない問題を解決。</li>
-</ul>
-</dd>
-
-<dt>2011/04/26</dt>
-<dd>
-バージョン 0.5.5 を公開しました。
-<ul>
-<li>原子座標を修正したあとの MM/MD の不具合を修正。</li>
-<li>wrap_unit_cell コマンドの不具合を修正。</li>
-<li>単位格子が定義されているときに、周期的なイメージを表示する機能を実装。</li>
-<li>周期境界条件での vdW／静電力計算の不具合を修正。</li>
-<li>mbsf ファイルにスケール、配向などの表示に関する設定を保存。</li>
-<li>MD パラメータがない分子に他の分子からのパラメータをペーストできない不具合を修正。</li>
-<li>GaussianW の fch(k) ファイルが読めない不具合を修正。また、拡張子 ".fch" を Gaussian Checkpoint File として認識するよう設定。</li>
-</ul>
-</dd>
-
-<dt>2010/05/07</dt>
-<dd>
-バージョン 0.5.4 を公開しました。
-<ul>
-<li>"Create GAMESS Input" ダイアログで、内部座標の自動生成を指定できるようにした。</li>
-<li>多数の不具合を修正。</li>
-</ul>
-</dd>
-
-<dt>2010/04/25</dt>
-<dd>
-バージョン 0.5.3 を公開しました。
-<ul>
-<li>フレームごとに可変な単位格子を設定可能。</li>
-<li>パラメータテーブルのコピー／カット／ペーストを改善。</li>
-<li>Mac 版で、隠れウィンドウの "Molby" がときどき Window メニューに現れる不具合を修正。</li>
-<li>テーブルの編集時の不具合（Windows はクラッシュ、Mac はテキストフィールドが残ってしまう）の修正。</li>
-</ul>
-</dd>
-
-<dt>2010/03/20</dt>
-<dd>
-バージョン 0.5.2 を公開しました。
-<ul>
-<li>組み込み Ruby のリファレンスを作成。また、Ruby コマンドの仕様を整理。</li>
-</ul>
-</dd>
-
-<dt>2010/02/06</dt>
-<dd>バージョン 0.5.1 を公開しました。
-<ul>
-<li><a href="http://ambermd.org/">AmberTools 1.3</a>（の一部）を同梱しました。有機分子の分子力学計算について、原子タイプの指定と am1-bcc 法による部分電荷の計算が簡単にできます。</li>
-<li>MM/MD を使ったあと終了時にフリーズする問題を改善。（まだ時々起きますが）</li>
-<li>ドキュメントに「<a href="../doc/ja/mm_minimize.html">分子力学計算によるエネルギー最小化</a>」の章を追記。</li>
-</ul>
-<p class="note">2010/02/07 追記：AmberTools とドキュメントにリンクを追加。エントリの日付を訂正。</p>
-</dd>
-<dt>2010/02/01</dt>
-<dd>ホームページの英語版を作りました。</dd>
-<dt>2010/01/21</dt>
-<dd>公開開始。</dd>
-
 </dl>
+
+<p>※ これ以前の更新は「<a href="history.html">更新履歴</a>」をご覧ください。</p>
 
 </div> <!-- end content -->
 
