@@ -6,8 +6,9 @@
 <title>Molby</title>
 <link href='../style.css' rel='stylesheet' type='text/css' />
 <link href='index.html' rel='Start' />
+<script type="text/javascript" src="../releases.js"></script>
 </head>
-<body>
+<body onload="get_download_url();">
 
 <div id="navibox">
 
@@ -30,10 +31,16 @@
     <p>An Interactive Molecular Modeling Software</p>
     <p>For Mac OS X and Windows</p>
   </div>
-  <div id="downloadbox">
-  <a href="https://github.com/toshinagata/Molby/releases/">
-  To Download Page
-  </a>
+  <div>
+  <table border="1" cellspacing="0" style="margin-right:auto">
+  <tr><th>Latest Release</th><th>File</th><th>Downloads</th></tr>
+  <tr><td id="title1" rowspan="5"></td><td id="file1"></td><td id="count1"></td></tr>
+  <tr><td id="file2"></td><td id="count2"></td></tr>
+  <tr><td id="file3"></td><td id="count3"></td></tr>
+  <tr><td id="file4"></td><td id="count4"></td></tr>
+  <tr><td id="file5"></td><td id="count5"></td></tr>
+  <tr><td colspan="3"><a href="https://github.com/toshinagata/molby/releases">Other releases...</a></td></tr>
+  </table>
   </div>
 </div>
 
@@ -105,6 +112,7 @@ Version 1.0.2 is out.<br />
 <li>Windows: Screen update is improved.</li>
 </ul>
 [Developers]<br />
+<ul>
 <li>Version info is updated on every build on Mac platform.</li>
 <li>Handling of progress dialog is improved.</li>
 <li>Calling subprocess is reworked.</li>
