@@ -9,12 +9,10 @@ ifeq ($(TARGET_PLATFORM),MSW)
   SETUP_NAME = SetupMolbyWin
  else
   TOOL_PREFIX = i686-w64-mingw32-
-#  CPP_EXTRA_FLAGS += -isystem /usr/local/mingw-w32/mingw/include
   MSW_BUILD = build-win32
   LIB_SUFFIX = -3.2-i686-w64-mingw32
   WINE_PATH=/Applications/EasyWine.app/Contents/Resources/wine/bin
   PRODUCT_SUFFIX = 32
-#  FINAL_EXECUTABLE_SUFFIX = _32bit
   TARGET_ARCH_DEFINE = -DTARGET_ARCH=32
   SETUP_NAME = SetupMolbyWin32
  endif
@@ -97,22 +95,10 @@ ortep3/ortep3$(EXE_SUFFIX) :
 	make -f ../Makefile_ortep3
 
 ifeq ($(TARGET_PLATFORM),MSW)
-#EXTRA_OBJECTS = window_msw.o textctrl_msw.o OpenGL_extensions.o
 EXTRA_OBJECTS = OpenGL_extensions.o
 RESOURCE = molby_rc.o
-#  The following HOMETEMP kludges are to work around a bug where '#include "..."' 
-#  does not work when the include path is on the C: drive whereas the source is 
-#  on the Z: drive. 2009.7.24. Toshi Nagata
-#  2019.8.16. We no longer need this kludge
-#HOMETEMP = $(HOME)/__molby_temp_build__
 $(DESTPREFIX)/$(RESOURCE) : molby.rc
 	$(TOOL_PREFIX)windres -i molby.rc -o $(DESTPREFIX)/$(RESOURCE) -I$(WX_DIR)/include
-#	mkdir -p $(HOMETEMP)/$(MSW_BUILD) $(HOMETEMP)/bitmaps
-#	cp molby.rc $(HOMETEMP)/$(MSW_BUILD)
-#	cp ../bitmaps/*.ico $(HOMETEMP)/bitmaps
-#	(cd $(HOMETEMP)/$(MSW_BUILD); $(TOOL_PREFIX)windres -i molby.rc -o molby_rc.o -I$(WX_DIR)/include)
-#	cp $(HOMETEMP)/$(MSW_BUILD)/molby_rc.o $@
-#	rm -rf $(HOMETEMP)
 endif
 
 depend: cleandep $(DESTPREFIX) $(OBJECTS:%.o=$(DESTPREFIX)/%.d) $(EXTRA_OBJECTS:%.o=$(DESTPREFIX)/%.d)
@@ -160,7 +146,6 @@ ifeq ($(TARGET_PLATFORM),MSW)
 	rm -rf $(DESTPREFIX)/$(PRODUCT_DIR)
 	mkdir -p $(DESTPREFIX)/$(PRODUCT_DIR)
 	cp $(DESTPREFIX)/$(EXECUTABLE) "$(DESTPREFIX)/$(PRODUCT_DIR)/$(FINAL_EXECUTABLE)"
-#	cp mingwm10.dll $(DESTPREFIX)/$(PRODUCT_DIR)
 	cp -r ../Scripts $(DESTPREFIX)/$(PRODUCT_DIR)
 	cp -r ../bitmaps/bitmaps $(DESTPREFIX)/$(PRODUCT_DIR)
 	cp -r amber11 $(DESTPREFIX)/$(PRODUCT_DIR)
@@ -196,9 +181,4 @@ clean:
 	rm -f $(DESTPREFIX)/MolLib/*.o
 	rm -f $(DESTPREFIX)/MolLib/MD/*.o
 	rm -f $(DESTPREFIX)/MolLib/Ruby_bind/*.o
-
-#	rm -f $(EXECUTABLE) $(OBJECTS)
-#	rm -rf $(PRODUCT)
-#	cd ../MolLib; $(MAKE) clean
-#	cd ../MolLib/Ruby_bind; $(MAKE) clean
 
