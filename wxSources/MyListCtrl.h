@@ -148,6 +148,7 @@ public:
     void OnCharInScroll(wxKeyEvent &event);
     void OnSetFocusInScroll(wxFocusEvent &event);
     void OnKillFocusInScroll(wxFocusEvent &event);
+    bool HasFocusInScroll(void);
     
 	void EnableSelectionChangeNotification(bool flag) { selectionChangeNotificationEnabled = flag; }
 

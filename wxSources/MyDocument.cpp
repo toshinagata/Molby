@@ -569,7 +569,7 @@ MyDocument::OnCopy(wxCommandEvent& event)
 		event.Skip();
 		return;
 	}
-	if (focusWindow == ((MoleculeView *)GetFirstView())->GetListCtrl() && GetMainView()->tableIndex == kMainViewParameterTableIndex) {
+	if (((MoleculeView *)GetFirstView())->GetListCtrl()->HasFocusInScroll() && GetMainView()->tableIndex == kMainViewParameterTableIndex) {
 		MainView_copyOrCutParameters(GetMainView(), 2);
 	} else {
 		MoleculeLock(mol);
@@ -586,7 +586,7 @@ MyDocument::OnCut(wxCommandEvent& event)
 		event.Skip();
 		return;
 	}
-	if (focusWindow == ((MoleculeView *)GetFirstView())->GetListCtrl() && GetMainView()->tableIndex == kMainViewParameterTableIndex) {
+	if (((MoleculeView *)GetFirstView())->GetListCtrl()->HasFocusInScroll() && GetMainView()->tableIndex == kMainViewParameterTableIndex) {
 		MainView_copyOrCutParameters(GetMainView(), 3);
 	} else {
 		MoleculeLock(mol);
@@ -603,7 +603,7 @@ MyDocument::OnPaste(wxCommandEvent& event)
 		event.Skip();
 		return;
 	}
-	if (focusWindow == ((MoleculeView *)GetFirstView())->GetListCtrl() && GetMainView()->tableIndex == kMainViewParameterTableIndex) {
+	if (((MoleculeView *)GetFirstView())->GetListCtrl()->HasFocusInScroll() && GetMainView()->tableIndex == kMainViewParameterTableIndex) {
 		MainView_pasteParameters(GetMainView());
 	} else {
 		MoleculeLock(mol);
@@ -615,7 +615,7 @@ MyDocument::OnPaste(wxCommandEvent& event)
 void
 MyDocument::OnDelete(wxCommandEvent& event)
 {
-	if (wxWindow::FindFocus() == ((MoleculeView *)GetFirstView())->GetListCtrl() && GetMainView()->tableIndex == kMainViewParameterTableIndex) {
+	if (((MoleculeView *)GetFirstView())->GetListCtrl()->HasFocusInScroll() && GetMainView()->tableIndex == kMainViewParameterTableIndex) {
 		MainView_copyOrCutParameters(GetMainView(), 1);
 	} else {
 		MoleculeLock(mol);
@@ -764,7 +764,7 @@ MyDocument::OnCreateNewParameter(wxCommandEvent &event)
 void
 MyDocument::OnSelectAll(wxCommandEvent& event)
 {
-	if (wxWindow::FindFocus() == ((MoleculeView *)GetFirstView())->GetListCtrl() && mol->mview->tableIndex == kMainViewParameterTableIndex) {
+	if (((MoleculeView *)GetFirstView())->GetListCtrl()->HasFocusInScroll() && mol->mview->tableIndex == kMainViewParameterTableIndex) {
 	} else {
 		MoleculeLock(mol);
 		MainView_selectAll(GetMainView());

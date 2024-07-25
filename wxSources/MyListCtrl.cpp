@@ -1079,6 +1079,12 @@ MyListCtrl::OnKillFocusInScroll(wxFocusEvent &event)
     Refresh();
 }
 
+bool
+MyListCtrl::HasFocusInScroll()
+{
+    return (scroll->HasFocus() || this->HasFocus());
+}
+
 void
 MyListCtrl::OnPopUpMenuSelected(wxCommandEvent &event)
 {
