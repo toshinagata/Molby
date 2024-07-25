@@ -194,8 +194,6 @@
 /* Begin PBXFileReference section */
 		8D1107320486CEB800E47090 /* Molby.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Molby.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E403568328CF6A3D008E2C46 /* QuartzCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuartzCore.framework; path = /System/Library/Frameworks/QuartzCore.framework; sourceTree = "<absolute>"; };
-		E403568728D0C859008E2C46 /* window_msw.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = window_msw.cpp; sourceTree = "<group>"; };
-		E403568828D0C8C4008E2C46 /* textctrl_msw.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = textctrl_msw.cpp; sourceTree = "<group>"; };
 		E4059FE428C46A6E0052B36B /* MolbyMacLegacy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MolbyMacLegacy.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		E4059FE628C46B320052B36B /* Molby_MacLegacy-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "Molby_MacLegacy-Info.plist"; sourceTree = "<group>"; };
 		E40C8B3228E8522F003CE26E /* JANPA */ = {isa = PBXFileReference; lastKnownFileType = folder; name = JANPA; path = ../JANPA; sourceTree = "<group>"; };
@@ -211,7 +209,6 @@
 		E420BDED1885746700A2B983 /* GlobalParameterFrame.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = GlobalParameterFrame.cpp; sourceTree = "<group>"; };
 		E420BDEE1885746700A2B983 /* GlobalParameterFrame.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GlobalParameterFrame.h; sourceTree = "<group>"; };
 		E420BDF31885749000A2B983 /* listctrl_private.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = listctrl_private.h; sourceTree = "<group>"; };
-		E420BDF41885749000A2B983 /* listctrl.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = listctrl.cpp; sourceTree = "<group>"; };
 		E420BDF51885749000A2B983 /* MoleculeView.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MoleculeView.cpp; sourceTree = "<group>"; };
 		E420BDF61885749000A2B983 /* MoleculeView.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MoleculeView.h; sourceTree = "<group>"; };
 		E420BDF71885749000A2B983 /* MyApp.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = MyApp.cpp; sourceTree = "<group>"; wrapsLines = 1; };
@@ -537,9 +534,7 @@
 				E420BDED1885746700A2B983 /* GlobalParameterFrame.cpp */,
 				E420BDEE1885746700A2B983 /* GlobalParameterFrame.h */,
 				E420BDF31885749000A2B983 /* listctrl_private.h */,
-				E420BDF41885749000A2B983 /* listctrl.cpp */,
 				E4653CB018A0CC7D0022377B /* textctrl_addition.mm */,
-				E403568828D0C8C4008E2C46 /* textctrl_msw.cpp */,
 				E4196C65190B2FA500183E62 /* menu.mm */,
 				E420BDF51885749000A2B983 /* MoleculeView.cpp */,
 				E420BDF61885749000A2B983 /* MoleculeView.h */,
@@ -579,7 +574,6 @@
 				E4D379A019C87C1200636D28 /* modalwindow.h */,
 				E4D379A119C87C2200636D28 /* modalwindow.cpp */,
 				E4D37E0D19CC831500636D28 /* modalwindow_osx.mm */,
-				E403568728D0C859008E2C46 /* window_msw.cpp */,
 				E4CB37081FDD4654001BB75E /* OpenGL_extensions.c */,
 				E4CB37091FDD4654001BB75E /* OpenGL_extensions.h */,
 			);
