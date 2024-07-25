@@ -179,7 +179,7 @@ def guess_uff_parameter_dialog(current_value, indices)
     par_type = "angle"
   else
     message_box("UFF parameter guess of this type is not implemented.", "Guess UFF Force", "OK")
-	return nil
+    return nil
   end
   
   #  Look up the UFFParams entry
@@ -204,8 +204,8 @@ def guess_uff_parameter_dialog(current_value, indices)
   types_str = types.join("-")
   recalc = lambda { |i1, i2, i3, b1, b2|
     i1 = uff_types[0][i1] rescue 0
-	i2 = uff_types[1][i2] rescue 0
-	i3 = uff_types[2][i3] rescue 0
+    i2 = uff_types[1][i2] rescue 0
+    i3 = uff_types[2][i3] rescue 0
     if par_type == "bond"
       k = uff_bond_force(i1, i2, b1)
     else
@@ -215,12 +215,12 @@ def guess_uff_parameter_dialog(current_value, indices)
   }
   hash = Dialog.run("Guess UFF Force", "Accept", "Cancel") {
     action_proc = lambda { |it|
-	  t1 = value("uff_type_0").to_i rescue 0
-	  t2 = value("uff_type_1").to_i rescue 0
-	  t3 = value("uff_type_2").to_i rescue 0
-	  b1 = value("bond_order_0").to_f rescue 1.0
-	  b2 = value("bond_order_1").to_f rescue 1.0
-	  current_value = value("current_value") rescue nil
+      t1 = value("uff_type_0").to_i rescue 0
+      t2 = value("uff_type_1").to_i rescue 0
+      t3 = value("uff_type_2").to_i rescue 0
+      b1 = value("bond_order_0").to_f rescue 1.0
+      b2 = value("bond_order_1").to_f rescue 1.0
+      current_value = value("current_value") rescue nil
       set_value("guessed", recalc.call(t1, t2, t3, b1, b2)) rescue nil
     }
     type_selects = []
@@ -229,8 +229,8 @@ def guess_uff_parameter_dialog(current_value, indices)
       if p.length == 1
         type_selects.push(item(:text, :title=>UFFParams[p[0]][13]))
       else
-	    subitems = p.map { |pp| UFFParams[pp][0] }
-		uff_idx = subitems.index(utypes[i]) || 0
+        subitems = p.map { |pp| UFFParams[pp][0] }
+        uff_idx = subitems.index(utypes[i]) || 0
         type_selects.push(item(:popup, :subitems=>p.map { |pp| UFFParams[pp][13] }, :tag=>"uff_type_#{i}", :action=>action_proc, :value=>uff_idx))
       end
     }
@@ -247,11 +247,11 @@ def guess_uff_parameter_dialog(current_value, indices)
         layout(2, *type_selects),
         layout(2, *bond_orders)
       ),
-	  (par_type == "bond" ? nil :
-		layout(2,
-		  item(:text, :title=>"Equilibrium angle = "),
-		  item(:textfield, :width=>100, :value=>current_value, :tag=>"current_value", :action=>action_proc))
-	  ),
+      (par_type == "bond" ? nil :
+        layout(2,
+          item(:text, :title=>"Equilibrium angle = "),
+          item(:textfield, :width=>100, :value=>current_value, :tag=>"current_value", :action=>action_proc))
+      ),
       layout(2,
         item(:text, :title=>"Guessed force = "),
         item(:textfield, :editable=>false, :width=>100, :value=>recalc.call(0, 0, 0, 1.0, 1.0), :tag=>"guessed")
@@ -260,13 +260,13 @@ def guess_uff_parameter_dialog(current_value, indices)
   }
   if hash[:status] == 0
     3.times { |i|
-	  idx = indices[i]
-	  next unless idx
-	  ii = uff_types[i][hash["uff_type_#{i}"].to_i]
-	  if ii
+      idx = indices[i]
+      next unless idx
+      ii = uff_types[i][hash["uff_type_#{i}"].to_i]
+      if ii
         atoms[idx].uff_type = UFFParams[ii][0]
       end
-	}
+    }
     return hash["guessed"], current_value
   else
     return nil
@@ -290,22 +290,22 @@ def guess_uff_parameters
       xdihedrals = (0...mol.ndihedrals).select { |i| d = mol.dihedrals[i]; xatoms.include?(d[0]) || xatoms.include?(d[1]) || xatoms.include?(d[2]) || xatoms.include?(d[3]) }
       xbonds.each { |i| xatoms.add(mol.bonds[i]) }
       xangles.each { |i|
-	    ang = mol.angles[i]
-		xatoms.add(ang)
-		2.times { |j|
-		  b0 = ang[j]
-		  b1 = ang[j + 1]
-		  k = 0
-		  mol.bonds.each { |b|
-		    break if (b[0] == b0 && b[1] && b1) || (b[0] == b1 && b[1] && b0)
-			k += 1
-		  }
-		  if k < mol.nbonds && !xbonds.include?(k)
-		    xbonds.push(k)
-		  end
-		}
-	  }
-	  xbonds.sort!
+        ang = mol.angles[i]
+        xatoms.add(ang)
+        2.times { |j|
+          b0 = ang[j]
+          b1 = ang[j + 1]
+          k = 0
+          mol.bonds.each { |b|
+            break if (b[0] == b0 && b[1] && b1) || (b[0] == b1 && b[1] && b0)
+            k += 1
+          }
+          if k < mol.nbonds && !xbonds.include?(k)
+            xbonds.push(k)
+          end
+        }
+      }
+      xbonds.sort!
       item_with_tag("table")[:refresh] = true
     }
     columns = {
@@ -401,9 +401,9 @@ def guess_uff_parameters
     uff_title_for_type[""] = "-- select --"
     uff_popup = lambda { |an|
       if uff_popup_titles[an] == nil
-	    if an == 0
-		  titles = ["(no type)"]
-		else
+        if an == 0
+          titles = ["(no type)"]
+        else
           titles = []
           Molby::Molecule::UFFParams.each { |u|
             if u[1] == an
@@ -412,7 +412,7 @@ def guess_uff_parameters
               uff_title_for_type[u[0]] = u[13]
             end
           }
-		end
+        end
         uff_popup_titles[an] = titles
       end
       uff_popup_titles[an]
@@ -594,16 +594,16 @@ def guess_uff_parameters
         pref = arena.improper_par(idx)
         pen = mol.parameter.impropers
       end
-	  if atom_types == nil
-	    atom_types = pref.atom_types
-	  end
+      if atom_types == nil
+        atom_types = pref.atom_types
+      end
       pref_new = pen.lookup(atom_types, :create, :local, :nobasetype, :nowildcard)
       pref.keys.each { |k|
         next if k == :source || k == :index || k == :par_type
-		if k == :atom_types
-		  pref_new.set_attr(k, atom_types)
-		  next
-		end
+        if k == :atom_types
+          pref_new.set_attr(k, atom_types)
+          next
+        end
         pref_new.set_attr(k, pref.get_attr(k))
       }
       if attr != nil
@@ -617,8 +617,8 @@ def guess_uff_parameters
       end
     }
     set_value = lambda { |it, row, col, val|
-	  old_val = get_value.call(it, row, col)
-	  return if val == old_val
+      old_val = get_value.call(it, row, col)
+      return if val == old_val
       case tab
       when "atoms"
         idx = xatoms[row]
@@ -649,11 +649,11 @@ def guess_uff_parameters
         end
       when "bonds"
         idx = xbonds[row]
-		types = mol.bonds[idx]
-		if col == 7 && val.to_f == 0.0
-		  val = nil
-		end
-		if val
+        types = mol.bonds[idx]
+        if col == 7 && val.to_f == 0.0
+          val = nil
+        end
+        if val
           case col
           when 5
             mol.assign_bond_order(idx, val.to_f)
@@ -662,28 +662,28 @@ def guess_uff_parameters
           when 7
             modify_parameter.call(mol, "bond", types, idx, :r0, val)
           end
-		end
+        end
       when "angles"
         idx = xangles[row]
-		types = mol.angles[idx]
-		if col == 6 && val.to_f == 0.0
-		  val = nil
-		end
-		if val
+        types = mol.angles[idx]
+        if col == 6 && val.to_f == 0.0
+          val = nil
+        end
+        if val
           case col
           when 5
             modify_parameter.call(mol, "angle", types, idx, :k, val)
           when 6
             modify_parameter.call(mol, "angle", types, idx, :a0, val)
           end
-		end
+        end
       when "dihedrals"
         idx = xdihedrals[row]
-		types = mol.dihedrals
-		if (col == 5 || col == 7) && val.to_f == 0.0
-		  val = nil
-		end
-		if val
+        types = mol.dihedrals
+        if (col == 5 || col == 7) && val.to_f == 0.0
+          val = nil
+        end
+        if val
           case col
           when 5
             modify_parameter.call(mol, "dihedral", types, idx, :k, val)
@@ -692,7 +692,7 @@ def guess_uff_parameters
           when 7
             modify_parameter.call(mol, "dihedral", types, idx, :phi0, val)
           end
-	    end
+        end
       end
     }
     has_popup_menu = lambda { |it, row, col|
@@ -714,7 +714,7 @@ def guess_uff_parameters
     guess_uff_types = lambda { |g|
       xatoms.each { |idx|
         ap = mol.atoms[idx]
-		next if !g.include?(idx)
+        next if !g.include?(idx)
         u = uff_popup.call(ap.atomic_number)
         if u.length == 1
           ap.uff_type = (uff_type_for_title[u[0]] || "")
@@ -771,12 +771,12 @@ def guess_uff_parameters
       name = mol.name
       xfragments.each_with_index { |frag, i|
         fmol = mol.extract(frag)
-		mol.selection = frag
-		frag_str = frag.to_s[9..-2]  #  Remove "IntGroup[" and "]"
-		mes = "Guess MM/MD Parameters for #{mol.name}.fragment #{i}"
-		n = fmol.ambertools_dialog("antechamber", mes, frag_str)
-		break if n == 0
-		next if n == -1
+        mol.selection = frag
+        frag_str = frag.to_s[9..-2]  #  Remove "IntGroup[" and "]"
+        mes = "Guess MM/MD Parameters for #{mol.name}.fragment #{i}"
+        n = fmol.ambertools_dialog("antechamber", mes, frag_str)
+        break if n == 0
+        next if n == -1
         n = fmol.invoke_antechamber(false, mes)
         break if n == 1
         calc_charge = get_global_settings("antechamber.calc_charge").to_i
@@ -789,12 +789,12 @@ def guess_uff_parameters
         end
         if guess_atom_types
           #  Copy atom types and local parameters
-		  g = IntGroup[]
+          g = IntGroup[]
           frag.each_with_index { |n, i|
-		    if mol.atoms[n].atom_type != fmol.atoms[i].atom_type
-			  g.add(n)
+            if mol.atoms[n].atom_type != fmol.atoms[i].atom_type
+              g.add(n)
               mol.atoms[n].atom_type = fmol.atoms[i].atom_type
-			end
+            end
           }
           [:bond, :angle, :dihedral, :improper, :vdw].each { |ptype|
             case ptype
@@ -820,7 +820,7 @@ def guess_uff_parameters
               end
             }
           }
-		  guess_uff_types.call(g)
+          guess_uff_types.call(g)
         end
       }
     }
@@ -828,11 +828,11 @@ def guess_uff_parameters
       catch(:exit) {
         #  Atoms
         xatoms.each { |idx|
-		  pref = arena.vdw_par(idx) 
-		  next if pref.source != false   #  Already defined
+          pref = arena.vdw_par(idx) 
+          next if pref.source != false  #  Already defined
           ap0 = mol.atoms[idx]
           next if exclude.member?(ap0.atomic_number)
-		  next if ap0.anchor_list != nil
+          next if ap0.anchor_list != nil
           uff_type = ap0.uff_type
           u = UFFParams.find { |u| u[0] == uff_type }
           if u == nil
@@ -843,118 +843,118 @@ def guess_uff_parameters
           pref.atom_type = idx
           pref.eps = pref.eps14 = u[5]
           pref.r_eq = pref.r_eq14 = u[4] * 0.5
-		  pref.atomic_number = ap0.atomic_number
-		  pref.weight = ap0.weight
+          pref.atomic_number = ap0.atomic_number
+          pref.weight = ap0.weight
         }
-		#  Bonds
-		pars = []
-		xbonds.each { |idx|
-		  pref = arena.bond_par(idx)
-		  next if pref.source != false && pref.k > 0.0   #  Already defined
-		  b = mol.bonds[idx]
-		  is = []
-		  aps = [mol.atoms[b[0]], mol.atoms[b[1]]]
-		  2.times { |i|
-		    if aps[i].anchor_list != nil
-			  is[i] = -1
-			  next
-			end
-		    uff_type = aps[i].uff_type
-		    UFFParams.each_with_index { |u, j|
-			  if u[0] == uff_type
-			    is[i] = j
-				break
-			  end
-			}
-		    if is[i] == nil
-			  error_message_box("The UFF type for atom #{b[i]} (#{aps[i].name}) is not defined.")
-			  throw(:exit)
-			end
-		  }
-		  bo = mol.get_bond_order(idx)
-		  if bo == nil || bo == 0.0
-		    bo = 1.0
-		  end
-		  if pref.source != false && pref.r0 > 0.0
-		    len = pref.r0
-	      elsif is[0] >= 0 && is[1] >= 0
+        #  Bonds
+        pars = []
+        xbonds.each { |idx|
+          pref = arena.bond_par(idx)
+          next if pref.source != false && pref.k > 0.0   #  Already defined
+          b = mol.bonds[idx]
+          is = []
+          aps = [mol.atoms[b[0]], mol.atoms[b[1]]]
+          2.times { |i|
+            if aps[i].anchor_list != nil
+              is[i] = -1
+              next
+            end
+            uff_type = aps[i].uff_type
+            UFFParams.each_with_index { |u, j|
+              if u[0] == uff_type
+                is[i] = j
+                break
+              end
+            }
+            if is[i] == nil
+              error_message_box("The UFF type for atom #{b[i]} (#{aps[i].name}) is not defined.")
+              throw(:exit)
+            end
+          }
+          bo = mol.get_bond_order(idx)
+          if bo == nil || bo == 0.0
+            bo = 1.0
+          end
+          if pref.source != false && pref.r0 > 0.0
+            len = pref.r0
+          elsif !@use_present_values && (is[0] >= 0 && is[1] >= 0)
             len = mol.uff_bond_length(UFFParams[is[0]][2], UFFParams[is[1]][2], UFFParams[is[0]][10], UFFParams[is[1]][10], bo)
           else
             len = mol.calc_bond(b[0], b[1])
-	      end
-		  if is[0] == -1 && is[1] == -1
-		    #  Bond between anchors: no force
-			force = 0.0
-	      elsif is[0] == -1 || is[1] == -1
-		    i = (is[0] == -1 ? 1 : 0)
-			case aps[i].atomic_number
-			when 0..23
-			  force = 135.0
-			when 24
-			  force = 150.0
-			when 25..27
-			  force = 205.0
-			when 28..36
-			  force = 140.0
-			when 37..54
-			  force = 205.0
-			else
-			  force = 260.0
-			end
-		  else
-		    force = mol.uff_bond_force(is[0], is[1], bo)
-		  end
-		  pars[idx] = [b, force, len]
-		}
-		pars.each { |pp|
-		  next if pp == nil
-		  pref = mol.parameter.lookup(:bond, pp[0], :local, :missing, :create, :nowildcard, :nobasetype)
-		  if pref.source == false
- 		    pref.atom_types = pp[0]
-		  end
-		  pref.k = pp[1]
-		  pref.r0 = pp[2]
-	    }
-		#  Angles
-		pars.clear
-		xangles.each { |idx|
-		  pref = arena.angle_par(idx)
-		  next if pref.source != false && pref.k > 0.0   #  Already defined
-		  a = mol.angles[idx]
-		  is = []
-		  aps = [mol.atoms[a[0]], mol.atoms[a[1]], mol.atoms[a[2]]]
-		  3.times { |i|
-		    if aps[i].anchor_list != nil
-			  is[i] = -1
-			  next
-			end
-		    uff_type = aps[i].uff_type
-		    UFFParams.each_with_index { |u, j|
-			  if u[0] == uff_type
-			    is[i] = j
-				break
-			  end
-			}
-		    if is[i] == nil
-			  error_message_box("The UFF type for atom #{a[i]} (#{aps[i].name}) is not defined.")
-			  throw(:exit)
-			end
-		  }
-		  bos = [1.0, 1.0]
-		  2.times { |i|
-		    #  Look up the bond and get the bond order
-			mol.bonds.each_with_index { |b, j|
-			  if (a[i] == b[0] && a[i + 1] == b[1]) || (a[i] == b[1] && a[i + 1] == b[0])
-			    bos[i] = mol.get_bond_order(j)
-				if bos[i] == nil || bos[i] == 0.0
-				  bos[i] = 1.0
-				end
-			  end
-			}
-		  }
-		  if pref.source != false && pref.a0 > 0.0
-		    ang = pref.a0
-		  elsif is[0] >= 0 && is[1] >= 0 && is[2] >= 0
+          end
+          if is[0] == -1 && is[1] == -1
+            #  Bond between anchors: no force
+            force = 0.0
+          elsif is[0] == -1 || is[1] == -1
+            i = (is[0] == -1 ? 1 : 0)
+            case aps[i].atomic_number
+            when 0..23
+              force = 135.0
+            when 24
+              force = 150.0
+            when 25..27
+              force = 205.0
+            when 28..36
+              force = 140.0
+            when 37..54
+              force = 205.0
+            else
+              force = 260.0
+            end
+          else
+            force = mol.uff_bond_force(is[0], is[1], bo)
+          end
+          pars[idx] = [b, force, len]
+        }
+        pars.each { |pp|
+          next if pp == nil
+          pref = mol.parameter.lookup(:bond, pp[0], :local, :missing, :create, :nowildcard, :nobasetype)
+          if pref.source == false
+             pref.atom_types = pp[0]
+          end
+          pref.k = pp[1]
+          pref.r0 = pp[2]
+        }
+        #  Angles
+        pars.clear
+        xangles.each { |idx|
+          pref = arena.angle_par(idx)
+          next if pref.source != false && pref.k > 0.0   #  Already defined
+          a = mol.angles[idx]
+          is = []
+          aps = [mol.atoms[a[0]], mol.atoms[a[1]], mol.atoms[a[2]]]
+          3.times { |i|
+            if aps[i].anchor_list != nil
+              is[i] = -1
+              next
+            end
+            uff_type = aps[i].uff_type
+            UFFParams.each_with_index { |u, j|
+              if u[0] == uff_type
+                is[i] = j
+                break
+              end
+            }
+            if is[i] == nil
+              error_message_box("The UFF type for atom #{a[i]} (#{aps[i].name}) is not defined.")
+              throw(:exit)
+            end
+          }
+          bos = [1.0, 1.0]
+          2.times { |i|
+            #  Look up the bond and get the bond order
+            mol.bonds.each_with_index { |b, j|
+              if (a[i] == b[0] && a[i + 1] == b[1]) || (a[i] == b[1] && a[i + 1] == b[0])
+                bos[i] = mol.get_bond_order(j)
+                if bos[i] == nil || bos[i] == 0.0
+                  bos[i] = 1.0
+                end
+              end
+            }
+          }
+          if pref.source != false && pref.a0 > 0.0
+            ang = pref.a0
+          elsif !@use_present_values && (is[0] >= 0 && is[1] >= 0 && is[2] >= 0)
             ang = UFFParams[is[1]][3]
             if UFFParams[is[1]][14] == "oc" || UFFParams[is[1]][14] == "sq"
               #  Octahedral or square planar: we need to account for the actual geometry
@@ -967,106 +967,106 @@ def guess_uff_parameters
               end
             end
           else
-		    ang = mol.calc_angle(a[0], a[1], a[2])
-		  end
-		  met = [aps[0].atomic_number, aps[1].atomic_number, aps[2].atomic_number].max
-		  if is[1] == -1 && is[0] != -1 && is[2] != 0
-		    #  Metal-Dummy-C angle
-			case met
-			when 0..23
-			  force = 85.0
-			when 24
-			  force = 93.0
-			when 25..27
-			  force = 100.0
-			when 28..36
-			  force = 28.0
-			when 37..54
-			  force = 125.0
-			else
-			  force = 130.0
-			end
-		  elsif is[1] != -1 && is[0] == -1 && is[2] == -1
-		    #  Dummy-Metal-Dummy angle
-			case met
-			when 0..23
-			  force = 50.0
-			when 24
-			  force = 40.0
-			when 25..27
-			  force = 40.0
-			when 28..36
-			  force = 40.0
-			when 37..54
-			  force = 52.0
-			else
-			  force = 56.0
-			end
-		  elsif is[0] >= 0 && is[1] >= 0 && is[2] >= 0
-		    force = mol.uff_angle_force(is[0], is[1], is[2], bos[0], bos[1], ang)
-		  else
-		    force = 0.0
-		  end
-		  pars[idx] = [a, force, ang]
-		}
-		pars.each { |pp|
-		  next if pp == nil
-		  pref = mol.parameter.lookup(:angle, pp[0], :local, :missing, :create, :nowildcard, :nobasetype)
-		  if pref.source == false
-		    pref.atom_types = pp[0]
-		  end
-		  pref.k = pp[1]
-		  pref.a0 = pp[2]
-	    }
-		xdihedrals.each { |idx|
-		  pref = arena.dihedral_par(idx)
-		  next if pref.source != false   #  Already defined
-		  d = mol.dihedrals[idx]
-		  is = []
-		  aps = [mol.atoms[d[0]], mol.atoms[d[1]], mol.atoms[d[2]], mol.atoms[d[3]]]
-		  4.times { |i|
-		    if aps[i].anchor_list != nil
-			  is[i] = -1
-			  next
-			end
-		    uff_type = aps[i].uff_type
-		    UFFParams.each_with_index { |u, j|
-			  if u[0] == uff_type
-			    is[i] = j
-				break
-			  end
-			}
-		  }
-		  if is[1] == -1 && is[2] == -1 && is[0] != -1 && is[3] != -1
-		    #  X-##-##-X dihedral
-			met = (aps[1].connects & aps[2].connects)[0]
-			if met != nil
-			  case mol.atoms[met].atomic_number
-			  when 0..36
-			    force = 0.36
-		      when 37..54
-			    force = 3.4
-			  else
-			    force = 3.4
-			  end
-			  pref = mol.parameter.lookup(:dihedral, ["X", d[1], d[2], "X"], :local, :missing, :create)
-			  pref.atom_types = ["X", d[1], d[2], "X"]
-			  pref.period = 5
-			  pref.phi0 = 180.0
-			  pref.k = force
-			  arena.prepare(true)
-			end
-		  else
-		    pref = mol.parameter.lookup(:dihedral, d, :local, :missing, :create, :nowildcard, :nobasetype)
-			pref.atom_types = d
-			pref.period = 2
-			pref.phi0 = 180.0
-			pref.k = 0.0
-		  end
-	    }
+            ang = mol.calc_angle(a[0], a[1], a[2])
+          end
+          met = [aps[0].atomic_number, aps[1].atomic_number, aps[2].atomic_number].max
+          if is[1] == -1 && is[0] != -1 && is[2] != 0
+            #  Metal-Dummy-C angle
+            case met
+            when 0..23
+              force = 85.0
+            when 24
+              force = 93.0
+            when 25..27
+              force = 100.0
+            when 28..36
+              force = 28.0
+            when 37..54
+              force = 125.0
+            else
+              force = 130.0
+            end
+          elsif is[1] != -1 && is[0] == -1 && is[2] == -1
+            #  Dummy-Metal-Dummy angle
+            case met
+            when 0..23
+              force = 50.0
+            when 24
+              force = 40.0
+            when 25..27
+              force = 40.0
+            when 28..36
+              force = 40.0
+            when 37..54
+              force = 52.0
+            else
+              force = 56.0
+            end
+          elsif is[0] >= 0 && is[1] >= 0 && is[2] >= 0
+            force = mol.uff_angle_force(is[0], is[1], is[2], bos[0], bos[1], ang)
+          else
+            force = 0.0
+          end
+          pars[idx] = [a, force, ang]
+        }
+        pars.each { |pp|
+          next if pp == nil
+          pref = mol.parameter.lookup(:angle, pp[0], :local, :missing, :create, :nowildcard, :nobasetype)
+          if pref.source == false
+            pref.atom_types = pp[0]
+          end
+          pref.k = pp[1]
+          pref.a0 = pp[2]
+        }
+        xdihedrals.each { |idx|
+          pref = arena.dihedral_par(idx)
+          next if pref.source != false   #  Already defined
+          d = mol.dihedrals[idx]
+          is = []
+          aps = [mol.atoms[d[0]], mol.atoms[d[1]], mol.atoms[d[2]], mol.atoms[d[3]]]
+          4.times { |i|
+            if aps[i].anchor_list != nil
+              is[i] = -1
+              next
+            end
+            uff_type = aps[i].uff_type
+            UFFParams.each_with_index { |u, j|
+              if u[0] == uff_type
+                is[i] = j
+                break
+              end
+            }
+          }
+          if is[1] == -1 && is[2] == -1 && is[0] != -1 && is[3] != -1
+            #  X-##-##-X dihedral
+            met = (aps[1].connects & aps[2].connects)[0]
+            if met != nil
+              case mol.atoms[met].atomic_number
+              when 0..36
+                force = 0.36
+              when 37..54
+                force = 3.4
+              else
+                force = 3.4
+              end
+              pref = mol.parameter.lookup(:dihedral, ["X", d[1], d[2], "X"], :local, :missing, :create)
+              pref.atom_types = ["X", d[1], d[2], "X"]
+              pref.period = 5
+              pref.phi0 = 180.0
+              pref.k = force
+              arena.prepare(true)
+            end
+          else
+            pref = mol.parameter.lookup(:dihedral, d, :local, :missing, :create, :nowildcard, :nobasetype)
+            pref.atom_types = d
+            pref.period = 2
+            pref.phi0 = 180.0
+            pref.k = 0.0
+          end
+        }
       }
-	  arena.prepare(true)
-	  item_with_tag("table")[:refresh] = true
+      arena.prepare(true)
+      item_with_tag("table")[:refresh] = true
     }
     layout(1,
 #      layout(2,
@@ -1099,13 +1099,15 @@ def guess_uff_parameters
         :action=>guess_parameters_for_fragments, :flex=>[1,1,1,0,0,0], :align=>:center),
       item(:button, :title=>"Guess UFF Parameters for Bonds and Angles Including Metal Atoms",
         :action=>guess_parameters_for_metals, :flex=>[1,1,1,0,0,0], :align=>:center),
+      item(:checkbox, :title=>"Use present bond lengths and angles as best values",
+        :action=>lambda { |it| @use_present_values = (it[:value] != 0) }, :flex=>[1,1,1,0,0,0], :align=>:center),
       item(:button, :title=>"Close", :action=>lambda { |it| hide }, :flex=>[1,1,1,0,0,0], :align=>:center),
       :flex=>[0,0,0,0,1,1]
     )
     size = self.size
     set_min_size(size)
     set_size(size[0] + 100, size[1] + 50);
-	@on_document_modified = lambda { |d| update_xatoms.call; update_selection.call }
+    @on_document_modified = lambda { |d| update_xatoms.call; update_selection.call }
     # listen(mol, "documentModified", lambda { |d| update_xatoms.call; update_selection.call })
     # listen(mol, "documentWillClose", lambda { |d| hide })
     update_xatoms.call
