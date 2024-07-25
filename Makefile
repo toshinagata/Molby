@@ -18,7 +18,7 @@ ifeq ($(TARGET_PLATFORM),MSW)
   TARGET_ARCH_DEFINE = -DTARGET_ARCH=32
   SETUP_NAME = SetupMolbyWin32
  endif
- WX_DIR = $(PWD)/../../wxWidgets-3.2.0
+ WX_DIR = $(PWD)/../../wxWidgets-3.2.5
  WX_LIB_DIR = $(WX_DIR)/$(MSW_BUILD)/lib
  WX_ARCH_DIR = $(WX_LIB_DIR)/wx/include/$(TOOL_PREFIX)msw-unicode-static-3.2
  WX_CPPFLAGS = -isystem $(WX_ARCH_DIR) -isystem $(WX_DIR)/include -D_LARGEFIILE_SOURCE=unknown -D__WXMSW__ $(TARGET_ARCH_DEFINE)

@@ -854,7 +854,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "if [ \"${BUILD_STYLE:=$CONFIGURATION}\" = \"Release\" ]; then\n  (cd \"$PROJECT_DIR/../latest_binaries\" && rm -f MolbyMac.zip && zip -r MolbyMac.zip Molby.app -x \\*.DS_Store -x \\*.svn*) || exit 1\n  (cd \"$PROJECT_DIR/../latest_binaries\" && rm -f MolbyMacLegacy.zip && zip -r MolbyMacLegacy.zip MolbyMacLegacy.app -x \\*.DS_Store -x \\*.svn*) || exit 1\n  (cd \"$PROJECT_DIR/../Documents\" && /usr/bin/ruby makedoc.rb && cp -a MolbyDoc \"$PROJECT_DIR/../latest_binaries\") || exit 1\n  (cd \"$PROJECT_DIR/../latest_binaries\" && zip -r MolbyDoc.zip MolbyDoc -x \\*.DS_Store -x \\*.svn*) || exit 1\n#(cd \"$PROJECT_DIR/../build-win32\"; PATH=/usr/local/homebrew/bin:$PATH; make setup) || exit 1\n  (cd \"$PROJECT_DIR/../build-win\"; PATH=/usr/local/homebrew/bin:$PATH; make setup) || exit 1\nfi\n";
+			shellScript = "if [ \"${BUILD_STYLE:=$CONFIGURATION}\" = \"Release\" ]; then\n  (cd \"$PROJECT_DIR/../latest_binaries\" && rm -f MolbyMac.zip && zip -r MolbyMac.zip Molby.app -x \\*.DS_Store -x \\*.svn*) || exit 1\n  (cd \"$PROJECT_DIR/../latest_binaries\" && rm -f MolbyMacLegacy.zip && zip -r MolbyMacLegacy.zip MolbyMacLegacy.app -x \\*.DS_Store -x \\*.svn*) || exit 1\n  (cd \"$PROJECT_DIR/../Document_Sources\" && /usr/bin/ruby makedoc.rb && cp -a ../docs/MolbyDoc \"$PROJECT_DIR/../latest_binaries\") || exit 1\n  (cd \"$PROJECT_DIR/../latest_binaries\" && zip -r MolbyDoc.zip MolbyDoc -x \\*.DS_Store -x \\*.svn*) || exit 1\n#(cd \"$PROJECT_DIR/../build-win32\"; PATH=/usr/local/homebrew/bin:$PATH; make setup) || exit 1\n  (cd \"$PROJECT_DIR/../build-win\"; PATH=/usr/local/homebrew/bin:$PATH; make setup) || exit 1\nfi\n";
 		};
 		E4FC7B57183E516E0064FB2E /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -1029,8 +1029,8 @@
 				GCC_VERSION = "";
 				HEADER_SEARCH_PATHS = (
 					"$(PROJECT_DIR)/../../fftw-3.3.2/build-osx/include",
-					"$(PROJECT_DIR)/../../wxWidgets-3.2.0/include",
-					"$(PROJECT_DIR)/../../wxWidgets-3.2.0/build-osx/lib/wx/include/osx_cocoa-unicode-static-3.2",
+					"$(PROJECT_DIR)/../../wxWidgets-3.2.5/include",
+					"$(PROJECT_DIR)/../../wxWidgets-3.2.5/build-osx/lib/wx/include/osx_cocoa-unicode-static-3.2",
 					"$(PROJECT_DIR)/../../ruby-2.0.0-p353",
 					"$(PROJECT_DIR)/../../ruby-2.0.0-p353/build-osx/include/ruby-2.0.0",
 					"$(PROJECT_DIR)/../../ruby-2.0.0-p353/build-osx/include/ruby-2.0.0/x86_64-darwin18.7.0",
@@ -1040,7 +1040,7 @@
 				INSTALL_PATH = "$(HOME)/Applications";
 				LIBRARY_SEARCH_PATHS = (
 					"$(PROJECT_DIR)/../../fftw-3.3.2/build-osx/lib",
-					"$(PROJECT_DIR)/../../wxWidgets-3.2.0/build-osx/lib",
+					"$(PROJECT_DIR)/../../wxWidgets-3.2.5/build-osx/lib",
 					"$(PROJECT_DIR)/../../ruby-2.0.0-p353/build-osx/lib",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.12;
@@ -1090,8 +1090,8 @@
 				GCC_VERSION = "";
 				HEADER_SEARCH_PATHS = (
 					"$(PROJECT_DIR)/../../fftw-3.3.2/build-osx/include",
-					"$(PROJECT_DIR)/../../wxWidgets-3.2.0/include",
-					"$(PROJECT_DIR)/../../wxWidgets-3.2.0/build-osx/lib/wx/include/osx_cocoa-unicode-static-3.2",
+					"$(PROJECT_DIR)/../../wxWidgets-3.2.5/include",
+					"$(PROJECT_DIR)/../../wxWidgets-3.2.5/build-osx/lib/wx/include/osx_cocoa-unicode-static-3.2",
 					"$(PROJECT_DIR)/../../ruby-2.0.0-p353",
 					"$(PROJECT_DIR)/../../ruby-2.0.0-p353/build-osx/include/ruby-2.0.0",
 					"$(PROJECT_DIR)/../../ruby-2.0.0-p353/build-osx/include/ruby-2.0.0/x86_64-darwin18.7.0",
@@ -1101,7 +1101,7 @@
 				INSTALL_PATH = "$(HOME)/Applications";
 				LIBRARY_SEARCH_PATHS = (
 					"$(PROJECT_DIR)/../../fftw-3.3.2/build-osx/lib",
-					"$(PROJECT_DIR)/../../wxWidgets-3.2.0/build-osx/lib",
+					"$(PROJECT_DIR)/../../wxWidgets-3.2.5/build-osx/lib",
 					"$(PROJECT_DIR)/../../ruby-2.0.0-p353/build-osx/lib",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.12;
