@@ -507,14 +507,7 @@ MyListCtrl::OnLeftDown(wxMouseEvent &event)
     if (editText)
         EndEditText();
     if (!isPaintActive) {
-        //  The scroll is still displayed in inactive state;
-        //  Set focus to scroll, and do nothing else.
-        //  This flag is used because we actually want to intercept the mouseDown
-        //  for 'just activate the listview', but wxWidgets may not allow processing
-        //  mouseDown event _before_ the scroll view gets focus.
         scroll->SetFocus();
-        Refresh();
-        return;
     }
     pos = event.GetPosition();
     if (FindItemAtPosition(pos, &row, &col) && dataSource != NULL && (n = dataSource->HasPopUpMenu(this, row, col, &items)) > 0) {
