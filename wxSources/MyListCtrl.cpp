@@ -27,8 +27,10 @@
 
 #if wxCHECK_VERSION(3,1,0)
 #define FromFrameDIP(frame, x) frame->FromDIP(x)
+#define ToFrameDIP(frame, x) frame->ToDIP(x)
 #else
 #define FromFrameDIP(frame, x) (x)
+#define ToFrameDIP(frame, x) (x)
 #endif
 
 const wxEventType MyListCtrlEvent = wxNewEventType();
@@ -42,7 +44,7 @@ END_EVENT_TABLE()
 
 MyListCtrl::MyListCtrl()
 {
-	editText = NULL;
+    editText = NULL;
     dataSource = NULL;
     header = NULL;
     scroll = NULL;
@@ -60,25 +62,25 @@ MyListCtrl::MyListCtrl()
     lastPopUpColumn = lastPopUpRow = -1;
 
 #if defined(__WXMAC__)
-	//  On OSX, the default font seems to be 14-point, which is too big.
-//	wxFont font = this->GetFont();
-//	font.SetPointSize(12);
-//	this->SetFont(font);
+    //  On OSX, the default font seems to be 14-point, which is too big.
+//    wxFont font = this->GetFont();
+//    font.SetPointSize(12);
+//    this->SetFont(font);
 #endif
 }
 
 MyListCtrl::~MyListCtrl()
 {
-	if (editText != NULL) {
-	/*	editText->Destroy(); */  /*  May be unnecessary  */
-		editText = NULL;
-	}
+    if (editText != NULL) {
+    /*    editText->Destroy(); */  /*  May be unnecessary  */
+        editText = NULL;
+    }
 }
 
 bool
 MyListCtrl::Create(wxWindow* parent, wxWindowID wid, const wxPoint& pos, const wxSize& size)
 {
-	this->wxWindow::Create(parent, wid, pos, size);
+    this->wxWindow::Create(parent, wid, pos, size);
 
     header = new wxWindow(this, 1001, wxPoint(0, 0), wxSize(size.x, 16), wxWANTS_CHARS);
     scroll = new wxScrolledWindow(this, 1002, wxPoint(0, 16), wxSize(size.x, (size.y <= 16 ? -1 : size.y - 16)));
@@ -111,13 +113,13 @@ MyListCtrl::Create(wxWindow* parent, wxWindowID wid, const wxPoint& pos, const w
         wxClientDC dc(this);
         int w, h, descent, leading;
         dc.GetTextExtent(_T("M"), &w, &h, &descent, &leading, &cellFont);
-        rowHeight = h + FromFrameDIP(scroll, 2);
+        rowHeight = ToFrameDIP(scroll, h) + 2;
         dc.GetTextExtent(_T("M"), &w, &h, &descent, &leading, &headerFont);
-        headerHeight = h + FromFrameDIP(scroll, 2);
-        header->SetSize(wxSize(size.x, headerHeight));
+        headerHeight = ToFrameDIP(scroll, h) + 2;
+        header->SetSize(wxSize(size.x, FromFrameDIP(scroll, headerHeight)));
         pageHeight = rowHeight;
         pageWidth = rowHeight;
-        scroll->SetScrollbars(rowHeight, rowHeight, 1, 1, true);
+        scroll->SetScrollbars(FromFrameDIP(scroll, rowHeight), FromFrameDIP(scroll, rowHeight), 1, 1, true);
     }
 
     //  Set sizer
@@ -126,16 +128,16 @@ MyListCtrl::Create(wxWindow* parent, wxWindowID wid, const wxPoint& pos, const w
     vsizer->Add(scroll, wxSizerFlags(1).Expand().Border(wxALL, 0));
     this->SetSizer(vsizer);
     
-	selectionChangeNotificationRequired = false;
-	selectionChangeNotificationEnabled = true;
-	return true;
+    selectionChangeNotificationRequired = false;
+    selectionChangeNotificationEnabled = true;
+    return true;
 }
 
 void
 MyListCtrl::SetDataSource(MyListCtrlDataSource *source)
 {
-	dataSource = source;
-	RefreshTable();
+    dataSource = source;
+    RefreshTable();
 }
 
 int
@@ -162,10 +164,16 @@ MyListCtrl::InsertColumn(int col, const wxString &heading, int format, int width
     if (col < 0 || col > GetColumnCount())
         return false;
     colNames.Insert(heading, col);
-    colWidths.insert(colWidths.begin() + col, width);
+    colWidths.insert(colWidths.begin() + col, ToFrameDIP(this, width));
     colFormats.insert(colFormats.begin() + col, format);
     SetNeedsReload();
     return true;
+}
+
+int
+MyListCtrl::GetHeaderHeight()
+{
+    return FromFrameDIP(this, headerHeight);
 }
 
 void
@@ -173,7 +181,7 @@ MyListCtrl::SetColumnWidth(int col, int width)
 {
     if (col < 0 || col > GetColumnCount())
         return;
-    colWidths[col] = width;
+    colWidths[col] = ToFrameDIP(this, width);
     SetNeedsReload();
 }
 
@@ -193,12 +201,12 @@ MyListCtrl::RefreshTable(bool refreshWindow)
         }
         // rowHeight = dataSource->GetRowHeight(this);
         //  "+4" is for drawing marker during cell dragging
-        pageHeight = rowHeight * nrows + FromFrameDIP(this, 4);
+        pageHeight = rowHeight * nrows + 4;
         //  Set the subwindow infos
         sz.y = headerHeight;
-        header->SetMinSize(sz);
-        scroll->SetVirtualSize(pageWidth, pageHeight);
-        int pageSize = floor((pageWidth + rowHeight - 1) / rowHeight);
+        header->SetMinSize(FromFrameDIP(this, sz));
+        scroll->SetVirtualSize(FromFrameDIP(this, pageWidth), FromFrameDIP(this, pageHeight));
+        int pageSize = FromFrameDIP(this, floor((pageWidth + rowHeight - 1) / rowHeight));
         if (scroll->GetScrollPageSize(wxHORIZONTAL) != pageSize)
             scroll->SetScrollPageSize(wxHORIZONTAL, pageSize);
         if (scroll->GetScrollPageSize(wxVERTICAL) != pageSize)
@@ -239,16 +247,20 @@ MyListCtrl::OnPaint(wxPaintEvent &event)
     scroll->CalcUnscrolledPosition(0, 0, &ox, &oy);
     int col = -1, row, basex;
     wxSize sz = scroll->GetClientSize();
+    wxSize szd = ToFrameDIP(this, sz);
     bool showDragTarget = (draggingRows && (dragTargetRow != mouseRow && dragTargetRow != mouseRow + 1));
     //  Draw background
     dc.SetPen(*wxTRANSPARENT_PEN);
     dc.SetBrush(*wxWHITE_BRUSH);
     dc.DrawRectangle(ox, oy, sz.x, sz.y);
     int i, j;
+    int oxd, oyd;
+    oxd = ToFrameDIP(this, ox);
+    oyd = ToFrameDIP(this, oy);
     basex = 0;
     for (i = 0; i < ncols; i++) {
         basex += colWidths[i];
-        if (basex > ox) {
+        if (basex > oxd) {
             col = i;
             basex -= colWidths[i];
             break;
@@ -258,8 +270,8 @@ MyListCtrl::OnPaint(wxPaintEvent &event)
         wxTextAttr attr;
         wxString str;
         int x, y;
-        int mg = FromFrameDIP(this, 2);
-        row = floor(oy / rowHeight);
+        int mg = 2;
+        row = floor(oyd / rowHeight);
         for (j = row; j < nrows; j++) {
             float fg0[4], bg0[4];
             int n0 = dataSource->SetItemColor(this, j, -1, fg0, bg0);
@@ -267,7 +279,7 @@ MyListCtrl::OnPaint(wxPaintEvent &event)
             if (showDragTarget && j >= dragTargetRow) {
                 y += 5;
             }
-            if (y > sz.y + oy)
+            if (y > szd.y + oyd)
                 break;
             x = basex;
             for (i = col; i < ncols; i++) {
@@ -344,24 +356,24 @@ MyListCtrl::OnPaint(wxPaintEvent &event)
                 dc.SetPen(*wxTRANSPARENT_PEN);
                 colour.Set(fg[0] * 255, fg[1] * 255, fg[2] * 255);
                 dc.SetTextForeground(colour);
-                dc.DrawRectangle(x, y, colWidths[i], rowHeight - 1);
+                dc.DrawRectangle(FromFrameDIP(this, x), FromFrameDIP(this, y), FromFrameDIP(this, colWidths[i]), FromFrameDIP(this, rowHeight - 1));
                 dc.SetPen(*wxLIGHT_GREY_PEN);
-                dc.DrawLine(x, y + rowHeight - 1, x + colWidths[i], y + rowHeight - 1);
+                dc.DrawLine(FromFrameDIP(this, x), FromFrameDIP(this, y + rowHeight - 1), FromFrameDIP(this, x + colWidths[i]), FromFrameDIP(this, y + rowHeight - 1));
                 if (i == ncols - 1) {
-                    dc.DrawLine(x + colWidths[i], y, x + colWidths[i], y + rowHeight - 1);
+                    dc.DrawLine(FromFrameDIP(this, x + colWidths[i]), FromFrameDIP(this, y), FromFrameDIP(this, x + colWidths[i]), FromFrameDIP(this, y + rowHeight - 1));
                 }
-                dc.SetClippingRegion(x + mg, y, colWidths[i] - mg * 2, rowHeight - 1);
-                dc.DrawText(str, x + mg, y);
+                dc.SetClippingRegion(FromFrameDIP(this, x + mg), FromFrameDIP(this, y), FromFrameDIP(this, colWidths[i] - mg * 2), FromFrameDIP(this, rowHeight - 1));
+                dc.DrawText(str, FromFrameDIP(this, x + mg), FromFrameDIP(this, y));
                 dc.DestroyClippingRegion();
                 x += colWidths[i];
-                if (x > ox + sz.x)
+                if (x > oxd + szd.x)
                     break;
             }
             if (showDragTarget) {
                 y = dragTargetRow * rowHeight + 1;
                 dc.SetBrush(*wxRED_BRUSH);
                 dc.SetPen(wxNullPen);
-                dc.DrawRectangle(basex, y, x - basex, 3);
+                dc.DrawRectangle(FromFrameDIP(this, basex), FromFrameDIP(this, y), FromFrameDIP(this, x - basex), FromFrameDIP(this, 3));
             }
         }
     }
@@ -374,22 +386,25 @@ MyListCtrl::OnPaintHeader(wxPaintEvent &event)
     dc.SetPen(*wxGREY_PEN);
     dc.SetBrush(*wxLIGHT_GREY_BRUSH);
     wxSize sz = header->GetSize();
+    wxSize szd = ToFrameDIP(this, sz);
     dc.DrawRectangle(0, 0, sz.x, sz.y);
     if (dataSource) {
-        int ox, oy;
+        int ox, oy, oxd, oyd;
         int x, x1;
         int i;
         wxTextAttr attr;
         int mg = FromFrameDIP(this, 2);
         scroll->CalcUnscrolledPosition(0, 0, &ox, &oy);
-        x = -ox;
+        oxd = ToFrameDIP(this, ox);
+        oyd = ToFrameDIP(this, oy);
+        x = -oxd;
         for (i = 0; i < ncols; i++) {
             x1 = x + colWidths[i];
             if (x1 > 0) {
                 wxString str = colNames[i];
-                dc.DrawLine(x + colWidths[i], 0, x + colWidths[i], sz.y - 1);
-                dc.SetClippingRegion(x + mg, 0, colWidths[i] - mg * 2, sz.y);
-                dc.DrawText(str, x + mg, 0);
+                dc.DrawLine(FromFrameDIP(this, x + colWidths[i]), 0, FromFrameDIP(this, x + colWidths[i]), FromFrameDIP(this, szd.y - 1));
+                dc.SetClippingRegion(FromFrameDIP(this, x + mg), 0, FromFrameDIP(this, colWidths[i] - mg * 2), FromFrameDIP(this, szd.y));
+                dc.DrawText(str, FromFrameDIP(this, x + mg), 0);
                 dc.DestroyClippingRegion();
             }
             x = x1;
@@ -548,7 +563,10 @@ MyListCtrl::OnLeftDown(wxMouseEvent &event)
     }
     
     scroll->CalcUnscrolledPosition(pos.x, pos.y, &ux, &uy);
-    row = floor(uy / rowHeight);
+    int uxd, uyd;
+    uxd = ToFrameDIP(this, ux);
+    uyd = ToFrameDIP(this, uy);
+    row = floor(uyd / rowHeight);
     isRowSelected = IsRowSelected(row);
     modifiers = event.GetModifiers();
     PrepareSelectionChangeNotification();
@@ -602,6 +620,7 @@ MyListCtrl::OnLeftDown(wxMouseEvent &event)
 void
 MyListCtrl::DragRows(int x, int y)
 {
+    /*  (x, y) is physical coordinate (not DIP)  */
     wxSize sz = scroll->GetClientSize();
     int ux, uy;
     if (y < 0)
@@ -609,7 +628,7 @@ MyListCtrl::DragRows(int x, int y)
     else if (y > sz.y)
         y = sz.y;
     scroll->CalcUnscrolledPosition(x, y, &ux, &uy);
-    dragTargetRow = floor(uy / rowHeight + 0.5);
+    dragTargetRow = floor(ToFrameDIP(this, uy) / rowHeight + 0.5);
     if (dragTargetRow < 0)
         dragTargetRow = 0;
     else if (dragTargetRow > nrows)
@@ -644,10 +663,11 @@ MyListCtrl::OnLeftDClick(wxMouseEvent &event)
     x = event.GetX();
     y = event.GetY();
     scroll->CalcUnscrolledPosition(x, y, &ux, &uy);
-    row = floor(uy / rowHeight);
+    int uxd = ToFrameDIP(this, ux);
+    row = floor(ToFrameDIP(this, uy) / rowHeight);
     cx = 0;
     for (i = 0; i < ncols; i++) {
-        if ((ux >= cx && ux < cx + colWidths[i]) || i == ncols - 1) {
+        if ((uxd >= cx && uxd < cx + colWidths[i]) || i == ncols - 1) {
             col = i;
             break;
         }
@@ -667,7 +687,7 @@ MyListCtrl::OnLeftUp(wxMouseEvent &event)
     x = event.GetX();
     y = event.GetY();
     scroll->CalcUnscrolledPosition(x, y, &ux, &uy);
-    row = floor(uy / rowHeight);
+    row = floor(ToFrameDIP(this, uy) / rowHeight);
     PrepareSelectionChangeNotification();
     if (scroll->HasCapture()) {
         scroll->ReleaseMouse();
@@ -707,7 +727,7 @@ MyListCtrl::OnScrollWin(wxScrollWinEvent &event)
     wxSize sz = scroll->GetClientSize();
     wxEventType etype = event.GetEventType();
     int vx, vy;
-    int step = rowHeight;
+    int step = FromFrameDIP(this, rowHeight);
     scroll->CalcUnscrolledPosition(0, 0, &vx, &vy);
     wxSize vs = scroll->GetVirtualSize();
     int orient = event.GetOrientation();
@@ -758,11 +778,11 @@ void
 MyListCtrl::PostSelectionChangeNotification()
 {
     dataSource->OnSelectionChanged(this);
-	if (selectionChangeNotificationRequired && selectionChangeNotificationEnabled) {
-		wxCommandEvent myEvent(MyListCtrlEvent, MyListCtrlEvent_tableSelectionChanged);
-		wxPostEvent(this, myEvent);
+    if (selectionChangeNotificationRequired && selectionChangeNotificationEnabled) {
+        wxCommandEvent myEvent(MyListCtrlEvent, MyListCtrlEvent_tableSelectionChanged);
+        wxPostEvent(this, myEvent);
         selectionChangeNotificationRequired = false;
-	}
+    }
 }
 
 //  Find item on list control
@@ -772,17 +792,18 @@ MyListCtrl::FindItemAtPosition(const wxPoint &pos, int *row, int *col)
 {
     int r, cx, i;
     wxPoint p = scroll->CalcUnscrolledPosition(pos);
-    r = floor(p.y / rowHeight);
+    wxPoint pd = ToFrameDIP(this, p);
+    r = floor(pd.y / rowHeight);
     if (r < 0)
         r = -1;
     else if (r >= nrows)
         r = nrows;
     cx = 0;
-    if (p.x < 0)
+    if (pd.x < 0)
         i = -1;
     else {
         for (i = 0; i < ncols; i++) {
-            if (p.x >= cx && p.x < cx + colWidths[i])
+            if (pd.x >= cx && pd.x < cx + colWidths[i])
                 break;
             cx += colWidths[i];
         }
@@ -806,11 +827,11 @@ MyListCtrl::GetItemRectForRowAndColumn(wxRect &rect, int row, int col)
     for (i = 0; i < col; i++) {
         cx += colWidths[i];
     }
-    scroll->CalcScrolledPosition(cx, cy, &tx, &ty);
+    scroll->CalcScrolledPosition(FromFrameDIP(this, cx), FromFrameDIP(this, cy), &tx, &ty);
     rect.x = tx;
     rect.y = ty;
-    rect.width = colWidths[col];
-    rect.height = rowHeight;
+    rect.width = FromFrameDIP(this, colWidths[col]);
+    rect.height = FromFrameDIP(this, rowHeight);
     return true;
 }
 
@@ -830,8 +851,6 @@ MyListCtrl::SetScrollPosition(int xpos, int ypos)
     bool retval = true;
     int xlim = scroll->GetScrollLines(wxHORIZONTAL) - scroll->GetScrollPageSize(wxHORIZONTAL);
     int ylim = scroll->GetScrollLines(wxVERTICAL) - scroll->GetScrollPageSize(wxVERTICAL);
-//    int xlim = (vsz.x - sz.x) / rowHeight;
-//    int ylim = (vsz.y - sz.y) / rowHeight;
     if (xpos > xlim) {
         retval = false;
         xpos = xlim;
@@ -868,27 +887,30 @@ MyListCtrl::EnsureVisible(int row, int col)
     if (!GetItemRectForRowAndColumn(r, row, (col == -1 ? 0 : col)))
         return false;
     wxSize sz = scroll->GetClientSize();
+    wxSize szd = ToFrameDIP(this, sz);
+    wxPoint rposd = wxPoint(ToFrameDIP(this, r.x), ToFrameDIP(this, r.y));
+    wxSize rsized = wxSize(ToFrameDIP(this, r.width), ToFrameDIP(this, r.height));
     int scx = -1, scy = -1;
     int ux, uy;
     scroll->CalcUnscrolledPosition(r.x, r.y, &ux, &uy);
     if (col >= 0) {
-        if (r.x < 0) {
-            scx = floor(ux / rowHeight);
-        } else if (r.x + r.width > sz.x) {
-            scx = ceil((ux + r.width - sz.x) / rowHeight);
+        if (rposd.x < 0) {
+            scx = floor(ToFrameDIP(this, ux) / rowHeight);
+        } else if (rposd.x + rsized.x > szd.x) {
+            scx = ceil((ToFrameDIP(this, ux) + rsized.x - szd.x) / rowHeight);
             if (scx < 0)
                 scx = 0;
         }
     }  // If col is negative, then do not scroll horizontally
-    if (r.y < 0) {
-        scy = floor(uy / rowHeight);
+    if (rposd.y < 0) {
+        scy = floor(ToFrameDIP(this, uy) / rowHeight);
     } else if (r.y + r.height > sz.y) {
-        scy = ceil((uy + r.height - sz.y) / rowHeight);
+        scy = ceil((ToFrameDIP(this, uy) + rsized.y - szd.y) / rowHeight);
         if (scy < 0)
             scy = 0;
     }
     if (scx >= 0 || scy >= 0) {
-        scroll->Scroll(scx, scy);
+        scroll->Scroll(FromFrameDIP(this, scx), FromFrameDIP(this, scy));
         header->Refresh();
         return true;
     } else return false;
@@ -898,7 +920,7 @@ void
 MyListCtrl::StartEditText(int row, int col)
 {
     wxRect r;
-    int delta = FromFrameDIP(scroll, 2);
+    int delta = FromFrameDIP(this, 2);
     EnsureVisible(row, col);
     if (!GetItemRectForRowAndColumn(r, row, col))
         return;
@@ -1081,6 +1103,6 @@ MyListCtrl::HasFocusInScroll()
 void
 MyListCtrl::OnPopUpMenuSelected(wxCommandEvent &event)
 {
-	if (dataSource != NULL)
-		dataSource->OnPopUpMenuSelected(this, lastPopUpRow, lastPopUpColumn, event.GetId() - 1);
+    if (dataSource != NULL)
+        dataSource->OnPopUpMenuSelected(this, lastPopUpRow, lastPopUpColumn, event.GetId() - 1);
 }

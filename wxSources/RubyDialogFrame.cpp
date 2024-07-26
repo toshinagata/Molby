@@ -67,9 +67,8 @@ RubyDialogFrame::RubyDialogFrame(wxWindow* parent, wxWindowID wid, const wxStrin
 	nditems = 0;
 	dval = NULL;
 	mySize = gZeroSize;
+  myDPI = 0;
 	autoResizeEnabled = true;
-//	messageData = NULL;
-//	countMessageData = 0;
 	onKeyHandlerEnabled = false;
 	currentContext = NULL;
 	currentDrawingItem = NULL;
@@ -94,30 +93,7 @@ RubyDialogFrame::~RubyDialogFrame()
 		delete myTimer;
 	if (ditems != NULL)
 		free(ditems);
-//	DiscardMessageData();
 }
-
-#if 0
-void
-RubyDialogFrame::DiscardMessageData()
-{
-	int i;
-	for (i = 0; i < countMessageData; i++) {
-		if (messageData[i * 5] != NULL) {
-			wxEventType eventType = (wxEventType)messageData[i * 5 + 2];
-			wxEvtHandler *handler = NULL;
-			if (eventType == MyDocumentEvent)
-				handler = MyDocumentFromMolecule((Molecule *)messageData[i * 5]);
-			if (handler != NULL) {
-				handler->Disconnect((int)messageData[i * 5 + 1], eventType, wxCommandEventHandler(RubyDialogFrame::HandleDocumentEvent), NULL, this);
-			}
-		}
-	}
-	free(messageData);
-	messageData = NULL;
-	countMessageData = 0;
-}
-#endif
 
 int
 RubyDialogFrame::AddDialogItem(RDItem *item)
@@ -177,7 +153,6 @@ RubyDialogFrame::SetRubyObject(RubyValue val)
 void
 RubyDialogFrame::CreateStandardButtons(const char *oktitle, const char *canceltitle)
 {
-//	wxSizer *sizer = CreateButtonSizer(wxOK | wxCANCEL);
 	wxStdDialogButtonSizer *sizer = new wxStdDialogButtonSizer();
 	{
 		wxButton *ok = NULL;
@@ -188,7 +163,6 @@ RubyDialogFrame::CreateStandardButtons(const char *oktitle, const char *cancelti
 		sizer->AddButton(cancel);
 		ok->SetDefault();
 		ok->SetFocus();
-	//	SetAffirmativeId(wxID_OK);
 		sizer->Realize();
 	}
 	
@@ -303,17 +277,19 @@ RubyDialogFrame::OnTimerEvent(wxTimerEvent &event)
 	RubyDialog_doTimerAction((RubyValue)dval);
 }
 
-static void
-sResizeSubWindows(RubyValue dval, wxWindow *win, int dx, int dy)
+/*  Note: dx and dy are device-independent coordinates (DIP)  */
+void
+RubyDialogFrame::ResizeSubWindows(RubyValue dval, wxWindow *parent, int dx, int dy)
 {
-	wxWindowList & children = win->GetChildren();
+	wxWindowList & children = parent->GetChildren();
 	wxWindowList::Node *node;
+  int newDPI = FromFrameDIP(this, 96);
 	for (node = children.GetFirst(); node; node = node->GetNext()) {
 		int i, d, f, d1, d2, d3, ddx, ddy;
 		wxWindow *current = (wxWindow *)node->GetData();
 		wxRect frame = current->GetRect();
 		int flex = RubyDialog_getFlexFlags(dval, (RDItem *)current);
-		if (flex < 0)
+		if (flex < 0 && newDPI == myDPI)
 			continue;		
 		for (i = 0, f = flex; i < 2; i++, f /= 2) {
 			if (i == 0)
@@ -357,17 +333,16 @@ sResizeSubWindows(RubyValue dval, wxWindow *win, int dx, int dy)
 					break;
 			}
 			if (i == 0) {
-				frame.x += d1;
-				frame.width += d2;
+				frame.x = FromFrameDIP(this, (frame.x * 96) / myDPI + d1);
+				frame.width = FromFrameDIP(this, (frame.width * 96) / myDPI + d2);
 				ddx = d2;
 			} else {
-				frame.y += d1;
-				frame.height += d2;
+        frame.y = FromFrameDIP(this, (frame.y * 96) / myDPI + d1);
+				frame.height = FromFrameDIP(this, (frame.height * 96) / myDPI + d2);
 				ddy = d2;
 			}
 		}
-		if (ddx != 0 || ddy != 0)
-			sResizeSubWindows(dval, current, ddx, ddy);
+    ResizeSubWindows(dval, current, ddx, ddy);
 		current->SetSize(frame);
 #if defined(__WXMSW__)
 		if (current->IsKindOf(CLASSINFO(MyDrawingPanel))) {
@@ -381,11 +356,22 @@ sResizeSubWindows(RubyValue dval, wxWindow *win, int dx, int dy)
 void
 RubyDialogFrame::OnSize(wxSizeEvent &event)
 {
-	wxSize size = GetClientSize();
-	if (mySize.width != 0 && mySize.height != 0 && /*(mySize.width != size.x || mySize.height != size.y) &&*/ autoResizeEnabled) {
-		/*  Resize the subviews  */
-		sResizeSubWindows((RubyValue)dval, this, size.x - mySize.width, size.y - mySize.height);
+  wxSize size = ToFrameDIP(this, GetClientSize());
+  int newDPI = FromFrameDIP(this, 96);
+  if (mySize.width != 0 && mySize.height != 0 && myDPI != 0) {
+    if (myDPI != 0 && myDPI != newDPI) {
+      /*  DPI change: the window itself may not yet be scaled: force dx=dy=0 and resize/relocate */
+      ResizeSubWindows((RubyValue)dval, this, 0, 0);
+      /*  Don't update mySize for now: later another OnSize event will be fired with the
+          new window size  */
+      size.x = mySize.width;
+      size.y = mySize.height;
+    } else if (autoResizeEnabled) {
+      /*  Real window resize: resize the subviews  */
+      ResizeSubWindows((RubyValue)dval, this, size.x - mySize.width, size.y - mySize.height);
+    }
 	}
+  myDPI = newDPI;
 	mySize.width = size.x;
 	mySize.height = size.y;
 	event.Skip();
@@ -484,114 +470,6 @@ sGetEventHandlerFromObjectAndType(void *obj, wxEventType eventType)
 		return MyDocumentFromMolecule((Molecule *)obj);
 	else return NULL;
 }
-
-#if 0
-int
-RubyDialogFrame::ListenToObject(void *obj, const char *objtype, const char *msg, RubyValue oval, RubyValue pval)
-{
-	int i, j, eventId = -1;
-	wxEventType eventType = -1;
-	wxEvtHandler *handler = NULL;
-	if (objtype == NULL) {
-		if (pval != NULL && pval != RubyNil)
-			return -1;  /*  The object type must be specified unless we are removing the registration  */
-	} else if (strcmp(objtype, "Molecule") == 0) {
-		eventType = MyDocumentEvent;
-		handler = sGetEventHandlerFromObjectAndType(obj, eventType);
-		if (handler == NULL)
-			return -1;  /*  obj is not an event handler  */
-		if (msg == NULL)
-			eventId = -1;
-		else if (strcmp(msg, "documentModified") == 0)
-			eventId = MyDocumentEvent_documentModified;
-		else if (strcmp(msg, "documentWillClose") == 0)
-			eventId = MyDocumentEvent_documentWillClose;
-		else return -2; /*  this event type is not supported  */
-	} else return -1;
-	
-	if (pval == NULL || pval == RubyNil) {
-		/*  Remove the registration  */
-		int ii = -3;
-		for (i = 0; i < countMessageData; i++) {
-			if ((messageData[i * 5] == obj || obj == NULL) && 
-				(messageData[i * 5 + 1] == (void *)eventId || eventId == -1) &&
-				(messageData[i * 5 + 2] == (void *)eventType || eventType == -1)) {
-					if (obj == NULL)
-						handler = sGetEventHandlerFromObjectAndType(messageData[i * 5], (wxEventType)messageData[i * 5 + 2]);
-					handler->Disconnect(eventId, eventType, wxCommandEventHandler(RubyDialogFrame::HandleDocumentEvent), NULL, this);
-					if ((wxEventType)messageData[i * 5 + 2] == MyDocumentEvent)
-						MoleculeRelease((Molecule *)obj);
-					messageData[i * 5] = NULL;  /*  Disabled entry  */
-					ii = i;
-				}
-		}
-		if (i == countMessageData)
-			return -3;  /*  No such message  */
-		return ii;
-	} else {
-		/*  Check the duplicate  */
-		j = countMessageData;  /*  The position to store info if it is new  */
-		for (i = 0; i < countMessageData; i++) {
-			if (messageData[i * 5] == obj && 
-				messageData[i * 5 + 1] == (void *)eventId &&
-				messageData[i * 5 + 2] == (void *)eventType) {
-				/*  Just replace the arguments  */
-				messageData[i * 5 + 3] = (void *)oval;
-				messageData[i * 5 + 4] = (void *)pval;
-				break;
-			}
-			if (messageData[i * 5] == NULL)
-				j = i;
-		}
-		if (i == countMessageData) {
-			/*  Register the data and establish a new connection  */
-			if (j == countMessageData) {
-				/*  Create a new entry  */
-				InsertArray(&messageData, &countMessageData, sizeof(void *) * 5, i, 1, NULL);
-			}
-			messageData[j * 5] = obj;
-			messageData[j * 5 + 1] = (void *)eventId;
-			messageData[j * 5 + 2] = (void *)eventType;
-			messageData[j * 5 + 3] = (void *)oval;
-			messageData[j * 5 + 4] = (void *)pval;
-			handler->Connect(eventId, eventType, wxCommandEventHandler(RubyDialogFrame::HandleDocumentEvent), NULL, this);
-			if (eventType == MyDocumentEvent)
-				MoleculeRetain((Molecule *)obj);
-			i = j;
-		}
-		return i;
-	}
-}
-
-void
-RubyDialogFrame::HandleDocumentEvent(wxCommandEvent &event)
-{
-	int i;
-	int eventId = event.GetId();
-	int eventType = event.GetEventType();
-	wxObject *eventObject = event.GetEventObject();
-	void *obj;
-
-	if (eventType == MyDocumentEvent) {
-		if (wxDynamicCast(eventObject, MyDocument) != NULL) {
-			obj = ((MyDocument *)eventObject)->GetMolecule();
-		} else return;
-	} else return;
-	
-	/*  Look up the message table  */
-	for (i = 0; i < countMessageData; i++) {
-		if (messageData[i * 5] == obj && 
-			messageData[i * 5 + 1] == (void *)eventId &&
-			messageData[i * 5 + 2] == (void *)eventType) {
-			int status;
-			RubyValue oval = (RubyValue)messageData[i * 5 + 3];
-			RubyValue pval = (RubyValue)messageData[i * 5 + 4];
-			Ruby_funcall2_protect_extern(pval, g_RubyID_call, 1, &oval, &status);
-		}
-	}
-	event.Skip();
-}
-#endif
 
 void
 RubyDialogFrame::HandlePaintEvent(wxPaintEvent &event)
@@ -923,14 +801,6 @@ RubyDialogCallback_isAutoResizeEnabled(RubyDialog *dref)
 	return ((RubyDialogFrame *)dref)->IsAutoResizeEnabled();
 }
 
-/*
-int
-RubyDialogCallback_Listen(RubyDialog *dref, void *obj, const char *objtype, const char *msg, RubyValue oval, RubyValue pval)
-{
-	return ((RubyDialogFrame *)dref)->ListenToObject(obj, objtype, msg, oval, pval);
-}
-*/
-
 void
 RubyDialogCallback_createStandardButtons(RubyDialog *dref, const char *oktitle, const char *canceltitle)
 {
@@ -1158,8 +1028,6 @@ RubyDialogCallback_setStringToItem(RDItem *item, const char *s)
 	wxString str(s, WX_DEFAULT_CONV);
 	if (wxDynamicCast((wxWindow *)item, wxTextCtrl) != NULL) {
 		((wxTextCtrl *)item)->ChangeValue(str);
-	//	((wxTextCtrl *)item)->Clear();
-	//	((wxTextCtrl *)item)->AppendText(str);
 	} else if (wxDynamicCast((wxWindow *)item, wxStaticText) != NULL) {
 		((wxStaticText *)item)->SetLabel(str);
 	}
@@ -1225,9 +1093,6 @@ RubyDialogCallback_setEnabledForItem(RDItem *item, int flag)
 int
 RubyDialogCallback_isItemEnabled(RDItem *item)
 {
-/*	if (wxDynamicCast((wxWindow *)item, wxTextCtrl) != NULL)
-		return ((wxTextCtrl *)item)->IsEditable();
-	else */
 	return ((wxWindow *)item)->IsEnabled();
 }
 
@@ -1567,17 +1432,6 @@ RubyDialogCallback_isTableRowSelected(RDItem *item, int row)
 		return ((MyListCtrl *)item)->GetItemState(row, wxLIST_STATE_SELECTED) != 0;
 	} else return false;
 }
-
-/*
- char
-RubyDialogCallback_setTableRowSelected(RDItem *item, int row, int flag)
-{
-	if (wxDynamicCast((wxWindow *)item, MyListCtrl) != NULL) {
-		long state = (flag ? wxLIST_STATE_SELECTED : 0);
-		return ((MyListCtrl *)item)->SetItemState(row, state, wxLIST_STATE_SELECTED);
-	} else return false;
-}
-*/
 
 IntGroup *
 RubyDialogCallback_selectedTableRows(RDItem *item)

@@ -133,7 +133,7 @@ public:
 	bool DeleteColumn(int col);
 	bool InsertColumn(int col, const wxString &heading, int format = MyLIST_FORMAT_LEFT, int width = -1);
     void SetHeaderHeight(int headerHeight);
-    int GetHeaderHeight() { return headerHeight; }
+    int GetHeaderHeight();
     void SetColumnWidth(int col, int width);
 
     void OnPaintHeader(wxPaintEvent &event);

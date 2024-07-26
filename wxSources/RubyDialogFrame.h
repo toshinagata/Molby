@@ -70,7 +70,8 @@ public:
 	/*  Auto resizing  */
 	RDSize mySize;  /*  Previous size  */
 	bool autoResizeEnabled;  /*  true if auto resizing is enabled  */
-	
+  int myDPI;      /*  Previous DPI  */
+
 	/*  Message bridge (with Ruby world); obj, event_type, event_id, proc val  */
 //	void **messageData;
 //	int countMessageData;
@@ -85,15 +86,11 @@ public:
 	RubyDialogFrame(wxWindow* parent, wxWindowID wid, const wxString& title, const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxDefaultSize, long style = wxDEFAULT_FRAME_STYLE);
 	virtual ~RubyDialogFrame();
 
-	/*  For internal use (discard data in messageData[])  */
-//	void DiscardMessageData();
-	
 	void SetAutoResizeEnabled(int flag) { autoResizeEnabled = (flag != 0); }
 	bool IsAutoResizeEnabled() { return autoResizeEnabled; }
 	
-//	int ListenToObject(void *obj, const char *objtype, const char *msg, RubyValue oval, RubyValue pval);
-//	void HandleDocumentEvent(wxCommandEvent &event);
-
+  void ResizeSubWindows(RubyValue dval, wxWindow *parent, int dx, int dy);
+  
 	void HandlePaintEvent(wxPaintEvent &event);
 
 	int AddDialogItem(RDItem *item);
