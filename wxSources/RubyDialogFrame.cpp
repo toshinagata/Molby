@@ -290,58 +290,61 @@ RubyDialogFrame::ResizeSubWindows(RubyValue dval, wxWindow *parent, int dx, int 
 		wxRect frame = current->GetRect();
 		int flex = RubyDialog_getFlexFlags(dval, (RDItem *)current);
 		if (flex < 0 && newDPI == myDPI)
-			continue;		
-		for (i = 0, f = flex; i < 2; i++, f /= 2) {
-			if (i == 0)
-				d = dx;
-			else
-				d = dy;
-			switch (f & 21) {  /*  left, right, width (or top, bottom, height) */
-				case 21:  /*  all flex  */
-					d1 = d2 = d / 3;
-					d3 = d - d1 - d2;
-					break;
-				case 5:   /*  left & right  */
-					d1 = d / 2;
-					d2 = 0;
-					d3 = d - d1;
-					break;
-				case 17:  /*  left & width  */
-					d1 = d / 2;
-					d2 = d - d1;
-					d3 = 0;
-					break;
-				case 20:  /*  right & width  */
-					d1 = 0;
-					d2 = d / 2;
-					d3 = d - d2;
-					break;
-				case 1:   /*  left  */
-					d1 = d;
-					d2 = d3 = 0;
-					break;
-				case 4:   /*  right */
-					d3 = d;
-					d1 = d2 = 0;
-					break;
-				case 16:  /*  width  */
-					d2 = d;
-					d1 = d3 = 0;
-					break;
-				default:  /*  no resize  */
-					d1 = d2 = d3 = 0;
-					break;
-			}
-			if (i == 0) {
-				frame.x = FromFrameDIP(this, (frame.x * 96) / myDPI + d1);
-				frame.width = FromFrameDIP(this, (frame.width * 96) / myDPI + d2);
-				ddx = d2;
-			} else {
+			continue;
+    for (i = 0; i < 2; i++) {
+      d1 = d2 = d3 = 0;  /*  Default: no resize  */
+      if (flex >= 0) {
+        if (i == 0) {
+          f = flex;
+          d = dx;
+        } else {
+          f = flex / 2;
+          d = dy;
+        }
+        switch (f & 21) {  /*  left, right, width (or top, bottom, height) */
+          case 21:  /*  all flex  */
+            d1 = d2 = d / 3;
+            d3 = d - d1 - d2;
+            break;
+          case 5:   /*  left & right  */
+            d1 = d / 2;
+            d2 = 0;
+            d3 = d - d1;
+            break;
+          case 17:  /*  left & width  */
+            d1 = d / 2;
+            d2 = d - d1;
+            d3 = 0;
+            break;
+          case 20:  /*  right & width  */
+            d1 = 0;
+            d2 = d / 2;
+            d3 = d - d2;
+            break;
+          case 1:   /*  left  */
+            d1 = d;
+            d2 = d3 = 0;
+            break;
+          case 4:   /*  right */
+            d3 = d;
+            d1 = d2 = 0;
+            break;
+          case 16:  /*  width  */
+            d2 = d;
+            d1 = d3 = 0;
+            break;
+        }
+      } /* end if flex */
+      if (i == 0) {
+        frame.x = FromFrameDIP(this, (frame.x * 96) / myDPI + d1);
+        frame.width = FromFrameDIP(this, (frame.width * 96) / myDPI + d2);
+        ddx = d2;
+      } else {
         frame.y = FromFrameDIP(this, (frame.y * 96) / myDPI + d1);
-				frame.height = FromFrameDIP(this, (frame.height * 96) / myDPI + d2);
-				ddy = d2;
-			}
-		}
+        frame.height = FromFrameDIP(this, (frame.height * 96) / myDPI + d2);
+        ddy = d2;
+      }
+    } /* end for i */
     ResizeSubWindows(dval, current, ddx, ddy);
 		current->SetSize(frame);
 #if defined(__WXMSW__)
@@ -350,7 +353,7 @@ RubyDialogFrame::ResizeSubWindows(RubyValue dval, wxWindow *parent, int dx, int 
 			current->Refresh();
 		}
 #endif
-	}
+	} /* end for node */
 }
 
 void
