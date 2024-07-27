@@ -3082,19 +3082,19 @@ static ColumnInfoRecord sAtomColumns[] = {
 	{"x", 6, 1}, {"y", 6, 1}, {"z", 6, 1}, {"charge", 6, 1}, {NULL}
 };
 static ColumnInfoRecord sBondColumns[] = {
-	{"atoms", 9, 0}, {"names", 9, 0}, {"type", 9, 0}, {"length", 8, 0}, 
+	{"atoms", 9, 0}, {"names", 9, 0}, {"length", 8, 0}, {"type", 9, 0},
 	{"par type", 8, 0}, {"k", 8, 0}, {"r0", 8, 0}, {NULL}
 };
 static ColumnInfoRecord sAngleColumns[] = {
-	{"atoms", 12, 0}, {"names", 12, 0}, {"type", 12, 0}, {"angle", 8, 0}, 
+	{"atoms", 12, 0}, {"names", 12, 0}, {"angle", 8, 0}, {"type", 12, 0},
 	{"par type", 8, 0}, {"k", 8, 0}, {"a0", 8, 0}, {NULL}
 };
 static ColumnInfoRecord sDihedralColumns[] = {
-	{"atoms", 15, 0}, {"names", 15, 0}, {"type", 15, 0}, {"dihedral", 8, 0}, 
+	{"atoms", 15, 0}, {"names", 15, 0}, {"dihedral", 8, 0}, {"type", 15, 0},
 	{"par type", 8, 0}, {"k", 8, 0}, {"period", 4, 0}, {"phi0", 8, 0}, {NULL}
 };
 static ColumnInfoRecord sImproperColumns[] = {
-	{"atoms", 15, 0}, {"names", 15, 0}, {"type", 15, 0}, {"improper", 8, 0}, 
+	{"atoms", 15, 0}, {"names", 15, 0}, {"improper", 8, 0}, {"type", 15, 0},
 	{"par type", 8, 0}, {"k", 8, 0}, {"period", 4, 0}, {"phi0", 8, 0}, {NULL}
 };
 static ColumnInfoRecord sParameterColumns[] = {
@@ -3352,10 +3352,10 @@ MainView_valueForTable(MainView *mview, int column, int row, char *buf, int bufs
 		switch (column) {
 			case 0: snprintf(buf, bufsize, "%d-%d", ip[0], ip[1]); break;
 			case 1: snprintf(buf, bufsize, "%s-%s", sAtomDescription(ap[0], descbuf[0], 20), sAtomDescription(ap[1], descbuf[1], 20)); break;
-			case 2: snprintf(buf, bufsize, "%.6s-%.6s", AtomTypeDecodeToString(ap[0]->type, typebuf[0]), AtomTypeDecodeToString(ap[1]->type, typebuf[1])); break;
-			case 3:
-				snprintf(buf, bufsize, "%.3f", MoleculeMeasureBond(mview->mol, &(ap[0]->r), &(ap[1]->r)));
-				break;
+      case 2:
+        snprintf(buf, bufsize, "%.3f", MoleculeMeasureBond(mview->mol, &(ap[0]->r), &(ap[1]->r)));
+        break;
+			case 3: snprintf(buf, bufsize, "%.6s-%.6s", AtomTypeDecodeToString(ap[0]->type, typebuf[0]), AtomTypeDecodeToString(ap[1]->type, typebuf[1])); break;
 			case 4:
 			case 5:
 			case 6: {
@@ -3381,10 +3381,10 @@ MainView_valueForTable(MainView *mview, int column, int row, char *buf, int bufs
 		switch (column) {
 			case 0: snprintf(buf, bufsize, "%d-%d-%d", ip[0], ip[1], ip[2]); break;
 			case 1: snprintf(buf, bufsize, "%s-%s-%s", sAtomDescription(ap[0], descbuf[0], 20), sAtomDescription(ap[1], descbuf[1], 20), sAtomDescription(ap[2], descbuf[2], 20)); break;
-			case 2: snprintf(buf, bufsize, "%.6s-%.6s-%.6s", AtomTypeDecodeToString(ap[0]->type, typebuf[0]), AtomTypeDecodeToString(ap[1]->type, typebuf[1]), AtomTypeDecodeToString(ap[2]->type, typebuf[2])); break;
-			case 3:
-				snprintf(buf, bufsize, "%.3f", MoleculeMeasureAngle(mview->mol, &(ap[0]->r), &(ap[1]->r), &(ap[2]->r)));
-				break;
+      case 2:
+        snprintf(buf, bufsize, "%.3f", MoleculeMeasureAngle(mview->mol, &(ap[0]->r), &(ap[1]->r), &(ap[2]->r)));
+        break;
+			case 3: snprintf(buf, bufsize, "%.6s-%.6s-%.6s", AtomTypeDecodeToString(ap[0]->type, typebuf[0]), AtomTypeDecodeToString(ap[1]->type, typebuf[1]), AtomTypeDecodeToString(ap[2]->type, typebuf[2])); break;
 			case 4:
 			case 5:
 			case 6: {
@@ -3412,10 +3412,10 @@ MainView_valueForTable(MainView *mview, int column, int row, char *buf, int bufs
 		switch (column) {
 			case 0: snprintf(buf, bufsize, "%d-%d-%d-%d", ip[0], ip[1], ip[2], ip[3]); break;
 			case 1: snprintf(buf, bufsize, "%s-%s-%s-%s", sAtomDescription(ap[0], descbuf[0], 20), sAtomDescription(ap[1], descbuf[1], 20), sAtomDescription(ap[2], descbuf[2], 20), sAtomDescription(ap[3], descbuf[3], 20)); break;
-			case 2: snprintf(buf, bufsize, "%.6s-%.6s-%.6s-%.6s", AtomTypeDecodeToString(ap[0]->type, typebuf[0]), AtomTypeDecodeToString(ap[1]->type, typebuf[1]), AtomTypeDecodeToString(ap[2]->type, typebuf[2]), AtomTypeDecodeToString(ap[3]->type, typebuf[3])); break;
-			case 3:
-				snprintf(buf, bufsize, "%.3f", MoleculeMeasureDihedral(mview->mol, &(ap[0]->r), &(ap[1]->r), &(ap[2]->r), &(ap[3]->r)));
-				break;
+      case 2:
+        snprintf(buf, bufsize, "%.3f", MoleculeMeasureDihedral(mview->mol, &(ap[0]->r), &(ap[1]->r), &(ap[2]->r), &(ap[3]->r)));
+        break;
+			case 3: snprintf(buf, bufsize, "%.6s-%.6s-%.6s-%.6s", AtomTypeDecodeToString(ap[0]->type, typebuf[0]), AtomTypeDecodeToString(ap[1]->type, typebuf[1]), AtomTypeDecodeToString(ap[2]->type, typebuf[2]), AtomTypeDecodeToString(ap[3]->type, typebuf[3])); break;
 			case 4:
 			case 5:
 			case 6:
@@ -3577,7 +3577,7 @@ MainView_setColorForTable(MainView *mview, int column, int row, float *fg, float
 		default:
 			return 0;
 	}
-	if (column < 3)
+	if (column < 2 || column == 3) /* indices, names, --, types */
 		return 0;
 
 	idx = MainView_tableRowToIndex(mview, row);
@@ -3585,7 +3585,7 @@ MainView_setColorForTable(MainView *mview, int column, int row, float *fg, float
 	if (up == NULL)
 		return 0;
 
-	if (column == 3) {
+	if (column == 2) {
 		/*  Value column; warn if the value is "abnormal"  */
 		int f;
 		switch (parType) {
@@ -3601,11 +3601,12 @@ MainView_setColorForTable(MainView *mview, int column, int row, float *fg, float
 			return 2;
 		} else return 0;
 	} else {
-		if (up->bond.src == 0) {
+    /* par_types and later: color for parameters */
+		if (up->bond.src == 0) { /* local */
 			bg[0] = bg[1] = 1.0;
 			bg[2] = 0.6;
 			return 2;
-		} else if (up->bond.src == -1) {
+		} else if (up->bond.src == -1) { /* missing */
 			bg[0] = 1.0;
 			bg[1] = bg[2] = 0.2;
 			return 2;
