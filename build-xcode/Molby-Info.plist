@@ -34,11 +34,11 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>Version 1.1.0</string>
+	<string>Version 1.2beta1</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleVersion</key>
-	<string>v1.1.0</string>
+	<string>v1.2beta1</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>Copyright 2008-2024 Toshi Nagata</string>
 	<key>NSPrincipalClass</key>
