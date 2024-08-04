@@ -23,6 +23,8 @@
 #include <limits.h>
 #include <float.h>
 
+#include "Types_LAMatrix.h"
+
 #pragma mark ====== Global Values ======
 
 VALUE rb_cVector3D, rb_cTransform, rb_cLAMatrix, rb_cIntGroup;

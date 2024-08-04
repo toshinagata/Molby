@@ -3,7 +3,7 @@ ifeq ($(TARGET_PLATFORM),MSW)
   TOOL_PREFIX = x86_64-w64-mingw32-
   MSW_BUILD = build-win
   LIB_SUFFIX = -3.2-x86_64-w64-mingw32
-  WINE_PATH=/Applications/EasyWine.app/Contents/Resources/wine/bin
+  WINE_PATH=/Applications/Wine\ Stable.app/Contents/Resources/wine/bin
   PRODUCT_SUFFIX = 64
   TARGET_ARCH_DEFINE = -DTARGET_ARCH=64
   SETUP_NAME = SetupMolbyWin
@@ -11,7 +11,7 @@ ifeq ($(TARGET_PLATFORM),MSW)
   TOOL_PREFIX = i686-w64-mingw32-
   MSW_BUILD = build-win32
   LIB_SUFFIX = -3.2-i686-w64-mingw32
-  WINE_PATH=/Applications/EasyWine.app/Contents/Resources/wine/bin
+  WINE_PATH=/Applications/Wine\ Stable.app/Contents/Resources/wine/bin
   PRODUCT_SUFFIX = 32
   TARGET_ARCH_DEFINE = -DTARGET_ARCH=32
   SETUP_NAME = SetupMolbyWin32

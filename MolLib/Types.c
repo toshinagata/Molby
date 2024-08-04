@@ -19,6 +19,8 @@
 #include <stdarg.h>
 #include <ctype.h>
 
+#include "Types_LAMatrix.h"
+
 static void
 defaultPanic(const char *fmt, ...)
 {

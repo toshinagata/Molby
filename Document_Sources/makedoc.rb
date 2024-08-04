@@ -291,6 +291,7 @@ body.each_element_with_attribute('file') { |ef|
     }
     open("#{base_dir}/#{lang}/_#{file}", "w") { |fp|
       ndoc.write(fp)
+      fp.write("\n")
     }
 	system("cd #{base_dir}/#{lang}; sed 's!/>! />!g' _#{file} >#{file}; rm _#{file}")
   end

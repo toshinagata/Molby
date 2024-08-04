@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 45;
+	objectVersion = 51;
 	objects = {
 
 /* Begin PBXAggregateTarget section */
@@ -14,7 +14,6 @@
 				E4CB37171FE4FF42001BB75E /* ShellScript */,
 			);
 			dependencies = (
-				E4589CF728D856C200F55785 /* PBXTargetDependency */,
 				E4CB37141FE4FF23001BB75E /* PBXTargetDependency */,
 				E4CB37191FE50707001BB75E /* PBXTargetDependency */,
 				E4B710FF2306BD0A000A77EB /* PBXTargetDependency */,
@@ -85,7 +84,6 @@
 		E4059FD728C46A6E0052B36B /* GLUT.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E4FC7847183E51180064FB2E /* GLUT.framework */; };
 		E4059FD828C46A6E0052B36B /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E4FC7848183E51180064FB2E /* IOKit.framework */; };
 		E4059FD928C46A6E0052B36B /* OpenGL.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E4FC7849183E51180064FB2E /* OpenGL.framework */; };
-		E4059FDA28C46A6E0052B36B /* QuickTime.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E4FC784A183E51180064FB2E /* QuickTime.framework */; };
 		E4059FDB28C46A6E0052B36B /* System.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E4FC784B183E51180064FB2E /* System.framework */; };
 		E4059FDC28C46A6E0052B36B /* AppKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E4FC7A15183E51570064FB2E /* AppKit.framework */; };
 		E4059FDD28C46A6E0052B36B /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E4FC7A16183E51570064FB2E /* Foundation.framework */; };
@@ -161,13 +159,6 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		E4589CF628D856C200F55785 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 29B97313FDCFA39411CA2CEA /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = E4059F9628C46A6E0052B36B;
-			remoteInfo = Molby_MacLegacy;
-		};
 		E4B710FE2306BD0A000A77EB /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 29B97313FDCFA39411CA2CEA /* Project object */;
@@ -245,6 +236,7 @@
 		E4653CB018A0CC7D0022377B /* textctrl_addition.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = textctrl_addition.mm; sourceTree = "<group>"; };
 		E49B3DF62306D9F500422E13 /* buildInfo_cmd.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = buildInfo_cmd.c; sourceTree = "<group>"; };
 		E4ACACE418C6D32300F08B67 /* ortep3 */ = {isa = PBXFileReference; lastKnownFileType = folder; path = ortep3; sourceTree = "<group>"; };
+		E4B59EE02C5A726E00F58C67 /* Types_LAMatrix.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Types_LAMatrix.h; sourceTree = "<group>"; };
 		E4CB37081FDD4654001BB75E /* OpenGL_extensions.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = OpenGL_extensions.c; sourceTree = "<group>"; };
 		E4CB37091FDD4654001BB75E /* OpenGL_extensions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = OpenGL_extensions.h; sourceTree = "<group>"; };
 		E4D379A019C87C1200636D28 /* modalwindow.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = modalwindow.h; sourceTree = "<group>"; };
@@ -306,7 +298,6 @@
 		E4FC7847183E51180064FB2E /* GLUT.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GLUT.framework; path = /System/Library/Frameworks/GLUT.framework; sourceTree = "<absolute>"; };
 		E4FC7848183E51180064FB2E /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = /System/Library/Frameworks/IOKit.framework; sourceTree = "<absolute>"; };
 		E4FC7849183E51180064FB2E /* OpenGL.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OpenGL.framework; path = /System/Library/Frameworks/OpenGL.framework; sourceTree = "<absolute>"; };
-		E4FC784A183E51180064FB2E /* QuickTime.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuickTime.framework; path = /System/Library/Frameworks/QuickTime.framework; sourceTree = "<absolute>"; };
 		E4FC784B183E51180064FB2E /* System.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = System.framework; path = /System/Library/Frameworks/System.framework; sourceTree = "<absolute>"; };
 		E4FC7A15183E51570064FB2E /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = ../../../../../../System/Library/Frameworks/AppKit.framework; sourceTree = SOURCE_ROOT; };
 		E4FC7A16183E51570064FB2E /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = ../../../../../../System/Library/Frameworks/Foundation.framework; sourceTree = SOURCE_ROOT; };
@@ -348,7 +339,6 @@
 				E4059FD728C46A6E0052B36B /* GLUT.framework in Frameworks */,
 				E4059FD828C46A6E0052B36B /* IOKit.framework in Frameworks */,
 				E4059FD928C46A6E0052B36B /* OpenGL.framework in Frameworks */,
-				E4059FDA28C46A6E0052B36B /* QuickTime.framework in Frameworks */,
 				E4059FDB28C46A6E0052B36B /* System.framework in Frameworks */,
 				E4059FDC28C46A6E0052B36B /* AppKit.framework in Frameworks */,
 				E4059FDD28C46A6E0052B36B /* Foundation.framework in Frameworks */,
@@ -438,6 +428,7 @@
 				E4FC77A5183E4F3F0064FB2E /* Trackball.h */,
 				E4FC77A6183E4F3F0064FB2E /* Types.c */,
 				E4FC77A7183E4F3F0064FB2E /* Types.h */,
+				E4B59EE02C5A726E00F58C67 /* Types_LAMatrix.h */,
 				E4FC779B183E4F3F0064FB2E /* Ruby_bind */,
 			);
 			name = MolLib;
@@ -506,7 +497,6 @@
 				E4FC7847183E51180064FB2E /* GLUT.framework */,
 				E4FC7848183E51180064FB2E /* IOKit.framework */,
 				E4FC7849183E51180064FB2E /* OpenGL.framework */,
-				E4FC784A183E51180064FB2E /* QuickTime.framework */,
 				E4FC784B183E51180064FB2E /* System.framework */,
 				E4FC7B58183E53710064FB2E /* WebKit.framework */,
 			);
@@ -678,7 +668,7 @@
 				};
 			};
 			buildConfigurationList = C01FCF4E08A954540054247B /* Build configuration list for PBXProject "Molby" */;
-			compatibilityVersion = "Xcode 3.1";
+			compatibilityVersion = "Xcode 10.0";
 			developmentRegion = English;
 			hasScannedForEncodings = 1;
 			knownRegions = (
@@ -775,7 +765,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "cd $PROJECT_DIR/../Documents\nif [ ! -e ../docs/MolbyDoc/ja/index.html ] || [ src/doc_source.html -nt ../docs/MolbyDoc/ja/index.html ]; then\n  ruby makedoc.rb\nfi\n";
+			shellScript = "cd $PROJECT_DIR/../Document_Sources\nif [ ! -e ../docs/MolbyDoc/ja/index.html ] || [ src/doc_source.html -nt ../docs/MolbyDoc/ja/index.html ]; then\n  ruby makedoc.rb\nfi\n";
 		};
 		E4059FE028C46A6E0052B36B /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -848,7 +838,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "if [ \"${BUILD_STYLE:=$CONFIGURATION}\" = \"Release\" ]; then\n  (cd \"$PROJECT_DIR/../latest_binaries\" && rm -f MolbyMac.zip && zip -r MolbyMac.zip Molby.app -x \\*.DS_Store -x \\*.svn*) || exit 1\n  (cd \"$PROJECT_DIR/../latest_binaries\" && rm -f MolbyMacLegacy.zip && zip -r MolbyMacLegacy.zip MolbyMacLegacy.app -x \\*.DS_Store -x \\*.svn*) || exit 1\n  (cd \"$PROJECT_DIR/../Document_Sources\" && /usr/bin/ruby makedoc.rb && cp -a ../docs/MolbyDoc \"$PROJECT_DIR/../latest_binaries\") || exit 1\n  (cd \"$PROJECT_DIR/../latest_binaries\" && zip -r MolbyDoc.zip MolbyDoc -x \\*.DS_Store -x \\*.svn*) || exit 1\n#(cd \"$PROJECT_DIR/../build-win32\"; PATH=/usr/local/homebrew/bin:$PATH; make setup) || exit 1\n  (cd \"$PROJECT_DIR/../build-win\"; PATH=/usr/local/homebrew/bin:$PATH; make setup) || exit 1\nfi\n";
+			shellScript = "if [ \"${BUILD_STYLE:=$CONFIGURATION}\" = \"Release\" ]; then\n  (cd \"$PROJECT_DIR/../latest_binaries\" && rm -f MolbyMac.zip && zip -r MolbyMac.zip Molby.app -x \\*.DS_Store -x \\*.svn*) || exit 1\n  #(cd \"$PROJECT_DIR/../latest_binaries\" && rm -f MolbyMacLegacy.zip && zip -r MolbyMacLegacy.zip MolbyMacLegacy.app -x \\*.DS_Store -x \\*.svn*) || exit 1\n  (cd \"$PROJECT_DIR/../Document_Sources\" && /usr/bin/ruby makedoc.rb && cp -a ../docs/MolbyDoc \"$PROJECT_DIR/../latest_binaries\") || exit 1\n  (cd \"$PROJECT_DIR/../latest_binaries\" && zip -r MolbyDoc.zip MolbyDoc -x \\*.DS_Store -x \\*.svn*) || exit 1\n#(cd \"$PROJECT_DIR/../build-win32\"; PATH=/usr/local/homebrew/bin:$PATH; make setup) || exit 1\n  (cd \"$PROJECT_DIR/../build-win\"; PATH=/usr/local/homebrew/bin:$PATH; make setup) || exit 1\nfi\n";
 		};
 		E4FC7B57183E516E0064FB2E /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -978,11 +968,6 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		E4589CF728D856C200F55785 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = E4059F9628C46A6E0052B36B /* MolbyMacLegacy */;
-			targetProxy = E4589CF628D856C200F55785 /* PBXContainerItemProxy */;
-		};
 		E4B710FF2306BD0A000A77EB /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = E4B710FA2306BC80000A77EB /* Molby_win64 */;
@@ -1027,7 +1012,7 @@
 					"$(PROJECT_DIR)/../../wxWidgets-3.2.5/build-osx/lib/wx/include/osx_cocoa-unicode-static-3.2",
 					"$(PROJECT_DIR)/../../ruby-2.0.0-p353",
 					"$(PROJECT_DIR)/../../ruby-2.0.0-p353/build-osx/include/ruby-2.0.0",
-					"$(PROJECT_DIR)/../../ruby-2.0.0-p353/build-osx/include/ruby-2.0.0/x86_64-darwin18.7.0",
+					"$(PROJECT_DIR)/../../ruby-2.0.0-p353/build-osx/include/ruby-2.0.0/x86_64-darwin21.6.0",
 					/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk/System/Library/Frameworks/Accelerate.framework/Frameworks/vecLib.framework/Headers,
 				);
 				INFOPLIST_FILE = "Molby-Info.plist";
@@ -1038,14 +1023,15 @@
 					"$(PROJECT_DIR)/../../ruby-2.0.0-p353/build-osx/lib",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.12;
+				ONLY_ACTIVE_ARCH = YES;
 				OTHER_CFLAGS = (
 					"-D_FILE_OFFSET_BITS=64",
 					"-D__WXMAC__",
 					"-D__WXOSX__",
 					"-D__WXOSX_COCOA__",
+					"-Wno-compound-token-split-by-macro",
 				);
 				OTHER_LDFLAGS = (
-					"-L$(PROJECT_DIR)/../../wxWidgets-3.0.3/build-osx/lib",
 					"-lwx_osx_cocoau-3.2",
 					"-lwx_osx_cocoau_gl-3.2",
 					"-lwxregexu-3.2",
@@ -1062,7 +1048,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.yourcompany.Molby;
 				PRODUCT_NAME = Molby;
-				SDKROOT = macosx10.12;
+				SDKROOT = macosx;
 			};
 			name = Debug;
 		};
@@ -1088,7 +1074,7 @@
 					"$(PROJECT_DIR)/../../wxWidgets-3.2.5/build-osx/lib/wx/include/osx_cocoa-unicode-static-3.2",
 					"$(PROJECT_DIR)/../../ruby-2.0.0-p353",
 					"$(PROJECT_DIR)/../../ruby-2.0.0-p353/build-osx/include/ruby-2.0.0",
-					"$(PROJECT_DIR)/../../ruby-2.0.0-p353/build-osx/include/ruby-2.0.0/x86_64-darwin18.7.0",
+					"$(PROJECT_DIR)/../../ruby-2.0.0-p353/build-osx/include/ruby-2.0.0/x86_64-darwin21.6.0",
 					/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk/System/Library/Frameworks/Accelerate.framework/Frameworks/vecLib.framework/Headers,
 				);
 				INFOPLIST_FILE = "Molby-Info.plist";
@@ -1099,14 +1085,15 @@
 					"$(PROJECT_DIR)/../../ruby-2.0.0-p353/build-osx/lib",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.12;
+				ONLY_ACTIVE_ARCH = YES;
 				OTHER_CFLAGS = (
 					"-D_FILE_OFFSET_BITS=64",
 					"-D__WXMAC__",
 					"-D__WXOSX__",
 					"-D__WXOSX_COCOA__",
+					"-Wno-compound-token-split-by-macro",
 				);
 				OTHER_LDFLAGS = (
-					"-L$(PROJECT_DIR)/../../wxWidgets-3.0.3/build-osx/lib",
 					"-lwx_osx_cocoau-3.2",
 					"-lwx_osx_cocoau_gl-3.2",
 					"-lwxregexu-3.2",
@@ -1123,7 +1110,7 @@
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.yourcompany.Molby;
 				PRODUCT_NAME = Molby;
-				SDKROOT = macosx10.12;
+				SDKROOT = macosx;
 			};
 			name = Release;
 		};
@@ -1137,7 +1124,7 @@
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 10.12;
-				ONLY_ACTIVE_ARCH = YES;
+				ONLY_ACTIVE_ARCH = NO;
 				SDKROOT = macosx;
 			};
 			name = Debug;
@@ -1152,6 +1139,7 @@
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 10.12;
+				ONLY_ACTIVE_ARCH = NO;
 				SDKROOT = macosx;
 			};
 			name = Release;
@@ -1174,22 +1162,23 @@
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				GCC_VERSION = "";
 				HEADER_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/../../fftw-3.3.2/build-osx/include",
+					"$(PROJECT_DIR)/../../fftw-3.3.2/build-osx106/include",
 					"$(PROJECT_DIR)/../../wxWidgets-3.0.3/include",
-					"$(PROJECT_DIR)/../../wxWidgets-3.0.3/build-osx/lib/wx/include/osx_cocoa-unicode-static-3.0",
+					"$(PROJECT_DIR)/../../wxWidgets-3.0.3/build-osx106/lib/wx/include/osx_cocoa-unicode-static-3.0",
 					"$(PROJECT_DIR)/../../ruby-2.0.0-p353",
-					"$(PROJECT_DIR)/../../ruby-2.0.0-p353/build-osx/include/ruby-2.0.0",
-					"$(PROJECT_DIR)/../../ruby-2.0.0-p353/build-osx/include/ruby-2.0.0/x86_64-darwin18.7.0",
+					"$(PROJECT_DIR)/../../ruby-2.0.0-p353/build-osx106/include/ruby-2.0.0",
+					"$(PROJECT_DIR)/../../ruby-2.0.0-p353/build-osx106/include/ruby-2.0.0/x86_64-darwin18.7.0",
 					/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.6.sdk/System/Library/Frameworks/Accelerate.framework/Frameworks/vecLib.framework/Headers,
 				);
 				INFOPLIST_FILE = "$(SRCROOT)/Molby_MacLegacy-Info.plist";
 				INSTALL_PATH = "$(HOME)/Applications";
 				LIBRARY_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/../../fftw-3.3.2/build-osx/lib",
-					"$(PROJECT_DIR)/../../wxWidgets-3.0.3/build-osx/lib",
-					"$(PROJECT_DIR)/../../ruby-2.0.0-p353/build-osx/lib",
+					"$(PROJECT_DIR)/../../fftw-3.3.2/build-osx106/lib",
+					"$(PROJECT_DIR)/../../wxWidgets-3.0.3/build-osx106/lib",
+					"$(PROJECT_DIR)/../../ruby-2.0.0-p353/build-osx106/lib",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.6;
+				ONLY_ACTIVE_ARCH = YES;
 				OTHER_CFLAGS = (
 					"-D_FILE_OFFSET_BITS=64",
 					"-D__WXMAC__",
@@ -1197,7 +1186,6 @@
 					"-D__WXOSX_COCOA__",
 				);
 				OTHER_LDFLAGS = (
-					"-L$(PROJECT_DIR)/../../wxWidgets-3.0.3/build-osx/lib",
 					"-lwx_osx_cocoau-3.0",
 					"-lwx_osx_cocoau_gl-3.0",
 					"-lwxregexu-3.0",
@@ -1233,22 +1221,23 @@
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				GCC_VERSION = "";
 				HEADER_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/../../fftw-3.3.2/build-osx/include",
+					"$(PROJECT_DIR)/../../fftw-3.3.2/build-osx106/include",
 					"$(PROJECT_DIR)/../../wxWidgets-3.0.3/include",
-					"$(PROJECT_DIR)/../../wxWidgets-3.0.3/build-osx/lib/wx/include/osx_cocoa-unicode-static-3.0",
+					"$(PROJECT_DIR)/../../wxWidgets-3.0.3/build-osx106/lib/wx/include/osx_cocoa-unicode-static-3.0",
 					"$(PROJECT_DIR)/../../ruby-2.0.0-p353",
-					"$(PROJECT_DIR)/../../ruby-2.0.0-p353/build-osx/include/ruby-2.0.0",
-					"$(PROJECT_DIR)/../../ruby-2.0.0-p353/build-osx/include/ruby-2.0.0/x86_64-darwin18.7.0",
+					"$(PROJECT_DIR)/../../ruby-2.0.0-p353/build-osx106/include/ruby-2.0.0",
+					"$(PROJECT_DIR)/../../ruby-2.0.0-p353/build-osx106/include/ruby-2.0.0/x86_64-darwin18.7.0",
 					/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.6.sdk/System/Library/Frameworks/Accelerate.framework/Frameworks/vecLib.framework/Headers,
 				);
 				INFOPLIST_FILE = "$(SRCROOT)/Molby_MacLegacy-Info.plist";
 				INSTALL_PATH = "$(HOME)/Applications";
 				LIBRARY_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/../../fftw-3.3.2/build-osx/lib",
-					"$(PROJECT_DIR)/../../wxWidgets-3.0.3/build-osx/lib",
-					"$(PROJECT_DIR)/../../ruby-2.0.0-p353/build-osx/lib",
+					"$(PROJECT_DIR)/../../fftw-3.3.2/build-osx106/lib",
+					"$(PROJECT_DIR)/../../wxWidgets-3.0.3/build-osx106/lib",
+					"$(PROJECT_DIR)/../../ruby-2.0.0-p353/build-osx106/lib",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.6;
+				ONLY_ACTIVE_ARCH = YES;
 				OTHER_CFLAGS = (
 					"-D_FILE_OFFSET_BITS=64",
 					"-D__WXMAC__",
@@ -1256,7 +1245,6 @@
 					"-D__WXOSX_COCOA__",
 				);
 				OTHER_LDFLAGS = (
-					"-L$(PROJECT_DIR)/../../wxWidgets-3.0.3/build-osx/lib",
 					"-lwx_osx_cocoau-3.0",
 					"-lwx_osx_cocoau_gl-3.0",
 					"-lwxregexu-3.0",

@@ -25,17 +25,6 @@
 #include <stdio.h>
 #include <math.h>
 
-#if defined(__WXMAC__) || defined(__CMDMAC__)
-/*  On Mac OS X, CLAPACK is in Accelerate.framework  */
-#include <cblas.h>
-#include <clapack.h>
-//#include <Accelerate/Accelerate.h>
-#else
-#include <f2c.h>
-#include <blaswrap.h>
-#include <clapack.h>
-#endif
-
 #if defined(__WXMSW__)
 /*  MinGW may not have definition of DBL_EPSILON and FLT_EPSILON  */
 #ifndef DBL_EPSILON
@@ -44,14 +33,6 @@
 #ifndef FLT_EPSILON
 #define FLT_EPSILON __FLT_EPSILON__
 #endif
-#endif
-
-/*  Get the eigenvalue/eigenvector for a real symmetric matrix (3x3)  */
-#if !defined(__WXMAC__) && !defined(__CMDMAC__)
-typedef integer        __CLPK_integer;
-typedef logical        __CLPK_logical;
-typedef real           __CLPK_real;
-typedef doublereal     __CLPK_doublereal;
 #endif
 
 #ifdef __cplusplus
@@ -93,6 +74,8 @@ typedef unsigned int UInt;
 typedef struct Vector { Double x, y, z; } Vector;
 typedef struct Quat { Double x, y, z, w; } Quat;   /*  A quaternion  */
 typedef Double Mat33[9];  /*  Columns first!  */
+
+typedef struct LAMatrix LAMatrix;
 
 /*  Mat33 (rot) and Vector (translation) */
 /*  Transform[0..8] are the same as Mat33, and Transform[9..11] are the fourth column. So that, the
@@ -141,12 +124,6 @@ int  TransformForReflection(Transform dst, const Vector *axis, const Vector *cen
 int  TransformForRotation(Transform dst, const Vector *axis, Double angle, const Vector *center);
 
 extern Transform gIdentityTransform;
-
-/*  Wrapper struct for CLAPACK routines  */
-typedef struct LAMatrix {
-	__CLPK_integer row, column;
-	__CLPK_doublereal data[1];
-} LAMatrix;
 
 LAMatrix *LAMatrixAllocTempMatrix(int row, int column);
 void LAMatrixReleaseTempMatrix(LAMatrix *mat);

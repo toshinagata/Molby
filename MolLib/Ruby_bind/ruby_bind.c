@@ -19,6 +19,8 @@
 #include "ruby_dialog.h"
 #include "../MD/MDCore.h"
 
+#include "Types_LAMatrix.h"
+
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>

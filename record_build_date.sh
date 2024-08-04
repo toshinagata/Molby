@@ -3,11 +3,15 @@
 LAST_BUILD=`date '+%Y-%m-%d %H:%M:%S %Z'`
 echo "last_build = \"$LAST_BUILD\"" > buildInfo.txt
 echo "volatile char *gLastBuildString = \"$LAST_BUILD\";"
+REVISION_INFO=""
 if [ "$1" = "--with-git-status" ]; then
   REVISION_INFO=`git rev-list HEAD --count`
 #  REVISION_INFO=`(cd ..; svn status -v . --depth=empty | awk '{print $1}')`
-  echo $REVISION_INFO > ../revisionInfo.txt
-else
+  if [ "$REVISION_INFO" != "" ]; then
+    echo $REVISION_INFO > ../revisionInfo.txt
+  fi
+fi
+if [ "$REVISION_INFO" = "" ]; then
   REVISION_INFO=`cat ../revisionInfo.txt 2>/dev/null`
   if [ "$REVISION_INFO" = "" ]; then
     REVISION_INFO=0
