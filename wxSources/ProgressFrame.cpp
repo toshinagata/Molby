@@ -21,20 +21,18 @@
 #include "wx/stattext.h"
 #include "wx/gauge.h"
 #include "wx/sizer.h"
+#include "wx/button.h"
 #include "wx/evtloop.h"
 
-#if __WXMAC__
-#include <Carbon/Carbon.h>
-#endif
-
 BEGIN_EVENT_TABLE(ProgressFrame, wxFrame)
-//    EVT_TEXT_ENTER(-1, ConsoleFrame::OnEnterPressed)
-//	EVT_CHAR(ConsoleFrame::OnChar)
-//	EVT_RICHTEXT_RETURN(-1, ConsoleFrame::OnEnterPressed)
+EVT_BUTTON(-1, ProgressFrame::OnButtonPressed)
 END_EVENT_TABLE()
 
+int ProgressFrame::c_uniqueID = 1000;
+wxWindowList ProgressFrame::c_progressFrames;
+
 ProgressFrame::ProgressFrame(const wxString &title, const wxString &mes):
-	wxFrame(NULL, wxID_ANY, title, wxDefaultPosition, wxDefaultSize, wxCAPTION)
+	wxFrame(NULL, c_uniqueID, title, wxDefaultPosition, wxDefaultSize, wxCAPTION)
 {
 	//  Vertical sizer containing (1) message text, (2) progress gauge, (3) note text
 	wxBoxSizer *sizer = new wxBoxSizer(wxVERTICAL);
@@ -45,38 +43,59 @@ ProgressFrame::ProgressFrame(const wxString &title, const wxString &mes):
 	m_progressGauge = new wxGauge(this, -1, 10000, wxDefaultPosition, wxSize(240, 24), wxGA_HORIZONTAL);
 	sizer->Add(m_progressGauge, 0, wxALL | wxEXPAND, 10);
 	
-	wxStaticText *noteText = new wxStaticText(this, -1, wxT("Press ESC to interrupt"), wxDefaultPosition, wxSize(240, 20), wxALIGN_CENTRE | wxST_NO_AUTORESIZE);
-/*	wxFont smallFont(noteText->GetFont());
-	int size = smallFont.GetPointSize();
-	if (size >= 14)
-		size = 12;
-	else if (size >= 12)
-		size = 10;
-	else if (size >= 10)
-		size = 9;
-	smallFont.SetPointSize(size);
-	noteText->SetFont(smallFont); */
-	noteText->SetFont(*wxSMALL_FONT);
-	sizer->Add(noteText, 0, wxALL | wxEXPAND, 10);
-
+  m_cancelButton = new wxButton(this, -1, _T("Cancel"), wxDefaultPosition, wxDefaultSize);
+  sizer->Add(m_cancelButton, 0, wxALL | wxEXPAND, 10);
+  
 	m_value = -1.0;
 	m_progressGauge->Pulse();
 	m_messageText->SetLabel(mes);
 	
 	m_interruptValue = 0;
 
+  c_progressFrames.push_back(this);
+  c_uniqueID++;
+  
 	sizer->Layout();
 	this->SetSizerAndFit(sizer);
-	this->Centre();
+  
+  m_disabler = new wxWindowDisabler(this);  //  Make this dialog application modal
+
+  this->Centre();
 	this->Show();
-	
-#if __WXMAC__
-//	::SetWindowModality(((WindowRef)MacGetWindowRef()), kWindowModalityAppModal, NULL);
-#endif
+  this->Enable();
+
 }
 
 ProgressFrame::~ProgressFrame()
 {
+  /*  Remove this from the progressFrame list  */
+  wxWindowList::iterator itr;
+  for (itr = c_progressFrames.begin(); itr != c_progressFrames.end(); itr++) {
+    if (*itr == this) {
+      c_progressFrames.erase(itr);
+      break;
+    }
+  }
+  delete m_disabler;
+}
+
+ProgressFrame *
+ProgressFrame::FindProgressFrameWithID(int id)
+{
+  if (id < 0) {
+    /*  Returns the last one  */
+    if (c_progressFrames.size() > 0) {
+      wxWindow *w = c_progressFrames.back();
+      return wxDynamicCast(w, ProgressFrame);
+    } else return NULL;
+  } else {
+    wxWindowList::iterator itr;
+    for (itr = c_progressFrames.begin(); itr != c_progressFrames.end(); itr++) {
+      if ((*itr)->GetId() == id)
+        return wxDynamicCast(*itr, ProgressFrame);
+    }
+    return NULL;  /*  Not found  */
+  }
 }
 
 void
@@ -85,7 +104,7 @@ ProgressFrame::SetProgressMessage(const wxString &mes)
 	m_messageText->SetLabel(mes);
 	if (m_value < 0)
 		m_progressGauge->Pulse();
-	Update();
+  UpdateAndYield();
 }
 
 void
@@ -96,7 +115,7 @@ ProgressFrame::SetProgressValue(double value)
 		m_progressGauge->Pulse();
 	else
 		m_progressGauge->SetValue((int)(value * 10000));
-	Update();
+  UpdateAndYield();
 }
 
 void
@@ -105,9 +124,26 @@ ProgressFrame::SetInterruptValue(int value)
 	m_interruptValue = value;
 }
 
+void
+ProgressFrame::UpdateAndYield()
+{
+  Update();
+  wxEventLoopBase * const loop = wxEventLoopBase::GetActive();
+  if (loop != NULL)
+    loop->YieldFor(wxEVT_CATEGORY_UI);
+}
+
 int
 ProgressFrame::CheckInterrupt()
 {
+  UpdateAndYield();
+  if (m_interruptValue)
+    return m_interruptValue;
+  if (::wxGetKeyState(WXK_ESCAPE))
+    return 1;
+  else return 0;
+
+#if 0
 	if (m_interruptValue) {
 		int save = m_interruptValue;
 		m_interruptValue = 0;
@@ -135,4 +171,11 @@ ProgressFrame::CheckInterrupt()
 	if (::wxGetKeyState(WXK_ESCAPE))
 		return 1;
 	else return 0;
+#endif
+}
+
+void
+ProgressFrame::OnButtonPressed(wxCommandEvent& event)
+{
+  m_interruptValue = 1;
 }

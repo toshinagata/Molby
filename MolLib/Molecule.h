@@ -621,7 +621,7 @@ STUB void MoleculeCallback_cannotModifyMoleculeDuringMDError(Molecule *mol);
 STUB int MoleculeCallback_callSubProcessAsync(Molecule *mol, const char **argv, int (*callback)(Molecule *, int), int (*timerCallback)(Molecule *, int), FILE *output, FILE *errout);
 
 /*  This is also defined in Molby_extern.h, but it may be called from functions in Molecule.c  */
-STUB int MyAppCallback_checkInterrupt(void);
+STUB int MyAppCallback_checkInterrupt(int id);
 	
 void MoleculeLock(Molecule *mol);
 void MoleculeUnlock(Molecule *mol);

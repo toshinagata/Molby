@@ -180,7 +180,7 @@ MyApp::FindResourcePath()
 MyApp::MyApp(void)
 {
     m_docManager = NULL;
-	m_progressDialog = NULL;
+//	m_progressDialog = NULL;
 	m_process = NULL;
 //	m_processTerminated = false;
 //	m_processExitCode = 0;
@@ -733,13 +733,12 @@ sModifyMenuForFilterMode(wxMenuBar *mbar)
 	
 }
 
-void
+int
 MyApp::ShowProgressPanel(const char *mes)
 {
-    wxString string((mes ? mes : ""), WX_DEFAULT_CONV);
-    if (m_progressDialog == NULL) {
-        m_progressDialog = new wxProgressDialog(wxT("Progress"), mes, 100, NULL, wxPD_APP_MODAL | wxPD_CAN_ABORT);
-    }
+  wxString string((mes ? mes : ""), WX_DEFAULT_CONV);
+  ProgressFrame *frame = new ProgressFrame(_T("Progress"), mes);
+  return frame->GetId();
 /*
 #if __WXMAC__
 		{
@@ -757,61 +756,45 @@ MyApp::ShowProgressPanel(const char *mes)
 }
 
 void
-MyApp::HideProgressPanel()
+MyApp::HideProgressPanel(int id)
 {
-    if (m_progressDialog != NULL) {
-        m_progressDialog->Hide();
-        m_progressDialog->Destroy();
-        m_progressDialog = NULL;
-    }
-/*
-    if (m_progressFrame != NULL) {
-		m_progressFrame->Hide();
-		m_progressFrame->Destroy();
-		m_progressFrame = NULL;
-#if __WXMAC__
-		{
-			wxMenuBar *mbar = ((wxFrame *)GetTopWindow())->GetMenuBar();
-			mbar->Enable(true);
-			wxMenuItem *quitMenuItem = mbar->FindItem(wxID_EXIT);
-			if (quitMenuItem != NULL)
-				quitMenuItem->Enable(true);
-		}
-#endif
-	}
-*/
+  ProgressFrame *frame = ProgressFrame::FindProgressFrameWithID(id);
+  if (frame != NULL) {
+    frame->Hide();
+    frame->Destroy();
+  }
 }
 
 void
-MyApp::SetProgressValue(double dval)
+MyApp::SetProgressValue(double dval, int id)
 {
-    if (m_progressDialog != NULL) {
-        if (dval >= 0)
-            m_progressDialog->Update((int)(dval * 100));
-        else
-            m_progressDialog->Pulse();
-    }
+  ProgressFrame *frame = ProgressFrame::FindProgressFrameWithID(id);
+  if (frame != NULL) {
+    frame->SetProgressValue(dval);
+  }
 }
 
 void
-MyApp::SetProgressMessage(const char *mes)
+MyApp::SetProgressMessage(const char *mes, int id)
 {
-	if (m_progressDialog != NULL) {
-		wxString string((mes ? mes : ""), WX_DEFAULT_CONV);
-		m_progressDialog->Update(0, string);
-	}
+  ProgressFrame *frame = ProgressFrame::FindProgressFrameWithID(id);
+  if (frame != NULL) {
+    wxString string((mes ? mes : ""), WX_DEFAULT_CONV);
+    frame->SetProgressMessage(string);
+  }
 }
 
 int
-MyApp::IsInterrupted()
+MyApp::IsInterrupted(int id)
 {
-    if (m_progressDialog != NULL)
-        return m_progressDialog->WasCancelled();
-    else {
-        if (::wxGetKeyState(WXK_ESCAPE))
-            return 1;
-        else return 0;
-    }
+  ProgressFrame *frame = ProgressFrame::FindProgressFrameWithID(id);
+  if (frame != NULL) {
+    return frame->CheckInterrupt();
+  } else {
+    if (::wxGetKeyState(WXK_ESCAPE))
+        return 1;
+    else return 0;
+  }
 }
 
 void
@@ -1037,7 +1020,7 @@ MyApp::OnScriptMenuSelected(wxCommandEvent& event)
 void
 MyApp::UpdatePredefinedFragmentMenu(wxMenuBar *mbar)
 {
-	int i, n;
+	int i;
 	wxMenuItem *fmenuItem = mbar->FindItem(myMenuID_PredefinedFragment);
 	wxMenu *fmenu = (fmenuItem != NULL ? fmenuItem->GetSubMenu() : NULL);
 	if (fmenu == NULL)
@@ -1055,27 +1038,7 @@ MyApp::UpdatePredefinedFragmentMenu(wxMenuBar *mbar)
 	}
 	m_NamedFragments = NULL;
 	m_CountNamedFragments = 0;
-	if (MolActionCreateAndPerform(NULL, SCRIPT_ACTION(";i"), "lambda { $named_fragments.length }", &n) != 0 || n <= 0)
-		return;
-	m_CountNamedFragments = n;
-	m_NamedFragments = (char **)calloc(sizeof(char *), n * 2);
-	for (i = 0; i < n; i++) {
-		if (MolActionCreateAndPerform(NULL, SCRIPT_ACTION("i;s"), "lambda { |i| $named_fragments[i][0] }", i, &m_NamedFragments[i * 2]) != 0 ||
-			MolActionCreateAndPerform(NULL, SCRIPT_ACTION("i;s"), "lambda { |i| $named_fragments[i][1] }", i, &m_NamedFragments[i * 2 + 1]) != 0)
-			break;
-	}
-	if (i < n) {
-		for (i = 0; i < m_CountNamedFragments; i++) {
-			if (m_NamedFragments[i * 2] != NULL)
-				free(m_NamedFragments[i * 2]);
-			if (m_NamedFragments[i * 2 + 1] != NULL)
-				free(m_NamedFragments[i * 2 + 1]);
-		}
-		free(m_NamedFragments);
-		m_CountNamedFragments = 0;
-		m_NamedFragments = NULL;
-		return;
-	}
+  Molby_updateNamedFragments(&m_CountNamedFragments, &m_NamedFragments);
 	
 	wxMenu *predefined_submenu = NULL;
 	wxString stitle;
@@ -1251,7 +1214,7 @@ MyApp::RequestOpenFilesByEvent(wxString& files)
 {
     /*  We do not respond to "open file" event (either via IPC [MSW] or Apple Event [Mac])
         while we are running something else  */
-    if (m_progressDialog != NULL || gMolbyIsCheckingInterrupt || gMolbyRunLevel > 0)
+    if (gMolbyIsCheckingInterrupt || gMolbyRunLevel > 0)
         return;
 
 	if (m_pendingFilesToOpen != NULL)
@@ -2079,72 +2042,64 @@ MyAppCallback_setGlobalSettings(const char *key, const char *value)
 int
 MyAppCallback_getGlobalSettingsWithType(const char *key, int type, void *ptr)
 {
-    int retval, temp;
-	char *s = MyAppCallback_getGlobalSettings(key);
-	char desc[] = SCRIPT_ACTION("s; ");
-	desc[sizeof(desc) - 2] = type;
-    temp = gMolActionNoErrorDialog;
-    gMolActionNoErrorDialog = 1;
-	retval = MolActionCreateAndPerform(NULL, desc, "eval", s, ptr);
-	free(s);
-    gMolActionNoErrorDialog = temp;
-	return retval;
+  int retval;
+  char *s = MyAppCallback_getGlobalSettings(key);
+  retval = Molby_evalStringAsType(s, type, ptr);
+  free(s);
+  return retval;
 }
 
 int
 MyAppCallback_setGlobalSettingsWithType(const char *key, int type, const void *ptr)
 {
-	const char *cmd = "set_global_settings";
-	switch (type) {
-		case 'i': return MolActionCreateAndPerform(NULL, SCRIPT_ACTION("si"), cmd, key, *((const Int *)ptr));
-		case 'd': return MolActionCreateAndPerform(NULL, SCRIPT_ACTION("sd"), cmd, key, *((const Double *)ptr));
-		case 's': return MolActionCreateAndPerform(NULL, SCRIPT_ACTION("ss"), cmd, key, (const char *)ptr);
-		case 'v': return MolActionCreateAndPerform(NULL, SCRIPT_ACTION("sv"), cmd, key, (const Vector *)ptr);
-		case 't': return MolActionCreateAndPerform(NULL, SCRIPT_ACTION("st"), cmd, key, (const Transform *)ptr);
-		default:
-			MyAppCallback_errorMessageBox("Internal error: unsupported format '%c' at line %d, file %s", type, __LINE__, __FILE__);
-			return -2;
-	}
+  int status;
+  char *s = Molby_inspectedValueOfType(type, ptr, &status);
+  if (s != NULL) {
+    MyAppCallback_setGlobalSettings(key, s);
+    free(s);
+    return 0;
+  }
+  else return status;
 }
 
 int
-MyAppCallback_checkInterrupt(void)
+MyAppCallback_checkInterrupt(int id)
 {
     if (!gUseGUI)
         return 0;
-    return wxGetApp().IsInterrupted();
+    return wxGetApp().IsInterrupted(id);
 }
 
-void
+int
 MyAppCallback_showProgressPanel(const char *msg)
 {
     if (!gUseGUI)
-        return;
-    wxGetApp().ShowProgressPanel(msg);
+      return -1;
+    return wxGetApp().ShowProgressPanel(msg);
 }
 
 void
-MyAppCallback_hideProgressPanel(void)
+MyAppCallback_hideProgressPanel(int id)
 {
     if (!gUseGUI)
         return;
-    wxGetApp().HideProgressPanel();
+    wxGetApp().HideProgressPanel(id);
 }
 
 void
-MyAppCallback_setProgressValue(double dval)
+MyAppCallback_setProgressValue(double dval, int id)
 {
     if (!gUseGUI)
         return;
-    wxGetApp().SetProgressValue(dval);
+    wxGetApp().SetProgressValue(dval, id);
 }
 
 void
-MyAppCallback_setProgressMessage(const char *msg)
+MyAppCallback_setProgressMessage(const char *msg, int id)
 {
     if (!gUseGUI)
         return;
-    wxGetApp().SetProgressMessage(msg);
+    wxGetApp().SetProgressMessage(msg, id);
 }
 
 int

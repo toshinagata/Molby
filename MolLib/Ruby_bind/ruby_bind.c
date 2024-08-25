@@ -553,46 +553,82 @@ s_StandardInputMethodMissing(int argc, VALUE *argv, VALUE self)
  *  enable_interrupt and disable_interrupt.  */
 
 static VALUE s_interrupt_flag = Qfalse;
+static VALUE s_progress_panel_list = Qnil;
 
 static VALUE
 s_ShowProgressPanel(int argc, VALUE *argv, VALUE self)
 {
 	volatile VALUE message;
 	const char *p;
+  int id;
+  if (s_progress_panel_list == Qnil) {
+    /*  Initialize s_progress_panel_list  */
+    rb_define_variable("$progress_panel_list", &s_progress_panel_list);
+    s_progress_panel_list = rb_ary_new();
+  }
 	if (Ruby_GetInterruptFlag() == Qtrue) {
 		rb_scan_args(argc, argv, "01", &message);
 		if (message != Qnil)
 			p = StringValuePtr(message);
 		else
 			p = NULL;
-		MyAppCallback_showProgressPanel(p);
+		id = MyAppCallback_showProgressPanel(p);
+    if (id >= 0) {
+      /*  Record ID of this dialog  */
+      rb_ary_push(s_progress_panel_list, INT2NUM(id));
+    }
 	}
 	return Qnil;
 }
 
 static VALUE
-s_HideProgressPanel(VALUE self)
+s_GetProgressPanelID(VALUE idval)
 {
-	MyAppCallback_hideProgressPanel();
+  if (idval == Qnil) {
+    if (s_progress_panel_list == Qnil || RARRAY_LEN(s_progress_panel_list) == 0)
+      rb_raise(rb_eMolbyError, "No progress panel is open now");
+    idval = rb_ary_entry(s_progress_panel_list, -1);
+  } else {
+    idval = rb_Integer(idval);
+    if (rb_ary_includes(s_progress_panel_list, idval) == Qfalse)
+      rb_raise(rb_eMolbyError, "Progress panel with ID %d is not present", NUM2INT(idval));
+  }
+  return idval;
+}
+
+static VALUE
+s_HideProgressPanel(int argc, VALUE *argv, VALUE self)
+{
+  VALUE idval;
+  rb_scan_args(argc, argv, "01", &idval);
+  idval = s_GetProgressPanelID(idval);
+  MyAppCallback_hideProgressPanel(NUM2INT(idval));
+  rb_ary_delete(s_progress_panel_list, idval);
 	return Qnil;
 }
 
 static VALUE
-s_SetProgressValue(VALUE self, VALUE val)
+s_SetProgressValue(int argc, VALUE *argv, VALUE self)
 {
+  VALUE val, idval;
+  rb_scan_args(argc, argv, "11", &val, &idval);
 	double dval = NUM2DBL(rb_Float(val));
-	MyAppCallback_setProgressValue(dval);
+  idval = s_GetProgressPanelID(idval);
+  MyAppCallback_setProgressValue(dval, NUM2INT(idval));
 	return Qnil;
 }
 
 static VALUE
-s_SetProgressMessage(VALUE self, VALUE msg)
+s_SetProgressMessage(int argc, VALUE *argv, VALUE self)
 {
 	const char *p;
+  VALUE msg, idval;
+  rb_scan_args(argc, argv, "11", &msg, &idval);
 	if (msg == Qnil)
 		p = NULL;
 	else p = StringValuePtr(msg);
-	MyAppCallback_setProgressMessage(p);
+  idval = s_GetProgressPanelID(idval);
+  MyAppCallback_setProgressMessage(p, NUM2INT(idval));
 	return Qnil;
 }
 
@@ -637,13 +673,18 @@ Ruby_GetInterruptFlag(void)
  *  Returns 1 if interrupted, 0 if not, -1 if interrupt is disabled.
  */
 static VALUE
-s_Kernel_CheckInterrupt(VALUE self)
+s_Kernel_CheckInterrupt(int argc, VALUE *argv, VALUE self)
 {
+  VALUE idval;
+  rb_scan_args(argc, argv, "01", &idval);
 	if (Ruby_GetInterruptFlag() == Qfalse)
 		return INT2NUM(-1);
-	else if (MyAppCallback_checkInterrupt())
-		return INT2NUM(1);
-	else return INT2NUM(0);
+  else {
+    idval = s_GetProgressPanelID(idval);
+    if (MyAppCallback_checkInterrupt(NUM2INT(idval)))
+      return INT2NUM(1);
+    else return INT2NUM(0);
+  }
 }
 
 static volatile unsigned long sITimerCount = 0;
@@ -768,13 +809,13 @@ s_Event_Callback(rb_event_flag_t evflag, VALUE data, VALUE self, ID mid, VALUE k
 		currentTime = s_GetTimerCount();
 		if (currentTime != sLastTime) {
 			sLastTime = currentTime;
-			gMolbyIsCheckingInterrupt = 1;
-			flag = MyAppCallback_checkInterrupt();
-			gMolbyIsCheckingInterrupt = 0;
-			if (flag) {
-				s_SetInterruptFlag(Qnil, Qfalse);
-				rb_interrupt();
-			}
+      gMolbyIsCheckingInterrupt = 1;
+      flag = MyAppCallback_checkInterrupt(-1);
+      gMolbyIsCheckingInterrupt = 0;
+      if (flag) {
+        s_SetInterruptFlag(Qnil, Qfalse);
+        rb_interrupt();
+      }
 		}
 	}
 }
@@ -5309,7 +5350,7 @@ s_Molecule_Loaddat(int argc, VALUE *argv, VALUE self)
 	fstr = FileStringValuePtr(fname);
 	MyAppCallback_showProgressPanel("Loading GAMESS dat file...");
 	retval = MoleculeLoadGamessDatFile(mol, fstr, &gLoadSaveErrorMessage);
-	MyAppCallback_hideProgressPanel();
+	MyAppCallback_hideProgressPanel(-1);
 	s_Molecule_RaiseOnLoadSave(retval, 1, "Failed to load GAMESS dat", fstr);
 	return Qtrue;	
 }
@@ -10366,8 +10407,8 @@ s_Molecule_GetDefaultMOGrid(int argc, VALUE *argv, VALUE self)
 static int
 s_Cubegen_callback(double progress, void *ref)
 {
-	MyAppCallback_setProgressValue(progress);
-	if (MyAppCallback_checkInterrupt())
+	MyAppCallback_setProgressValue(progress, -1);
+	if (MyAppCallback_checkInterrupt(-1))
 		return 1;
 	else return 0;
 }
@@ -12079,13 +12120,13 @@ Init_Molby(void)
 	rb_eMolbyError = rb_define_class_under(rb_mMolby, "MolbyError", rb_eStandardError);
 
 	/*  module Kernel  */
-	rb_define_method(rb_mKernel, "check_interrupt", s_Kernel_CheckInterrupt, 0);
+	rb_define_method(rb_mKernel, "check_interrupt", s_Kernel_CheckInterrupt, -1);
 	rb_define_method(rb_mKernel, "get_interrupt_flag", s_GetInterruptFlag, 0);
 	rb_define_method(rb_mKernel, "set_interrupt_flag", s_SetInterruptFlag, 1);
 	rb_define_method(rb_mKernel, "show_progress_panel", s_ShowProgressPanel, -1);
-	rb_define_method(rb_mKernel, "hide_progress_panel", s_HideProgressPanel, 0);
-	rb_define_method(rb_mKernel, "set_progress_value", s_SetProgressValue, 1);
-	rb_define_method(rb_mKernel, "set_progress_message", s_SetProgressMessage, 1);
+	rb_define_method(rb_mKernel, "hide_progress_panel", s_HideProgressPanel, -1);
+	rb_define_method(rb_mKernel, "set_progress_value", s_SetProgressValue, -1);
+	rb_define_method(rb_mKernel, "set_progress_message", s_SetProgressMessage, -1);
 	rb_define_method(rb_mKernel, "ask", s_Kernel_Ask, -1);
 	rb_define_method(rb_mKernel, "register_menu", s_Kernel_RegisterMenu, -1);
 	rb_define_method(rb_mKernel, "lookup_menu", s_Kernel_LookupMenu, 1);
@@ -12220,7 +12261,7 @@ Molby_evalRubyScriptOnMolecule(const char *script, Molecule *mol, const char *fn
 	VALUE save_interrupt_flag;
 /*	char *save_ruby_sourcefile;
 	int save_ruby_sourceline; */
-	if (gMolbyIsCheckingInterrupt) {
+	if (gMolbyIsCheckingInterrupt || gMolbyRunLevel > 0) {
 		MolActionAlertRubyIsRunning();
 		*status = -1;
 		return (RubyValue)Qnil;
@@ -12274,7 +12315,7 @@ int
 Ruby_showValue(RubyValue value, char **outValueString)
 {
 	VALUE val = (VALUE)value;
-	if (gMolbyIsCheckingInterrupt) {
+	if (gMolbyIsCheckingInterrupt || gMolbyRunLevel > 0) {
 		MolActionAlertRubyIsRunning();
 		return 0;
 	}
@@ -12346,6 +12387,14 @@ Ruby_showError(int status)
         if (!gUseGUI && exit_status == 0)
             exit(0);  // Capture exit(0) here and force exit
     }
+  if (s_progress_panel_list != Qnil) {
+    int i;
+    for (i = RARRAY_LEN(s_progress_panel_list) - 1; i >= 0; i--) {
+      int id = NUM2INT(rb_ary_entry(s_progress_panel_list, i));
+      MyAppCallback_hideProgressPanel(id);
+    }
+    rb_ary_clear(s_progress_panel_list);
+  }
 	gMolbyRunLevel--;
 }
 
@@ -12638,3 +12687,120 @@ Molby_buildARGV(int argc, const char **argv)
 		rb_ary_push(rb_argv, arg);
     }
 }
+
+int
+Molby_updateNamedFragments(int *count, char ***ary)
+{
+  VALUE named_fragments = rb_gv_get("$named_fragments");
+  int i, j;
+  if (*count > 0 && *ary != NULL) {
+    for (i = 0; i < *count; i++) {
+      free((*ary)[i][0]);
+      free((*ary)[i][1]);
+    }
+    free(*ary);
+  }
+  if (named_fragments == Qnil)
+    *count = 0;
+  else
+    *count = RARRAY_LEN(named_fragments);
+  *ary = (char **)calloc(sizeof(char *), (*count) * 2);
+  for (i = j = 0; i < *count; i++) {
+    VALUE v = rb_ary_entry(named_fragments, i);
+    if (v != Qnil) {
+      VALUE s1 = rb_ary_entry(v, 0);
+      VALUE s2 = rb_ary_entry(v, 1);
+      if (s1 != Qnil && s2 != Qnil) {
+        char *p1 = StringValuePtr(s1);
+        char *p2 = StringValuePtr(s2);
+        (*ary)[j * 2] = strdup(p1);
+        (*ary)[j * 2 + 1] = strdup(p2);
+        j++;
+      }
+    }
+  }
+  *count = j;
+  return j;
+}
+
+static VALUE
+s_Molby_evalStringAsType(VALUE data)
+{
+  void **p = (void **)data;
+  const char *str = (const char *)p[0];
+  int type = (int)(intptr_t)p[1];
+  void *ptr = p[2];
+  VALUE val = rb_eval_string(str);
+  switch (type) {
+    case 'i': *((Int *)(ptr)) = NUM2INT(rb_Integer(val)); break;
+    case 'd': *((Double *)(ptr)) = NUM2DBL(rb_Float(val)); break;
+    case 's': *((char **)(ptr)) = strdup(StringValuePtr(val)); break;
+    case 'v': VectorFromValue(val, (Vector *)ptr); break;
+    case 't': TransformFromValue(val, (Transform *)ptr); break;
+    default:
+      rb_raise(rb_eMolbyError, "evalStringAsType: invalid type \'%c\'", type);
+      break;
+  }
+  return val;
+}
+
+int
+Molby_evalStringAsType(const char *str, int type, void *ptr)
+{
+  int status;
+  void *p[3];
+  p[0] = (void *)str;
+  p[1] = (void *)(intptr_t)type;
+  p[2] = ptr;
+  rb_protect(s_Molby_evalStringAsType, (VALUE)p, &status);
+  return status;
+}
+
+static VALUE
+s_Molby_inspectedValueOfType(VALUE data)
+{
+  void **p = (void **)data;
+  int type = (int)(intptr_t)p[0];
+  void *ptr = p[1];
+  VALUE val;
+  switch (type) {
+    case 'i':
+      val = INT2NUM(*((Int *)ptr));
+      break;
+    case 'd':
+      val = rb_float_new(*((Double *)ptr));
+      break;
+    case 's':
+      val = Ruby_NewEncodedStringValue((char *)ptr, strlen((char *)ptr));
+      break;
+    case 'v':
+      val = ValueFromVector((Vector *)ptr);
+      break;
+    case 't':
+      val = ValueFromTransform((Transform *)ptr);
+      break;
+    default:
+      rb_raise(rb_eMolbyError, "inspectValueOfType: invalid type \'%c\'", type);
+      break;
+  }
+  val = rb_inspect(val);
+  return val;
+}
+
+char *
+Molby_inspectedValueOfType(int type, const void *ptr, int *status)
+{
+  void *p[2];
+  VALUE retval;
+  int n;
+  if (status == NULL)
+    status = &n;
+  p[0] = (void *)(intptr_t)type;
+  p[1] = (void *)ptr;
+  retval = rb_protect(s_Molby_inspectedValueOfType, (VALUE)p, status);
+  if (*status == 0)
+    return strdup(StringValuePtr(retval));
+  else
+    return NULL;
+}
+

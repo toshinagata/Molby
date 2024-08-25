@@ -51,7 +51,11 @@ extern RubyValue Molby_evalRubyScriptOnMolecule(const char *script, Molecule *mo
 extern RubyValue Molby_evalRubyScriptOnActiveMoleculeWithInterrupt(const char *script, int *status); */
 /*extern int Ruby_methodType(const char *className, const char *methodName);*/
 extern void Molby_buildARGV(int argc, const char **argv);
-	
+
+extern int Molby_updateNamedFragments(int *count, char ***ary);
+extern int Molby_evalStringAsType(const char *str, int type, void *ptr);
+extern char *Molby_inspectedValueOfType(int type, const void *ptr, int *status);
+
 /*  RubyValue version of Ruby_funcall2_protect()  */
 extern RubyValue Ruby_funcall2_protect_extern(RubyValue recv, int mid, int argc, RubyValue *argv, int *status);
 
@@ -65,11 +69,11 @@ STUB int MyAppCallback_setGlobalSettingsWithType(const char *key, int type, cons
 STUB int MyAppCallback_showScriptMessage(const char *fmt, ...);
 STUB void MyAppCallback_setConsoleColor(int color);
 STUB void MyAppCallback_showRubyPrompt(void);
-STUB int MyAppCallback_checkInterrupt(void);
-STUB void MyAppCallback_showProgressPanel(const char *msg);
-STUB void MyAppCallback_hideProgressPanel(void);
-STUB void MyAppCallback_setProgressValue(double dval);
-STUB void MyAppCallback_setProgressMessage(const char *msg);
+STUB int MyAppCallback_checkInterrupt(int id);
+STUB int MyAppCallback_showProgressPanel(const char *msg);
+STUB void MyAppCallback_hideProgressPanel(int id);
+STUB void MyAppCallback_setProgressValue(double dval, int id);
+STUB void MyAppCallback_setProgressMessage(const char *msg, int id);
 //STUB int MyAppCallback_processUIWithTimeout(double seconds);
 STUB int MyAppCallback_getTextWithPrompt(const char *prompt, char *buf, int bufsize);
 STUB int MyAppCallback_messageBox(const char *message, const char *title, int flags, int icon);

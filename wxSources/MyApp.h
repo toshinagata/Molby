@@ -41,7 +41,7 @@ class MyClient;
 
 class wxMenuBar;
 class wxMenu;
-class wxProgressDialog;
+//class wxProgressDialog;
 
 class ConsoleFrame;
 class ProgressFrame;
@@ -192,11 +192,11 @@ class MyApp: public wxApp
 
 	ConsoleFrame *GetConsoleFrame() { return consoleFrame; }
 
-	void ShowProgressPanel(const char *mes);
-	void HideProgressPanel();
-	void SetProgressValue(double dval);
-	void SetProgressMessage(const char *mes);
-	int IsInterrupted();
+	int ShowProgressPanel(const char *mes);
+	void HideProgressPanel(int id = -1);
+	void SetProgressValue(double dval, int id = -1);
+	void SetProgressMessage(const char *mes, int id = -1);
+	int IsInterrupted(int id = -1);
 	// ProgressFrame *GetProgressFrame() { return m_progressFrame; }
     
     MyDocManager *DocManager() { return m_docManager; }
@@ -260,7 +260,7 @@ class MyApp: public wxApp
 
 protected:
     MyDocManager* m_docManager;
-	wxProgressDialog *m_progressDialog;
+//	wxProgressDialog *m_progressDialog;
 //	bool m_progressCanceled;
 //	int m_progressValue;
 	MyStringHash m_defaultSettings;

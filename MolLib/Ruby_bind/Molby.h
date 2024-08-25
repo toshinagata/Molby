@@ -91,21 +91,6 @@ extern char *Ruby_EncodedStringValuePtr(VALUE *valp);
 extern VALUE Ruby_NewEncodedStringValue(const char *str, int len);
 extern VALUE Ruby_NewEncodedStringValue2(const char *str);
 
-/*
-STUB VALUE MyAppCallback_getGlobalSettings(const char *key);
-STUB void MyAppCallback_setGlobalSettings(const char *key, VALUE value);
-STUB int MyAppCallback_showScriptMessage(const char *fmt, ...);
-STUB void MyAppCallback_showScriptError(int status);
-STUB int MyAppCallback_checkInterrupt(void);
-STUB void MyAppCallback_showProgressPanel(const char *msg);
-STUB void MyAppCallback_hideProgressPanel(void);
-STUB void MyAppCallback_setProgressValue(double dval);
-STUB void MyAppCallback_setProgressMessage(const char *msg);
-STUB int MyAppCallback_processUIWithTimeout(double seconds);
-STUB int MyAppCallback_getTextWithPrompt(const char *prompt, char *buf, int bufsize);
-STUB int MyAppCallback_registerScriptMenu(const char *title);
-*/
-
 #ifdef __cplusplus
 }
 #endif

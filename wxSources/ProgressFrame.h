@@ -20,6 +20,7 @@
 
 #include "wx/frame.h"
 #include "wx/gauge.h"
+#include "wx/utils.h"  //  For wxWindowDisabler
 
 class wxStaticText;
 //class wxGauge;    //  This forward declaration does not work because in wxMSW wxGauge is #define'ed as wxGauge95
@@ -30,16 +31,25 @@ class ProgressFrame: public wxFrame
 public:
 	ProgressFrame(const wxString& title, const wxString &mes);
 	virtual ~ProgressFrame();
-	
+
+  static ProgressFrame *FindProgressFrameWithID(int id);
+
 	void SetProgressMessage(const wxString &mes);
 	void SetProgressValue(double value);
 	void SetInterruptValue(int value);
 	int CheckInterrupt();
+  void UpdateAndYield();
+  void OnButtonPressed(wxCommandEvent& event);
 
 	wxStaticText *m_messageText;
 	wxGauge *m_progressGauge;
+  wxButton *m_cancelButton;
 	double m_value;
 	int m_interruptValue;
+  wxWindowDisabler *m_disabler;
+  
+  static int c_uniqueID;
+  static wxWindowList c_progressFrames;
 
 private:
 	DECLARE_EVENT_TABLE()

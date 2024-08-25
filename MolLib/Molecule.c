@@ -710,7 +710,7 @@ sReadLineWithInterrupt(char *buf, int size, FILE *stream, int *lineNumber)
 		if (*lineNumber == 0)
 			lastLineNumber = 0;
 		else if (*lineNumber >= lastLineNumber + 1000) {
-			if (MyAppCallback_checkInterrupt() != 0)
+			if (MyAppCallback_checkInterrupt(-1) != 0)
 				return -1;  /*  User interrupt  */
 			lastLineNumber = *lineNumber;
 		}
