@@ -525,7 +525,8 @@ MyDocument::Close()
 	}
 	if (wxDocument::Close()) {
 		/*  Call close hander in the Ruby world  */
-		MolActionCreateAndPerform(mol, SCRIPT_ACTION(""), "on_close");
+    if (mol != NULL)
+      MolActionCreateAndPerform(mol, SCRIPT_ACTION(""), "on_close");
 		/*  Send a message that this document will close  */
 		wxCommandEvent myEvent(MyDocumentEvent, MyDocumentEvent_documentWillClose);
 		myEvent.SetEventObject(this);
@@ -554,7 +555,7 @@ MyDocument::OnDocumentModified(wxCommandEvent& event)
 
 	/*  Call modified handler in the Ruby world  */
 	/*  (Does not if undo is disabled --- e.g. during loading structure)  */
-	if (isUndoEnabled)
+	if (isUndoEnabled && mol != NULL)
 		MolActionCreateAndPerform(mol, SCRIPT_ACTION(""), "on_modified");
 
 	event.Skip();  //  Also pass to other notification handlers
