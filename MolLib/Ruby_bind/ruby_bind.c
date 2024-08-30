@@ -10982,6 +10982,7 @@ s_Molecule_SetMOCoefficients(VALUE self, VALUE ival, VALUE eval, VALUE aval)
 	for (i = 0; i < ncomps; i++)
 		coeffs[i] = NUM2DBL(rb_Float(RARRAY_PTR(aval)[i]));
 	i = MoleculeSetMOCoefficients(mol, idx, energy, ncomps, coeffs); /* Negative (beta orbitals) or zero (arbitrary vector) idx is allowed */
+  free(coeffs);
 end:
 	if (i == -1)
 		rb_raise(rb_eMolbyError, "Molecule is emptry");
