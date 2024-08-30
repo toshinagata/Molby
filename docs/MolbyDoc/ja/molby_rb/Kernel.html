@@ -240,11 +240,11 @@ Hide the console window.
 <div id="method-M000378" class="method-detail">
 <a name="hide_progress_panel"></a>
 <div class="method-heading">
-<span class="method-name">hide_progress_panel</span>
+<span class="method-name">hide_progress_panel(id = nil)</span>
 </div>
 <div class="method-description">
 <p>
-Hide the progress panel. If the panel is not yet shown or already dismissed, do nothing.
+Hide the progress panel with the given ID. If ID is not given, then the last panel created by show_progress_panel is hidden. If no progress panel is shown, an exception is raised.
 </p>
 <p><i>See Also:</i> <a href="#show_progress_panel">show_progress_panel</a>
 </div>
@@ -332,12 +332,12 @@ Set the current interrupt flag (true to enable interrupt, false to disable inter
 <div id="method-M000378" class="method-detail">
 <a name="set_progress_message"></a>
 <div class="method-heading">
-<span class="method-name">set_progress_message(message)<br />
+<span class="method-name">set_progress_message(message, id = nil)<br />
 </span>
 </div>
 <div class="method-description">
 <p>
-Set the message for the progress panel. If the progress panel is not shown, do nothing.
+Set the message for the progress panel with the given ID. If the ID is not given, then the last panel created by show_progress_panel is specified. If the progress panel is not shown, an exception is raised.
 </p>
 </div>
 </div>
@@ -345,12 +345,15 @@ Set the message for the progress panel. If the progress panel is not shown, do n
 <div id="method-M000378" class="method-detail">
 <a name="set_progress_value"></a>
 <div class="method-heading">
-<span class="method-name">set_progress_value(value)<br />
+<span class="method-name">set_progress_value(value, id = nil)<br />
 </span>
 </div>
 <div class="method-description">
 <p>
-Set the progress value. The value should be a Float. If 0 <= value <= 1, then the progress bar becomes determinant and shows the value as the length of the colored part (value 1 corresponds to 100% progress). If the value is negative, then the progress bar becomes indeterminant.
+Set the progress value to the progress panel with the given ID. The value should be a Float. If 0 <= value <= 1, then the progress bar becomes determinant and shows the value as the length of the colored part (value 1 corresponds to 100% progress). If the value is negative, then the progress bar becomes indeterminant.
+</p>
+<p>
+If the ID is not given, then the last panel created by show_progress_panel is specified. If the progress panel is not shown, an exception is raised.
 </p>
 </div>
 </div>
@@ -371,11 +374,14 @@ Show the console window.
 <div id="method-M000378" class="method-detail">
 <a name="show_progress_panel"></a>
 <div class="method-heading">
-<span class="method-name">show_progress_panel</span>
+<span class="method-name">show_progress_panel &rarr; Integer</span>
 </div>
 <div class="method-description">
 <p>
-Show the progress panel. The panel can be dismissed by pressing the escape key, in which case Interrupt exception is thrown.
+Show the progress panel. The panel can be dismissed by pressing the escape key or pressing the cancel button, in which case Interrupt exception is raised.
+</p>
+<p>
+The return value is an integer to specify the panel. On calling hide_progress_panel, set_progress_message and set_progress_value, this return value can be given as an ID.
 </p>
 <p><i>See Also:</i> <a href="#hide_progress_panel">hide_progress_panel</a>
 </div>
