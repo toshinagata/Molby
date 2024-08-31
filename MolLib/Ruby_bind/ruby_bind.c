@@ -5148,13 +5148,15 @@ s_Molecule_Equal(VALUE self, VALUE val)
 static void
 s_Molecule_RaiseOnLoadSave(int status, int isloading, const char *msg, const char *fname)
 {
+  char *m = "";
 	if (gLoadSaveErrorMessage != NULL) {
 		MyAppCallback_setConsoleColor(1);
 		MyAppCallback_showScriptMessage("On %s %s:\n%s\n", (isloading ? "loading" : "saving"), fname, gLoadSaveErrorMessage);
 		MyAppCallback_setConsoleColor(0);
+    m = gLoadSaveErrorMessage;
 	}
 	if (status != 0)
-		rb_raise(rb_eMolbyError, "%s %s", msg, fname);
+		rb_raise(rb_eMolbyError, "%s \"%s\": %s", msg, fname, m);
 }
 
 /*
@@ -5174,9 +5176,10 @@ s_Molecule_Loadmbsf(int argc, VALUE *argv, VALUE self)
 	MoleculeClearLoadSaveErrorMessage();
 	Data_Get_Struct(self, Molecule, mol);
 	rb_scan_args(argc, argv, "1", &fname);
-	fstr = FileStringValuePtr(fname);
+  fstr = strdup(FileStringValuePtr(fname));
 	retval = MoleculeLoadMbsfFile(mol, fstr, &gLoadSaveErrorMessage);
 	s_Molecule_RaiseOnLoadSave(retval, 1, "Failed to load mbsf", fstr);
+  free(fstr);
 	return Qtrue;	
 }
 
@@ -5201,15 +5204,15 @@ s_Molecule_Loadpsf(int argc, VALUE *argv, VALUE self)
 		return Qnil;  /*  Must be a new molecule  */
 	MoleculeClearLoadSaveErrorMessage();
 	rb_scan_args(argc, argv, "11", &fname, &pdbname);
-	fstr = FileStringValuePtr(fname);
+  fstr = strdup(FileStringValuePtr(fname));
 	retval = MoleculeLoadPsfFile(mol, fstr, &gLoadSaveErrorMessage);
 	s_Molecule_RaiseOnLoadSave(retval, 1, "Failed to load psf", fstr);
-	pdbstr = NULL;
+  free(fstr);
 	if (!NIL_P(pdbname)) {
 		pdbstr = strdup(FileStringValuePtr(pdbname));
 		retval = MoleculeReadCoordinatesFromPdbFile(mol, pdbstr, &gLoadSaveErrorMessage);
-		free(pdbstr);
 		s_Molecule_RaiseOnLoadSave(retval, 1, "Failed to load coordinates from pdb", pdbstr);
+    free(pdbstr);
 	}
 	return Qtrue;
 }
@@ -5232,9 +5235,10 @@ s_Molecule_Loadpdb(int argc, VALUE *argv, VALUE self)
 	Data_Get_Struct(self, Molecule, mol);
 	rb_scan_args(argc, argv, "1", &fname);
 	MoleculeClearLoadSaveErrorMessage();
-	fstr = FileStringValuePtr(fname);
+  fstr = strdup(FileStringValuePtr(fname));
 	retval = MoleculeReadCoordinatesFromPdbFile(mol, fstr, &gLoadSaveErrorMessage);
 	s_Molecule_RaiseOnLoadSave(retval, 1, "Failed to load pdb", fstr);
+  free(fstr);
 	return Qtrue;	
 }
 
@@ -5255,9 +5259,10 @@ s_Molecule_Loaddcd(int argc, VALUE *argv, VALUE self)
 	Data_Get_Struct(self, Molecule, mol);
 	rb_scan_args(argc, argv, "1", &fname);
 	MoleculeClearLoadSaveErrorMessage();
-	fstr = FileStringValuePtr(fname);
+  fstr = strdup(FileStringValuePtr(fname));
 	retval = MoleculeReadCoordinatesFromDcdFile(mol, fstr, &gLoadSaveErrorMessage);
 	s_Molecule_RaiseOnLoadSave(retval, 1, "Failed to load dcd", fstr);
+  free(fstr);
 	return Qtrue;	
 }
 
@@ -5278,9 +5283,10 @@ s_Molecule_Loadtep(int argc, VALUE *argv, VALUE self)
 	Data_Get_Struct(self, Molecule, mol);
 	rb_scan_args(argc, argv, "1", &fname);
 	MoleculeClearLoadSaveErrorMessage();
-	fstr = FileStringValuePtr(fname);
+  fstr = strdup(FileStringValuePtr(fname));
 	retval = MoleculeLoadTepFile(mol, fstr, &gLoadSaveErrorMessage);
 	s_Molecule_RaiseOnLoadSave(retval, 1, "Failed to load ORTEP file", fstr);
+  free(fstr);
 	return Qtrue;	
 }
 
@@ -5301,9 +5307,10 @@ s_Molecule_Loadres(int argc, VALUE *argv, VALUE self)
 	Data_Get_Struct(self, Molecule, mol);
 	rb_scan_args(argc, argv, "1", &fname);
 	MoleculeClearLoadSaveErrorMessage();
-	fstr = FileStringValuePtr(fname);
+  fstr = strdup(FileStringValuePtr(fname));
 	retval = MoleculeLoadShelxFile(mol, fstr, &gLoadSaveErrorMessage);
 	s_Molecule_RaiseOnLoadSave(retval, 1, "Failed to load SHELX res file", fstr);
+  free(fstr);
 	return Qtrue;	
 }
 
@@ -5324,9 +5331,10 @@ s_Molecule_Loadfchk(int argc, VALUE *argv, VALUE self)
 	Data_Get_Struct(self, Molecule, mol);
 	rb_scan_args(argc, argv, "1", &fname);
 	MoleculeClearLoadSaveErrorMessage();
-	fstr = FileStringValuePtr(fname);
+  fstr = strdup(FileStringValuePtr(fname));
 	retval = MoleculeLoadGaussianFchkFile(mol, fstr, &gLoadSaveErrorMessage);
 	s_Molecule_RaiseOnLoadSave(retval, 1, "Failed to load Gaussian fchk", fstr);
+  free(fstr);
 	return Qtrue;	
 }
 
@@ -5347,11 +5355,12 @@ s_Molecule_Loaddat(int argc, VALUE *argv, VALUE self)
 	Data_Get_Struct(self, Molecule, mol);
 	rb_scan_args(argc, argv, "1", &fname);
 	MoleculeClearLoadSaveErrorMessage();
-	fstr = FileStringValuePtr(fname);
+  fstr = strdup(FileStringValuePtr(fname));
 	MyAppCallback_showProgressPanel("Loading GAMESS dat file...");
 	retval = MoleculeLoadGamessDatFile(mol, fstr, &gLoadSaveErrorMessage);
 	MyAppCallback_hideProgressPanel(-1);
 	s_Molecule_RaiseOnLoadSave(retval, 1, "Failed to load GAMESS dat", fstr);
+  free(fstr);
 	return Qtrue;	
 }
 
@@ -5365,13 +5374,14 @@ static VALUE
 s_Molecule_Savembsf(VALUE self, VALUE fname)
 {
 	char *fstr;
-    Molecule *mol;
+  Molecule *mol;
 	int retval;
-    Data_Get_Struct(self, Molecule, mol);
+  Data_Get_Struct(self, Molecule, mol);
 	MoleculeClearLoadSaveErrorMessage();
-	fstr = FileStringValuePtr(fname);
+  fstr = strdup(FileStringValuePtr(fname));
 	retval = MoleculeWriteToMbsfFile(mol, fstr, &gLoadSaveErrorMessage);
 	s_Molecule_RaiseOnLoadSave(retval, 0, "Failed to save mbsf", fstr);
+  free(fstr);
 	return Qtrue;
 }
 
@@ -5389,9 +5399,10 @@ s_Molecule_Savepsf(VALUE self, VALUE fname)
 	int retval;
     Data_Get_Struct(self, Molecule, mol);
 	MoleculeClearLoadSaveErrorMessage();
-	fstr = FileStringValuePtr(fname);
+  fstr = strdup(FileStringValuePtr(fname));
 	retval = MoleculeWriteToPsfFile(mol, fstr, &gLoadSaveErrorMessage);
 	s_Molecule_RaiseOnLoadSave(retval, 0, "Failed to save psf", fstr);
+  free(fstr);
 	return Qtrue;
 }
 
@@ -5409,9 +5420,10 @@ s_Molecule_Savepdb(VALUE self, VALUE fname)
 	int retval;
     Data_Get_Struct(self, Molecule, mol);
 	MoleculeClearLoadSaveErrorMessage();
-	fstr = FileStringValuePtr(fname);
+  fstr = strdup(FileStringValuePtr(fname));
 	retval = MoleculeWriteToPdbFile(mol, fstr, &gLoadSaveErrorMessage);
 	s_Molecule_RaiseOnLoadSave(retval, 0, "Failed to save pdb", fstr);
+  free(fstr);
 	return Qtrue;
 }
 
@@ -5429,9 +5441,10 @@ s_Molecule_Savedcd(VALUE self, VALUE fname)
 	int retval;
     Data_Get_Struct(self, Molecule, mol);
 	MoleculeClearLoadSaveErrorMessage();
-	fstr = FileStringValuePtr(fname);
+  fstr = strdup(FileStringValuePtr(fname));
 	retval = MoleculeWriteToDcdFile(mol, fstr, &gLoadSaveErrorMessage);
 	s_Molecule_RaiseOnLoadSave(retval, 0, "Failed to save dcd", fstr);
+  free(fstr);
 	return Qtrue;
 }
 
@@ -12737,8 +12750,8 @@ Molby_updateNamedFragments(int *count, char ***ary)
   int i, j;
   if (*count > 0 && *ary != NULL) {
     for (i = 0; i < *count; i++) {
-      free((*ary)[i][0]);
-      free((*ary)[i][1]);
+      free((*ary)[i * 2]);
+      free((*ary)[i * 2 + 1]);
     }
     free(*ary);
   }

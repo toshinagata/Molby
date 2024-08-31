@@ -227,8 +227,7 @@ MyDocument::DoOpenDocument(const wxString& file)
 	if ((status = MolActionCreateAndPerform(newmol, SCRIPT_ACTION("s"), "molload", p)) != 0) {
     if (status > 0) {
       /*  status -1 is user interrupt; otherwise, some error message may be present  */
-      if (gLoadSaveErrorMessage != NULL)
-        MyAppCallback_errorMessageBox("On loading %s:\n%s\n", p, gLoadSaveErrorMessage);
+      Ruby_showError(status);
     }
 		free(p);
 		SetMolecule(NULL);
@@ -344,8 +343,8 @@ MyDocument::OnImport(wxCommandEvent& event)
       MoleculeUnlock(mol);
       if (status != 0) {
         /*  status -1 is user interrupt; otherwise, some error message may be present  */
-        if (status > 0 && gLoadSaveErrorMessage != NULL)
-          MyAppCallback_errorMessageBox("On importing %s:\n%s\n", p, gLoadSaveErrorMessage);
+        if (status > 0)
+          Ruby_showError(status);
         Molecule *newmol = MoleculeNew();
         status = MoleculeLoadMbsfFile(newmol, tempFile.mb_str(wxConvFile), &errbuf);
         if (status == 0) {

@@ -1177,7 +1177,8 @@ MyApp::OnExecuteScript(wxCommandEvent &event)
 		int status;
 		RubyValue retval;
 		wxString path = dialog->GetPath();
-		
+    dialog->Destroy();
+  
 		//  Command line: execute_script('pathname')
 		wxString cline(path);
 		wxRegEx re(_T("[\\\\']"));   //  A backslash and a single-quote
@@ -1194,8 +1195,10 @@ MyApp::OnExecuteScript(wxCommandEvent &event)
 			MyAppCallback_errorMessageBox("Cannot open Ruby script %s", (const char *)path.mb_str(wxConvFile));
 		else if (status != 0)
 			Ruby_showError(status);
-	}
-	dialog->Destroy();
+    MyAppCallback_showRubyPrompt();
+  } else {
+    dialog->Destroy();
+  }
 }
 
 void
