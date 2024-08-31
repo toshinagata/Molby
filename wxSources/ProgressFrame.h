@@ -31,9 +31,11 @@ class ProgressFrame: public wxFrame
 public:
 	ProgressFrame(const wxString& title, const wxString &mes);
 	virtual ~ProgressFrame();
+  virtual bool Destroy();
 
   static ProgressFrame *FindProgressFrameWithID(int id);
 
+  void CleanUp();
 	void SetProgressMessage(const wxString &mes);
 	void SetProgressValue(double value);
 	void SetInterruptValue(int value);

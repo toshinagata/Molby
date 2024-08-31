@@ -69,6 +69,13 @@ ProgressFrame::ProgressFrame(const wxString &title, const wxString &mes):
 
 ProgressFrame::~ProgressFrame()
 {
+  if (m_disabler != NULL)
+    CleanUp();  /*  Somehow Destroy() has not been called */
+}
+
+void
+ProgressFrame::CleanUp()
+{
   /*  Remove this from the progressFrame list  */
   wxWindowList::iterator itr;
   for (itr = c_progressFrames.begin(); itr != c_progressFrames.end(); itr++) {
@@ -78,6 +85,14 @@ ProgressFrame::~ProgressFrame()
     }
   }
   delete m_disabler;
+  m_disabler = NULL;
+}
+
+bool
+ProgressFrame::Destroy()
+{
+  CleanUp();
+  return wxFrame::Destroy();
 }
 
 ProgressFrame *

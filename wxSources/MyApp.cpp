@@ -760,7 +760,6 @@ MyApp::HideProgressPanel(int id)
 {
   ProgressFrame *frame = ProgressFrame::FindProgressFrameWithID(id);
   if (frame != NULL) {
-    frame->Hide();
     frame->Destroy();
   }
 }
