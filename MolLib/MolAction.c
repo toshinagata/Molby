@@ -75,8 +75,8 @@ const char *gMolActionAmendBySymmetry = "amendBySymmetry:G;G";
 /*  A Ruby array to retain objects used in MolActionArg  */
 static VALUE sMolActionArgValues = Qfalse;
 
-/*  A global flag to suppress RubyError dialog during execution  */
-int gMolActionNoErrorDialog = 0;
+/*  A global flag to suppress RubyError messages during script execution  */
+int gMolActionNoErrorMessage = 0;
 
 /*  Action arguments  */
 /*  (Simple types)  i: Int, d: double, s: string, v: Vector, t: Transform, u: UnionPar
@@ -528,7 +528,7 @@ s_MolActionExecuteRubyScript(VALUE vinfo)
 static int
 s_MolActionPerformRubyScript(Molecule *mol, MolAction *action)
 {
-	int result;
+	int status;
 	MolRubyActionInfo info;
 	memset(&info, 0, sizeof(info));
 	if (gMolbyIsCheckingInterrupt || gMolbyRunLevel > 0) {
@@ -538,22 +538,39 @@ s_MolActionPerformRubyScript(Molecule *mol, MolAction *action)
 	info.mol = mol; /*  May be NULL  */
 	info.action = action;
 	gMolbyRunLevel++;
-	rb_protect(s_MolActionToRubyArguments, (VALUE)&info, &result);
+	rb_protect(s_MolActionToRubyArguments, (VALUE)&info, &status);
 	gMolbyRunLevel--;
-	if (result == 0) {
+	if (status == 0) {
 		VALUE save_interrupt;
 		MyAppCallback_beginUndoGrouping();
 		save_interrupt = Ruby_SetInterruptFlag(Qtrue);
 		gMolbyRunLevel++;
-		rb_protect(s_MolActionExecuteRubyScript, (VALUE)&info, &result);
+		rb_protect(s_MolActionExecuteRubyScript, (VALUE)&info, &status);
 		gMolbyRunLevel--;
 		Ruby_SetInterruptFlag(save_interrupt);
 		MyAppCallback_endUndoGrouping();
 	}
-	if (result != 0 && gMolActionNoErrorDialog == 0) {
-		Ruby_showError(result);
-	}
-	return (result == 0 ? 0 : -1);
+  if (status != 0) {
+    MyAppCallback_setConsoleColor(1);
+    if (Ruby_WasInterruptRaised()) {
+      status = -1;
+      MyAppCallback_showScriptMessage("User interrupt\n");
+    } else if (gMolActionNoErrorMessage == 0) {
+      char *title, *msg1, *msg2;
+      Ruby_getErrorMessage(status, &title, &msg1, &msg2);
+      if (msg1 != NULL) {
+        MyAppCallback_showScriptMessage("%s\n", msg1);
+        free(msg1);
+      }
+      if (msg2 != NULL) {
+        MyAppCallback_showScriptMessage("%s\n", msg2);
+        free(msg2);
+      }
+    }
+    Ruby_clearError();
+    MyAppCallback_showRubyPrompt();
+  }
+  return status;
 }
 
 static int

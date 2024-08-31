@@ -39,6 +39,7 @@
 #include "wx/clipbrd.h"
 #include "wx/filename.h"
 #include "wx/dir.h"
+#include "wx/filefn.h"
 
 #include <stdlib.h>
 #include <errno.h>
@@ -216,22 +217,24 @@ bool
 MyDocument::DoOpenDocument(const wxString& file)
 {
 	char *p;
-	int len;
+  int len, status;
 	Molecule *newmol;
 	p = strdup((const char *)file.mb_str(wxConvFile));
 	newmol = MoleculeNew();
 	SetMolecule(newmol);
 	MoleculeRelease(newmol);
 	SetUndoEnabled(false);
-	if (MolActionCreateAndPerform(newmol, SCRIPT_ACTION("s"), "molload", p) != 0) {
+	if ((status = MolActionCreateAndPerform(newmol, SCRIPT_ACTION("s"), "molload", p)) != 0) {
+    if (status > 0) {
+      /*  status -1 is user interrupt; otherwise, some error message may be present  */
+      if (gLoadSaveErrorMessage != NULL)
+        MyAppCallback_errorMessageBox("On loading %s:\n%s\n", p, gLoadSaveErrorMessage);
+    }
 		free(p);
 		SetMolecule(NULL);
 		SetUndoEnabled(true);
 		return false;
 	}
-	
-  if (gLoadSaveErrorMessage != NULL)
-    MyAppCallback_showScriptMessage("On loading %s:\n%s\n", p, gLoadSaveErrorMessage);
 
   /*  Does this document have multiple representation of molecules?  */
 	if (MolActionCreateAndPerform(newmol, SCRIPT_ACTION(";i"), "lambda { @aux_mols ? @aux_mols.count : 0 }", &len) == 0 && len > 0) {
@@ -325,15 +328,40 @@ MyDocument::OnImport(wxCommandEvent& event)
 
 	wxFileDialog *dialog = new wxFileDialog(NULL, _T("Choose Coordinate File"), _T(""), _T(""), wildcard, wxFD_OPEN | wxFD_CHANGE_DIR | wxFD_FILE_MUST_EXIST);
 	if (dialog->ShowModal() == wxID_OK) {
+    int status;
+    char *errbuf;
 		char *p = strdup((const char *)(dialog->GetPath().mb_str(wxConvFile)));
-		MoleculeLock(mol);
-		MolActionCreateAndPerform(mol, SCRIPT_ACTION("s"), "molload", p);
-		if (gLoadSaveErrorMessage != NULL)
-			MyAppCallback_showScriptMessage("On loading %s:\n%s\n", p, gLoadSaveErrorMessage);
-		MoleculeUnlock(mol);
+    dialog->Destroy();
+    /*  Save the current molecule to a temporary file (in case of error)  */
+    wxString tempFile = wxFileName::CreateTempFileName(_T("MolbyTemp"));
+    status = MoleculeWriteToMbsfFile(mol, tempFile.mb_str(wxConvFile), &errbuf);
+    if (status != 0) {
+      MyAppCallback_errorMessageBox("Cannot save the current molecule before importing\n%s", errbuf);
+    } else {
+      SetUndoEnabled(false);
+      MoleculeLock(mol);
+      status = MolActionCreateAndPerform(mol, SCRIPT_ACTION("s"), "molload", p);
+      MoleculeUnlock(mol);
+      if (status != 0) {
+        /*  status -1 is user interrupt; otherwise, some error message may be present  */
+        if (status > 0 && gLoadSaveErrorMessage != NULL)
+          MyAppCallback_errorMessageBox("On importing %s:\n%s\n", p, gLoadSaveErrorMessage);
+        Molecule *newmol = MoleculeNew();
+        status = MoleculeLoadMbsfFile(newmol, tempFile.mb_str(wxConvFile), &errbuf);
+        if (status == 0) {
+          SetMolecule(newmol);
+        } else {
+          MyAppCallback_errorMessageBox("Cannot restore the current molecule\n%s", errbuf);
+          MoleculeRelease(newmol);
+        }
+      }
+      SetUndoEnabled(true);
+    }
+    ::wxRemoveFile(tempFile);
 		free(p);
-	}
-	dialog->Destroy();
+  } else {
+    dialog->Destroy();
+  }
 }
 
 void

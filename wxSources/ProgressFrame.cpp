@@ -62,6 +62,7 @@ ProgressFrame::ProgressFrame(const wxString &title, const wxString &mes):
 
   this->Centre();
 	this->Show();
+  this->Raise();
   this->Enable();
 
 }
@@ -130,15 +131,18 @@ ProgressFrame::UpdateAndYield()
   Update();
   wxEventLoopBase * const loop = wxEventLoopBase::GetActive();
   if (loop != NULL)
-    loop->YieldFor(wxEVT_CATEGORY_UI);
+    loop->YieldFor(wxEVT_CATEGORY_UI | wxEVT_CATEGORY_USER_INPUT);
 }
 
 int
 ProgressFrame::CheckInterrupt()
 {
   UpdateAndYield();
-  if (m_interruptValue)
-    return m_interruptValue;
+  if (m_interruptValue) {
+    int save = m_interruptValue;
+    m_interruptValue = 0;
+    return save;
+  }
   if (::wxGetKeyState(WXK_ESCAPE))
     return 1;
   else return 0;

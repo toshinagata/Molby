@@ -39,7 +39,10 @@ extern int gUseGUI;
 extern char *gRubyVersion;
 extern char *gRubyCopyright;
 
+extern int Ruby_WasInterruptRaised(void);
+extern int Ruby_getErrorMessage(int status, char **title, char **msg1, char **msg2);
 extern void Ruby_showError(int status);
+extern void Ruby_clearError(void);
 extern int Ruby_showValue(RubyValue value, char **outValueString);
 extern int Ruby_UpdateUI(int index, Molecule *mol, int *outChecked, char **outTitle);
 

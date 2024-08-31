@@ -12282,7 +12282,7 @@ Molby_evalRubyScriptOnMolecule(const char *script, Molecule *mol, const char *fn
 			/*  Capture exit and return the status value  */
 			retval = (RubyValue)rb_funcall(last_exception, rb_intern("status"), 0);
 			*status = 0;
-			rb_set_errinfo(Qnil);
+      Ruby_clearError();
 		}
 	}
 	s_SetInterruptFlag(Qnil, save_interrupt_flag);
@@ -12339,55 +12339,75 @@ Ruby_showValue(RubyValue value, char **outValueString)
 	return 0;
 }
 
-void
-Ruby_showError(int status)
+int
+Ruby_WasInterruptRaised(void)
 {
-	static const int tag_raise = 6;
-    char *main_message = "Molby script error";
-	char *msg = NULL, *msg2;
-	VALUE val, backtrace;
-	int interrupted = 0;
-    int exit_status = -1;
-	if (status == tag_raise) {
-		VALUE errinfo = rb_errinfo();
-		VALUE eclass = CLASS_OF(errinfo);
-		if (eclass == rb_eInterrupt) {
-            main_message = "Molby script interrupted";
-            msg = "Interrupt";
-			interrupted = 1;
-        } else if (eclass == rb_eSystemExit) {
-            main_message = "Molby script exit";
-            interrupted = 2;
-            val = rb_eval_string_protect("$!.status", &status);
-            if (status == 0) {
-                exit_status = NUM2INT(rb_Integer(val));
-                asprintf(&msg, "Molby script exit with status %d", exit_status);
-            } else {
-                asprintf(&msg, "Molby script exit with unknown status");
-            }
-        }
-	}
-	gMolbyRunLevel++;
-    if (exit_status != 0) {
-        backtrace = rb_eval_string_protect("$backtrace = $!.backtrace.join(\"\\n\")", &status);
-        if (msg == NULL) {
-            val = rb_eval_string_protect("$!.to_s", &status);
-            if (status == 0)
-                msg = RSTRING_PTR(val);
-            else
-                msg = "(message not available)";
-        }
-        asprintf(&msg2, "%s\n%s", msg, RSTRING_PTR(backtrace));
-    } else {
-        msg2 = strdup(msg);
+  VALUE errinfo = rb_errinfo();
+  VALUE eclass = CLASS_OF(errinfo);
+  return (eclass == rb_eInterrupt);
+}
+
+/*  Get error message from Ruby interpreter  */
+/*  Return value; 1: system exit, 2: user interrupt, 3: other exception */
+/*  *title: title of the error dialog, *msg1: main message, *msg2: backtrace or NULL */
+/*  *title, *msg1, *msg2 are malloc'ed strings if not NULL  */
+int
+Ruby_getErrorMessage(int status, char **title, char **msg1, char **msg2)
+{
+  static const int tag_raise = 6;
+  const char *t1 = "Molby script error";
+  char *s1 = NULL, *s2 = NULL;
+  VALUE val, backtrace;
+  int retval = 0;
+  int exit_status = -1;
+  if (status == tag_raise) {
+    VALUE errinfo = rb_errinfo();
+    VALUE eclass = CLASS_OF(errinfo);
+    if (eclass == rb_eInterrupt) {
+      t1 = "Molby script interrupted";
+      s1 = strdup("Interrupt");
+      retval = 2;
+    } else if (eclass == rb_eSystemExit) {
+      t1 = "Molby script exit";
+      retval = 1;
+      val = rb_eval_string_protect("$!.status", &status);
+      if (status == 0) {
+        exit_status = NUM2INT(rb_Integer(val));
+        asprintf(&s1, "Molby script exit with status %d", exit_status);
+      } else {
+        asprintf(&s1, "Molby script exit with unknown status");
+      }
+    } else retval = 3;
+  }
+  gMolbyRunLevel++;
+  if (exit_status != 0) {
+    backtrace = rb_eval_string_protect("$backtrace = $!.backtrace.join(\"\\n\")", &status);
+    if (s1 == NULL) {
+      val = rb_eval_string_protect("$!.to_s", &status);
+      if (status == 0)
+        s1 = strdup(RSTRING_PTR(val));
+      else
+        s1 = strdup("(message not available)");
     }
-	MyAppCallback_messageBox(msg2, main_message, 0, 3);
-	free(msg2);
-    if (interrupted == 2) {
-        free(msg);
-        if (!gUseGUI && exit_status == 0)
-            exit(0);  // Capture exit(0) here and force exit
-    }
+    s2 = strdup(RSTRING_PTR(backtrace));
+  }
+  gMolbyRunLevel--;
+  if (title != NULL)
+    *title = strdup(t1);
+  if (msg1 != NULL)
+    *msg1 = s1;
+  else free(s1);
+  if (msg2 != NULL)
+    *msg2 = s2;
+  else if (s2 != NULL)
+    free(s2);
+  return retval;
+}
+
+void
+Ruby_clearError(void)
+{
+  rb_set_errinfo(Qnil);
   if (s_progress_panel_list != Qnil) {
     int i;
     for (i = RARRAY_LEN(s_progress_panel_list) - 1; i >= 0; i--) {
@@ -12396,7 +12416,28 @@ Ruby_showError(int status)
     }
     rb_ary_clear(s_progress_panel_list);
   }
-	gMolbyRunLevel--;
+}
+
+void
+Ruby_showError(int status)
+{
+  char *title, *msg1, *msg2, *msg3;
+  int n;
+  n = Ruby_getErrorMessage(status, &title, &msg1, &msg2);
+  if (msg2 != NULL) {
+    asprintf(&msg3, "%s\n%s", msg1, msg2);
+    free(msg1);
+    free(msg2);
+  } else {
+    msg3 = msg1;
+    free(msg1);
+  }
+	MyAppCallback_messageBox(msg3, title, 0, 3);
+	free(msg3);
+  Ruby_clearError();
+  if (n == 1 && !gUseGUI) {
+      exit(0);  // Capture exit(0) here and force exit
+  }
 }
 
 /*  Wrapper function for rb_load_protect or rb_eval_string_protect. Used only in non-GUI mode.  */
@@ -12660,8 +12701,8 @@ Molby_startup(const char *script, const char *dir)
     if (gUseGUI) {
         /*  Register interrupt check code  */
         rb_add_event_hook(s_Event_Callback, RUBY_EVENT_ALL, Qnil);
-        /*  Start interval timer (for periodic polling of interrupt); firing every 50 msec  */
-        s_SetIntervalTimer(0, 50);
+        /*  Start interval timer (for periodic polling of interrupt); firing every 500 msec  */
+        s_SetIntervalTimer(0, 500);
     }
 	
 	/*  Read the startup script  */
