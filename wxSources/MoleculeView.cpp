@@ -96,13 +96,34 @@ END_EVENT_TABLE()
 #define ConnectMouseDownEvents(src, func, target) \
 	(src->Connect(wxEVT_LEFT_DOWN, wxMouseEventHandler(func), NULL, target), \
 	src->Connect(wxEVT_LEFT_DCLICK, wxMouseEventHandler(func), NULL, target))
-				 
+#define DisconnectMouseDownEvents(src, func, target) \
+  (src->Disconnect(wxEVT_LEFT_DOWN, wxMouseEventHandler(func), NULL, target), \
+  src->Disconnect(wxEVT_LEFT_DCLICK, wxMouseEventHandler(func), NULL, target))
+
 WX_DEFINE_ARRAY_PTR(MoleculeView *, ArrayOfMoleculeViews);
 
 ArrayOfMoleculeViews sActiveViews;
 
 MoleculeView::~MoleculeView()
 {
+  /*  Unlink the connection with the widgets (otherwise the widgets may try to
+   access to this view after deletion  */
+  canvas->Disconnect(-1, wxEVT_CHAR, wxKeyEventHandler(MoleculeView::OnChar), NULL, this);
+  DisconnectMouseDownEvents(bbuttons[0], MoleculeView::OnFrameButtonAction, this);
+  DisconnectMouseDownEvents(bbuttons[1], MoleculeView::OnFrameButtonAction, this);
+  DisconnectMouseDownEvents(bbuttons[2], MoleculeView::OnFrameButtonAction, this);
+  DisconnectMouseDownEvents(bbuttons[3], MoleculeView::OnFrameButtonAction, this);
+
+  //  Disconnect the notification handler
+  MolDocument()->Disconnect(MyDocumentEvent_documentModified, MyDocumentEvent, wxCommandEventHandler(MoleculeView::OnDocumentModified), NULL, this);
+  wxGetApp().Disconnect(MyDocumentEvent_scriptMenuModified, MyDocumentEvent, wxCommandEventHandler(MoleculeView::OnScriptMenuModified), NULL, this);
+
+  //  Unbind the double-click handler of MyListCtrl
+  listctrl->GetScrolledWindow()->Unbind(wxEVT_LEFT_DCLICK, &MoleculeView::OnLeftDClickInListCtrl, this);
+
+  //  Unset data source for the list control
+  listctrl->SetDataSource(NULL);
+
 }
 
 bool
@@ -302,13 +323,15 @@ MoleculeView::OnCreate(wxDocument *doc, long WXUNUSED(flags) )
 				wxBitmap bmp41(jump_to_start_xpm);
 				wxBitmapButton *button41 = new wxBitmapButton(frameControlPanel, myID_JumpToStartButton, bmp41, wxDefaultPosition, FromFrameDIP(frame, wxSize(16, height)), wxTOGGLEBUTTON_STYLE);
 				sizer4->Add(button41, 0, wxEXPAND);
-				ConnectMouseDownEvents(button41, MoleculeView::OnFrameButtonAction, this);
+        bbuttons[0] = button41;
+				ConnectMouseDownEvents(bbuttons[0], MoleculeView::OnFrameButtonAction, this);
 
 				#include "../bitmaps/play_backward.xpm"
 				wxBitmap bmp42(play_backward_xpm);
 				wxBitmapButton *button42 = new wxBitmapButton(frameControlPanel, myID_PlayBackwardButton, bmp42, wxDefaultPosition, FromFrameDIP(frame, wxSize(16, height)), wxTOGGLEBUTTON_STYLE);
 				sizer4->Add(button42, 0, wxEXPAND);
-				ConnectMouseDownEvents(button42, MoleculeView::OnFrameButtonAction, this);
+        bbuttons[1] = button42;
+				ConnectMouseDownEvents(bbuttons[1], MoleculeView::OnFrameButtonAction, this);
 				
 				{
 					frameText = new wxTextCtrl(frameControlPanel, myID_FrameText, wxT(""), wxDefaultPosition, FromFrameDIP(frame, wxSize(40, height)));
@@ -324,13 +347,15 @@ MoleculeView::OnCreate(wxDocument *doc, long WXUNUSED(flags) )
 				wxBitmap bmp43(play_forward_xpm);
 				wxBitmapButton *button43 = new wxBitmapButton(frameControlPanel, myID_PlayForwardButton, bmp43, wxDefaultPosition, FromFrameDIP(frame, wxSize(16, height)), wxTOGGLEBUTTON_STYLE);
 				sizer4->Add(button43, 0, wxEXPAND);
-				ConnectMouseDownEvents(button43, MoleculeView::OnFrameButtonAction, this);
+        bbuttons[2] = button43;
+				ConnectMouseDownEvents(bbuttons[2], MoleculeView::OnFrameButtonAction, this);
 
 				#include "../bitmaps/jump_to_end.xpm"
 				wxBitmap bmp44(jump_to_end_xpm);
 				wxBitmapButton *button44 = new wxBitmapButton(frameControlPanel, myID_JumpToEndButton, bmp44, wxDefaultPosition, FromFrameDIP(frame, wxSize(16, height)), wxTOGGLEBUTTON_STYLE);
 				sizer4->Add(button44, 0, wxEXPAND);
-				ConnectMouseDownEvents(button44, MoleculeView::OnFrameButtonAction, this);
+        bbuttons[3] = button44;
+				ConnectMouseDownEvents(bbuttons[3], MoleculeView::OnFrameButtonAction, this);
 				
 				wxPanel *spacer = new wxPanel(frameControlPanel, -1, wxDefaultPosition, FromFrameDIP(frame, wxSize(21, height)));
 				sizer4->Add(spacer, 0, wxEXPAND);

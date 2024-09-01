@@ -42,6 +42,7 @@ public:
 	wxMenu *file_history_menu;
 	wxMenu *edit_menu;
 	MyToggleButton *tbuttons[6];
+  wxBitmapButton *bbuttons[4];
 	wxStaticText *infotext;
 	MyProgressIndicator *progress;
 	wxPanel *frameControlPanel;

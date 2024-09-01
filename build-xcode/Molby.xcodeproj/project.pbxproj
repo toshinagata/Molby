@@ -113,7 +113,6 @@
 		E420BE24188574F600A2B983 /* wxKillAddition.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E420BE21188574F600A2B983 /* wxKillAddition.cpp */; };
 		E4589CEF28D5FD6400F55785 /* MyToggleButton.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E4589CEE28D5FD6400F55785 /* MyToggleButton.cpp */; };
 		E4589CF028D5FD6400F55785 /* MyToggleButton.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E4589CEE28D5FD6400F55785 /* MyToggleButton.cpp */; };
-		E4589CF228D6E89900F55785 /* docview.cpp in Sources */ = {isa = PBXBuildFile; fileRef = E45B94611A170B9A008E95EB /* docview.cpp */; };
 		E4589CF528D82A5200F55785 /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = E4FC7845183E51180064FB2E /* Carbon.framework */; };
 		E4653CB118A0CC7D0022377B /* textctrl_addition.mm in Sources */ = {isa = PBXBuildFile; fileRef = E4653CB018A0CC7D0022377B /* textctrl_addition.mm */; };
 		E4ACACE718C6D32300F08B67 /* ortep3 in Resources */ = {isa = PBXBuildFile; fileRef = E4ACACE418C6D32300F08B67 /* ortep3 */; };
@@ -920,7 +919,6 @@
 				E4059FA528C46A6E0052B36B /* MDCore.c in Sources */,
 				E4059FA628C46A6E0052B36B /* MDEwald.c in Sources */,
 				E4059FA728C46A6E0052B36B /* MDForce.c in Sources */,
-				E4589CF228D6E89900F55785 /* docview.cpp in Sources */,
 				E4059FA828C46A6E0052B36B /* MDGraphite.c in Sources */,
 				E4059FA928C46A6E0052B36B /* MDPressure.c in Sources */,
 				E4059FAA28C46A6E0052B36B /* MDSurface.c in Sources */,
