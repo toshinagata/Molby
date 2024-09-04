@@ -531,7 +531,7 @@ s_MolActionPerformRubyScript(Molecule *mol, MolAction *action)
 	int status;
 	MolRubyActionInfo info;
 	memset(&info, 0, sizeof(info));
-	if (gMolbyIsCheckingInterrupt || gMolbyRunLevel > 0) {
+	if (gMolbyIsCheckingInterrupt) {
 		MolActionAlertRubyIsRunning();
 		return -1;
 	}
