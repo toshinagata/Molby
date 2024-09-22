@@ -150,13 +150,15 @@ MyGLCanvas::OnMouseEvent(wxMouseEvent &event)
 		MoleculeLock(mview->mol);
 		MainView_mouseDragged(mview, p, modifierFlags);
 		MoleculeUnlock(mview->mol);
-	} else if (event.LeftDown()) {
-		if (wxWindow::FindFocus() != this)
-			SetFocus();
-		CaptureMouse();
-		MoleculeLock(mview->mol);
-		MainView_mouseDown(mview, p, modifierFlags);
-		MoleculeUnlock(mview->mol);
+  } else if (event.LeftDown()) {
+    if (wxWindow::FindFocus() != this)
+      SetFocus();
+    CaptureMouse();
+    MoleculeLock(mview->mol);
+    MainView_mouseDown(mview, p, modifierFlags);
+    MoleculeUnlock(mview->mol);
+  } else if (event.Moving()) {
+    MainView_mouseMoved(mview, p, modifierFlags);
 	} else event.Skip();
 }
 
