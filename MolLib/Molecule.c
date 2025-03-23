@@ -264,7 +264,7 @@ AtomConnectHasEntry(AtomConnect *ac, Int ent)
 MolEnumerable *
 MolEnumerableNew(Molecule *mol, int kind)
 {
-	MolEnumerable *mseq = (MolEnumerable *)calloc(sizeof(MolEnumerable), 1);
+	MolEnumerable *mseq = (MolEnumerable *)calloc(1, sizeof(MolEnumerable));
 	if (mseq != NULL) {
 		mseq->mol = MoleculeRetain(mol);
 		mseq->kind = kind;
@@ -284,7 +284,7 @@ MolEnumerableRelease(MolEnumerable *mseq)
 AtomRef *
 AtomRefNew(Molecule *mol, int idx)
 {
-	AtomRef *aref = (AtomRef *)calloc(sizeof(AtomRef), 1);
+	AtomRef *aref = (AtomRef *)calloc(1, sizeof(AtomRef));
 	if (aref != NULL) {
 		aref->mol = MoleculeRetain(mol);
 		aref->idx = idx;
@@ -307,7 +307,7 @@ Molecule *
 MoleculeNew(void)
 {
 	char name[40];
-	Molecule *mp = (Molecule *)calloc(sizeof(Molecule), 1);
+	Molecule *mp = (Molecule *)calloc(1, sizeof(Molecule));
 	if (mp == NULL)
 		Panic("Cannot allocate new molecule record");
 	snprintf(name, sizeof name, "Untitled %d", sMoleculeUntitledCount++);
@@ -373,7 +373,7 @@ MoleculeInitWithMolecule(Molecule *mp2, Molecule *mp)
 		memmove(mp2->residues, mp->residues, sizeof(mp->residues[0]) * mp->nresidues);
 	}
 	if (mp->cell != NULL) {
-		mp2->cell = (XtalCell *)calloc(sizeof(XtalCell), 1);
+		mp2->cell = (XtalCell *)calloc(1, sizeof(XtalCell));
 		memmove(mp2->cell, mp->cell, sizeof(XtalCell));
 	}
 	if (mp->nsyms > 0) {
@@ -722,13 +722,18 @@ static int
 s_append_asprintf(char **buf, const char *fmt, ...)
 {
 	int len;
+  int add_newline = 0;
 	char *s;
 	va_list va;
 	va_start(va, fmt);
 	vasprintf(&s, fmt, va);
 	len = (*buf == NULL ? 0 : strlen(*buf));
-	if (s == NULL)
+  if (s == NULL || *s == 0)
 		return len;
+  if (len > 0 && (*buf)[len - 1] != '\n') {
+    add_newline = 1;
+    len++;
+  }
 	len += strlen(s);
 	if (*buf == NULL) {
 		*buf = malloc(len + 1);
@@ -736,7 +741,9 @@ s_append_asprintf(char **buf, const char *fmt, ...)
 	} else {
 		*buf = realloc(*buf, len + 1);
 	}
-	strcat(*buf, s);
+  if (add_newline)
+    strcat(*buf, "\n");
+  strcat(*buf, s);
 	free(s);
 	return len;
 }
@@ -960,9 +967,11 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 					free(ap->anchor->coeffs);
 					free(ap->anchor);
 				}
-				ap->anchor = (PiAnchor *)calloc(sizeof(PiAnchor), 1);
+				ap->anchor = (PiAnchor *)calloc(1, sizeof(PiAnchor));
 				if (ibuf[1] < 2 || ibuf[1] >= mp->natoms) {
 					s_append_asprintf(errbuf, "line %d: bad number of components for pi_anchor", lineNumber);
+          free(ap->anchor);
+          ap->anchor = NULL;
 					goto skip_section;
 				}
 				AtomConnectResize(&ap->anchor->connect, ibuf[1]);
@@ -970,20 +979,24 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 				NewArray(&ap->anchor->coeffs, &ap->anchor->ncoeffs, sizeof(Double), ibuf[1]);
 				j = ibuf[1];
 				for (i = 0; i < j; i++) {
-					if (ReadLine(buf, sizeof buf, fp, &lineNumber) <= 0) {
-						s_append_asprintf(errbuf, "line %d: unexpected end of file while reading pi_anchors", lineNumber);
-						goto err_exit;
-					}
-					if (sscanf(buf, "%d %lf", &ibuf[0], &dbuf[0]) < 2) {
+          if (ReadLine(buf, sizeof buf, fp, &lineNumber) <= 0) {
+            s_append_asprintf(errbuf, "line %d: unexpected end of file while reading pi_anchors", lineNumber);
+            goto skip_pi_anchor;
+          }
+            if (sscanf(buf, "%d %lf", &ibuf[0], &dbuf[0]) < 2) {
 						s_append_asprintf(errbuf, "line %d: bad format for pi_anchor", lineNumber);
-						goto skip_section;
+						goto skip_pi_anchor;
 					}
 					if (ibuf[0] < 0 || ibuf[0] >= mp->natoms) {
 						s_append_asprintf(errbuf, "line %d: atom index out of range", lineNumber);
-						goto skip_section;
+						goto skip_pi_anchor;
 					}
 					if (dbuf[0] <= 0.0) {
 						s_append_asprintf(errbuf, "line %d: the pi anchor weights should be positive", lineNumber);
+          skip_pi_anchor:
+            AtomConnectResize(&ap->anchor->connect, 0);
+            free(ap->anchor);
+            ap->anchor = NULL;
 						goto skip_section;
 					}
 					ip[i] = ibuf[0];
@@ -1001,7 +1014,7 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 				/* idx x y z */
 				if ((j = sscanf(buf, "%d %lf %lf %lf %lf %lf %lf", &ibuf[0], &dbuf[0], &dbuf[1], &dbuf[2], &dbuf[3], &dbuf[4], &dbuf[5])) < 4) {
 					s_append_asprintf(errbuf, "line %d: atom position cannot be read for atom %d frame %d", lineNumber, i + 1, nframes);
-					goto err_exit;
+					goto skip_section;
 				}
 				if (j > 4 && nframes != 0) {
 					s_append_asprintf(errbuf, "line %d: atom position sigma can only be given for frame 0", lineNumber);
@@ -1013,7 +1026,7 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 				}
 				if (i >= mp->natoms) {
 					s_append_asprintf(errbuf, "line %d: too many atom position records\n", lineNumber);
-					goto err_exit;
+					goto skip_section;
 				}
 				v.x = dbuf[0];
 				v.y = dbuf[1];
@@ -1310,7 +1323,7 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 				if (i < 4) {
 					if (sscanf(buf, "%lf %lf %lf", &dbuf[0], &dbuf[1], &dbuf[2]) < 3) {
 						s_append_asprintf(errbuf, "line %d: bad periodic_box format", lineNumber);
-						goto err_exit;
+						goto skip_section;
 					}
 					vs[i].x = dbuf[0];
 					vs[i].y = dbuf[1];
@@ -1723,13 +1736,13 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 				if (buf[0] == '\n')
 					break;
 				/* sym nprims a_idx [add_exp] */
-                i = sscanf(buf, "%6s %d %d %d", cbuf[0], &ibuf[0], &ibuf[1], &ibuf[3]);
-                if (i < 3) {
+        i = sscanf(buf, "%6s %d %d %d", cbuf[0], &ibuf[0], &ibuf[1], &ibuf[3]);
+        if (i < 3) {
 					s_append_asprintf(errbuf, "line %d: the gaussian primitive info cannot be read", lineNumber);
-					goto skip_section;
+          goto skip_gaussian_section;
 				}
-                if (i == 3)
-                    ibuf[3] = 0;  /*  Additional exponent (JANPA extension)  */
+        if (i == 3)
+          ibuf[3] = 0;  /*  Additional exponent (JANPA extension)  */
 				if (strcasecmp(cbuf[0], "S") == 0) {
 					ibuf[2] = 0;
 				} else if (strcasecmp(cbuf[0], "P") == 0) {
@@ -1750,14 +1763,17 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 					ibuf[2] = -4;
 				} else {
 					s_append_asprintf(errbuf, "line %d: the gaussian primitive type %s is unknown", lineNumber, cbuf[0]);
-					goto skip_section;
+          goto skip_gaussian_section;
 				}
 				if (ibuf[0] <= 0) {
 					s_append_asprintf(errbuf, "line %d: the number of primitive (%d) must be positive", lineNumber, ibuf[0]);
-					goto skip_section;
+					goto skip_gaussian_section;
 				}
 				if (ibuf[1] < 0 || ibuf[1] >= mp->natoms) {
 					s_append_asprintf(errbuf, "line %d: the atom index (%d) is out of range", lineNumber, ibuf[1]);
+        skip_gaussian_section:
+          BasisSetRelease(mp->bset);
+          mp->bset = NULL;
 					goto skip_section;
 				}
 				MoleculeAddGaussianOrbitalShell(mp, ibuf[1], ibuf[2], ibuf[0], ibuf[3]);
@@ -1769,6 +1785,8 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 						break;
 					if (sscanf(buf, "%lf %lf %lf", &dbuf[0], &dbuf[1], &dbuf[2]) < 3) {
 						s_append_asprintf(errbuf, "line %d: cannot read gaussian primitive coefficients", lineNumber);
+            BasisSetRelease(mp->bset);
+            mp->bset = NULL;
 						goto skip_section;
 					}
 					MoleculeAddGaussianPrimitiveCoefficients(mp, dbuf[0], dbuf[1], dbuf[2]);
@@ -1809,7 +1827,7 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 		} else if (strcmp(buf, "!:mo_coefficients") == 0) {
 			if (mp->bset == NULL || mp->bset->nshells == 0) {
 				s_append_asprintf(errbuf, "line %d: the :gaussian_primitive section must come before :mo_coefficients", lineNumber);
-				goto skip_section;
+        goto skip_mo_section;
 			}
 			/*  Count the number of components  */
 			dp = (Double *)malloc(sizeof(Double) * mp->bset->ncomps);
@@ -1821,23 +1839,23 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 					break;
 				if (sscanf(buf, "MO %d %lf", &ibuf[0], &dbuf[6]) < 2) {
 					s_append_asprintf(errbuf, "line %d: cannot read the MO index or energy", lineNumber);
-					goto skip_section;
+          goto skip_mo_section;
 				}
 				if (ibuf[0] != i) {
 					s_append_asprintf(errbuf, "line %d: the MO index (%d) must be in ascending order", lineNumber, ibuf[0]);
-					goto skip_section;
+          goto skip_mo_section;
 				}
 				i = 0;
 				while (ReadLine(buf, sizeof buf, fp, &lineNumber) > 0) {
 					j = sscanf(buf, "%lf %lf %lf %lf %lf %lf", &dbuf[0], &dbuf[1], &dbuf[2], &dbuf[3], &dbuf[4], &dbuf[5]);
 					if (j == 0) {
 						s_append_asprintf(errbuf, "line %d: cannot read the MO coefficients", lineNumber);
-						goto err_exit;
+            goto skip_mo_section;
 					}
 					for (k = 0; k < j; k++, i++) {
 						if (i >= mp->bset->ncomps) {
 							s_append_asprintf(errbuf, "line %d: too many MO coefficients", lineNumber);
-							goto err_exit;
+							goto skip_mo_section;
 						}
 						dp[i] = dbuf[k];
 					}
@@ -1847,6 +1865,9 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 				i = MoleculeSetMOCoefficients(mp, ibuf[0], dbuf[6], mp->bset->ncomps, dp);
 				if (i != 0) {
 					s_append_asprintf(errbuf, "line %d: cannot set MO coefficients", lineNumber);
+        skip_mo_section:
+          BasisSetRelease(mp->bset);
+          mp->bset = NULL;
 					goto skip_section;
 				}
 				i = ibuf[0] + 1;  /*  For next entry  */
@@ -1875,7 +1896,7 @@ MoleculeLoadMbsfFile(Molecule *mp, const char *fname, char **errbuf)
 				} else {
 					continue;  /*  Skip  */
 				}
-				gp = (MainViewGraphic *)calloc(sizeof(MainViewGraphic), 1);
+				gp = (MainViewGraphic *)calloc(1, sizeof(MainViewGraphic));
 				gp->kind = ibuf[0];
 				i = 0;
 				while (ReadLine(buf, sizeof buf, fp, &lineNumber) > 0) {
@@ -2750,7 +2771,7 @@ MoleculeAddGaussianOrbitalShell(Molecule *mol, Int a_idx, Int sym, Int nprims, I
 		return -1;  /*  Molecule is empty  */
 	bset = mol->bset;
 	if (bset == NULL) {
-		bset = mol->bset = (BasisSet *)calloc(sizeof(BasisSet), 1);
+		bset = mol->bset = (BasisSet *)calloc(1, sizeof(BasisSet));
 		if (bset == NULL)
 			return -2;  /*  Low memory  */
 	}
@@ -2796,7 +2817,7 @@ MoleculeAddGaussianPrimitiveCoefficients(Molecule *mol, Double exponent, Double 
 		return -1;  /*  Molecule is empty  */
 	bset = mol->bset;
 	if (bset == NULL) {
-		bset = mol->bset = (BasisSet *)calloc(sizeof(BasisSet), 1);
+		bset = mol->bset = (BasisSet *)calloc(1, sizeof(BasisSet));
 		if (bset == NULL)
 			return -2;  /*  Low memory  */
 	}
@@ -2911,7 +2932,7 @@ MoleculeSetMOCoefficients(Molecule *mol, Int idx, Double energy, Int ncomps, Dou
 		return -1;  /*  Molecule is empty  */
 	bset = mol->bset;
 	if (bset == NULL) {
-		bset = mol->bset = (BasisSet *)calloc(sizeof(BasisSet), 1);
+		bset = mol->bset = (BasisSet *)calloc(1, sizeof(BasisSet));
 		if (bset == NULL)
 			return -2;  /*  Low memory  */
 	}
@@ -2930,8 +2951,8 @@ MoleculeSetMOCoefficients(Molecule *mol, Int idx, Double energy, Int ncomps, Dou
 			bset->nmos = bset->ncomps;
 		if (bset->nmos <= 0)
 			return -3;  /*  Bad or inconsistent number of MOs  */
-		bset->mo = (Double *)calloc(sizeof(Double), (bset->nmos + 1) * bset->ncomps);
-		bset->moenergies = (Double *)calloc(sizeof(Double), bset->nmos + 1);
+		bset->mo = (Double *)calloc((bset->nmos + 1) * bset->ncomps, sizeof(Double));
+		bset->moenergies = (Double *)calloc(bset->nmos + 1, sizeof(Double));
 		if (bset->mo == NULL || bset->moenergies == NULL) {
 			if (bset->mo != NULL)
 				free(bset->mo);
@@ -2992,7 +3013,7 @@ MoleculeGetMOCoefficients(Molecule *mol, Int idx, Double *energy, Int *ncoeffs, 
 		if (*ncoeffs < bset->ncomps || *coeffs == NULL) {
 			if (*coeffs != NULL)
 				free(*coeffs);  /*  Caution: possible cause of SIGBUS if *coeff is not initialized properly */
-			*coeffs = (Double *)calloc(sizeof(Double), bset->ncomps);
+			*coeffs = (Double *)calloc(bset->ncomps, sizeof(Double));
 			*ncoeffs = bset->ncomps;
 		}
 		memmove(*coeffs, bset->mo + (idx * bset->ncomps), sizeof(Double) * bset->ncomps);
@@ -3017,7 +3038,7 @@ MoleculeSetMOInfo(Molecule *mol, Int rflag, Int ne_alpha, Int ne_beta)
 	}
 	bset = mol->bset;
 	if (bset == NULL) {
-		bset = mol->bset = (BasisSet *)calloc(sizeof(BasisSet), 1);
+		bset = mol->bset = (BasisSet *)calloc(1, sizeof(BasisSet));
 		if (bset == NULL)
 			return -2;  /*  Low memory  */
 	}
@@ -3265,7 +3286,7 @@ MoleculeLoadGaussianFchkFile(Molecule *mp, const char *fname, char **errbuf)
 	*errbuf = NULL;
 	if (mp == NULL)
 		mp = MoleculeNew();
-	bset = (BasisSet *)calloc(sizeof(BasisSet), 1);
+	bset = (BasisSet *)calloc(1, sizeof(BasisSet));
 	if (bset == NULL)
 		goto panic;
 	mp->bset = bset;
@@ -3311,7 +3332,7 @@ MoleculeLoadGaussianFchkFile(Molecule *mp, const char *fname, char **errbuf)
 			/*  Also allocate atom position array for MO calculations  */
 		/*	AssignArray(&bset->pos, &bset->natoms, sizeof(Vector), natoms - 1, NULL); */
 			/*  Also allocate nuclear charge array  */
-			bset->nuccharges = (Double *)calloc(sizeof(Double), natoms);
+			bset->nuccharges = (Double *)calloc(natoms, sizeof(Double));
 		} else if (strcmp(buf, "Number of electrons") == 0) {
 			if (tokens[1] == NULL || (i = atoi(tokens[1])) < 0) {
 				s_append_asprintf(errbuf, "Line %d: strange number of electrons: %s", lineNumber, tokens[1]);
@@ -3707,7 +3728,7 @@ MoleculeLoadGamessDatFile(Molecule *mol, const char *fname, char **errbuf)
 		if (strncmp(buf, " $DATA", 6) == 0) {
 			/*  Initial geometry  */
 			if (!newmol) {
-				vbuf = (Vector *)calloc(sizeof(Vector), mol->natoms);
+				vbuf = (Vector *)calloc(mol->natoms, sizeof(Vector));
 			}
 			i = 0;
 			ReadLine(buf, sizeof buf, fp, &lineNumber);  /*  Title  */
@@ -3771,7 +3792,7 @@ MoleculeLoadGamessDatFile(Molecule *mol, const char *fname, char **errbuf)
 				IntGroupRelease(ig);
 			}
 			if (vbuf == NULL)
-				vbuf = (Vector *)calloc(sizeof(Vector), natoms);
+				vbuf = (Vector *)calloc(natoms, sizeof(Vector));
 			nframes = MoleculeGetNumberOfFrames(mol);
 			if (status < 0)
 				break;
@@ -3827,7 +3848,7 @@ MoleculeLoadGamessDatFile(Molecule *mol, const char *fname, char **errbuf)
 				continue;  /*  Just ignore  */
 			if (optimizing)
 				continue;  /*  Ignore VEC group during optimization  */
-			coeffs = (Double *)calloc(sizeof(Double), mol->bset->ncomps);
+			coeffs = (Double *)calloc(mol->bset->ncomps, sizeof(Double));
 			if (coeffs == NULL) {
 				s_append_asprintf(errbuf, "Line %d: low memory during $VEC", lineNumber);
 				retval = 9;
@@ -3952,7 +3973,7 @@ MoleculeReadCoordinatesFromPdbFile(Molecule *mp, const char *fname, char **errbu
 		new_unit = 1;
 	else {
 		/*  Allocate buffer for undo-capable modification  */
-		vp = (Vector *)calloc(sizeof(Vector), mp->natoms);
+		vp = (Vector *)calloc(mp->natoms, sizeof(Vector));
 		for (i = 0, ap = mp->atoms; i < mp->natoms; i++, ap = ATOM_NEXT(ap)) {
 			/*  Retain current position if the atom info is missing in the input file  */
 			vp[i] = ap->r;
@@ -4104,7 +4125,7 @@ MoleculeReadCoordinatesFromPdbFile(Molecule *mp, const char *fname, char **errbu
 	if (new_unit) {
 		/*  Renumber atoms if some atom number is unoccupied  */
 		int *old2new, oldidx, newidx;
-		old2new = (int *)calloc(sizeof(int), mp->natoms);
+		old2new = (int *)calloc(mp->natoms, sizeof(int));
 		if (old2new == NULL) {
 			s_append_asprintf(errbuf, "Out of memory");
 			retval = 1;
@@ -4216,9 +4237,9 @@ MoleculeReadCoordinatesFromDcdFile(Molecule *mp, const char *fname, char **errbu
 		return 1;
 	}
 
-	vp = (Vector *)calloc(sizeof(Vector), mp->natoms * dcd.nframes);
+	vp = (Vector *)calloc(mp->natoms * dcd.nframes, sizeof(Vector));
 	if (dcd.nextra)
-		cp = (Vector *)calloc(sizeof(Vector), dcd.nframes * 4);
+		cp = (Vector *)calloc(dcd.nframes * 4, sizeof(Vector));
 	else cp = NULL;
 	xp = (SFloat32 *)malloc(sizeof(SFloat32) * dcd.natoms);
 	yp = (SFloat32 *)malloc(sizeof(SFloat32) * dcd.natoms);
@@ -5488,9 +5509,9 @@ MoleculeWriteToTepFile(Molecule *mp, const char *fname, char **errbuf)
 
 	/*  Create sorted array of atoms  */
 	natoms = mp->natoms;
-	atoms = (Atom *)calloc(sizeof(Atom), natoms);
-	app = (Atom **)calloc(sizeof(Atom *), natoms);
-	ip = (int *)calloc(sizeof(int), natoms);
+	atoms = (Atom *)calloc(natoms, sizeof(Atom));
+	app = (Atom **)calloc(natoms, sizeof(Atom *));
+	ip = (int *)calloc(natoms, sizeof(int));
 	if (atoms == NULL || app == NULL || ip == NULL) {
 		s_append_asprintf(errbuf, "Cannot allocate memory");
 		return 1;
@@ -5723,7 +5744,7 @@ MoleculePrepareMDArena(Molecule *mol, int check_only, char **retmsg)
 			nparams = ParameterGetCountForType(arena->par, parType);
 			if (nparams == 0)
 				continue;
-			upbuf = (UnionPar *)calloc(sizeof(UnionPar), nparams);
+			upbuf = (UnionPar *)calloc(nparams, sizeof(UnionPar));
 			ig1 = IntGroupNew();
 			ig2 = IntGroupNew();
 			for (idx = 0; (up = ParameterGetUnionParFromTypeAndIndex(arena->par, parType, idx)) != NULL; idx++) {
@@ -5793,7 +5814,7 @@ MoleculeDeserialize(const char *data, Int length, Int *timep)
 				if (j < 0 || j >= mp->natoms)
 					goto bad_format;
 				ap = ATOM_AT_INDEX(mp->atoms, j);
-				ap->aniso = (Aniso *)calloc(sizeof(Aniso), 1);
+				ap->aniso = (Aniso *)calloc(1, sizeof(Aniso));
 				if (ap->aniso == NULL)
 					goto out_of_memory;
 				*(ap->aniso) = *((Aniso *)(ptr + sizeof(Int)));
@@ -6840,7 +6861,7 @@ sAllocEqList(void)
 		lp->next = NULL;
 		return lp;
 	}
-	lp = (struct sEqList *)calloc(sizeof(struct sEqList), 1);
+	lp = (struct sEqList *)calloc(1, sizeof(struct sEqList));
 	lp->link = sListBase;
 	sListBase = lp;
 	return lp;
@@ -6945,7 +6966,7 @@ MoleculeSearchEquivalentAtoms(Molecule *mol, IntGroup *ig)
 	int i, j, k, ii, jj, kk;
 	if (mol == NULL || mol->natoms == 0)
 		return NULL;
-	db = (Int **)calloc(sizeof(Int *), mol->natoms);
+	db = (Int **)calloc(mol->natoms, sizeof(Int *));
 	ibuf = NULL;
 	nibuf = 0;
 
@@ -6979,7 +7000,7 @@ MoleculeSearchEquivalentAtoms(Molecule *mol, IntGroup *ig)
 				}
 			}
 			if (n > 1) {
-				ip = (Int *)calloc(sizeof(Int), n + 1);
+				ip = (Int *)calloc(n + 1, sizeof(Int));
 				if (ip == NULL)
 					return NULL;
 				ip[0] = n;
@@ -7015,7 +7036,7 @@ MoleculeSearchEquivalentAtoms(Molecule *mol, IntGroup *ig)
 				if (ii != jj && (db[ii] == NULL || db[ii] != db[jj])) {
 					/*  Merge db[ii] and db[jj]  */
 					k = (db[ii] == NULL ? 1 : db[ii][0]) + (db[jj] == NULL ? 1 : db[jj][0]);
-					ip = (Int *)calloc(sizeof(Int), k + 1);
+					ip = (Int *)calloc(k + 1, sizeof(Int));
 					if (ip == NULL)
 						return NULL;  /*  Out of memory  */
 					if (db[ii] == NULL) {
@@ -7054,7 +7075,7 @@ MoleculeSearchEquivalentAtoms(Molecule *mol, IntGroup *ig)
 	}
 	
 	/*  Record the equivalent atoms with the lowest index for each atom  */
-	result = (Int *)calloc(sizeof(Int), mol->natoms);
+	result = (Int *)calloc(mol->natoms, sizeof(Int));
 	for (i = 0; i < mol->natoms; i++)
 		result[i] = -1;
 	for (i = 0; i < mol->natoms; i++) {
@@ -7330,7 +7351,7 @@ MoleculeAmendBySymmetry(Molecule *mp, IntGroup *group, IntGroup **groupout, Vect
 			if (groupout != NULL) {
 				if (ig == NULL) {
 					ig = IntGroupNew();
-					vp = (Vector *)calloc(sizeof(Vector), mp->natoms);
+					vp = (Vector *)calloc(mp->natoms, sizeof(Vector));
 				}
 				vp[count] = ap->r;
 				IntGroupAdd(ig, i, 1);
@@ -7365,7 +7386,7 @@ MoleculeAmendBySymmetry(Molecule *mp, IntGroup *group, IntGroup **groupout, Vect
 		if (groupout != NULL) {
 			if (ig == NULL) {
 				ig = IntGroupNew();
-				vp = (Vector *)calloc(sizeof(Vector), mp->natoms);
+				vp = (Vector *)calloc(mp->natoms, sizeof(Vector));
 			}
 			vp[count] = nr;
 			IntGroupAdd(ig, i, 1);
@@ -7754,7 +7775,7 @@ MoleculeMerge(Molecule *dst, Molecule *src, IntGroup *where, Int resSeqOffset, I
 
 	/*  Atom index table. For "old" index, 0..ndst-1 are for atoms in dst,
 	    and ndst..ndst+nsrc-1 are for atoms in src.  */ 
-	new2old = (Int *)calloc(sizeof(Int), (ndst + nsrc) * 2);
+	new2old = (Int *)calloc((ndst + nsrc) * 2, sizeof(Int));
 	if (new2old == NULL)
 		goto panic;
 	old2new = new2old + ndst + nsrc;
@@ -7964,7 +7985,7 @@ MoleculeMerge(Molecule *dst, Molecule *src, IntGroup *where, Int resSeqOffset, I
 			n1 = IntGroupGetCount(ig);
 			if (n1 == 0)
 				continue;
-			up1 = (UnionPar *)calloc(sizeof(UnionPar), n1);
+			up1 = (UnionPar *)calloc(n1, sizeof(UnionPar));
 			if (up1 == NULL)
 				goto panic;
 			/*  Copy parameters and renumber indices if necessary  */
@@ -8067,7 +8088,7 @@ sMoleculeUnmergeSub(Molecule *src, Molecule **dstp, IntGroup *where, int resSeqO
 
 	/*  Atom index table. For "new" index, 0..nsrcnew-1 are for atoms remaining in src,
 	    and nsrcnew..nsrc-1 are for atoms moved into dst.  */ 
-	new2old = (Int *)calloc(sizeof(Int), nsrc * 2);
+	new2old = (Int *)calloc(nsrc * 2, sizeof(Int));
 	if (new2old == NULL)
 		goto panic;
 	old2new = new2old + nsrc;
@@ -8169,7 +8190,7 @@ sMoleculeUnmergeSub(Molecule *src, Molecule **dstp, IntGroup *where, int resSeqO
 		dst_ap = dst->atoms;
 	} else {
 		dst = NULL;
-		dst_ap = (Atom *)calloc(sizeof(Atom), ndst);
+		dst_ap = (Atom *)calloc(ndst, sizeof(Atom));
 		if (dst_ap == NULL)
 			goto panic;
 	}
@@ -8300,7 +8321,7 @@ sMoleculeUnmergeSub(Molecule *src, Molecule **dstp, IntGroup *where, int resSeqO
 			nitems_dst = NULL;
 			items_dst = NULL;
 		}
-		counts = (unsigned char *)calloc(1, *nitems);
+		counts = (unsigned char *)calloc(*nitems, 1);
 		/*  Find the entries that should be moved to dst  */
 		n2 = 0;
 		for (j = 0; j < *nitems * nsize; j++) {
@@ -8412,7 +8433,7 @@ sMoleculeUnmergeSub(Molecule *src, Molecule **dstp, IntGroup *where, int resSeqO
 			goto panic;
 		for (i = 0; i <= kLastParType - kFirstParType; i++)
 			dst_par_count[i] = 0;
-		up = (UnionPar *)calloc(sizeof(UnionPar), n2);
+		up = (UnionPar *)calloc(n2, sizeof(UnionPar));
 		if (up == NULL)
 			goto panic;
 		if (ParameterCopy(src->par, kFirstParType, up, dst_par_g) < n2)
@@ -8594,7 +8615,7 @@ MoleculeAddBonds(Molecule *mp, Int nbonds, const Int *bonds, IntGroup *where, In
 	}
 	if (mp->bondOrders != NULL) {
 		/*  Expand the bond order info (all new entries are zero)  */
-		Double *dp = (Double *)calloc(sizeof(Double), nbonds);
+		Double *dp = (Double *)calloc(nbonds, sizeof(Double));
 		if (dp == NULL)
 			return -4;
 		if (AssignArray(&(mp->bondOrders), &(mp->nbondOrders), sizeof(Double), n1 + nbonds - 1, NULL) == NULL
@@ -9761,9 +9782,9 @@ sMoleculeReorder(Molecule *mp)
 		return;
 
 	/*  Sort the atoms, bonds, etc. */
-	apArray = (Atom **)calloc(sizeof(Atom *), mp->natoms);
-	old2new = (Int *)calloc(sizeof(Int), mp->natoms);
-	newAtoms = (Atom *)calloc(gSizeOfAtomRecord, mp->natoms);
+	apArray = (Atom **)calloc(mp->natoms, sizeof(Atom *));
+	old2new = (Int *)calloc(mp->natoms, sizeof(Int));
+	newAtoms = (Atom *)calloc(mp->natoms, gSizeOfAtomRecord);
 	if (apArray == NULL || old2new == NULL || newAtoms == NULL)
 		Panic("Low memory during reordering atoms");
 	for (i = 0; i < mp->natoms; i++)
@@ -9839,8 +9860,8 @@ MoleculeRenumberAtoms(Molecule *mp, const Int *new2old, Int *old2new_out, Int is
 	if (old2new_out != NULL)
 		old2new = old2new_out;
 	else
-		old2new = (Int *)calloc(sizeof(Int), mp->natoms);
-	saveAtoms = (Atom *)calloc(gSizeOfAtomRecord, mp->natoms);
+		old2new = (Int *)calloc(mp->natoms, sizeof(Int));
+	saveAtoms = (Atom *)calloc(mp->natoms, gSizeOfAtomRecord);
 	if (old2new == NULL || saveAtoms == NULL)
 		Panic("Low memory during reordering atoms");
 	memmove(saveAtoms, mp->atoms, gSizeOfAtomRecord * mp->natoms);
@@ -10286,7 +10307,7 @@ MoleculeSetCell(Molecule *mp, Double a, Double b, Double c, Double alpha, Double
 	} else {
 		cp = mp->cell;
 		if (cp == NULL) {
-			cp = (XtalCell *)calloc(sizeof(XtalCell), 1);
+			cp = (XtalCell *)calloc(1, sizeof(XtalCell));
 			if (cp == NULL)
 				Panic("Low memory during setting cell parameters");
 			mp->cell = cp;
@@ -10373,7 +10394,7 @@ MoleculeSetAniso(Molecule *mp, int n1, int type, Double x11, Double x22, Double 
 	anp = mp->atoms[n1].aniso;
 	__MoleculeLock(mp);
 	if (anp == NULL) {
-		anp = (Aniso *)calloc(sizeof(Aniso), 1);
+		anp = (Aniso *)calloc(1, sizeof(Aniso));
 		if (anp == NULL) {
 			__MoleculeUnlock(mp);
 			Panic("Low memory during setting anisotropic atom parameters");
@@ -10480,7 +10501,7 @@ MoleculeSetAnisoBySymop(Molecule *mp, int idx)
 		return;
 	}
 	if (ap->aniso == NULL)
-		ap->aniso = (Aniso *)calloc(sizeof(Aniso), 1);
+		ap->aniso = (Aniso *)calloc(1, sizeof(Aniso));
 	if (ap->symop.sym == 0 || ap->symop.sym >= mp->nsyms) {
 		/*  Just copy the aniso parameters  */
 		memmove(ap->aniso, ap2->aniso, sizeof(Aniso));
@@ -10545,7 +10566,7 @@ MoleculeSetPeriodicBox(Molecule *mp, const Vector *ax, const Vector *ay, const V
 		}
 		free(mp->cell);
 	}
-	mp->cell = (XtalCell *)calloc(sizeof(XtalCell), 1);
+	mp->cell = (XtalCell *)calloc(1, sizeof(XtalCell));
 	if (mp->cell != NULL) {
 		memmove(mp->cell, &b, sizeof(XtalCell));
 		TransformMul(cmat, b.tr, cmat);
@@ -11243,14 +11264,14 @@ MoleculeCreateProperty(Molecule *mp, const char *name)
 		if (strcmp(prp->propname, name) == 0)
 			return -(i + 1);
 	}
-	prp = (MolProp *)calloc(sizeof(MolProp), 1);
+	prp = (MolProp *)calloc(1, sizeof(MolProp));
 	if (prp == NULL)
 		return -10000;
 	prp->propname = strdup(name);
 	if (prp->propname == NULL)
 		return -10000;
 	i = MoleculeGetNumberOfFrames(mp);
-	prp->propvals = (Double *)calloc(sizeof(Double), i);
+	prp->propvals = (Double *)calloc(i, sizeof(Double));
 	if (prp->propvals == NULL)
 		return -10000;
 	AssignArray(&mp->molprops, &mp->nmolprops, sizeof(MolProp), mp->nmolprops, prp);
@@ -11477,7 +11498,7 @@ MoleculeSetPiAnchorList(Molecule *mol, Int idx, Int nentries, Int *entries, Doub
 			IntGroupRelease(bg);
 		}
 	} else {
-		ap->anchor = (PiAnchor *)calloc(sizeof(PiAnchor), 1);
+		ap->anchor = (PiAnchor *)calloc(1, sizeof(PiAnchor));
 	}
 	AtomConnectResize(&ap->anchor->connect, nentries);
 	memmove(AtomConnectData(&ap->anchor->connect), entries, sizeof(Int) * nentries);
@@ -11787,11 +11808,11 @@ MoleculeCalcMO(Molecule *mp, Int mono, const Vector *op, const Vector *dxp, cons
 	if (mp->bset->natoms_bs > mp->natoms)
 		return -3;  /*  Number of atoms is smaller than expected (internal error)  */
 	
-	cp = (Cube *)calloc(sizeof(Cube), 1);
+	cp = (Cube *)calloc(1, sizeof(Cube));
 	if (cp == NULL) {
 		return -1;
 	}
-	cp->dp = (Double *)calloc(sizeof(Double), nx * ny * nz);
+	cp->dp = (Double *)calloc(nx * ny * nz, sizeof(Double));
 	if (cp->dp == NULL) {
 		free(cp);
 		return -1;
@@ -11806,7 +11827,7 @@ MoleculeCalcMO(Molecule *mp, Int mono, const Vector *op, const Vector *dxp, cons
 	cp->nz = nz;
 	
 	/*  TODO: use multithread  */
-	tmp = (Double *)calloc(sizeof(Double), mp->bset->natoms_bs * 4);
+	tmp = (Double *)calloc(mp->bset->natoms_bs * 4, sizeof(Double));
 	if (tmp == NULL) {
 		free(cp->dp);
 		free(cp);
@@ -12015,7 +12036,7 @@ MoleculeClearMCube(Molecule *mol, Int nx, Int ny, Int nz, const Vector *origin, 
 		mol->mcube = NULL;
 	}
 	if (nx > 0 && ny > 0 && nz > 0) {
-		mc = (MCube *)calloc(sizeof(MCube), 1);
+		mc = (MCube *)calloc(1, sizeof(MCube));
 		mc->idn = -1;
 		/*  round up to nearest 4N+1 integer  */
 		dx *= nx;
@@ -12033,15 +12054,15 @@ MoleculeClearMCube(Molecule *mol, Int nx, Int ny, Int nz, const Vector *origin, 
 			free(mc);
 			return NULL;
 		}
-		mc->radii = (Double *)calloc(sizeof(Double), mol->natoms);
+		mc->radii = (Double *)calloc(mol->natoms, sizeof(Double));
 		if (mc->radii == NULL) {
 			free(mc->dp);
 			free(mc);
 			return NULL;
 		}
 		mc->nradii = mol->natoms;
-		mc->c[0].fp = (unsigned char *)calloc(sizeof(unsigned char), mc->nx * mc->ny * mc->nz);
-		mc->c[1].fp = (unsigned char *)calloc(sizeof(unsigned char), mc->nx * mc->ny * mc->nz);
+		mc->c[0].fp = (unsigned char *)calloc(mc->nx * mc->ny * mc->nz, sizeof(unsigned char));
+		mc->c[1].fp = (unsigned char *)calloc(mc->nx * mc->ny * mc->nz, sizeof(unsigned char));
 		if (mc->c[0].fp == NULL || mc->c[1].fp == NULL) {
 			free(mc->c[0].fp);
 			free(mc->c[1].fp);
@@ -12529,7 +12550,7 @@ MoleculeUpdateMCube(Molecule *mol, int idn)
     }
     
 	/*  Temporary work area  */
-	tmp = (Double *)calloc(sizeof(Double), mol->bset->natoms_bs * 4);
+	tmp = (Double *)calloc(mol->bset->natoms_bs * 4, sizeof(Double));
 	if (tmp == NULL)
 		return -2;
 	

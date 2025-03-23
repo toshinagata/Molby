@@ -227,7 +227,15 @@ MyDocument::DoOpenDocument(const wxString& file)
 	if ((status = MolActionCreateAndPerform(newmol, SCRIPT_ACTION("s"), "molload", p)) != 0) {
     if (status > 0) {
       /*  status -1 is user interrupt; otherwise, some error message may be present  */
-      Ruby_showError(status);
+      const char *fmt = "Error occurred during load:\n%s";
+      char *msg1, *msg2;
+      if (gLoadSaveErrorMessage != NULL && *gLoadSaveErrorMessage != 0)
+        msg1 = gLoadSaveErrorMessage;
+      else
+        msg1 = (char *)"";
+      asprintf(&msg2, fmt, msg1);
+      MyAppCallback_messageBox(msg2, "Load Error", 0, 3);
+      free(msg2);
     }
 		free(p);
 		SetMolecule(NULL);
@@ -1099,7 +1107,7 @@ MyDocument::OnInsertFrameFromMD(wxCommandEvent &event)
 		/*  It is more convenient to set cell parameter when inserting frames, whereas 
 		    the coordinates can be set afterwards  */
 		if (ring->size > mol->natoms) {
-			rp = (Vector *)calloc(sizeof(Vector) * 4, n);
+			rp = (Vector *)calloc(n, sizeof(Vector) * 4);
 			for (i = 0; i < n; i++) {
 				j = ((ring->next - n + i + ring->nframes) % ring->nframes) * ring->size + mol->natoms;
 				rp[i * 4] = ring->buf[j++];
