@@ -839,7 +839,7 @@ MyApp::OnBringAllWindowsToFront(wxCommandEvent &event)
 	wxTopLevelWindow **wins;
 	size = wxTopLevelWindows.size();
 	if (size > 0) {
-		wins = (wxTopLevelWindow **)calloc(sizeof(wxTopLevelWindow *), size);
+		wins = (wxTopLevelWindow **)calloc(size, sizeof(wxTopLevelWindow *));
 		for (iter = wxTopLevelWindows.begin(), n = 0; iter != wxTopLevelWindows.end(); ++iter, ++n) {
 			wins[n] = (wxTopLevelWindow *)(*iter);
 		}

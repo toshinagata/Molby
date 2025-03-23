@@ -55,7 +55,7 @@ s_initialize_spline_coeffs(void)
 	Int n, m, k;
 	if (s_spline_coeffs != NULL && SPLINE_COEFF(2, 0, 1) == 1.0 && SPLINE_COEFF(2, 1, 1) == -1.0)
 		return;  /*  Already initialized  */
-	s_spline_coeffs = (Double *)calloc(sizeof(Double), (MAX_DIM_SPLINE - 1) * MAX_DIM_SPLINE * MAX_DIM_SPLINE);
+	s_spline_coeffs = (Double *)calloc((MAX_DIM_SPLINE - 1) * MAX_DIM_SPLINE * MAX_DIM_SPLINE, sizeof(Double));
 	SPLINE_COEFF(2, 0, 0) = 0.0;
 	SPLINE_COEFF(2, 0, 1) = 1.0;
 	SPLINE_COEFF(2, 1, 0) = 2.0;
@@ -872,7 +872,7 @@ pme_init(MDArena *arena)
 		/*  Direct Ewald  */
 		if (arena->pme != NULL)
 			pme_release(arena);
-		arena->pme = (MDPME *)calloc(sizeof(MDPME), 1);
+		arena->pme = (MDPME *)calloc(1, sizeof(MDPME));
 		if (arena->pme == NULL)
 			return;
 		/*  Only marray and kxyz is allocated (for force calculation)  */
@@ -912,7 +912,7 @@ pme_init(MDArena *arena)
 			return;
 		}
 		if (arena->pme == NULL) {
-			arena->pme = (MDPME *)calloc(sizeof(MDPME), 1);
+			arena->pme = (MDPME *)calloc(1, sizeof(MDPME));
 			if (arena->pme == NULL)
 				return;
 		}

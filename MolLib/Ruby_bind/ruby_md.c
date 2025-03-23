@@ -583,7 +583,7 @@ s_MDArena_SetAlchemicalPerturbation(VALUE self, VALUE gval1, VALUE gval2)
 	if (arena->mol == NULL)
 		rb_raise(rb_eMolbyError, "Molecule is not set");
 	n = arena->xmol->natoms;
-	flags = (char *)calloc(1, n);
+	flags = (char *)calloc(n, 1);
 	ig1 = (gval1 == Qnil ? NULL : IntGroupFromValue(gval1));
 	ig2 = (gval2 == Qnil ? NULL : IntGroupFromValue(gval2));
 	for (i = 0; i < n; i++) {
@@ -668,7 +668,7 @@ s_MDArena_SetExternalForces(VALUE self, VALUE aval)
 		md_set_external_forces(arena, 0, NULL);
 		return self;
 	}
-	vp = (Vector *)calloc(sizeof(Vector), n);
+	vp = (Vector *)calloc(n, sizeof(Vector));
 	for (i = 0; i < n; i++) {
 		VectorFromValue(RARRAY_PTR(aval)[i], vp + i);
 		VecScaleSelf(vp[i], KCAL2INTERNAL);

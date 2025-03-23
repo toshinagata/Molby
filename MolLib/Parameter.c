@@ -42,7 +42,7 @@ Parameter *
 ParameterNew(void)
 {
 	char name[40];
-	Parameter *par = (Parameter *)calloc(sizeof(Parameter), 1);
+	Parameter *par = (Parameter *)calloc(1, sizeof(Parameter));
 	if (par == NULL)
 		Panic("Cannot allocate new parameter record");
 	snprintf(name, sizeof name, "Untitled %d", sParameterUntitledCount++);
@@ -163,7 +163,7 @@ ParameterRelease(Parameter *par)
 ParameterRef *
 ParameterRefNew(struct Molecule *mol, int type, int idx)
 {
-	ParameterRef *pref = (ParameterRef *)calloc(sizeof(ParameterRef), 1);
+	ParameterRef *pref = (ParameterRef *)calloc(1, sizeof(ParameterRef));
 	if (pref != NULL) {
 		pref->mol = mol;
 		if (mol != NULL)

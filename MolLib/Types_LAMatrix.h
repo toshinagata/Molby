@@ -26,6 +26,7 @@
 #else
 #include <f2c.h>
 #include <blaswrap.h>
+#include <fblaswr.h>
 #include <clapack.h>
 #endif
 

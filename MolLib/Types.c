@@ -404,7 +404,7 @@ LAMatrixReleaseTempMatrix(LAMatrix *mat)
 LAMatrix *
 LAMatrixNew(int row, int column)
 {
-	LAMatrix *m = (LAMatrix *)calloc(sizeof(LAMatrix) + sizeof(__CLPK_doublereal) * (column * row - 1), 1);
+	LAMatrix *m = (LAMatrix *)calloc(1, sizeof(LAMatrix) + sizeof(__CLPK_doublereal) * (column * row - 1));
 	m->column = column;
 	m->row = row;
 	return m;
@@ -459,7 +459,7 @@ LAMatrixMul(int trans1, int trans2, double scale1, const LAMatrix *mat1, const L
 	cblas_dgemm(CblasColMajor, trans1, trans2, m, n, k, scale1, mat1->data, mat1->row, mat2->data, mat2->row, scale2, mat3->data, mat3->row);
 #else
 	char ctrans1, ctrans2;
-	int m, n, k;
+	integer m, n, k;
 	if (trans1) {
 		ctrans1 = 'T';
 		m = mat1->column;
@@ -625,7 +625,7 @@ AssignArray(void *base, Int *count, int item_size, int idx, const void *value)
 	if (*count == 0 || idx / 8 > (*count - 1) / 8) {
 		int new_size = (idx / 8 + 1) * 8;
 		if (*bp == NULL)
-			*bp = calloc(item_size, new_size);
+			*bp = calloc(new_size, item_size);
 		else
 			*bp = realloc(*bp, new_size * item_size);
 		if (*bp == NULL)

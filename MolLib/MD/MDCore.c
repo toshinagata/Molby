@@ -341,7 +341,7 @@ s_make_exclusion_list(MDArena *arena)
 	AtomConnect *anchor_rev;
 	Atom *ap;
 
-	results = (Int *)calloc(sizeof(Int), natoms + 1);
+	results = (Int *)calloc(natoms + 1, sizeof(Int));
 	if (results == NULL)
 		md_panic(arena, ERROR_out_of_memory);
 
@@ -352,7 +352,7 @@ s_make_exclusion_list(MDArena *arena)
 	arena->nexlist = 0;
 
 	/*  Make temporary table of "anchor_reverse"  */
-	anchor_rev = (AtomConnect *)calloc(sizeof(AtomConnect), natoms);
+	anchor_rev = (AtomConnect *)calloc(natoms, sizeof(AtomConnect));
 	for (i = 0, ap = arena->mol->atoms; i < natoms; i++, ap = ATOM_NEXT(ap)) {
 		if (ap->anchor != NULL) {
 			Int *cp = AtomConnectData(&ap->anchor->connect);
@@ -365,7 +365,7 @@ s_make_exclusion_list(MDArena *arena)
 	
 	if (arena->exinfo != NULL)
 		free(arena->exinfo);
-	arena->exinfo = (MDExclusion *)calloc(sizeof(MDExclusion), natoms + 1);
+	arena->exinfo = (MDExclusion *)calloc(natoms + 1, sizeof(MDExclusion));
 	if (arena->exinfo == NULL)
 		md_panic(arena, ERROR_out_of_memory);
 	exinfo = arena->exinfo;
@@ -611,7 +611,7 @@ s_find_vdw_parameters(MDArena *arena)
 
 	if (arena->vdw_par_i != NULL)
 		free(arena->vdw_par_i);
-	arena->vdw_par_i = (Int *)calloc(sizeof(Int), mol->natoms);
+	arena->vdw_par_i = (Int *)calloc(mol->natoms, sizeof(Int));
 	if (arena->vdw_par_i == NULL)
 		md_panic(arena, ERROR_out_of_memory);
 
@@ -708,7 +708,7 @@ s_find_vdw_parameters(MDArena *arena)
 	/*  Build cache  */
 	if (arena->vdw_cache != NULL)
 		free(arena->vdw_cache);
-	arena->vdw_cache = (MDVdwCache *)calloc(sizeof(MDVdwCache), par->nvdwPars * par->nvdwPars + 1);
+	arena->vdw_cache = (MDVdwCache *)calloc(par->nvdwPars * par->nvdwPars + 1, sizeof(MDVdwCache));
 	if (arena->vdw_cache == NULL)
 		md_panic(arena, ERROR_out_of_memory);
 	cutoff6 = arena->cutoff * arena->cutoff;
@@ -817,12 +817,12 @@ s_find_bond_parameters(MDArena *arena)
 	if (mol->nbonds > 0) {
 		if (arena->bond_par_i != NULL)
 			free(arena->bond_par_i);
-		arena->bond_par_i = (Int *)calloc(sizeof(Int), mol->nbonds);
+		arena->bond_par_i = (Int *)calloc(mol->nbonds, sizeof(Int));
 		if (arena->bond_par_i == NULL)
 			md_panic(arena, ERROR_out_of_memory);
 		if (arena->anbond_r0 != NULL)
 			free(arena->anbond_r0);
-		arena->anbond_r0 = (Double *)calloc(sizeof(Double), mol->nbonds);
+		arena->anbond_r0 = (Double *)calloc(mol->nbonds, sizeof(Double));
 		if (arena->anbond_r0 == NULL)
 			md_panic(arena, ERROR_out_of_memory);
 
@@ -909,7 +909,7 @@ s_find_angle_parameters(MDArena *arena)
 	if (mol->nangles > 0) {
 		if (arena->angle_par_i != NULL)
 			free(arena->angle_par_i);
-		arena->angle_par_i = (Int *)calloc(sizeof(Int), mol->nangles);
+		arena->angle_par_i = (Int *)calloc(mol->nangles, sizeof(Int));
 		if (arena->angle_par_i == NULL)
 			md_panic(arena, ERROR_out_of_memory);
 		
@@ -996,7 +996,7 @@ s_find_dihedral_parameters(MDArena *arena)
 	if (mol->ndihedrals > 0) {
 		if (arena->dihedral_par_i != NULL)
 			free(arena->dihedral_par_i);
-		arena->dihedral_par_i = (Int *)calloc(sizeof(Int), mol->ndihedrals);
+		arena->dihedral_par_i = (Int *)calloc(mol->ndihedrals, sizeof(Int));
 		if (arena->dihedral_par_i == NULL)
 			md_panic(arena, ERROR_out_of_memory);
 		
@@ -1091,7 +1091,7 @@ s_find_improper_parameters(MDArena *arena)
 	if (mol->nimpropers > 0) {
 		if (arena->improper_par_i != NULL)
 			free(arena->improper_par_i);
-		arena->improper_par_i = (Int *)calloc(sizeof(Int), mol->nimpropers);
+		arena->improper_par_i = (Int *)calloc(mol->nimpropers, sizeof(Int));
 		if (arena->improper_par_i == NULL)
 			md_panic(arena, ERROR_out_of_memory);
 		
@@ -1220,7 +1220,7 @@ md_find_fragments(MDArena *arena)
 	arena->nfragments = idx;
 	if (arena->fragment_info != NULL)
 		free(arena->fragment_info);
-	arena->fragment_info = (struct MDFragmentInfo *)calloc(sizeof(struct MDFragmentInfo), idx);
+	arena->fragment_info = (struct MDFragmentInfo *)calloc(idx, sizeof(struct MDFragmentInfo));
 	if (arena->fragment_info == NULL)
 		md_panic(arena, "Low memory in md_find_fragments");
 }
@@ -1691,25 +1691,25 @@ md_prepare(MDArena *arena, int check_only)
 	arena->max_nverlets = mol->natoms;
 	if (arena->verlets != NULL)
 		free(arena->verlets);
-	arena->verlets = (MDVerlet *)calloc(sizeof(MDVerlet), arena->max_nverlets);
+	arena->verlets = (MDVerlet *)calloc(arena->max_nverlets, sizeof(MDVerlet));
 	arena->nverlets = 0;
 	if (arena->verlets_dr != NULL)
 		free(arena->verlets_dr);
-	arena->verlets_dr = (Vector *)calloc(sizeof(Vector), mol->natoms);
+	arena->verlets_dr = (Vector *)calloc(mol->natoms, sizeof(Vector));
 	if (arena->verlets == NULL || arena->verlets_dr == NULL)
 		md_panic(arena, ERROR_out_of_memory);
 	arena->last_verlet_step = -1;
 	if (arena->verlet_i != NULL)
 		free(arena->verlet_i);
-	arena->verlet_i = (Int *)calloc(sizeof(Int), mol->natoms + 1);
+	arena->verlet_i = (Int *)calloc(mol->natoms + 1, sizeof(Int));
 	
 	/*  Allocate storage for partial energy/force  */
 	if (arena->energies != NULL)
 		free(arena->energies);
-	arena->energies = (Double *)calloc(sizeof(Double), kEndIndex);
+	arena->energies = (Double *)calloc(kEndIndex, sizeof(Double));
 	if (arena->forces != NULL)
 		free(arena->forces);
-	arena->forces = (Vector *)calloc(sizeof(Vector), kKineticIndex * mol->natoms);
+	arena->forces = (Vector *)calloc(kKineticIndex * mol->natoms, sizeof(Vector));
 	if (arena->energies == NULL || arena->forces == NULL)
 		md_panic(arena, ERROR_out_of_memory);
 
@@ -1729,7 +1729,7 @@ md_prepare(MDArena *arena, int check_only)
 		free(arena->ring->buf);
 		free(arena->ring);
 	}
-	arena->ring = (MDRing *)calloc(sizeof(MDRing), 1);
+	arena->ring = (MDRing *)calloc(1, sizeof(MDRing));
 	if (arena->ring == NULL)
 		md_panic(arena, ERROR_out_of_memory);
 	arena->ring->size = mol->natoms;
@@ -1742,7 +1742,7 @@ md_prepare(MDArena *arena, int check_only)
 	arena->ring->nframes = 2000 / arena->ring->size;
 	if (arena->ring->nframes < 2)
 		arena->ring->nframes = 2;
-	arena->ring->buf = (Vector *)calloc(sizeof(Vector), arena->ring->size * arena->ring->nframes);
+	arena->ring->buf = (Vector *)calloc(arena->ring->size * arena->ring->nframes, sizeof(Vector));
 	if (arena->ring->buf == NULL)
 		md_panic(arena, ERROR_out_of_memory);
 	arena->ring->next = 0;
@@ -2446,7 +2446,7 @@ md_minimize_init(MDArena *arena)
 	static const Vector zerov = {0, 0, 0};
 	if (arena->old_forces != NULL)
 		free(arena->old_forces);
-	arena->old_forces = (Vector *)calloc(sizeof(Vector), arena->mol->natoms * 2);
+	arena->old_forces = (Vector *)calloc(arena->mol->natoms * 2, sizeof(Vector));
 	if (arena->old_forces == NULL)
 		md_panic(arena, ERROR_out_of_memory);
 	arena->old_pos = arena->old_forces + arena->mol->natoms;
@@ -3294,7 +3294,7 @@ MDArena *
 md_arena_new(Molecule *xmol)
 {
 	MDArena *arena;
-	arena = (MDArena *)calloc(sizeof(MDArena), 1);
+	arena = (MDArena *)calloc(1, sizeof(MDArena));
 	if (arena == NULL)
 		return NULL;
 	arena->refCount = 1;

@@ -374,7 +374,7 @@ graphite_new(void)
 {
 	static Vector x = {1, 0, 0}, y = {0, 1, 0}, z = {0, 0, 1};
 	static Mat33 u = {1, 0, 0, 0, 1, 0, 0, 0, 1};
-	MDGraphiteArena *graphite = (MDGraphiteArena *)calloc(sizeof(MDGraphiteArena), 1);
+	MDGraphiteArena *graphite = (MDGraphiteArena *)calloc(1, sizeof(MDGraphiteArena));
 	graphite->use_table = 1;
 	graphite->Sx = 32;
 	graphite->Sy = 32;

@@ -1108,13 +1108,13 @@ s_Kernel_CallSubProcess(int argc, VALUE *argv, VALUE self)
         pnamestr = StringValuePtr(procname);
     else pnamestr = NULL;
     if (rb_obj_is_kind_of(cmd, rb_cString)) {
-        cmdargv = calloc(sizeof(cmdargv[0]), 3);
+        cmdargv = calloc(3, sizeof(cmdargv[0]));
         cmdargv[0] = StringValuePtr(cmd);
         cmdargv[1] = "";
         cmdargv[2] = NULL;
     } else {
         cmd = rb_ary_to_ary(cmd);
-        cmdargv = calloc(sizeof(cmdargv[0]), RARRAY_LEN(cmd) + 1);
+        cmdargv = calloc(RARRAY_LEN(cmd) + 1, sizeof(cmdargv[0]));
         for (n = 0; n < RARRAY_LEN(cmd); n++) {
             cmdargv[n] = StringValuePtr(RARRAY_PTR(cmd)[n]);
         }
@@ -3510,7 +3510,7 @@ typedef struct ParEnumerable {
 static ParEnumerable *
 s_ParEnumerableNew(Molecule *mol, Int parType)
 {
-	ParEnumerable *pen = (ParEnumerable *)calloc(sizeof(ParEnumerable), 1);
+	ParEnumerable *pen = (ParEnumerable *)calloc(1, sizeof(ParEnumerable));
 	if (pen != NULL) {
 		pen->mol = mol;
 		if (mol != NULL)
@@ -6546,7 +6546,7 @@ s_Molecule_AssignBondOrder(VALUE self, VALUE idxval, VALUE dval)
 		if (n == 0)
 			rb_raise(rb_eMolbyError, "the bond index is empty");
 		dval = rb_ary_to_ary(dval);
-		dp = (Double *)calloc(sizeof(Double), n);
+		dp = (Double *)calloc(n, sizeof(Double));
 		for (i = 0; i < RARRAY_LEN(dval) && i < n; i++) {
 			dp[i] = NUM2DBL(rb_Float(RARRAY_PTR(dval)[i]));
 		}
@@ -6595,7 +6595,7 @@ s_Molecule_GetBondOrder(VALUE self, VALUE idxval)
 			rb_raise(rb_eMolbyError, "the bond index is empty");
 		numericArg = 0;
 	}
-	dp = (Double *)calloc(sizeof(Double), n);
+	dp = (Double *)calloc(n, sizeof(Double));
 	MoleculeGetBondOrders(mol, dp, ig);
 	if (numericArg)
 		retval = rb_float_new(dp[0]);
@@ -8347,7 +8347,7 @@ s_Molecule_GetCoordFromFrame(int argc, VALUE *argv, VALUE self)
 	}
 	n = IntGroupGetCount(ig);
 	if (n > 0) {
-		vp = (Vector *)calloc(sizeof(Vector), n);
+		vp = (Vector *)calloc(n, sizeof(Vector));
 		IntGroupIteratorInit(ig, &iter);
 		j = 0;
 		nn = 0;
@@ -8404,8 +8404,8 @@ s_Molecule_ReorderFrames(VALUE self, VALUE aval)
 	nframes = MoleculeGetNumberOfFrames(mol);
 	if (RARRAY_LEN(aval) != nframes)
 		rb_raise(rb_eMolbyError, "The argument must have the same number of integers as the number of frames");
-	ip2 = (Int *)calloc(sizeof(Int), nframes);
-	ip = (Int *)calloc(sizeof(Int), nframes);
+	ip2 = (Int *)calloc(nframes, sizeof(Int));
+	ip = (Int *)calloc(nframes, sizeof(Int));
 	for (i = 0; i < nframes; i++) {
 		n = NUM2INT(rb_Integer(RARRAY_PTR(aval)[i]));
 		if (n < 0 || n >= nframes || ip2[n] != 0) {
@@ -8802,8 +8802,8 @@ s_Molecule_FitCoordinates(int argc, VALUE *argv, VALUE self)
 		IntGroupRelease(ig);
 		rb_raise(rb_eMolbyError, "atom group is not given correctly");
 	}
-	ref = (Vector *)calloc(sizeof(Vector), nn);
-	weights = (Double *)calloc(sizeof(Double), nn);
+	ref = (Vector *)calloc(nn, sizeof(Vector));
+	weights = (Double *)calloc(nn, sizeof(Double));
 	IntGroupIteratorInit(ig, &iter);
 	if (rb_obj_is_kind_of(rval, rb_cNumeric)) {
 		int fn = NUM2INT(rb_Integer(rval));
@@ -10987,7 +10987,7 @@ s_Molecule_SetMOCoefficients(VALUE self, VALUE ival, VALUE eval, VALUE aval)
 	energy = NUM2DBL(rb_Float(eval));
 	aval = rb_ary_to_ary(aval);
 	ncomps = RARRAY_LEN(aval);
-	coeffs = (Double *)calloc(sizeof(Double), ncomps);
+	coeffs = (Double *)calloc(ncomps, sizeof(Double));
 	if (coeffs == NULL) {
 		i = -2;
 		goto end;
@@ -11376,7 +11376,7 @@ s_Molecule_SetProperty(int argc, VALUE *argv, VALUE self)
 			rb_raise(rb_eMolbyError, "No frames are specified");
 		if (RARRAY_LEN(vval) < n)
 			rb_raise(rb_eMolbyError, "Values are missing; at least %d values should be given", n);
-		dp = (Double *)calloc(sizeof(Double), n);
+		dp = (Double *)calloc(n, sizeof(Double));
 		for (i = 0; i < n; i++)
 			dp[i] = NUM2DBL(rb_Float(RARRAY_PTR(vval)[i]));
 	}
@@ -11438,7 +11438,7 @@ s_Molecule_GetProperty(int argc, VALUE *argv, VALUE self)
 		if (n == 0)
 			return rb_ary_new();
 	}
-	dp = (Double *)calloc(sizeof(Double), n);
+	dp = (Double *)calloc(n, sizeof(Double));
 	MoleculeGetProperty(mol, idx, ig, dp);	
 	if (FIXNUM_P(ival))
 		ival = rb_float_new(dp[0]);
@@ -11698,13 +11698,13 @@ s_Molecule_CallSubProcessAsync(int argc, VALUE *argv, VALUE self)
 	rb_ivar_set(self, rb_intern("timer_proc"), timer_proc);
     
     if (rb_obj_is_kind_of(cmd, rb_cString)) {
-        cmdargv = calloc(sizeof(cmdargv[0]), 3);
+        cmdargv = calloc(3, sizeof(cmdargv[0]));
         cmdargv[0] = StringValuePtr(cmd);
         cmdargv[1] = "";
         cmdargv[2] = NULL;
     } else {
         cmd = rb_ary_to_ary(cmd);
-        cmdargv = calloc(sizeof(cmdargv[0]), RARRAY_LEN(cmd) + 1);
+        cmdargv = calloc(RARRAY_LEN(cmd) + 1, sizeof(cmdargv[0]));
         for (n = 0; n < RARRAY_LEN(cmd); n++) {
             cmdargv[n] = StringValuePtr(RARRAY_PTR(cmd)[n]);
         }
@@ -12759,7 +12759,7 @@ Molby_updateNamedFragments(int *count, char ***ary)
     *count = 0;
   else
     *count = RARRAY_LEN(named_fragments);
-  *ary = (char **)calloc(sizeof(char *), (*count) * 2);
+  *ary = (char **)calloc((*count) * 2, sizeof(char *));
   for (i = j = 0; i < *count; i++) {
     VALUE v = rb_ary_entry(named_fragments, i);
     if (v != Qnil) {

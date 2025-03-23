@@ -1003,7 +1003,7 @@ temporarySelection(MainView *mview, int flags, int clickCount, int ignoreExpande
 	const Atom *ap;
 	Double rect[4];
 	natoms = mview->mol->natoms;
-	selectFlags = (char *)calloc(sizeof(char), natoms);
+	selectFlags = (char *)calloc(natoms, sizeof(char));
 	if (selectFlags == NULL)
 		return NULL;
 	if (clickCount > 0) {
@@ -1859,7 +1859,7 @@ drawLabels(MainView *mview)
 	if (mview->nlabels == 0)
 		return;
 	
-/*	mview->sortedLabels = (LabelRecord **)calloc(sizeof(LabelRecord *), mview->nlabels);
+/*	mview->sortedLabels = (LabelRecord **)calloc(mview->nlabels, sizeof(LabelRecord *));
 	if (mview->sortedLabels == NULL)
 		return; */
 	
@@ -2127,7 +2127,7 @@ MainView_purgeUnusedLabels(MainView *mview)
 	Int *tempid;
 	if (mview == NULL || mview->nlabels == 0 || mview->mol->natoms == 0)
 		return;
-	tempid = (Int *)calloc(sizeof(Int), mview->nlabels);
+	tempid = (Int *)calloc(mview->nlabels, sizeof(Int));
 	if (tempid == NULL)
 		return;
 
@@ -2665,7 +2665,7 @@ MainView_rotateBySlider(MainView *mview, float angle, int mode, int mouseStatus,
 		if (mview->rotateFragment != NULL) {
 			/*  Save the original position  */
 			n1 = IntGroupGetCount(mview->rotateFragment);
-			mview->rotateFragmentOldPos = (Vector *)calloc(sizeof(Vector), n1);
+			mview->rotateFragmentOldPos = (Vector *)calloc(n1, sizeof(Vector));
 			if (mview->rotateFragmentOldPos == NULL) {
 				IntGroupRelease(mview->rotateFragment);
 				mview->rotateFragment = NULL;
@@ -2958,7 +2958,7 @@ MainView_pasteParameters(MainView *mview)
 		p += sizeof(Int);
 		count = *((Int *)p);
 		p += sizeof(Int);
-		up = (UnionPar *)calloc(sizeof(UnionPar), count);
+		up = (UnionPar *)calloc(count, sizeof(UnionPar));
 		memmove(up, p, sizeof(UnionPar) * count);
 
 		/*  The global parameters become local when pasted  */
@@ -3017,7 +3017,7 @@ MainView_copyOrCutParameters(MainView *mview, int flags)
 		if (t1 != type) {
 			/*  Process Parameters for the last group  */
 			if (type >= kFirstParType && ig2 != NULL && (n = IntGroupGetCount(ig2)) > 0) {
-				UnionPar *up = (UnionPar *)calloc(sizeof(UnionPar), n);
+				UnionPar *up = (UnionPar *)calloc(n, sizeof(UnionPar));
 				if (flags & 1) {
 					MolAction *act;
 					if (ParameterDelete(par, type, up, ig2) < 0)
@@ -3879,7 +3879,7 @@ MainView_dragTableSelectionToRow(MainView *mview, int row)
 	sel = MoleculeGetSelection(mview->mol);
 	if (sel == NULL || (count = IntGroupGetCount(sel)) == 0)
 		return;
-	new2old = (Int *)calloc(sizeof(Int), natoms);
+	new2old = (Int *)calloc(natoms, sizeof(Int));
 	if (new2old == NULL)
 		return;
 

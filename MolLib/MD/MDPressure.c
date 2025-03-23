@@ -59,7 +59,7 @@ s_lattice_deformation_stress(const Mat33 apply, const Transform celltr, const Tr
 MDPressureArena *
 pressure_new(void)
 {
-	MDPressureArena *pressure = (MDPressureArena *)calloc(sizeof(MDPressureArena), 1);
+	MDPressureArena *pressure = (MDPressureArena *)calloc(1, sizeof(MDPressureArena));
 	if (pressure == NULL)
 		return NULL;
 	pressure->freq = 20;
@@ -105,12 +105,12 @@ pressure_prepare(MDArena *arena)
 	pressure->mc_accept = pressure->mc_reject = 0;
 	if (pressure->temporary_energies != NULL)
 		free(pressure->temporary_energies);
-	pressure->temporary_energies = (Double *)calloc(sizeof(Double), arena->natoms_uniq);
+	pressure->temporary_energies = (Double *)calloc(arena->natoms_uniq, sizeof(Double));
 	if (pressure->temporary_energies == NULL)
 		md_panic(arena, "Low memory");
 	if (pressure->temporary_velocities != NULL)
 		free(pressure->temporary_velocities);
-	pressure->temporary_velocities = (Vector *)calloc(sizeof(Vector), arena->natoms_uniq);
+	pressure->temporary_velocities = (Vector *)calloc(arena->natoms_uniq, sizeof(Vector));
 	if (pressure->temporary_velocities == NULL)
 		md_panic(arena, "Low memory");
 }

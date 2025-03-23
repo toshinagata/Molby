@@ -96,7 +96,7 @@ rotation2Quat(const double *A, double *q)
 Trackball *
 TrackballNew(void)
 {
-	Trackball *track = (Trackball *)calloc(sizeof(Trackball), 1);
+	Trackball *track = (Trackball *)calloc(1, sizeof(Trackball));
 	MALLOC_CHECK(track, "allocating a trackball record");
     track->quat[0] = track->tempQuat[0] = 1.0;
 	return track;

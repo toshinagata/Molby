@@ -50,24 +50,24 @@ s_allocate_sp_arena(MDArena *arena)
 {
 	SPArena *sarena;
 	Int natoms, i;
-	sarena = (SPArena *)calloc(sizeof(SPArena), 1);
+	sarena = (SPArena *)calloc(1, sizeof(SPArena));
 	if (sarena == NULL)
 		md_panic(arena, ERROR_out_of_memory);
 	arena->sp_arena = sarena;
 	natoms = arena->mol->natoms;
-	sarena->atom_rad = (Double *)calloc(sizeof(Double), natoms);
+	sarena->atom_rad = (Double *)calloc(natoms, sizeof(Double));
 	if (sarena->atom_rad == NULL)
 		md_panic(arena, ERROR_out_of_memory);
-	sarena->atom_pot = (Double *)calloc(sizeof(Double), natoms);
+	sarena->atom_pot = (Double *)calloc(natoms, sizeof(Double));
 	if (sarena->atom_pot == NULL)
 		md_panic(arena, ERROR_out_of_memory);
-	sarena->atom_area = (Double *)calloc(sizeof(Double), natoms);
+	sarena->atom_area = (Double *)calloc(natoms, sizeof(Double));
 	if (sarena->atom_area == NULL)
 		md_panic(arena, ERROR_out_of_memory);
-	sarena->atom_buried = (Byte *)calloc(sizeof(Byte), natoms);
+	sarena->atom_buried = (Byte *)calloc(natoms, sizeof(Byte));
 	if (sarena->atom_buried == NULL)
 		md_panic(arena, ERROR_out_of_memory);
-	sarena->sphere_idx = (Int *)calloc(sizeof(Int), natoms*2);
+	sarena->sphere_idx = (Int *)calloc(natoms*2, sizeof(Int));
 	if (sarena->sphere_idx == NULL)
 		md_panic(arena, ERROR_out_of_memory);
 	for (i = 0; i < natoms; i++) {

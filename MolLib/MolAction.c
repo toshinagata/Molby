@@ -181,7 +181,7 @@ MolActionNewArgv(const char *name, va_list ap)
 				if (allocsize == 0)
 					arg.u.arval.ptr = NULL;
 				else {
-					arg.u.arval.ptr = calloc(1, allocsize);
+					arg.u.arval.ptr = calloc(allocsize, 1);
 					if (arg.u.arval.ptr == NULL)
 						goto low_memory;
 					memmove(arg.u.arval.ptr, ptr, itemsize * nitems);
@@ -497,7 +497,7 @@ s_MolActionStoreReturnValue(MolRubyActionInfo *info, VALUE val)
 				else if (info->return_type == 'V')
 					size = sizeof(Vector);
 				else break;
-				*((void **)(info->return_ptr)) = p = calloc(size, n);
+				*((void **)(info->return_ptr)) = p = calloc(n, size);
 				for (i = 0; i < n; i++) {
 					VALUE rval = (RARRAY_PTR(val))[i];
 					if (info->return_type == 'I') {
@@ -1068,7 +1068,7 @@ s_MolActionAssignBondOrders(Molecule *mol, MolAction *action, MolAction **actp)
 		dp2 = NULL;
 	} else {
 		/*  Get the old bond orders  */
-		dp2 = (Double *)calloc(sizeof(Double), n1);
+		dp2 = (Double *)calloc(n1, sizeof(Double));
 		MoleculeGetBondOrders(mol, dp2, ig);
 	}
 	MoleculeAssignBondOrders(mol, dp, ig);
@@ -1290,7 +1290,7 @@ s_MolActionRemoveFrames(Molecule *mol, MolAction *action, MolAction **actp)
 	
 	/*  Undo action for restoring properties  */
 	for (n2 = 0; n2 < mol->nmolprops; n2++) {
-		Double *dp = (Double *)calloc(sizeof(Double), n1);
+		Double *dp = (Double *)calloc(n1, sizeof(Double));
 		if (MoleculeGetProperty(mol, n2, ig2, dp) > 0) {
 			/*  The negative property index indicates that no undo is required  */
 			act2 = MolActionNew(gMolActionSetProperty, -n2 - 1, ig2, n1, dp);
@@ -1300,9 +1300,9 @@ s_MolActionRemoveFrames(Molecule *mol, MolAction *action, MolAction **actp)
 		free(dp);
 	}
 	
-	vp = (Vector *)calloc(sizeof(Vector), n1 * mol->natoms);
+	vp = (Vector *)calloc(n1 * mol->natoms, sizeof(Vector));
 	if (mol->cell != NULL && mol->frame_cells != NULL)
-		vp2 = (Vector *)calloc(sizeof(Vector) * 4, n1);
+		vp2 = (Vector *)calloc(n1, sizeof(Vector) * 4);
 	else vp2 = NULL;
 	if (MoleculeRemoveFrames(mol, ig2, vp, vp2) < 0) {
 		if (ig2 != ig)
@@ -1376,7 +1376,7 @@ s_MolActionSetProperty(Molecule *mol, MolAction *action, MolAction **actp)
 	
 	/*  Undo action for restoring old values  */
 	if (no_undo == 0) {
-		dp2 = (Double *)calloc(sizeof(Double), n1);
+		dp2 = (Double *)calloc(n1, sizeof(Double));
 		MoleculeGetProperty(mol, idx, ig, dp2);
 		*actp = MolActionNew(gMolActionSetProperty, idx, ig, n1, dp2);
 		free(dp2);
@@ -1430,7 +1430,7 @@ s_MolActionChangeResidueNumber(Molecule *mol, MolAction *action, MolAction **act
 
 	ig = action->args[0].u.igval;
 	n1 = IntGroupGetCount(ig);
-	ip = (Int *)calloc(sizeof(Int), n1 + 1);
+	ip = (Int *)calloc(n1 + 1, sizeof(Int));
 	IntGroupIteratorInit(ig, &iter);
 	i = 0;
 	while ((n1 = IntGroupIteratorNext(&iter)) >= 0) {
@@ -1528,7 +1528,7 @@ s_MolActionExpandBySymmetry(Molecule *mol, MolAction *action, MolAction **actp)
 	allow_overlap = action->args[5].u.ival;
 	if (action->args[6].u.retval.ptr != NULL) {
 		/*  Request the indices of the atoms  */
-		ip = (Int *)calloc(sizeof(Int), count);
+		ip = (Int *)calloc(count, sizeof(Int));
 	} else ip = NULL;
 	n1 = MoleculeAddExpandedAtoms(mol, symop, ig, ip, allow_overlap);
 	if (n1 > 0) {
@@ -1828,7 +1828,7 @@ s_MolActionDeleteParameters(Molecule *mol, MolAction *action, MolAction **actp)
 	parType = action->args[0].u.ival;
 	ig = action->args[1].u.igval;
 	n1 = IntGroupGetCount(ig);
-	up = (UnionPar *)calloc(sizeof(UnionPar), n1);
+	up = (UnionPar *)calloc(n1, sizeof(UnionPar));
 	ParameterDelete(mol->par, parType, up, ig);
 	*actp = MolActionNew(gMolActionAddParameters, parType, ig, n1, up);
 	free(up);

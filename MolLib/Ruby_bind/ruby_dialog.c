@@ -961,11 +961,11 @@ s_RubyDialog_Layout(int argc, VALUE *argv, VALUE self)
 	argv++;
 
 	/*  Allocate temporary storage  */
-	itags = (int *)calloc(sizeof(int), row * col);
-	opts = (VALUE *)calloc(sizeof(VALUE), row * col);
-	sizes = (RDSize *)calloc(sizeof(RDSize), row * col);
-	widths = (float *)calloc(sizeof(float), col);
-	heights = (float *)calloc(sizeof(float), row);
+	itags = (int *)calloc(row * col, sizeof(int));
+	opts = (VALUE *)calloc(row * col, sizeof(VALUE));
+	sizes = (RDSize *)calloc(row * col, sizeof(RDSize));
+	widths = (float *)calloc(col, sizeof(float));
+	heights = (float *)calloc(row, sizeof(float));
 	if (itags == NULL || sizes == NULL || opts == NULL || widths == NULL || heights == NULL)
 		rb_raise(rb_eNoMemError, "out of memory during layout");
 	
@@ -2387,7 +2387,7 @@ s_RubyDialog_DrawLine(int argc, VALUE *argv, VALUE self)
 			ncoords = argc;
 			if (ncoords < 2)
 				rb_raise(rb_eDialogError, "Too few coordinates are given (requires at least two points)");
-			coords = (float *)calloc(sizeof(float), ncoords * 2);
+			coords = (float *)calloc(ncoords * 2, sizeof(float));
 			coords[0] = NUM2DBL(rb_Float(RARRAY_PTR(aval)[0]));
 			coords[1] = NUM2DBL(rb_Float(RARRAY_PTR(aval)[1]));
 			for (i = 1; i < ncoords; i++) {
@@ -2404,7 +2404,7 @@ s_RubyDialog_DrawLine(int argc, VALUE *argv, VALUE self)
 			ncoords = RARRAY_LEN(aval) / 2;
 			if (ncoords < 2)
 				rb_raise(rb_eDialogError, "Too few coordinates are given (requires at least two points)");
-			coords = (float *)calloc(sizeof(float), ncoords * 2);
+			coords = (float *)calloc(ncoords * 2, sizeof(float));
 			for (i = 0; i < ncoords * 2; i++) {
 				coords[i] = NUM2DBL(rb_Float(RARRAY_PTR(aval)[i]));
 			}
@@ -2416,7 +2416,7 @@ s_RubyDialog_DrawLine(int argc, VALUE *argv, VALUE self)
 			rb_raise(rb_eDialogError, "Too few coordinates are given (requires at least two points)");
 		if (argc % 2 == 1)
 			rb_raise(rb_eDialogError, "An odd number of numerics are given; the coordinate values should be given in pairs");
-		coords = (float *)calloc(sizeof(float), ncoords * 2);
+		coords = (float *)calloc(ncoords * 2, sizeof(float));
 		for (i = 0; i < ncoords * 2; i++) {
 			coords[i] = NUM2DBL(rb_Float(argv[i]));
 		}
@@ -2502,7 +2502,7 @@ s_RubyDialog_Font(int argc, VALUE *argv, VALUE self)
 		int i, j;
 		VALUE keys = rb_funcall(hval, rb_intern("keys"), 0);
 		float width;
-		args = (void **)calloc(sizeof(void *), RARRAY_LEN(keys) * 2 + 1);
+		args = (void **)calloc(RARRAY_LEN(keys) * 2 + 1, sizeof(void *));
 		for (i = 0; i < RARRAY_LEN(keys); i++) {
 			VALUE kval = RARRAY_PTR(keys)[i];
 			VALUE aval = rb_hash_aref(hval, RARRAY_PTR(keys)[i]);
@@ -2577,7 +2577,7 @@ s_RubyDialog_Pen(int argc, VALUE *argv, VALUE self)
 		int i, j;
 		VALUE keys = rb_funcall(hval, rb_intern("keys"), 0);
 		float forecolor[4], width;
-		args = (void **)calloc(sizeof(void *), RARRAY_LEN(keys) * 2 + 1);
+		args = (void **)calloc(RARRAY_LEN(keys) * 2 + 1, sizeof(void *));
 		for (i = 0; i < RARRAY_LEN(keys); i++) {
 			VALUE kval = RARRAY_PTR(keys)[i];
 			VALUE aval = rb_hash_aref(hval, RARRAY_PTR(keys)[i]);
