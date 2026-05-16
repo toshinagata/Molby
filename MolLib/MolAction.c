@@ -53,6 +53,7 @@ const char *gMolActionRemoveFrames    = "removeFrames:G";
 const char *gMolActionReorderFrames   = "reorderFrames:I";
 const char *gMolActionSetProperty     = "setProperty:iGD";
 const char *gMolActionSetSelection    = "selection:G";
+const char *gMolActionSetMOInfo       = "setMOinfo:B";
 const char *gMolActionChangeResidueNumber = "changeResSeq:Gi";
 const char *gMolActionChangeResidueNumberForUndo = "changeResSeqForUndo:GIi";
 const char *gMolActionChangeResidueNames = "changeResNames:IC";
@@ -81,7 +82,7 @@ int gMolActionNoErrorMessage = 0;
 /*  Action arguments  */
 /*  (Simple types)  i: Int, d: double, s: string, v: Vector, t: Transform, u: UnionPar
  (Array types)   I: array of Int, D: array of double, V: array of Vector, C: array of char, T: array of Transform, U: array of UnionPars
- (Complex types) M: Molecule, G: IntGroup, A: Atom
+ (Complex types) M: Molecule, G: IntGroup, A: Atom, B: BasisSet
  (Ruby value)    b: Ruby boolean, r: Ruby object, R: an array of Ruby object (a Ruby array)
  (Return value)  i, d, s, v, t, r, G + 0x80 */
 typedef struct MolActionArg {
@@ -96,6 +97,7 @@ typedef struct MolActionArg {
 		struct IntGroup *igval; /* The record is retained but not duplicated */
 		struct Molecule *mval; /* The record is retained but not duplicated */
 		struct Atom *aval; /* The value is duplicated, so any pointer can be passed */
+    struct BasisSet *bval; /* The record is retained but not duplicated */
 		VALUE vval;        /* The value is retained in sMolActionArgValues  */
 		struct {
 			void *ptr;    /*  Return value pointer  */
@@ -205,6 +207,10 @@ MolActionNewArgv(const char *name, va_list ap)
 				AtomDuplicate(arg.u.aval, aval);
 				break;
 			}
+      case 'B':
+        arg.u.bval = va_arg(ap, BasisSet *);
+        BasisSetRetain(arg.u.bval);
+        break;
 			case 'r':
 			case 'R': {
 				int rtype;
@@ -308,6 +314,9 @@ MolActionRelease(MolAction *action)
 			case 'M':
 				MoleculeRelease(argp->u.mval);
 				break;
+      case 'B':
+        BasisSetRelease(argp->u.bval);
+        break;
 			case 'A':
 				if (argp->u.aval != NULL) {
 					AtomClean(argp->u.aval);
@@ -718,6 +727,19 @@ s_UpdateSelection(Molecule *mol, const IntGroup *ig, int is_insert)
 	IntGroupRelease(orig_atoms);
 }
 
+static void
+s_ClearMOInfoWithUndo(Molecule *mol)
+{
+  if (mol->bset != NULL) {
+    /*  Register undo action and clear bset  */
+    MolAction *act = MolActionNew(gMolActionSetMOInfo, mol->bset);
+    MolActionCallback_registerUndo(mol, act);
+    MolActionRelease(act);
+    BasisSetRelease(mol->bset);
+    mol->bset = NULL;
+  }
+}
+
 static int
 s_MolActionAddAnAtom(Molecule *mol, MolAction *action, MolAction **actp)
 {
@@ -728,6 +750,7 @@ s_MolActionAddAnAtom(Molecule *mol, MolAction *action, MolAction **actp)
 		*ip = n1;
 	if (n1 < 0)
 		return -1;
+  s_ClearMOInfoWithUndo(mol);
 	ig = IntGroupNewWithPoints(n1, 1, -1);
 	s_UpdateSelection(mol, ig, 1);
 	IntGroupRelease(ig);
@@ -787,6 +810,7 @@ s_MolActionMergeMolecule(Molecule *mol, MolAction *action, MolAction **actp)
 	if ((result = MoleculeMerge(mol, mol2, ig, regOffset, &nUndoActions, &undoActions, forUndo)) != 0)
 		return result;
 	
+  s_ClearMOInfoWithUndo(mol);
 	s_UpdateSelection(mol, ig, 1);
 	
 	/*  Register undo actions after registering unmerge action  */
@@ -835,6 +859,7 @@ s_MolActionDeleteAtoms(Molecule *mol, MolAction *action, MolAction **actp)
 		return result;
 	}
 	
+  s_ClearMOInfoWithUndo(mol);
 	s_UpdateSelection(mol, ig, 0);
 	
 	if (mol2 == NULL)
@@ -1404,6 +1429,16 @@ s_MolActionSetSelection(Molecule *mol, MolAction *action, MolAction **actp)
 }
 
 static int
+s_MolActionSetMOInfo(Molecule *mol, MolAction *action, MolAction **actp)
+{
+  *actp = MolActionNew(gMolActionSetMOInfo, mol->bset);
+  BasisSetRelease(mol->bset);
+  mol->bset = action->args[0].u.bval;
+  BasisSetRetain(mol->bset);
+  return 0;
+}
+
+static int
 s_MolActionRenumberAtoms(Molecule *mol, MolAction *action, MolAction **actp)
 {
 	Int *ip, n1, result;
@@ -1417,6 +1452,7 @@ s_MolActionRenumberAtoms(Molecule *mol, MolAction *action, MolAction **actp)
 		free(ip2);
 		return result;
 	}
+  s_ClearMOInfoWithUndo(mol);
 	*actp = MolActionNew(gMolActionRenumberAtoms, mol->natoms, ip2);
 	return 0;
 }
@@ -1545,6 +1581,7 @@ s_MolActionExpandBySymmetry(Molecule *mol, MolAction *action, MolAction **actp)
 		}
 		*((Int **)(action->args[6].u.retval.ptr)) = ip;
 		*(action->args[6].u.retval.nptr) = count;
+    s_ClearMOInfoWithUndo(mol);
 	}
 	return (n1 >= 0 ? 0 : n1);
 }
@@ -1964,6 +2001,9 @@ MolActionPerform(Molecule *mol, MolAction *action)
 	} else if (strcmp(action->name, gMolActionSetSelection) == 0) {
 		if ((result = s_MolActionSetSelection(mol, action, &act2)) != 0)
 			return result;
+  } else if (strcmp(action->name, gMolActionSetMOInfo) == 0) {
+    if ((result = s_MolActionSetMOInfo(mol, action, &act2)) != 0)
+      return result;
 	} else if (strcmp(action->name, gMolActionRenumberAtoms) == 0) {
 		if ((result = s_MolActionRenumberAtoms(mol, action, &act2)) != 0)
 			return result;

@@ -1540,6 +1540,10 @@ class Molecule
 	end
   end
 
+  def cmd_clear_MO_info
+    clear_basis_set
+  end
+  
   def export_psi4(fname, hash)
     now = Time.now.to_s
     if fname
@@ -2227,3 +2231,5 @@ register_menu("QChem\tCreate MOPAC6 Input...",
   :cmd_create_mopac_input, :non_empty)    # mopac6.rb
 register_menu("QChem\tCreate MO Cube...",
   :cmd_create_cube, lambda { |m| m && m.mo_type } )
+register_menu("QChem\tClear MO Information...",
+  :cmd_clear_MO_info, lambda { |m| m && m.mo_type } )

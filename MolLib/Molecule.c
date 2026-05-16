@@ -137,35 +137,52 @@ CubeRelease(Cube *cp)
 	}
 }
 
+BasisSet *
+BasisSetNew(void)
+{
+  BasisSet *bset = (BasisSet *)calloc(1, sizeof(BasisSet));
+  if (bset == NULL)
+    Panic("Cannot allocate new BasisSet record");
+  bset->refCount = 1;
+  return bset;
+}
+
+void
+BasisSetRetain(BasisSet *bset)
+{
+  if (bset != NULL)
+    ++(bset->refCount);
+}
+
 void
 BasisSetRelease(BasisSet *bset)
 {
-	int i;
-	if (bset == NULL)
-		return;
-	if (bset->shells != NULL)
-		free(bset->shells);
-	if (bset->priminfos != NULL)
-		free(bset->priminfos);
-	if (bset->mo != NULL)
-		free(bset->mo);
-	if (bset->cns != NULL)
-		free(bset->cns);
-	if (bset->moenergies != NULL)
-		free(bset->moenergies);
-	if (bset->scfdensities != NULL)
-		free(bset->scfdensities);
-/*	if (bset->pos != NULL)
-		free(bset->pos); */
-	if (bset->nuccharges != NULL)
-		free(bset->nuccharges);
-	if (bset->cubes != NULL) {
-		for (i = 0; i < bset->ncubes; i++) {
-			CubeRelease(bset->cubes[i]);
-		}
-		free(bset->cubes);
-	}
-	free(bset);
+  if (bset == NULL)
+    return;
+  if (--(bset->refCount) <= 0) {
+    int i;
+    if (bset->shells != NULL)
+      free(bset->shells);
+    if (bset->priminfos != NULL)
+      free(bset->priminfos);
+    if (bset->mo != NULL)
+      free(bset->mo);
+    if (bset->cns != NULL)
+      free(bset->cns);
+    if (bset->moenergies != NULL)
+      free(bset->moenergies);
+    if (bset->scfdensities != NULL)
+      free(bset->scfdensities);
+    if (bset->nuccharges != NULL)
+      free(bset->nuccharges);
+    if (bset->cubes != NULL) {
+      for (i = 0; i < bset->ncubes; i++) {
+        CubeRelease(bset->cubes[i]);
+      }
+      free(bset->cubes);
+    }
+    free(bset);
+  }
 }
 
 Int *
@@ -2771,13 +2788,15 @@ MoleculeAddGaussianOrbitalShell(Molecule *mol, Int a_idx, Int sym, Int nprims, I
 		return -1;  /*  Molecule is empty  */
 	bset = mol->bset;
 	if (bset == NULL) {
-		bset = mol->bset = (BasisSet *)calloc(1, sizeof(BasisSet));
+    bset = BasisSetNew();
 		if (bset == NULL)
 			return -2;  /*  Low memory  */
 	}
 	shellp = AssignArray(&bset->shells, &bset->nshells, sizeof(ShellInfo), bset->nshells, NULL);
-	if (shellp == NULL)
-		return -2;  /*  Low memory  */
+  if (shellp == NULL) {
+    BasisSetRelease(bset);    /*  Discard the temporary bset  */
+    return -2;  /*  Low memory  */
+  }
 	switch (sym) {
 		case 0:  shellp->sym = kGTOType_S;  shellp->ncomp = 1; break;
 		case 1:  shellp->sym = kGTOType_P;  shellp->ncomp = 3; break;
@@ -2789,6 +2808,7 @@ MoleculeAddGaussianOrbitalShell(Molecule *mol, Int a_idx, Int sym, Int nprims, I
 		case 4:  shellp->sym = kGTOType_G;  shellp->ncomp = 15; break;
 		case -4: shellp->sym = kGTOType_G9; shellp->ncomp = 9; break;
 		default:
+      BasisSetRelease(bset);
 			return -3;  /* Unsupported shell type  */
 	}
 	shellp->nprim = nprims;
@@ -2804,6 +2824,7 @@ MoleculeAddGaussianOrbitalShell(Molecule *mol, Int a_idx, Int sym, Int nprims, I
 	/*  Update the number of components (if not yet determined)  */
 	if (bset->ncomps < shellp->m_idx + shellp->ncomp)
 		bset->ncomps = shellp->m_idx + shellp->ncomp;
+  mol->bset = bset;
 	return 0;
 }
 
@@ -2817,16 +2838,20 @@ MoleculeAddGaussianPrimitiveCoefficients(Molecule *mol, Double exponent, Double 
 		return -1;  /*  Molecule is empty  */
 	bset = mol->bset;
 	if (bset == NULL) {
-		bset = mol->bset = (BasisSet *)calloc(1, sizeof(BasisSet));
+    bset = BasisSetNew();
 		if (bset == NULL)
 			return -2;  /*  Low memory  */
 	}
 	primp = AssignArray(&bset->priminfos, &bset->npriminfos, sizeof(PrimInfo), bset->npriminfos, NULL);
-	if (primp == NULL)
-		return -2;  /*  Low memory  */
+  if (primp == NULL) {
+    if (mol->bset == NULL)
+      BasisSetRelease(bset);   /*  Discard the temporary bset  */
+    return -2;  /*  Low memory  */
+  }
 	primp->A = exponent;
 	primp->C = contraction;
 	primp->Csp = contraction_sp;
+  mol->bset = bset;
 	return 0;
 }
 
@@ -2932,7 +2957,7 @@ MoleculeSetMOCoefficients(Molecule *mol, Int idx, Double energy, Int ncomps, Dou
 		return -1;  /*  Molecule is empty  */
 	bset = mol->bset;
 	if (bset == NULL) {
-		bset = mol->bset = (BasisSet *)calloc(1, sizeof(BasisSet));
+    bset = BasisSetNew();
 		if (bset == NULL)
 			return -2;  /*  Low memory  */
 	}
@@ -2949,8 +2974,13 @@ MoleculeSetMOCoefficients(Molecule *mol, Int idx, Double energy, Int ncomps, Dou
 			bset->nmos = bset->ncomps * 2;
 		else
 			bset->nmos = bset->ncomps;
-		if (bset->nmos <= 0)
-			return -3;  /*  Bad or inconsistent number of MOs  */
+    if (bset->nmos <= 0) {
+      /*  Bad or inconsistent number of MOs  */
+      bset->nmos = 0;
+      if (mol->bset == NULL)
+        BasisSetRelease(bset);  /*  Discard the temporary bset  */
+      return -3;
+    }
 		bset->mo = (Double *)calloc((bset->nmos + 1) * bset->ncomps, sizeof(Double));
 		bset->moenergies = (Double *)calloc(bset->nmos + 1, sizeof(Double));
 		if (bset->mo == NULL || bset->moenergies == NULL) {
@@ -2961,6 +2991,8 @@ MoleculeSetMOCoefficients(Molecule *mol, Int idx, Double energy, Int ncomps, Dou
 			bset->mo = NULL;
 			bset->moenergies = NULL;
 			bset->nmos = 0;
+      if (mol->bset == NULL)
+        BasisSetRelease(bset);  /*  Discard the temporary bset  */
 			return -2;  /*  Low memory  */
 		}
 	}
@@ -2974,8 +3006,18 @@ MoleculeSetMOCoefficients(Molecule *mol, Int idx, Double energy, Int ncomps, Dou
 		idx--;
 	if (energy != -1000000)
 		bset->moenergies[idx] = energy;
-	if (ncomps < bset->ncomps)
-		return -5;  /*  Insufficient number of data provided  */
+  if (ncomps < bset->ncomps) {
+    if (bset->mo != NULL)
+      free(bset->mo);
+    if (bset->moenergies != NULL)
+      free(bset->moenergies);
+    bset->mo = NULL;
+    bset->moenergies = NULL;
+    bset->nmos = 0;
+    if (mol->bset == NULL)
+      BasisSetRelease(bset);  /*  Discard the temporary bset  */
+    return -5;  /*  Insufficient number of data provided  */
+  }
 	memmove(bset->mo + (idx * bset->ncomps), coeffs, sizeof(Double) * bset->ncomps);
 	if (bset->cns != NULL) {
 		/*  Clear the cached values  */
@@ -2983,6 +3025,7 @@ MoleculeSetMOCoefficients(Molecule *mol, Int idx, Double energy, Int ncomps, Dou
 		bset->cns = NULL;
 		bset->ncns = 0;
 	}
+  mol->bset = bset;
 	return 0;
 }
 
@@ -3038,7 +3081,7 @@ MoleculeSetMOInfo(Molecule *mol, Int rflag, Int ne_alpha, Int ne_beta)
 	}
 	bset = mol->bset;
 	if (bset == NULL) {
-		bset = mol->bset = (BasisSet *)calloc(1, sizeof(BasisSet));
+    bset = mol->bset = BasisSetNew();
 		if (bset == NULL)
 			return -2;  /*  Low memory  */
 	}
@@ -3286,13 +3329,13 @@ MoleculeLoadGaussianFchkFile(Molecule *mp, const char *fname, char **errbuf)
 	*errbuf = NULL;
 	if (mp == NULL)
 		mp = MoleculeNew();
-	bset = (BasisSet *)calloc(1, sizeof(BasisSet));
+  bset = BasisSetNew();
 	if (bset == NULL)
 		goto panic;
-	mp->bset = bset;
 	fp = fopen(fname, "rb");
 	if (fp == NULL) {
 		s_append_asprintf(errbuf, "Cannot open file");
+    BasisSetRelease(bset);
 		return 1;
 	}
 	lineNumber = 0;
@@ -3673,11 +3716,13 @@ cleanup:
 	if (dary != NULL)
 		free(dary);
 	if (retval != 0) {
-		if (mp->bset != NULL) {
-			BasisSetRelease(mp->bset);
-			mp->bset = NULL;
-		}
-	}
+    if (bset != NULL)
+      BasisSetRelease(bset);
+  } else {
+    if (mp->bset != NULL)
+      BasisSetRelease(mp->bset);
+    mp->bset = bset;
+  }
 	return retval;
 panic:
 	Panic("low memory while reading fchk file %s", fname);

@@ -228,6 +228,7 @@ typedef struct ShellInfo {
 
 /*  Basis set and MO information  */
 typedef struct BasisSet {
+  Int refCount;
 	Int nshells;         /*  Number of gaussian orbital shells  */
 	ShellInfo *shells;   /*  Gaussian orbital shells  */
 	Int npriminfos;      /*  Size of primitive information table  */
@@ -391,6 +392,8 @@ typedef struct Molecule {
 
 int strlen_limit(const char *s, int limit);
 
+BasisSet *BasisSetNew(void);
+void BasisSetRetain(BasisSet *bset);
 void BasisSetRelease(BasisSet *bset);
 
 Molecule *MoleculeNew(void);
